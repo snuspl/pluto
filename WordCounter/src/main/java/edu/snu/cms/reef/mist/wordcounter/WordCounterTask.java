@@ -19,21 +19,56 @@
 package edu.snu.cms.reef.mist.wordcounter;
 
 import org.apache.reef.task.Task;
+import org.codehaus.jackson.map.ser.impl.SerializerCache;
 
 import javax.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 
 /**
  * A 'hello REEF' Task.
  */
 public final class WordCounterTask implements Task {
 
+  Random _rand;
+  Map<String, Integer> counts = new HashMap<String, Integer>();
+
+  private String generator() {
+    String[] sentences = new String[]{ "the cow jumped over the moon", "an apple a day keeps the doctor away",
+            "four score and seven years ago", "snow white and the seven dwarfs", "i am at two with nature" };
+    String sentence = sentences[_rand.nextInt(sentences.length)];
+    return sentence;
+  }
+
+  private String[] splitter(String sentence) {
+    String[] words = sentence.split(" ");
+    return words;
+  }
+
+  private void counter (String[] words) {
+    for(String word : words) {
+      Integer count = counts.get(word);
+      if (count == null)
+        count = 0;
+      count++;
+      counts.put(word, count);
+    }
+  }
+
   @Inject
   private WordCounterTask() {
+    _rand = new Random();
   }
 
   @Override
   public byte[] call(final byte[] memento) {
-    System.out.println("Hello, REEF!");
+    for(int i = 0; i < 10; i++) {
+      counter(splitter(generator()));
+    }
+    for(Map.Entry<String, Integer> item : counts.entrySet()) {
+      System.out.println("Word: " + item.getKey() + ", Count: " + item.getValue());
+    }
     return null;
   }
 }
