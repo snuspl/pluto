@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package edu.snu.cms.reef.tutorial.hello;
+package edu.snu.cms.reef.mist.wordcounter;
 
 import org.apache.reef.task.Task;
 
@@ -25,10 +25,10 @@ import javax.inject.Inject;
 /**
  * A 'hello REEF' Task.
  */
-public final class HelloTask implements Task {
+public final class WordCounterTask implements Task {
 
   @Inject
-  private HelloTask() {
+  private WordCounterTask() {
   }
 
   @Override

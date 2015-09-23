@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package edu.snu.cms.reef.tutorial.hello;
+package edu.snu.cms.reef.mist.wordcounter;
 
 import org.apache.reef.client.DriverConfiguration;
 import org.apache.reef.client.DriverLauncher;
@@ -33,8 +33,8 @@ import java.util.logging.Logger;
 /**
  * The Client for Hello REEF example.
  */
-public final class HelloREEF {
-  private static final Logger LOG = Logger.getLogger(HelloREEF.class.getName());
+public final class WordCounterClient {
+  private static final Logger LOG = Logger.getLogger(WordCounterClient.class.getName());
 
   /**
    * The upper limit on the number of Evaluators that the local resourcemanager will hand out concurrently.
@@ -57,14 +57,14 @@ public final class HelloREEF {
   }
 
   /**
-   * @return the configuration of the HelloREEF driver.
+   * @return the configuration of the WordCounterClient driver.
    */
   private static Configuration getDriverConfiguration() {
     return DriverConfiguration.CONF
-        .set(DriverConfiguration.GLOBAL_LIBRARIES, EnvironmentUtils.getClassLocation(HelloDriver.class))
-        .set(DriverConfiguration.DRIVER_IDENTIFIER, "HelloREEF")
-        .set(DriverConfiguration.ON_DRIVER_STARTED, HelloDriver.StartHandler.class)
-        .set(DriverConfiguration.ON_EVALUATOR_ALLOCATED, HelloDriver.EvaluatorAllocatedHandler.class)
+        .set(DriverConfiguration.GLOBAL_LIBRARIES, EnvironmentUtils.getClassLocation(WordCounterDriver.class))
+        .set(DriverConfiguration.DRIVER_IDENTIFIER, "WordCounterClient")
+        .set(DriverConfiguration.ON_DRIVER_STARTED, WordCounterDriver.StartHandler.class)
+        .set(DriverConfiguration.ON_EVALUATOR_ALLOCATED, WordCounterDriver.EvaluatorAllocatedHandler.class)
         .build();
   }
 
@@ -88,6 +88,6 @@ public final class HelloREEF {
   /**
    * Empty private constructor to prohibit instantiation of utility class.
    */
-  private HelloREEF() {
+  private WordCounterClient() {
   }
 }

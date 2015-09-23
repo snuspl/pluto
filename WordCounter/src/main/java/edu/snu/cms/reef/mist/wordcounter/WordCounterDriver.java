@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package edu.snu.cms.reef.tutorial.hello;
+package edu.snu.cms.reef.mist.wordcounter;
 
 import org.apache.reef.driver.evaluator.AllocatedEvaluator;
 import org.apache.reef.driver.evaluator.EvaluatorRequest;
@@ -35,9 +35,9 @@ import java.util.logging.Logger;
  * The Driver code for the Hello REEF Application
  */
 @Unit
-public final class HelloDriver {
+public final class WordCounterDriver {
 
-  private static final Logger LOG = Logger.getLogger(HelloDriver.class.getName());
+  private static final Logger LOG = Logger.getLogger(WordCounterDriver.class.getName());
 
   private final EvaluatorRequestor requestor;
 
@@ -47,9 +47,9 @@ public final class HelloDriver {
    * @param requestor evaluator requestor object used to create new evaluator containers.
    */
   @Inject
-  private HelloDriver(final EvaluatorRequestor requestor) {
+  private WordCounterDriver(final EvaluatorRequestor requestor) {
     this.requestor = requestor;
-    LOG.log(Level.FINE, "Instantiated 'HelloDriver'");
+    LOG.log(Level.FINE, "Instantiated 'WordCounterDriver'");
   }
 
   /**
@@ -58,7 +58,7 @@ public final class HelloDriver {
   public final class StartHandler implements EventHandler<StartTime> {
     @Override
     public void onNext(final StartTime startTime) {
-      HelloDriver.this.requestor.submit(EvaluatorRequest.newBuilder()
+      WordCounterDriver.this.requestor.submit(EvaluatorRequest.newBuilder()
           .setNumber(1)
           .setMemory(64)
           .setNumberOfCores(1)
@@ -68,15 +68,15 @@ public final class HelloDriver {
   }
 
   /**
-   * Handles AllocatedEvaluator: Submit the HelloTask.
+   * Handles AllocatedEvaluator: Submit the WordCounterTask.
    */
   public final class EvaluatorAllocatedHandler implements EventHandler<AllocatedEvaluator> {
     @Override
     public void onNext(final AllocatedEvaluator allocatedEvaluator) {
-      LOG.log(Level.INFO, "Submitting HelloREEF task to AllocatedEvaluator: {0}", allocatedEvaluator);
+      LOG.log(Level.INFO, "Submitting WordCounterClient task to AllocatedEvaluator: {0}", allocatedEvaluator);
       final Configuration taskConfiguration = TaskConfiguration.CONF
           .set(TaskConfiguration.IDENTIFIER, "HelloREEFTask")
-          .set(TaskConfiguration.TASK, HelloTask.class)
+          .set(TaskConfiguration.TASK, WordCounterTask.class)
           .build();
       allocatedEvaluator.submitTask(taskConfiguration);
     }

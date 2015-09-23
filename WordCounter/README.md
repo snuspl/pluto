@@ -1,4 +1,4 @@
-## Hello REEF
+## WordCounter
 
 # Build the application
 
@@ -6,4 +6,4 @@
   
 # Launch the application
 
-```java -cp target/*-shaded.jar edu.snu.cms.reef.tutorial.HelloREEF```
+```java -cp target/*-shaded.jar edu.snu.cms.reef.mist.wordcounter.WordCounterClient```
