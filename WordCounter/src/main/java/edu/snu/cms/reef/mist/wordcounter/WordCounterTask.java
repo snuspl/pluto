@@ -46,14 +46,12 @@ public final class WordCounterTask implements Task {
     return words;
   }
 
-  private void counter (String[] words) {
-    for(String word : words) {
+  private void counter (String word) {
       Integer count = counts.get(word);
       if (count == null)
         count = 0;
       count++;
       counts.put(word, count);
-    }
   }
 
   @Inject
@@ -64,7 +62,10 @@ public final class WordCounterTask implements Task {
   @Override
   public byte[] call(final byte[] memento) {
     for(int i = 0; i < 10; i++) {
-      counter(splitter(generator()));
+      String[] words = splitter(generator());
+      for(String word : words) {
+        counter(word);
+      }
     }
     for(Map.Entry<String, Integer> item : counts.entrySet()) {
       System.out.println("Word: " + item.getKey() + ", Count: " + item.getValue());
