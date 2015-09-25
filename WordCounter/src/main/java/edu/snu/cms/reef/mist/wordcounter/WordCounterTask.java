@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Random;
 
 /**
- * A 'hello REEF' Task.
+ * A 'WordCounter' Task.
  */
 public final class WordCounterTask implements Task {
 
@@ -61,16 +61,23 @@ public final class WordCounterTask implements Task {
 
   @Override
   public byte[] call(final byte[] memento) {
-    for(int i = 0; i < 10; i++) {
+    int count = 0;
+    while(true) {
+      count++;
       String[] words = splitter(generator());
       for(String word : words) {
         counter(word);
       }
+      System.out.println("Count = " + count);
+      for(Map.Entry<String, Integer> item : counts.entrySet()) {
+        System.out.println("Word: " + item.getKey() + ", Count: " + item.getValue());
+      }
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
     }
-    for(Map.Entry<String, Integer> item : counts.entrySet()) {
-      System.out.println("Word: " + item.getKey() + ", Count: " + item.getValue());
-    }
-    return null;
   }
 }
 

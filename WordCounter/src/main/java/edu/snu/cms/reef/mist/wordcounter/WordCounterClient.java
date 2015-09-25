@@ -31,7 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The Client for Hello REEF example.
+ * The Client for WordCounter example.
  */
 public final class WordCounterClient {
   private static final Logger LOG = Logger.getLogger(WordCounterClient.class.getName());
@@ -44,7 +44,7 @@ public final class WordCounterClient {
   /**
    * Number of milliseconds to wait for the job to complete.
    */
-  private static final int JOB_TIMEOUT = 10000; // 10 sec.
+  //private static final int JOB_TIMEOUT = 10000; // 10 sec.
 
 
   /**
@@ -81,7 +81,7 @@ public final class WordCounterClient {
 
     final LauncherStatus status = DriverLauncher
         .getLauncher(runtimeConf)
-        .run(driverConf, JOB_TIMEOUT);
+        .run(driverConf);
     LOG.log(Level.INFO, "REEF job completed: {0}", status);
   }
 
