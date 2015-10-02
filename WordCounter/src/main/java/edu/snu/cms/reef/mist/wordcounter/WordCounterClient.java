@@ -39,7 +39,6 @@ public final class WordCounterClient {
   /**
    * The upper limit on the number of Evaluators that the local resourcemanager will hand out concurrently.
    */
-  private static final int MAX_NUMBER_OF_EVALUATORS = 2;
 
   /**
    * Number of milliseconds to wait for the job to complete.
@@ -50,21 +49,24 @@ public final class WordCounterClient {
   /**
    * @return the configuration of the runtime
    */
+  // Local runtime configuration
   private static Configuration getRuntimeConfiguration() {
     return LocalRuntimeConfiguration.CONF
-        .set(LocalRuntimeConfiguration.MAX_NUMBER_OF_EVALUATORS, MAX_NUMBER_OF_EVALUATORS)
+        // There are two tasks - sender & receiver
+        .set(LocalRuntimeConfiguration.MAX_NUMBER_OF_EVALUATORS, 3)
         .build();
   }
-
   /**
    * @return the configuration of the WordCounterClient driver.
    */
   private static Configuration getDriverConfiguration() {
     return DriverConfiguration.CONF
         .set(DriverConfiguration.GLOBAL_LIBRARIES, EnvironmentUtils.getClassLocation(WordCounterDriver.class))
-        .set(DriverConfiguration.DRIVER_IDENTIFIER, "WordCounterClient")
+        .set(DriverConfiguration.DRIVER_IDENTIFIER, "WordCounterDriver")
         .set(DriverConfiguration.ON_DRIVER_STARTED, WordCounterDriver.StartHandler.class)
         .set(DriverConfiguration.ON_EVALUATOR_ALLOCATED, WordCounterDriver.EvaluatorAllocatedHandler.class)
+        .set(DriverConfiguration.ON_CONTEXT_ACTIVE, WordCounterDriver.ActiveContextHandler.class)
+        .set(DriverConfiguration.ON_TASK_RUNNING, WordCounterDriver.RunningTaskHandler.class)
         .build();
   }
 

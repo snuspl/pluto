@@ -18,6 +18,9 @@
  */
 package edu.snu.cms.reef.mist.wordcounter;
 
+import org.apache.reef.exception.evaluator.NetworkException;
+import org.apache.reef.io.network.Connection;
+import org.apache.reef.io.network.ConnectionFactory;
 import org.apache.reef.io.network.Message;
 import org.apache.reef.io.network.NetworkConnectionService;
 import org.apache.reef.io.network.impl.config.NetworkConnectionServiceIdFactory;
@@ -34,74 +37,72 @@ import org.apache.reef.wake.IdentifierFactory;
 import org.apache.reef.wake.remote.impl.StringCodec;
 
 import javax.inject.Inject;
-import java.net.SocketAddress;
-import java.util.Iterator;
-import java.util.logging.Level;
+import java.util.Random;
 import java.util.logging.Logger;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * A 'WordCounter' Task.
  */
-public final class WordCounterTask implements Task {
+public final class WordGeneratorTask implements Task {
 
-  Map<String, Integer> counts = new HashMap<String, Integer>();
-  int count = 0;
+  Random _rand;
+
+  @NamedParameter
+  public static class SenderName implements Name<String> {
+  }
 
   @NamedParameter
   public static class ReceiverName implements Name<String> {
   }
 
-  private static final Logger LOG = Logger.getLogger(WordCounterTask.class.getName());
+  private static final Logger LOG = Logger.getLogger(WordGeneratorTask.class.getName());
+  private final Connection<String> conn;
 
-  private String[] splitter(String sentence) {
-    String[] words = sentence.split(" ");
-    return words;
-  }
-
-  private void counter (String word) {
-      Integer count = counts.get(word);
-      if (count == null)
-        count = 0;
-      count++;
-      counts.put(word, count);
-  }
-
-  private class StringMessageHandler implements EventHandler<Message<String>> {
+  private static class WordGeneratorEventHandler<String> implements EventHandler<Message<String>> {
     @Override
     public void onNext(final Message<String> message) {
-      final Iterator<String> iter = message.getData().iterator();
-      while(iter.hasNext()) {
-        count++;
-        String sentence = iter.next();
-        String[] words = splitter(sentence);
-        for(String word : words) {
-          counter(word);
-        }
-        System.out.println("Count = " + count);
-        for(Map.Entry<String, Integer> item : counts.entrySet()) {
-          System.out.println("Word: " + item.getKey() + ", Count: " + item.getValue());
-        }
-      }
     }
   }
 
+  private String generator() {
+    String[] sentences = new String[]{ "the cow jumped over the moon", "an apple a day keeps the doctor away",
+            "four score and seven years ago", "snow white and the seven dwarfs", "i am at two with nature" };
+    String sentence = sentences[_rand.nextInt(sentences.length)];
+    return sentence;
+  }
+
+
   @Inject
-  private WordCounterTask (final NetworkConnectionService ncs,
-        final @Parameter(ReceiverName.class) String receiverName)
-      throws InjectionException {
+  private WordGeneratorTask(final NetworkConnectionService ncs,
+                            @Parameter(SenderName.class) final String senderName,
+                            @Parameter(ReceiverName.class) final String receiverName) throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     final IdentifierFactory idFac = injector.getNamedInstance(NetworkConnectionServiceIdFactory.class);
     final Identifier connId = idFac.getNewInstance("connection");
+    final Identifier senderId = idFac.getNewInstance(senderName);
     final Identifier receiverId = idFac.getNewInstance(receiverName);
-    ncs.registerConnectionFactory(connId, new StringCodec(), new StringMessageHandler(), new WordCountLinkListener(), receiverId);
-    LOG.log(Level.FINE, "Receiver Task Started");
+    ncs.registerConnectionFactory(connId, new StringCodec(), new WordGeneratorEventHandler<String>(),
+        new WordCountLinkListener(), senderId);
+
+    ConnectionFactory<String> connFac = ncs.getConnectionFactory(connId);
+    conn = connFac.newConnection(receiverId);
+    _rand = new Random();
   }
 
   @Override
   public byte[] call(final byte[] memento) {
-    while(true);
+    try {
+      conn.open();
+      while(true) {
+        conn.write(generator());
+        Thread.sleep(1000);
+      }
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (NetworkException e) {
+      e.printStackTrace();
+    }
+    return null;
   }
 }
 

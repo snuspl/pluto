@@ -1,7 +1,8 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>edu.snu.cms.reef.mist.wordcount</groupId>
+  <groupId>edu.snu.cms.reef.mist.wordcounter</groupId>
   <artifactId>wordcounter</artifactId>
   <packaging>jar</packaging>
   <version>1.0</version>
@@ -11,10 +12,10 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <hadoop.version>2.6.0</hadoop.version>
-    <reef.version>0.12.0-incubating</reef.version>
+    <reef.version>0.13.0-incubating-SNAPSHOT</reef.version>
     <junit.version>4.11</junit.version>
   </properties>
-  
+
   <dependencies>
     <!-- REEF -->
     <dependency>
@@ -30,6 +31,11 @@
     <dependency>
         <groupId>org.apache.reef</groupId>
         <artifactId>reef-runtime-yarn</artifactId>
+        <version>${reef.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.reef</groupId>
+        <artifactId>reef-io</artifactId>
         <version>${reef.version}</version>
     </dependency>
     <dependency>
