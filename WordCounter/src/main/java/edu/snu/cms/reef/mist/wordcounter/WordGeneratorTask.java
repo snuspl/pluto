@@ -41,11 +41,11 @@ import java.util.Random;
 import java.util.logging.Logger;
 
 /**
- * A 'WordCounter' Task.
+ * A 'WordGenerator' Task.
  */
 public final class WordGeneratorTask implements Task {
 
-  Random _rand;
+  private Random rand;
 
   @NamedParameter
   public static class SenderName implements Name<String> {
@@ -65,9 +65,9 @@ public final class WordGeneratorTask implements Task {
   }
 
   private String generator() {
-    String[] sentences = new String[]{ "the cow jumped over the moon", "an apple a day keeps the doctor away",
-            "four score and seven years ago", "snow white and the seven dwarfs", "i am at two with nature" };
-    String sentence = sentences[_rand.nextInt(sentences.length)];
+    String[] sentences = new String[] {"the cow jumped over the moon", "an apple a day keeps the doctor away",
+        "four score and seven years ago", "snow white and the seven dwarfs", "i am at two with nature" };
+    String sentence = sentences[rand.nextInt(sentences.length)];
     return sentence;
   }
 
@@ -82,11 +82,11 @@ public final class WordGeneratorTask implements Task {
     final Identifier senderId = idFac.getNewInstance(senderName);
     final Identifier receiverId = idFac.getNewInstance(receiverName);
     ncs.registerConnectionFactory(connId, new StringCodec(), new WordGeneratorEventHandler<String>(),
-        new WordCountLinkListener(), senderId);
+        new WordCounterLinkListener(), senderId);
 
     ConnectionFactory<String> connFac = ncs.getConnectionFactory(connId);
     conn = connFac.newConnection(receiverId);
-    _rand = new Random();
+    rand = new Random();
   }
 
   @Override

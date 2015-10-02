@@ -6,4 +6,4 @@
   
 # Launch the application
 
-```java -cp target/*-shaded.jar edu.snu.cms.reef.mist.wordcounter.WordCounterClient```
+```./bin/run.sh```

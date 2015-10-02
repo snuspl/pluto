@@ -41,7 +41,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The Driver code for the WordCounter Application
+ * Driver code for the WordCounter Application.
  */
 @Unit
 public final class WordCounterDriver {
@@ -76,7 +76,7 @@ public final class WordCounterDriver {
   }
 
   /**
-   * Handles the StartTime event: Request as single Evaluator.
+   * Handles the StartTime event: Request Evaluators.
    */
   public final class StartHandler implements EventHandler<StartTime> {
     @Override
@@ -91,7 +91,7 @@ public final class WordCounterDriver {
   }
 
   /**
-   * Handles AllocatedEvaluator: Submit the WordCounterTask.
+   * Handles AllocatedEvaluator.
    */
   public final class EvaluatorAllocatedHandler implements EventHandler<AllocatedEvaluator> {
     @Override
@@ -111,6 +111,9 @@ public final class WordCounterDriver {
     }
   }
 
+  /**
+   * Handles Activated Context: Submit the WordAggregatorTask.
+   */
   public final class ActiveContextHandler implements EventHandler<ActiveContext> {
     @Override
     public void onNext(final ActiveContext context) {
@@ -120,7 +123,7 @@ public final class WordCounterDriver {
       } else {
         final Configuration partialTaskConf = TaskConfiguration.CONF
             .set(TaskConfiguration.IDENTIFIER, "receiver_task")
-            .set(TaskConfiguration.TASK, WordCounterTask.class)
+            .set(TaskConfiguration.TASK, WordAggregatorTask.class)
             .build();
         final Configuration netConf = NameResolverConfiguration.CONF
             .set(NameResolverConfiguration.NAME_SERVER_HOSTNAME, driverHostAddress)
@@ -128,13 +131,16 @@ public final class WordCounterDriver {
             .build();
         final JavaConfigurationBuilder taskConfBuilder =
             Tang.Factory.getTang().newConfigurationBuilder(partialTaskConf, netConf);
-        taskConfBuilder.bindNamedParameter(WordCounterTask.ReceiverName.class, receiverName);
+        taskConfBuilder.bindNamedParameter(WordAggregatorTask.ReceiverName.class, receiverName);
         final Configuration taskConf = taskConfBuilder.build();
         context.submitTask(taskConf);
       }
     }
   }
 
+  /**
+   * Handles Running Tasks.
+   */
   public final class RunningTaskHandler implements EventHandler<RunningTask> {
     @Override
     public void onNext(final RunningTask task) {
