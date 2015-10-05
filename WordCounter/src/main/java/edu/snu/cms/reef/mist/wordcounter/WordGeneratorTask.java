@@ -45,14 +45,14 @@ import java.util.logging.Logger;
  */
 public final class WordGeneratorTask implements Task {
 
-  private Random rand;
+  private final Random rand;
 
   @NamedParameter
-  public static class SenderName implements Name<String> {
+  public static final class SenderName implements Name<String> {
   }
 
   @NamedParameter
-  public static class ReceiverName implements Name<String> {
+  public static final class ReceiverName implements Name<String> {
   }
 
   private static final Logger LOG = Logger.getLogger(WordGeneratorTask.class.getName());
@@ -65,9 +65,9 @@ public final class WordGeneratorTask implements Task {
   }
 
   private String generator() {
-    String[] sentences = new String[] {"the cow jumped over the moon", "an apple a day keeps the doctor away",
+    final String[] sentences = new String[] {"the cow jumped over the moon", "an apple a day keeps the doctor away",
         "four score and seven years ago", "snow white and the seven dwarfs", "i am at two with nature" };
-    String sentence = sentences[rand.nextInt(sentences.length)];
+    final String sentence = sentences[rand.nextInt(sentences.length)];
     return sentence;
   }
 

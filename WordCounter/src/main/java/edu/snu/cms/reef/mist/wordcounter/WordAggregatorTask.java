@@ -34,7 +34,6 @@ import org.apache.reef.wake.IdentifierFactory;
 import org.apache.reef.wake.remote.impl.StringCodec;
 
 import javax.inject.Inject;
-import java.net.SocketAddress;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,30 +41,30 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A 'WordCounter' Task.
+ * A 'WordAggregator' Task.
  */
-public final class WordCounterTask implements Task {
+public final class WordAggregatorTask implements Task {
 
-  Map<String, Integer> counts = new HashMap<String, Integer>();
-  int count = 0;
+  private Map<String, Integer> counts = new HashMap<String, Integer>();
+  private int count = 0;
 
   @NamedParameter
   public static class ReceiverName implements Name<String> {
   }
 
-  private static final Logger LOG = Logger.getLogger(WordCounterTask.class.getName());
+  private static final Logger LOG = Logger.getLogger(WordAggregatorTask.class.getName());
 
-  private String[] splitter(String sentence) {
+  private String[] splitter(final String sentence) {
     String[] words = sentence.split(" ");
     return words;
   }
 
-  private void counter (String word) {
-      Integer count = counts.get(word);
-      if (count == null)
-        count = 0;
-      count++;
-      counts.put(word, count);
+  private void counter(final String word) {
+    if(counts.containsKey(word)) {
+      counts.put(word, counts.get(word)+1);
+    } else {
+      counts.put(word, 1);
+    }
   }
 
   private class StringMessageHandler implements EventHandler<Message<String>> {
@@ -88,20 +87,23 @@ public final class WordCounterTask implements Task {
   }
 
   @Inject
-  private WordCounterTask (final NetworkConnectionService ncs,
-        final @Parameter(ReceiverName.class) String receiverName)
+  private WordAggregatorTask(final NetworkConnectionService ncs,
+                             @Parameter(ReceiverName.class) final String receiverName)
       throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     final IdentifierFactory idFac = injector.getNamedInstance(NetworkConnectionServiceIdFactory.class);
     final Identifier connId = idFac.getNewInstance("connection");
     final Identifier receiverId = idFac.getNewInstance(receiverName);
-    ncs.registerConnectionFactory(connId, new StringCodec(), new StringMessageHandler(), new WordCountLinkListener(), receiverId);
+    ncs.registerConnectionFactory(connId, new StringCodec(), new StringMessageHandler(),
+        new WordCounterLinkListener(), receiverId);
     LOG.log(Level.FINE, "Receiver Task Started");
   }
 
   @Override
   public byte[] call(final byte[] memento) {
-    while(true);
+    while(true) {
+      // TODO: Sleep or wait instead of spin
+    }
   }
 }
 

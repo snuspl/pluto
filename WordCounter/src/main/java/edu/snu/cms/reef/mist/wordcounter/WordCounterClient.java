@@ -46,9 +46,9 @@ public final class WordCounterClient {
 
 
   /**
+   * Local runtime configuration
    * @return the configuration of the runtime
    */
-  // Local runtime configuration
   private static Configuration getRuntimeConfiguration() {
     return LocalRuntimeConfiguration.CONF
         // There are two tasks - sender & receiver
