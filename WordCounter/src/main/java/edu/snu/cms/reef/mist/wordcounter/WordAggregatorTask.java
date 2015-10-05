@@ -45,7 +45,7 @@ import java.util.Map;
  */
 public final class WordAggregatorTask implements Task {
 
-  private Map<String, Integer> counts = new HashMap<String, Integer>();
+  private final Map<String, Integer> counts = new HashMap<String, Integer>();
   private int count = 0;
 
   @NamedParameter
