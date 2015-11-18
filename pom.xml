@@ -23,7 +23,7 @@ limitations under the License.
     <packaging>pom</packaging>
 
     <properties>
-        <reef.version>0.13.0-incubating-SNAPSHOT</reef.version>
+        <reef.version>0.13.0-incubating</reef.version>
         <hadoop.version>2.6.0</hadoop.version>
         <project.build.directory>target</project.build.directory>
     </properties>
@@ -114,6 +114,19 @@ limitations under the License.
                         </filter>
                     </filters>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>validate</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
