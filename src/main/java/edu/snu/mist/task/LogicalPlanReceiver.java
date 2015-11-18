@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Seoul National University
+ * Copyright (C) 2016 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.task;
+
+import edu.snu.mist.task.operator.Operator;
+import org.apache.reef.wake.EventHandler;
+
 /**
- * A package of mist project.
+ * This interface receives LogicalPlans and converts them to PhysicalPlans.
+ * TODO[MIST-68]: Receive and deserialize logical plans into physical plans.
  */
-package edu.snu.mist;
+public interface LogicalPlanReceiver {
+
+  /**
+   * Sets an event handler which handles PhysicalPlans.
+   * @param handler a handler
+   */
+  void setHandler(final EventHandler<PhysicalPlan<Operator>> handler);
+}

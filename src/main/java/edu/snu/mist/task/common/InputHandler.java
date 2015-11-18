@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Seoul National University
+ * Copyright (C) 2016 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.task.common;
+
 /**
- * A package of mist project.
+ * This interface handles inputs.
+ * @param <I>
  */
-package edu.snu.mist;
+public interface InputHandler<I> {
+  /**
+   * It handles inputs.
+   * @param input input.
+   */
+  void handle(I input);
+}

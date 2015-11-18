@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Seoul National University
+ * Copyright (C) 2016 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.task.common;
+
 /**
- * A package of mist project.
+ * This interface can push outputs to next operators.
+ * @param <O>
  */
-package edu.snu.mist;
+public interface OutputEmittable<O> {
+  /**
+   * Sets an output emitter which forwards outputs to next operators.
+   * @param emitter an output emitter
+   */
+  void setOutputEmitter(final OutputEmitter<O> emitter);
+}
