@@ -30,21 +30,21 @@ import org.apache.reef.wake.remote.Codec;
 public class NCSSourceBuilder extends ConfigurationModuleBuilder {
 
   /**
-   * Tang NamedParameter for NCS connection name
+   * Tang NamedParameter for NCS connection name.
    */
   @NamedParameter
   public static class ConnectionName implements Name<String> {
   }
 
   /**
-   * Tang NamedParameter for the name of the source NCS
+   * Tang NamedParameter for the name of the source NCS.
    */
   @NamedParameter
   public static class SourceNCSName implements Name<String> {
   }
 
   /**
-   * Tang NamedParameter for the codec used for deserializing data
+   * Tang NamedParameter for the codec used for deserializing data.
    */
   @NamedParameter
   public static class DeserializeCodec implements Name<Codec> {
