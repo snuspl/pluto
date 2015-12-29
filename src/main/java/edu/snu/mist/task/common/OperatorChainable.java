@@ -17,7 +17,7 @@ package edu.snu.mist.task.common;
 
 import edu.snu.mist.task.operator.Operator;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * This interface is used when an object can chain another operators (downstream operators)
@@ -36,7 +36,7 @@ public interface OperatorChainable<I> {
    * Adds downstream operators.
    * @param operators downstream operators
    */
-  void addDownstreamOperators(final List<Operator<I, ?>> operators);
+  void addDownstreamOperators(final Set<Operator<I, ?>> operators);
 
   /**
    * Removes a downstream operator.
@@ -48,11 +48,11 @@ public interface OperatorChainable<I> {
    * Removes downstream operators.
    * @param operators downstream operators
    */
-  void removeDownstreamOperators(final List<Operator<I, ?>> operators);
+  void removeDownstreamOperators(final Set<Operator<I, ?>> operators);
 
   /**
    * Gets downstream operators.
    * @return downstream operators
    */
-  List<Operator<I, ?>> getDownstreamOperators();
+  Set<Operator<I, ?>> getDownstreamOperators();
 }

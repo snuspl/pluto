@@ -18,6 +18,7 @@ package edu.snu.mist.task.operator;
 import edu.snu.mist.task.common.OperatorChainable;
 import edu.snu.mist.task.executor.MistExecutor;
 import org.apache.reef.wake.EventHandler;
+import org.apache.reef.wake.Identifier;
 
 import java.util.List;
 
@@ -52,4 +53,10 @@ public interface Operator<I, O> extends EventHandler<List<I>>, OperatorChainable
    * @param executor executor
    */
   void assignExecutor(final MistExecutor executor);
+
+  /**
+   * Gets the identifier of the operator.
+   * @return identifier
+   */
+  Identifier getIdentifier();
 }

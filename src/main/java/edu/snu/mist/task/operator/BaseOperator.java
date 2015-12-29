@@ -19,8 +19,9 @@ import edu.snu.mist.task.executor.MistExecutor;
 import edu.snu.mist.task.executor.impl.DefaultExecutorTask;
 import org.apache.reef.wake.Identifier;
 
-import java.util.LinkedList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * This is a base operator which implements basic function of the operator.
@@ -31,7 +32,7 @@ public abstract class BaseOperator<I, O> implements Operator<I, O> {
   /**
    * Downstream operators which receives outputs of this operator as inputs.
    */
-  protected final List<Operator<O, ?>> downstreamOperators;
+  protected final Set<Operator<O, ?>> downstreamOperators;
 
   /**
    * An assigned executor for this operator.
@@ -44,7 +45,7 @@ public abstract class BaseOperator<I, O> implements Operator<I, O> {
   protected final Identifier identifier;
 
   public BaseOperator(final Identifier identifier) {
-    this.downstreamOperators = new LinkedList<>();
+    this.downstreamOperators = new HashSet<>();
     this.identifier = identifier;
   }
 
@@ -64,7 +65,7 @@ public abstract class BaseOperator<I, O> implements Operator<I, O> {
   }
 
   @Override
-  public void addDownstreamOperators(final List<Operator<O, ?>> operators) {
+  public void addDownstreamOperators(final Set<Operator<O, ?>> operators) {
     downstreamOperators.addAll(operators);
   }
 
@@ -74,13 +75,18 @@ public abstract class BaseOperator<I, O> implements Operator<I, O> {
   }
 
   @Override
-  public void removeDownstreamOperators(final List<Operator<O, ?>> operators) {
+  public void removeDownstreamOperators(final Set<Operator<O, ?>> operators) {
     downstreamOperators.removeAll(operators);
   }
 
   @Override
-  public List<Operator<O, ?>> getDownstreamOperators() {
+  public Set<Operator<O, ?>> getDownstreamOperators() {
     return downstreamOperators;
+  }
+
+  @Override
+  public Identifier getIdentifier() {
+    return identifier;
   }
 
   /**
