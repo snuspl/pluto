@@ -28,7 +28,7 @@ public final class NCSSourceParameters {
   /**
    * Hostname of the name server.
    */
-  public static final String NAME_SERVER_HOMSTNAME = "NameServerHostName";
+  public static final String NAME_SERVER_HOSTNAME = "NameServerHostName";
 
   /**
    * Port where name service is running.

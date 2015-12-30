@@ -30,7 +30,7 @@ public final class REEFNetworkSourceBuilderImpl extends SourceBuilderImpl {
    * Required Parameters for ReefNetworkSource.
    */
   private static String[] reefNetworkRequiredParameters = {
-      NCSSourceParameters.NAME_SERVER_HOMSTNAME,
+      NCSSourceParameters.NAME_SERVER_HOSTNAME,
       NCSSourceParameters.NAME_SERVICE_PORT,
       NCSSourceParameters.SENDER_ID,
       NCSSourceParameters.CONNECTION_ID,
@@ -38,7 +38,7 @@ public final class REEFNetworkSourceBuilderImpl extends SourceBuilderImpl {
   };
 
   @Inject
-  REEFNetworkSourceBuilderImpl() {
+  public REEFNetworkSourceBuilderImpl() {
     requiredParameters.addAll(Arrays.asList(reefNetworkRequiredParameters));
   }
 
