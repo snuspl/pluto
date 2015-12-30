@@ -1,32 +1,29 @@
-/*
- * Copyright (C) 2015 Seoul National University
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package edu.snu.mist.api.sources.builder;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * Abstract class for Source Configuration.
+ * This interface defines commonly necessary methods for building MIST SourceStream.
  */
-public abstract class SourceBuilder {
+@DefaultImplementation(SourceBuilderImpl.class)
+public interface SourceBuilder {
+  /**
+   * Get the target source type of this builder.
+   * @return The type of source it configures. Ex) ReefNetworkSource
+   */
+  String getSourceType();
 
-  protected final Map<String, Object> confMap = new HashMap<>();
+  /**
+   * Build key-value configuration for MIST SourceStream.
+   * @return Key-value configuration
+   */
+  SourceConfiguration build();
 
-  public abstract String getSourceType();
-  public abstract Map<String, Object> build();
-  public abstract SourceBuilder set(String key, Object value);
+  /**
+   * Sets the configuration for the given param to the given value.
+   * @param param
+   * @param value
+   * @return
+   */
+  SourceBuilder set(String param, Object value);
 }

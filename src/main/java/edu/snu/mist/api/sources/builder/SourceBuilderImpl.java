@@ -1,0 +1,66 @@
+/*
+ * Copyright (C) 2015 Seoul National University
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package edu.snu.mist.api.sources.builder;
+
+import java.util.*;
+
+/**
+ * This abstract class implements commonly necessary data structures and
+ * methods for building MIST SourceStream.
+ */
+public abstract class SourceBuilderImpl implements SourceBuilder {
+
+  /**
+   * Configuration storing map for SourceBuilderImpl.
+   */
+  protected final Map<String, Object> configMap = new HashMap<>();
+  /**
+   * Set of required configuration parameters.
+   */
+  protected final Set<String> requiredParameters = new HashSet<>();
+
+  @Override
+  public abstract String getSourceType();
+
+  @Override
+  public SourceConfiguration build() {
+    // Check for missing parameters
+    final Set<String> remainingParams = new HashSet();
+    requiredParameters.stream()
+        .filter(s -> !configMap.containsKey(s))
+        .forEach(s -> remainingParams.add(s));
+    if (!remainingParams.isEmpty()) {
+      final StringBuilder stringBuilder
+          = new StringBuilder("Missing Configuration for " + this.getClass().getName());
+      stringBuilder.append(": [");
+      remainingParams.stream()
+          .forEach(s -> stringBuilder.append(s + ", "));
+      stringBuilder.append("]");
+      throw new IllegalStateException(stringBuilder.toString());
+    }
+    return new DefaultSourceConfigurationImpl(configMap);
+  }
+
+  @Override
+  public SourceBuilder set(final String key, final Object value) {
+    if (configMap.containsKey(key)) {
+      throw new IllegalStateException("Attempts to add duplicate configuration!");
+    }
+    configMap.put(key, value);
+    return this;
+  }
+}
