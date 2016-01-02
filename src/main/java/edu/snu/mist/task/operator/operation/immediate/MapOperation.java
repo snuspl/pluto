@@ -1,0 +1,55 @@
+/*
+ * Copyright (C) 2015 Seoul National University
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package edu.snu.mist.task.operator.operation.immediate;
+
+import javax.inject.Inject;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.function.Function;
+
+/**
+ * Map operator which maps input.
+ * @param <I> input type
+ * @param <I> output type
+ */
+public final class MapOperation<I, O> implements ImmediateOperation<I, O> {
+
+  /**
+   * Map function.
+   */
+  private final Function<I, O> mapFunc;
+
+  /**
+   * Map operator.
+   * @param mapFunc a map function
+   */
+  @Inject
+  private MapOperation(final Function<I, O> mapFunc) {
+    this.mapFunc = mapFunc;
+  }
+
+  @Override
+  public List<O> compute(final List<I> inputs) {
+    final List<O> outputs = new LinkedList<>();
+    for (final I input : inputs) {
+      final O output = mapFunc.apply(input);
+      if (output != null) {
+        outputs.add(output);
+      }
+    }
+    return outputs;
+  }
+}
