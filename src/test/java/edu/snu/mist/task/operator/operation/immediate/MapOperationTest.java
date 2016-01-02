@@ -16,6 +16,7 @@
 package edu.snu.mist.task.operator.operation.immediate;
 
 import com.google.common.collect.ImmutableList;
+import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -61,54 +62,5 @@ public final class MapOperationTest {
     System.out.println("expected: " + expected);
     System.out.println("result: " + result);
     Assert.assertEquals(expected, result);
-  }
-
-  class Tuple {
-    private final String key;
-    private final int val;
-
-    Tuple(final String key, final int val) {
-      this.key = key;
-      this.val = val;
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-
-      final Tuple tuple = (Tuple) o;
-
-      if (val != tuple.val) {
-        return false;
-      }
-      if (!key.equals(tuple.key)) {
-        return false;
-      }
-
-      return true;
-    }
-
-    @Override
-    public int hashCode() {
-      int result = key.hashCode();
-      result = 31 * result + val;
-      return result;
-    }
-
-    @Override
-    public String toString() {
-      final StringBuilder sb = new StringBuilder();
-      sb.append("(");
-      sb.append(this.key);
-      sb.append(",");
-      sb.append(this.val);
-      sb.append(")");
-      return sb.toString();
-    }
   }
 }

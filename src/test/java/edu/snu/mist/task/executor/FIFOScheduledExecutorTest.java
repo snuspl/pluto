@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableList;
 import edu.snu.mist.task.executor.impl.DefaultExecutorTask;
 import edu.snu.mist.task.executor.impl.FIFOScheduler;
 import edu.snu.mist.task.operator.BaseOperator;
+import edu.snu.mist.task.operator.Operator;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -32,7 +33,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * This test submits multiple executor tasks to MistExecutor with FIFO scheduler
+ * This test submits multiple `ExecutorTask`s to MistExecutor with FIFO scheduler
  * and checks the executor tasks are executed in FIFO order.
  */
 public final class FIFOScheduledExecutorTest {
@@ -65,19 +66,21 @@ public final class FIFOScheduledExecutorTest {
   }
 
   /**
-   * Submits 100 executor tasks and checks the tasks are executed in FIFO order.
-   * First executor task is executing while loop during 2 seconds,
-   * in order to see the remaining 99 tasks are scheduled in FIFO order.
+   * Submits 100 `ExecutorTask`s and checks the tasks are executed in FIFO order.
+   * First `ExecutorTask` executes `WhileLoopOperator`,
+   * in order to see the next 99 tasks are scheduled in FIFO order.
    * @throws Exception
    */
   @Test
   public void fifoScheduledExecutorTest() throws Exception {
     final int numTasks = 100;
-    for (int i = 0; i < numTasks; i++) {
-      executor.onNext(
-          new DefaultExecutorTask<>(
-              new TestOperator(idfac.getNewInstance("operator-" + i), i == 0),
-              ImmutableList.of(i)));
+    final Operator<Integer, Integer> whileLoopOp =
+        new WhileLoopOperator(idfac.getNewInstance("while-loop-op"));
+    final Operator<Integer, Integer> noOp = new NoOperator(idfac.getNewInstance("no-op"));
+
+    executor.onNext(new DefaultExecutorTask<>(whileLoopOp, ImmutableList.of(0)));
+    for (int i = 1; i < numTasks; i++) {
+      executor.onNext(new DefaultExecutorTask<>(noOp, ImmutableList.of(i)));
     }
 
     Thread.sleep(2500);
@@ -88,26 +91,38 @@ public final class FIFOScheduledExecutorTest {
   }
 
   /**
-   * Test operator.
+   * This operator do `while loop` during two seconds
+   * and pushes inputs to outputs list.
    */
-  class TestOperator extends BaseOperator<Integer, Integer> {
-    private boolean first;
+  class WhileLoopOperator extends BaseOperator<Integer, Integer> {
 
-    public TestOperator(final Identifier id, final boolean first) {
+    public WhileLoopOperator(final Identifier id) {
       super(id);
-      this.first = first;
     }
 
     @Override
     public void onNext(final List<Integer> inputs) {
-      if (first) {
-        final long startTime = System.currentTimeMillis();
-        while (System.currentTimeMillis() - startTime < 2000) {
-          // empty
-        }
+      final long startTime = System.currentTimeMillis();
+      while (System.currentTimeMillis() - startTime < 2000) {
+        // empty
       }
       outputs.add(inputs.get(0));
-      System.out.println(identifier);
+      System.out.println(identifier + ", input: " + inputs.get(0));
+    }
+  }
+
+  /**
+   * This operator just adds inputs to outputs list.
+   */
+  class NoOperator extends BaseOperator<Integer, Integer> {
+    public NoOperator(final Identifier id) {
+      super(id);
+    }
+
+    @Override
+    public void onNext(final List<Integer> inputs) {
+      outputs.add(inputs.get(0));
+      System.out.println(identifier + ", input: " + inputs.get(0));
     }
   }
 }

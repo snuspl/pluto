@@ -20,7 +20,7 @@ import edu.snu.mist.task.operator.Operator;
 import java.util.Set;
 
 /**
- * This interface is used when an object can chain another operators (downstream operators)
+ * This interface is used to chain other operators (downstream operators)
  * in order to forward its outputs to the downstream operators.
  * @param <I> input type of the downstream operator
  */

@@ -25,6 +25,8 @@ import java.util.Set;
 
 /**
  * This is a base operator which implements basic function of the operator.
+ * This implements methods of `OperatorChainable`, `assignExecutor`, `getExecutor` and `getIdentifier`.
+ * It also has a helper method `forwardOutputs` which helps to forward outputs to downstream operators.
  * @param <I> input
  * @param <O> output
  */

@@ -42,7 +42,7 @@ public interface Operator<I, O> extends EventHandler<List<I>>, OperatorChainable
   @Override
   void onNext(final List<I> inputs);
 
-  /**
+   /**
    * Gets the assigned executor.
    * @return executor
    */
