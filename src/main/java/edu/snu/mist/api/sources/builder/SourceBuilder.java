@@ -15,8 +15,6 @@
  */
 package edu.snu.mist.api.sources.builder;
 
-import org.apache.reef.tang.annotations.DefaultImplementation;
-
 /**
  * This interface defines commonly necessary methods for building MIST SourceStream.
  */
