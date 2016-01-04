@@ -17,6 +17,7 @@
 package edu.snu.mist.api.sources.builder;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * This abstract class implements commonly necessary data structures and
@@ -39,14 +40,13 @@ public abstract class SourceBuilderImpl implements SourceBuilder {
   @Override
   public SourceConfiguration build() {
     // Check for missing parameters
-    requiredParameters.stream()
-        .filter(s -> configMap.containsKey(s))
-        .forEach(s -> requiredParameters.remove(s));
-    if (!requiredParameters.isEmpty()) {
+    Stream<String> missingParams = requiredParameters.stream()
+        .filter(s -> !configMap.containsKey(s));
+    if (missingParams.count() > 0) {
       final StringBuilder stringBuilder
           = new StringBuilder("Missing Configuration for " + this.getClass().getName());
       stringBuilder.append(": [");
-      requiredParameters.stream()
+      missingParams
           .forEach(s -> stringBuilder.append(s + ", "));
       stringBuilder.append("]");
       throw new IllegalStateException(stringBuilder.toString());
