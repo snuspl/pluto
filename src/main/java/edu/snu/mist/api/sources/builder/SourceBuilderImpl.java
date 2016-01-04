@@ -39,15 +39,14 @@ public abstract class SourceBuilderImpl implements SourceBuilder {
   @Override
   public SourceConfiguration build() {
     // Check for missing parameters
-    final Set<String> remainingParams = new HashSet();
     requiredParameters.stream()
-        .filter(s -> !configMap.containsKey(s))
-        .forEach(s -> remainingParams.add(s));
-    if (!remainingParams.isEmpty()) {
+        .filter(s -> configMap.containsKey(s))
+        .forEach(s -> requiredParameters.remove(s));
+    if (!requiredParameters.isEmpty()) {
       final StringBuilder stringBuilder
           = new StringBuilder("Missing Configuration for " + this.getClass().getName());
       stringBuilder.append(": [");
-      remainingParams.stream()
+      requiredParameters.stream()
           .forEach(s -> stringBuilder.append(s + ", "));
       stringBuilder.append("]");
       throw new IllegalStateException(stringBuilder.toString());

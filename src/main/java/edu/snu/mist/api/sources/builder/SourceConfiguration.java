@@ -27,7 +27,7 @@ public interface SourceConfiguration {
   /**
    * Gets the configuration value for the given parameter.
    * @param parameter
-   * @return
+   * @return the configured value for the given parameter
    */
   Object getConfigurationValue(String parameter);
 }
