@@ -21,14 +21,13 @@ import java.util.Map;
 /**
  * The default implementation class for SourceConfiguration.
  */
-public class DefaultSourceConfigurationImpl implements SourceConfiguration {
+public final class DefaultSourceConfigurationImpl implements SourceConfiguration {
 
   private final Map<String, Object> configMap;
 
   public DefaultSourceConfigurationImpl(final Map<String, Object> configMap) {
     this.configMap = new HashMap<>();
-    configMap.keySet().stream()
-        .forEach(s->this.configMap.put(s, configMap.get(s)));
+    this.configMap.putAll(configMap);
   }
 
   @Override

@@ -28,6 +28,7 @@ public interface SourceConfiguration {
    * Gets the configuration value for the given parameter.
    * @param parameter
    * @return the configured value for the given parameter
+   * @throws IllegalStateException throws the exception when tries to get a configuration value for non-existing param.
    */
-  Object getConfigurationValue(String parameter);
+  Object getConfigurationValue(String parameter) throws IllegalStateException;
 }

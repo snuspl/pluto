@@ -36,6 +36,7 @@ public interface SourceBuilder {
    * @param param the parameter given by users which they want to set
    * @param value the value given by users which they want to set
    * @return the configured SourceBuilder
+   * @throws IllegalStateException throws the exception when tries to get a configuration value for non-existing param.
    */
-  SourceBuilder set(String param, Object value);
+  SourceBuilder set(String param, Object value) throws IllegalStateException;
 }
