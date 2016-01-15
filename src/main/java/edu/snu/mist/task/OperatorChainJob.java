@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Seoul National University
+ * Copyright (C) 2016 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.task;
+
+import org.apache.reef.tang.annotations.DefaultImplementation;
+
 /**
- * A package of mist project.
+ * OperatorChainJob executes a OperatorChain with an input.
+ * It calls operator.onNext(inputs) when .run() is called.
  */
-package edu.snu.mist;
+@DefaultImplementation(DefaultOperatorChainJob.class)
+public interface OperatorChainJob extends Runnable {
+
+}

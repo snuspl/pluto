@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Seoul National University
+ * Copyright (C) 2016 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.task.executor.queue;
+
+import javax.inject.Inject;
+import java.util.concurrent.LinkedBlockingQueue;
+
 /**
- * A package of mist project.
+ * A simple FIFO queue which inherits linked blocking queue.
  */
-package edu.snu.mist;
+public final class FIFOQueue extends LinkedBlockingQueue<Runnable> implements SchedulingQueue {
+
+  @Inject
+  private FIFOQueue() {
+    super();
+  }
+}

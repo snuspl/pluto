@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Seoul National University
+ * Copyright (C) 2016 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.task.sink;
+
+import edu.snu.mist.task.common.InputHandler;
+
 /**
- * A package of mist project.
+ * Sink consumes inputs and does final process, such as print, save input to database and so on.
  */
-package edu.snu.mist;
+public interface Sink<I> extends InputHandler<I> {
+
+}

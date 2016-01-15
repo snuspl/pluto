@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Seoul National University
+ * Copyright (C) 2016 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.task.operator;
+
+import edu.snu.mist.task.common.InputHandler;
+import edu.snu.mist.task.common.OutputEmittable;
+
 /**
- * A package of mist project.
+ * This is an interface of mist physical operator which runs actual computation.
+ * Operator receives an input, does computation, and emits an output to OutputEmitter.
  */
-package edu.snu.mist;
+public interface Operator<I, O> extends InputHandler<I>, OutputEmittable<O> {
+
+}
