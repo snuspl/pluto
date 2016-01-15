@@ -16,12 +16,13 @@
 package edu.snu.mist.task;
 
 import edu.snu.mist.task.operator.Operator;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.wake.EventHandler;
 
 /**
  * This interface receives LogicalPlans and converts them to PhysicalPlans.
- * TODO[MIST-68]: Receive and deserialize logical plans into physical plans.
  */
+@DefaultImplementation(DefaultLogicalPlanReceiverImpl.class)
 public interface LogicalPlanReceiver {
 
   /**

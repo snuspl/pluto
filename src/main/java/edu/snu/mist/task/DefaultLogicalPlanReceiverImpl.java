@@ -15,24 +15,21 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.common.DAG;
-import edu.snu.mist.task.executor.MistExecutor;
-import org.apache.reef.tang.annotations.DefaultImplementation;
+import edu.snu.mist.task.operator.Operator;
+import org.apache.reef.wake.EventHandler;
 
-import java.util.Set;
+import javax.inject.Inject;
 
-/**
- * This interface allocates OperatorChains represented as a DAG to MistExecutors.
- */
-@DefaultImplementation(DefaultOperatorChainAllocatorImpl.class)
-public interface OperatorChainAllocator {
+// TODO[MIST-68]: Receive and deserialize logical plans into physical plans.
+final class DefaultLogicalPlanReceiverImpl implements LogicalPlanReceiver {
 
-  /**
-   * Allocates the OperatorChain represented as a DAG to MistExecutors.
-   * @param executors executors
-   * @param dag a DAG of OperatorChain
-   */
-  void allocate(
-      final Set<MistExecutor> executors,
-      final DAG<OperatorChain> dag);
+  @Inject
+  private DefaultLogicalPlanReceiverImpl() {
+
+  }
+
+  @Override
+  public void setHandler(final EventHandler<PhysicalPlan<Operator>> handler) {
+    throw new RuntimeException("DefaultLogicalPlanReceiverImpl.setHandler is not implemented yet");
+  }
 }
