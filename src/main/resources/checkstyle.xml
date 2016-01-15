@@ -190,15 +190,15 @@
         <module name="Indentation">
             <property name="basicOffset" value="2"/>
             <property name="caseIndent" value="0"/>
-        </module>
+        </module>-->
         <module name="TodoComment">
             <property name="severity" value="warning"/>
-            <property name="format" value="TODO[^\[][^J][^I][^R][^A]"/>
+            <property name="format" value="TODO[^\[][^M][^I][^S][^T]"/>
         </module>
         <module name="TodoComment">
             <property name="severity" value="info"/>
-            <property name="format" value="TODO\[JIRA"/>
-        </module> -->
+            <property name="format" value="TODO\[MIST"/>
+        </module>
         <module name="UpperEll"/>
     </module>
 </module>
