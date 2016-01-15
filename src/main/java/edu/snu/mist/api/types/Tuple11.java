@@ -13,8 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.api.types;
+
+import java.util.Arrays;
 
 /**
- * A Package for source api testing.
+ * This class is an implementation of 11-dimensional Tuples.
  */
-package edu.snu.mist.api.sources;
+public final class Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> extends TupleImpl {
+
+  public Tuple11(final T1 value1, final T2 value2, final T3 value3, final T4 value4, final T5 value5, final T6 value6,
+                 final T7 value7, final T8 value8, final T9 value9, final T10 value10, final T11 value11) {
+    super(Arrays.asList(value1, value2, value3, value4, value5, value6, value7, value8, value9, value10, value11));
+  }
+}

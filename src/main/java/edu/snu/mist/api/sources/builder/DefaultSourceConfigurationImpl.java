@@ -23,6 +23,9 @@ import java.util.Map;
  */
 public final class DefaultSourceConfigurationImpl implements SourceConfiguration {
 
+  /**
+   * A Map contains configuration information.
+   */
   private final Map<String, Object> configMap;
 
   public DefaultSourceConfigurationImpl(final Map<String, Object> configMap) {

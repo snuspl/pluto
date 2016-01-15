@@ -19,9 +19,9 @@ package edu.snu.mist.api.sources.parameters;
 /**
  * This class contains the list of necessary parameters for NCSSourceConfigurations.
  */
-public final class NCSSourceParameters {
+public final class REEFNetworkSourceParameters {
 
-  private NCSSourceParameters() {
+  private REEFNetworkSourceParameters() {
     // not called.
   }
 

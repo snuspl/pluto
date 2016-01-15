@@ -13,8 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.api.sources;
+
+import edu.snu.mist.api.StreamType;
+import edu.snu.mist.api.sources.builder.SourceConfiguration;
 
 /**
- * A Package for source api testing.
+ * This class represents a SourceStream from the REEF network services.
  */
-package edu.snu.mist.api.sources;
+public final class REEFNetworkSourceStream<T> extends SourceStream<T> {
+
+  public REEFNetworkSourceStream(final SourceConfiguration sourceConfiguration) {
+    super(StreamType.SourceType.REEF_NETWORK_SOURCE, sourceConfiguration);
+  }
+}

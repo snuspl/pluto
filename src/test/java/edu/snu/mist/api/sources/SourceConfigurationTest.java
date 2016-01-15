@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Seoul National University
+ * Copyright (C) 2016 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package edu.snu.mist.api.sources;
 import edu.snu.mist.api.sources.builder.REEFNetworkSourceBuilderImpl;
 import edu.snu.mist.api.sources.builder.SourceBuilder;
 import edu.snu.mist.api.sources.builder.SourceConfiguration;
-import edu.snu.mist.api.sources.parameters.NCSSourceParameters;
+import edu.snu.mist.api.sources.parameters.REEFNetworkSourceParameters;
 import org.apache.reef.wake.remote.impl.StringCodec;
 import org.junit.Assert;
 import org.junit.Test;
@@ -33,23 +33,23 @@ public class SourceConfigurationTest {
    */
   @Test
   public void testREEFNetworkSourceBuilder() {
-    SourceConfiguration reefNetworkSourceConfiguration = new REEFNetworkSourceBuilderImpl()
-        .set(NCSSourceParameters.NAME_SERVER_HOSTNAME, "localhost")
-        .set(NCSSourceParameters.NAME_SERVICE_PORT, 8080)
-        .set(NCSSourceParameters.CONNECTION_ID, "TestConn")
-        .set(NCSSourceParameters.SENDER_ID, "TestSender")
-        .set(NCSSourceParameters.CODEC, StringCodec.class)
+    final SourceConfiguration reefNetworkSourceConfiguration = new REEFNetworkSourceBuilderImpl()
+        .set(REEFNetworkSourceParameters.NAME_SERVER_HOSTNAME, "localhost")
+        .set(REEFNetworkSourceParameters.NAME_SERVICE_PORT, 8080)
+        .set(REEFNetworkSourceParameters.CONNECTION_ID, "TestConn")
+        .set(REEFNetworkSourceParameters.SENDER_ID, "TestSender")
+        .set(REEFNetworkSourceParameters.CODEC, StringCodec.class)
         .build();
 
-    Assert.assertEquals(reefNetworkSourceConfiguration.getConfigurationValue(NCSSourceParameters.NAME_SERVER_HOSTNAME)
-        , "localhost");
-    Assert.assertEquals(reefNetworkSourceConfiguration.getConfigurationValue(NCSSourceParameters.NAME_SERVICE_PORT)
-        , 8080);
-    Assert.assertEquals(reefNetworkSourceConfiguration.getConfigurationValue(NCSSourceParameters.CONNECTION_ID)
+    Assert.assertEquals(reefNetworkSourceConfiguration.
+        getConfigurationValue(REEFNetworkSourceParameters.NAME_SERVER_HOSTNAME), "localhost");
+    Assert.assertEquals(reefNetworkSourceConfiguration.getConfigurationValue(
+        REEFNetworkSourceParameters.NAME_SERVICE_PORT), 8080);
+    Assert.assertEquals(reefNetworkSourceConfiguration.getConfigurationValue(REEFNetworkSourceParameters.CONNECTION_ID)
         , "TestConn");
-    Assert.assertEquals(reefNetworkSourceConfiguration.getConfigurationValue(NCSSourceParameters.SENDER_ID)
+    Assert.assertEquals(reefNetworkSourceConfiguration.getConfigurationValue(REEFNetworkSourceParameters.SENDER_ID)
         , "TestSender");
-    Assert.assertEquals(reefNetworkSourceConfiguration.getConfigurationValue(NCSSourceParameters.CODEC)
+    Assert.assertEquals(reefNetworkSourceConfiguration.getConfigurationValue(REEFNetworkSourceParameters.CODEC)
         , StringCodec.class);
   }
 
@@ -59,9 +59,9 @@ public class SourceConfigurationTest {
   @Test(expected = IllegalStateException.class)
   public void testSourceBuilderDuplicate() {
     // NCSSourceParameters.NAME_SERVER_HOSTNAME is duplicate!
-    SourceBuilder builder = new REEFNetworkSourceBuilderImpl()
-        .set(NCSSourceParameters.NAME_SERVER_HOSTNAME, "localhost")
-        .set(NCSSourceParameters.NAME_SERVER_HOSTNAME, "remotehost");
+    final SourceBuilder builder = new REEFNetworkSourceBuilderImpl()
+        .set(REEFNetworkSourceParameters.NAME_SERVER_HOSTNAME, "localhost")
+        .set(REEFNetworkSourceParameters.NAME_SERVER_HOSTNAME, "remotehost");
   }
 
   /**
@@ -70,11 +70,11 @@ public class SourceConfigurationTest {
   @Test(expected = IllegalStateException.class)
   public void testSourceBuilderMissingParameter() {
     // NCSSourceParameters.CODEC is missing!
-    SourceConfiguration reefNetworkSourceConfiguration = new REEFNetworkSourceBuilderImpl()
-        .set(NCSSourceParameters.NAME_SERVER_HOSTNAME, "localhost")
-        .set(NCSSourceParameters.NAME_SERVICE_PORT, 8080)
-        .set(NCSSourceParameters.CONNECTION_ID, "TestConn")
-        .set(NCSSourceParameters.SENDER_ID, "TestSender")
+    final SourceConfiguration reefNetworkSourceConfiguration = new REEFNetworkSourceBuilderImpl()
+        .set(REEFNetworkSourceParameters.NAME_SERVER_HOSTNAME, "localhost")
+        .set(REEFNetworkSourceParameters.NAME_SERVICE_PORT, 8080)
+        .set(REEFNetworkSourceParameters.CONNECTION_ID, "TestConn")
+        .set(REEFNetworkSourceParameters.SENDER_ID, "TestSender")
         .build();
   }
 }

@@ -13,8 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.api.types;
+
+import java.util.Arrays;
 
 /**
- * A Package for source api testing.
+ * This class is an implementation of 4-dimensional Tuples.
  */
-package edu.snu.mist.api.sources;
+public final class Tuple4<T1, T2, T3, T4> extends TupleImpl {
+
+  public Tuple4(final T1 value1, final T2 value2, final T3 value3, final T4 value4) {
+    super(Arrays.asList(value1, value2, value3, value4));
+  }
+}

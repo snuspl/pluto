@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
- * A Package for source api testing.
+ * A package for Tuple interface.
  */
-package edu.snu.mist.api.sources;
+package edu.snu.mist.api.types;

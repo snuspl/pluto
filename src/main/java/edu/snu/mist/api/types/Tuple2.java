@@ -13,8 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.api.types;
+
+import java.util.Arrays;
 
 /**
- * A Package for source api testing.
+ * This class is an implementation of 2-dimensional Tuples.
  */
-package edu.snu.mist.api.sources;
+public final class Tuple2<T1, T2> extends TupleImpl {
+
+  public Tuple2(final T1 value1, final T2 value2) {
+    super(Arrays.asList(value1, value2));
+  }
+}

@@ -15,6 +15,6 @@
  */
 
 /**
- * A Package for source api testing.
+ * A package for MIST API.
  */
-package edu.snu.mist.api.sources;
+package edu.snu.mist.api;

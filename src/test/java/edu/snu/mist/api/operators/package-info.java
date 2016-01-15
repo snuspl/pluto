@@ -15,6 +15,6 @@
  */
 
 /**
- * A Package for source api testing.
+ * A Package for operator api testing.
  */
-package edu.snu.mist.api.sources;
+package edu.snu.mist.api.operators;

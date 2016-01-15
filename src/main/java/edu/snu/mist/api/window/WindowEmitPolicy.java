@@ -13,8 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.api.window;
 
 /**
- * A Package for source api testing.
+ * Window policy interface which decides when to emit results.
  */
-package edu.snu.mist.api.sources;
+public interface WindowEmitPolicy {
+
+}

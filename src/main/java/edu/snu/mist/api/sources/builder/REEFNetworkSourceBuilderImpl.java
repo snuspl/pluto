@@ -16,7 +16,7 @@
 
 package edu.snu.mist.api.sources.builder;
 
-import edu.snu.mist.api.sources.parameters.NCSSourceParameters;
+import edu.snu.mist.api.sources.parameters.REEFNetworkSourceParameters;
 
 import javax.inject.Inject;
 import java.util.Arrays;
@@ -30,11 +30,11 @@ public final class REEFNetworkSourceBuilderImpl extends SourceBuilderImpl {
    * Required Parameters for ReefNetworkSource.
    */
   private static String[] reefNetworkRequiredParameters = {
-      NCSSourceParameters.NAME_SERVER_HOSTNAME,
-      NCSSourceParameters.NAME_SERVICE_PORT,
-      NCSSourceParameters.SENDER_ID,
-      NCSSourceParameters.CONNECTION_ID,
-      NCSSourceParameters.CODEC
+      REEFNetworkSourceParameters.NAME_SERVER_HOSTNAME,
+      REEFNetworkSourceParameters.NAME_SERVICE_PORT,
+      REEFNetworkSourceParameters.SENDER_ID,
+      REEFNetworkSourceParameters.CONNECTION_ID,
+      REEFNetworkSourceParameters.CODEC
   };
 
   @Inject
