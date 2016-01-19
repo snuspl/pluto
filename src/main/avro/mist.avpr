@@ -25,7 +25,7 @@
 
  "types": [
      {"name": "QueryInfo", "type": "record",
-      "fields": [ /* TODO[MIST-#]: define protocol between client and driver */
+      "fields": [ /* TODO[MIST-92]: Define avro RPC protocol between client and driver */
       ]
      },
      {"name": "IPAddress", "type": "record",

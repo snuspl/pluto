@@ -100,6 +100,11 @@ limitations under the License.
             <artifactId>avro-ipc</artifactId>
             <version>${avro.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>${avro.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -213,6 +218,10 @@ limitations under the License.
                             <goal>protocol</goal>
                             <goal>idl-protocol</goal>
                         </goals>
+                        <configuration>
+                            <sourceDirectory>${project.basedir}/src/main/avro/</sourceDirectory>
+                            <outputDirectory>${project.basedir}/target/generated-sources/avro/</outputDirectory>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
