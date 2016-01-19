@@ -28,6 +28,7 @@ limitations under the License.
         <project.build.directory>target</project.build.directory>
         <maven-checkstyle-plugin.version>2.15</maven-checkstyle-plugin.version>
         <checkstyle.version>6.6</checkstyle.version>
+        <avro.version>1.7.7</avro.version>
     </properties>
 
     <organization>
@@ -93,6 +94,17 @@ limitations under the License.
             <version>1.8.4</version>
         </dependency>
 
+        <!-- Avro -->
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro-ipc</artifactId>
+            <version>${avro.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>${avro.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -190,6 +202,26 @@ limitations under the License.
                         <goals>
                             <goal>check</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro-maven-plugin</artifactId>
+                <version>${avro.version}</version>
+                <executions>
+                    <execution>
+                        <id>schemas</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>schema</goal>
+                            <goal>protocol</goal>
+                            <goal>idl-protocol</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${project.basedir}/src/main/avro/</sourceDirectory>
+                            <outputDirectory>${project.basedir}/target/generated-sources/avro/</outputDirectory>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
