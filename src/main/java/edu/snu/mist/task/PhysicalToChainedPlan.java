@@ -16,12 +16,13 @@
 package edu.snu.mist.task;
 
 import edu.snu.mist.task.operator.Operator;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
  * This interface converts a PhysicalPlan<Operator> to a PhysicalPlan<OperatorChain>
  * by chaining the operators.
- * TODO[MIST-69]: Partitioning physical plans into OperatorChains by chaining operators
  */
+@DefaultImplementation(DefaultPhysicalToChainedPlanImpl.class)
 public interface PhysicalToChainedPlan {
   /**
    * Converts the PhysicalPlan<Operator> to the PhysicalPlan<OperatorChain>.

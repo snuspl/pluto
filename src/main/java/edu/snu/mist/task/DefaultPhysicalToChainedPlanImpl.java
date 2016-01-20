@@ -15,24 +15,20 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.common.DAG;
-import edu.snu.mist.task.executor.MistExecutor;
-import org.apache.reef.tang.annotations.DefaultImplementation;
+import edu.snu.mist.task.operator.Operator;
 
-import java.util.Set;
+import javax.inject.Inject;
 
-/**
- * This interface allocates OperatorChains represented as a DAG to MistExecutors.
- */
-@DefaultImplementation(DefaultOperatorChainAllocatorImpl.class)
-public interface OperatorChainAllocator {
+// TODO[MIST-69]: Partitioning physical plans into OperatorChains by chaining operators
+final class DefaultPhysicalToChainedPlanImpl implements PhysicalToChainedPlan {
 
-  /**
-   * Allocates the OperatorChain represented as a DAG to MistExecutors.
-   * @param executors executors
-   * @param dag a DAG of OperatorChain
-   */
-  void allocate(
-      final Set<MistExecutor> executors,
-      final DAG<OperatorChain> dag);
+  @Inject
+  private DefaultPhysicalToChainedPlanImpl() {
+
+  }
+
+  @Override
+  public PhysicalPlan<OperatorChain> convertToChainedPlan(final PhysicalPlan<Operator> plan) {
+    throw new RuntimeException("DefaultPhysicalToChainedPlanImpl.convertToChainedPlan is not implemented yet");
+  }
 }

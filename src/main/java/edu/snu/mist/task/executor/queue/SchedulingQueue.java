@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.task.executor.queue;
 
+import org.apache.reef.tang.annotations.DefaultImplementation;
+
 import java.util.Collection;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -25,6 +27,7 @@ import java.util.concurrent.TimeUnit;
  * 'offer', 'isEmpty', 'drainTo', 'remove', 'poll', 'take' and 'size'.
  * By implementing these methods, this queue can schedule the submitted jobs.
  */
+@DefaultImplementation(FIFOQueue.class)
 public interface SchedulingQueue extends BlockingQueue<Runnable> {
 
   @Override
