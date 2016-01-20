@@ -24,7 +24,7 @@ import org.apache.reef.wake.Identifier;
  * In the memory, SSM keeps a map where the key is the Identifier and the value is the state.
  * In the database, SSM uses a key-value type database where the key is also the Identifier and the value is the state.
  *
- * TODO: We could later save other objects other than states.
+ * TODO[MIST-48]: We could later save other objects other than states.
  */
 public interface SSM {
     /**
@@ -51,6 +51,6 @@ public interface SSM {
      */
     boolean delete(final Identifier identifier);
 
-    //TODO[MIST-101]: The policy on where to keep the states - in the memory or the database - should be implemented.
+    //TODO[MIST-50]: The policy on where to keep the states - in the memory or the database - should be implemented.
     // Currently everything is saved in the database.
 }
