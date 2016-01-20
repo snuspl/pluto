@@ -16,21 +16,20 @@
 package edu.snu.mist.task;
 
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.common.GraphUtils;
 import edu.snu.mist.task.executor.MistExecutor;
-import edu.snu.mist.task.parameter.NumExecutors;
 import edu.snu.mist.task.source.SourceGenerator;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
-import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.task.Task;
 
 import javax.inject.Inject;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A runtime engine running mist queries.
@@ -45,10 +44,6 @@ import java.util.logging.Level;
 @SuppressWarnings("unchecked")
 public final class MistTask implements Task {
   private static final Logger LOG = Logger.getLogger(MistTask.class.getName());
-  /**
-   * This contains a set of MistExecutors.
-   */
-  private final Set<MistExecutor> executors;
 
   /**
    * A count down latch for sleeping and terminating this task.
@@ -57,26 +52,21 @@ public final class MistTask implements Task {
 
   /**
    * Default constructor of MistTask.
-   * @param allocator an allocator which allocates a OperatorChain to a MistExecutor
+   * @param chainAllocator an allocator which allocates a OperatorChain to a MistExecutor
    * @param physicalToChainedPlan a converter which chains operator and make OperatorChains
    * @param receiver logical plan receiver which converts the logical plans to physical plans
-   * @param numExecutors the number of MistExecutors
+   * @param executorListProvider executor list provider which returns the list of executors
    * @throws InjectionException
    */
   @Inject
-  private MistTask(final OperatorChainAllocator allocator,
+  private MistTask(final OperatorChainAllocator chainAllocator,
                    final PhysicalToChainedPlan physicalToChainedPlan,
                    final LogicalPlanReceiver receiver,
-                   @Parameter(NumExecutors.class) final int numExecutors) throws InjectionException {
+                   final ExecutorListProvider executorListProvider) throws InjectionException {
     this.countDownLatch = new CountDownLatch(1);
-    this.executors = new HashSet<>();
     final Injector injector = Tang.Factory.getTang().newInjector();
-    // 1) creates MistExecutors
-    for (int i = 0; i < numExecutors; i++) {
-      final MistExecutor executor = injector.getInstance(MistExecutor.class);
-      this.executors.add(executor);
-    }
 
+    // 1) creates MistExecutors in executorListProvider
     // 2) Receives logical plans and converts to physical plans
     receiver.setHandler(physicalPlan -> {
       // 3) Chains the physical operators and make OperatorChain.
@@ -85,13 +75,15 @@ public final class MistTask implements Task {
 
       final DAG<OperatorChain> chainedOperators = chainedPlan.getOperators();
       // 4) Allocates the OperatorChains to the MistExecutors
-      allocator.allocate(executors, chainedOperators);
+      chainAllocator.allocate(chainedOperators);
 
       // 5) Sets the OutputEmitters of the OperatorChains
-      chainedOperators.dfsTraverse(chainedOp -> {
-        final Set<OperatorChain> neighbors = chainedOperators.getNeighbors(chainedOp);
-        chainedOp.setOutputEmitter(new DefaultOutputEmitter(chainedOp, neighbors));
-      });
+      final Iterator<OperatorChain> iterator = GraphUtils.topologicalSort(chainedOperators);
+      while (iterator.hasNext()) {
+        final OperatorChain operatorChain = iterator.next();
+        final Set<OperatorChain> neighbors = chainedOperators.getNeighbors(operatorChain);
+        operatorChain.setOutputEmitter(new DefaultOutputEmitter(operatorChain, neighbors));
+      }
 
       // 5) Sets the OutputEmitters of the SourceGenerator and OperatorChains
       for (final SourceGenerator src : chainedPlan.getSourceMap().keySet()) {

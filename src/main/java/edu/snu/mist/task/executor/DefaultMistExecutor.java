@@ -17,6 +17,9 @@ package edu.snu.mist.task.executor;
 
 import edu.snu.mist.task.OperatorChainJob;
 import edu.snu.mist.task.executor.queue.SchedulingQueue;
+import org.apache.reef.io.network.util.StringIdentifierFactory;
+import org.apache.reef.tang.annotations.Parameter;
+import org.apache.reef.wake.Identifier;
 import org.apache.reef.wake.WakeParameters;
 
 import javax.inject.Inject;
@@ -53,10 +56,18 @@ final class DefaultMistExecutor implements MistExecutor {
    */
   private final long shutdownTimeout = WakeParameters.EXECUTOR_SHUTDOWN_TIMEOUT;
 
+  /**
+   * An identifier.
+   */
+  private final Identifier identifier;
+
   @Inject
-  private DefaultMistExecutor(final SchedulingQueue queue) {
+  private DefaultMistExecutor(final SchedulingQueue queue,
+                              @Parameter(MistExecutorId.class) final String identifier,
+                              final StringIdentifierFactory identifierFactory) {
     this.tpExecutor = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS, queue);
     this.queue = queue;
+    this.identifier = identifierFactory.getNewInstance(identifier);
   }
 
   /**
@@ -83,5 +94,30 @@ final class DefaultMistExecutor implements MistExecutor {
         LOG.log(Level.WARNING, "Executor dropped " + droppedRunnables.size() + " tasks.");
       }
     }
+  }
+
+  @Override
+  public Identifier getIdentifier() {
+    return identifier;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final DefaultMistExecutor that = (DefaultMistExecutor) o;
+    if (!identifier.equals(that.identifier)) {
+      return false;
+    }
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    return identifier.hashCode();
   }
 }

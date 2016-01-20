@@ -15,18 +15,20 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.common.DAG;
+import edu.snu.mist.task.executor.MistExecutor;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
+import java.util.List;
+
 /**
- * This interface allocates OperatorChains represented as a DAG to MistExecutors.
+ * This provides a list of mist executors which run queries.
  */
-@DefaultImplementation(DefaultOperatorChainAllocatorImpl.class)
-public interface OperatorChainAllocator {
+@DefaultImplementation(DefaultExecutorListProviderImpl.class)
+public interface ExecutorListProvider {
 
   /**
-   * Allocates the OperatorChain represented as a DAG to MistExecutors.
-   * @param dag a DAG of OperatorChain
+   * Gets a list of mist executors.
+   * @return a list of mist executor
    */
-  void allocate(final DAG<OperatorChain> dag);
+  List<MistExecutor> getExecutors();
 }
