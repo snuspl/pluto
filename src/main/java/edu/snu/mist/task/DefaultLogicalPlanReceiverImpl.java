@@ -23,6 +23,8 @@ import javax.inject.Inject;
 // TODO[MIST-68]: Receive and deserialize logical plans into physical plans.
 final class DefaultLogicalPlanReceiverImpl implements LogicalPlanReceiver {
 
+  private EventHandler<PhysicalPlan<Operator>> eventHandler;
+
   @Inject
   private DefaultLogicalPlanReceiverImpl() {
 
@@ -30,6 +32,6 @@ final class DefaultLogicalPlanReceiverImpl implements LogicalPlanReceiver {
 
   @Override
   public void setHandler(final EventHandler<PhysicalPlan<Operator>> handler) {
-    throw new RuntimeException("DefaultLogicalPlanReceiverImpl.setHandler is not implemented yet");
+    eventHandler = handler;
   }
 }
