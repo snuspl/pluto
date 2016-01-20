@@ -20,46 +20,37 @@ import org.apache.reef.wake.Identifier;
 
 /**
  * This interface is the basic representation of the Stream State Manager.
- * It is used by stateful operators to store states into the database.
- * Since this is a key-value type database, the key is the Identifier, and the value is generic.
+ * It allows stateful operators to store its states either into the memory or the database.
+ * In the memory, SSM keeps a map where the key is the Identifier and the value is the state.
+ * In the database, SSM uses a key-value type database where the key is also the Identifier and the value is the state.
  *
  * TODO: We could later save other objects other than states.
  */
 public interface SSM {
-
     /**
-     * Opens the database.
-     * @return true if the open worked well, false if not.
-     */
-    boolean open();
-
-    /**
-     * Closes the database.
-     * @return true if the database was closed well, false if not.
-     */
-    boolean close();
-
-    /**
-     * Stores the key-value pair in the database.
+     * Stores the key-value pair in SSM (could be in memory or could be in the database).
      * @param identifier The identifier of the operator.
      * @param value The value will be the state that the operator needs to store.
-     * @param <I> Type of the value (state) to be stored in the database.
+     * @param <I> Type of the value (state) to be stored in SSM.
      * @return true if set worked well, false if not.
      */
     <I> boolean set(final Identifier identifier, final I value);
 
     /**
-     *
+     * Get the value from the SSM.
      * @param identifier The identifier of the operator.
-     * @param <I> Type of the value (state) to be stored in the database.
+     * @param <I> Type of the value (state) to be stored in SSM.
      * @return true if the value was grabbed, false if nothing was saved.
      */
     <I> I get(final Identifier identifier);
 
     /**
-     *
+     * Delete the key-value pair from SSM.
      * @param identifier The identifier of the operator.
      * @return true if there was data to delete, false if deletion did not occur.
      */
     boolean delete(final Identifier identifier);
+
+    //TODO: The policy on where to keep the states - in the memory or the database - should be implemented.
+    // Currently everything is saved in the database.
 }

@@ -16,11 +16,14 @@
 
 package edu.snu.mist.task.ssm.orientdb;
 
+import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import edu.snu.mist.task.ssm.SSM;
+import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.wake.Identifier;
 
+import javax.inject.Inject;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,71 +35,82 @@ import java.util.logging.Logger;
 public final class SSMImplOrientDb implements SSM {
 
     private static final Logger LOG = Logger.getLogger(SSMImplOrientDb.class.getName());
-    public static ODatabaseDocumentTx db;
+    private static ODatabaseDocumentTx db;
+    //TODO where to close the database?
 
-    @Override
-    public boolean open (){
+    @Inject
+    private SSMImplOrientDb(@Parameter(OrientDbPath.class) final String orientDbPath,
+                    @Parameter(OrientDbUser.class) final String orientDbUser,
+                    @Parameter(OrientDbPassword.class) final String orientDbPassword,
+                    @Parameter(OrientDbDropDB.class) final boolean orientDbDrop,
+                    @Parameter(OrientDbSize.class) final int orientDbSize) {
+        //open the database
         try {
             //The database is opened under this url.
-            db = new ODatabaseDocumentTx("plocal:/tmp/SSM-orientdb");
-            if (db.exists()){
-                LOG.log(Level.INFO, "Opening existing OrientDB");
-                //The id, password of the database.
-                db.open("admin", "admin");
-                db.drop();
-                db.create();
+            db = new ODatabaseDocumentTx(orientDbPath);
+            OGlobalConfiguration.DISK_CACHE_SIZE.setValue(orientDbSize); // this is in megabytes
+            if (db.exists()){ //OrientDB method to check whether the db exists in the path.
+                if(orientDbDrop){
+                    //If drop is true, drop and create the database.
+                    LOG.log(Level.INFO, "OrientDB: dropping and creating a new database.");
+                    db.open(orientDbUser, orientDbPassword);
+                    db.drop();
+                    db.create();
+                }
+                else {
+                    LOG.log(Level.INFO, "OrientDB: opening existing database.");
+                    //Open with the id, password of the database.
+                    db.open(orientDbUser, orientDbPassword);
+                }
             }
             else {
-                LOG.log(Level.INFO, "Creating new OrientDB");
+                LOG.log(Level.INFO, "OrientDB: creating new database.");
                 db.create();
             }
-            return true;
         } catch (Exception e){
             e.printStackTrace();
-            LOG.log(Level.SEVERE, "OrientDB failed to open.");
-            return false;
-        }
-    }
-
-    @Override
-    public boolean close(){
-        try {
-            db.close();
-            return true;
-        } catch (Exception e){
-            e.printStackTrace();
-            LOG.log(Level.SEVERE, "OrientDB failed to close.");
-            return false;
+            LOG.log(Level.SEVERE, "OrientDB: failed to open.");
         }
     }
 
     @Override
     public <I> boolean set (final Identifier identifier, final I value){
-        try {
-            for (ODocument doc: db.browseClass((identifier.toString()))){
-                //If there is an existing identifier, update the document
+       try {
+           //If there is an existing identifier, replace the old value with the new value.
+           for (ODocument doc: db.browseClass((identifier.toString()))){
+                /*browseClass is an OrientDB method to browse for the key in the database.
+                  Since this is a document db, it can have multiple keys (in our case the key is unique).
+                  Thus, it returns an iterative class, so a for loop must be used.
+                  But since we only have unique keys, this for loop will only be looped once.
+                 */
                 if (doc.containsField("state")){
                     doc.field("state", value);
-                    LOG.log(Level.INFO, "saving (" + identifier+ ", "+ value+")");
+                    LOG.log(Level.INFO, "OrientDB: saving (" + identifier+ ", "+ value+") to database.");
                     doc.save();
                     return true;
                 }
             }
-            return false;
 
-        } catch (IllegalArgumentException e) {
+           //This is the case when the identifier was previously saved then deleted.
+           final ODocument document = new ODocument(identifier.toString());
+           document.field("state", value); //field() is an OrientDB method to set the value to a certain field.
+           LOG.log(Level.INFO, "OrientDB: saving (" + identifier+ ", "+ value+") to database.");
+           document.save(); //save() is an OrientDB method to save the document in the database.
+           return true;
+
+        } catch (Exception e) {
             try{
-                //If there is no existing identifier, create a new document
+                //This is the case when the identifier was never saved.
                 //TODO: This exception handling could lead to unnecessary exception handling load.
-                final ODocument document = new ODocument(identifier.toString());
-                document.field("state", value);
-                LOG.log(Level.INFO, "saving (" + identifier+ ", "+ value+") to OrientDB");
 
-                document.save();
+                final ODocument document = new ODocument(identifier.toString());
+                document.field("state", value); //field() is an OrientDB method to set the value to a certain field.
+                LOG.log(Level.INFO, "OrientDB: saving (" + identifier+ ", "+ value+") to database.");
+                document.save(); //save() is an OrientDB method to save the document in the database.
                 return true;
-            } catch (IllegalArgumentException f){
+            } catch (Exception f){
                 f.printStackTrace();
-                LOG.log(Level.SEVERE, "OrientDB failed to save.");
+                LOG.log(Level.SEVERE, "OrientDB: failed to save.");
                 return false;
             }
         }
@@ -110,15 +124,16 @@ public final class SSMImplOrientDb implements SSM {
                     return doc.field("state");
                 }
                 else{
-                    LOG.log(Level.SEVERE, "OrientDB failed to get state.");
+                    LOG.log(Level.SEVERE, "OrientDB: failed to get state. Document is null.");
                     return null;
                 }
             }
+            LOG.log(Level.SEVERE, "OrientDB: failed to get state. The key does not exist in the database.");
             return null;
 
-        } catch (IllegalArgumentException e){
+        } catch (Exception e){
             e.printStackTrace();
-            LOG.log(Level.SEVERE, "OrientDB failed to get state.");
+            LOG.log(Level.SEVERE, "OrientDB: failed to get state.");
             return null;
         }
     };
@@ -127,13 +142,16 @@ public final class SSMImplOrientDb implements SSM {
     public boolean delete (final Identifier identifier){
         try{
             for (ODocument doc : db.browseClass(identifier.toString())) {
-                LOG.log(Level.INFO, "deleting (" + identifier + ", " + doc.field("state") + ")");
-                doc.delete();
+                LOG.log(Level.INFO, "OrientDB: deleting (" + identifier + ", " + doc.field("state") +
+                        ") from database.");
+                db.delete(doc);
+                return true;
             }
-            return true;
+            LOG.log(Level.INFO, "OrientDB: deletion failed. The key does not exist in the database.");
+            return false;
 
-        } catch (IllegalArgumentException e){
-            LOG.log(Level.SEVERE, "The key does not exist in OrientDB");
+        } catch (Exception e){
+            LOG.log(Level.INFO, "OrientDB: deletion failed.");
             return false;
         }
     };
