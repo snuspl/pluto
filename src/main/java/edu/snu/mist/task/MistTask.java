@@ -16,6 +16,7 @@
 package edu.snu.mist.task;
 
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.common.GraphUtils;
 import edu.snu.mist.task.executor.MistExecutor;
 import edu.snu.mist.task.parameter.NumExecutors;
 import edu.snu.mist.task.source.SourceGenerator;
@@ -27,10 +28,11 @@ import org.apache.reef.task.Task;
 
 import javax.inject.Inject;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A runtime engine running mist queries.
@@ -88,10 +90,12 @@ public final class MistTask implements Task {
       allocator.allocate(executors, chainedOperators);
 
       // 5) Sets the OutputEmitters of the OperatorChains
-      chainedOperators.dfsTraverse(chainedOp -> {
-        final Set<OperatorChain> neighbors = chainedOperators.getNeighbors(chainedOp);
-        chainedOp.setOutputEmitter(new DefaultOutputEmitter(chainedOp, neighbors));
-      });
+      final Iterator<OperatorChain> iterator = GraphUtils.topologicalSort(chainedOperators);
+      while (iterator.hasNext()) {
+        final OperatorChain operatorChain = iterator.next();
+        final Set<OperatorChain> neighbors = chainedOperators.getNeighbors(operatorChain);
+        operatorChain.setOutputEmitter(new DefaultOutputEmitter(operatorChain, neighbors));
+      }
 
       // 5) Sets the OutputEmitters of the SourceGenerator and OperatorChains
       for (final SourceGenerator src : chainedPlan.getSourceMap().keySet()) {

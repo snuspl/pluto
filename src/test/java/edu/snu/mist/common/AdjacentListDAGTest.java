@@ -20,7 +20,6 @@ import junit.framework.Assert;
 import org.junit.Test;
 
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -71,43 +70,5 @@ public final class AdjacentListDAGTest {
     dag.removeEdge(2, 4);
     Assert.assertFalse(dag.isAdjacent(2, 4));
     Assert.assertEquals(dag.getInDegree(4), 0);
-  }
-
-
-  @Test
-  public void dfsTraverseTest() {
-    final DAG<Integer> dag = new AdjacentListDAG<>();
-    dag.addVertex(1); dag.addVertex(2); dag.addVertex(3); dag.addVertex(4); dag.addVertex(5);
-    dag.addEdge(1, 2); dag.addEdge(2, 3); dag.addEdge(2, 4); dag.addEdge(4, 5);
-
-    final List<Integer> expected1 = ImmutableList.of(1, 2, 3, 4, 5);
-    final List<Integer> expected2 = ImmutableList.of(1, 2, 4, 5, 3);
-    final List<Integer> result = new LinkedList<>();
-
-    Assert.assertEquals(new HashSet<>(ImmutableList.of(1)), dag.getRootVertices());
-
-    /**
-     * Traverse:
-     * 1 -> 2 -> 3
-     *        -> 4 -> 5.
-     */
-    dag.dfsTraverse(result::add);
-    System.out.println("DFS Traversal1: " + result);
-    Assert.assertTrue(expected1.equals(result) || expected2.equals(result));
-
-    /**
-     * Traverse:
-     * 1 -> 2 -> 3 -> 6 -> 7
-     *        -> 4 -> 5.
-     */
-    final List<Integer> expected3 = ImmutableList.of(1, 2, 3, 6, 7, 4, 5);
-    final List<Integer> expected4 = ImmutableList.of(1, 2, 4, 5, 3, 6, 7);
-    final List<Integer> result2 = new LinkedList<>();
-
-    dag.addVertex(6); dag.addVertex(7);
-    dag.addEdge(3, 6); dag.addEdge(6, 7);
-    dag.dfsTraverse(result2::add);
-    System.out.println("DFS Traversal2: " + result2);
-    Assert.assertTrue(expected3.equals(result2) || expected4.equals(result2));
   }
 }

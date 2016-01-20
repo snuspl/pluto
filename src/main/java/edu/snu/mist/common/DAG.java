@@ -15,8 +15,6 @@
  */
 package edu.snu.mist.common;
 
-import org.apache.reef.wake.EventHandler;
-
 import java.util.Set;
 
 /**
@@ -50,30 +48,34 @@ public interface DAG<V> {
   /**
    * Adds the vertex v, if it is not there.
    * @param v vertex
+   * @return true if the vertex is added, false if the vertex already exists
    */
-  void addVertex(V v);
+  boolean addVertex(V v);
 
   /**
    * Removes the vertex v, if it is there.
    * @param v vertex
+   * @return true if the vertex is removed, false if the vertex does not exist
    */
-  void removeVertex(V v);
+  boolean removeVertex(V v);
 
   /**
    * Adds the edge from the vertices v to w, if it is not there.
    * @param v src vertex
    * @param w dest vertex
+   * @return true if the edge is added, false if the edge already exists between v and w
    * @throws java.util.NoSuchElementException if the vertex v does not exist
    */
-  void addEdge(V v, V w);
+  boolean addEdge(V v, V w);
 
   /**
    * Removes the edge from the vertices v to w, if it is there.
    * @param v src vertex
    * @param w dest vertex
+   * @return true if the edge is removed, false if the edge does not exist between v and w
    * @throws java.util.NoSuchElementException if the vertex v or w do not exist
    */
-  void removeEdge(V v, V w);
+  boolean removeEdge(V v, V w);
 
   /**
    * Gets the in-degree of vertex v.
@@ -82,11 +84,4 @@ public interface DAG<V> {
    * @throws java.util.NoSuchElementException if the vertex v does not exist.
    */
   int getInDegree(V v);
-
-  /**
-   * Traverses the graph in DFS order.
-   * It returns the traversed vertices to the event handler
-   * @param vertexHandler a handler for traversed vertices.
-   */
-  void dfsTraverse(EventHandler<V> vertexHandler);
 }
