@@ -17,22 +17,19 @@ package edu.snu.mist.task;
 
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.task.executor.MistExecutor;
-import org.apache.reef.tang.annotations.DefaultImplementation;
 
+import javax.inject.Inject;
 import java.util.Set;
 
-/**
- * This interface allocates OperatorChains represented as a DAG to MistExecutors.
- */
-@DefaultImplementation(DefaultOperatorChainAllocatorImpl.class)
-public interface OperatorChainAllocator {
+// TODO[MIST-42]: Implement a simple round-robin allocator
+final class DefaultOperatorChainAllocatorImpl implements OperatorChainAllocator {
 
-  /**
-   * Allocates the OperatorChain represented as a DAG to MistExecutors.
-   * @param executors executors
-   * @param dag a DAG of OperatorChain
-   */
-  void allocate(
-      final Set<MistExecutor> executors,
-      final DAG<OperatorChain> dag);
+  @Inject
+  private DefaultOperatorChainAllocatorImpl() {
+  }
+
+  @Override
+  public void allocate(final Set<MistExecutor> executors, final DAG<OperatorChain> dag) {
+    throw new RuntimeException("DefaultOperatorChainAllocatorImpl.allocate is not implemented yet");
+  }
 }

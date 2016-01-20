@@ -29,6 +29,8 @@ import javax.inject.Inject;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * A runtime engine running mist queries.
@@ -42,7 +44,7 @@ import java.util.concurrent.CountDownLatch;
  */
 @SuppressWarnings("unchecked")
 public final class MistTask implements Task {
-
+  private static final Logger LOG = Logger.getLogger(MistTask.class.getName());
   /**
    * This contains a set of MistExecutors.
    */
@@ -111,6 +113,7 @@ public final class MistTask implements Task {
 
   @Override
   public byte[] call(final byte[] bytes) throws Exception {
+    LOG.log(Level.INFO, "MistTask is started");
     countDownLatch.await();
     return new byte[0];
   }
