@@ -27,30 +27,30 @@ import org.apache.reef.wake.Identifier;
  * TODO[MIST-48]: We could later save other objects other than states.
  */
 public interface SSM {
-    /**
-     * Stores the key-value pair in SSM (could be in memory or could be in the database).
-     * @param identifier The identifier of the operator.
-     * @param value The value will be the state that the operator needs to store.
-     * @param <I> Type of the value (state) to be stored in SSM.
-     * @return true if set worked well, false if not.
-     */
-    <I> boolean set(final Identifier identifier, final I value);
+  /**
+   * * Stores the key-value pair in SSM (could be in memory or could be in the database).
+   * @param identifier The identifier of the operator.
+   * @param value The value will be the state that the operator needs to store.
+   * @param <I> Type of the value (state) to be stored in SSM.
+   * @return true if set worked well, false if not.
+   */
+  <I> boolean set(final Identifier identifier, final I value);
 
-    /**
-     * Get the value from the SSM.
-     * @param identifier The identifier of the operator.
-     * @param <I> Type of the value (state) to be stored in SSM.
-     * @return value of type I if there was data to get, null if the value does not exist in the database.
-     */
-    <I> I get(final Identifier identifier);
+  /**
+   * Get the value from the SSM.
+   * @param identifier The identifier of the operator.
+   * @param <I> Type of the value (state) to be stored in SSM.
+   * @return value of type I if there was data to get, null if the value does not exist in the database.
+   */
+  <I> I get(final Identifier identifier);
 
-    /**
-     * Delete the key-value pair from SSM.
-     * @param identifier The identifier of the operator.
-     * @return true if there was data to delete, false if deletion did not occur.
-     */
-    boolean delete(final Identifier identifier);
+  /**
+   * Delete the key-value pair from SSM.
+   * @param identifier The identifier of the operator.
+   * @return true if there was data to delete, false if deletion did not occur.
+   */
+  boolean delete(final Identifier identifier);
 
-    //TODO[MIST-50]: The policy on where to keep the states - in the memory or the database - should be implemented.
-    // Currently everything is saved in the database.
+  //TODO[MIST-50]: The policy on where to keep the states - in the memory or the database - should be implemented.
+  // Currently everything is saved in the database.
 }
