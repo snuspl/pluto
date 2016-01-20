@@ -56,14 +56,12 @@ public final class SSMImplOrientDb implements SSM {
                     db.open(orientDbUser, orientDbPassword);
                     db.drop();
                     db.create();
-                }
-                else {
+                } else {
                     LOG.log(Level.INFO, "OrientDB: opening existing database.");
                     //Open with the id, password of the database.
                     db.open(orientDbUser, orientDbPassword);
                 }
-            }
-            else {
+            } else {
                 LOG.log(Level.INFO, "OrientDB: creating new database.");
                 db.create();
             }
@@ -74,10 +72,10 @@ public final class SSMImplOrientDb implements SSM {
     }
 
     @Override
-    public <I> boolean set (final Identifier identifier, final I value){
+    public <I> boolean set(final Identifier identifier, final I value){
        try {
            //If there is an existing identifier, replace the old value with the new value.
-           for (ODocument doc: db.browseClass((identifier.toString()))){
+           for (ODocument doc: db.browseClass(identifier.toString())){
                 /*browseClass is an OrientDB method to browse for the key in the database.
                   Since this is a document db, it can have multiple keys (in our case the key is unique).
                   Thus, it returns an iterative class, so a for loop must be used.
@@ -117,13 +115,12 @@ public final class SSMImplOrientDb implements SSM {
     };
 
     @Override
-    public <I> I get (final Identifier identifier){
+    public <I> I get(final Identifier identifier){
         try{
             for (ODocument doc : db.browseClass(identifier.toString())){
                 if (doc!=null){
                     return doc.field("state");
-                }
-                else{
+                } else{
                     LOG.log(Level.SEVERE, "OrientDB: failed to get state. Document is null.");
                     return null;
                 }
@@ -139,7 +136,7 @@ public final class SSMImplOrientDb implements SSM {
     };
 
     @Override
-    public boolean delete (final Identifier identifier){
+    public boolean delete(final Identifier identifier){
         try{
             for (ODocument doc : db.browseClass(identifier.toString())) {
                 LOG.log(Level.INFO, "OrientDB: deleting (" + identifier + ", " + doc.field("state") +
