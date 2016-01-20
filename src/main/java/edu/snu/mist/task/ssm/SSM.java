@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.snu.mist.task.SSM;
+package edu.snu.mist.task.ssm;
 
 import org.apache.reef.wake.Identifier;
 
@@ -25,7 +25,6 @@ import org.apache.reef.wake.Identifier;
  *
  * TODO: We could later save other objects other than states.
  */
-
 public interface SSM {
 
     /**

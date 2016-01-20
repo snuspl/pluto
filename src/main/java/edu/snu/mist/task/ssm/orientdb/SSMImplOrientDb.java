@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package edu.snu.mist.task.SSM;
+package edu.snu.mist.task.ssm.orientdb;
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import edu.snu.mist.task.ssm.SSM;
 import org.apache.reef.wake.Identifier;
 
 import java.util.logging.Level;
@@ -28,10 +29,9 @@ import java.util.logging.Logger;
  * The key (document) is the identifier of the operator.
  * There is only one field at all times - "state". All values (states) are stored under this field.
  */
+public final class SSMImplOrientDb implements SSM {
 
-public final class SSMImpl implements SSM{
-
-    private static final Logger LOG = Logger.getLogger(SSMImpl.class.getName());
+    private static final Logger LOG = Logger.getLogger(SSMImplOrientDb.class.getName());
     public static ODatabaseDocumentTx db;
 
     @Override
@@ -40,14 +40,14 @@ public final class SSMImpl implements SSM{
             //The database is opened under this url.
             db = new ODatabaseDocumentTx("plocal:/tmp/SSM-orientdb");
             if (db.exists()){
-                LOG.log(Level.INFO, "Opening existing DB");
+                LOG.log(Level.INFO, "Opening existing OrientDB");
                 //The id, password of the database.
                 db.open("admin", "admin");
                 db.drop();
                 db.create();
             }
             else {
-                LOG.log(Level.INFO, "Creating new DB");
+                LOG.log(Level.INFO, "Creating new OrientDB");
                 db.create();
             }
             return true;
@@ -63,7 +63,7 @@ public final class SSMImpl implements SSM{
         try {
             db.close();
             return true;
-        }catch (Exception e){
+        } catch (Exception e){
             e.printStackTrace();
             LOG.log(Level.SEVERE, "OrientDB failed to close.");
             return false;
@@ -84,18 +84,17 @@ public final class SSMImpl implements SSM{
             }
             return false;
 
-        } catch (Exception e) {
-
+        } catch (IllegalArgumentException e) {
             try{
                 //If there is no existing identifier, create a new document
                 //TODO: This exception handling could lead to unnecessary exception handling load.
                 final ODocument document = new ODocument(identifier.toString());
                 document.field("state", value);
-                LOG.log(Level.INFO, "saving (" + identifier+ ", "+ value+")");
+                LOG.log(Level.INFO, "saving (" + identifier+ ", "+ value+") to OrientDB");
 
                 document.save();
                 return true;
-            } catch (Exception f){
+            } catch (IllegalArgumentException f){
                 f.printStackTrace();
                 LOG.log(Level.SEVERE, "OrientDB failed to save.");
                 return false;
@@ -117,7 +116,7 @@ public final class SSMImpl implements SSM{
             }
             return null;
 
-        } catch (Exception e){
+        } catch (IllegalArgumentException e){
             e.printStackTrace();
             LOG.log(Level.SEVERE, "OrientDB failed to get state.");
             return null;
@@ -133,8 +132,8 @@ public final class SSMImpl implements SSM{
             }
             return true;
 
-        } catch (Exception e){
-            LOG.log(Level.SEVERE, "Nothing to delete.");
+        } catch (IllegalArgumentException e){
+            LOG.log(Level.SEVERE, "The key does not exist in OrientDB");
             return false;
         }
     };
