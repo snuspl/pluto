@@ -40,7 +40,7 @@ public interface SSM {
      * Get the value from the SSM.
      * @param identifier The identifier of the operator.
      * @param <I> Type of the value (state) to be stored in SSM.
-     * @return true if the value was grabbed, false if nothing was saved.
+     * @return value of type I if there was data to get, null if the value does not exist in the database.
      */
     <I> I get(final Identifier identifier);
 
@@ -51,6 +51,6 @@ public interface SSM {
      */
     boolean delete(final Identifier identifier);
 
-    //TODO: The policy on where to keep the states - in the memory or the database - should be implemented.
+    //TODO[MIST-101]: The policy on where to keep the states - in the memory or the database - should be implemented.
     // Currently everything is saved in the database.
 }

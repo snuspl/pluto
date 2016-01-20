@@ -18,6 +18,7 @@ package edu.snu.mist.task.ssm.orientdb;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The Orient database disk size", default_value = "10000") //In megabytes. Default is 10Gb.
-public final class OrientDbSize implements Name<Integer>{
+@NamedParameter(doc = "The Orient database disk size (MB).",
+        default_value = "10000", short_name = "size")
+public final class OrientDbSize implements Name<Integer> {
 }

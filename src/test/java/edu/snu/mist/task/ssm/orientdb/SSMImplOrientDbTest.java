@@ -34,7 +34,7 @@ public class SSMImplOrientDbTest {
         //open orient db on a new path
         final Injector injector = Tang.Factory.getTang().newInjector();
         injector.bindVolatileParameter(OrientDbPath.class, "plocal:/tmp/SSM-orientdbTest");
-        injector.bindVolatileParameter(OrientDbDropDB.class, true);
+        injector.bindVolatileParameter(OrientDbDropDb.class, true);
         injector.bindVolatileParameter(OrientDbSize.class, 100);
         SSMImplOrientDb orientSSM = injector.getInstance(SSMImplOrientDb.class);
 
@@ -52,7 +52,7 @@ public class SSMImplOrientDbTest {
         //open orient db on a new path
         final Injector injector = Tang.Factory.getTang().newInjector();
         injector.bindVolatileParameter(OrientDbPath.class, "plocal:/tmp/SSM-orientdbTest");
-        injector.bindVolatileParameter(OrientDbDropDB.class, true);
+        injector.bindVolatileParameter(OrientDbDropDb.class, true);
         injector.bindVolatileParameter(OrientDbSize.class, 100);
         SSMImplOrientDb orientSSM = injector.getInstance(SSMImplOrientDb.class);
 
@@ -87,7 +87,7 @@ public class SSMImplOrientDbTest {
         //open orient db on a new path
         final Injector injector = Tang.Factory.getTang().newInjector();
         injector.bindVolatileParameter(OrientDbPath.class, "plocal:/tmp/SSM-orientdbTest");
-        injector.bindVolatileParameter(OrientDbDropDB.class, true);
+        injector.bindVolatileParameter(OrientDbDropDb.class, true);
         injector.bindVolatileParameter(OrientDbSize.class, 100);
         SSMImplOrientDb orientSSM = injector.getInstance(SSMImplOrientDb.class);
 
@@ -118,7 +118,7 @@ public class SSMImplOrientDbTest {
         //open orient db on a new path
         final Injector injector = Tang.Factory.getTang().newInjector();
         injector.bindVolatileParameter(OrientDbPath.class, "plocal:/tmp/SSM-orientdbTest");
-        injector.bindVolatileParameter(OrientDbDropDB.class, true);
+        injector.bindVolatileParameter(OrientDbDropDb.class, true);
         injector.bindVolatileParameter(OrientDbSize.class, 100);
         SSMImplOrientDb orientSSM = injector.getInstance(SSMImplOrientDb.class);
 

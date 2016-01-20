@@ -19,6 +19,6 @@ import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 @NamedParameter(doc = "Whether to drop the existing database when opening orientDB",
-        default_value = "false")
-public final class OrientDbDropDB implements Name<Boolean>{
+        default_value = "false", short_name = "drop")
+public final class OrientDbDropDb implements Name<Boolean> {
 }

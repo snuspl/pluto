@@ -18,6 +18,6 @@ package edu.snu.mist.task.ssm.orientdb;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The Orient database password", default_value = "admin")
-public final class OrientDbPassword implements Name<String>{
+@NamedParameter(doc = "The Orient database password", default_value = "admin", short_name = "password")
+public final class OrientDbPassword implements Name<String> {
 }

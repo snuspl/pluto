@@ -36,14 +36,13 @@ public final class SSMImplOrientDb implements SSM {
 
     private static final Logger LOG = Logger.getLogger(SSMImplOrientDb.class.getName());
     private static ODatabaseDocumentTx db;
-    //TODO where to close the database?
 
     @Inject
     private SSMImplOrientDb(@Parameter(OrientDbPath.class) final String orientDbPath,
-                    @Parameter(OrientDbUser.class) final String orientDbUser,
-                    @Parameter(OrientDbPassword.class) final String orientDbPassword,
-                    @Parameter(OrientDbDropDB.class) final boolean orientDbDrop,
-                    @Parameter(OrientDbSize.class) final int orientDbSize) {
+                            @Parameter(OrientDbUser.class) final String orientDbUser,
+                            @Parameter(OrientDbPassword.class) final String orientDbPassword,
+                            @Parameter(OrientDbDropDb.class) final boolean orientDbDrop,
+                            @Parameter(OrientDbSize.class) final int orientDbSize) {
         //open the database
         try {
             //The database is opened under this url.
@@ -65,7 +64,7 @@ public final class SSMImplOrientDb implements SSM {
                 LOG.log(Level.INFO, "OrientDB: creating new database.");
                 db.create();
             }
-        } catch (Exception e){
+        } catch (final Exception e){
             e.printStackTrace();
             LOG.log(Level.SEVERE, "OrientDB: failed to open.");
         }
@@ -75,7 +74,7 @@ public final class SSMImplOrientDb implements SSM {
     public <I> boolean set(final Identifier identifier, final I value){
        try {
            //If there is an existing identifier, replace the old value with the new value.
-           for (ODocument doc: db.browseClass(identifier.toString())){
+           for (final ODocument doc: db.browseClass(identifier.toString())){
                 /*browseClass is an OrientDB method to browse for the key in the database.
                   Since this is a document db, it can have multiple keys (in our case the key is unique).
                   Thus, it returns an iterative class, so a for loop must be used.
@@ -96,17 +95,17 @@ public final class SSMImplOrientDb implements SSM {
            document.save(); //save() is an OrientDB method to save the document in the database.
            return true;
 
-        } catch (Exception e) {
+        } catch (final Exception e) {
             try{
                 //This is the case when the identifier was never saved.
-                //TODO: This exception handling could lead to unnecessary exception handling load.
+                //TODO[MIST-100]: This exception handling could lead to unnecessary exception handling load.
 
                 final ODocument document = new ODocument(identifier.toString());
                 document.field("state", value); //field() is an OrientDB method to set the value to a certain field.
                 LOG.log(Level.INFO, "OrientDB: saving (" + identifier+ ", "+ value+") to database.");
                 document.save(); //save() is an OrientDB method to save the document in the database.
                 return true;
-            } catch (Exception f){
+            } catch (final Exception f){
                 f.printStackTrace();
                 LOG.log(Level.SEVERE, "OrientDB: failed to save.");
                 return false;
@@ -117,7 +116,7 @@ public final class SSMImplOrientDb implements SSM {
     @Override
     public <I> I get(final Identifier identifier){
         try{
-            for (ODocument doc : db.browseClass(identifier.toString())){
+            for (final ODocument doc : db.browseClass(identifier.toString())){
                 if (doc!=null){
                     return doc.field("state");
                 } else{
@@ -128,7 +127,7 @@ public final class SSMImplOrientDb implements SSM {
             LOG.log(Level.SEVERE, "OrientDB: failed to get state. The key does not exist in the database.");
             return null;
 
-        } catch (Exception e){
+        } catch (final Exception e){
             e.printStackTrace();
             LOG.log(Level.SEVERE, "OrientDB: failed to get state.");
             return null;
@@ -138,7 +137,7 @@ public final class SSMImplOrientDb implements SSM {
     @Override
     public boolean delete(final Identifier identifier){
         try{
-            for (ODocument doc : db.browseClass(identifier.toString())) {
+            for (final ODocument doc : db.browseClass(identifier.toString())) {
                 LOG.log(Level.INFO, "OrientDB: deleting (" + identifier + ", " + doc.field("state") +
                         ") from database.");
                 db.delete(doc);
@@ -147,7 +146,7 @@ public final class SSMImplOrientDb implements SSM {
             LOG.log(Level.INFO, "OrientDB: deletion failed. The key does not exist in the database.");
             return false;
 
-        } catch (Exception e){
+        } catch (final Exception e){
             LOG.log(Level.INFO, "OrientDB: deletion failed.");
             return false;
         }
