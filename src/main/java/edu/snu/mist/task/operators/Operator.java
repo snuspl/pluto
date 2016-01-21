@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.source;
+package edu.snu.mist.task.operators;
 
+import edu.snu.mist.task.common.InputHandler;
 import edu.snu.mist.task.common.OutputEmittable;
 
 /**
- * SourceGenerator generates input stream.
- * It supports fetching input data from external systems, such as kafka and HDFS,
- * or receives input data from IoT devices and network connection.
- * After that, it sends the inputs to the OutputEmitter which forwards the inputs to next Operators.
+ * This is an interface of mist physical operator which runs actual computation.
+ * Operator receives an input, does computation, and emits an output to OutputEmitter.
  */
-public interface SourceGenerator<I> extends OutputEmittable<I> {
+public interface Operator<I, O> extends InputHandler<I>, OutputEmittable<O> {
 
-  /**
-   * Starts to generate source stream and forwards inputs to the OutputEmitter.
-   */
-  void start();
 }

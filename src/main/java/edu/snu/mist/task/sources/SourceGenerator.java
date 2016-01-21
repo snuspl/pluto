@@ -13,13 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.sink;
+package edu.snu.mist.task.sources;
 
-import edu.snu.mist.task.common.InputHandler;
+import edu.snu.mist.task.common.OutputEmittable;
 
 /**
- * Sink consumes inputs and does final process, such as print, save input to database and so on.
+ * SourceGenerator generates input stream.
+ * It supports fetching input data from external systems, such as kafka and HDFS,
+ * or receives input data from IoT devices and network connection.
+ * After that, it sends the inputs to the OutputEmitter which forwards the inputs to next Operators.
  */
-public interface Sink<I> extends InputHandler<I> {
+public interface SourceGenerator<I> extends OutputEmittable<I> {
 
+  /**
+   * Starts to generate source stream and forwards inputs to the OutputEmitter.
+   */
+  void start();
 }

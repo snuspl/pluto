@@ -17,8 +17,8 @@ package edu.snu.mist.task;
 
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.task.executor.MistExecutor;
-import edu.snu.mist.task.parameter.NumExecutors;
-import edu.snu.mist.task.source.SourceGenerator;
+import edu.snu.mist.task.parameters.NumExecutors;
+import edu.snu.mist.task.sources.SourceGenerator;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;

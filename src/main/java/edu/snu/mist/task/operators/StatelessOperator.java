@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.operator;
+package edu.snu.mist.task.operators;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;

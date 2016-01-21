@@ -13,7 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.task.sinks;
+
+import edu.snu.mist.task.common.InputHandler;
+
 /**
- * This package contains source operators which sends input stream to downstream operators.
+ * Sink consumes inputs and does final process, such as print, save input to database and so on.
  */
-package edu.snu.mist.task.source;
+public interface Sink<I> extends InputHandler<I> {
+
+}

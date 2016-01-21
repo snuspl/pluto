@@ -17,7 +17,7 @@ package edu.snu.mist.task;
 
 import edu.snu.mist.task.common.OutputEmitter;
 import edu.snu.mist.task.executor.MistExecutor;
-import edu.snu.mist.task.operator.Operator;
+import edu.snu.mist.task.operators.Operator;
 
 import javax.inject.Inject;
 import java.util.LinkedList;

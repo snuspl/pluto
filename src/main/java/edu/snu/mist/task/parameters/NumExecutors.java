@@ -13,15 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.operator;
+package edu.snu.mist.task.parameters;
 
-import edu.snu.mist.task.common.InputHandler;
-import edu.snu.mist.task.common.OutputEmittable;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-/**
- * This is an interface of mist physical operator which runs actual computation.
- * Operator receives an input, does computation, and emits an output to OutputEmitter.
- */
-public interface Operator<I, O> extends InputHandler<I>, OutputEmittable<O> {
-
+@NamedParameter(doc = "The number of mist executors")
+public final class NumExecutors implements Name<Integer> {
 }

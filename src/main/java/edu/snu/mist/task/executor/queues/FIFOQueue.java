@@ -13,7 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.task.executor.queues;
+
+import javax.inject.Inject;
+import java.util.concurrent.LinkedBlockingQueue;
+
 /**
- * A package of mist task parameters.
+ * A simple FIFO queue which inherits linked blocking queue.
  */
-package edu.snu.mist.task.parameter;
+public final class FIFOQueue extends LinkedBlockingQueue<Runnable> implements SchedulingQueue {
+
+  @Inject
+  private FIFOQueue() {
+    super();
+  }
+}

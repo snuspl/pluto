@@ -15,8 +15,8 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.task.operator.BaseOperator;
-import edu.snu.mist.task.operator.Operator;
+import edu.snu.mist.task.operators.BaseOperator;
+import edu.snu.mist.task.operators.Operator;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
