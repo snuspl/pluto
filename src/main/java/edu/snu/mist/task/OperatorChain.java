@@ -18,7 +18,7 @@ package edu.snu.mist.task;
 import edu.snu.mist.task.common.InputHandler;
 import edu.snu.mist.task.common.OutputEmittable;
 import edu.snu.mist.task.executor.MistExecutor;
-import edu.snu.mist.task.operator.Operator;
+import edu.snu.mist.task.operators.Operator;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**

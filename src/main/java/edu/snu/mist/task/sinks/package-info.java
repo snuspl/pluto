@@ -16,4 +16,4 @@
 /**
  * This package contains sink.
  */
-package edu.snu.mist.task.sink;
+package edu.snu.mist.task.sinks;

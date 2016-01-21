@@ -16,7 +16,7 @@
 package edu.snu.mist.task.executor;
 
 import edu.snu.mist.task.OperatorChainJob;
-import edu.snu.mist.task.executor.queue.SchedulingQueue;
+import edu.snu.mist.task.executor.queues.SchedulingQueue;
 import org.apache.reef.wake.WakeParameters;
 
 import javax.inject.Inject;

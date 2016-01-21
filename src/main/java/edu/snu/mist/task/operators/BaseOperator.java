@@ -13,21 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task;
+package edu.snu.mist.task.operators;
 
-import edu.snu.mist.task.operators.Operator;
-import org.apache.reef.tang.annotations.DefaultImplementation;
+import edu.snu.mist.task.common.OutputEmitter;
+
+import java.util.logging.Logger;
 
 /**
- * This interface converts a PhysicalPlan<Operator> to a PhysicalPlan<OperatorChain>
- * by chaining the operators.
+ * This is a base operator which sets an output emitter.
+ * @param <I> input
+ * @param <O> output
  */
-@DefaultImplementation(DefaultPhysicalToChainedPlanImpl.class)
-public interface PhysicalToChainedPlan {
+public abstract class BaseOperator<I, O> implements Operator<I, O> {
+  private static final Logger LOG = Logger.getLogger(BaseOperator.class.getName());
+
   /**
-   * Converts the PhysicalPlan<Operator> to the PhysicalPlan<OperatorChain>.
-   * @param plan a plan
-   * @return a chained physical plan
+   * An output emitter which forwards outputs to next Operators.
    */
-  PhysicalPlan<OperatorChain> convertToChainedPlan(PhysicalPlan<Operator> plan);
+  protected OutputEmitter<O> outputEmitter;
+
+  public BaseOperator() {
+    // empty
+  }
+
+  @Override
+  public void setOutputEmitter(final OutputEmitter<O> emitter) {
+    this.outputEmitter = emitter;
+  }
 }

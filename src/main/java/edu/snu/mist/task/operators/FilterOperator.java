@@ -13,31 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.operator;
+package edu.snu.mist.task.operators;
 
-import edu.snu.mist.task.common.OutputEmitter;
-
-import java.util.logging.Logger;
+import javax.inject.Inject;
+import java.util.function.Predicate;
 
 /**
- * This is a base operator which sets an output emitter.
- * @param <I> input
- * @param <O> output
+ * Filter operator which filters input stream.
+ * @param <I> input type
  */
-public abstract class BaseOperator<I, O> implements Operator<I, O> {
-  private static final Logger LOG = Logger.getLogger(BaseOperator.class.getName());
+public final class FilterOperator<I> extends StatelessOperator<I, I> {
 
   /**
-   * An output emitter which forwards outputs to next Operators.
+   * Filter function.
    */
-  protected OutputEmitter<O> outputEmitter;
+  private final Predicate<I> filterFunc;
 
-  public BaseOperator() {
-    // empty
+  @Inject
+  private FilterOperator(final Predicate<I> filterFunc) {
+    super();
+    this.filterFunc = filterFunc;
+  }
+
+  /**
+   * Filters the input.
+   */
+  @Override
+  public I compute(final I input) {
+    return filterFunc.test(input) ? input : null;
   }
 
   @Override
-  public void setOutputEmitter(final OutputEmitter<O> emitter) {
-    this.outputEmitter = emitter;
+  public String getOperatorClassName() {
+    return FilterOperator.class.getName();
   }
 }

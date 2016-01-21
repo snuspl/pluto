@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 /**
- * This package contains test cases of operators.
+ * A package of mist executor's scheduling queue.
  */
-package edu.snu.mist.task.operator;
+package edu.snu.mist.task.executor.queues;
