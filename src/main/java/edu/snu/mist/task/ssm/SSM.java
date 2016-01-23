@@ -18,39 +18,60 @@ package edu.snu.mist.task.ssm;
 
 import org.apache.reef.wake.Identifier;
 
+import java.util.HashMap;
+
 /**
  * This interface is the basic representation of the Stream State Manager.
- * It allows stateful operators to store its states either into the memory or the database.
- * In the memory, SSM keeps a map where the key is the Identifier and the value is the state.
- * In the database, SSM uses a key-value type database where the key is also the Identifier and the value is the state.
+ * It allows queries that use stateful operators to manage its states either into
+ * the memory's CacheStorage or the DatabaseStorage.
+ * In the memory, SSM keeps a map, 'queryStateMap', where the key is the query Identifier.
+ * The value is another map, 'operatorStateMap', which has the operator Identifier as its key
+ * and the state as its value.
+ * By following the caching policy, the SSM evicts the entire query's states (queryState) to the database.
  *
  * TODO[MIST-48]: We could later save other objects other than states.
  */
-public interface SSM {
-  /**
-   * * Stores the key-value pair in SSM (could be in memory or could be in the database).
-   * @param identifier The identifier of the operator.
-   * @param value The value will be the state that the operator needs to store.
-   * @param <I> Type of the value (state) to be stored in SSM.
-   * @return true if set worked well, false if not.
-   */
-  <I> boolean set(final Identifier identifier, final I value);
+public interface SSM{
 
   /**
-   * Get the value from the SSM.
-   * @param identifier The identifier of the operator.
-   * @param <I> Type of the value (state) to be stored in SSM.
-   * @return value of type I if there was data to get, null if the value does not exist in the database.
+   * Creates the initial states of the relevant operators in the query, and stores it in the CacheStorage.
+   * This is called when the query is submitted.
+   * @param operatorStateMap A map that has operators as its keys and their states as values.
    */
-  <I> I get(final Identifier identifier);
+  void create(final HashMap<Identifier, OperatorState> operatorStateMap);
 
   /**
-   * Delete the key-value pair from SSM.
-   * @param identifier The identifier of the operator.
-   * @return true if there was data to delete, false if deletion did not occur.
+   * Reads the state of the operator from the queryStateMap's operatorStateMap in CacheStorage.
+   * If it is not present in the CacheStorage, CacheStorage will fetch the relevant queryStateMap
+   * from the DatabaseStorage synchronously.
+   * If the CacheStorage is full, it will evict all the states of a certain query (queryStateMap)
+   * according to the caching policy.
+   * This is called from the operator to get its states.
+   * @param operatorId Key of the operatorState map. Identifier of the operator.
+   * @return the state of type I if it worked well, null if not.
+   * @throws DatabaseReadException when there is an error in reading the database.
+   * //TODO[MIST-108]: Return something else other than null if it fails.
    */
-  boolean delete(final Identifier identifier);
+  OperatorState read(final Identifier operatorId) throws DatabaseReadException;
+
+  /**
+   * Update the states in the CacheStorage. The updated values will go into the DatabaseStorage when they are evicted.
+   * @param operatorId The identifier of the operator to update.
+   * @param state The state to update.
+   * @return true if update worked well, false if not.
+   * @throws DatabaseReadException when there is an error in reading the database.
+   */
+  boolean update(final Identifier operatorId, final OperatorState state) throws DatabaseReadException;
+
+  /**
+   * Delete all states associated with the query identifier (deleting an entire operatorStateMap of the query)
+   * The deletion occurs for both the CacheStorage and the DatabaseStorage.
+   * It is assumed that the query has already been deleted in the Task part.
+   * @return true if deletion worked well, false if not.
+   * @throws DatabaseDeleteException when there is an error in deleting the database.
+   */
+  boolean delete() throws DatabaseDeleteException;
 
   //TODO[MIST-50]: The policy on where to keep the states - in the memory or the database - should be implemented.
-  // Currently everything is saved in the database.
+  //Currently, everything is saved to the memory.
 }
