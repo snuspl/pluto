@@ -15,8 +15,6 @@
  */
 package edu.snu.mist.common;
 
-import org.apache.reef.wake.EventHandler;
-
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -71,27 +69,32 @@ public final class AdjacentListDAG<V> implements DAG<V> {
   }
 
   @Override
-  public void addVertex(final V v) {
-    if (adjacent.put(v, new HashSet<>()) == null) {
+  public boolean addVertex(final V v) {
+    if (!adjacent.containsKey(v)) {
+      adjacent.put(v, new HashSet<>());
       inDegrees.put(v, 0);
       rootVertices.add(v);
+      return true;
     } else {
       LOG.log(Level.WARNING, "The vertex {0} already exists", new Object[]{v});
+      return false;
     }
   }
 
   @Override
-  public void removeVertex(final V v) {
+  public boolean removeVertex(final V v) {
     if (adjacent.remove(v) != null) {
       inDegrees.remove(v);
       rootVertices.remove(v);
+      return true;
     } else {
       LOG.log(Level.WARNING, "The vertex {0} does exists", new Object[]{v});
+      return false;
     }
   }
 
   @Override
-  public void addEdge(final V v1, final V v2) {
+  public boolean addEdge(final V v1, final V v2) {
     final Set<V> adjs = getNeighbors(v1);
     if (adjs == null) {
       throw new NoSuchElementException("No src vertex " + v1);
@@ -103,13 +106,15 @@ public final class AdjacentListDAG<V> implements DAG<V> {
       if (inDegree == 0) {
         rootVertices.remove(v2);
       }
+      return true;
     } else {
       LOG.log(Level.WARNING, "The edge from {0} to {1} already exists", new Object[]{v1, v2});
+      return false;
     }
   }
 
   @Override
-  public void removeEdge(final V v1, final V v2) {
+  public boolean removeEdge(final V v1, final V v2) {
     final Set<V> adjs = getNeighbors(v1);
     if (adjs == null) {
       throw new NoSuchElementException("No src vertex " + v1);
@@ -121,8 +126,10 @@ public final class AdjacentListDAG<V> implements DAG<V> {
       if (inDegree == 1) {
         rootVertices.add(v2);
       }
+      return true;
     } else {
       LOG.log(Level.WARNING, "The edge from {0} to {1} does not exists", new Object[]{v1, v2});
+      return false;
     }
   }
 
@@ -133,25 +140,5 @@ public final class AdjacentListDAG<V> implements DAG<V> {
       throw new NoSuchElementException("No src vertex " + v);
     }
     return inDegree;
-  }
-
-  @Override
-  public void dfsTraverse(final EventHandler<V> traversal) {
-    for (final V root : rootVertices) {
-      dfs(root, traversal);
-    }
-  }
-
-  /**
-   * A helper method for dfs traversal.
-   * @param src src vertex
-   * @param traversal event handler for traversed vertex.
-   */
-  private void dfs(final V src, final EventHandler<V> traversal) {
-    final Set<V> neighbors = getNeighbors(src);
-    traversal.onNext(src);
-    for (final V neighbor : neighbors) {
-      dfs(neighbor, traversal);
-    }
   }
 }
