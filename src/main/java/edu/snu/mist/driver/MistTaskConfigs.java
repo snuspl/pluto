@@ -18,7 +18,7 @@ package edu.snu.mist.driver;
 import edu.snu.mist.driver.parameters.NumTaskCores;
 import edu.snu.mist.driver.parameters.NumTasks;
 import edu.snu.mist.driver.parameters.TaskMemorySize;
-import edu.snu.mist.task.parameter.NumExecutors;
+import edu.snu.mist.task.parameters.NumExecutors;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;

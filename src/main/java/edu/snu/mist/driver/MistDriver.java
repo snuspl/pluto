@@ -16,7 +16,7 @@
 package edu.snu.mist.driver;
 
 import edu.snu.mist.task.MistTask;
-import edu.snu.mist.task.parameter.NumExecutors;
+import edu.snu.mist.task.parameters.NumExecutors;
 import org.apache.avro.ipc.Server;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.driver.context.ContextConfiguration;

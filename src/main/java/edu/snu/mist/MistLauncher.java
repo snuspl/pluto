@@ -20,7 +20,7 @@ import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.driver.MistDriver;
 import edu.snu.mist.driver.SpecificResponderWrapper;
 import edu.snu.mist.driver.parameters.*;
-import edu.snu.mist.task.parameter.NumExecutors;
+import edu.snu.mist.task.parameters.NumExecutors;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.reef.client.DriverConfiguration;

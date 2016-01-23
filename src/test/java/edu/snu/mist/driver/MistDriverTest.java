@@ -19,7 +19,7 @@ import edu.snu.mist.common.rpc.AvroRPCNettyServerWrapper;
 import edu.snu.mist.driver.parameters.IsLocal;
 import edu.snu.mist.driver.parameters.NumTaskCores;
 import edu.snu.mist.driver.parameters.TaskMemorySize;
-import edu.snu.mist.task.parameter.NumExecutors;
+import edu.snu.mist.task.parameters.NumExecutors;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.reef.client.DriverConfiguration;
