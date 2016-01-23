@@ -15,7 +15,6 @@ limitations under the License.
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <groupId>edu.snu.mist</groupId>
     <artifactId>mist</artifactId>
     <name>MIST</name>
@@ -77,6 +76,11 @@ limitations under the License.
             <artifactId>hadoop-mapreduce-client-core</artifactId>
             <version>${hadoop.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.orientechnologies</groupId>
+            <artifactId>orientdb-core</artifactId>
+            <version>2.1.9</version>
+        </dependency>
 
         <!-- Test -->
         <!-- JUnit -->
@@ -116,33 +120,33 @@ limitations under the License.
                     <source>1.8</source>
                     <target>1.8</target>
                 </configuration>
-              </plugin>
+            </plugin>
             <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-checkstyle-plugin</artifactId>
-              <version>${maven-checkstyle-plugin.version}</version>
-              <dependencies>
-                <dependency>
-                  <groupId>com.puppycrawl.tools</groupId>
-                  <artifactId>checkstyle</artifactId>
-                  <version>${checkstyle.version}</version>
-                </dependency>
-              </dependencies>
-              <configuration>
-                <configLocation>src/main/resources/checkstyle.xml</configLocation>
-                <outputFile>${project.build.directory}/checkstyle-errors.xml</outputFile>
-                <includeTestSourceDirectory>true</includeTestSourceDirectory>
-              </configuration>
-              <executions>
-                <execution>
-                  <id>validate</id>
-                  <phase>validate</phase>
-                  <goals>
-                    <goal>check</goal>
-                    <goal>checkstyle</goal>
-                  </goals>
-                </execution>
-              </executions>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${maven-checkstyle-plugin.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>${checkstyle.version}</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <configLocation>src/main/resources/checkstyle.xml</configLocation>
+                    <outputFile>${project.build.directory}/checkstyle-errors.xml</outputFile>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>validate</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                            <goal>checkstyle</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
