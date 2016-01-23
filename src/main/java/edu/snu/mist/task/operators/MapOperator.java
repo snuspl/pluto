@@ -13,38 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.operator;
+package edu.snu.mist.task.operators;
 
 import javax.inject.Inject;
-import java.util.function.Predicate;
+import java.util.function.Function;
 
 /**
- * Filter operator which filters input stream.
+ * Map operator which maps input.
  * @param <I> input type
+ * @param <I> output type
  */
-public final class FilterOperator<I> extends StatelessOperator<I, I> {
+public final class MapOperator<I, O> extends StatelessOperator<I, O> {
 
   /**
-   * Filter function.
+   * Map function.
    */
-  private final Predicate<I> filterFunc;
+  private final Function<I, O> mapFunc;
 
   @Inject
-  private FilterOperator(final Predicate<I> filterFunc) {
+  private MapOperator(final Function<I, O> mapFunc) {
     super();
-    this.filterFunc = filterFunc;
+    this.mapFunc = mapFunc;
   }
 
-  /**
-   * Filters the input.
-   */
   @Override
-  public I compute(final I input) {
-    return filterFunc.test(input) ? input : null;
+  public O compute(final I input) {
+    return mapFunc.apply(input);
   }
 
   @Override
   public String getOperatorClassName() {
-    return FilterOperator.class.getName();
+    return MapOperator.class.getName();
   }
 }

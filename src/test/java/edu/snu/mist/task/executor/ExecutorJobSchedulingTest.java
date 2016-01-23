@@ -16,8 +16,8 @@
 package edu.snu.mist.task.executor;
 
 import edu.snu.mist.task.OperatorChainJob;
-import edu.snu.mist.task.executor.queue.FIFOQueue;
-import edu.snu.mist.task.executor.queue.SchedulingQueue;
+import edu.snu.mist.task.executor.queues.FIFOQueue;
+import edu.snu.mist.task.executor.queues.SchedulingQueue;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;

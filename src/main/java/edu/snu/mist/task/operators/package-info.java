@@ -13,36 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.operator;
-
-import javax.inject.Inject;
-import java.util.function.Function;
-
 /**
- * Map operator which maps input.
- * @param <I> input type
- * @param <I> output type
+ * This package contains physical operators in mist task.
  */
-public final class MapOperator<I, O> extends StatelessOperator<I, O> {
-
-  /**
-   * Map function.
-   */
-  private final Function<I, O> mapFunc;
-
-  @Inject
-  private MapOperator(final Function<I, O> mapFunc) {
-    super();
-    this.mapFunc = mapFunc;
-  }
-
-  @Override
-  public O compute(final I input) {
-    return mapFunc.apply(input);
-  }
-
-  @Override
-  public String getOperatorClassName() {
-    return MapOperator.class.getName();
-  }
-}
+package edu.snu.mist.task.operators;

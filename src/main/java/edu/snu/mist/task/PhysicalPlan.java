@@ -16,7 +16,7 @@
 package edu.snu.mist.task;
 
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.task.source.SourceGenerator;
+import edu.snu.mist.task.sources.SourceGenerator;
 
 import java.util.Map;
 import java.util.Set;

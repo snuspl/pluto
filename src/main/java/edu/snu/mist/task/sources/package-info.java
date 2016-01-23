@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 /**
- * This package contains physical operators in mist task.
+ * This package contains source operators which sends input stream to downstream operators.
  */
-package edu.snu.mist.task.operator;
+package edu.snu.mist.task.sources;
