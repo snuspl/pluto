@@ -20,20 +20,21 @@ import org.apache.reef.driver.task.RunningTask;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * TaskSelector communicates with MistTasks in order to collect information about MistTasks' loads,
- * and returns a list of tasks for executing client queries.
+ * TaskSelector returns a list of tasks for executing client queries
+ * by collecting information about MistTasks.
+ * It extends MistTaskProvider which is a generated avro RPC protocol.
  */
 @DefaultImplementation(DefaultTaskSelectorImpl.class)
 public interface TaskSelector extends MistTaskProvider {
   /**
-   * Adds a running tsk to task selector.
+   * Registers a running task to task selector.
    * @param runningTask running task
    */
-  void addRunningTask(final RunningTask runningTask);
+  void registerRunningTask(final RunningTask runningTask);
 
   /**
-   * Removes the task.
+   * Unregisters the task.
    * @param taskId task id
    */
-  void removeTask(final String taskId);
+  void unregisterTask(final String taskId);
 }

@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.driver.parameters;
+package edu.snu.mist.common.rpc;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The port number of the server receiving MistAvrMsgs",
-    short_name = "port", default_value = "20332")
-public final class ServerPort implements Name<Integer> {
+@NamedParameter(doc = "The port number of the RPC server", short_name = "port", default_value = "20332")
+public final class RPCServerPort implements Name<Integer> {
   // empty
 }

@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.driver;
+package edu.snu.mist.common.rpc;
 
-import edu.snu.mist.driver.parameters.ServerPort;
 import org.apache.avro.ipc.NettyServer;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
@@ -42,7 +41,7 @@ public final class AvroRPCNettyServerWrapper implements ExternalConstructor<Serv
 
   @Inject
   private AvroRPCNettyServerWrapper(final SpecificResponder responder,
-                                    @Parameter(ServerPort.class) final int serverPort) {
+                                    @Parameter(RPCServerPort.class) final int serverPort) {
     this.responder = responder;
     this.serverPort = serverPort;
   }

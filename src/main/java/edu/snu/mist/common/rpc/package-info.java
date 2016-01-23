@@ -13,12 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.driver;
-
 /**
- * This is an interface of a message which is used to communicate
- * between MistDriver and MistTasks via REEF NCS.
+ * A package for RPC.
  */
-public interface DriverTaskMessage {
-  // TODO[MIST-#]: Implement DriverTaskMessage, its codec and handler
-}
+package edu.snu.mist.common.rpc;

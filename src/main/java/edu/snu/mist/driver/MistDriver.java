@@ -15,9 +15,6 @@
  */
 package edu.snu.mist.driver;
 
-import edu.snu.mist.driver.parameters.NumTaskCores;
-import edu.snu.mist.driver.parameters.NumTasks;
-import edu.snu.mist.driver.parameters.TaskMemorySize;
 import edu.snu.mist.task.MistTask;
 import edu.snu.mist.task.parameter.NumExecutors;
 import org.apache.avro.ipc.Server;
@@ -34,7 +31,6 @@ import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
-import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.annotations.Unit;
 import org.apache.reef.wake.EventHandler;
 import org.apache.reef.wake.remote.address.LocalAddressProvider;
@@ -48,7 +44,7 @@ import java.util.logging.Logger;
 /**
  * MistDriver communicates with 1) MistClients and 2) MistTasks.
  * For 1), avro RPC is used.
- * For 2), NCS is used.
+ * For 2), reef NCS is used.
  *
  * 1) MistDriver returns a list of MistTasks' ip addresses to MistClients,
  * when they send messages to MistDriver.
@@ -58,6 +54,9 @@ import java.util.logging.Logger;
  * 2) MistDriver communicates with MistTasks in order to collect information about MistTasks' loads.
  * With the information, MistDriver can decide some tasks to run the clients' queries.
  * This logic is performed by TaskSelector.
+ *
+ * Current MistDriver cannot add/remove Tasks at runtime.
+ * TODO[MIST-#]: We need to support this feature to dynamically scale in/out Tasks.
  */
 @Unit
 public final class MistDriver {
@@ -74,24 +73,9 @@ public final class MistDriver {
   public static final String MIST_DRIVER_ID = "MIST_DRIVER";
 
   /**
-   * The number of MistTasks.
-   */
-  private final int numTasks;
-
-  /**
    * An evaluator requestor.
    */
   private final EvaluatorRequestor requestor;
-
-  /**
-   * The memory size of a MistTask.
-   */
-  private final int taskMemSize;
-
-  /**
-   * The number of cores of a MistTask.
-   */
-  private final int numTaskCores;
 
   /**
    * Index of MistTasks.
@@ -113,32 +97,33 @@ public final class MistDriver {
    */
   private final TaskSelector taskSelector;
 
+  /**
+   * Configurations for MistTask.
+   */
+  private final MistTaskConfigs mistTaskConfigs;
+
   @Inject
   private MistDriver(final EvaluatorRequestor requestor,
                      final NameServer nameServer,
                      final LocalAddressProvider localAddressProvider,
                      final TaskSelector taskSelector,
                      final Server server,
-                     @Parameter(NumTasks.class) final int numTasks,
-                     @Parameter(TaskMemorySize.class) final int taskMemSize,
-                     @Parameter(NumTaskCores.class) final int numTaskCores) {
+                     final MistTaskConfigs mistTaskConfigs) {
     this.nameServer = nameServer;
     this.localAddressProvider = localAddressProvider;
-    this.numTasks = numTasks;
     this.requestor = requestor;
-    this.taskMemSize = taskMemSize;
-    this.numTaskCores = numTaskCores;
     this.taskIndex = new AtomicInteger(0);
     this.taskSelector = taskSelector;
+    this.mistTaskConfigs = mistTaskConfigs;
   }
 
   public final class StartHandler implements EventHandler<StartTime> {
     @Override
     public void onNext(final StartTime startTime) {
       requestor.submit(EvaluatorRequest.newBuilder()
-          .setNumber(numTasks)
-          .setMemory(taskMemSize)
-          .setNumberOfCores(numTaskCores)
+          .setNumber(mistTaskConfigs.getNumTasks())
+          .setMemory(mistTaskConfigs.getTaskMemSize())
+          .setNumberOfCores(mistTaskConfigs.getNumTaskCores())
           .build());
       LOG.log(Level.INFO, "Requested Evaluator.");
     }
@@ -150,8 +135,8 @@ public final class MistDriver {
       LOG.log(Level.INFO, "Submitting Context to AllocatedEvaluator: {0}", allocatedEvaluator);
       final String taskId = "MistTask-" + taskIndex.getAndIncrement();
       allocatedEvaluator.submitContext(ContextConfiguration.CONF
-      .set(ContextConfiguration.IDENTIFIER, taskId)
-      .build());
+          .set(ContextConfiguration.IDENTIFIER, taskId)
+          .build());
     }
   }
 
@@ -171,7 +156,7 @@ public final class MistDriver {
           .set(TaskConfiguration.TASK, MistTask.class)
           .build();
       final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-      jcb.bindNamedParameter(NumExecutors.class, numTaskCores+"");
+      jcb.bindNamedParameter(NumExecutors.class, mistTaskConfigs.getNumTaskExecutors()+"");
       // submit a task
       activeContext.submitTask(
           Configurations.merge(nameResolverConf, taskConfiguration, jcb.build()));
@@ -182,8 +167,8 @@ public final class MistDriver {
     @Override
     public void onNext(final RunningTask runningTask) {
       LOG.log(Level.INFO, "Task {0} is running", runningTask.getId());
-      // Add the running task to TaskSelector
-      taskSelector.addRunningTask(runningTask);
+      // Registers the running task to TaskSelector
+      taskSelector.registerRunningTask(runningTask);
     }
   }
 }

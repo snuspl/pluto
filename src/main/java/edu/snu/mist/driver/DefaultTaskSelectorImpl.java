@@ -36,12 +36,13 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * A default task selector which returns a list of task ip addresses for client queries.
- * This simply returns the list of tasks without load information of tasks.
+ * This simply returns the list of tasks without load information about tasks.
  */
 final class DefaultTaskSelectorImpl implements TaskSelector {
 
   /**
    * A map of running task id and its ip address and connection.
+   * It maintains both InetSocketAddress and Connection.
    */
   private final ConcurrentMap<String,
       Tuple<InetSocketAddress, Connection<DriverTaskMessage>>> taskAddrAndConnMap;
@@ -54,31 +55,31 @@ final class DefaultTaskSelectorImpl implements TaskSelector {
   /**
    * An identifier factory for creating identifiers.
    */
-  private final IdentifierFactory idFac;
+  private final IdentifierFactory idFactory;
 
   @Inject
   private DefaultTaskSelectorImpl(final NetworkConnectionService ncs,
-                                  final StringIdentifierFactory idFac,
+                                  final StringIdentifierFactory idFactory,
                                   final DriverTaskMessageCodec messageCodec,
                                   final DriverTaskMessageHandler messageHandler) {
     this.taskAddrAndConnMap = new ConcurrentHashMap<>();
-    this.idFac = idFac;
-    this.connFactory = ncs.registerConnectionFactory(idFac.getNewInstance(MistDriver.MIST_CONN_FACTORY_ID),
-        messageCodec, messageHandler, null, idFac.getNewInstance(MistDriver.MIST_DRIVER_ID));
+    this.idFactory = idFactory;
+    this.connFactory = ncs.registerConnectionFactory(idFactory.getNewInstance(MistDriver.MIST_CONN_FACTORY_ID),
+        messageCodec, messageHandler, null, idFactory.getNewInstance(MistDriver.MIST_DRIVER_ID));
   }
 
   @Override
-  public void addRunningTask(final RunningTask runningTask) {
+  public void registerRunningTask(final RunningTask runningTask) {
     final InetSocketAddress inetSocketAddress = runningTask.getActiveContext()
         .getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress();
     final Connection<DriverTaskMessage> conn =
-        connFactory.newConnection(idFac.getNewInstance(runningTask.getId()));
+        connFactory.newConnection(idFactory.getNewInstance(runningTask.getId()));
     taskAddrAndConnMap.put(runningTask.getId(),
         new Tuple<>(inetSocketAddress, conn));
   }
 
   @Override
-  public void removeTask(final String taskId) {
+  public void unregisterTask(final String taskId) {
     taskAddrAndConnMap.remove(taskId);
   }
 
@@ -86,8 +87,8 @@ final class DefaultTaskSelectorImpl implements TaskSelector {
    * Returns the list of ip addresses of the MistTasks.
    * This method is called by avro RPC when client calls .getTasks(msg);
    * Current implementation simply returns the list of tasks.
-   * @param message message
-   * @return result
+   * @param message a message containing query information from clients
+   * @return a list of ip addresses of MistTasks
    * @throws AvroRemoteException
    */
   @Override

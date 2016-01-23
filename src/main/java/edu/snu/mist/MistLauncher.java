@@ -15,10 +15,12 @@
  */
 package edu.snu.mist;
 
-import edu.snu.mist.driver.AvroRPCNettyServerWrapper;
+import edu.snu.mist.common.rpc.AvroRPCNettyServerWrapper;
+import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.driver.MistDriver;
 import edu.snu.mist.driver.SpecificResponderWrapper;
 import edu.snu.mist.driver.parameters.*;
+import edu.snu.mist.task.parameter.NumExecutors;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.reef.client.DriverConfiguration;
@@ -70,8 +72,9 @@ public final class MistLauncher {
     final CommandLine commandLine = new CommandLine(jcb)
         .registerShortNameOfClass(IsLocal.class)
         .registerShortNameOfClass(NumTaskCores.class)
+        .registerShortNameOfClass(NumExecutors.class)
         .registerShortNameOfClass(NumTasks.class)
-        .registerShortNameOfClass(ServerPort.class)
+        .registerShortNameOfClass(RPCServerPort.class)
         .registerShortNameOfClass(TaskMemorySize.class);
     commandLine.processCommandLine(args);
     return jcb.build();

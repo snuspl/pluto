@@ -15,9 +15,11 @@
  */
 package edu.snu.mist.driver;
 
+import edu.snu.mist.common.rpc.AvroRPCNettyServerWrapper;
 import edu.snu.mist.driver.parameters.IsLocal;
 import edu.snu.mist.driver.parameters.NumTaskCores;
 import edu.snu.mist.driver.parameters.TaskMemorySize;
+import edu.snu.mist.task.parameter.NumExecutors;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.reef.client.DriverConfiguration;
@@ -52,6 +54,7 @@ public final class MistDriverTest {
     jcb.bindConstructor(Server.class, AvroRPCNettyServerWrapper.class);
     jcb.bindNamedParameter(IsLocal.class, "true");
     jcb.bindNamedParameter(NumTaskCores.class, "1");
+    jcb.bindNamedParameter(NumExecutors.class, "1");
     jcb.bindNamedParameter(TaskMemorySize.class, "256");
 
     final Configuration runtimeConf = LocalRuntimeConfiguration.CONF
