@@ -67,7 +67,7 @@ public final class GraphUtilsTest {
   }
 
   /**
-   * Test topological sort.
+   * Test whether GraphUtils.topologicalSort(dag) sorts the DAG correctly by topological order.
    */
   @Test
   public void topologicalSortTest() {

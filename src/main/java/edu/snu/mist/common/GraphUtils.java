@@ -21,7 +21,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * This is an utility class for graph.
+ * This is a utility class for graph.
+ * This supports graph copy and traversal.
  */
 public final class GraphUtils {
 

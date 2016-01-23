@@ -70,7 +70,8 @@ public final class AdjacentListDAG<V> implements DAG<V> {
 
   @Override
   public boolean addVertex(final V v) {
-    if (adjacent.put(v, new HashSet<>()) == null) {
+    if (!adjacent.containsKey(v)) {
+      adjacent.put(v, new HashSet<>());
       inDegrees.put(v, 0);
       rootVertices.add(v);
       return true;
