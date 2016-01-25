@@ -72,11 +72,14 @@ public final class GraphUtilsTest {
   @Test
   public void topologicalSortTest() {
     final Iterator<Integer> vertices = GraphUtils.topologicalSort(srcDAG);
+    int vertexNum = 0;
     while (vertices.hasNext()) {
       final Integer vertex = vertices.next();
       Assert.assertTrue("Vertex " + vertex + " should be root vertex",
           srcDAG.getRootVertices().contains(vertex));
       srcDAG.removeVertex(vertex);
+      vertexNum += 1;
     }
+    Assert.assertEquals("Vertex number should be 7", 7, vertexNum);
   }
 }

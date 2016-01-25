@@ -15,10 +15,7 @@
  */
 package edu.snu.mist.common;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * This is a utility class for graph.
@@ -71,7 +68,7 @@ public final class GraphUtils {
     copy(dag, newDAG);
 
     while (true) {
-      final Set<V> rootVertices = newDAG.getRootVertices();
+      final Set<V> rootVertices = new HashSet<>(newDAG.getRootVertices());
       if (rootVertices.size() == 0) {
         break;
       }
