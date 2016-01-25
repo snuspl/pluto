@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 /**
- * This package contains ssm.
+ * This package contains ssm interfaces, implementations and related exceptions.
  */
 package edu.snu.mist.task.ssm;

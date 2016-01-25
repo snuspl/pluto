@@ -22,7 +22,9 @@ import java.util.HashMap;
 
 /**
  * This interface represents the cache storage.
- * It accesses the hash map in the memory that contains states for the operators in queries.
+ * It accesses operatorStateMap, which is the memory that contains states for the operators in queries.
+ * The operatorStateMap has operatorId as its key, and OperatorState as its value.
+ * The OperatorState is the state of the operator of the query.
  * It evicts the operatorStateMap according to a caching policy.
  */
 public interface CacheStorage {
@@ -31,14 +33,16 @@ public interface CacheStorage {
    * Reads from the memory's queryStateMap.
    * @param queryId Identifier of the query.
    * @param operatorId Identifier of the operator.
-   * @return operatorState, which is the state of the operator of the query.
+   * @return operatorState if the state is in memory. Returns null if the state is not in the memory.
+   * //TODO [MIST-108]: Should return something other than null when it is not in the memory.
    */
   OperatorState read(final Identifier queryId, final Identifier operatorId);
 
   /**
    * Adds an operatorStateMap as a value to the queryStateMap, where the queryId is its key.
+   * When the SSM needs to add any state to the memory, this method is executed.
    * @param queryId Identifier of the query.
-   * @param operatorStateMap The hash map that has operatorIds as its key and OperatorStates as its value.
+   * @param operatorStateMap The map that has operatorIds as its key and OperatorStates as its value.
    */
   void addOperatorStateMap(final Identifier queryId,
                                 final HashMap<Identifier, OperatorState> operatorStateMap);
@@ -48,14 +52,14 @@ public interface CacheStorage {
    * @param queryId Identifier of the query.
    * @param operatorId Identifier of the operator.
    * @param state OperatorState is the state that the operator holds.
-   * @return true if update worked well, false if not.
+   * @return true if the state was in memory and update worked without errors, false if not.
    */
   boolean update(final Identifier queryId, final Identifier operatorId, final OperatorState state);
 
   /**
    * Deletes the entire operatorStateMap from the queryStateMap.
    * @param queryId Identifier of the query.
-   * @return true if deletion worked, false if not.
+   * @return true if the state was in memory and deletion worked without errors, false if not.
    */
   boolean delete(final Identifier queryId);
 }

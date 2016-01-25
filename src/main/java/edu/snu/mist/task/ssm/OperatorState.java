@@ -22,18 +22,14 @@ import java.io.Serializable;
  * This is the class that all states of the operators have.
  * @param <I>
  */
-public class OperatorState <I> implements Serializable{
+public final class OperatorState <I> implements Serializable {
   private I state;
 
-  public OperatorState(){
-    this.state = null;
+  public OperatorState(final I state){
+    this.state = state;
   }
 
   public I getState(){
     return this.state;
-  }
-
-  public void setState(final I state){
-    this.state = state;
   }
 }
