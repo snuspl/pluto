@@ -16,20 +16,49 @@
 package edu.snu.mist.task;
 
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.common.GraphUtils;
 import edu.snu.mist.task.executor.MistExecutor;
 
 import javax.inject.Inject;
-import java.util.Set;
+import java.util.Iterator;
+import java.util.List;
 
-// TODO[MIST-42]: Implement a simple round-robin allocator
+/**
+ * A default operator chain allocator
+ * which allocates OperatorChains to MistExecutors in round-robin way.
+ */
 final class DefaultOperatorChainAllocatorImpl implements OperatorChainAllocator {
 
+  /**
+   * A list of MistExecutors.
+   */
+  private final List<MistExecutor> executors;
+
+  /**
+   * An index of MistExecutors.
+   */
+  private Iterator<MistExecutor> executorIterator;
+
   @Inject
-  private DefaultOperatorChainAllocatorImpl() {
+  private DefaultOperatorChainAllocatorImpl(
+      final ExecutorListProvider executorListProvider) {
+    this.executors = executorListProvider.getExecutors();
+    this.executorIterator = executors.iterator();
   }
 
+  /**
+   * This allocates OperatorChains to MistExecutors in round-robin way.
+   * @param dag a DAG of OperatorChain
+   */
   @Override
-  public void allocate(final Set<MistExecutor> executors, final DAG<OperatorChain> dag) {
-    throw new RuntimeException("DefaultOperatorChainAllocatorImpl.allocate is not implemented yet");
+  public void allocate(final DAG<OperatorChain> dag) {
+    final Iterator<OperatorChain> operatorChainIterator = GraphUtils.topologicalSort(dag);
+    while (operatorChainIterator.hasNext()) {
+      final OperatorChain operatorChain = operatorChainIterator.next();
+      if (!executorIterator.hasNext()) {
+        executorIterator = executors.iterator();
+      }
+      operatorChain.setExecutor(executorIterator.next());
+    }
   }
 }
