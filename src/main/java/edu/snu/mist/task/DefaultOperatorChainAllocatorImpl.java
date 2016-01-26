@@ -37,13 +37,13 @@ final class DefaultOperatorChainAllocatorImpl implements OperatorChainAllocator 
   /**
    * An index of MistExecutors.
    */
-  private Iterator<MistExecutor> executorIterator;
+  private int index;
 
   @Inject
   private DefaultOperatorChainAllocatorImpl(
       final ExecutorListProvider executorListProvider) {
     this.executors = executorListProvider.getExecutors();
-    this.executorIterator = executors.iterator();
+    this.index = 0;
   }
 
   /**
@@ -55,10 +55,8 @@ final class DefaultOperatorChainAllocatorImpl implements OperatorChainAllocator 
     final Iterator<OperatorChain> operatorChainIterator = GraphUtils.topologicalSort(dag);
     while (operatorChainIterator.hasNext()) {
       final OperatorChain operatorChain = operatorChainIterator.next();
-      if (!executorIterator.hasNext()) {
-        executorIterator = executors.iterator();
-      }
-      operatorChain.setExecutor(executorIterator.next());
+      operatorChain.setExecutor(executors.get(index));
+      index = (index + 1) % executors.size();
     }
   }
 }

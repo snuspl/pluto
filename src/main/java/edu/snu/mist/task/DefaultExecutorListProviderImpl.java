@@ -45,10 +45,15 @@ final class DefaultExecutorListProviderImpl implements ExecutorListProvider {
   @Inject
   private DefaultExecutorListProviderImpl(
       @Parameter(NumExecutors.class) final int numExecutors) throws InjectionException {
+    if (numExecutors <= 0) {
+      throw new RuntimeException("The number of executors should be greater than zero");
+    }
     this.executors = new LinkedList<>();
     for (int i = 0; i < numExecutors; i++) {
       final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-      jcb.bindNamedParameter(MistExecutorId.class, "MistExecutor-" + i);
+      final StringBuffer sb = new StringBuffer();
+      sb.append("MistExecutor-"); sb.append(i);
+      jcb.bindNamedParameter(MistExecutorId.class, sb.toString());
       final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
       final MistExecutor executor = injector.getInstance(MistExecutor.class);
       this.executors.add(executor);
