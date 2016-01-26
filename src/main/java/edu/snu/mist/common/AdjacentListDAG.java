@@ -83,8 +83,18 @@ public final class AdjacentListDAG<V> implements DAG<V> {
 
   @Override
   public boolean removeVertex(final V v) {
-    if (adjacent.remove(v) != null) {
+    final Set<V> neighbors = adjacent.remove(v);
+    if (neighbors != null) {
       inDegrees.remove(v);
+      // update inDegrees of neighbor vertices
+      // and update rootVertices
+      for (final V neighbor : neighbors) {
+        final int inDegree = inDegrees.get(neighbor) - 1;
+        inDegrees.put(neighbor, inDegree);
+        if (inDegree == 0) {
+          rootVertices.add(neighbor);
+        }
+      }
       rootVertices.remove(v);
       return true;
     } else {
