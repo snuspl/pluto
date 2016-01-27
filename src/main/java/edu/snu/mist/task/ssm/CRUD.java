@@ -21,7 +21,7 @@ import org.apache.reef.wake.Identifier;
 
 import java.util.Map;
 
-public interface CRUD{
+public interface CRUD {
 
   /**
    * Creates the initial states of the relevant operators in the query.

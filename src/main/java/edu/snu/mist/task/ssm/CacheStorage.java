@@ -28,6 +28,6 @@ package edu.snu.mist.task.ssm;
  * Update : Update the specific state in the queryStateMap according to the queryId and operatorId.
  * Delete : Delete the entire queryState from the queryStateMap.
  */
-public interface CacheStorage extends CRUD{
+public interface CacheStorage extends CRUD {
 
 }

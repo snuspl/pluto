@@ -38,7 +38,7 @@ package edu.snu.mist.task.ssm;
  *          It is assumed that the query has already been deleted in the Task part.
  * TODO[MIST-48]: We could later save other objects other than states.
  */
-public interface SSM{
+public interface SSM {
 
   //TODO[MIST-50]: The policy on where to keep the states should be implemented. Could have CachingPolicy interface.
   //Currently, everything is saved to the memory.

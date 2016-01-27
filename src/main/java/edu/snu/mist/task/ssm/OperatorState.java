@@ -22,7 +22,7 @@ import java.io.Serializable;
  * This is the class that all states of the operators have.
  * @param <I> The type of the state.
  */
-public final class OperatorState <I> implements Serializable{
+public final class OperatorState <I> implements Serializable {
   private final I state;
 
   public OperatorState(final I state) {

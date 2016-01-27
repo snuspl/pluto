@@ -25,6 +25,6 @@ package edu.snu.mist.task.ssm;
  * Update : Updates the queryState in the PersistentStorage.
  * Delete : Deletes the entire queryState of the queryId in the PersistentStorage.
  */
-public interface PersistentStorage extends CRUD{
+public interface PersistentStorage extends CRUD {
 
 }
