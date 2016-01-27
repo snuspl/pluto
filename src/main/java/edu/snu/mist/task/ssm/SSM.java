@@ -18,43 +18,41 @@ package edu.snu.mist.task.ssm;
 
 import org.apache.reef.wake.Identifier;
 
-import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This interface is the basic representation of the Stream State Manager.
  * It allows queries that use stateful operators to manage its states either into
  * the memory's CacheStorage or the DatabaseStorage.
- * In the memory, SSM keeps a map, 'queryStateMap', where the key is the query Identifier.
- * The value is another map, 'operatorStateMap', which has the operator Identifier as its key
- * and the state as its value.
- * By following the caching policy, the SSM evicts the entire query's states (queryState) to the database.
+ * In the memory, SSM keeps a information about the query states stored in the CacheStorage.
+ * By following the caching policy, the SSM evicts the entire query's states to the database.
  *
  * TODO[MIST-48]: We could later save other objects other than states.
  */
 public interface SSM {
 
   /**
-   * Creates the initial states of the relevant operators in the query, and stores it in the CacheStorage.
+   * Creates the initial states of the relevant operators in the query.
    * This is called when the query is submitted.
    * @param queryId The operator's query identifier.
-   * @param operatorStateMap A map that has operators as its keys and their states as values.
+   * @param queryState A map that has operators as its keys and their states as values.
+   * @return true if SSM created the initial states without errors, false if not.
    */
-  void create(final Identifier queryId, final HashMap<Identifier, OperatorState> operatorStateMap);
+  boolean create(final Identifier queryId, final Map<Identifier, OperatorState> queryState);
 
   /**
-   * Reads the state of the operator from the queryStateMap's operatorStateMap in CacheStorage.
-   * If it is not present in the CacheStorage, SSM will fetch the relevant queryStateMap
+   * Reads the state of the operator.
+   * If it is not present in the CacheStorage, SSM will fetch the relevant operatorStateMap
    * from the DatabaseStorage synchronously.
-   * If the CacheStorage is full, CacheStorage will evict all the states of a certain query, the queryStateMap,
+   * If the CacheStorage is full, SSM will evict all the states of a certain query, the queryState,
    * according to the caching policy.
    * This is called from the operator to get its states.
    * @param queryId The operator's query identifier.
    * @param operatorId Key of the operatorState map. Identifier of the operator.
    * @return the state of type I if SSM was able to fetch the state (from cache or database), null if not.
-   * @throws DatabaseReadException when there is an error in reading the database.
    * //TODO[MIST-108]: Return something else other than null if it fails.
    */
-  OperatorState read(final Identifier queryId, final Identifier operatorId) throws DatabaseReadException;
+  OperatorState read(final Identifier queryId, final Identifier operatorId);
 
   /**
    * Update the states in the CacheStorage. The updated values will go into the DatabaseStorage when they are evicted.
@@ -63,21 +61,18 @@ public interface SSM {
    * @param queryId The operator's query identifier.
    * @param operatorId The identifier of the operator to update.
    * @param state The state to update.
-   * @return true if SSM was able to update the memory, false if not.
-   * @throws DatabaseReadException when there is an error in reading the database.
+   * @return true if SSM was able to update, false if not.
    */
-  boolean update(final Identifier queryId, final Identifier operatorId,
-                 final OperatorState state) throws DatabaseReadException;
+  boolean update(final Identifier queryId, final Identifier operatorId, final OperatorState state);
 
   /**
-   * Delete all states associated with the query identifier (deleting an entire operatorStateMap of the query)
+   * Delete all states associated with the query identifier (deleting an entire queryState of the query)
    * The deletion occurs for both the CacheStorage and the DatabaseStorage.
    * It is assumed that the query has already been deleted in the Task part.
    * @param queryId The operator's query identifier.
    * @return true if the queryId's operatorStateMap was deleted from CacheStorage and DatabaseStorage, false if not.
-   * @throws DatabaseDeleteException when there is an error in deleting from the database.
    */
-  boolean delete(final Identifier queryId) throws DatabaseDeleteException;
+  boolean delete(final Identifier queryId);
 
   //TODO[MIST-50]: The policy on where to keep the states - in the memory or the database - should be implemented.
   //Currently, everything is saved to the memory.

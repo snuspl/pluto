@@ -32,23 +32,22 @@ public interface DatabaseStorage{
    * @param queryId The identifier of the query. This is the key.
    * @return HashMap of operatorStateMap.
    */
-  HashMap<Identifier, OperatorState> read(final Identifier queryId) throws DatabaseReadException;
+  HashMap<Identifier, OperatorState> read(final Identifier queryId);
 
   /**
    * Updates the operatorStateMap to the query identifier.
+   * If there is a new value, it stores it as well.
    * @param queryId Identifier of the query.
-   * @param operatorStateMap The map that has operator identifier as its key and states for its value.
+   * @param queryState The map that has operator identifier as its key and states for its value.
    * @return true if update worked well, false if not.
-   * @throws DatabaseUpdateException when there is an error in updating the database.
    */
-  boolean update(final Identifier queryId, final HashMap<Identifier, OperatorState> operatorStateMap)
-      throws DatabaseUpdateException, IOException;
+  boolean update(final Identifier queryId, final HashMap<Identifier, OperatorState> queryState)
+      throws IOException;
 
   /**
    * Delets the entire operatorStateMap of the queryId in the database.
    * @param queryId Identifier of the query.
    * @return true if delete worked well, false if not.
-   * @throws DatabaseDeleteException
    */
-  boolean delete(final Identifier queryId) throws DatabaseDeleteException;
+  boolean delete(final Identifier queryId);
 }

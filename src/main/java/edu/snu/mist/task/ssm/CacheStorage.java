@@ -18,16 +18,23 @@ package edu.snu.mist.task.ssm;
 
 import org.apache.reef.wake.Identifier;
 
-import java.util.HashMap;
+import java.util.Map;
 
 /**
- * This interface represents the cache storage.
- * It accesses operatorStateMap, which is the memory that contains states for the operators in queries.
- * The operatorStateMap has operatorId as its key, and OperatorState as its value.
+ * This interface represents the CacheStorage. Alike the DatabaseStorage, it only contains methods that access
+ * the data it holds.
+ * It accesses queryStateMap, which has queryId as its key and queryState as its value.
+ * The queryState is also a map that has operatorId as its key and OperatorState as its value.
  * The OperatorState is the state of the operator of the query.
- * It evicts the operatorStateMap according to a caching policy.
  */
 public interface CacheStorage {
+
+  /**
+   * Creates a new queryId-queryState pair in the queryStateMap.
+   * @param queryId Identifier of the query.
+   * @param queryState The map that has operatorId as its key and operatorStates as its value.
+   */
+  void create(final Identifier queryId, final Map<Identifier, OperatorState> queryState);
 
   /**
    * Reads from the memory's queryStateMap.
@@ -39,27 +46,17 @@ public interface CacheStorage {
   OperatorState read(final Identifier queryId, final Identifier operatorId);
 
   /**
-   * Adds an operatorStateMap as a value to the queryStateMap, where the queryId is its key.
-   * When the SSM needs to add any state to the memory, this method is executed.
-   * @param queryId Identifier of the query.
-   * @param operatorStateMap The map that has operatorIds as its key and OperatorStates as its value.
-   */
-  void addOperatorStateMap(final Identifier queryId,
-                                final HashMap<Identifier, OperatorState> operatorStateMap);
-
-  /**
    * Updates the specific state in the queryStateMap according to the queryId and operatorId.
    * @param queryId Identifier of the query.
    * @param operatorId Identifier of the operator.
    * @param state OperatorState is the state that the operator holds.
-   * @return true if the state was in memory and update worked without errors, false if not.
    */
-  boolean update(final Identifier queryId, final Identifier operatorId, final OperatorState state);
+  void update(final Identifier queryId, final Identifier operatorId, final OperatorState state);
 
   /**
-   * Deletes the entire operatorStateMap from the queryStateMap.
-   * @param queryId Identifier of the query.
-   * @return true if the state was in memory and deletion worked without errors, false if not.
+   * Deletes the entire queryState from the queryStateMap.
+   * Thus, all the states that the query holds are deleted.
+   * @param queryId Identifier of the query to delete.
    */
   boolean delete(final Identifier queryId);
 }

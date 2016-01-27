@@ -23,9 +23,9 @@ import java.io.Serializable;
  * @param <I>
  */
 public final class OperatorState <I> implements Serializable {
-  private I state;
+  private final I state;
 
-  public OperatorState(final I state){
+  public OperatorState(final I state) {
     this.state = state;
   }
 
