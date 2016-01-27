@@ -21,6 +21,10 @@ import org.apache.reef.wake.Identifier;
 
 import java.util.Map;
 
+/**
+ * This interface contains the methods create, read, update and delete.
+ * It will be extended by the SSM, CacheStorage and the PersistentStorage.
+ */
 public interface CRUD {
 
   /**

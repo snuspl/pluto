@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 /**
- * This package contains ssm interfaces, implementations and related exceptions.
+ * This package contains Stream State Manager related interfaces and implementations.
  */
 package edu.snu.mist.task.ssm;
