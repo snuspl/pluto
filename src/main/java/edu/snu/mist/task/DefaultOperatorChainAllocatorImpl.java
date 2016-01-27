@@ -24,7 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * A default operator chain allocator
+ * A default operator chain allocator,
  * which allocates OperatorChains to MistExecutors in round-robin way.
  */
 final class DefaultOperatorChainAllocatorImpl implements OperatorChainAllocator {

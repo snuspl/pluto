@@ -52,10 +52,10 @@ public final class MistTask implements Task {
 
   /**
    * Default constructor of MistTask.
-   * @param chainAllocator an allocator which allocates a OperatorChain to a MistExecutor
-   * @param physicalToChainedPlan a converter which chains operator and make OperatorChains
-   * @param receiver logical plan receiver which converts the logical plans to physical plans
-   * @param executorListProvider executor list provider which returns the list of executors
+   * @param chainAllocator an allocator, which allocates a OperatorChain to a MistExecutor
+   * @param physicalToChainedPlan a converter, which chains operators and makes OperatorChains
+   * @param receiver logical plan receiver, which converts the logical plans to physical plans
+   * @param executorListProvider executor list provider, which returns the list of executors
    * @throws InjectionException
    */
   @Inject
@@ -66,7 +66,7 @@ public final class MistTask implements Task {
     this.countDownLatch = new CountDownLatch(1);
     final Injector injector = Tang.Factory.getTang().newInjector();
 
-    // 1) creates MistExecutors in executorListProvider
+    // 1) Creates MistExecutors in executorListProvider
     // 2) Receives logical plans and converts to physical plans
     receiver.setHandler(physicalPlan -> {
       // 3) Chains the physical operators and make OperatorChain.

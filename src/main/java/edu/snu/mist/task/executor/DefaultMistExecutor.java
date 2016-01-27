@@ -58,7 +58,7 @@ final class DefaultMistExecutor implements MistExecutor {
   private final long shutdownTimeout = WakeParameters.EXECUTOR_SHUTDOWN_TIMEOUT;
 
   /**
-   * An identifier.
+   * An identifier of MistExecutor.
    */
   private final Identifier identifier;
 

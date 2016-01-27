@@ -21,7 +21,7 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
 import java.util.List;
 
 /**
- * This provides a list of mist executors which run queries.
+ * This provides a list of mist executors that run queries.
  */
 @DefaultImplementation(DefaultExecutorListProviderImpl.class)
 public interface ExecutorListProvider {
