@@ -23,10 +23,6 @@ package edu.snu.mist.task.ssm;
  * The queryState is also a map that has operatorId as its key and OperatorState as its value.
  * The OperatorState is the state of the operator of the query.
  * It extends the CRUD interface.
- * Create : Create a new queryId-queryState pair in the queryStateMap.
- * Read : Read the OperatorState from the memory's queryStateMap.
- * Update : Update the specific state in the queryStateMap according to the queryId and operatorId.
- * Delete : Delete the entire queryState from the queryStateMap.
  */
 public interface CacheStorage extends CRUD {
 

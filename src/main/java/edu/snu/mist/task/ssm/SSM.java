@@ -23,21 +23,6 @@ package edu.snu.mist.task.ssm;
  * In the memory, SSM keeps a information about the query states stored in the CacheStorage.
  * By following the caching policy, the SSM evicts the entire query's states to the PersistentStorage.
  * It extends the CRUD interface.
- * Create : Creates the initial states of the relevant operators in the query, called when the query is submitted.
- * Read : Reads the state of the operator.
- *        If it is not present in the CacheStorage, SSM will fetch the relevant queryState
- *        from the PersistentStorage synchronously.
- *        If the CacheStorage is full, SSM will evict all the states of a certain query, the queryState,
- *        according to the caching policy.
- *        This is called from the operator to get its states.
- * Update : Update the queryState in the CacheStorage. The updated values will go into the
- *          PersistentStorage when evicted.
- *          SSM first tries to update first from the CacheStorage, if the queryState is not there,
- *          it fetches the queryState from the PersistentStorage and puts it in the CacheStorage.
- *          Then it updates the specific state from the memory.
- * Delete : Delete all states associated with the query identifier (deleting an entire queryState of the query)
- *          The deletion occurs for both the CacheStorage and the PersistentStorage.
- *          It is assumed that the query has already been deleted in the Task part.
  * TODO[MIST-48]: We could later save other objects other than states.
  */
 public interface SSM extends CRUD {

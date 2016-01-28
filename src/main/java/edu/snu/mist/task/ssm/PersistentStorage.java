@@ -20,10 +20,6 @@ package edu.snu.mist.task.ssm;
  * This interface represents the PersistentStorage.
  * It reads values from the PersistentStorage, stores values that were evicted from the CacheStorage and deletes values.
  * It extends the CRUD interface.
- * Create : Creates a new queryId-queryState pair in the PersistentStorage.
- * Read : Fetches the queryState from the PersistentStorage.
- * Update : Updates the queryState in the PersistentStorage.
- * Delete : Deletes the entire queryState of the queryId in the PersistentStorage.
  */
 public interface PersistentStorage extends CRUD {
 
