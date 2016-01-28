@@ -33,7 +33,7 @@ public interface CRUD {
    * @param queryState A map that has operators as its keys and their states as values.
    * @return true if initial states were created without errors, false if not.
    */
-  boolean create(final Identifier queryId, final Map<Identifier, OperatorState> queryState);
+  boolean create(Identifier queryId, Map<Identifier, OperatorState> queryState);
 
   /**
    * Reads the state of the operator.
@@ -42,7 +42,7 @@ public interface CRUD {
    * @return the state of type I if the state was able to be fetched, null if not.
    * //TODO[MIST-108]: Return something else other than null if it fails.
    */
-  OperatorState read(final Identifier queryId, final Identifier operatorId);
+  OperatorState read(Identifier queryId, Identifier operatorId);
 
   /**
    * Update the states of the query.
@@ -51,7 +51,7 @@ public interface CRUD {
    * @param state The state to update.
    * @return true if the state was updated, false if not.
    */
-  boolean update(final Identifier queryId, final Identifier operatorId, final OperatorState state);
+  boolean update(Identifier queryId, Identifier operatorId, OperatorState state);
 
   /**
    * Delete all states associated with the query identifier (deleting an entire queryState of the query)
@@ -59,5 +59,5 @@ public interface CRUD {
    * @param queryId The operator's query identifier.
    * @return true if the queryId's queryState was deleted, false if not.
    */
-  boolean delete(final Identifier queryId);
+  boolean delete(Identifier queryId);
 }
