@@ -31,18 +31,48 @@ public final class SSMImpl implements SSM{
     cache = new CacheStorageImpl();
   };
 
+  /**
+   * Create the initial states of the relevant operators in the query.
+   * This is called when the query is submitted.
+   * @param queryId The operator's query identifier.
+   * @param queryState A map that has operators as its keys and their states as values.
+   * @return true if initial states were created without errors, false if not.
+   */
   public boolean create(Identifier queryId, Map<Identifier, OperatorState> queryState){
     return cache.create(queryId, queryState);
   };
 
+  /**
+   * Read the state of the operator.
+   * This is called from the operator to get its states.
+   * @param queryId The operator's query identifier.
+   * @param operatorId Identifier of the operator to read.
+   * @return the state of type I if the state was able to be fetched, null if not.
+   */
   public OperatorState read(Identifier queryId, Identifier operatorId){
     return cache.read(queryId, operatorId);
   };
 
+  /**
+   * Update the states in the CacheStorage. The updated values will go into the PersistentStorage when they are evicted.
+   * SSM first tries to update straight from the CacheStorage, if the state is not there, it fetches the data from
+   * the PersistentStorage and puts it in the CacheStorage. Then it updates the state from the memory.
+   * @param queryId The operator's query identifier.
+   * @param operatorId The identifier of the operator to update.
+   * @param state The state to update.
+   * @return true if the state was updated, false if not.
+   */
   public boolean update(Identifier queryId, Identifier operatorId, OperatorState state){
     return cache.update(queryId, operatorId, state);
   };
 
+  /**
+   * Delete all states associated with the query identifier (deleting an entire queryState of the query)
+   * The deletion occurs for both the CacheStorage and the PersistentStorage.
+   * It is assumed that the query has already been deleted in the Task part.
+   * @param queryId The operator's query identifier.
+   * @return true if the queryId's queryState was deleted, false if not.
+   */
   public boolean delete(Identifier queryId){
     return cache.delete(queryId);
   };
