@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  * It reads the operator state from SSM, updates and saves the state to SSM,
  * computes outputs, and emits the outputs with OutputEmitter.
  * @param <I> input type
- * @param <S> state tyoe
+ * @param <S> state type
  * @param <O> output type
  */
 public abstract class StatefulOperator<I, S, O> extends BaseOperator<I, O> {
@@ -60,7 +60,7 @@ public abstract class StatefulOperator<I, S, O> extends BaseOperator<I, O> {
   /**
    * This method should be called at query creation time.
    * A query containing this operator should call SSM.create(queryId, queryInitialState)
-   * in which the queryInitialState consists of map of operatorId and operator initial state.
+   * in which the queryInitialState consists of a map of operatorId and operator initial state.
    * @return initial state of the operator
    */
   public abstract OperatorState<S> getInitialState();

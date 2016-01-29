@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * This is a simple SSM for test stateful operator.
+ * This is a simple SSM to test stateful operator.
  */
 public final class TestSSM implements SSM {
   private final Map<Identifier, Map<Identifier, OperatorState>> queryStates;

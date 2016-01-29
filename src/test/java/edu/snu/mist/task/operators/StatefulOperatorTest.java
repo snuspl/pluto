@@ -39,7 +39,7 @@ import java.util.function.BiFunction;
 public final class StatefulOperatorTest {
 
   /**
-   * Test reduceByKeyOperator generates correct outputs.
+   * Test whether reduceByKeyOperator generates correct outputs.
    * Input: a list of tuples: ("a", 1), ("b", 1), ("c", 1), ("a", 1), ("d", 1), ("a", 1), ("b", 1)
    * Expected outputs: word counts:
    *  {"a": 1},
