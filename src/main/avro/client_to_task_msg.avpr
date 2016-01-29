@@ -16,44 +16,70 @@
 /**
  * This protocol defines the client message to mist tasks. The current implemented part is query submission action.
  **/
-{"namespace": "edu.snu.mist.common.bridge.formats.avro", "protocol": "ClientToTaskMessage", "type": "record", "name": "ClientToTaskMessage", "fields": [
-    {"name": "MessageType", "type": "enum", "symbols": ["SUBMIT_QUERY"]},
-    {"name": "Contents", "type": [
+{
+    "namespace": "edu.snu.mist.common.bridge.formats.avro",
+    "protocol": "ClientToTaskMessage",
+    "types": [
         {"type": "record", "name": "LogicalPlan", "fields": [
-            {"name": "Vertices", "type": "array", "value": {"name": "Vertex", "type": "record", "fields": [
-                {"name": "VertexType", "type": "enum", "symbols": ["SOURCE", "INSTANT_OPERATOR", "WINDOW_OPERATOR",
-                    "SINK"]},
-                {"name": "Attributes", "type": [
-                    {"name": "SourceInfo", "type": "record", "fields": [
-                        {"name": "SourceType", "type": "enum", "symbols": ["REEF_NETWORK_SOURCE"]},
-                        {"name": "SourceConfiguration", "type": "map", "value": "bytes"}
-                    ]},
-                    {"name": "InstantOperatorInfo", "type": "record", "fields": [
-                        {"name": "InstantOperatorType", "type": "enum", "symbols": [
-                            "APPLY_STATEFUL", "FILTER", "FLAT_MAP", "MAP", "REDUCE_BY_KEY", "REDUCE_BY_KEY_WINDOW"
+            {"name": "Vertices", "type": {"type": "array", "items":
+                {"name": "Vertex", "type": "record", "fields": [
+                    {"name": "VertexType", "type": {
+                        "name": "VertexTypeEnum",
+                        "type": "enum",
+                        "symbols": ["SOURCE", "INSTANT_OPERATOR", "WINDOW_OPERATOR", "SINK"]
+                    }},
+                    {"name": "Attributes", "type": [
+                        {"name": "SourceInfo", "type": "record", "fields": [
+                            {"name": "SourceType", "type": {
+                                "name": "SourceTypeEnum", "type": "enum", "symbols": ["REEF_NETWORK_SOURCE"]
+                            }},
+                            {"name": "SourceConfiguration", "type": {"type": "map", "values": "bytes"}}
                         ]},
-                        {"name": "Functions", "type": "array", "value": "bytes"}
-                    ]},
-                    {"name": "WindowOperatorInfo", "type": "record", "fields": [
-                        {"name": "SizePolicyType", "type": "enum", "symbols": ["TIME"]},
-                        {"name": "SizePolicyInfo", "type": [
-                            {"name": "TimeDuration", "type": "integer"}
+                        {"name": "InstantOperatorInfo", "type": "record", "fields": [
+                            {"name": "InstantOperatorType", "type": {
+                                "name": "InstantOperatorTypeEnum", "type": "enum", "symbols": [
+                                "APPLY_STATEFUL", "FILTER", "FLAT_MAP", "MAP", "REDUCE_BY_KEY", "REDUCE_BY_KEY_WINDOW"]
+                            }},
+                            {"name": "Functions", "type": {"type": "array", "items": "bytes"}},
+                            {"name": "KeyIndex", "type": ["null", "int"]}
                         ]},
-                        {"name": "EmitPolicyType", "type": "enum", "symbols": ["TIME"]},
-                        {"name": "EmitPolicyInfo", "type": [
-                            {"name": "TimeInterval", "type": "integer"}
+                        {"name": "WindowOperatorInfo", "type": "record", "fields": [
+                            {"name": "SizePolicyType", "type": {
+                                "name": "SizePolicyTypeEnum", "type": "enum", "symbols": ["TIME"]
+                            }},
+                            {"name": "SizePolicyInfo", "type": [
+                                {"name": "TimeDuration", "type": "int"}
+                            ]},
+                            {"name": "EmitPolicyType", "type": {
+                                "name": "EmitPolicyTypeEnum", "type": "enum", "symbols": ["TIME"]
+                            }},
+                            {"name": "EmitPolicyInfo", "type": [
+                                {"name": "TimeInterval", "type": "int"}
+                            ]}
+                        ]},
+                        {"name": "SinkInfo", "type": "record", "fields": [
+                            {"name": "SinkType", "type": {
+                                "name": "SinkTypeEnum", "type": "enum", "symbols": ["REEF_NETWORK_SOURCE"]
+                            }},
+                            {"name": "SinkConfiguration", "type": {"type": "map", "values": "bytes"}}
                         ]}
-                    ]},
-                    {"name": "SinkInfo", "type": "record", "fields": [
-                        {"name": "SinkType", "type": "enum", "symbols": ["REEF_NETWORK_SOURCE"]},
-                        {"name": "SinkConfiguration", "type": "map", "value": "bytes"}
                     ]}
                 ]}
-            ]}},
-            {"name": "Edges", "type": "array", "value": {"name": "Edge", "type": "record", "fields": [
-                {"name": "From", "type": "integer"},
-                {"name": "To", "type": "integer"}
-            ]}}
+            }},
+            {"name": "Edges", "type":{"type": "array", "items": {"name": "Edge", "type": "record", "fields": [
+                {"name": "From", "type": "int"},
+                {"name": "To", "type": "int"}
+            ]}}}
+        ]},
+        {"type": "record", "name": "QuerySubmissionResult", "fields": [
+            {"name": "IsSuccessful", "type": "boolean"},
+            {"name": "FailDescription", "type": "string"}
         ]}
-    ]}
-]}
+    ]},
+    "messages": {
+       "sendQueries": {
+           "request": "LogicalPlan",
+           "response": "QuerySubmissionResult"
+       }
+    }
+}
