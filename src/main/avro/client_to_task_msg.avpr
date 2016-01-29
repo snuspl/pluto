@@ -75,10 +75,10 @@
             {"name": "IsSuccessful", "type": "boolean"},
             {"name": "FailDescription", "type": "string"}
         ]}
-    ]},
+    ],
     "messages": {
        "sendQueries": {
-           "request": "LogicalPlan",
+           "request":  [{"name": "logicalPlan", "type": "LogicalPlan"}],
            "response": "QuerySubmissionResult"
        }
     }
