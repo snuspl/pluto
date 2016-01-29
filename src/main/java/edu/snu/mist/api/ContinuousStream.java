@@ -16,6 +16,8 @@
 package edu.snu.mist.api;
 
 import edu.snu.mist.api.operators.*;
+import edu.snu.mist.api.sink.Sink;
+import edu.snu.mist.api.sink.builder.SinkConfiguration;
 import edu.snu.mist.api.window.WindowEmitPolicy;
 import edu.snu.mist.api.window.WindowSizePolicy;
 
@@ -88,4 +90,11 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    * @return new windowed stream after applying the window operation
    */
   WindowedStream<T> window(WindowSizePolicy windowSizePolicy, WindowEmitPolicy windowEmitPolicy);
+
+  /**
+   * It defines a REEF Network output Sink for the current stream according to the SinkConfiguration.
+   * @param sinkConfiguration The configuration for sink
+   * @return new sink for the current stream
+   */
+  Sink reefNetworkOutput(SinkConfiguration sinkConfiguration);
 }
