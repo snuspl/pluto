@@ -16,6 +16,7 @@
 package edu.snu.mist.task;
 
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sources.SourceGenerator;
 
 import java.util.Map;
@@ -39,4 +40,10 @@ public interface PhysicalPlan<E> {
    * @return a map
    */
   Map<SourceGenerator, Set<E>> getSourceMap();
+
+  /**
+   * Gets the map of operator and sinks.
+   * @return a map
+   */
+  Map<E, Set<Sink>> getSinkMap();
 }

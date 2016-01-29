@@ -57,7 +57,9 @@ final class DefaultOperatorChain implements OperatorChain {
       final Operator firstOperator = operators.get(0);
       newOperator.setOutputEmitter(firstOperator::handle);
     } else {
-      newOperator.setOutputEmitter(outputEmitter::emit);
+      if (outputEmitter != null) {
+        newOperator.setOutputEmitter(outputEmitter::emit);
+      }
     }
     operators.add(0, newOperator);
   }
@@ -68,7 +70,9 @@ final class DefaultOperatorChain implements OperatorChain {
       final Operator lastOperator = operators.get(operators.size() - 1);
       lastOperator.setOutputEmitter(newOperator::handle);
     }
-    newOperator.setOutputEmitter(outputEmitter::emit);
+    if (outputEmitter != null) {
+      newOperator.setOutputEmitter(outputEmitter::emit);
+    }
     operators.add(operators.size(), newOperator);
   }
 
@@ -76,7 +80,9 @@ final class DefaultOperatorChain implements OperatorChain {
   public Operator removeFromTail() {
     final Operator prevLastOperator = operators.remove(operators.size() - 1);
     final Operator lastOperator = operators.get(operators.size() - 1);
-    lastOperator.setOutputEmitter(outputEmitter::emit);
+    if (outputEmitter != null) {
+      lastOperator.setOutputEmitter(outputEmitter::emit);
+    }
     return prevLastOperator;
   }
 
@@ -97,6 +103,9 @@ final class DefaultOperatorChain implements OperatorChain {
 
   @Override
   public void handle(final Object input) {
+    if (outputEmitter == null) {
+      throw new RuntimeException("OutputEmitter should be set in OperatorChain");
+    }
     final Operator firstOperator = operators.get(0);
     if (firstOperator != null) {
       firstOperator.handle(input);
@@ -106,5 +115,29 @@ final class DefaultOperatorChain implements OperatorChain {
   @Override
   public void setOutputEmitter(final OutputEmitter emitter) {
     this.outputEmitter = emitter;
+    if (operators.size() > 0) {
+      final Operator lastOperator = operators.get(operators.size() - 1);
+      lastOperator.setOutputEmitter(outputEmitter::emit);
+    }
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final DefaultOperatorChain that = (DefaultOperatorChain) o;
+    if (!operators.equals(that.operators)) {
+      return false;
+    }
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    return operators.hashCode();
   }
 }
