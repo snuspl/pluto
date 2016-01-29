@@ -38,7 +38,7 @@ public final class SSMImpl implements SSM{
    * @param queryState A map that has operators as its keys and their states as values.
    * @return true if initial states were created without errors, false if not.
    */
-  public boolean create(Identifier queryId, Map<Identifier, OperatorState> queryState){
+  public boolean create(final Identifier queryId, final Map<Identifier, OperatorState> queryState){
     return cache.create(queryId, queryState);
   };
 
@@ -49,7 +49,7 @@ public final class SSMImpl implements SSM{
    * @param operatorId Identifier of the operator to read.
    * @return the state of type I if the state was able to be fetched, null if not.
    */
-  public OperatorState read(Identifier queryId, Identifier operatorId){
+  public OperatorState read(final Identifier queryId, final Identifier operatorId){
     return cache.read(queryId, operatorId);
   };
 
@@ -62,7 +62,7 @@ public final class SSMImpl implements SSM{
    * @param state The state to update.
    * @return true if the state was updated, false if not.
    */
-  public boolean update(Identifier queryId, Identifier operatorId, OperatorState state){
+  public boolean update(final Identifier queryId, final Identifier operatorId, final OperatorState state){
     return cache.update(queryId, operatorId, state);
   };
 
@@ -73,7 +73,7 @@ public final class SSMImpl implements SSM{
    * @param queryId The operator's query identifier.
    * @return true if the queryId's queryState was deleted, false if not.
    */
-  public boolean delete(Identifier queryId){
+  public boolean delete(final Identifier queryId){
     return cache.delete(queryId);
   };
 }

@@ -39,10 +39,10 @@ public final class CacheStorageImpl implements CacheStorage {
    * @param queryState A map that has operators as its keys and their states as values.
    * @return true if a queryId-queryState pair was put in the queryStateMap, false if the queryId was already present.
    */
-  public boolean create(Identifier queryId, Map<Identifier, OperatorState> queryState){
-    if (queryStateMap.containsKey(queryId))
+  public boolean create(final Identifier queryId, final Map<Identifier, OperatorState> queryState){
+    if (queryStateMap.containsKey(queryId)) {
       return false;
-    else {
+    } else {
       queryStateMap.put(queryId, queryState);
       return true;
     }
@@ -54,7 +54,7 @@ public final class CacheStorageImpl implements CacheStorage {
    * @param operatorId Identifier of the operator to read.
    * @return OperatorState if the state is in queryStateMap, null if not.
    */
-  public OperatorState read(Identifier queryId, Identifier operatorId){
+  public OperatorState read(final Identifier queryId, final Identifier operatorId){
     OperatorState state = null;
     if (queryStateMap.containsKey(queryId)) {
       state = queryStateMap.get(queryId).get(operatorId);
@@ -70,7 +70,7 @@ public final class CacheStorageImpl implements CacheStorage {
    * @param state The state to update.
    * @return true if the state was updated, false if the queryId was not in the queryStateMap.
    */
-  public boolean update(Identifier queryId, Identifier operatorId, OperatorState state){
+  public boolean update(final Identifier queryId, final Identifier operatorId, final OperatorState state){
     if (queryStateMap.containsKey(queryId)) {
       Map<Identifier, OperatorState> queryState =  queryStateMap.get(queryId);
       queryState.put(operatorId, state);
@@ -87,7 +87,7 @@ public final class CacheStorageImpl implements CacheStorage {
    * @param queryId The operator's query identifier.
    * @return true if the queryState was deleted, false if the queryId was not in the queryStateMap.
    */
-  public boolean delete(Identifier queryId){
+  public boolean delete(final Identifier queryId){
     if(queryStateMap.containsKey(queryId)) {
       queryStateMap.remove(queryId);
       return true;
