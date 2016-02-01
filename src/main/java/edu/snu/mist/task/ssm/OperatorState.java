@@ -20,16 +20,16 @@ import java.io.Serializable;
 
 /**
  * This is the class that all states of the operators have.
- * @param <I> The type of the state.
+ * @param <S> The type of the state.
  */
-public final class OperatorState <I> implements Serializable {
-  private final I state;
+public final class OperatorState <S> implements Serializable {
+  private final S state;
 
-  public OperatorState(final I state) {
+  public OperatorState(final S state) {
     this.state = state;
   }
 
-  public I getState(){
+  public S getState(){
     return this.state;
   }
 }
