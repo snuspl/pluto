@@ -13,20 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.sources;
+package edu.snu.mist.task.sources.parameters;
 
-import edu.snu.mist.task.common.OutputEmittable;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-/**
- * SourceGenerator generates input stream.
- * It supports fetching input data from external systems, such as kafka and HDFS,
- * or receives input data from IoT devices and network connection.
- * After that, it sends the inputs to the OutputEmitter which forwards the inputs to next Operators.
- */
-public interface SourceGenerator<I> extends OutputEmittable<I>, AutoCloseable {
-
-  /**
-   * Starts to generate source stream and forwards inputs to the OutputEmitter.
-   */
-  void start();
+@NamedParameter(doc = "Time to sleep when source fetches no data (msec)", default_value = "1000")
+public final class DataFetchSleepTime implements Name<Long> {
+  // empty
 }
