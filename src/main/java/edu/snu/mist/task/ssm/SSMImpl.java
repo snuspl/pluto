@@ -16,6 +16,8 @@
 
 package edu.snu.mist.task.ssm;
 
+import com.google.inject.Inject;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.wake.Identifier;
 
 import java.util.Map;
@@ -23,11 +25,13 @@ import java.util.Map;
 /**
  * This class is the implementation of the SSM.
  */
-public final class SSMImpl implements SSM{
+@DefaultImplementation(SSMImpl.class)
+public final class SSMImpl implements SSM {
 
   private CacheStorage cache;
 
-  public SSMImpl() {
+  @Inject
+  SSMImpl() {
     cache = new CacheStorageImpl();
   };
 
@@ -38,9 +42,10 @@ public final class SSMImpl implements SSM{
    * @param queryState A map that has operators as its keys and their states as values.
    * @return true if initial states were created without errors, false if not.
    */
-  public boolean create(final Identifier queryId, final Map<Identifier, OperatorState> queryState){
+  @Override
+  public boolean create(final Identifier queryId, final Map<Identifier, OperatorState> queryState) {
     return cache.create(queryId, queryState);
-  };
+  }
 
   /**
    * Read the state of the operator.
@@ -49,12 +54,14 @@ public final class SSMImpl implements SSM{
    * @param operatorId Identifier of the operator to read.
    * @return the state of type I if the state was able to be fetched, null if not.
    */
-  public OperatorState read(final Identifier queryId, final Identifier operatorId){
+  @Override
+  public OperatorState read(final Identifier queryId, final Identifier operatorId) {
     return cache.read(queryId, operatorId);
-  };
+  }
 
   /**
-   * Update the states in the CacheStorage. The updated values will go into the PersistentStorage when they are evicted.
+   * Update the states in the CacheStorage.
+   * TODO[MIST-113]: The updated values will go into the PersistentStorage when they are evicted.
    * SSM first tries to update straight from the CacheStorage, if the state is not there, it fetches the data from
    * the PersistentStorage and puts it in the CacheStorage. Then it updates the state from the memory.
    * @param queryId The operator's query identifier.
@@ -62,18 +69,21 @@ public final class SSMImpl implements SSM{
    * @param state The state to update.
    * @return true if the state was updated, false if not.
    */
-  public boolean update(final Identifier queryId, final Identifier operatorId, final OperatorState state){
+  @Override
+  public boolean update(final Identifier queryId, final Identifier operatorId, final OperatorState state) {
     return cache.update(queryId, operatorId, state);
-  };
+  }
 
   /**
    * Delete all states associated with the query identifier (deleting an entire queryState of the query)
-   * The deletion occurs for both the CacheStorage and the PersistentStorage.
+   * The deletion occurs for the CacheStorage.
+   * TODO[MIST-113]: Deletion occurs for the PersistentStorage as well.
    * It is assumed that the query has already been deleted in the Task part.
    * @param queryId The operator's query identifier.
    * @return true if the queryId's queryState was deleted, false if not.
    */
-  public boolean delete(final Identifier queryId){
+  @Override
+  public boolean delete(final Identifier queryId) {
     return cache.delete(queryId);
-  };
+  }
 }
