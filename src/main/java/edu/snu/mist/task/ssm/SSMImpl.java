@@ -17,7 +17,6 @@
 package edu.snu.mist.task.ssm;
 
 import com.google.inject.Inject;
-import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.wake.Identifier;
 
 import java.util.Map;
