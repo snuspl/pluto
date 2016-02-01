@@ -106,6 +106,9 @@ final class DefaultOperatorChain implements OperatorChain {
     if (outputEmitter == null) {
       throw new RuntimeException("OutputEmitter should be set in OperatorChain");
     }
+    if (operators.size() == 0) {
+      throw new RuntimeException("The number of operators should be greater than zero");
+    }
     final Operator firstOperator = operators.get(0);
     if (firstOperator != null) {
       firstOperator.handle(input);
