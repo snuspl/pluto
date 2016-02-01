@@ -13,13 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.sinks;
-
-import edu.snu.mist.task.common.InputHandler;
-
 /**
- * Sink consumes inputs and does final process, such as print, save input to database and so on.
+ * A test package of sinks in mist task.
  */
-public interface Sink<I> extends InputHandler<I>, AutoCloseable {
-
-}
+package edu.snu.mist.task.sinks;
