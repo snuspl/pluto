@@ -17,6 +17,9 @@
 package edu.snu.mist.api;
 
 import edu.snu.mist.api.operators.*;
+import edu.snu.mist.api.sink.Sink;
+import edu.snu.mist.api.sink.SinkImpl;
+import edu.snu.mist.api.sink.builder.SinkConfiguration;
 import edu.snu.mist.api.window.WindowEmitPolicy;
 import edu.snu.mist.api.window.WindowSizePolicy;
 
@@ -91,5 +94,10 @@ public abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implemen
   public WindowedStream<T> window(final WindowSizePolicy windowSizePolicy,
                                     final WindowEmitPolicy windowEmitPolicy) {
     return new WindowedStreamImpl<>(this, windowSizePolicy, windowEmitPolicy);
+  }
+
+  @Override
+  public Sink reefNetworkOutput(final SinkConfiguration sinkConfiguration) {
+    return new SinkImpl(this, StreamType.SinkType.REEF_NETWORK_SINK, sinkConfiguration);
   }
 }

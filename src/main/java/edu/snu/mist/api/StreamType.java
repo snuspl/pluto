@@ -40,6 +40,11 @@ public final class StreamType {
   public static enum SourceType {REEF_NETWORK_SOURCE}
 
   /**
+   * The type of sink stream.
+   */
+  public static enum SinkType {REEF_NETWORK_SINK}
+
+  /**
    * The type of operator stream.
    */
   public static enum OperatorType {FILTER, FLAT_MAP, MAP, REDUCE_BY_KEY, REDUCE_BY_KEY_WINDOW, APPLY_STATEFUL}
