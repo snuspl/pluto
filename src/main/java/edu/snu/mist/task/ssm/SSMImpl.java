@@ -23,15 +23,17 @@ import java.util.Map;
 
 /**
  * This class is the implementation of the SSM.
+ * Currently, all the states are begin created, read, updated, deleted from the CacheStorage only.
+ * TODO [MIST-113]: Use PersistentStorage as well.
  */
 public final class SSMImpl implements SSM {
 
-  private CacheStorage cache;
+  private final CacheStorage cache;
 
   @Inject
-  SSMImpl() {
-    cache = new CacheStorageImpl();
-  };
+  SSMImpl(final CacheStorage cache) {
+    this.cache = cache;
+  }
 
   /**
    * Create the initial states of the relevant operators in the query.

@@ -39,9 +39,9 @@ public class CacheStorageTest {
    */
   @Test
   public void createCacheStorageTest() {
-    CacheStorageImpl cache = new CacheStorageImpl();
-    final Map<Identifier, OperatorState> queryState1= new HashMap<>();
-    final Map<Identifier, OperatorState> queryState2= new HashMap<>();
+    final CacheStorage cache = new CacheStorageImpl();
+    final Map<Identifier, OperatorState> queryState1 = new HashMap<>();
+    final Map<Identifier, OperatorState> queryState2 = new HashMap<>();
 
     queryState1.put(oid1, value1);
     queryState2.put(oid1, value2);
@@ -61,8 +61,8 @@ public class CacheStorageTest {
    */
   @Test
   public void readCacheStorageTest() {
-    CacheStorageImpl cache = new CacheStorageImpl();
-    final Map<Identifier, OperatorState> queryState1= new HashMap<>();
+    final CacheStorage cache = new CacheStorageImpl();
+    final Map<Identifier, OperatorState> queryState1 = new HashMap<>();
 
     queryState1.put(oid1, value1);
     queryState1.put(oid2, value2);
@@ -88,12 +88,12 @@ public class CacheStorageTest {
    */
   @Test
   public void updateCacheStorageTest() {
-    CacheStorageImpl cache = new CacheStorageImpl();
-    final Map<Identifier, OperatorState> queryState1= new HashMap<>();
+    final CacheStorage cache = new CacheStorageImpl();
+    final Map<Identifier, OperatorState> queryState1 = new HashMap<>();
 
     queryState1.put(oid1, value1);
-    OperatorState<Integer> value3 = new OperatorState<>(10);
-    OperatorState<String> value4 = new OperatorState<>("abcd");
+    final OperatorState<Integer> value3 = new OperatorState<>(10);
+    final OperatorState<String> value4 = new OperatorState<>("abcd");
 
     cache.create(qid1, queryState1);
 
@@ -127,11 +127,10 @@ public class CacheStorageTest {
    */
   @Test
   public void deleteCacheStorageTest() {
-    CacheStorageImpl cache = new CacheStorageImpl();
-    final Map<Identifier, OperatorState> queryState1= new HashMap<>();
+    final CacheStorage cache = new CacheStorageImpl();
+    final Map<Identifier, OperatorState> queryState1 = new HashMap<>();
 
     queryState1.put(oid1, value1);
-
     cache.create(qid1, queryState1);
 
     //Test if deletion deletes the entire queryState
@@ -149,13 +148,12 @@ public class CacheStorageTest {
    */
   @Test
   public void deleteCreateCacheStorageTest() {
-    CacheStorageImpl cache = new CacheStorageImpl();
-    final Map<Identifier, OperatorState> queryState1= new HashMap<>();
-    final Map<Identifier, OperatorState> queryState2= new HashMap<>();
+    final CacheStorage cache = new CacheStorageImpl();
+    final Map<Identifier, OperatorState> queryState1 = new HashMap<>();
+    final Map<Identifier, OperatorState> queryState2 = new HashMap<>();
 
     queryState1.put(oid1, value1);
     queryState2.put(oid1, value2);
-
     cache.create(qid1, queryState1);
 
     Assert.assertEquals(value1, cache.read(qid1, oid1));
@@ -169,11 +167,10 @@ public class CacheStorageTest {
    */
   @Test
   public void deleteUpdateCacheStorageTest() {
-    CacheStorageImpl cache = new CacheStorageImpl();
-    final Map<Identifier, OperatorState> queryState1= new HashMap<>();
+    final CacheStorage cache = new CacheStorageImpl();
+    final Map<Identifier, OperatorState> queryState1 = new HashMap<>();
 
     queryState1.put(oid1, value1);
-
     cache.create(qid1, queryState1);
 
     Assert.assertEquals(value1, cache.read(qid1, oid1));
