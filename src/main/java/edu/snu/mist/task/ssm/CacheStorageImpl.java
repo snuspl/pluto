@@ -27,7 +27,6 @@ import java.util.Map;
  * This class is the implementation of the CacheStorage interface.
  * It holds queryStateMap, which holds queries' states in memory. It is a queryIdentifier(key)-queryState(value) map.
  */
-@DefaultImplementation(CacheStorageImpl.class)
 public final class CacheStorageImpl implements CacheStorage {
 
   private final Map<Identifier, Map<Identifier, OperatorState>> queryStateMap;

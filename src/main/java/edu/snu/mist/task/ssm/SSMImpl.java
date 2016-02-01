@@ -25,7 +25,6 @@ import java.util.Map;
 /**
  * This class is the implementation of the SSM.
  */
-@DefaultImplementation(SSMImpl.class)
 public final class SSMImpl implements SSM {
 
   private CacheStorage cache;
