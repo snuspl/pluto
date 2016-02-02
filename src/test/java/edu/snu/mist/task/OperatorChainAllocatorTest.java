@@ -43,7 +43,7 @@ public final class OperatorChainAllocatorTest {
     final int numOperatorChains = 10;
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     // Create 4 MistExecutors
-    jcb.bindNamedParameter(NumExecutors.class, 4+"");
+    jcb.bindNamedParameter(NumExecutors.class, Integer.toString(4));
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final ExecutorListProvider executorListProvider = injector.getInstance(ExecutorListProvider.class);
     final DAG<OperatorChain> operatorChainDAG = new AdjacentListDAG<>();
