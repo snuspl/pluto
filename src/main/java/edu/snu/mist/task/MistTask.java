@@ -53,14 +53,14 @@ public final class MistTask implements Task {
   /**
    * Default constructor of MistTask.
    * @param chainAllocator an allocator, which allocates a OperatorChain to a MistExecutor
-   * @param physicalToChainedPlan a converter, which chains operators and makes OperatorChains
+   * @param operatorChainer a converter, which chains operators and makes OperatorChains
    * @param receiver logical plan receiver, which converts the logical plans to physical plans
    * @param executorListProvider executor list provider, which returns the list of executors
    * @throws InjectionException
    */
   @Inject
   private MistTask(final OperatorChainAllocator chainAllocator,
-                   final PhysicalToChainedPlan physicalToChainedPlan,
+                   final OperatorChainer operatorChainer,
                    final LogicalPlanReceiver receiver,
                    final ExecutorListProvider executorListProvider) throws InjectionException {
     this.countDownLatch = new CountDownLatch(1);
@@ -71,7 +71,7 @@ public final class MistTask implements Task {
     receiver.setHandler(physicalPlan -> {
       // 3) Chains the physical operators and make OperatorChain.
       final PhysicalPlan<OperatorChain> chainedPlan =
-          physicalToChainedPlan.convertToChainedPlan(physicalPlan);
+          operatorChainer.chainOperators(physicalPlan);
 
       final DAG<OperatorChain> chainedOperators = chainedPlan.getOperators();
       // 4) Allocates the OperatorChains to the MistExecutors
