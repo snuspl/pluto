@@ -16,6 +16,7 @@
 package edu.snu.mist.task.executor;
 
 import edu.snu.mist.task.OperatorChainJob;
+import edu.snu.mist.task.executor.parameters.MistExecutorId;
 import edu.snu.mist.task.executor.queues.FIFOQueue;
 import edu.snu.mist.task.executor.queues.SchedulingQueue;
 import org.apache.reef.tang.Injector;
@@ -54,6 +55,7 @@ public final class ExecutorJobSchedulingTest {
     final int numTasks = 100;
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindImplementation(SchedulingQueue.class, FIFOQueue.class);
+    jcb.bindNamedParameter(MistExecutorId.class, "MistTestExecutor");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final MistExecutor executor = injector.getInstance(MistExecutor.class);
     final OperatorChainJob firstJob = () -> {
