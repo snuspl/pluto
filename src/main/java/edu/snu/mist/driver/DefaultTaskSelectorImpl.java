@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.driver;
 
+import edu.snu.mist.common.rpc.RPCServerPort;
 import mist.IPAddress;
 import mist.QueryInfo;
 import mist.TaskList;
@@ -25,6 +26,7 @@ import org.apache.reef.io.network.Connection;
 import org.apache.reef.io.network.ConnectionFactory;
 import org.apache.reef.io.network.NetworkConnectionService;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
+import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.wake.IdentifierFactory;
 
 import javax.inject.Inject;
@@ -57,15 +59,22 @@ final class DefaultTaskSelectorImpl implements TaskSelector {
    */
   private final IdentifierFactory idFactory;
 
+  /**
+   * MistTask's RPC server port.
+   */
+  private final int rpcServerPort;
+
   @Inject
   private DefaultTaskSelectorImpl(final NetworkConnectionService ncs,
                                   final StringIdentifierFactory idFactory,
                                   final DriverTaskMessageCodec messageCodec,
-                                  final DriverTaskMessageHandler messageHandler) {
+                                  final DriverTaskMessageHandler messageHandler,
+                                  @Parameter(RPCServerPort.class) final int rpcServerPort) {
     this.taskAddrAndConnMap = new ConcurrentHashMap<>();
     this.idFactory = idFactory;
     this.connFactory = ncs.registerConnectionFactory(idFactory.getNewInstance(MistDriver.MIST_CONN_FACTORY_ID),
         messageCodec, messageHandler, null, idFactory.getNewInstance(MistDriver.MIST_DRIVER_ID));
+    this.rpcServerPort = rpcServerPort;
   }
 
   @Override
@@ -99,7 +108,7 @@ final class DefaultTaskSelectorImpl implements TaskSelector {
       final IPAddress ipAddress = new IPAddress();
       final InetSocketAddress inetSocketAddress = value.getKey();
       ipAddress.setHostAddress(inetSocketAddress.getAddress().getHostAddress());
-      ipAddress.setPort(inetSocketAddress.getPort());
+      ipAddress.setPort(rpcServerPort);
       taskLists.add(ipAddress);
     }
     result.setTasks(taskLists);
