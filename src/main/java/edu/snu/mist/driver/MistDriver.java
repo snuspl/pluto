@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.driver;
 
+import edu.snu.mist.formats.avro.ClientToTaskMessage;
+import edu.snu.mist.task.DefaultClientToTaskMessageImpl;
 import edu.snu.mist.task.MistTask;
 import edu.snu.mist.task.parameters.NumExecutors;
 import org.apache.avro.ipc.Server;
@@ -157,6 +159,7 @@ public final class MistDriver {
           .build();
       final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
       jcb.bindNamedParameter(NumExecutors.class, mistTaskConfigs.getNumTaskExecutors()+"");
+      jcb.bindImplementation(ClientToTaskMessage.class, DefaultClientToTaskMessageImpl.class);
       // submit a task
       activeContext.submitTask(
           Configurations.merge(nameResolverConf, taskConfiguration, jcb.build()));

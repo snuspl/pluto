@@ -55,12 +55,12 @@ public final class TextSocketStreamGenerator extends BaseSourceGenerator<String>
   }
 
   @Override
-  String nextInput() throws IOException {
+  public String nextInput() throws IOException {
     return bf.readLine();
   }
 
   @Override
-  void releaseResources() throws IOException {
+  public void releaseResources() throws IOException {
     socket.close();
   }
 }
