@@ -59,15 +59,15 @@ import java.util.Set;
  * The different OperatorChains are allocated to multiple MistExecutors.
  * But, they can be executed on the same MistExecutor according to the allocation policy.
  */
-final class DefaultPhysicalToChainedPlanImpl implements PhysicalToChainedPlan {
+final class DefaultOperatorChainerImpl implements OperatorChainer {
 
   @Inject
-  private DefaultPhysicalToChainedPlanImpl() {
+  private DefaultOperatorChainerImpl() {
 
   }
 
   @Override
-  public PhysicalPlan<OperatorChain> convertToChainedPlan(final PhysicalPlan<Operator> plan) {
+  public PhysicalPlan<OperatorChain> chainOperators(final PhysicalPlan<Operator> plan) {
     final Map<SourceGenerator, Set<OperatorChain>> sourceMap = new HashMap<>();
     final Map<OperatorChain, Set<Sink>> sinkMap = new HashMap<>();
     final DAG<OperatorChain> operatorChainDAG = new AdjacentListDAG<>();

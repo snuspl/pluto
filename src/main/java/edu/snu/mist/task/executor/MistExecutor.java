@@ -17,6 +17,7 @@ package edu.snu.mist.task.executor;
 
 import edu.snu.mist.task.OperatorChainJob;
 import org.apache.reef.tang.annotations.DefaultImplementation;
+import org.apache.reef.wake.Identifier;
 
 /**
  * Mist Executor runs OperatorChainJobs on a single thread.
@@ -35,4 +36,10 @@ public interface MistExecutor {
    * @throws Exception
    */
   void close() throws Exception;
+
+  /**
+   * Gets an identifier.
+   * @return an identifier
+   */
+  Identifier getIdentifier();
 }

@@ -13,20 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task;
-
-import edu.snu.mist.common.DAG;
-import org.apache.reef.tang.annotations.DefaultImplementation;
-
 /**
- * This interface allocates OperatorChains represented as a DAG to MistExecutors.
+ * This package contains commonly used parameters.
  */
-@DefaultImplementation(DefaultOperatorChainAllocatorImpl.class)
-public interface OperatorChainAllocator {
-
-  /**
-   * Allocates the OperatorChain represented as a DAG to MistExecutors.
-   * @param dag a DAG of OperatorChain
-   */
-  void allocate(final DAG<OperatorChain> dag);
-}
+package edu.snu.mist.task.common.parameters;

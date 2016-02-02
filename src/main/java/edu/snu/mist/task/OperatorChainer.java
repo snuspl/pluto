@@ -22,12 +22,12 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
  * This interface converts a PhysicalPlan<Operator> to a PhysicalPlan<OperatorChain>
  * by chaining the operators.
  */
-@DefaultImplementation(DefaultPhysicalToChainedPlanImpl.class)
-public interface PhysicalToChainedPlan {
+@DefaultImplementation(DefaultOperatorChainerImpl.class)
+public interface OperatorChainer {
   /**
-   * Converts the PhysicalPlan<Operator> to the PhysicalPlan<OperatorChain>.
+   * Chains the operators and converts the PhysicalPlan<Operator> to the PhysicalPlan<OperatorChain>.
    * @param plan a plan
-   * @return a chained physical plan
+   * @return a physical plan which contains OperatorChain.
    */
-  PhysicalPlan<OperatorChain> convertToChainedPlan(PhysicalPlan<Operator> plan);
+  PhysicalPlan<OperatorChain> chainOperators(PhysicalPlan<Operator> plan);
 }
