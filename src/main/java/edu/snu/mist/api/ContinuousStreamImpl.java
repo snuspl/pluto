@@ -16,6 +16,9 @@
 
 package edu.snu.mist.api;
 
+import edu.snu.mist.api.functions.MISTBiFunction;
+import edu.snu.mist.api.functions.MISTFunction;
+import edu.snu.mist.api.functions.MISTPredicate;
 import edu.snu.mist.api.operators.*;
 import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sink.SinkImpl;
@@ -25,9 +28,6 @@ import edu.snu.mist.api.window.WindowSizePolicy;
 
 import java.util.List;
 import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * This abstract class contains common methods for ContinuousStream.
@@ -63,30 +63,31 @@ public abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implemen
   }
 
   @Override
-  public <OUT> MapOperatorStream<T, OUT> map(final Function<T, OUT> mapFunc) {
+  public <OUT> MapOperatorStream<T, OUT> map(final MISTFunction<T, OUT> mapFunc) {
     return new MapOperatorStream<>(this, mapFunc);
   }
 
   @Override
-  public <OUT> FlatMapOperatorStream<T, OUT> flatMap(final Function<T, List<OUT>> flatMapFunc) {
+  public <OUT> FlatMapOperatorStream<T, OUT> flatMap(final MISTFunction<T, List<OUT>> flatMapFunc) {
     return new FlatMapOperatorStream<>(this, flatMapFunc);
   }
 
   @Override
-  public FilterOperatorStream<T> filter(final Predicate<T> filterFunc) {
+  public FilterOperatorStream<T> filter(final MISTPredicate<T> filterFunc) {
     return new FilterOperatorStream<>(this, filterFunc);
   }
 
   @Override
   public <K, V> ReduceByKeyOperatorStream<T, K, V> reduceByKey(final int keyFieldNum,
                                                                  final Class<K> keyType,
-                                                                 final BiFunction<V, V, V> reduceFunc) {
+                                                                 final MISTBiFunction<V, V, V> reduceFunc) {
     return new ReduceByKeyOperatorStream<>(this, keyFieldNum, keyType, reduceFunc);
   }
 
   @Override
-  public <S, OUT> ApplyStatefulOperatorStream<T, OUT, S> applyStateful(final BiFunction<T, S, S> updateStateFunc,
-                                                                       final Function<S, OUT> produceResultFunc) {
+  public <S, OUT> ApplyStatefulOperatorStream<T, OUT, S> applyStateful(
+      final MISTBiFunction<T, S, S> updateStateFunc,
+      final MISTFunction<S, OUT> produceResultFunc) {
     return new ApplyStatefulOperatorStream<>(this, updateStateFunc, produceResultFunc);
   }
 

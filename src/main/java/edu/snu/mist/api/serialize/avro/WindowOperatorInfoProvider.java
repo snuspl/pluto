@@ -13,15 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.window;
+package edu.snu.mist.api.serialize.avro;
+
+import edu.snu.mist.api.WindowedStream;
+import edu.snu.mist.formats.avro.WindowOperatorInfo;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * Window policy interface which decides the size of the window inside.
+ * This is an interface for getting avro-serialized WindowOperatorInfo from MIST WindowedStream.
  */
-public interface WindowSizePolicy {
-  // TODO[MIST-76]: Support UDF WindowMaintainOption for more flexible window operation design.
+@DefaultImplementation(WindowOperatorInfoProviderImpl.class)
+public interface WindowOperatorInfoProvider {
+
   /**
-   * @return The type of window size policy type.
+   * @param windowedStream WindowedStream defined via MIST API.
+   * @return avro-serialized WindowOperatorInfo.
    */
-  WindowType.SizePolicy getSizePolicyType();
+  WindowOperatorInfo getWindowOperatorInfo(WindowedStream windowedStream);
 }

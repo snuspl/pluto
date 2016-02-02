@@ -17,6 +17,8 @@ package edu.snu.mist.api.sources.builder;
 
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
+import java.util.Set;
+
 /**
  * This interface defines necessary methods for storing and getting
  * configuration for source streams.
@@ -31,4 +33,10 @@ public interface SourceConfiguration {
    * @throws IllegalStateException throws the exception when tries to get a configuration value for non-existing param.
    */
   Object getConfigurationValue(String parameter) throws IllegalStateException;
+
+  /**
+   * Gets the set of all configuration keys for the source configuration.
+   * @return set of configuration keys.
+   */
+  Set<String> getConfigurationKeys();
 }

@@ -13,15 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.window;
-
 /**
- * Window policy interface which decides the size of the window inside.
+ * A package for MIST serialization.
  */
-public interface WindowSizePolicy {
-  // TODO[MIST-76]: Support UDF WindowMaintainOption for more flexible window operation design.
-  /**
-   * @return The type of window size policy type.
-   */
-  WindowType.SizePolicy getSizePolicyType();
-}
+package edu.snu.mist.api.serialize;

@@ -17,6 +17,8 @@ package edu.snu.mist.api.sink.builder;
 
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
+import java.util.Set;
+
 /**
  * This defines configuration interface necessary for building Sink output.
  */
@@ -29,4 +31,10 @@ public interface SinkConfiguration {
    * @throws IllegalStateException throws the exception when tries to get a configuration value for non-existing param.
    */
   Object getConfigurationValue(String parameter) throws IllegalStateException;
+
+  /**
+   * Gets the set of all configuration keys for the sink configuration.
+   * @return set of configuration keys.
+   */
+  Set<String> getConfigurationKeys();
 }

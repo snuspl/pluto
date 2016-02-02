@@ -33,6 +33,11 @@ public final class TimeEmitPolicy implements WindowEmitPolicy {
     }
   }
 
+  @Override
+  public WindowType.EmitPolicy getEmitPolicyType() {
+    return WindowType.EmitPolicy.TIME;
+  }
+
   /**
    * @return The emitting time interval of the window in millisecond unit.
    */

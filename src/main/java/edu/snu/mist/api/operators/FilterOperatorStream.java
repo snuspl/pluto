@@ -17,21 +17,20 @@ package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.ContinuousStream;
 import edu.snu.mist.api.StreamType;
-
-import java.util.function.Predicate;
+import edu.snu.mist.api.functions.MISTPredicate;
 
 /**
  * This class implements the necessary methods for getting information
  * about FilterOperator.
  */
-public final class FilterOperatorStream<T> extends ContinuousOperatorStream<T, T> {
+public final class FilterOperatorStream<T> extends InstantOperatorStream<T, T> {
 
   /**
    * Predicate function used for filter operation.
    */
-  private final Predicate<T> filterFunc;
+  private final MISTPredicate<T> filterFunc;
 
-  public FilterOperatorStream(final ContinuousStream<T> precedingStream, final Predicate<T> filterFunc) {
+  public FilterOperatorStream(final ContinuousStream<T> precedingStream, final MISTPredicate<T> filterFunc) {
     super(StreamType.OperatorType.FILTER, precedingStream);
     this.filterFunc = filterFunc;
   }
@@ -39,7 +38,7 @@ public final class FilterOperatorStream<T> extends ContinuousOperatorStream<T, T
   /**
    * @return The predicate user for filter operation
    */
-  public Predicate<T> getFilterFunction() {
+  public MISTPredicate<T> getFilterFunction() {
     return filterFunc;
   }
 }

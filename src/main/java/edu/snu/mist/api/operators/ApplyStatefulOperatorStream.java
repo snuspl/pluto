@@ -17,28 +17,27 @@ package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.ContinuousStream;
 import edu.snu.mist.api.StreamType;
-
-import java.util.function.BiFunction;
-import java.util.function.Function;
+import edu.snu.mist.api.functions.MISTBiFunction;
+import edu.snu.mist.api.functions.MISTFunction;
 
 /**
  * This class implements the necessary methods for getting information
  * about user-defined stateful operators.
  */
-public final class ApplyStatefulOperatorStream<IN, OUT, S> extends ContinuousOperatorStream<IN, OUT> {
+public final class ApplyStatefulOperatorStream<IN, OUT, S> extends InstantOperatorStream<IN, OUT> {
 
   /**
    * BiFunction used for updating the internal state.
    */
-  private final BiFunction<IN, S, S> updateStateFunc;
+  private final MISTBiFunction<IN, S, S> updateStateFunc;
   /**
    * Function used for producing the result stream.
    */
-  private final Function<S, OUT> produceResultFunc;
+  private final MISTFunction<S, OUT> produceResultFunc;
 
   public ApplyStatefulOperatorStream(final ContinuousStream<IN> precedingStream,
-                                     final BiFunction<IN, S, S> updateStateFunc,
-                                     final Function<S, OUT> produceResultFunc) {
+                                     final MISTBiFunction<IN, S, S> updateStateFunc,
+                                     final MISTFunction<S, OUT> produceResultFunc) {
     super(StreamType.OperatorType.APPLY_STATEFUL, precedingStream);
     this.updateStateFunc = updateStateFunc;
     this.produceResultFunc = produceResultFunc;
@@ -47,14 +46,14 @@ public final class ApplyStatefulOperatorStream<IN, OUT, S> extends ContinuousOpe
   /**
    * @return the Function with two arguments used for updating its internal state
    */
-  public BiFunction<IN, S, S> getUpdateStateFunc() {
+  public MISTBiFunction<IN, S, S> getUpdateStateFunc() {
     return updateStateFunc;
   }
 
   /**
    * @return the Function with one argument used for producing results
    */
-  public Function<S, OUT> getProduceResultFunc() {
+  public MISTFunction<S, OUT> getProduceResultFunc() {
     return produceResultFunc;
   }
 }

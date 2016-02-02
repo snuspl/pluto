@@ -17,7 +17,7 @@
  * This protocol defines the client message to mist tasks. The current implemented part is query submission action.
  **/
 {
-    "namespace": "edu.snu.mist.common.bridge.formats.avro",
+    "namespace": "edu.snu.mist.formats.avro",
     "protocol": "ClientToTaskMessage",
     "types": [
         {"type": "record", "name": "LogicalPlan", "fields": [
@@ -33,7 +33,9 @@
                             {"name": "SourceType", "type": {
                                 "name": "SourceTypeEnum", "type": "enum", "symbols": ["REEF_NETWORK_SOURCE"]
                             }},
-                            {"name": "SourceConfiguration", "type": {"type": "map", "values": "bytes"}}
+                            {"name": "SourceConfiguration", "type": {"type": "map", "values": [
+                                "bytes", "int", "string", "float", "boolean"
+                            ]}}
                         ]},
                         {"name": "InstantOperatorInfo", "type": "record", "fields": [
                             {"name": "InstantOperatorType", "type": {
@@ -61,7 +63,9 @@
                             {"name": "SinkType", "type": {
                                 "name": "SinkTypeEnum", "type": "enum", "symbols": ["REEF_NETWORK_SOURCE"]
                             }},
-                            {"name": "SinkConfiguration", "type": {"type": "map", "values": "bytes"}}
+                            {"name": "SinkConfiguration", "type": {"type": "map", "values": [
+                                "bytes", "int", "string", "float", "boolean"
+                            ]}}
                         ]}
                     ]}
                 ]}
@@ -75,10 +79,10 @@
             {"name": "IsSuccessful", "type": "boolean"},
             {"name": "FailDescription", "type": "string"}
         ]}
-    ]},
+    ],
     "messages": {
        "sendQueries": {
-           "request": "LogicalPlan",
+           "request":  [{"name": "logicalPlan", "type": "LogicalPlan"}],
            "response": "QuerySubmissionResult"
        }
     }

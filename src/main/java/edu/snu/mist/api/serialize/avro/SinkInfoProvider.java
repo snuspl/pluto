@@ -13,15 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.window;
+package edu.snu.mist.api.serialize.avro;
+
+import edu.snu.mist.api.sink.Sink;
+import edu.snu.mist.formats.avro.SinkInfo;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * Window policy interface which decides the size of the window inside.
+ * This is an interface for getting avro-serialized SinkInfo from MIST API Sink.
  */
-public interface WindowSizePolicy {
-  // TODO[MIST-76]: Support UDF WindowMaintainOption for more flexible window operation design.
+@DefaultImplementation(SinkInfoProviderImpl.class)
+public interface SinkInfoProvider {
+
   /**
-   * @return The type of window size policy type.
+   * @param sink Sink defined via MIST API.
+   * @return avro-serialized SinkInfo.
    */
-  WindowType.SizePolicy getSizePolicyType();
+  SinkInfo getSinkInfo(Sink sink);
 }

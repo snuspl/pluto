@@ -13,15 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.window;
+package edu.snu.mist.api.serialize.avro;
+
+import edu.snu.mist.api.sources.SourceStream;
+import edu.snu.mist.formats.avro.SourceInfo;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * Window policy interface which decides the size of the window inside.
+ * This is an interface for getting avro-serialized SourceInfo from MIST API SourceStream.
  */
-public interface WindowSizePolicy {
-  // TODO[MIST-76]: Support UDF WindowMaintainOption for more flexible window operation design.
+@DefaultImplementation(SourceInfoProviderImpl.class)
+public interface SourceInfoProvider {
+
   /**
-   * @return The type of window size policy type.
+   * @param sourceStream SourceStream defined via MIST API.
+   * @return avro-serialized SourceInfo.
    */
-  WindowType.SizePolicy getSizePolicyType();
+  SourceInfo getSourceInfo(SourceStream sourceStream);
 }

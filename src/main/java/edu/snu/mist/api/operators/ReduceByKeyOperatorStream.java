@@ -17,8 +17,7 @@ package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.ContinuousStream;
 import edu.snu.mist.api.StreamType;
-
-import java.util.function.BiFunction;
+import edu.snu.mist.api.functions.MISTBiFunction;
 
 /**
  * This class implements the necessary methods for getting information
@@ -27,7 +26,7 @@ import java.util.function.BiFunction;
 public final class ReduceByKeyOperatorStream<IN, K, V> extends ReduceOperatorStream<IN, K, V> {
 
   public ReduceByKeyOperatorStream(final ContinuousStream<IN> precedingStream, final int keyFieldIndex,
-                                   final Class<K> keyType, final BiFunction<V, V, V> reduceFunc) {
+                                   final Class<K> keyType, final MISTBiFunction<V, V, V> reduceFunc) {
     super(StreamType.OperatorType.REDUCE_BY_KEY, precedingStream, keyFieldIndex, keyType, reduceFunc);
   }
 }

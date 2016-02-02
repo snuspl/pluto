@@ -17,9 +17,9 @@ package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.WindowedStream;
+import edu.snu.mist.api.functions.MISTBiFunction;
 
 import java.util.Collection;
-import java.util.function.BiFunction;
 
 /**
  * This class implements the necessary methods for getting information about reduceByKeyOnWindow operator.
@@ -30,7 +30,7 @@ public final class ReduceByKeyWindowOperatorStream<IN, K, V>
     extends ReduceOperatorStream<Collection<IN>, K, V> {
 
   public ReduceByKeyWindowOperatorStream(final WindowedStream<IN> precedingStream, final int keyFieldIndex,
-                                         final Class<K> keyType, final BiFunction<V, V, V> reduceFunc) {
+                                         final Class<K> keyType, final MISTBiFunction<V, V, V> reduceFunc) {
     super(StreamType.OperatorType.REDUCE_BY_KEY_WINDOW, precedingStream, keyFieldIndex, keyType, reduceFunc);
   }
 }

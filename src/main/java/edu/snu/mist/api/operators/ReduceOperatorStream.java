@@ -18,20 +18,20 @@ package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.MISTStream;
 import edu.snu.mist.api.StreamType;
+import edu.snu.mist.api.functions.MISTBiFunction;
 
 import java.util.Map;
-import java.util.function.BiFunction;
 
 /**
  * This is the common implementation for reduce-like operators/
  * e.g) ReduceByKeyWindow, ReduceByKeyOperator, ...
  */
-public abstract class ReduceOperatorStream<IN, K, V> extends ContinuousOperatorStream<IN, Map<K, V>> {
+public abstract class ReduceOperatorStream<IN, K, V> extends InstantOperatorStream<IN, Map<K, V>> {
 
   /**
    * BiFunction used for reduce operation.
    */
-  protected final BiFunction<V, V, V> reduceFunc;
+  protected final MISTBiFunction<V, V, V> reduceFunc;
   /**
    * The field number of key used for reduce operation.
    */
@@ -39,7 +39,7 @@ public abstract class ReduceOperatorStream<IN, K, V> extends ContinuousOperatorS
 
   protected ReduceOperatorStream(final StreamType.OperatorType operatorName, final MISTStream<IN> precedingStream,
                                  final int keyFieldIndex, final Class<K> keyType,
-                                 final BiFunction<V, V, V> reduceFunc) {
+                                 final MISTBiFunction<V, V, V> reduceFunc) {
     // TODO[MIST-63]: Add dynamic type checking routine here.
     super(operatorName, precedingStream);
     this.reduceFunc = reduceFunc;
@@ -49,7 +49,7 @@ public abstract class ReduceOperatorStream<IN, K, V> extends ContinuousOperatorS
   /**
    * @return the Function with a single argument used for reduceByKey operation
    */
-  public BiFunction<V, V, V> getReduceFunction() {
+  public MISTBiFunction<V, V, V> getReduceFunction() {
     return reduceFunc;
   }
 
