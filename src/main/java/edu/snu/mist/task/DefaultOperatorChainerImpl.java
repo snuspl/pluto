@@ -20,15 +20,15 @@ import edu.snu.mist.task.operators.Operator;
 import javax.inject.Inject;
 
 // TODO[MIST-69]: Partitioning physical plans into OperatorChains by chaining operators
-final class DefaultPhysicalToChainedPlanImpl implements PhysicalToChainedPlan {
+final class DefaultOperatorChainerImpl implements OperatorChainer {
 
   @Inject
-  private DefaultPhysicalToChainedPlanImpl() {
+  private DefaultOperatorChainerImpl() {
 
   }
 
   @Override
-  public PhysicalPlan<OperatorChain> convertToChainedPlan(final PhysicalPlan<Operator> plan) {
+  public PhysicalPlan<OperatorChain> chainOperators(final PhysicalPlan<Operator> plan) {
     throw new RuntimeException("DefaultPhysicalToChainedPlanImpl.convertToChainedPlan is not implemented yet");
   }
 }
