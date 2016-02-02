@@ -31,7 +31,7 @@ import java.util.*;
 
 import static org.mockito.Mockito.mock;
 
-public final class PhysicalToChainedPlanTest {
+public final class OperatorChainerTest {
 
   /**
    * PhysicalPlan:
@@ -93,12 +93,12 @@ public final class PhysicalToChainedPlanTest {
     final PhysicalPlan<Operator> physicalPlan =
         new DefaultPhysicalPlanImpl<>(sourceMap, operatorDAG, sinkMap);
     final Injector injector = Tang.Factory.getTang().newInjector();
-    final PhysicalToChainedPlan physicalToChainedPlan =
-        injector.getInstance(PhysicalToChainedPlan.class);
+    final OperatorChainer operatorChainer =
+        injector.getInstance(OperatorChainer.class);
 
     // convert
     final PhysicalPlan<OperatorChain> chainedPhysicalPlan =
-        physicalToChainedPlan.convertToChainedPlan(physicalPlan);
+        operatorChainer.chainOperators(physicalPlan);
 
     // check
     Injector newInjector = Tang.Factory.getTang().newInjector();
