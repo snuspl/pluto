@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task.operators;
 
+import edu.snu.mist.api.StreamType;
 import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.task.operators.parameters.OperatorId;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
@@ -52,7 +53,7 @@ public final class FilterOperator<I> extends StatelessOperator<I, I> {
   }
 
   @Override
-  public String getOperatorClassName() {
-    return FilterOperator.class.getName();
+  public StreamType.OperatorType getOperatorType() {
+    return StreamType.OperatorType.FILTER;
   }
 }

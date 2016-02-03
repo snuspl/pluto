@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.api.StreamType;
 import edu.snu.mist.task.operators.BaseOperator;
 import edu.snu.mist.task.operators.Operator;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
@@ -102,6 +103,11 @@ public final class OperatorChainTest {
     public void handle(final Integer input) {
       outputEmitter.emit(input * input);
     }
+
+    @Override
+    public StreamType.OperatorType getOperatorType() {
+      return StreamType.OperatorType.MAP;
+    }
   }
 
   /**
@@ -117,6 +123,11 @@ public final class OperatorChainTest {
     public void handle(final Integer input) {
       outputEmitter.emit(input + 1);
     }
+
+    @Override
+    public StreamType.OperatorType getOperatorType() {
+      return StreamType.OperatorType.MAP;
+    }
   }
 
   /**
@@ -131,6 +142,11 @@ public final class OperatorChainTest {
     @Override
     public void handle(final Integer input) {
       outputEmitter.emit(input * 2);
+    }
+
+    @Override
+    public StreamType.OperatorType getOperatorType() {
+      return StreamType.OperatorType.MAP;
     }
   }
 }

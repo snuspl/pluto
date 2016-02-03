@@ -78,7 +78,7 @@ public abstract class StatefulOperator<I, S, O> extends BaseOperator<I, O> {
     ssm.update(queryId, operatorId, new OperatorState<>(intermediateState));
     final O output = generateOutput(intermediateState);
     LOG.log(Level.FINE, "{0} updates the state {1} with input {2} to {3}, and generates {4}",
-        new Object[]{getOperatorClassName(), state, input, intermediateState, output});
+        new Object[]{getOperatorIdentifier(), state, input, intermediateState, output});
     if (output != null) {
       outputEmitter.emit(output);
     }
@@ -96,10 +96,4 @@ public abstract class StatefulOperator<I, S, O> extends BaseOperator<I, O> {
    * @return an output
    */
   public abstract O generateOutput(final S finalState);
-
-  /**
-   * Gets the actual operator class name.
-   * @return operator name
-   */
-  public abstract String getOperatorClassName();
 }

@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task.operators;
 
+import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.task.operators.parameters.KeyIndex;
@@ -104,7 +105,7 @@ public final class ReduceByKeyOperator<K, V> extends StatefulOperator<Tuple2, Ma
   }
 
   @Override
-  public String getOperatorClassName() {
-    return "ReduceByKeyOperator";
+  public StreamType.OperatorType getOperatorType() {
+    return StreamType.OperatorType.REDUCE_BY_KEY;
   }
 }

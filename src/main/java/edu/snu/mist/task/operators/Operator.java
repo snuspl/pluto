@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task.operators;
 
+import edu.snu.mist.api.StreamType;
 import edu.snu.mist.task.common.InputHandler;
 import edu.snu.mist.task.common.OutputEmittable;
 import org.apache.reef.wake.Identifier;
@@ -36,4 +37,10 @@ public interface Operator<I, O> extends InputHandler<I>, OutputEmittable<O> {
    * @return an identifier
    */
   Identifier getQueryIdentifier();
+
+  /**
+   * Gets the type of operator.
+   * @return operator type
+   */
+  StreamType.OperatorType getOperatorType();
 }
