@@ -32,6 +32,7 @@ import java.net.Socket;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -56,21 +57,21 @@ public final class SocketSourceGeneratorTest {
    */
   @Test
   public void testSocketSourceGenerator() throws Exception {
+    final CountDownLatch countDownLatch = new CountDownLatch(3);
     final ExecutorService serverExecutor = Executors.newSingleThreadExecutor();
     final List<String> inputStream = Arrays.asList(
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
         "In in leo nec erat fringilla mattis eu non massa.",
         "Cras quis diam suscipit, commodo enim id, pulvinar nunc.");
     final List<String> result = new LinkedList<>();
-    final ServerSocket serverSoc = serverSocket;
     serverExecutor.submit(() -> {
       try {
-        final Socket sc = serverSoc.accept();
-        System.out.println("Socket is connected to " + sc);
-        final PrintWriter out = new PrintWriter(sc.getOutputStream(), true);
+        final Socket socket = serverSocket.accept();
+        System.out.println("Socket is connected to " + socket);
+        final PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
         inputStream.stream().forEach(out::println);
         out.close();
-        sc.close();
+        socket.close();
       } catch (final IOException e) {
         e.printStackTrace();
         throw new RuntimeException(e);
@@ -83,10 +84,13 @@ public final class SocketSourceGeneratorTest {
     jcb.bindImplementation(SourceGenerator.class, TextSocketStreamGenerator.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final SourceGenerator<String> sourceGenerator = injector.getInstance(SourceGenerator.class);
-    sourceGenerator.setOutputEmitter(result::add);
+    sourceGenerator.setOutputEmitter((data) -> {
+      result.add(data);
+      countDownLatch.countDown();
+    });
     sourceGenerator.start();
 
-    Thread.sleep(3000);
+    countDownLatch.await();
     sourceGenerator.close();
     Assert.assertEquals("SourceGenerator should generate " + inputStream,
         inputStream, result);

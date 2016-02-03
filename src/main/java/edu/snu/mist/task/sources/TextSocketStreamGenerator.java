@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * This source generator fetches data stream from socket server and generates String inputs.
  * This uses a single dedicated thread to fetch data from the socket server.
  * But, if the number of socket stream generator increases, this thread allocation could be a bottleneck.
- * TODO[MIST-##]: Threads of SourceGenerator should be managed judiciously.
+ * TODO[MIST-152]: Threads of SourceGenerator should be managed judiciously.
  */
 public final class TextSocketStreamGenerator implements SourceGenerator<String> {
   /**
@@ -60,7 +60,7 @@ public final class TextSocketStreamGenerator implements SourceGenerator<String> 
 
   /**
    * An executor service running this source generator.
-   * TODO[MIST-##]: Threads of SourceGenerator should be managed judiciously.
+   * TODO[MIST-152]: Threads of SourceGenerator should be managed judiciously.
    */
   private final ExecutorService executorService;
 
@@ -81,7 +81,7 @@ public final class TextSocketStreamGenerator implements SourceGenerator<String> 
       @Parameter(DataFetchSleepTime.class) final long sleepTime) throws IOException {
     this.socket = new Socket(serverIp, serverPort);
     this.is = socket.getInputStream();
-    // TODO[MIST-##]: Threads of SourceGenerator should be managed judiciously.
+    // TODO[MIST-152]: Threads of SourceGenerator should be managed judiciously.
     this.executorService = Executors.newSingleThreadExecutor();
     this.closed = new AtomicBoolean(false);
     this.started = new AtomicBoolean(false);
@@ -119,8 +119,7 @@ public final class TextSocketStreamGenerator implements SourceGenerator<String> 
 
   @Override
   public void close() throws Exception {
-    if (!closed.get()) {
-      closed.set(true);
+    if (closed.compareAndSet(false, true)) {
       socket.close();
       executorService.shutdown();
     }
