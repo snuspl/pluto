@@ -80,7 +80,7 @@ final class DefaultOperatorChainerImpl implements OperatorChainer {
         final OperatorChain newOperatorChain = getNewOperatorChain();
         operatorChainMap.put(rootOperator, newOperatorChain);
         newOperatorChain.insertToTail(rootOperator);
-        chainOperators(plan, operatorChainMap, operatorChainDAG, sinkMap,
+        chainOperatorHelper(plan, operatorChainMap, operatorChainDAG, sinkMap,
             rootOperator, null, newOperatorChain);
         operatorChains.add(newOperatorChain);
       }
@@ -90,7 +90,7 @@ final class DefaultOperatorChainerImpl implements OperatorChainer {
   }
 
   /**
-   * Chains the operators according to the mechanism.
+   * Chains the operators recursively according to the mechanism.
    * @param plan a physical plan of operators
    * @param operatorChainMap a map of operator and OperatorChain
    * @param operatorChainDAG a DAG of OperatorChain
@@ -99,13 +99,13 @@ final class DefaultOperatorChainerImpl implements OperatorChainer {
    * @param prevChain previous OperatorChain
    * @param currChain current OperatorChain
    */
-  private void chainOperators(final PhysicalPlan<Operator> plan,
-                              final Map<Operator, OperatorChain> operatorChainMap,
-                              final DAG<OperatorChain> operatorChainDAG,
-                              final Map<OperatorChain, Set<Sink>> sinkMap,
-                              final Operator currentOp,
-                              final OperatorChain prevChain,
-                              final OperatorChain currChain) {
+  private void chainOperatorHelper(final PhysicalPlan<Operator> plan,
+                                   final Map<Operator, OperatorChain> operatorChainMap,
+                                   final DAG<OperatorChain> operatorChainDAG,
+                                   final Map<OperatorChain, Set<Sink>> sinkMap,
+                                   final Operator currentOp,
+                                   final OperatorChain prevChain,
+                                   final OperatorChain currChain) {
     final DAG<Operator> dag = plan.getOperators();
     final Set<Operator> neighbors = dag.getNeighbors(currentOp);
 
@@ -122,13 +122,13 @@ final class DefaultOperatorChainerImpl implements OperatorChainer {
           final OperatorChain newChain = getNewOperatorChain();
           newChain.insertToTail(neighbor);
           operatorChainMap.put(neighbor, newChain);
-          chainOperators(plan, operatorChainMap, operatorChainDAG, sinkMap, neighbor, currChain, newChain);
+          chainOperatorHelper(plan, operatorChainMap, operatorChainDAG, sinkMap, neighbor, currChain, newChain);
         } else {
           // 1) This is sequential
           // so connect currentOperator to the current OperatorChain
           currChain.insertToTail(neighbor);
           operatorChainMap.put(neighbor, currChain);
-          chainOperators(plan, operatorChainMap, operatorChainDAG, sinkMap, neighbor, prevChain, currChain);
+          chainOperatorHelper(plan, operatorChainMap, operatorChainDAG, sinkMap, neighbor, prevChain, currChain);
         }
       } else {
         // The neighbor is already visited
@@ -154,6 +154,7 @@ final class DefaultOperatorChainerImpl implements OperatorChainer {
 
   /**
    * Gets a new OperatorChain.
+   * TODO[MIST-#]: Gets a new OperatorChain from OperatorChainFactory.
    * @return new operator chain
    */
   private OperatorChain getNewOperatorChain() {
