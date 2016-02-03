@@ -15,6 +15,12 @@
  */
 package edu.snu.mist.task.operators;
 
+import edu.snu.mist.api.StreamType;
+import edu.snu.mist.common.parameters.QueryId;
+import edu.snu.mist.task.operators.parameters.OperatorId;
+import org.apache.reef.io.network.util.StringIdentifierFactory;
+import org.apache.reef.tang.annotations.Parameter;
+
 import javax.inject.Inject;
 import java.util.function.Function;
 
@@ -31,8 +37,11 @@ public final class MapOperator<I, O> extends StatelessOperator<I, O> {
   private final Function<I, O> mapFunc;
 
   @Inject
-  private MapOperator(final Function<I, O> mapFunc) {
-    super();
+  private MapOperator(final Function<I, O> mapFunc,
+                      @Parameter(QueryId.class) final String queryId,
+                      @Parameter(OperatorId.class) final String operatorId,
+                      final StringIdentifierFactory idfactory) {
+    super(idfactory.getNewInstance(queryId), idfactory.getNewInstance(operatorId));
     this.mapFunc = mapFunc;
   }
 
@@ -42,7 +51,7 @@ public final class MapOperator<I, O> extends StatelessOperator<I, O> {
   }
 
   @Override
-  public String getOperatorClassName() {
-    return MapOperator.class.getName();
+  public StreamType.OperatorType getOperatorType() {
+    return StreamType.OperatorType.MAP;
   }
 }

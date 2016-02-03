@@ -16,8 +16,11 @@
 package edu.snu.mist.task.operators;
 
 import com.google.common.collect.ImmutableList;
+import edu.snu.mist.common.parameters.QueryId;
+import edu.snu.mist.task.operators.parameters.OperatorId;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
+import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
@@ -55,7 +58,10 @@ public final class StatelessOperatorTest {
         new Tuple("d", 1), new Tuple("b", 1), new Tuple("c", 1)};
     final List<Tuple> expected = Arrays.asList(outputs);
 
-    final Injector injector = Tang.Factory.getTang().newInjector();
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(QueryId.class, "testQuery");
+    jcb.bindNamedParameter(OperatorId.class, "testMapOperator");
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     // map function: convert string to tuple
     final Function<String, Tuple> mapFunc = (mapInput) -> new Tuple(mapInput, 1);
 
@@ -79,7 +85,10 @@ public final class StatelessOperatorTest {
     // expected output
     final List<String> expected = Arrays.asList("alpha", "area", "application", "ally");
 
-    final Injector injector = Tang.Factory.getTang().newInjector();
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(QueryId.class, "testQuery");
+    jcb.bindNamedParameter(OperatorId.class, "testMapOperator");
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     // create a filter function
     final Predicate<String> filterFunc = (input) -> input.startsWith("a");
 

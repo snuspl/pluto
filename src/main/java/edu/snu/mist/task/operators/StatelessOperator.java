@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.task.operators;
 
+import org.apache.reef.wake.Identifier;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,8 +29,9 @@ import java.util.logging.Logger;
 public abstract class StatelessOperator<I, O> extends BaseOperator<I, O> {
   private static final Logger LOG = Logger.getLogger(StatelessOperator.class.getName());
 
-  public StatelessOperator() {
-    // empty
+  public StatelessOperator(final Identifier queryId,
+                           final Identifier operatorId) {
+    super(queryId, operatorId);
   }
 
   /**
@@ -41,7 +44,7 @@ public abstract class StatelessOperator<I, O> extends BaseOperator<I, O> {
     final O output = compute(input);
     if (output != null) {
       LOG.log(Level.FINE, "{0} computes {1} to {2}",
-          new Object[]{getOperatorClassName(), input, output});
+          new Object[]{getOperatorIdentifier(), input, output});
       outputEmitter.emit(output);
     }
   }
@@ -54,11 +57,4 @@ public abstract class StatelessOperator<I, O> extends BaseOperator<I, O> {
    * @return output
    */
   public abstract O compute(final I input);
-
-
-  /**
-   * Gets the actual operator class name.
-   * @return operator name
-   */
-  public abstract String getOperatorClassName();
 }

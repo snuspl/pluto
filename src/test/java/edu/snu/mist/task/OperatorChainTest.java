@@ -15,11 +15,14 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.api.StreamType;
 import edu.snu.mist.task.operators.BaseOperator;
 import edu.snu.mist.task.operators.Operator;
+import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
+import org.apache.reef.wake.Identifier;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -44,9 +47,15 @@ public final class OperatorChainTest {
     final OperatorChain operatorChain = injector.getInstance(OperatorChain.class);
     operatorChain.setOutputEmitter(output -> result.add((Integer) output));
 
-    final Operator<Integer, Integer> squareOp = new SquareOperator();
-    final Operator<Integer, Integer> incOp = new IncrementOperator();
-    final Operator<Integer, Integer> doubleOp = new DoubleOperator();
+    final StringIdentifierFactory idFactory = injector.getInstance(StringIdentifierFactory.class);
+    final Identifier queryId = idFactory.getNewInstance("testQuery");
+    final Identifier squareOpId = idFactory.getNewInstance("squareOp");
+    final Identifier incOpId = idFactory.getNewInstance("incOp");
+    final Identifier doubleOpId = idFactory.getNewInstance("doubleOp");
+
+    final Operator<Integer, Integer> squareOp = new SquareOperator(queryId, squareOpId);
+    final Operator<Integer, Integer> incOp = new IncrementOperator(queryId, incOpId);
+    final Operator<Integer, Integer> doubleOp = new DoubleOperator(queryId, doubleOpId);
 
     // 2 * (input * input + 1)
     final Integer expected1 = 2 * (input * input + 1);
@@ -85,13 +94,19 @@ public final class OperatorChainTest {
    * This emits squared inputs.
    */
   class SquareOperator extends BaseOperator<Integer, Integer> {
-    SquareOperator() {
-      super();
+    SquareOperator(final Identifier queryId,
+                   final Identifier operatorId) {
+      super(queryId, operatorId);
     }
 
     @Override
     public void handle(final Integer input) {
       outputEmitter.emit(input * input);
+    }
+
+    @Override
+    public StreamType.OperatorType getOperatorType() {
+      return StreamType.OperatorType.MAP;
     }
   }
 
@@ -99,13 +114,19 @@ public final class OperatorChainTest {
    * This increments the input.
    */
   class IncrementOperator extends BaseOperator<Integer, Integer> {
-    IncrementOperator() {
-      super();
+    IncrementOperator(final Identifier queryId,
+                      final Identifier operatorId) {
+      super(queryId, operatorId);
     }
 
     @Override
     public void handle(final Integer input) {
       outputEmitter.emit(input + 1);
+    }
+
+    @Override
+    public StreamType.OperatorType getOperatorType() {
+      return StreamType.OperatorType.MAP;
     }
   }
 
@@ -113,13 +134,19 @@ public final class OperatorChainTest {
    * This doubles the input.
    */
   class DoubleOperator extends BaseOperator<Integer, Integer> {
-    DoubleOperator() {
-      super();
+    DoubleOperator(final Identifier queryId,
+                   final Identifier operatorId) {
+      super(queryId, operatorId);
     }
 
     @Override
     public void handle(final Integer input) {
       outputEmitter.emit(input * 2);
+    }
+
+    @Override
+    public StreamType.OperatorType getOperatorType() {
+      return StreamType.OperatorType.MAP;
     }
   }
 }

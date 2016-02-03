@@ -15,6 +15,12 @@
  */
 package edu.snu.mist.task.operators;
 
+import edu.snu.mist.api.StreamType;
+import edu.snu.mist.common.parameters.QueryId;
+import edu.snu.mist.task.operators.parameters.OperatorId;
+import org.apache.reef.io.network.util.StringIdentifierFactory;
+import org.apache.reef.tang.annotations.Parameter;
+
 import javax.inject.Inject;
 import java.util.function.Predicate;
 
@@ -30,8 +36,11 @@ public final class FilterOperator<I> extends StatelessOperator<I, I> {
   private final Predicate<I> filterFunc;
 
   @Inject
-  private FilterOperator(final Predicate<I> filterFunc) {
-    super();
+  private FilterOperator(final Predicate<I> filterFunc,
+                         @Parameter(QueryId.class) final String queryId,
+                         @Parameter(OperatorId.class) final String operatorId,
+                         final StringIdentifierFactory idfactory) {
+    super(idfactory.getNewInstance(queryId), idfactory.getNewInstance(operatorId));
     this.filterFunc = filterFunc;
   }
 
@@ -44,7 +53,7 @@ public final class FilterOperator<I> extends StatelessOperator<I, I> {
   }
 
   @Override
-  public String getOperatorClassName() {
-    return FilterOperator.class.getName();
+  public StreamType.OperatorType getOperatorType() {
+    return StreamType.OperatorType.FILTER;
   }
 }
