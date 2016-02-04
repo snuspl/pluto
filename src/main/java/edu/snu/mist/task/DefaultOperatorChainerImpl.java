@@ -127,33 +127,31 @@ final class DefaultOperatorChainerImpl implements OperatorChainer {
                                    final OperatorChain currChain) {
     final DAG<Operator> dag = plan.getOperators();
     final Set<Operator> nextOps = dag.getNeighbors(currentOp);
-
     for (final Operator nextOp : nextOps) {
-      if (operatorChainMap.get(nextOp) == null) {
-        if (nextOps.size() > 1 || dag.getInDegree(nextOp) > 1) {
-          // the current operator is 2) branching (have multiple next ops)
-          // or the next operator is 3) merging operator (have multiple incoming edges)
-          // so try to create a new OperatorChain for the next operator.
-          operatorChainDAG.addVertex(currChain);
-          if (prevChain != null) {
-            operatorChainDAG.addEdge(prevChain, currChain);
-          }
+      if (nextOps.size() > 1 || dag.getInDegree(nextOp) > 1) {
+        // the current operator is 2) branching (have multiple next ops)
+        // or the next operator is 3) merging operator (have multiple incoming edges)
+        // so try to create a new OperatorChain for the next operator.
+        operatorChainDAG.addVertex(currChain);
+        if (prevChain != null) {
+          operatorChainDAG.addEdge(prevChain, currChain);
+        }
+        if (operatorChainMap.get(nextOp) == null) {
           // create a new operatorChain
           final OperatorChain newChain = newOperatorChain();
           newChain.insertToTail(nextOp);
           operatorChainMap.put(nextOp, newChain);
           chainOperatorHelper(plan, operatorChainMap, operatorChainDAG, sinkMap, nextOp, currChain, newChain);
         } else {
-          // 1) The next operator is sequentially following the current operator
-          // so add the next operator to the current OperatorChain
-          currChain.insertToTail(nextOp);
-          operatorChainMap.put(nextOp, currChain);
-          chainOperatorHelper(plan, operatorChainMap, operatorChainDAG, sinkMap, nextOp, prevChain, currChain);
+          // The next operator is already visited so finish the chaining.
+          operatorChainDAG.addEdge(currChain, operatorChainMap.get(nextOp));
         }
       } else {
-        // The next operator is already visited so finish the chaining.
-        operatorChainDAG.addVertex(currChain);
-        operatorChainDAG.addEdge(currChain, operatorChainMap.get(nextOp));
+        // 1) The next operator is sequentially following the current operator
+        // so add the next operator to the current OperatorChain
+        currChain.insertToTail(nextOp);
+        operatorChainMap.put(nextOp, currChain);
+        chainOperatorHelper(plan, operatorChainMap, operatorChainDAG, sinkMap, nextOp, prevChain, currChain);
       }
     }
 

@@ -147,4 +147,9 @@ final class DefaultOperatorChain implements OperatorChain {
   public int hashCode() {
     return operators.hashCode();
   }
+
+  @Override
+  public String toString() {
+    return operators.toString();
+  }
 }
