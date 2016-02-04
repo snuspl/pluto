@@ -17,8 +17,6 @@ package edu.snu.mist.task;
 
 import edu.snu.mist.task.operators.BaseOperator;
 import edu.snu.mist.task.operators.Operator;
-import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -37,11 +35,10 @@ public final class OperatorChainTest {
   @Test
   public void operatorChainExecutionTest() throws InjectionException {
 
-    final Injector injector = Tang.Factory.getTang().newInjector();
     final List<Integer> result = new LinkedList<>();
     final Integer input = 3;
 
-    final OperatorChain operatorChain = injector.getInstance(OperatorChain.class);
+    final OperatorChain operatorChain = new DefaultOperatorChain();
     operatorChain.setOutputEmitter(output -> result.add((Integer) output));
 
     final Operator<Integer, Integer> squareOp = new SquareOperator();

@@ -19,7 +19,6 @@ import edu.snu.mist.task.common.InputHandler;
 import edu.snu.mist.task.common.OutputEmittable;
 import edu.snu.mist.task.executor.MistExecutor;
 import edu.snu.mist.task.operators.Operator;
-import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
  * This interface chains operators as a list and executes them in order
@@ -29,7 +28,6 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
  * It receives inputs, performs computations through the list of operators,
  * and forwards final outputs to an OutputEmitter which sends the outputs to next OperatorChains.
  */
-@DefaultImplementation(DefaultOperatorChain.class)
 public interface OperatorChain extends InputHandler, OutputEmittable {
 
   /**

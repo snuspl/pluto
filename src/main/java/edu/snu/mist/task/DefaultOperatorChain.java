@@ -47,7 +47,7 @@ final class DefaultOperatorChain implements OperatorChain {
   private MistExecutor mistExecutor;
 
   @Inject
-  private DefaultOperatorChain() {
+  DefaultOperatorChain() {
     this.operators = new LinkedList<>();
   }
 

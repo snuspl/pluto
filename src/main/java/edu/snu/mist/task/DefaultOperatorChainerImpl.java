@@ -20,9 +20,6 @@ import edu.snu.mist.common.DAG;
 import edu.snu.mist.task.operators.Operator;
 import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sources.SourceGenerator;
-import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.Tang;
-import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
 import java.util.HashMap;
@@ -93,7 +90,7 @@ final class DefaultOperatorChainerImpl implements OperatorChainer {
         // Check whether this operator is already visited.
         if (currOpChain == null) {
           // Create a new OperatorChain for this operator.
-          currOpChain = newOperatorChain();
+          currOpChain = new DefaultOperatorChain();
           // Mark this operator as visited and add it to current OperatorChain
           operatorChainMap.put(rootOperator, currOpChain);
           currOpChain.insertToTail(rootOperator);
@@ -138,7 +135,7 @@ final class DefaultOperatorChainerImpl implements OperatorChainer {
         }
         if (operatorChainMap.get(nextOp) == null) {
           // create a new operatorChain
-          final OperatorChain newChain = newOperatorChain();
+          final OperatorChain newChain = new DefaultOperatorChain();
           newChain.insertToTail(nextOp);
           operatorChainMap.put(nextOp, newChain);
           chainOperatorHelper(plan, operatorChainMap, operatorChainDAG, sinkMap, nextOp, currChain, newChain);
@@ -166,21 +163,6 @@ final class DefaultOperatorChainerImpl implements OperatorChainer {
       if (sinkMap.get(currChain) == null) {
         sinkMap.put(currChain, plan.getSinkMap().get(currentOp));
       }
-    }
-  }
-
-  /**
-   * Gets a new OperatorChain.
-   * TODO[MIST-#]: Gets a new OperatorChain from OperatorChainFactory.
-   * @return new operator chain
-   */
-  private OperatorChain newOperatorChain() {
-    final Injector injector = Tang.Factory.getTang().newInjector();
-    try {
-      return injector.getInstance(OperatorChain.class);
-    } catch (final InjectionException e) {
-      e.printStackTrace();
-      throw new RuntimeException(e);
     }
   }
 }

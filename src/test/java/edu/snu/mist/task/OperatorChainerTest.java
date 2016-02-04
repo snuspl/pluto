@@ -111,24 +111,19 @@ public final class OperatorChainerTest {
 
     // check
 
-    Injector newInjector = Tang.Factory.getTang().newInjector();
-    final OperatorChain op11op12 = newInjector.getInstance(OperatorChain.class);
+    final OperatorChain op11op12 = new DefaultOperatorChain();
     op11op12.insertToTail(op11); op11op12.insertToTail(op12);
 
-    newInjector = Tang.Factory.getTang().newInjector();
-    final OperatorChain op13chain = newInjector.getInstance(OperatorChain.class);
+    final OperatorChain op13chain = new DefaultOperatorChain();
     op13chain.insertToTail(op13);
 
-    newInjector = Tang.Factory.getTang().newInjector();
-    final OperatorChain op14op15 = newInjector.getInstance(OperatorChain.class);
+    final OperatorChain op14op15 = new DefaultOperatorChain();
     op14op15.insertToTail(op14); op14op15.insertToTail(op15);
 
-    newInjector = Tang.Factory.getTang().newInjector();
-    final OperatorChain op21op22 = newInjector.getInstance(OperatorChain.class);
+    final OperatorChain op21op22 = new DefaultOperatorChain();
     op21op22.insertToTail(op21); op21op22.insertToTail(op22);
 
-    newInjector = Tang.Factory.getTang().newInjector();
-    final OperatorChain op23chain = newInjector.getInstance(OperatorChain.class);
+    final OperatorChain op23chain = new DefaultOperatorChain();
     op23chain.insertToTail(op23);
 
     final DAG<OperatorChain> operatorChainDAG = chainedPhysicalPlan.getOperators();
@@ -246,7 +241,7 @@ public final class OperatorChainerTest {
         operatorChainer.chainOperators(physicalPlan);
 
     // check
-    final OperatorChain op11op12op13 = injector.getInstance(OperatorChain.class);
+    final OperatorChain op11op12op13 = new DefaultOperatorChain();
     op11op12op13.insertToTail(op11);
     op11op12op13.insertToTail(op12);
     op11op12op13.insertToTail(op13);
@@ -345,20 +340,16 @@ public final class OperatorChainerTest {
         operatorChainer.chainOperators(physicalPlan);
 
     // check
-    Injector newInjector = Tang.Factory.getTang().newInjector();
-    final OperatorChain op11op12 = newInjector.getInstance(OperatorChain.class);
+    final OperatorChain op11op12 = new DefaultOperatorChain();
     op11op12.insertToTail(op11); op11op12.insertToTail(op12);
 
-    newInjector = Tang.Factory.getTang().newInjector();
-    final OperatorChain op13chain = newInjector.getInstance(OperatorChain.class);
+    final OperatorChain op13chain = new DefaultOperatorChain();
     op13chain.insertToTail(op13);
 
-    newInjector = Tang.Factory.getTang().newInjector();
-    final OperatorChain op14chain = newInjector.getInstance(OperatorChain.class);
+    final OperatorChain op14chain = new DefaultOperatorChain();
     op14chain.insertToTail(op14);
 
-    newInjector = Tang.Factory.getTang().newInjector();
-    final OperatorChain op15chain = newInjector.getInstance(OperatorChain.class);
+    final OperatorChain op15chain = new DefaultOperatorChain();
     op15chain.insertToTail(op15);
 
     final DAG<OperatorChain> operatorChainDAG = chainedPhysicalPlan.getOperators();
@@ -485,20 +476,16 @@ public final class OperatorChainerTest {
         operatorChainer.chainOperators(physicalPlan);
 
     // check
-    Injector newInjector = Tang.Factory.getTang().newInjector();
-    final OperatorChain op11op12 = newInjector.getInstance(OperatorChain.class);
+    final OperatorChain op11op12 = new DefaultOperatorChain();
     op11op12.insertToTail(op11); op11op12.insertToTail(op12);
 
-    newInjector = Tang.Factory.getTang().newInjector();
-    final OperatorChain op13chain = newInjector.getInstance(OperatorChain.class);
+    final OperatorChain op13chain = new DefaultOperatorChain();
     op13chain.insertToTail(op13);
 
-    newInjector = Tang.Factory.getTang().newInjector();
-    final OperatorChain op21chain = newInjector.getInstance(OperatorChain.class);
+    final OperatorChain op21chain = new DefaultOperatorChain();
     op21chain.insertToTail(op21);
 
-    newInjector = Tang.Factory.getTang().newInjector();
-    final OperatorChain op31chain = newInjector.getInstance(OperatorChain.class);
+    final OperatorChain op31chain = new DefaultOperatorChain();
     op31chain.insertToTail(op31);
 
     final DAG<OperatorChain> operatorChainDAG = chainedPhysicalPlan.getOperators();
@@ -624,24 +611,19 @@ public final class OperatorChainerTest {
         operatorChainer.chainOperators(physicalPlan);
 
     // check
-    Injector newInjector = Tang.Factory.getTang().newInjector();
-    final OperatorChain opAchain = newInjector.getInstance(OperatorChain.class);
+    final OperatorChain opAchain = new DefaultOperatorChain();
     opAchain.insertToTail(opA);
 
-    newInjector = Tang.Factory.getTang().newInjector();
-    final OperatorChain opB1chain = newInjector.getInstance(OperatorChain.class);
+    final OperatorChain opB1chain = new DefaultOperatorChain();
     opB1chain.insertToTail(opB1);
 
-    newInjector = Tang.Factory.getTang().newInjector();
-    final OperatorChain opB2chain = newInjector.getInstance(OperatorChain.class);
+    final OperatorChain opB2chain = new DefaultOperatorChain();
     opB2chain.insertToTail(opB2);
 
-    newInjector = Tang.Factory.getTang().newInjector();
-    final OperatorChain opB3chain = newInjector.getInstance(OperatorChain.class);
+    final OperatorChain opB3chain = new DefaultOperatorChain();
     opB3chain.insertToTail(opB3);
 
-    newInjector = Tang.Factory.getTang().newInjector();
-    final OperatorChain opCchain = newInjector.getInstance(OperatorChain.class);
+    final OperatorChain opCchain = new DefaultOperatorChain();
     opCchain.insertToTail(opC);
 
     final DAG<OperatorChain> operatorChainDAG = chainedPhysicalPlan.getOperators();
