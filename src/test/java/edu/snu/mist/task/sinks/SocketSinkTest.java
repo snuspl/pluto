@@ -36,14 +36,30 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 public final class SocketSinkTest {
 
+  private static final Logger LOG = Logger.getLogger(SocketSinkTest.class.getName());
+
+  /**
+   * Server socket.
+   */
   private ServerSocket serverSocket;
+
+  /**
+   * Server port number.
+   */
+  private final int port = 8030;
+
+  /**
+   * Server ip address.
+   */
+  private final String serverIpAddress = "127.0.0.1";
 
   @Before
   public void setUp() throws IOException {
-    serverSocket = new ServerSocket(8030);
+    serverSocket = new ServerSocket(port);
   }
 
   @After
@@ -70,11 +86,11 @@ public final class SocketSinkTest {
       try {
         serverCreated.countDown();
         final Socket socket = serverSocket.accept();
-        System.out.println("Socket is connected to " + socket);
+        LOG.info("Socket is connected to " + socket);
         // wait until client sends inputs.
         final BufferedReader bf = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         // This should get three lines
-        while (result.size() < 3) {
+        while (result.size() < inputStream.size()) {
           final String input = bf.readLine();
           if (input != null) {
             result.add(input);
@@ -92,15 +108,16 @@ public final class SocketSinkTest {
     // wait until server socket is created.
     serverCreated.await();
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(SocketServerIp.class, "127.0.0.1");
-    jcb.bindNamedParameter(SocketServerPort.class, "8030");
+    jcb.bindNamedParameter(SocketServerIp.class, serverIpAddress);
+    jcb.bindNamedParameter(SocketServerPort.class, Integer.toString(port));
     jcb.bindImplementation(Sink.class, TextSocketSink.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final Sink<String> sink = injector.getInstance(Sink.class);
-    inputStream.stream().forEach(sink::handle);
-    endOfReceiving.await();
-    sink.close();
-    Assert.assertEquals("TextSocketSink should send " + inputStream,
-        inputStream, result);
+    try (final Sink<String> sink = injector.getInstance(Sink.class)) {
+      inputStream.stream().forEach(sink::handle);
+      endOfReceiving.await();
+    } finally {
+      Assert.assertEquals("TextSocketSink should send " + inputStream,
+          inputStream, result);
+    }
   }
 }
