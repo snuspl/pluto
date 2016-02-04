@@ -35,14 +35,30 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 public final class SocketSourceGeneratorTest {
 
+  private static final Logger LOG = Logger.getLogger(SocketSourceGeneratorTest.class.getName());
+
+  /**
+   * Server socket.
+   */
   private ServerSocket serverSocket;
+
+  /**
+   * Server port number.
+   */
+  private final int port = 8030;
+
+  /**
+   * Server ip address.
+   */
+  private final String serverIpAddress = "127.0.0.1";
 
   @Before
   public void setUp() throws IOException {
-    serverSocket = new ServerSocket(8030);
+    serverSocket = new ServerSocket(port);
   }
 
   @After
@@ -57,17 +73,17 @@ public final class SocketSourceGeneratorTest {
    */
   @Test
   public void testSocketSourceGenerator() throws Exception {
-    final CountDownLatch countDownLatch = new CountDownLatch(3);
-    final ExecutorService serverExecutor = Executors.newSingleThreadExecutor();
     final List<String> inputStream = Arrays.asList(
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
         "In in leo nec erat fringilla mattis eu non massa.",
         "Cras quis diam suscipit, commodo enim id, pulvinar nunc.");
+    final CountDownLatch countDownLatch = new CountDownLatch(inputStream.size());
+    final ExecutorService serverExecutor = Executors.newSingleThreadExecutor();
     final List<String> result = new LinkedList<>();
     serverExecutor.submit(() -> {
       try {
         final Socket socket = serverSocket.accept();
-        System.out.println("Socket is connected to " + socket);
+        LOG.info("Socket is connected to " + socket);
         final PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
         inputStream.stream().forEach(out::println);
         out.close();
@@ -79,20 +95,20 @@ public final class SocketSourceGeneratorTest {
     });
 
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(SocketServerIp.class, "127.0.0.1");
-    jcb.bindNamedParameter(SocketServerPort.class, "8030");
+    jcb.bindNamedParameter(SocketServerIp.class, serverIpAddress);
+    jcb.bindNamedParameter(SocketServerPort.class,  Integer.toString(port));
     jcb.bindImplementation(SourceGenerator.class, TextSocketStreamGenerator.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final SourceGenerator<String> sourceGenerator = injector.getInstance(SourceGenerator.class);
-    sourceGenerator.setOutputEmitter((data) -> {
-      result.add(data);
-      countDownLatch.countDown();
-    });
-    sourceGenerator.start();
-
-    countDownLatch.await();
-    sourceGenerator.close();
-    Assert.assertEquals("SourceGenerator should generate " + inputStream,
-        inputStream, result);
+    try (final SourceGenerator<String> sourceGenerator = injector.getInstance(SourceGenerator.class)) {
+      sourceGenerator.setOutputEmitter((data) -> {
+        result.add(data);
+        countDownLatch.countDown();
+      });
+      sourceGenerator.start();
+      countDownLatch.await();
+    } finally {
+      Assert.assertEquals("SourceGenerator should generate " + inputStream,
+          inputStream, result);
+    }
   }
 }
