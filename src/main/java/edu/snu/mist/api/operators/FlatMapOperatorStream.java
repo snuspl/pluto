@@ -17,22 +17,23 @@ package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.ContinuousStream;
 import edu.snu.mist.api.StreamType;
+import edu.snu.mist.api.functions.MISTFunction;
 
 import java.util.List;
-import java.util.function.Function;
 
 /**
  * This class implements the necessary methods for getting information
  * about FlatMapOperator.
  */
-public final class FlatMapOperatorStream<IN, OUT> extends ContinuousOperatorStream<IN, OUT> {
+public final class FlatMapOperatorStream<IN, OUT> extends InstantOperatorStream<IN, OUT> {
 
   /**
    * Function used for flatMap operation.
    */
-  private final Function<IN, List<OUT>> flatMapFunc;
+  private final MISTFunction<IN, List<OUT>> flatMapFunc;
 
-  public FlatMapOperatorStream(final ContinuousStream<IN> precedingStream, final Function<IN, List<OUT>> flatMapFunc) {
+  public FlatMapOperatorStream(final ContinuousStream<IN> precedingStream,
+                               final MISTFunction<IN, List<OUT>> flatMapFunc) {
     super(StreamType.OperatorType.FLAT_MAP, precedingStream);
     this.flatMapFunc = flatMapFunc;
   }
@@ -40,7 +41,7 @@ public final class FlatMapOperatorStream<IN, OUT> extends ContinuousOperatorStre
   /**
    * @return The function with a single argument used for flatMap operation
    */
-  public Function<IN, List<OUT>> getFlatMapFunction() {
+  public MISTFunction<IN, List<OUT>> getFlatMapFunction() {
     return flatMapFunc;
   }
 }

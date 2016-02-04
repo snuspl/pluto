@@ -20,6 +20,6 @@ import edu.snu.mist.task.common.InputHandler;
 /**
  * Sink consumes inputs and does final process, such as print, save input to database and so on.
  */
-public interface Sink<I> extends InputHandler<I> {
+public interface Sink<I> extends InputHandler<I>, AutoCloseable {
 
 }

@@ -17,7 +17,7 @@
  * This protocol defines the client message to mist tasks. The current implemented part is query submission action.
  **/
 {
-    "namespace": "edu.snu.mist.common.bridge.formats.avro",
+    "namespace": "edu.snu.mist.formats.avro",
     "protocol": "ClientToTaskMessage",
     "types": [
         {"type": "record", "name": "LogicalPlan", "fields": [
@@ -76,8 +76,7 @@
             ]}}}
         ]},
         {"type": "record", "name": "QuerySubmissionResult", "fields": [
-            {"name": "IsSuccessful", "type": "boolean"},
-            {"name": "FailDescription", "type": "string"}
+            {"name": "QueryId", "type": "string"}
         ]}
     ],
     "messages": {

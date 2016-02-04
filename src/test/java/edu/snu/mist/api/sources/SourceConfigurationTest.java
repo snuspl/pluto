@@ -15,8 +15,8 @@
  */
 package edu.snu.mist.api.sources;
 
-import edu.snu.mist.api.sources.builder.REEFNetworkSourceBuilderImpl;
-import edu.snu.mist.api.sources.builder.SourceBuilder;
+import edu.snu.mist.api.sources.builder.REEFNetworkSourceConfigurationBuilderImpl;
+import edu.snu.mist.api.sources.builder.SourceConfigurationBuilder;
 import edu.snu.mist.api.sources.builder.SourceConfiguration;
 import edu.snu.mist.api.sources.parameters.REEFNetworkSourceParameters;
 import org.apache.reef.wake.remote.impl.StringCodec;
@@ -33,7 +33,7 @@ public class SourceConfigurationTest {
    */
   @Test
   public void testREEFNetworkSourceBuilder() {
-    final SourceConfiguration reefNetworkSourceConfiguration = new REEFNetworkSourceBuilderImpl()
+    final SourceConfiguration reefNetworkSourceConfiguration = new REEFNetworkSourceConfigurationBuilderImpl()
         .set(REEFNetworkSourceParameters.NAME_SERVER_HOSTNAME, "localhost")
         .set(REEFNetworkSourceParameters.NAME_SERVICE_PORT, 8080)
         .set(REEFNetworkSourceParameters.CONNECTION_ID, "TestConn")
@@ -59,7 +59,7 @@ public class SourceConfigurationTest {
   @Test(expected = IllegalStateException.class)
   public void testSourceBuilderDuplicate() {
     // NCSSourceParameters.NAME_SERVER_HOSTNAME is duplicate!
-    final SourceBuilder builder = new REEFNetworkSourceBuilderImpl()
+    final SourceConfigurationBuilder builder = new REEFNetworkSourceConfigurationBuilderImpl()
         .set(REEFNetworkSourceParameters.NAME_SERVER_HOSTNAME, "localhost")
         .set(REEFNetworkSourceParameters.NAME_SERVER_HOSTNAME, "remotehost");
   }
@@ -70,7 +70,7 @@ public class SourceConfigurationTest {
   @Test(expected = IllegalStateException.class)
   public void testSourceBuilderMissingParameter() {
     // NCSSourceParameters.CODEC is missing!
-    final SourceConfiguration reefNetworkSourceConfiguration = new REEFNetworkSourceBuilderImpl()
+    final SourceConfiguration reefNetworkSourceConfiguration = new REEFNetworkSourceConfigurationBuilderImpl()
         .set(REEFNetworkSourceParameters.NAME_SERVER_HOSTNAME, "localhost")
         .set(REEFNetworkSourceParameters.NAME_SERVICE_PORT, 8080)
         .set(REEFNetworkSourceParameters.CONNECTION_ID, "TestConn")

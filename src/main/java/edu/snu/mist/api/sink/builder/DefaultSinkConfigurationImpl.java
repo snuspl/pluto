@@ -17,6 +17,7 @@ package edu.snu.mist.api.sink.builder;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The default implementation class for SinkConfiguration.
@@ -39,5 +40,10 @@ public final class DefaultSinkConfigurationImpl implements SinkConfiguration {
       throw new IllegalStateException("Tried to get a configuration value for non-existing param!");
     }
     return configMap.get(param);
+  }
+
+  @Override
+  public Set<String> getConfigurationKeys() {
+    return configMap.keySet();
   }
 }

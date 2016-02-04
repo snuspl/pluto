@@ -20,4 +20,8 @@ package edu.snu.mist.api.window;
  */
 public interface WindowSizePolicy {
   // TODO[MIST-76]: Support UDF WindowMaintainOption for more flexible window operation design.
+  /**
+   * @return The type of window size policy type.
+   */
+  WindowType.SizePolicy getSizePolicyType();
 }

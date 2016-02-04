@@ -16,8 +16,8 @@
 package edu.snu.mist.api.sink;
 
 import edu.snu.mist.api.sink.builder.REEFNetworkSinkConfigurationBuilderImpl;
-import edu.snu.mist.api.sink.builder.SinkConfigurationBuilder;
 import edu.snu.mist.api.sink.builder.SinkConfiguration;
+import edu.snu.mist.api.sink.builder.SinkConfigurationBuilder;
 import edu.snu.mist.api.sink.parameters.REEFNetworkSinkParameters;
 import org.apache.reef.wake.remote.impl.StringCodec;
 import org.junit.Assert;

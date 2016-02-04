@@ -26,7 +26,7 @@ import java.util.stream.Stream;
  * This abstract class implements commonly necessary data structures and
  * methods for building MIST SourceStream.
  */
-public abstract class SourceBuilderImpl implements SourceBuilder {
+public abstract class SourceConfigurationBuilderImpl implements SourceConfigurationBuilder {
 
   /**
    * Configuration storing map for SourceBuilderImpl.
@@ -58,7 +58,7 @@ public abstract class SourceBuilderImpl implements SourceBuilder {
   }
 
   @Override
-  public SourceBuilder set(final String key, final Object value) {
+  public SourceConfigurationBuilder set(final String key, final Object value) {
     if (configMap.containsKey(key)) {
       throw new IllegalStateException("Attempts to add duplicate configuration!");
     }

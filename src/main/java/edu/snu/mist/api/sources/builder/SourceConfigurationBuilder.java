@@ -18,7 +18,7 @@ package edu.snu.mist.api.sources.builder;
 /**
  * This interface defines commonly necessary methods for building MIST SourceStream.
  */
-public interface SourceBuilder {
+public interface SourceConfigurationBuilder {
   /**
    * Get the target source type of this builder.
    * @return The type of source it configures. Ex) ReefNetworkSource
@@ -38,5 +38,5 @@ public interface SourceBuilder {
    * @return the configured SourceBuilder
    * @throws IllegalStateException throws the exception when tries to get a configuration value for non-existing param.
    */
-  SourceBuilder set(String param, Object value) throws IllegalStateException;
+  SourceConfigurationBuilder set(String param, Object value) throws IllegalStateException;
 }

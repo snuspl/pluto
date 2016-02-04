@@ -23,7 +23,7 @@ import edu.snu.mist.task.common.OutputEmittable;
  * or receives input data from IoT devices and network connection.
  * After that, it sends the inputs to the OutputEmitter which forwards the inputs to next Operators.
  */
-public interface SourceGenerator<I> extends OutputEmittable<I> {
+public interface SourceGenerator<I> extends OutputEmittable<I>, AutoCloseable {
 
   /**
    * Starts to generate source stream and forwards inputs to the OutputEmitter.

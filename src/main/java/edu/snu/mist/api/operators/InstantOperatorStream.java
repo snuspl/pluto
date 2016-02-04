@@ -24,19 +24,19 @@ import java.util.Set;
 /**
  * A ContinuousStream created by operation on any kind of MISTStream.
  */
-public abstract class ContinuousOperatorStream<IN, OUT> extends ContinuousStreamImpl<OUT> {
+public abstract class InstantOperatorStream<IN, OUT> extends ContinuousStreamImpl<OUT> {
   /**
    * The type of this operator (e.g. filterOperator, mapOperator, ...)
    */
   private final StreamType.OperatorType operatorType;
 
-  public ContinuousOperatorStream(final StreamType.OperatorType operatorType, final MISTStream<IN> previousStream) {
+  public InstantOperatorStream(final StreamType.OperatorType operatorType, final MISTStream<IN> previousStream) {
     super(StreamType.ContinuousType.OPERATOR, previousStream);
     this.operatorType = operatorType;
   }
 
-  public ContinuousOperatorStream(final StreamType.OperatorType operatorType,
-                                  final Set<MISTStream> inputStreams) {
+  public InstantOperatorStream(final StreamType.OperatorType operatorType,
+                               final Set<MISTStream> inputStreams) {
     super(StreamType.ContinuousType.OPERATOR, inputStreams);
     this.operatorType = operatorType;
   }

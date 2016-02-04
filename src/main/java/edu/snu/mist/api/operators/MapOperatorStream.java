@@ -17,21 +17,20 @@ package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.ContinuousStream;
 import edu.snu.mist.api.StreamType;
-
-import java.util.function.Function;
+import edu.snu.mist.api.functions.MISTFunction;
 
 /**
  * This class implements the necessary methods for getting information
  * about MapOperator.
  */
-public final class MapOperatorStream<IN, OUT> extends ContinuousOperatorStream<IN, OUT> {
+public final class MapOperatorStream<IN, OUT> extends InstantOperatorStream<IN, OUT> {
 
   /**
    * Function used for map operation.
    */
-  private final Function<IN, OUT> mapFunc;
+  private final MISTFunction<IN, OUT> mapFunc;
 
-  public MapOperatorStream(final ContinuousStream<IN> precedingStream, final Function<IN, OUT> mapFunc) {
+  public MapOperatorStream(final ContinuousStream<IN> precedingStream, final MISTFunction<IN, OUT> mapFunc) {
     super(StreamType.OperatorType.MAP, precedingStream);
     this.mapFunc = mapFunc;
   }
@@ -39,7 +38,7 @@ public final class MapOperatorStream<IN, OUT> extends ContinuousOperatorStream<I
   /**
    * @return The function with a single argument used for map operation
    */
-  public Function<IN, OUT> getMapFunction() {
+  public MISTFunction<IN, OUT> getMapFunction() {
     return mapFunc;
   }
 }
