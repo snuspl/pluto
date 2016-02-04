@@ -24,7 +24,7 @@ import java.util.Set;
 
 /**
  * A default implementation of physical plan.
- * @param <E> operator type
+ * @param <E> Operator or OperatorChain
  */
 final class DefaultPhysicalPlanImpl<E> implements PhysicalPlan<E> {
 

@@ -66,23 +66,42 @@ final class DefaultOperatorChainerImpl implements OperatorChainer {
 
   }
 
+  /**
+   * It creates new OperatorChains for the root operators which are followed by sources,
+   * and creates OperatorChain by traversing the operators in DFS order.
+   * @param plan a plan
+   * @return physical plan consisting of OperatorChain
+   */
   @Override
   public PhysicalPlan<OperatorChain> chainOperators(final PhysicalPlan<Operator> plan) {
+    // This is a map of source and OperatorChains which are following sources
     final Map<SourceGenerator, Set<OperatorChain>> sourceMap = new HashMap<>();
+    // This is a map of OperatorChain and Sinks. The OperatorChain is followed by Sinks.
     final Map<OperatorChain, Set<Sink>> sinkMap = new HashMap<>();
     final DAG<OperatorChain> operatorChainDAG = new AdjacentListDAG<>();
+    // This map is used for marking visited operators.
     final Map<Operator, OperatorChain> operatorChainMap = new HashMap<>();
 
+    // It traverses the DAG of operators in DFS order
+    // from the root operators which are following sources.
     for (final Map.Entry<SourceGenerator, Set<Operator>> entry : plan.getSourceMap().entrySet()) {
+      // This is the root operators which are directly connected to sources.
       final Set<Operator> rootOperators = entry.getValue();
       final Set<OperatorChain> operatorChains = new HashSet<>();
       for (final Operator rootOperator : rootOperators) {
-        final OperatorChain newOperatorChain = getNewOperatorChain();
-        operatorChainMap.put(rootOperator, newOperatorChain);
-        newOperatorChain.insertToTail(rootOperator);
-        chainOperatorHelper(plan, operatorChainMap, operatorChainDAG, sinkMap,
-            rootOperator, null, newOperatorChain);
-        operatorChains.add(newOperatorChain);
+        OperatorChain currOpChain = operatorChainMap.get(rootOperator);
+        // Check whether this operator is already visited.
+        if (currOpChain == null) {
+          // Create a new OperatorChain for this operator.
+          currOpChain = newOperatorChain();
+          // Mark this operator as visited and add it to current OperatorChain
+          operatorChainMap.put(rootOperator, currOpChain);
+          currOpChain.insertToTail(rootOperator);
+          // Traverse in DFS order
+          chainOperatorHelper(plan, operatorChainMap, operatorChainDAG, sinkMap,
+              rootOperator, null, currOpChain);
+        }
+        operatorChains.add(currOpChain);
       }
       sourceMap.put(entry.getKey(), operatorChains);
     }
@@ -90,7 +109,7 @@ final class DefaultOperatorChainerImpl implements OperatorChainer {
   }
 
   /**
-   * Chains the operators recursively according to the mechanism.
+   * Chains the operators recursively (DFS order) according to the mechanism.
    * @param plan a physical plan of operators
    * @param operatorChainMap a map of operator and OperatorChain
    * @param operatorChainDAG a DAG of OperatorChain
@@ -107,39 +126,39 @@ final class DefaultOperatorChainerImpl implements OperatorChainer {
                                    final OperatorChain prevChain,
                                    final OperatorChain currChain) {
     final DAG<Operator> dag = plan.getOperators();
-    final Set<Operator> neighbors = dag.getNeighbors(currentOp);
+    final Set<Operator> nextOps = dag.getNeighbors(currentOp);
 
-    for (final Operator neighbor : neighbors) {
-      if (operatorChainMap.get(neighbor) == null) {
-        if (neighbors.size() > 1 || dag.getInDegree(neighbor) > 1) {
-          // the current operator is 2) branching or 3) merging operator
-          // so try to split the next operator and create a new chain
+    for (final Operator nextOp : nextOps) {
+      if (operatorChainMap.get(nextOp) == null) {
+        if (nextOps.size() > 1 || dag.getInDegree(nextOp) > 1) {
+          // the current operator is 2) branching (have multiple next ops)
+          // or the next operator is 3) merging operator (have multiple incoming edges)
+          // so try to create a new OperatorChain for the next operator.
           operatorChainDAG.addVertex(currChain);
           if (prevChain != null) {
             operatorChainDAG.addEdge(prevChain, currChain);
           }
           // create a new operatorChain
-          final OperatorChain newChain = getNewOperatorChain();
-          newChain.insertToTail(neighbor);
-          operatorChainMap.put(neighbor, newChain);
-          chainOperatorHelper(plan, operatorChainMap, operatorChainDAG, sinkMap, neighbor, currChain, newChain);
+          final OperatorChain newChain = newOperatorChain();
+          newChain.insertToTail(nextOp);
+          operatorChainMap.put(nextOp, newChain);
+          chainOperatorHelper(plan, operatorChainMap, operatorChainDAG, sinkMap, nextOp, currChain, newChain);
         } else {
-          // 1) This is sequential
-          // so connect currentOperator to the current OperatorChain
-          currChain.insertToTail(neighbor);
-          operatorChainMap.put(neighbor, currChain);
-          chainOperatorHelper(plan, operatorChainMap, operatorChainDAG, sinkMap, neighbor, prevChain, currChain);
+          // 1) The next operator is sequentially following the current operator
+          // so add the next operator to the current OperatorChain
+          currChain.insertToTail(nextOp);
+          operatorChainMap.put(nextOp, currChain);
+          chainOperatorHelper(plan, operatorChainMap, operatorChainDAG, sinkMap, nextOp, prevChain, currChain);
         }
       } else {
-        // The neighbor is already visited
-        // So finish the chaining at the current operator.
+        // The next operator is already visited so finish the chaining.
         operatorChainDAG.addVertex(currChain);
-        operatorChainDAG.addEdge(currChain, operatorChainMap.get(neighbor));
+        operatorChainDAG.addEdge(currChain, operatorChainMap.get(nextOp));
       }
     }
 
-    if (neighbors.size() == 0) {
-      // This operator is connected to Sink.
+    if (nextOps.size() == 0) {
+      // This operator is followed by Sink.
       // So finish the chaining at the current operator.
       operatorChainDAG.addVertex(currChain);
       if (prevChain != null) {
@@ -157,7 +176,7 @@ final class DefaultOperatorChainerImpl implements OperatorChainer {
    * TODO[MIST-#]: Gets a new OperatorChain from OperatorChainFactory.
    * @return new operator chain
    */
-  private OperatorChain getNewOperatorChain() {
+  private OperatorChain newOperatorChain() {
     final Injector injector = Tang.Factory.getTang().newInjector();
     try {
       return injector.getInstance(OperatorChain.class);

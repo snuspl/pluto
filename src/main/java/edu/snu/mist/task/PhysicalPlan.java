@@ -24,8 +24,9 @@ import java.util.Set;
 
 /**
  * This interface represents a PhysicalPlan of a query.
+ * PhysicalPlan can have two types: one is Operator and the other os OperatorChain.
  * TODO[MIST-68]: Receive and deserialize logical plans into physical plans.
- * @param <E> type of operator
+ * @param <E> Operator or OperatorChain
  */
 public interface PhysicalPlan<E> {
 
