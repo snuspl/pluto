@@ -26,12 +26,12 @@ import java.util.Map;
  * Currently, all the states are begin created, read, updated, deleted from the CacheStorage only.
  * TODO [MIST-113]: Use PersistentStorage as well.
  */
-public final class SSMImpl implements SSM {
+public final class DefaultSSMImpl implements SSM {
 
   private final CacheStorage cache;
 
   @Inject
-  SSMImpl(final CacheStorage cache) {
+  private DefaultSSMImpl(final CacheStorage cache) {
     this.cache = cache;
   }
 

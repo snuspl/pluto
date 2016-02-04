@@ -25,6 +25,9 @@ import java.util.Map;
 /**
  * This class is the implementation of the CacheStorage interface.
  * It holds queryStateMap, which holds queries' states in memory. It is a queryIdentifier(key)-queryState(value) map.
+ * It is only accessed by a single thread.
+ * This is because the operator that accesses SSM, which uses CacheStorage, is unique, and the operator is
+ * allocated only in a single executor.
  */
 public final class CacheStorageImpl implements CacheStorage {
 

@@ -27,7 +27,7 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
  * It extends the CRUD interface.
  * TODO[MIST-48]: We could later save other objects other than states.
  */
-@DefaultImplementation(SSMImpl.class)
+@DefaultImplementation(DefaultSSMImpl.class)
 public interface SSM extends CRUD {
 
 }
