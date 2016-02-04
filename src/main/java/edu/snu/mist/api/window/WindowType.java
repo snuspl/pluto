@@ -16,12 +16,15 @@
 package edu.snu.mist.api.window;
 
 /**
- * Window policy interface which decides the size of the window inside.
+ * Contains necessary parameters for defining streaming windows.
  */
-public interface WindowSizePolicy {
-  // TODO[MIST-76]: Support UDF WindowMaintainOption for more flexible window operation design.
-  /**
-   * @return The type of window size policy type.
-   */
-  WindowType.SizePolicy getSizePolicyType();
+public final class WindowType {
+
+  private WindowType() {
+    // Not called.
+  }
+
+  public static enum SizePolicy {TIME}
+
+  public static enum EmitPolicy {TIME}
 }

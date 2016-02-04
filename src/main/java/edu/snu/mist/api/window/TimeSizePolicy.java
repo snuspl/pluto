@@ -33,6 +33,11 @@ public final class TimeSizePolicy implements WindowSizePolicy {
     }
   }
 
+  @Override
+  public WindowType.SizePolicy getSizePolicyType() {
+    return WindowType.SizePolicy.TIME;
+  }
+
   /**
    * @return The time duration of the window size in millisecond unit.
    */

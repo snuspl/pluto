@@ -20,4 +20,8 @@ package edu.snu.mist.api.window;
  */
 public interface WindowEmitPolicy {
 
+  /**
+   * @return The type of window emitting policy type.
+   */
+  WindowType.EmitPolicy getEmitPolicyType();
 }

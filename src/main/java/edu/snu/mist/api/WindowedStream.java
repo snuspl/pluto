@@ -15,12 +15,12 @@
  */
 package edu.snu.mist.api;
 
+import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.operators.ReduceByKeyWindowOperatorStream;
 import edu.snu.mist.api.window.WindowEmitPolicy;
 import edu.snu.mist.api.window.WindowSizePolicy;
 
 import java.util.Collection;
-import java.util.function.BiFunction;
 
 /**
  * Windowed stream interface created by window methods. It emits a collection of data at one time.
@@ -44,5 +44,5 @@ public interface WindowedStream<T> extends MISTStream<Collection<T>> {
    * @return new reduced continuous stream after applying the operation
    */
   <K, V> ReduceByKeyWindowOperatorStream<T, K, V> reduceByKeyWindow(
-      int keyFieldNum, Class<K> keyType, BiFunction<V, V, V> reduceFunc);
+      int keyFieldNum, Class<K> keyType, MISTBiFunction<V, V, V> reduceFunc);
 }

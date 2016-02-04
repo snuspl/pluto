@@ -28,7 +28,7 @@ import java.util.function.Function;
 /**
  * The test class for operator APIs.
  */
-public class ContinuousOperatorStreamTest {
+public class InstantOperatorStreamTest {
 
   private final MapOperatorStream<String, Tuple2<String, Integer>> filteredMappedStream =
       new REEFNetworkSourceStream<String>(APITestParameters.TEST_REEF_NETWORK_SOURCE_CONF)

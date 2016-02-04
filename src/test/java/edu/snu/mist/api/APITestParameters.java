@@ -15,7 +15,10 @@
  */
 package edu.snu.mist.api;
 
-import edu.snu.mist.api.sources.builder.REEFNetworkSourceBuilderImpl;
+import edu.snu.mist.api.sink.builder.REEFNetworkSinkConfigurationBuilderImpl;
+import edu.snu.mist.api.sink.builder.SinkConfiguration;
+import edu.snu.mist.api.sink.parameters.REEFNetworkSinkParameters;
+import edu.snu.mist.api.sources.builder.REEFNetworkSourceConfigurationBuilderImpl;
 import edu.snu.mist.api.sources.builder.SourceConfiguration;
 import edu.snu.mist.api.sources.parameters.REEFNetworkSourceParameters;
 import org.apache.reef.wake.remote.impl.StringCodec;
@@ -29,11 +32,20 @@ public final class APITestParameters {
     // Do nothing here
   }
 
-  public static final SourceConfiguration TEST_REEF_NETWORK_SOURCE_CONF = new REEFNetworkSourceBuilderImpl()
+  public static final SourceConfiguration TEST_REEF_NETWORK_SOURCE_CONF =
+      new REEFNetworkSourceConfigurationBuilderImpl()
       .set(REEFNetworkSourceParameters.NAME_SERVER_HOSTNAME, "localhost")
       .set(REEFNetworkSourceParameters.NAME_SERVICE_PORT, 8080)
       .set(REEFNetworkSourceParameters.CONNECTION_ID, "TestConn")
       .set(REEFNetworkSourceParameters.SENDER_ID, "TestSender")
       .set(REEFNetworkSourceParameters.CODEC, StringCodec.class)
+      .build();
+
+  public static final SinkConfiguration TEST_REEF_NETWORK_SINK_CONF = new REEFNetworkSinkConfigurationBuilderImpl()
+      .set(REEFNetworkSinkParameters.NAME_SERVER_HOSTNAME, "localhost")
+      .set(REEFNetworkSinkParameters.NAME_SERVICE_PORT, 8088)
+      .set(REEFNetworkSinkParameters.CONNECTION_ID, "TestConn")
+      .set(REEFNetworkSinkParameters.RECEIVER_ID, "TestReceiver")
+      .set(REEFNetworkSinkParameters.CODEC, StringCodec.class)
       .build();
 }

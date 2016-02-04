@@ -15,6 +15,9 @@
  */
 package edu.snu.mist.api;
 
+import edu.snu.mist.api.functions.MISTBiFunction;
+import edu.snu.mist.api.functions.MISTFunction;
+import edu.snu.mist.api.functions.MISTPredicate;
 import edu.snu.mist.api.operators.*;
 import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sink.builder.SinkConfiguration;
@@ -22,9 +25,6 @@ import edu.snu.mist.api.window.WindowEmitPolicy;
 import edu.snu.mist.api.window.WindowSizePolicy;
 
 import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * Continuous Stream is a normal Stream used inside MIST. It emits one stream data (typed T) for one time.
@@ -42,7 +42,7 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    * @param <OUT> the type of newly created stream output
    * @return new transformed stream after applying the operation
    */
-  <OUT> MapOperatorStream<T, OUT> map(Function<T, OUT> mapFunc);
+  <OUT> MapOperatorStream<T, OUT> map(MISTFunction<T, OUT> mapFunc);
 
   /**
    * Applies flatMap operation to the current stream and creates a new stream.
@@ -50,14 +50,14 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    * @param <OUT> the type of newly created stream output
    * @return new transformed stream after applying the operation
    */
-  <OUT> FlatMapOperatorStream<T, OUT> flatMap(Function<T, List<OUT>> flatMapFunc);
+  <OUT> FlatMapOperatorStream<T, OUT> flatMap(MISTFunction<T, List<OUT>> flatMapFunc);
 
   /**
    * Applies filter operation to the current stream and creates a new stream.
    * @param filterFunc the function used for the transformation provided by a user.
    * @return new transformed stream after applying the operation
    */
-  FilterOperatorStream<T> filter(Predicate<T> filterFunc);
+  FilterOperatorStream<T> filter(MISTPredicate<T> filterFunc);
 
   /**
    * Applies reduceByKey operation to the current stream.
@@ -69,7 +69,7 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    * @return new transformed stream after applying the operation
    */
   <K, V> ReduceByKeyOperatorStream<T, K, V> reduceByKey(
-      int keyFieldIndex, Class<K> keyType, BiFunction<V, V, V> reduceFunc);
+      int keyFieldIndex, Class<K> keyType, MISTBiFunction<V, V, V> reduceFunc);
 
   /**
    * Applies user-defined stateful operator to the current stream.
@@ -80,8 +80,8 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    * @param <OUT> the type of stream output
    * @return new transformed stream after applying the user-defined stateful operation
    */
-  <S, OUT> ApplyStatefulOperatorStream<T, OUT, S> applyStateful(BiFunction<T, S, S> updateStateFunc,
-                                                                Function<S, OUT> produceResultFunc);
+  <S, OUT> ApplyStatefulOperatorStream<T, OUT, S> applyStateful(MISTBiFunction<T, S, S> updateStateFunc,
+                                                                MISTFunction<S, OUT> produceResultFunc);
 
   /**
    * It creates a new WindowsStream according to the policy defined in windowSizePolicy and windowEmitPolicy.

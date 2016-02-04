@@ -13,15 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.window;
+package edu.snu.mist.api.serialize.avro;
+
+import edu.snu.mist.api.MISTQuery;
+import edu.snu.mist.formats.avro.LogicalPlan;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * Window policy interface which decides the size of the window inside.
+ * This interface contains necessary methods for serializing MISTQueries.
  */
-public interface WindowSizePolicy {
-  // TODO[MIST-76]: Support UDF WindowMaintainOption for more flexible window operation design.
+@DefaultImplementation(MISTQuerySerializerImpl.class)
+public interface MISTQuerySerializer {
+
   /**
-   * @return The type of window size policy type.
+   * Serializes MISTQuery to LogicalPlan.
+   * @param query a query which a user wants to serialize.
+   * @return serialized LogicalPlan.
    */
-  WindowType.SizePolicy getSizePolicyType();
+  LogicalPlan queryToLogicalPlan(MISTQuery query);
 }

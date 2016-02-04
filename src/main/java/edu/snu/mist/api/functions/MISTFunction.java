@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.window;
+package edu.snu.mist.api.functions;
+
+import java.io.Serializable;
+import java.util.function.Function;
 
 /**
- * Window policy interface which decides the size of the window inside.
+ * A Java 8 lambda Function-compatible interface used in MIST.
  */
-public interface WindowSizePolicy {
-  // TODO[MIST-76]: Support UDF WindowMaintainOption for more flexible window operation design.
-  /**
-   * @return The type of window size policy type.
-   */
-  WindowType.SizePolicy getSizePolicyType();
+public interface MISTFunction<T, R> extends Function<T, R>, Serializable {
 }

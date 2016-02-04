@@ -13,15 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.window;
+package edu.snu.mist.api;
 
 /**
- * Window policy interface which decides the size of the window inside.
+ * This class contains necessary type information for various parameters in API.
  */
-public interface WindowSizePolicy {
-  // TODO[MIST-76]: Support UDF WindowMaintainOption for more flexible window operation design.
+public final class SerializedType {
+
+  private SerializedType() {
+    // Not called.
+  }
+
   /**
-   * @return The type of window size policy type.
+   * The enumeration of types used in source / sink configuration value.
    */
-  WindowType.SizePolicy getSizePolicyType();
+  public static enum AvroType {BYTES, INT, STRING, FLOAT, BOOLEAN}
 }

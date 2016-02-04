@@ -24,7 +24,7 @@ import java.util.Arrays;
 /**
  * This class builds SourceConfiguration of REEFNetworkStreamSource.
  */
-public final class REEFNetworkSourceBuilderImpl extends SourceBuilderImpl {
+public final class REEFNetworkSourceConfigurationBuilderImpl extends SourceConfigurationBuilderImpl {
 
   /**
    * Required Parameters for ReefNetworkSource.
@@ -38,7 +38,7 @@ public final class REEFNetworkSourceBuilderImpl extends SourceBuilderImpl {
   };
 
   @Inject
-  public REEFNetworkSourceBuilderImpl() {
+  public REEFNetworkSourceConfigurationBuilderImpl() {
     requiredParameters.addAll(Arrays.asList(reefNetworkRequiredParameters));
   }
 
