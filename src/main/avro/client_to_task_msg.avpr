@@ -31,7 +31,8 @@
                     {"name": "Attributes", "type": [
                         {"name": "SourceInfo", "type": "record", "fields": [
                             {"name": "SourceType", "type": {
-                                "name": "SourceTypeEnum", "type": "enum", "symbols": ["REEF_NETWORK_SOURCE"]
+                                "name": "SourceTypeEnum", "type": "enum", "symbols": ["REEF_NETWORK_SOURCE",
+                                    "TEXT_SOCKET_SOURCE"]
                             }},
                             {"name": "SourceConfiguration", "type": {"type": "map", "values": [
                                 "bytes", "int", "string", "float", "boolean"
@@ -61,7 +62,8 @@
                         ]},
                         {"name": "SinkInfo", "type": "record", "fields": [
                             {"name": "SinkType", "type": {
-                                "name": "SinkTypeEnum", "type": "enum", "symbols": ["REEF_NETWORK_SOURCE"]
+                                "name": "SinkTypeEnum", "type": "enum", "symbols": ["REEF_NETWORK_SINK",
+                                    "TEXT_SOCKET_SINK"]
                             }},
                             {"name": "SinkConfiguration", "type": {"type": "map", "values": [
                                 "bytes", "int", "string", "float", "boolean"

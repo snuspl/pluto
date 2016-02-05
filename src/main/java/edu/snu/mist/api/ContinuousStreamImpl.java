@@ -101,4 +101,9 @@ public abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implemen
   public Sink reefNetworkOutput(final SinkConfiguration sinkConfiguration) {
     return new SinkImpl(this, StreamType.SinkType.REEF_NETWORK_SINK, sinkConfiguration);
   }
+
+  @Override
+  public Sink textSocketOutput(final SinkConfiguration sinkConfiguration) {
+    return new SinkImpl(this, StreamType.SinkType.TEXT_SOCKET_SINK, sinkConfiguration);
+  }
 }

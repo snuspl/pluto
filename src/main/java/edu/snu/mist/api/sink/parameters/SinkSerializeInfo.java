@@ -39,6 +39,8 @@ public final class SinkSerializeInfo {
           .put(REEFNetworkSinkParameters.NAME_SERVER_HOSTNAME, SerializedType.AvroType.STRING)
           .put(REEFNetworkSinkParameters.NAME_SERVICE_PORT, SerializedType.AvroType.INT)
           .put(REEFNetworkSinkParameters.RECEIVER_ID, SerializedType.AvroType.STRING)
+          .put(TextSocketSinkParameters.SOCKET_HOST_ADDRESS, SerializedType.AvroType.STRING)
+          .put(TextSocketSinkParameters.SOCKET_HOST_PORT, SerializedType.AvroType.INT)
           .build();
 
   /**

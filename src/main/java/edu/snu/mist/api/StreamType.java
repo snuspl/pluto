@@ -37,12 +37,12 @@ public final class StreamType {
   /**
    * The type of source stream.
    */
-  public static enum SourceType {REEF_NETWORK_SOURCE}
+  public static enum SourceType {REEF_NETWORK_SOURCE, TEXT_SOCKET_SOURCE}
 
   /**
    * The type of sink stream.
    */
-  public static enum SinkType {REEF_NETWORK_SINK}
+  public static enum SinkType {REEF_NETWORK_SINK, TEXT_SOCKET_SINK}
 
   /**
    * The type of operator stream.

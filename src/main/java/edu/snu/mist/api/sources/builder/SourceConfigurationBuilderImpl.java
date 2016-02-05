@@ -16,6 +16,8 @@
 
 package edu.snu.mist.api.sources.builder;
 
+import edu.snu.mist.api.StreamType;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -38,7 +40,7 @@ public abstract class SourceConfigurationBuilderImpl implements SourceConfigurat
   protected final Set<String> requiredParameters = new HashSet<>();
 
   @Override
-  public abstract String getSourceType();
+  public abstract StreamType.SourceType getSourceType();
 
   @Override
   public SourceConfiguration build() {

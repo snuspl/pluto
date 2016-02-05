@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.api.sources.builder;
 
+import edu.snu.mist.api.StreamType;
+
 /**
  * This interface defines commonly necessary methods for building MIST SourceStream.
  */
@@ -23,7 +25,7 @@ public interface SourceConfigurationBuilder {
    * Get the target source type of this builder.
    * @return The type of source it configures. Ex) ReefNetworkSource
    */
-  String getSourceType();
+  StreamType.SourceType getSourceType();
 
   /**
    * Build key-value configuration for MIST SourceStream.

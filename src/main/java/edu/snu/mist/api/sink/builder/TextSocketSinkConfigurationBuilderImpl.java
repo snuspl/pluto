@@ -13,38 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package edu.snu.mist.api.sink.builder;
 
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.api.sink.parameters.REEFNetworkSinkParameters;
+import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 
 import javax.inject.Inject;
 import java.util.Arrays;
 
 /**
- * This class builds SinkConfiguration of REEFNetworkStreamSink.
+ * This class builds SinkConfiguration of TextSocketStreamSink.
  */
-public final class REEFNetworkSinkConfigurationBuilderImpl extends SinkConfigurationBuilderImpl {
+public final class TextSocketSinkConfigurationBuilderImpl extends SinkConfigurationBuilderImpl {
 
   /**
-   * Required Parameters for ReefNetworkSink.
+   * Required parameters for TextSocketSink.
    */
-  private final String[] reefNetworkRequiredParameters = {
-      REEFNetworkSinkParameters.NAME_SERVER_HOSTNAME,
-      REEFNetworkSinkParameters.NAME_SERVICE_PORT,
-      REEFNetworkSinkParameters.RECEIVER_ID,
-      REEFNetworkSinkParameters.CONNECTION_ID,
-      REEFNetworkSinkParameters.CODEC
+  private final String[] textSocketStreamSinkParameters = {
+      TextSocketSinkParameters.SOCKET_HOST_ADDRESS,
+      TextSocketSinkParameters.SOCKET_HOST_PORT
   };
 
   @Inject
-  public REEFNetworkSinkConfigurationBuilderImpl() {
-    requiredParameters.addAll(Arrays.asList(reefNetworkRequiredParameters));
+  public TextSocketSinkConfigurationBuilderImpl() {
+    requiredParameters.addAll(Arrays.asList(textSocketStreamSinkParameters));
   }
 
   @Override
   public StreamType.SinkType getSinkType() {
-    return StreamType.SinkType.REEF_NETWORK_SINK;
+    return StreamType.SinkType.TEXT_SOCKET_SINK;
   }
 }
