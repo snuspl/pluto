@@ -107,7 +107,7 @@ public final class StatefulOperatorTest {
 
     // test
     final List<Map<String, Integer>> result = new LinkedList<>();
-    wcOperator.setOutputEmitter(output -> result.add(new HashMap<>(output)));
+    wcOperator.setOutputEmitter(output -> result.add(output));
     inputStream.stream().forEach(wcOperator::handle);
     System.out.println("expected: " + expected);
     System.out.println("result: " + result);
