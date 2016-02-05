@@ -17,7 +17,6 @@ package edu.snu.mist.task.operators;
 
 import org.apache.reef.wake.Identifier;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -33,28 +32,4 @@ public abstract class StatelessOperator<I, O> extends BaseOperator<I, O> {
                            final Identifier operatorId) {
     super(queryId, operatorId);
   }
-
-  /**
-   * It receives inputs, performs computation,
-   * and emits the produced outputs to the OutputEmitter.
-   * @param input input.
-   */
-  @Override
-  public void handle(final I input) {
-    final O output = compute(input);
-    if (output != null) {
-      LOG.log(Level.FINE, "{0} computes {1} to {2}",
-          new Object[]{getOperatorIdentifier(), input, output});
-      outputEmitter.emit(output);
-    }
-  }
-
-  /**
-   * Computes the stateless operation on the input.
-   * It returns null if the input does not have to be forwarded to next operators.
-   * Otherwise, it returns an output.
-   * @param input input
-   * @return output
-   */
-  public abstract O compute(final I input);
 }

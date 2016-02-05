@@ -22,46 +22,49 @@ import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.function.Predicate;
+import java.util.List;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Filter operator which filters input stream.
+ * Maps and flattens the list of outputs.
  * @param <I> input type
+ * @param <O> output type
  */
-public final class FilterOperator<I> extends StatelessOperator<I, I> {
-  private static final Logger LOG = Logger.getLogger(FilterOperator.class.getName());
+public final class FlatMapOperator<I, O> extends StatelessOperator<I, O> {
+  private static final Logger LOG = Logger.getLogger(FlatMapOperator.class.getName());
 
   /**
-   * Filter function.
+   * FlatMap function.
    */
-  private final Predicate<I> filterFunc;
+  private final Function<I, List<O>> flatMapFunc;
 
   @Inject
-  private FilterOperator(final Predicate<I> filterFunc,
-                         @Parameter(QueryId.class) final String queryId,
-                         @Parameter(OperatorId.class) final String operatorId,
-                         final StringIdentifierFactory idfactory) {
+  private FlatMapOperator(@Parameter(QueryId.class) final String queryId,
+                          @Parameter(OperatorId.class) final String operatorId,
+                          final StringIdentifierFactory idfactory,
+                          final Function<I, List<O>> flatMapFunc) {
     super(idfactory.getNewInstance(queryId), idfactory.getNewInstance(operatorId));
-    this.filterFunc = filterFunc;
+    this.flatMapFunc = flatMapFunc;
   }
 
-
   /**
-   * Filters the input.
+   * FlatMaps the list of outputs.
    */
   @Override
   public void handle(final I input) {
-    if (filterFunc.test(input)) {
-      LOG.log(Level.FINE, "{0} Filters {1}",
-          new Object[]{FilterOperator.class, input});
-      outputEmitter.emit(input);
+    final List<O> outputs = flatMapFunc.apply(input);
+    LOG.log(Level.FINE, "{0} FlatMaps {1} to {2}",
+        new Object[]{FlatMapOperator.class, input, outputs});
+    for (final O output : outputs) {
+      outputEmitter.emit(output);
     }
   }
 
+
   @Override
   public StreamType.OperatorType getOperatorType() {
-    return StreamType.OperatorType.FILTER;
+    return StreamType.OperatorType.FLAT_MAP;
   }
 }
