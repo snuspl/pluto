@@ -39,6 +39,8 @@ public final class SourceSerializeInfo {
           .put(REEFNetworkSourceParameters.NAME_SERVER_HOSTNAME, SerializedType.AvroType.STRING)
           .put(REEFNetworkSourceParameters.NAME_SERVICE_PORT, SerializedType.AvroType.INT)
           .put(REEFNetworkSourceParameters.SENDER_ID, SerializedType.AvroType.STRING)
+          .put(TextSocketSourceParameters.SOCKET_HOST_ADDRESS, SerializedType.AvroType.STRING)
+          .put(TextSocketSourceParameters.SOCKET_HOST_PORT, SerializedType.AvroType.INT)
           .build();
 
   /**

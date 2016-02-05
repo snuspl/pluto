@@ -97,4 +97,11 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    * @return new sink for the current stream
    */
   Sink reefNetworkOutput(SinkConfiguration sinkConfiguration);
+
+  /**
+   * It defines a text socket output Sink for the current stream according to the SinkConfiguration.
+   * @param sinkConfiguration The configuration for sink
+   * @return new sink for the current stream
+   */
+  Sink textSocketOutput(SinkConfiguration sinkConfiguration);
 }

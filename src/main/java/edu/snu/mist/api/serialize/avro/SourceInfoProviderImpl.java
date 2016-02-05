@@ -46,6 +46,8 @@ public final class SourceInfoProviderImpl implements SourceInfoProvider {
     // Source type detection
     if (sourceStream.getSourceType() == StreamType.SourceType.REEF_NETWORK_SOURCE) {
       sourceInfoBuilder.setSourceType(SourceTypeEnum.REEF_NETWORK_SOURCE);
+    } else if (sourceStream.getSourceType() == StreamType.SourceType.TEXT_SOCKET_SOURCE) {
+      sourceInfoBuilder.setSourceType(SourceTypeEnum.TEXT_SOCKET_SOURCE);
     } else {
       throw new IllegalStateException("Source type is illegal!");
     }

@@ -45,7 +45,9 @@ public final class SinkInfoProviderImpl implements SinkInfoProvider {
     final SinkInfo.Builder sinkInfoBuilder = SinkInfo.newBuilder();
     // Sink type detection
     if (sink.getSinkType() == StreamType.SinkType.REEF_NETWORK_SINK) {
-      sinkInfoBuilder.setSinkType(SinkTypeEnum.REEF_NETWORK_SOURCE);
+      sinkInfoBuilder.setSinkType(SinkTypeEnum.REEF_NETWORK_SINK);
+    } else if (sink.getSinkType() == StreamType.SinkType.TEXT_SOCKET_SINK) {
+      sinkInfoBuilder.setSinkType(SinkTypeEnum.TEXT_SOCKET_SINK);
     } else {
       throw new IllegalStateException("Sink type is illegal!");
     }

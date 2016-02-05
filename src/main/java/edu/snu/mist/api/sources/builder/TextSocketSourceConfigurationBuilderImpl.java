@@ -13,38 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package edu.snu.mist.api.sources.builder;
 
+import com.google.inject.Inject;
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.api.sources.parameters.REEFNetworkSourceParameters;
+import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 
-import javax.inject.Inject;
 import java.util.Arrays;
 
 /**
- * This class builds SourceConfiguration of REEFNetworkStreamSource.
+ * This class builds SourceConfiguration of TextSocketSourceStream.
  */
-public final class REEFNetworkSourceConfigurationBuilderImpl extends SourceConfigurationBuilderImpl {
+public final class TextSocketSourceConfigurationBuilderImpl extends SourceConfigurationBuilderImpl {
 
   /**
-   * Required Parameters for ReefNetworkSource.
+   * Required parameters for TextSocketSourceStream.
    */
-  private final String[] reefNetworkRequiredParameters = {
-      REEFNetworkSourceParameters.NAME_SERVER_HOSTNAME,
-      REEFNetworkSourceParameters.NAME_SERVICE_PORT,
-      REEFNetworkSourceParameters.SENDER_ID,
-      REEFNetworkSourceParameters.CONNECTION_ID,
-      REEFNetworkSourceParameters.CODEC
+  private final String[] textSocketSourceParameters = {
+      TextSocketSourceParameters.SOCKET_HOST_ADDRESS,
+      TextSocketSourceParameters.SOCKET_HOST_PORT
   };
 
   @Inject
-  public REEFNetworkSourceConfigurationBuilderImpl() {
-    requiredParameters.addAll(Arrays.asList(reefNetworkRequiredParameters));
+  public TextSocketSourceConfigurationBuilderImpl() {
+    requiredParameters.addAll(Arrays.asList(textSocketSourceParameters));
   }
 
   @Override
   public StreamType.SourceType getSourceType() {
-    return StreamType.SourceType.REEF_NETWORK_SOURCE;
+    return StreamType.SourceType.TEXT_SOCKET_SOURCE;
   }
 }
