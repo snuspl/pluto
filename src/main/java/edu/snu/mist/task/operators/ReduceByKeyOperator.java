@@ -74,8 +74,8 @@ public final class ReduceByKeyOperator<K, V> extends StatefulOperator<Tuple2, Ma
 
   /**
    * Reduces the value by key.
-   * This does not create a new state and
-   * does mutable computation for efficient memory use.
+   * It creates a new map whenever it updates the state.
+   * This produces immutable output.
    * @param input input tuple
    * @param state previous state
    * @return output
@@ -83,15 +83,16 @@ public final class ReduceByKeyOperator<K, V> extends StatefulOperator<Tuple2, Ma
   @SuppressWarnings("unchecked")
   @Override
   public Map<K, V> updateState(final Tuple2 input, final Map<K, V> state) {
+    final Map<K, V> newState = new HashMap<>(state);
     final K key = (K)input.get(keyIndex);
     final V val = (V)input.get(1 - keyIndex);
-    final V oldVal = state.get(key);
+    final V oldVal = newState.get(key);
     if (oldVal == null) {
-      state.put(key, val);
+      newState.put(key, val);
     } else {
-      state.put(key, reduceFunc.apply(oldVal, val));
+      newState.put(key, reduceFunc.apply(oldVal, val));
     }
-    return state;
+    return newState;
   }
 
   /**
