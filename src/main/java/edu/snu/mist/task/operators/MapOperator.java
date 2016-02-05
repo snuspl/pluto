@@ -23,6 +23,8 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Map operator which maps input.
@@ -30,6 +32,7 @@ import java.util.function.Function;
  * @param <I> output type
  */
 public final class MapOperator<I, O> extends StatelessOperator<I, O> {
+  private static final Logger LOG = Logger.getLogger(MapOperator.class.getName());
 
   /**
    * Map function.
@@ -45,9 +48,14 @@ public final class MapOperator<I, O> extends StatelessOperator<I, O> {
     this.mapFunc = mapFunc;
   }
 
+  /**
+   * Maps the input to the output.
+   */
   @Override
-  public O compute(final I input) {
-    return mapFunc.apply(input);
+  public void handle(final I input) {
+    final O output = mapFunc.apply(input);
+    LOG.log(Level.FINE, "{0} maps {1} to {2}", new Object[]{MapOperator.class, input, output});
+    outputEmitter.emit(output);
   }
 
   @Override

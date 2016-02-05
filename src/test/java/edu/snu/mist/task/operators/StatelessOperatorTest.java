@@ -96,4 +96,27 @@ public final class StatelessOperatorTest {
     final FilterOperator<String> filterOperator = injector.getInstance(FilterOperator.class);
     testStatelessOperator(inputStream, expected, filterOperator);
   }
+
+  /**
+   * Test flatMap operation.
+   * It splits the string by space.
+   */
+  @Test
+  public void testFlatMapOperation() throws InjectionException {
+    // input stream
+    final List<String> inputStream = ImmutableList.of("a b c", "b c d", "d e f");
+    // expected output
+    final String[] outputs = {"a", "b", "c", "b", "c", "d", "d", "e", "f"};
+    final List<String> expected = Arrays.asList(outputs);
+
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(QueryId.class, "testQuery");
+    jcb.bindNamedParameter(OperatorId.class, "testFlatMapOperator");
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    // map function: splits the string by space.
+    final Function<String, List<String>> flatMapFunc = (mapInput) -> Arrays.asList(mapInput.split(" "));
+    injector.bindVolatileInstance(Function.class, flatMapFunc);
+    final FlatMapOperator<String, String> flatMapOperator = injector.getInstance(FlatMapOperator.class);
+    testStatelessOperator(inputStream, expected, flatMapOperator);
+  }
 }
