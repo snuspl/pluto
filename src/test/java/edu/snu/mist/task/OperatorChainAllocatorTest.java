@@ -51,11 +51,10 @@ public final class OperatorChainAllocatorTest {
         injector.getInstance(DefaultOperatorChainAllocatorImpl.class);
 
     // Create 10 OperatorChains which are sequentially connected.
-    OperatorChain src = injector.getInstance(OperatorChain.class);
+    OperatorChain src = new DefaultOperatorChain();
     operatorChainDAG.addVertex(src);
     for (int i = 1; i < numOperatorChains; i++) {
-      final Injector newInjector = Tang.Factory.getTang().newInjector();
-      final OperatorChain dest = newInjector.getInstance(OperatorChain.class);
+      final OperatorChain dest = new DefaultOperatorChain();
       operatorChainDAG.addVertex(dest);
       operatorChainDAG.addEdge(src, dest);
       src = dest;

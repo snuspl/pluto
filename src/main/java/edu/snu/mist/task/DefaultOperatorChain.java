@@ -47,7 +47,7 @@ final class DefaultOperatorChain implements OperatorChain {
   private MistExecutor mistExecutor;
 
   @Inject
-  private DefaultOperatorChain() {
+  DefaultOperatorChain() {
     this.operators = new LinkedList<>();
   }
 
@@ -146,5 +146,10 @@ final class DefaultOperatorChain implements OperatorChain {
   @Override
   public int hashCode() {
     return operators.hashCode();
+  }
+
+  @Override
+  public String toString() {
+    return operators.toString();
   }
 }

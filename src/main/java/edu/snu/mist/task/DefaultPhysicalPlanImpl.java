@@ -23,28 +23,46 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * This interface represents a PhysicalPlan of a query.
- * PhysicalPlan can have two types: one is Operator and the other os OperatorChain.
- * TODO[MIST-68]: Receive and deserialize logical plans into physical plans.
+ * A default implementation of physical plan.
  * @param <E> Operator or OperatorChain
  */
-public interface PhysicalPlan<E> {
+final class DefaultPhysicalPlanImpl<E> implements PhysicalPlan<E> {
 
   /**
-   * Gets the DAG of operators.
-   * @return a DAG
+   * A map of source generator and operators.
    */
-  DAG<E> getOperators();
+  private final Map<SourceGenerator, Set<E>> sourceMap;
 
   /**
-   * Gets the map containing SourceGenerator and its next operators.
-   * @return a map
+   * A DAG of operators.
    */
-  Map<SourceGenerator, Set<E>> getSourceMap();
+  private final DAG<E> operators;
 
   /**
-   * Gets the map of operator and sinks.
-   * @return a map
+   * A map of operator and sinks.
    */
-  Map<E, Set<Sink>> getSinkMap();
+  private final Map<E, Set<Sink>> sinkMap;
+
+  public DefaultPhysicalPlanImpl(final Map<SourceGenerator, Set<E>> sourceMap,
+                                 final DAG<E> operators,
+                                 final Map<E, Set<Sink>> sinkMap) {
+    this.sourceMap = sourceMap;
+    this.operators = operators;
+    this.sinkMap = sinkMap;
+  }
+
+  @Override
+  public DAG<E> getOperators() {
+    return operators;
+  }
+
+  @Override
+  public Map<SourceGenerator, Set<E>> getSourceMap() {
+    return sourceMap;
+  }
+
+  @Override
+  public Map<E, Set<Sink>> getSinkMap() {
+    return sinkMap;
+  }
 }

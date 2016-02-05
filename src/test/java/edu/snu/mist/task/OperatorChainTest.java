@@ -40,13 +40,13 @@ public final class OperatorChainTest {
   @Test
   public void operatorChainExecutionTest() throws InjectionException {
 
-    final Injector injector = Tang.Factory.getTang().newInjector();
     final List<Integer> result = new LinkedList<>();
     final Integer input = 3;
 
-    final OperatorChain operatorChain = injector.getInstance(OperatorChain.class);
+    final OperatorChain operatorChain = new DefaultOperatorChain();
     operatorChain.setOutputEmitter(output -> result.add((Integer) output));
 
+    final Injector injector = Tang.Factory.getTang().newInjector();
     final StringIdentifierFactory idFactory = injector.getInstance(StringIdentifierFactory.class);
     final Identifier queryId = idFactory.getNewInstance("testQuery");
     final Identifier squareOpId = idFactory.getNewInstance("squareOp");
