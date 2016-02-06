@@ -16,11 +16,11 @@
 
 package edu.snu.mist.task.ssm;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import org.apache.reef.wake.Identifier;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class is the implementation of the CacheStorage interface.
@@ -35,7 +35,7 @@ public final class CacheStorageImpl implements CacheStorage {
 
   @Inject
   CacheStorageImpl(){
-    queryStateMap = new HashMap<>();
+    queryStateMap = new ConcurrentHashMap<>();
   }
 
   /**

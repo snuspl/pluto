@@ -23,6 +23,9 @@ import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class CacheStorageTest {
 
@@ -31,8 +34,11 @@ public class CacheStorageTest {
   private final Identifier oid1 = new StringIdentifierFactory().getNewInstance("oid1");
   private final Identifier oid2 = new StringIdentifierFactory().getNewInstance("oid2");
   private final Identifier oid3 = new StringIdentifierFactory().getNewInstance("oid3");
+  private final Identifier oid4 = new StringIdentifierFactory().getNewInstance("oid4");
   private final OperatorState<Integer> value1 = new OperatorState<>(1);
   private final OperatorState<Integer> value2 = new OperatorState<>(2);
+  private final OperatorState<Integer> value3 = new OperatorState<>(3);
+  private final OperatorState<Integer> value4 = new OperatorState<>(4);
 
   /**
    * Tests whether the create method in the CacheStorage correctly creates queryId - queryState pairs.
@@ -47,13 +53,13 @@ public class CacheStorageTest {
     queryState2.put(oid1, value2);
 
     //Test if the state was created well.
-    Assert.assertEquals(true, cache.create(qid1, queryState1));
+    Assert.assertTrue(cache.create(qid1, queryState1));
 
     //Test if create fails when the same queryId is requested to be created again.
-    Assert.assertEquals(false, cache.create(qid1, queryState2));
+    Assert.assertFalse(cache.create(qid1, queryState2));
 
     //Test if create works if a different queryId with the same queryState is created.
-    Assert.assertEquals(true, cache.create(qid2, queryState1));
+    Assert.assertTrue(cache.create(qid2, queryState1));
   }
 
   /**
@@ -99,27 +105,27 @@ public class CacheStorageTest {
 
     //Test if update works when there is the queryId and operatorId is present in the cache.
     Assert.assertEquals(value1, cache.read(qid1, oid1));
-    Assert.assertEquals(true, cache.update(qid1, oid1, value3));
+    Assert.assertTrue(cache.update(qid1, oid1, value3));
     Assert.assertEquals(value3, cache.read(qid1, oid1));
 
     //Test if update works when another type of state is updated into the cache.
-    Assert.assertEquals(true, cache.update(qid1, oid1, value4));
+    Assert.assertTrue(cache.update(qid1, oid1, value4));
     Assert.assertEquals(value4, cache.read(qid1, oid1));
     Assert.assertEquals("abcd", cache.read(qid1, oid1).getState());
 
     //Test if update works when the same state is re-assigned.
-    Assert.assertEquals(true, cache.update(qid1, oid1, value4));
+    Assert.assertTrue(cache.update(qid1, oid1, value4));
     Assert.assertEquals(value4, cache.read(qid1, oid1));
 
     //Test if update works when the queryId is present but operatorId is not.
-    Assert.assertEquals(true, cache.update(qid1, oid2, value3));
+    Assert.assertTrue(cache.update(qid1, oid2, value3));
     Assert.assertSame(value3, cache.read(qid1, oid2));
 
     //Test if update returns false when the queryId is not present but operatorId is.
-    Assert.assertEquals(false, cache.update(qid2, oid1, value3));
+    Assert.assertFalse(cache.update(qid2, oid1, value3));
 
     //Test if update returns false when both the queryId and operatorId is not present in the cache.
-    Assert.assertEquals(false, cache.update(qid2, oid3, value3));
+    Assert.assertFalse(cache.update(qid2, oid3, value3));
   }
 
   /**
@@ -135,12 +141,12 @@ public class CacheStorageTest {
 
     //Test if deletion deletes the entire queryState
     Assert.assertEquals(value1, cache.read(qid1, oid1));
-    Assert.assertEquals(true, cache.delete(qid1));
+    Assert.assertTrue(cache.delete(qid1));
     Assert.assertSame(null, cache.read(qid1, oid1));
 
     //Test if deletion returns false if deleting on a non-existing queryId.
-    Assert.assertEquals(false, cache.delete(qid1));
-    Assert.assertEquals(false, cache.delete(qid2));
+    Assert.assertFalse(cache.delete(qid1));
+    Assert.assertFalse(cache.delete(qid2));
   }
 
   /**
@@ -157,8 +163,8 @@ public class CacheStorageTest {
     cache.create(qid1, queryState1);
 
     Assert.assertEquals(value1, cache.read(qid1, oid1));
-    Assert.assertEquals(true, cache.delete(qid1));
-    Assert.assertEquals(true, cache.create(qid1, queryState2));
+    Assert.assertTrue(cache.delete(qid1));
+    Assert.assertTrue(cache.create(qid1, queryState2));
     Assert.assertEquals(value2, cache.read(qid1, oid1));
   }
 
@@ -174,7 +180,63 @@ public class CacheStorageTest {
     cache.create(qid1, queryState1);
 
     Assert.assertEquals(value1, cache.read(qid1, oid1));
-    Assert.assertEquals(true, cache.delete(qid1));
-    Assert.assertEquals(false, cache.update(qid1, oid1, value2));
+    Assert.assertTrue(cache.delete(qid1));
+    Assert.assertFalse(cache.update(qid1, oid1, value2));
   }
+
+  /**
+   * Test if updates on the same queryId on different threads does not raise concurrency issues.
+   */
+  @Test
+  public void concurrencyCacheStorageTest() throws InterruptedException {
+    final CacheStorage cache = new CacheStorageImpl();
+    final ExecutorService executor = Executors.newFixedThreadPool(8);
+    final Map<Identifier, OperatorState> actualQueryState = new HashMap<>();
+
+    cache.create(qid1, actualQueryState);
+
+    executor.submit(new Runnable() {
+      @Override
+      public void run() {
+        cache.update(qid1, oid1, value1);
+      }
+    });
+
+    executor.submit(new Runnable() {
+      @Override
+      public void run() {
+        cache.update(qid1, oid2, value2);
+      }
+    });
+
+    executor.submit(new Runnable() {
+      @Override
+      public void run() {
+        cache.update(qid1, oid3, value3);
+      }
+    });
+
+    executor.submit(new Runnable() {
+      @Override
+      public void run() {
+        cache.update(qid1, oid4, value4);
+      }
+    });
+
+    executor.awaitTermination(100, TimeUnit.MILLISECONDS);
+    executor.shutdown();
+
+    final Map<Identifier, OperatorState> expectedQueryState = new HashMap<>();
+    expectedQueryState.put(oid1, value1);
+    expectedQueryState.put(oid2, value2);
+    expectedQueryState.put(oid3, value3);
+    expectedQueryState.put(oid4, value4);
+
+    Assert.assertEquals(expectedQueryState.get(oid1), cache.read(qid1, oid1));
+    Assert.assertEquals(expectedQueryState.get(oid2), cache.read(qid1, oid2));
+    Assert.assertEquals(expectedQueryState.get(oid3), cache.read(qid1, oid3));
+    Assert.assertEquals(expectedQueryState.get(oid4), cache.read(qid1, oid4));
+  }
+
+
 }
