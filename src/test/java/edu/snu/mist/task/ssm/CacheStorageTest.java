@@ -98,34 +98,34 @@ public class CacheStorageTest {
     final Map<Identifier, OperatorState> queryState1 = new HashMap<>();
 
     queryState1.put(oid1, value1);
-    final OperatorState<Integer> value3 = new OperatorState<>(10);
-    final OperatorState<String> value4 = new OperatorState<>("abcd");
+    final OperatorState<Integer> value5 = new OperatorState<>(10);
+    final OperatorState<String> value6 = new OperatorState<>("abcd");
 
     cache.create(qid1, queryState1);
 
     //Test if update works when there is the queryId and operatorId is present in the cache.
     Assert.assertEquals(value1, cache.read(qid1, oid1));
-    Assert.assertTrue(cache.update(qid1, oid1, value3));
-    Assert.assertEquals(value3, cache.read(qid1, oid1));
+    Assert.assertTrue(cache.update(qid1, oid1, value5));
+    Assert.assertEquals(value5, cache.read(qid1, oid1));
 
     //Test if update works when another type of state is updated into the cache.
-    Assert.assertTrue(cache.update(qid1, oid1, value4));
-    Assert.assertEquals(value4, cache.read(qid1, oid1));
+    Assert.assertTrue(cache.update(qid1, oid1, value6));
+    Assert.assertEquals(value6, cache.read(qid1, oid1));
     Assert.assertEquals("abcd", cache.read(qid1, oid1).getState());
 
     //Test if update works when the same state is re-assigned.
-    Assert.assertTrue(cache.update(qid1, oid1, value4));
-    Assert.assertEquals(value4, cache.read(qid1, oid1));
+    Assert.assertTrue(cache.update(qid1, oid1, value6));
+    Assert.assertEquals(value6, cache.read(qid1, oid1));
 
     //Test if update works when the queryId is present but operatorId is not.
-    Assert.assertTrue(cache.update(qid1, oid2, value3));
-    Assert.assertSame(value3, cache.read(qid1, oid2));
+    Assert.assertTrue(cache.update(qid1, oid2, value5));
+    Assert.assertSame(value5, cache.read(qid1, oid2));
 
     //Test if update returns false when the queryId is not present but operatorId is.
-    Assert.assertFalse(cache.update(qid2, oid1, value3));
+    Assert.assertFalse(cache.update(qid2, oid1, value5));
 
     //Test if update returns false when both the queryId and operatorId is not present in the cache.
-    Assert.assertFalse(cache.update(qid2, oid3, value3));
+    Assert.assertFalse(cache.update(qid2, oid3, value5));
   }
 
   /**
