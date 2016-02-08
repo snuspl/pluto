@@ -40,7 +40,7 @@ import java.util.Set;
 /**
  * DefaultQuerySubmitterImpl does the following things:
  * 1) receives logical plans from clients and converts the logical plans to physical plans,
- * 2) creates initial state of the querym
+ * 2) creates initial state of the query,
  * 3) chains the physical operators and make OperatorChain,
  * 4) allocates the OperatorChains to the MistExecutors,
  * 5) and sets the OutputEmitters of the SourceGenerator and OperatorChains
@@ -77,15 +77,15 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
 
       // 2) Creates initial state of the query
       final Iterator<Operator> iterator = GraphUtils.topologicalSort(physicalPlan.getOperators());
-      final Map<Identifier, OperatorState> operatorStateMap = getInitialStateOfQuery(iterator);
+      final Map<Identifier, OperatorState> operatorStateMap = getInitialQueryState(iterator);
       final Identifier queryId = idfactory.getNewInstance(tuple.getKey());
       ssm.create(queryId, operatorStateMap);
 
-      // 3) Chains the physical operators and make OperatorChain.
+      // 3) Chains the physical operators and makes OperatorChain.
       final PhysicalPlan<OperatorChain> chainedPlan =
           operatorChainer.chainOperators(physicalPlan);
-
       final DAG<OperatorChain> chainedOperators = chainedPlan.getOperators();
+
       // 4) Allocates the OperatorChains to the MistExecutors
       chainAllocator.allocate(chainedOperators);
 
@@ -109,14 +109,15 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
    * @param iterator iterator for the query's operators
    * @return map of operator identifier and state
    */
-  private Map<Identifier, OperatorState> getInitialStateOfQuery(final Iterator<Operator> iterator) {
+  private Map<Identifier, OperatorState> getInitialQueryState(final Iterator<Operator> iterator) {
     final Map<Identifier, OperatorState> operatorStateMap = new HashMap<>();
     while (iterator.hasNext()) {
       final Operator operator = iterator.next();
+      final StreamType.OperatorType operatorType = operator.getOperatorType();
       // check whether the operator is stateful or not.
-      if (operator.getOperatorType() == StreamType.OperatorType.REDUCE_BY_KEY ||
-          operator.getOperatorType() == StreamType.OperatorType.APPLY_STATEFUL ||
-          operator.getOperatorType() == StreamType.OperatorType.REDUCE_BY_KEY_WINDOW) {
+      if (operatorType == StreamType.OperatorType.REDUCE_BY_KEY ||
+          operatorType == StreamType.OperatorType.APPLY_STATEFUL ||
+          operatorType == StreamType.OperatorType.REDUCE_BY_KEY_WINDOW) {
         // this operator is stateful
         final StatefulOperator statefulOperator = (StatefulOperator)operator;
         // put initial state of the operator to operatorStateMap

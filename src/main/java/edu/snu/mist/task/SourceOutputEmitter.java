@@ -21,7 +21,7 @@ import edu.snu.mist.task.executor.MistExecutor;
 import java.util.Set;
 
 /**
- * This emitter emits the outputs to the next OperatorChains which are directly following the sources.
+ * This emitter emits the outputs to the next OperatorChains that get inputs from the sources.
  * It always submits jobs to MistExecutors.
  *  @param <I>
  */

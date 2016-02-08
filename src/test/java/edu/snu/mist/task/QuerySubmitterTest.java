@@ -154,7 +154,7 @@ public final class QuerySubmitterTest {
     operatorDAG.addEdge(reduceByKey, toStringMap);
     operatorDAG.addEdge(reduceByKey, totalCountMap);
 
-    // Creates source map
+    // Create source map
     final Set<Operator> src1Ops = new HashSet<>();
     src1Ops.add(flatMap);
     sourceMap.put(src, src1Ops);
