@@ -23,9 +23,6 @@ import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 public class CacheStorageTest {
 
@@ -117,9 +114,8 @@ public class CacheStorageTest {
     Assert.assertTrue(cache.update(qid1, oid1, value6));
     Assert.assertEquals(value6, cache.read(qid1, oid1));
 
-    //Test if update works when the queryId is present but operatorId is not.
-    Assert.assertTrue(cache.update(qid1, oid2, value5));
-    Assert.assertSame(value5, cache.read(qid1, oid2));
+    //Test if update returns false when the queryId is present but operatorId is not.
+    Assert.assertFalse(cache.update(qid1, oid2, value5));
 
     //Test if update returns false when the queryId is not present but operatorId is.
     Assert.assertFalse(cache.update(qid2, oid1, value5));
@@ -183,60 +179,4 @@ public class CacheStorageTest {
     Assert.assertTrue(cache.delete(qid1));
     Assert.assertFalse(cache.update(qid1, oid1, value2));
   }
-
-  /**
-   * Test if updates on the same queryId on different threads does not raise concurrency issues.
-   */
-  @Test
-  public void concurrencyCacheStorageTest() throws InterruptedException {
-    final CacheStorage cache = new CacheStorageImpl();
-    final ExecutorService executor = Executors.newFixedThreadPool(8);
-    final Map<Identifier, OperatorState> actualQueryState = new HashMap<>();
-
-    cache.create(qid1, actualQueryState);
-
-    executor.submit(new Runnable() {
-      @Override
-      public void run() {
-        cache.update(qid1, oid1, value1);
-      }
-    });
-
-    executor.submit(new Runnable() {
-      @Override
-      public void run() {
-        cache.update(qid1, oid2, value2);
-      }
-    });
-
-    executor.submit(new Runnable() {
-      @Override
-      public void run() {
-        cache.update(qid1, oid3, value3);
-      }
-    });
-
-    executor.submit(new Runnable() {
-      @Override
-      public void run() {
-        cache.update(qid1, oid4, value4);
-      }
-    });
-
-    executor.awaitTermination(100, TimeUnit.MILLISECONDS);
-    executor.shutdown();
-
-    final Map<Identifier, OperatorState> expectedQueryState = new HashMap<>();
-    expectedQueryState.put(oid1, value1);
-    expectedQueryState.put(oid2, value2);
-    expectedQueryState.put(oid3, value3);
-    expectedQueryState.put(oid4, value4);
-
-    Assert.assertEquals(expectedQueryState.get(oid1), cache.read(qid1, oid1));
-    Assert.assertEquals(expectedQueryState.get(oid2), cache.read(qid1, oid2));
-    Assert.assertEquals(expectedQueryState.get(oid3), cache.read(qid1, oid3));
-    Assert.assertEquals(expectedQueryState.get(oid4), cache.read(qid1, oid4));
-  }
-
-
 }

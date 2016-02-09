@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class CacheStorageImpl implements CacheStorage {
 
-  private final Map<Identifier, Map<Identifier, OperatorState>> queryStateMap;
+  private final ConcurrentHashMap<Identifier, Map<Identifier, OperatorState>> queryStateMap;
 
   @Inject
   CacheStorageImpl(){
@@ -46,12 +46,7 @@ public final class CacheStorageImpl implements CacheStorage {
    */
   @Override
   public boolean create(final Identifier queryId, final Map<Identifier, OperatorState> queryState) {
-    if (queryStateMap.containsKey(queryId)) {
-      return false;
-    } else {
-      queryStateMap.put(queryId, queryState);
-      return true;
-    }
+    return queryStateMap.putIfAbsent(queryId, queryState) == null ? true : false;
   }
 
   /**
@@ -82,8 +77,10 @@ public final class CacheStorageImpl implements CacheStorage {
   public boolean update(final Identifier queryId, final Identifier operatorId, final OperatorState state) {
     final Map<Identifier, OperatorState> queryState = queryStateMap.get(queryId);
     if (queryState != null) {
-      queryState.put(operatorId, state);
-      queryStateMap.put(queryId, queryState);
+      if (!queryState.containsKey(operatorId)) {
+        return false;
+      }
+      queryState.replace(operatorId, state);
       return true;
     } else {
       return false;
@@ -98,11 +95,6 @@ public final class CacheStorageImpl implements CacheStorage {
    */
   @Override
   public boolean delete(final Identifier queryId) {
-    if(queryStateMap.containsKey(queryId)) {
-      queryStateMap.remove(queryId);
-      return true;
-    } else {
-      return false;
-    }
+    return queryStateMap.remove(queryId) != null ? true : false;
   }
 }
