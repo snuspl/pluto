@@ -57,12 +57,8 @@ public final class CacheStorageImpl implements CacheStorage {
    */
   @Override
   public OperatorState read(final Identifier queryId, final Identifier operatorId) {
-    OperatorState state = null;
     final Map<Identifier, OperatorState> queryState = queryStateMap.get(queryId);
-    if (queryState != null) {
-      state = queryState.get(operatorId);
-    }
-    return state;
+    return queryState == null ? null : queryState.get(operatorId);
     //TODO [MIST-108]: Return something other than null.
   }
 
@@ -71,20 +67,16 @@ public final class CacheStorageImpl implements CacheStorage {
    * @param queryId The operator's query identifier.
    * @param operatorId The identifier of the operator to update.
    * @param state The state to update.
-   * @return true if the state was updated, false if the queryId was not in the queryStateMap.
+   * @return true if the state was updated, false if the queryId or the operatorId was missing.
    */
   @Override
   public boolean update(final Identifier queryId, final Identifier operatorId, final OperatorState state) {
     final Map<Identifier, OperatorState> queryState = queryStateMap.get(queryId);
-    if (queryState != null) {
-      if (!queryState.containsKey(operatorId)) {
-        return false;
-      }
-      queryState.replace(operatorId, state);
-      return true;
-    } else {
+    if (queryState == null) { //The queryId is missing.
       return false;
     }
+    return queryState.replace(operatorId, state) != null ? true : false; //If false, the operatorId is missing.
+    //TODO [MIST-170]: Distinguish between queryId missing and operatorId missing.
   }
 
   /**
