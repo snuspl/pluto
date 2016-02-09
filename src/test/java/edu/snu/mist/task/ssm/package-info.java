@@ -14,19 +14,7 @@
  * limitations under the License.
  */
 
-package edu.snu.mist.task.ssm;
-
-import org.apache.reef.tang.annotations.DefaultImplementation;
-
 /**
- * This interface represents the CacheStorage. Alike the PersistentStorage, it only contains methods that access
- * the data it holds.
- * It accesses queryStateMap, which has queryId as its key and queryState as its value.
- * The queryState is also a map that has operatorId as its key and OperatorState as its value.
- * The OperatorState is the state of the operator of the query.
- * It extends the CRUD interface.
+ * This package contains test cases of the ssm.
  */
-@DefaultImplementation(CacheStorageImpl.class)
-public interface CacheStorage extends CRUD {
-
-}
+package edu.snu.mist.task.ssm;
