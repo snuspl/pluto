@@ -16,9 +16,9 @@
 
 package edu.snu.mist.task.ssm;
 
-import com.google.inject.Inject;
 import org.apache.reef.wake.Identifier;
 
+import javax.inject.Inject;
 import java.util.Map;
 
 /**
