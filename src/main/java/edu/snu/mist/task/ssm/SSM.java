@@ -16,6 +16,8 @@
 
 package edu.snu.mist.task.ssm;
 
+import org.apache.reef.tang.annotations.DefaultImplementation;
+
 /**
  * This interface is the basic representation of the Stream State Manager.
  * It allows queries that use stateful operators to manage its states either into
@@ -25,6 +27,7 @@ package edu.snu.mist.task.ssm;
  * It extends the CRUD interface.
  * TODO[MIST-48]: We could later save other objects other than states.
  */
+@DefaultImplementation(DefaultSSMImpl.class)
 public interface SSM extends CRUD {
 
 }

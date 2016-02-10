@@ -20,16 +20,19 @@ import java.io.Serializable;
 
 /**
  * This is the class that all states of the operators have.
- * @param <I> The type of the state.
+ * Since operators can have various kinds of states and types, this class wraps the states to a single type.
+ * The state itself is in the OperatorState and can be accessed through getState().
+ * @param <S> The type of the state.
+ * TODO [MIST-116]: Serializable class being slow, use another way to store the state.
  */
-public final class OperatorState <I> implements Serializable {
-  private final I state;
+public final class OperatorState <S> implements Serializable {
+  private final S state;
 
-  public OperatorState(final I state) {
+  public OperatorState(final S state) {
     this.state = state;
   }
 
-  public I getState(){
+  public S getState(){
     return this.state;
   }
 }
