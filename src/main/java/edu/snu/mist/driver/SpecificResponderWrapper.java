@@ -27,17 +27,17 @@ import javax.inject.Inject;
 public final class SpecificResponderWrapper implements ExternalConstructor<SpecificResponder> {
 
   /**
-   * A task selector.
+   * A Specific responder.
    */
-  private final TaskSelector taskSelector;
+  private final SpecificResponder responder;
 
   @Inject
   private SpecificResponderWrapper(final TaskSelector taskSelector) {
-    this.taskSelector = taskSelector;
+    this.responder = new SpecificResponder(MistTaskProvider.class, taskSelector);
   }
 
   @Override
   public SpecificResponder newInstance() {
-    return new SpecificResponder(MistTaskProvider.class, taskSelector);
+    return responder;
   }
 }

@@ -36,6 +36,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * DefaultQuerySubmitterImpl does the following things:
@@ -56,6 +58,11 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
   private final ThreadPoolStage<Tuple<String, LogicalPlan>> tpStage;
 
   /**
+   * Map of query id and physical plan.
+   */
+  private final ConcurrentMap<String, PhysicalPlan<OperatorChain>> physicalPlanMap;
+
+  /**
    * Default query submitter in MistTask.
    * @param operatorChainer the converter which chains operators and makes OperatorChains
    * @param chainAllocator the allocator which allocates a OperatorChain to a MistExecutor
@@ -71,6 +78,7 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
                                     final SSM ssm,
                                     final StringIdentifierFactory idfactory,
                                     @Parameter(NumSubmitterThreads.class) final int numThreads) {
+    this.physicalPlanMap = new ConcurrentHashMap<>();
     this.tpStage = new ThreadPoolStage<>((tuple) -> {
       // 1) Converts the logical plan to the physical plan
       final PhysicalPlan<Operator> physicalPlan = physicalPlanGenerator.generate(tuple);
@@ -84,6 +92,7 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
       // 3) Chains the physical operators and makes OperatorChain.
       final PhysicalPlan<OperatorChain> chainedPlan =
           operatorChainer.chainOperators(physicalPlan);
+      physicalPlanMap.putIfAbsent(tuple.getKey(), chainedPlan);
       final DAG<OperatorChain> chainedOperators = chainedPlan.getOperators();
 
       // 4) Allocates the OperatorChains to the MistExecutors

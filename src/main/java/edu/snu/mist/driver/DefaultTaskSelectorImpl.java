@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.driver;
 
-import edu.snu.mist.common.rpc.RPCServerPort;
+import edu.snu.mist.driver.parameters.RPCTaskServerPort;
 import mist.IPAddress;
 import mist.QueryInfo;
 import mist.TaskList;
@@ -69,7 +69,7 @@ final class DefaultTaskSelectorImpl implements TaskSelector {
                                   final StringIdentifierFactory idFactory,
                                   final DriverTaskMessageCodec messageCodec,
                                   final DriverTaskMessageHandler messageHandler,
-                                  @Parameter(RPCServerPort.class) final int rpcServerPort) {
+                                  @Parameter(RPCTaskServerPort.class) final int rpcServerPort) {
     this.taskAddrAndConnMap = new ConcurrentHashMap<>();
     this.idFactory = idFactory;
     this.connFactory = ncs.registerConnectionFactory(idFactory.getNewInstance(MistDriver.MIST_CONN_FACTORY_ID),
