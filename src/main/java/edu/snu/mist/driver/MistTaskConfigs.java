@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.driver;
 
+import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.driver.parameters.NumTaskCores;
 import edu.snu.mist.driver.parameters.NumTasks;
 import edu.snu.mist.driver.parameters.TaskMemorySize;
@@ -48,15 +49,21 @@ final class MistTaskConfigs {
    */
   private final int numTaskCores;
 
+  /**
+   * The port number of rpc server.
+   */
+  private final int rpcServerPort;
   @Inject
   private MistTaskConfigs(@Parameter(NumTasks.class) final int numTasks,
                           @Parameter(TaskMemorySize.class) final int taskMemSize,
                           @Parameter(NumExecutors.class) final int numTaskExecutors,
-                          @Parameter(NumTaskCores.class) final int numTaskCores) {
+                          @Parameter(NumTaskCores.class) final int numTaskCores,
+                          @Parameter(RPCServerPort.class) final int rpcServerPort) {
     this.numTasks = numTasks;
     this.numTaskExecutors = numTaskExecutors;
     this.taskMemSize = taskMemSize;
     this.numTaskCores = numTaskCores;
+    this.rpcServerPort = rpcServerPort + 10;
   }
 
   public int getNumTasks() {
@@ -73,5 +80,9 @@ final class MistTaskConfigs {
 
   public int getNumTaskCores() {
     return numTaskCores;
+  }
+
+  public int getRpcServerPort() {
+    return rpcServerPort;
   }
 }

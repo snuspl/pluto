@@ -15,11 +15,15 @@
  */
 package edu.snu.mist.driver;
 
+import edu.snu.mist.common.rpc.AvroRPCNettyServerWrapper;
+import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import edu.snu.mist.task.DefaultClientToTaskMessageImpl;
 import edu.snu.mist.task.MistTask;
+import edu.snu.mist.task.TaskSpecificResponderWrapper;
 import edu.snu.mist.task.parameters.NumExecutors;
 import org.apache.avro.ipc.Server;
+import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.driver.context.ContextConfiguration;
 import org.apache.reef.driver.evaluator.AllocatedEvaluator;
@@ -160,6 +164,9 @@ public final class MistDriver {
       final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
       jcb.bindNamedParameter(NumExecutors.class, mistTaskConfigs.getNumTaskExecutors()+"");
       jcb.bindImplementation(ClientToTaskMessage.class, DefaultClientToTaskMessageImpl.class);
+      jcb.bindConstructor(Server.class, AvroRPCNettyServerWrapper.class);
+      jcb.bindConstructor(SpecificResponder.class, TaskSpecificResponderWrapper.class);
+      jcb.bindNamedParameter(RPCServerPort.class, mistTaskConfigs.getRpcServerPort()+"");
       // submit a task
       activeContext.submitTask(
           Configurations.merge(nameResolverConf, taskConfiguration, jcb.build()));

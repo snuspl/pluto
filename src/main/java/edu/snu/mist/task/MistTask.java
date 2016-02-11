@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.formats.avro.ClientToTaskMessage;
+import org.apache.avro.ipc.Server;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.task.Task;
 
@@ -38,11 +38,11 @@ public final class MistTask implements Task {
 
   /**
    * Default constructor of MistTask.
-   * @param clientToTaskMessage logical plan receiver
+   * @param server rpc server for receiving queries
    * @throws InjectionException
    */
   @Inject
-  private MistTask(final ClientToTaskMessage clientToTaskMessage) throws InjectionException {
+  private MistTask(final Server server) throws InjectionException {
     this.countDownLatch = new CountDownLatch(1);
   }
 

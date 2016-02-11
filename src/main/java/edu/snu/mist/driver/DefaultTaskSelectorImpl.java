@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.driver;
 
-import edu.snu.mist.driver.parameters.RPCTaskServerPort;
 import mist.IPAddress;
 import mist.QueryInfo;
 import mist.TaskList;
@@ -26,7 +25,6 @@ import org.apache.reef.io.network.Connection;
 import org.apache.reef.io.network.ConnectionFactory;
 import org.apache.reef.io.network.NetworkConnectionService;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
-import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.wake.IdentifierFactory;
 
 import javax.inject.Inject;
@@ -69,12 +67,12 @@ final class DefaultTaskSelectorImpl implements TaskSelector {
                                   final StringIdentifierFactory idFactory,
                                   final DriverTaskMessageCodec messageCodec,
                                   final DriverTaskMessageHandler messageHandler,
-                                  @Parameter(RPCTaskServerPort.class) final int rpcServerPort) {
+                                  final MistTaskConfigs mistTaskConfigs) {
     this.taskAddrAndConnMap = new ConcurrentHashMap<>();
     this.idFactory = idFactory;
     this.connFactory = ncs.registerConnectionFactory(idFactory.getNewInstance(MistDriver.MIST_CONN_FACTORY_ID),
         messageCodec, messageHandler, null, idFactory.getNewInstance(MistDriver.MIST_DRIVER_ID));
-    this.rpcServerPort = rpcServerPort;
+    this.rpcServerPort = mistTaskConfigs.getRpcServerPort();
   }
 
   @Override
