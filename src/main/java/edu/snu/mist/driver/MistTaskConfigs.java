@@ -29,6 +29,8 @@ import javax.inject.Inject;
  */
 final class MistTaskConfigs {
 
+  private static final int MAX_PORT_NUM = 65535;
+
   /**
    * The number of MistTasks.
    */
@@ -50,9 +52,10 @@ final class MistTaskConfigs {
   private final int numTaskCores;
 
   /**
-   * The port number of rpc server.
+   * The port number of rpc server of a MistTask.
    */
   private final int rpcServerPort;
+
   @Inject
   private MistTaskConfigs(@Parameter(NumTasks.class) final int numTasks,
                           @Parameter(TaskMemorySize.class) final int taskMemSize,
@@ -63,7 +66,7 @@ final class MistTaskConfigs {
     this.numTaskExecutors = numTaskExecutors;
     this.taskMemSize = taskMemSize;
     this.numTaskCores = numTaskCores;
-    this.rpcServerPort = rpcServerPort + 10;
+    this.rpcServerPort = rpcServerPort + 10 > MAX_PORT_NUM ? rpcServerPort - 10 : rpcServerPort + 10;
   }
 
   public int getNumTasks() {
