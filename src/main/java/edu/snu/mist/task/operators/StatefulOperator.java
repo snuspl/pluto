@@ -73,7 +73,7 @@ public abstract class StatefulOperator<I, S, O> extends BaseOperator<I, O> {
   @SuppressWarnings("unchecked")
   @Override
   public void handle(final I input) {
-    final S state = (S)ssm.read(queryId, operatorId).getState();
+    final S state = (S) ssm.read(queryId, operatorId).getState();
     final S intermediateState = updateState(input, state);
     ssm.update(queryId, operatorId, new OperatorState<>(intermediateState));
     final O output = generateOutput(intermediateState);

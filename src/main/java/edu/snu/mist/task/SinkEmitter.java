@@ -13,31 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.driver;
+package edu.snu.mist.task;
 
-import mist.MistTaskProvider;
-import org.apache.avro.ipc.specific.SpecificResponder;
-import org.apache.reef.tang.ExternalConstructor;
+import edu.snu.mist.task.common.OutputEmitter;
+import edu.snu.mist.task.sinks.Sink;
 
-import javax.inject.Inject;
+import java.util.Set;
 
 /**
- * A wrapper class for Avro SpecificResponder.
+ * This emitter sends the outputs to Sinks.
+ * @param <O> output type
  */
-public final class SpecificResponderWrapper implements ExternalConstructor<SpecificResponder> {
+final class SinkEmitter<O> implements OutputEmitter<O> {
 
   /**
-   * A Specific responder.
+   * Next Sinks.
    */
-  private final SpecificResponder responder;
+  private final Set<Sink> sinks;
 
-  @Inject
-  private SpecificResponderWrapper(final TaskSelector taskSelector) {
-    this.responder = new SpecificResponder(MistTaskProvider.class, taskSelector);
+  public SinkEmitter(final Set<Sink> sinks) {
+    this.sinks = sinks;
   }
 
   @Override
-  public SpecificResponder newInstance() {
-    return responder;
+  public void emit(final O output) {
+    for (final Sink sink : sinks) {
+      sink.handle(output);
+    }
   }
 }

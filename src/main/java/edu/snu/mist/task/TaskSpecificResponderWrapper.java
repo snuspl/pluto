@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.driver;
+package edu.snu.mist.task;
 
-import mist.MistTaskProvider;
+import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.reef.tang.ExternalConstructor;
 
@@ -24,7 +24,7 @@ import javax.inject.Inject;
 /**
  * A wrapper class for Avro SpecificResponder.
  */
-public final class SpecificResponderWrapper implements ExternalConstructor<SpecificResponder> {
+public final class TaskSpecificResponderWrapper implements ExternalConstructor<SpecificResponder> {
 
   /**
    * A Specific responder.
@@ -32,8 +32,8 @@ public final class SpecificResponderWrapper implements ExternalConstructor<Speci
   private final SpecificResponder responder;
 
   @Inject
-  private SpecificResponderWrapper(final TaskSelector taskSelector) {
-    this.responder = new SpecificResponder(MistTaskProvider.class, taskSelector);
+  private TaskSpecificResponderWrapper(final ClientToTaskMessage clientToTaskMessage) {
+    this.responder = new SpecificResponder(ClientToTaskMessage.class, clientToTaskMessage);
   }
 
   @Override

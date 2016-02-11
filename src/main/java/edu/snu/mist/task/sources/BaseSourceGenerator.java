@@ -96,7 +96,7 @@ public abstract class BaseSourceGenerator<I> implements SourceGenerator<I> {
    * @return input
    * @throws IOException
    */
-  abstract I nextInput() throws IOException;
+  public abstract I nextInput() throws IOException;
 
 
   /**
@@ -104,7 +104,7 @@ public abstract class BaseSourceGenerator<I> implements SourceGenerator<I> {
    * This method is called just once.
    * @throws Exception
    */
-  abstract void releaseResources() throws Exception;
+  public abstract void releaseResources() throws Exception;
 
   @Override
   public void close() throws Exception {

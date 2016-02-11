@@ -23,7 +23,7 @@ import java.util.Set;
 /**
  * This emitter forwards current OperatorChain's outputs as next OperatorChains' inputs.
  */
-final class DefaultOutputEmitter implements OutputEmitter {
+final class OperatorOutputEmitter implements OutputEmitter {
 
   /**
    * Current OperatorChain.
@@ -35,8 +35,8 @@ final class DefaultOutputEmitter implements OutputEmitter {
    */
   private final Set<OperatorChain> nextChains;
 
-  DefaultOutputEmitter(final OperatorChain currChain,
-                       final Set<OperatorChain> nextChains) {
+  OperatorOutputEmitter(final OperatorChain currChain,
+                        final Set<OperatorChain> nextChains) {
     this.currChain = currChain;
     this.nextChains = nextChains;
   }

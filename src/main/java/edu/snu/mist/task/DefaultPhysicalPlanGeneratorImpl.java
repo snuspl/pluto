@@ -13,31 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.driver;
+package edu.snu.mist.task;
 
-import mist.MistTaskProvider;
-import org.apache.avro.ipc.specific.SpecificResponder;
-import org.apache.reef.tang.ExternalConstructor;
+import edu.snu.mist.formats.avro.LogicalPlan;
+import edu.snu.mist.task.operators.Operator;
+import org.apache.reef.io.Tuple;
 
 import javax.inject.Inject;
 
 /**
- * A wrapper class for Avro SpecificResponder.
+ * A default implementation of PhysicalPlanGenerator.
+ * TODO[MIST-68]: Receive and deserialize logical plans into physical plans
  */
-public final class SpecificResponderWrapper implements ExternalConstructor<SpecificResponder> {
-
-  /**
-   * A Specific responder.
-   */
-  private final SpecificResponder responder;
+final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
 
   @Inject
-  private SpecificResponderWrapper(final TaskSelector taskSelector) {
-    this.responder = new SpecificResponder(MistTaskProvider.class, taskSelector);
+  private DefaultPhysicalPlanGeneratorImpl() {
+
   }
 
   @Override
-  public SpecificResponder newInstance() {
-    return responder;
+  public PhysicalPlan<Operator> generate(final Tuple<String, LogicalPlan> queryIdAndLogicalPlan) {
+    // TODO[MIST-68]: Receive and deserialize logical plans into physical plans
+    throw new RuntimeException("DefaultPhysicalPlanGeneratorImpl.generate is not implemented yet.");
   }
 }

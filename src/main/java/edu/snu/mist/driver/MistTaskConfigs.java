@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.driver;
 
+import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.driver.parameters.NumTaskCores;
 import edu.snu.mist.driver.parameters.NumTasks;
 import edu.snu.mist.driver.parameters.TaskMemorySize;
@@ -27,6 +28,8 @@ import javax.inject.Inject;
  * This class contains information for setting MistTasks.
  */
 final class MistTaskConfigs {
+
+  private static final int MAX_PORT_NUM = 65535;
 
   /**
    * The number of MistTasks.
@@ -48,15 +51,22 @@ final class MistTaskConfigs {
    */
   private final int numTaskCores;
 
+  /**
+   * The port number of rpc server of a MistTask.
+   */
+  private final int rpcServerPort;
+
   @Inject
   private MistTaskConfigs(@Parameter(NumTasks.class) final int numTasks,
                           @Parameter(TaskMemorySize.class) final int taskMemSize,
                           @Parameter(NumExecutors.class) final int numTaskExecutors,
-                          @Parameter(NumTaskCores.class) final int numTaskCores) {
+                          @Parameter(NumTaskCores.class) final int numTaskCores,
+                          @Parameter(RPCServerPort.class) final int rpcServerPort) {
     this.numTasks = numTasks;
     this.numTaskExecutors = numTaskExecutors;
     this.taskMemSize = taskMemSize;
     this.numTaskCores = numTaskCores;
+    this.rpcServerPort = rpcServerPort + 10 > MAX_PORT_NUM ? rpcServerPort - 10 : rpcServerPort + 10;
   }
 
   public int getNumTasks() {
@@ -73,5 +83,9 @@ final class MistTaskConfigs {
 
   public int getNumTaskCores() {
     return numTaskCores;
+  }
+
+  public int getRpcServerPort() {
+    return rpcServerPort;
   }
 }
