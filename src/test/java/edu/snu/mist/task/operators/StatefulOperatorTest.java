@@ -20,13 +20,10 @@ import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.task.operators.parameters.KeyIndex;
 import edu.snu.mist.task.operators.parameters.OperatorId;
-import edu.snu.mist.task.ssm.OperatorState;
-import edu.snu.mist.task.ssm.SSM;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
-import org.apache.reef.wake.Identifier;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -35,8 +32,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.logging.Logger;
 
 public final class StatefulOperatorTest {
+  private static final Logger LOG = Logger.getLogger(StatefulOperatorTest.class.getName());
 
   /**
    * Test whether reduceByKeyOperator generates correct outputs.
@@ -90,7 +89,6 @@ public final class StatefulOperatorTest {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(QueryId.class, "testQuery");
     jcb.bindNamedParameter(OperatorId.class, "testReduceByKeyOperator");
-    jcb.bindImplementation(SSM.class, TestSSM.class);
     // Set the key index of tuple
     jcb.bindNamedParameter(KeyIndex.class, 0+"");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
@@ -99,18 +97,20 @@ public final class StatefulOperatorTest {
     injector.bindVolatileInstance(BiFunction.class, wordCountFunc);
     final ReduceByKeyOperator<String, Integer> wcOperator = injector.getInstance(ReduceByKeyOperator.class);
 
-    // Initialize query state
-    final SSM ssm = injector.getInstance(SSM.class);
-    final Map<Identifier, OperatorState> queryStates = new HashMap<>();
-    queryStates.put(wcOperator.getOperatorIdentifier(), wcOperator.getInitialState());
-    ssm.create(wcOperator.getQueryIdentifier(), queryStates);
-
-    // test
+    // output test
     final List<Map<String, Integer>> result = new LinkedList<>();
     wcOperator.setOutputEmitter(output -> result.add(output));
     inputStream.stream().forEach(wcOperator::handle);
-    System.out.println("expected: " + expected);
-    System.out.println("result: " + result);
+    LOG.info("expected: " + expected);
+    LOG.info("result: " + result);
     Assert.assertEquals(expected, result);
+
+    // test getState
+    Assert.assertEquals(expected.get(expected.size() - 1), wcOperator.getState());
+    // test setState
+    final HashMap<String, Integer> newMap = new HashMap<>();
+    newMap.put("asdf", 111);
+    wcOperator.setState(newMap);
+    Assert.assertEquals(newMap, wcOperator.getState());
   }
 }

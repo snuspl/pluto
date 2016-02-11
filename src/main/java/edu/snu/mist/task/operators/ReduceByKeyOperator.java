@@ -20,22 +20,22 @@ import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.task.operators.parameters.KeyIndex;
 import edu.snu.mist.task.operators.parameters.OperatorId;
-import edu.snu.mist.task.ssm.OperatorState;
-import edu.snu.mist.task.ssm.SSM;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.io.Serializable;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.function.BiFunction;
 
 /**
  * This operator reduces the value by key.
  * @param <K> key type
  * @param <V> value type
+ * TODO[MIST-#]: Support non-serializable key and value
  */
-public final class ReduceByKeyOperator<K, V> extends StatefulOperator<Tuple2, Map<K, V>, Map<K, V>> {
+public final class ReduceByKeyOperator<K extends Serializable, V extends Serializable>
+    extends StatefulOperator<Tuple2, HashMap<K, V>, HashMap<K, V>> {
 
   /**
    * A reduce function.
@@ -48,7 +48,6 @@ public final class ReduceByKeyOperator<K, V> extends StatefulOperator<Tuple2, Ma
   private final int keyIndex;
 
   /**
-   * @param ssm ssm for read/update the operator state.
    * @param reduceFunc reduce function
    * @param queryId identifier of the query which contains this operator
    * @param operatorId identifier of operator
@@ -56,20 +55,19 @@ public final class ReduceByKeyOperator<K, V> extends StatefulOperator<Tuple2, Ma
    * @param idFactory identifier factory
    */
   @Inject
-  private ReduceByKeyOperator(final SSM ssm,
-                              final BiFunction<V, V, V> reduceFunc,
+  private ReduceByKeyOperator(final BiFunction<V, V, V> reduceFunc,
                               @Parameter(QueryId.class) final String queryId,
                               @Parameter(OperatorId.class) final String operatorId,
                               @Parameter(KeyIndex.class) final int keyIndex,
                               final StringIdentifierFactory idFactory) {
-    super(ssm, idFactory.getNewInstance(queryId), idFactory.getNewInstance(operatorId));
+    super(idFactory.getNewInstance(queryId), idFactory.getNewInstance(operatorId));
     this.reduceFunc = reduceFunc;
     this.keyIndex = keyIndex;
   }
 
   @Override
-  public OperatorState<Map<K, V>> getInitialState() {
-    return new OperatorState<>(new HashMap<>());
+  protected HashMap<K, V> getInitialState() {
+    return new HashMap<>();
   }
 
   /**
@@ -82,8 +80,8 @@ public final class ReduceByKeyOperator<K, V> extends StatefulOperator<Tuple2, Ma
    */
   @SuppressWarnings("unchecked")
   @Override
-  public Map<K, V> updateState(final Tuple2 input, final Map<K, V> state) {
-    final Map<K, V> newState = new HashMap<>(state);
+  protected HashMap<K, V> updateState(final Tuple2 input, final HashMap<K, V> state) {
+    final HashMap<K, V> newState = new HashMap<>(state);
     final K key = (K)input.get(keyIndex);
     final V val = (V)input.get(1 - keyIndex);
     final V oldVal = newState.get(key);
@@ -101,7 +99,7 @@ public final class ReduceByKeyOperator<K, V> extends StatefulOperator<Tuple2, Ma
    * @return output
    */
   @Override
-  public Map<K, V> generateOutput(final Map<K, V> finalState) {
+  protected HashMap<K, V> generateOutput(final HashMap<K, V> finalState) {
     return finalState;
   }
 
