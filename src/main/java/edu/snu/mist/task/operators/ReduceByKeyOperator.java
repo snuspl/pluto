@@ -66,7 +66,7 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
   }
 
   @Override
-  protected HashMap<K, V> getInitialState() {
+  protected HashMap<K, V> createInitialState() {
     return new HashMap<>();
   }
 

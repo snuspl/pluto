@@ -53,18 +53,18 @@ public abstract class StatefulOperator<I, S extends Serializable, O> extends Bas
     super(queryId, operatorId);
     this.queryId = queryId;
     this.operatorId = operatorId;
-    this.state = getInitialState();
+    this.state = createInitialState();
   }
 
   /**
    * Creates initial state of the operator.
    * @return initial state of the operator
    */
-  protected abstract S getInitialState();
+  protected abstract S createInitialState();
 
   /**
-   * It reads the operator state from SSM, updates and saves the state to SSM,
-   * computes outputs, and emits the outputs with OutputEmitter.
+   * It receives the input, updates the state, computes outputs,
+   * and emits the outputs with OutputEmitter.
    * @param input input.
    */
   @SuppressWarnings("unchecked")
@@ -111,7 +111,7 @@ public abstract class StatefulOperator<I, S extends Serializable, O> extends Bas
   /**
    * Sets a new state to the operator.
    * @param newState new state
-   * @return prev state
+   * @return previous state
    */
   public S setState(final S newState) {
     final S prevState = state;
