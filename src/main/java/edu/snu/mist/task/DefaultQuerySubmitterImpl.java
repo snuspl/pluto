@@ -25,9 +25,12 @@ import edu.snu.mist.task.parameters.NumSubmitterThreads;
 import edu.snu.mist.task.sources.SourceGenerator;
 import edu.snu.mist.task.ssm.OperatorState;
 import edu.snu.mist.task.ssm.SSM;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.annotations.Parameter;
+import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.wake.Identifier;
 import org.apache.reef.wake.impl.ThreadPoolStage;
 
@@ -52,6 +55,7 @@ import java.util.concurrent.ConcurrentMap;
 @SuppressWarnings("unchecked")
 final class DefaultQuerySubmitterImpl implements QuerySubmitter {
 
+  private static final Logger LOG = Logger.getLogger(DefaultQuerySubmitterImpl.class);
   /**
    * Thread pool stage for executing the query submission logic.
    */
@@ -80,8 +84,14 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
                                     @Parameter(NumSubmitterThreads.class) final int numThreads) {
     this.physicalPlanMap = new ConcurrentHashMap<>();
     this.tpStage = new ThreadPoolStage<>((tuple) -> {
-      // 1) Converts the logical plan to the physical plan
-      final PhysicalPlan<Operator> physicalPlan = physicalPlanGenerator.generate(tuple);
+      final PhysicalPlan<Operator> physicalPlan;
+      try {
+        // 1) Converts the logical plan to the physical plan
+        physicalPlan = physicalPlanGenerator.generate(tuple);
+      } catch (final InjectionException e) {
+        LOG.log(Level.INFO, "Injection Exception occurred during de-serializing LogicalPlans!");
+        return;
+      }
 
       // 2) Creates initial state of the query
       final Iterator<Operator> iterator = GraphUtils.topologicalSort(physicalPlan.getOperators());
