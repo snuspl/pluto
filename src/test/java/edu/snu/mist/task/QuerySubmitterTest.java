@@ -28,7 +28,6 @@ import edu.snu.mist.task.parameters.NumSubmitterThreads;
 import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sources.BaseSourceGenerator;
 import edu.snu.mist.task.sources.SourceGenerator;
-import edu.snu.mist.task.ssm.SSM;
 import junit.framework.Assert;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
@@ -121,21 +120,19 @@ public final class QuerySubmitterTest {
     // Create operators
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(NumExecutors.class, Integer.toString(4));
-    jcb.bindImplementation(SSM.class, TestSSM.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final SSM ssm = injector.getInstance(SSM.class);
     final Operator flatMap = createOperator(
-        queryId, "flatMap", Function.class, flatMapFunc, FlatMapOperator.class, ssm);
+        queryId, "flatMap", Function.class, flatMapFunc, FlatMapOperator.class);
     final Operator filter = createOperator(
-        queryId, "filter", Predicate.class, filterFunc, FilterOperator.class, ssm);
+        queryId, "filter", Predicate.class, filterFunc, FilterOperator.class);
     final Operator toTupleMap = createOperator(
-        queryId, "toTupleMap", Function.class, toTupleMapFunc, MapOperator.class, ssm);
+        queryId, "toTupleMap", Function.class, toTupleMapFunc, MapOperator.class);
     final Operator reduceByKey = createOperator(
-        queryId, "reduceByKey", BiFunction.class, reduceByKeyFunc, ReduceByKeyOperator.class, ssm);
+        queryId, "reduceByKey", BiFunction.class, reduceByKeyFunc, ReduceByKeyOperator.class);
     final Operator toStringMap = createOperator(
-        queryId, "toStringMap", Function.class, toStringMapFunc, MapOperator.class, ssm);
+        queryId, "toStringMap", Function.class, toStringMapFunc, MapOperator.class);
     final Operator totalCountMap = createOperator(
-        queryId, "totalCountMap", Function.class, totalCountMapFunc, MapOperator.class, ssm);
+        queryId, "totalCountMap", Function.class, totalCountMapFunc, MapOperator.class);
 
     // Create sinks
     final List<String> sink1Result = new LinkedList<>();
@@ -202,7 +199,6 @@ public final class QuerySubmitterTest {
    * @param funcClass udf function class
    * @param func udf function
    * @param opClass operator class
-   * @param ssm ssm
    * @param <T> udf function type
    * @param <O> operator class type
    * @return an operator
@@ -212,10 +208,8 @@ public final class QuerySubmitterTest {
                                                           final String operatorId,
                                                           final Class<T> funcClass,
                                                           final T func,
-                                                          final Class<O> opClass,
-                                                          final SSM ssm) throws InjectionException {
+                                                          final Class<O> opClass) throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
-    injector.bindVolatileInstance(SSM.class, ssm);
     injector.bindVolatileParameter(QueryId.class, queryId);
     injector.bindVolatileParameter(OperatorId.class, operatorId);
     injector.bindVolatileInstance(funcClass, func);

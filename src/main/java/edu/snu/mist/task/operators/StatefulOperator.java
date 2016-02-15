@@ -15,85 +15,107 @@
  */
 package edu.snu.mist.task.operators;
 
-import edu.snu.mist.task.ssm.OperatorState;
-import edu.snu.mist.task.ssm.SSM;
 import org.apache.reef.wake.Identifier;
 
+import java.io.Serializable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * This is an abstract class for stateful operator.
- * It reads the operator state from SSM, updates and saves the state to SSM,
- * computes outputs, and emits the outputs with OutputEmitter.
+ * It processes inputs, updates the state, computes outputs,
+ * and emits the outputs with OutputEmitter.
  * @param <I> input type
  * @param <S> state type
  * @param <O> output type
+ * TODO[MIST-#]: Support non-serializable state
  */
-public abstract class StatefulOperator<I, S, O> extends BaseOperator<I, O> {
+public abstract class StatefulOperator<I, S extends Serializable, O> extends BaseOperator<I, O> {
   private static final Logger LOG = Logger.getLogger(StatefulOperator.class.getName());
-
-  /**
-   * SSM for read/update states.
-   */
-  private final SSM ssm;
 
   /**
    * An identifier of the query which contains this operator.
    */
-  private final Identifier queryId;
+  protected final Identifier queryId;
 
   /**
    * An identifier of the operator.
    */
-  private final Identifier operatorId;
+  protected final Identifier operatorId;
 
-  public StatefulOperator(final SSM ssm,
-                          final Identifier queryId,
+  /**
+   * State of the stateful operator.
+   */
+  protected S state;
+
+  public StatefulOperator(final Identifier queryId,
                           final Identifier operatorId) {
     super(queryId, operatorId);
-    this.ssm = ssm;
     this.queryId = queryId;
     this.operatorId = operatorId;
+    this.state = createInitialState();
   }
 
   /**
-   * This method should be called at query creation time.
-   * A query containing this operator should call SSM.create(queryId, queryInitialState)
-   * in which the queryInitialState consists of a map of operatorId and operator initial state.
+   * Creates initial state of the operator.
    * @return initial state of the operator
    */
-  public abstract OperatorState<S> getInitialState();
+  protected abstract S createInitialState();
 
   /**
-   * It reads the operator state from SSM, updates and saves the state to SSM,
-   * computes outputs, and emits the outputs with OutputEmitter.
+   * It receives the input, updates the state, computes outputs,
+   * and emits the outputs with OutputEmitter.
    * @param input input.
    */
   @SuppressWarnings("unchecked")
   @Override
   public void handle(final I input) {
-    final S state = (S) ssm.read(queryId, operatorId).getState();
     final S intermediateState = updateState(input, state);
-    ssm.update(queryId, operatorId, new OperatorState<>(intermediateState));
     final O output = generateOutput(intermediateState);
     LOG.log(Level.FINE, "{0} updates the state {1} with input {2} to {3}, and generates {4}",
         new Object[]{getOperatorIdentifier(), state, input, intermediateState, output});
     if (output != null) {
       outputEmitter.emit(output);
     }
+    state = intermediateState;
   }
 
   /**
    * Updates the intermediates state with the input.
    * @return the updated state
    */
-  public abstract S updateState(final I input, final S state);
+  protected abstract S updateState(final I input, final S intermediateState);
 
   /**
    * Generates an output from the state.
    * @param finalState state
    * @return an output
    */
-  public abstract O generateOutput(final S finalState);
+  protected abstract O generateOutput(final S finalState);
+
+  /**
+   * Gets the state of the operator.
+   * @return state
+   */
+  public S getState() {
+    return state;
+  }
+
+  /**
+   * Removes the state of the operator.
+   */
+  public void removeState() {
+    state = null;
+  }
+
+  /**
+   * Sets a new state to the operator.
+   * @param newState new state
+   * @return previous state
+   */
+  public S setState(final S newState) {
+    final S prevState = state;
+    state = newState;
+    return prevState;
+  }
 }
