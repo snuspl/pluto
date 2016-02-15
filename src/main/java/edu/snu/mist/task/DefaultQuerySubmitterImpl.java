@@ -21,8 +21,6 @@ import edu.snu.mist.formats.avro.LogicalPlan;
 import edu.snu.mist.task.operators.Operator;
 import edu.snu.mist.task.parameters.NumSubmitterThreads;
 import edu.snu.mist.task.sources.SourceGenerator;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.annotations.Parameter;
@@ -34,6 +32,8 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * DefaultQuerySubmitterImpl does the following things:
@@ -47,7 +47,7 @@ import java.util.concurrent.ConcurrentMap;
 @SuppressWarnings("unchecked")
 final class DefaultQuerySubmitterImpl implements QuerySubmitter {
 
-  private static final Logger LOG = Logger.getLogger(DefaultQuerySubmitterImpl.class);
+  private static final Logger LOG = Logger.getLogger(DefaultQuerySubmitterImpl.class.getName());
   /**
    * Thread pool stage for executing the query submission logic.
    */

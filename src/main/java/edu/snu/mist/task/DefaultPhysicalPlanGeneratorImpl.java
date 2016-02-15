@@ -24,13 +24,13 @@ import edu.snu.mist.formats.avro.*;
 import edu.snu.mist.task.common.parameters.SocketServerIp;
 import edu.snu.mist.task.common.parameters.SocketServerPort;
 import edu.snu.mist.task.operators.*;
+import edu.snu.mist.task.operators.parameters.KeyIndex;
 import edu.snu.mist.task.operators.parameters.OperatorId;
 import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sinks.TextSocketSink;
 import edu.snu.mist.task.sources.SourceGenerator;
 import edu.snu.mist.task.sources.TextSocketStreamGenerator;
 import org.apache.commons.lang.SerializationUtils;
-import org.apache.log4j.Logger;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -43,13 +43,14 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.logging.Logger;
 
 /**
  * A default implementation of PhysicalPlanGenerator.
  */
 final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
 
-  private static final Logger LOG = Logger.getLogger(DefaultPhysicalPlanGeneratorImpl.class);
+  private static final Logger LOG = Logger.getLogger(DefaultPhysicalPlanGeneratorImpl.class.getName());
 
   private final OperatorIdGenerator operatorIdGenerator;
 
@@ -101,31 +102,42 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     final JavaConfigurationBuilder cb = Tang.Factory.getTang().newConfigurationBuilder();
     cb.bindNamedParameter(QueryId.class, queryId);
     cb.bindNamedParameter(OperatorId.class, operatorIdGenerator.generate());
-    final Injector injector = Tang.Factory.getTang().newInjector(cb.build());
     final List<ByteBuffer> functionList = iOpInfo.getFunctions();
-    switch(iOpInfo.getInstantOperatorType()) {
-      case APPLY_STATEFUL:
+    switch (iOpInfo.getInstantOperatorType()) {
+      case APPLY_STATEFUL: {
         throw new IllegalArgumentException("MISTTask: ApplyStatefulOperator is currently not supported!");
-      case FILTER:
+      }
+      case FILTER: {
         final Predicate predicate = (Predicate) deserializeLambda(functionList.get(0));
+        final Injector injector = Tang.Factory.getTang().newInjector(cb.build());
         injector.bindVolatileInstance(Predicate.class, predicate);
         return injector.getInstance(FilterOperator.class);
-      case FLAT_MAP:
+      }
+      case FLAT_MAP: {
         final Function flatMapFunc = (Function) deserializeLambda(functionList.get(0));
+        final Injector injector = Tang.Factory.getTang().newInjector(cb.build());
         injector.bindVolatileInstance(Function.class, flatMapFunc);
         return injector.getInstance(FlatMapOperator.class);
-      case MAP:
+      }
+      case MAP: {
         final Function mapFunc = (Function) deserializeLambda(functionList.get(0));
+        final Injector injector = Tang.Factory.getTang().newInjector(cb.build());
         injector.bindVolatileInstance(Function.class, mapFunc);
         return injector.getInstance(MapOperator.class);
-      case REDUCE_BY_KEY:
+      }
+      case REDUCE_BY_KEY: {
+        cb.bindNamedParameter(KeyIndex.class, iOpInfo.getKeyIndex().toString());
         final BiFunction reduceFunc = (BiFunction) deserializeLambda(functionList.get(0));
+        final Injector injector = Tang.Factory.getTang().newInjector(cb.build());
         injector.bindVolatileInstance(BiFunction.class, reduceFunc);
         return injector.getInstance(ReduceByKeyOperator.class);
-      case REDUCE_BY_KEY_WINDOW:
+      }
+      case REDUCE_BY_KEY_WINDOW: {
         throw new IllegalArgumentException("MISTTask: ReduceByKeyWindowOperator is currently not supported!");
-      default:
+      }
+      default: {
         throw new IllegalArgumentException("MISTTask: Invalid InstantOperatorType detected!");
+      }
     }
   }
 
@@ -140,82 +152,104 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
     // Deserialize vertices
     for (final Vertex vertex : logicalPlan.getVertices()) {
-      switch(vertex.getVertexType()) {
-        case SOURCE:
+      switch (vertex.getVertexType()) {
+        case SOURCE: {
           final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
-          if (sourceInfo.getSourceType() == SourceTypeEnum.TEXT_SOCKET_SOURCE) {
-            final TextSocketStreamGenerator textSocketStreamGenerator;
-            textSocketStreamGenerator = getTextSocketStreamGenerator(sourceInfo.getSourceConfiguration());
-            deserializedVertices.add(textSocketStreamGenerator);
-          } else if (sourceInfo.getSourceType() == SourceTypeEnum.REEF_NETWORK_SOURCE) {
-            throw new IllegalArgumentException("MISTTask: REEF_NETWORK_SOURCE is currently not supported!");
-          } else {
-            throw new IllegalArgumentException("MISTTask: Invalid source generator detected in LogicalPlan!");
+          switch (sourceInfo.getSourceType()) {
+            case TEXT_SOCKET_SOURCE: {
+              final TextSocketStreamGenerator textSocketStreamGenerator
+                  = getTextSocketStreamGenerator(sourceInfo.getSourceConfiguration());
+              deserializedVertices.add(textSocketStreamGenerator);
+              break;
+            }
+            case REEF_NETWORK_SOURCE: {
+              throw new IllegalArgumentException("MISTTask: REEF_NETWORK_SOURCE is currently not supported!");
+            }
+            default: {
+              throw new IllegalArgumentException("MISTTask: Invalid source generator detected in LogicalPlan!");
+            }
           }
           break;
-        case INSTANT_OPERATOR:
+        }
+        case INSTANT_OPERATOR: {
           final InstantOperatorInfo iOpInfo = (InstantOperatorInfo) vertex.getAttributes();
           final Operator operator = getInstantOperator(queryId, iOpInfo);
           deserializedVertices.add(operator);
           operators.addVertex(operator);
           break;
-        case WINDOW_OPERATOR:
+        }
+        case WINDOW_OPERATOR: {
           throw new IllegalArgumentException("MISTTask: WindowOperator is currently not supported!");
-        case SINK:
+        }
+        case SINK: {
           final SinkInfo sinkInfo = (SinkInfo) vertex.getAttributes();
-          if (sinkInfo.getSinkType() == SinkTypeEnum.TEXT_SOCKET_SINK) {
-            final TextSocketSink textSocketSink;
-            textSocketSink = getTextSocketSink(sinkInfo.getSinkConfiguration());
-            deserializedVertices.add(textSocketSink);
-          } else if (sinkInfo.getSinkType() == SinkTypeEnum.REEF_NETWORK_SINK) {
-            throw new IllegalArgumentException("MISTTask: REEF_NETWORK_SINK is currently not supported!");
-          } else {
-            throw new IllegalArgumentException("MISTTask: Invalid sink detected in LogicalPlan!");
+          switch (sinkInfo.getSinkType()) {
+            case TEXT_SOCKET_SINK: {
+              final TextSocketSink textSocketSink = getTextSocketSink(sinkInfo.getSinkConfiguration());
+              deserializedVertices.add(textSocketSink);
+              break;
+            }
+            case REEF_NETWORK_SINK: {
+              throw new IllegalArgumentException("MISTTask: REEF_NETWORK_SINK is currently not supported!");
+            }
+            default: {
+              throw new IllegalArgumentException("MISTTask: Invalid sink detected in LogicalPlan!");
+            }
           }
           break;
-        default:
+        }
+        default: {
           throw new IllegalArgumentException("MISTTask: Invalid vertex detected in LogicalPlan!");
+        }
       }
     }
     // Add edge info to physical plan
     for (final Edge edge : logicalPlan.getEdges()) {
-      final int fromIndex = edge.getFrom();
-      final Object deserializedFromVertex = deserializedVertices.get(fromIndex);
-      final int toIndex = edge.getTo();
-      final Object deserializedToVertex = deserializedVertices.get(toIndex);
-      switch(logicalPlan.getVertices().get(fromIndex).getVertexType()) {
-        case SOURCE:
-          if (!sourceMap.containsKey(deserializedFromVertex)) {
-            sourceMap.put((SourceGenerator) deserializedFromVertex, new HashSet<>());
+      final int srcIndex = edge.getFrom();
+      final Object deserializedSrcVertex = deserializedVertices.get(srcIndex);
+      final int dstIndex = edge.getTo();
+      final Object deserializedDstVertex = deserializedVertices.get(dstIndex);
+      switch (logicalPlan.getVertices().get(srcIndex).getVertexType()) {
+        case SOURCE: {
+          if (!sourceMap.containsKey(deserializedSrcVertex)) {
+            sourceMap.put((SourceGenerator) deserializedSrcVertex, new HashSet<>());
           }
-          sourceMap.get(deserializedFromVertex).add((Operator) deserializedToVertex);
+          sourceMap.get(deserializedSrcVertex).add((Operator) deserializedDstVertex);
           break;
-        case INSTANT_OPERATOR:
-          switch (logicalPlan.getVertices().get(toIndex).getVertexType()) {
-            case INSTANT_OPERATOR:
-              operators.addEdge((Operator) deserializedFromVertex, (Operator) deserializedToVertex);
+        }
+        case INSTANT_OPERATOR: {
+          switch (logicalPlan.getVertices().get(dstIndex).getVertexType()) {
+            case INSTANT_OPERATOR: {
+              operators.addEdge((Operator) deserializedSrcVertex, (Operator) deserializedDstVertex);
               break;
-            case WINDOW_OPERATOR:
+            }
+            case WINDOW_OPERATOR: {
               throw new IllegalStateException("MISTTask: WindowOperator is currently not supported but MIST didn't " +
                   "catch it in advance!");
-            case SINK:
-              if (!sinkMap.containsKey(deserializedFromVertex)) {
-                sinkMap.put((Operator) deserializedFromVertex, new HashSet<>());
+            }
+            case SINK: {
+              if (!sinkMap.containsKey(deserializedSrcVertex)) {
+                sinkMap.put((Operator) deserializedSrcVertex, new HashSet<>());
               }
-              sinkMap.get(deserializedFromVertex).add((Sink) deserializedToVertex);
+              sinkMap.get(deserializedSrcVertex).add((Sink) deserializedDstVertex);
               break;
-            default:
+            }
+            default: {
               // ToVertex type is SourceGenerator, but it's illegal!
               throw new IllegalArgumentException("MISTTask: Invalid edge detected! SourceGenerator cannot have" +
                   " ingoing edges!");
+            }
           }
           break;
-        case WINDOW_OPERATOR:
+        }
+        case WINDOW_OPERATOR: {
           throw new IllegalStateException("MISTTask: WindowOperator is currently not supported but MIST didn't catch" +
               " it in advance!");
-        default:
+        }
+        default: {
           // FromVertex type is guaranteed to be Sink! However, Sink cannot have outgoing edges!
           throw new IllegalArgumentException("MISTTask: Invalid edge detected! Sink cannot have outgoing edges!");
+        }
       }
     }
     return new DefaultPhysicalPlanImpl<>(sourceMap, operators, sinkMap);

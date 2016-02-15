@@ -24,22 +24,22 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Default implementation class for OperatorIdGenerator.
  */
-public final class DefaultOperatorIdGeneratorImpl implements OperatorIdGenerator{
+final class DefaultOperatorIdGeneratorImpl implements OperatorIdGenerator {
 
   /**
    * Prefix used for generating operator Ids.
    */
-  private String prefix;
+  private final String prefix;
 
   /**
    * Atomic ID Sequence number used for generating operator Ids.
    */
-  private AtomicLong operatorIdSeqNum;
+  private final AtomicLong operatorIdSeqNum;
 
   @Inject
   private DefaultOperatorIdGeneratorImpl(@Parameter(OperatorIdPrefix.class) final String prefix) {
     this.prefix = prefix;
-    operatorIdSeqNum = new AtomicLong();
+    this.operatorIdSeqNum = new AtomicLong();
   }
 
   @Override

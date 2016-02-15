@@ -22,6 +22,6 @@ import org.apache.reef.tang.annotations.NamedParameter;
  * Prefix used for making operator IDs.
  */
 @NamedParameter(doc = "A prefix used for making operator ID", default_value = "operator-")
-public class OperatorIdPrefix implements Name<String> {
+public final class OperatorIdPrefix implements Name<String> {
   // empty
 }

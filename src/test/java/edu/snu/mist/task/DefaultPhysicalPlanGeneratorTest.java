@@ -24,9 +24,7 @@ import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.LogicalPlan;
-import edu.snu.mist.task.operators.FlatMapOperator;
-import edu.snu.mist.task.operators.MapOperator;
-import edu.snu.mist.task.operators.Operator;
+import edu.snu.mist.task.operators.*;
 import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sinks.TextSocketSink;
 import edu.snu.mist.task.sources.SourceGenerator;
@@ -82,7 +80,9 @@ public final class DefaultPhysicalPlanGeneratorTest {
   public void testPhysicalPlanGenerator() throws InjectionException {
     final MISTQuery query = new TextSocketSourceStream<String>(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
         .flatMap(s -> Arrays.asList(s.split(" ")))
+        .filter(s -> s.startsWith("A"))
         .map(s -> new Tuple2<>(s, 1))
+        .reduceByKey(0, String.class, (Integer x, Integer y) -> x + y)
         .textSocketOutput(APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF)
         .getQuery();
 
@@ -106,13 +106,19 @@ public final class DefaultPhysicalPlanGeneratorTest {
     Assert.assertEquals(operator1, operators.getRootVertices().iterator().next());
     Assert.assertEquals(1, operators.getNeighbors(operator1).size());
     final Operator operator2 = operators.getNeighbors(operator1).iterator().next();
-    Assert.assertTrue(operator2 instanceof MapOperator);
+    Assert.assertTrue(operator2 instanceof FilterOperator);
+    Assert.assertEquals(1, operators.getNeighbors(operator2).size());
+    final Operator operator3 = operators.getNeighbors(operator2).iterator().next();
+    Assert.assertTrue(operator3 instanceof MapOperator);
+    Assert.assertEquals(1, operators.getNeighbors(operator3).size());
+    final Operator operator4 = operators.getNeighbors(operator3).iterator().next();
+    Assert.assertTrue(operator4 instanceof ReduceByKeyOperator);
 
     final Map<Operator, Set<Sink>> sinkMap = physicalPlan.getSinkMap();
     Assert.assertEquals(1, sinkMap.keySet().size());
-    Assert.assertTrue(sinkMap.containsKey(operator2));
-    Assert.assertEquals(1, sinkMap.get(operator2).size());
-    final Sink sink = sinkMap.get(operator2).iterator().next();
+    Assert.assertTrue(sinkMap.containsKey(operator4));
+    Assert.assertEquals(1, sinkMap.get(operator4).size());
+    final Sink sink = sinkMap.get(operator4).iterator().next();
     Assert.assertTrue(sink instanceof TextSocketSink);
   }
 }
