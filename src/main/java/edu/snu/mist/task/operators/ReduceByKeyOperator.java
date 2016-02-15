@@ -32,7 +32,9 @@ import java.util.function.BiFunction;
  * This operator reduces the value by key.
  * @param <K> key type
  * @param <V> value type
- * TODO[MIST-#]: Support non-serializable key and value
+ * TODO[MIST-#]: Support non-serializable key and value.
+ * Currently, we use HashMap instead of Map because HashMap is serializable, but Map isn't.
+ * This can be changed to Map when we support non-serializable state.
  */
 public final class ReduceByKeyOperator<K extends Serializable, V extends Serializable>
     extends StatefulOperator<Tuple2, HashMap<K, V>, HashMap<K, V>> {
