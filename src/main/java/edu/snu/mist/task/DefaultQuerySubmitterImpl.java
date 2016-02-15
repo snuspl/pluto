@@ -15,26 +15,19 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.GraphUtils;
 import edu.snu.mist.formats.avro.LogicalPlan;
 import edu.snu.mist.task.operators.Operator;
-import edu.snu.mist.task.operators.StatefulOperator;
 import edu.snu.mist.task.parameters.NumSubmitterThreads;
 import edu.snu.mist.task.sources.SourceGenerator;
-import edu.snu.mist.task.ssm.OperatorState;
-import edu.snu.mist.task.ssm.SSM;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.annotations.Parameter;
-import org.apache.reef.wake.Identifier;
 import org.apache.reef.wake.impl.ThreadPoolStage;
 
 import javax.inject.Inject;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -42,12 +35,11 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * DefaultQuerySubmitterImpl does the following things:
  * 1) receives logical plans from clients and converts the logical plans to physical plans,
- * 2) creates initial state of the query,
- * 3) chains the physical operators and make OperatorChain,
- * 4) allocates the OperatorChains to the MistExecutors,
- * 5) and sets the OutputEmitters of the SourceGenerator and OperatorChains
+ * 2) chains the physical operators and make OperatorChain,
+ * 3) allocates the OperatorChains to the MistExecutors,
+ * 4) and sets the OutputEmitters of the SourceGenerator and OperatorChains
  * to forward their outputs to next OperatorChains.
- * 6) starts to receive input data stream from the source of the query.
+ * 5) starts to receive input data stream from the source of the query.
  */
 @SuppressWarnings("unchecked")
 final class DefaultQuerySubmitterImpl implements QuerySubmitter {
@@ -67,7 +59,6 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
    * @param operatorChainer the converter which chains operators and makes OperatorChains
    * @param chainAllocator the allocator which allocates a OperatorChain to a MistExecutor
    * @param physicalPlanGenerator the physical plan generator which generates physical plan from logical paln
-   * @param ssm the ssm for saving initial state of the query
    * @param idfactory identifier factory
    * @param numThreads the number of threads for the query submitter
    */
@@ -75,7 +66,6 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
   private DefaultQuerySubmitterImpl(final OperatorChainer operatorChainer,
                                     final OperatorChainAllocator chainAllocator,
                                     final PhysicalPlanGenerator physicalPlanGenerator,
-                                    final SSM ssm,
                                     final StringIdentifierFactory idfactory,
                                     @Parameter(NumSubmitterThreads.class) final int numThreads) {
     this.physicalPlanMap = new ConcurrentHashMap<>();
@@ -83,22 +73,16 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
       // 1) Converts the logical plan to the physical plan
       final PhysicalPlan<Operator> physicalPlan = physicalPlanGenerator.generate(tuple);
 
-      // 2) Creates initial state of the query
-      final Iterator<Operator> iterator = GraphUtils.topologicalSort(physicalPlan.getOperators());
-      final Map<Identifier, OperatorState> operatorStateMap = getInitialQueryState(iterator);
-      final Identifier queryId = idfactory.getNewInstance(tuple.getKey());
-      ssm.create(queryId, operatorStateMap);
-
-      // 3) Chains the physical operators and makes OperatorChain.
+      // 2) Chains the physical operators and makes OperatorChain.
       final PhysicalPlan<OperatorChain> chainedPlan =
           operatorChainer.chainOperators(physicalPlan);
       physicalPlanMap.putIfAbsent(tuple.getKey(), chainedPlan);
       final DAG<OperatorChain> chainedOperators = chainedPlan.getOperators();
 
-      // 4) Allocates the OperatorChains to the MistExecutors
+      // 3) Allocates the OperatorChains to the MistExecutors
       chainAllocator.allocate(chainedOperators);
 
-      // 5) Sets output emitters and 6) starts to receive input data stream from the source
+      // 4) Sets output emitters and 5) starts to receive input data stream from the source
       start(chainedPlan);
     }, numThreads);
   }
@@ -114,37 +98,13 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
   }
 
   /**
-   * Gets the initial state of the query.
-   * @param iterator iterator for the query's operators
-   * @return map of operator identifier and state
-   */
-  private Map<Identifier, OperatorState> getInitialQueryState(final Iterator<Operator> iterator) {
-    final Map<Identifier, OperatorState> operatorStateMap = new HashMap<>();
-    while (iterator.hasNext()) {
-      final Operator operator = iterator.next();
-      final StreamType.OperatorType operatorType = operator.getOperatorType();
-      // check whether the operator is stateful or not.
-      if (operatorType == StreamType.OperatorType.REDUCE_BY_KEY ||
-          operatorType == StreamType.OperatorType.APPLY_STATEFUL ||
-          operatorType == StreamType.OperatorType.REDUCE_BY_KEY_WINDOW) {
-        // this operator is stateful
-        final StatefulOperator statefulOperator = (StatefulOperator)operator;
-        // put initial state of the operator to operatorStateMap
-        operatorStateMap.put(statefulOperator.getOperatorIdentifier(),
-            statefulOperator.getInitialState());
-      }
-    }
-    return operatorStateMap;
-  }
-
-  /**
    * Sets the OutputEmitters of the sources, operators and sinks
    * and starts to receive input data stream from the sources.
    * @param chainPhysicalPlan physical plan of OperatorChain
    */
   private void start(final PhysicalPlan<OperatorChain> chainPhysicalPlan) {
     final DAG<OperatorChain> chainedOperators = chainPhysicalPlan.getOperators();
-    // 5) Sets output emitters
+    // 4) Sets output emitters
     final Iterator<OperatorChain> iterator = GraphUtils.topologicalSort(chainedOperators);
     while (iterator.hasNext()) {
       final OperatorChain operatorChain = iterator.next();
@@ -162,7 +122,7 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
       final Set<OperatorChain> nextOps = chainPhysicalPlan.getSourceMap().get(src);
       // Sets SourceOutputEmitter to the sources
       src.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
-      // 6) starts to receive input data stream from the source
+      // 5) starts to receive input data stream from the source
       src.start();
     }
   }
