@@ -36,11 +36,11 @@ public final class MISTQueryImplTest {
    */
   @Test
   public void testMISTQuery() {
-    final Sink sink = new REEFNetworkSourceStream<String>(APITestParameters.TEST_REEF_NETWORK_SOURCE_CONF)
+    final Sink sink = new REEFNetworkSourceStream<String>(APITestParameters.LOCAL_REEF_NETWORK_SOURCE_CONF)
         .flatMap(s -> Arrays.asList(s.split(" ")))
         .map(s -> new Tuple2<>(s, 1))
         .reduceByKey(0, String.class, (Integer x, Integer y) -> x + y)
-        .reefNetworkOutput(APITestParameters.TEST_REEF_NETWORK_SINK_CONF);
+        .reefNetworkOutput(APITestParameters.LOCAL_REEF_NETWORK_SINK_CONF);
     final MISTQuery query = sink.getQuery();
 
     Assert.assertTrue(query.getQuerySinks().contains(sink));

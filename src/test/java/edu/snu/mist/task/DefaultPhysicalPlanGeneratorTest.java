@@ -62,9 +62,9 @@ public final class DefaultPhysicalPlanGeneratorTest {
 
   @Before
   public void setUp() throws IOException {
-    sourceServerSocket = new ServerSocket((Integer) APITestParameters.TEST_TEXT_SOCKET_SOURCE_CONF
+    sourceServerSocket = new ServerSocket((Integer) APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF
       .getConfigurationValue(TextSocketSourceParameters.SOCKET_HOST_PORT));
-    sinkServerSocket = new ServerSocket((Integer) APITestParameters.TEST_TEXT_SOCKET_SINK_CONF
+    sinkServerSocket = new ServerSocket((Integer) APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF
       .getConfigurationValue(TextSocketSinkParameters.SOCKET_HOST_PORT));
   }
 
@@ -80,10 +80,10 @@ public final class DefaultPhysicalPlanGeneratorTest {
    */
   @Test
   public void testPhysicalPlanGenerator() throws InjectionException {
-    final MISTQuery query = new TextSocketSourceStream<String>(APITestParameters.TEST_TEXT_SOCKET_SOURCE_CONF)
+    final MISTQuery query = new TextSocketSourceStream<String>(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
         .flatMap(s -> Arrays.asList(s.split(" ")))
         .map(s -> new Tuple2<>(s, 1))
-        .textSocketOutput(APITestParameters.TEST_TEXT_SOCKET_SINK_CONF)
+        .textSocketOutput(APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF)
         .getQuery();
 
     final MISTQuerySerializer querySerializer = Tang.Factory.getTang().newInjector()

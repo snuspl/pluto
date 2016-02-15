@@ -72,11 +72,11 @@ public class MISTExecutionEnvironmentImplTest {
         new InetSocketAddress(taskPortNum));
 
     // Step 2: Generate a new query
-    final MISTQuery query = new REEFNetworkSourceStream<String>(APITestParameters.TEST_REEF_NETWORK_SOURCE_CONF)
+    final MISTQuery query = new REEFNetworkSourceStream<String>(APITestParameters.LOCAL_REEF_NETWORK_SOURCE_CONF)
         .flatMap(s -> Arrays.asList(s.split(" ")))
         .map(s -> new Tuple2<>(s, 1))
         .reduceByKey(0, String.class, (Integer x, Integer y) -> x + y)
-        .reefNetworkOutput(APITestParameters.TEST_REEF_NETWORK_SINK_CONF)
+        .reefNetworkOutput(APITestParameters.LOCAL_REEF_NETWORK_SINK_CONF)
         .getQuery();
 
     // Step 3: Send a query and check whether the query comes to the task correctly

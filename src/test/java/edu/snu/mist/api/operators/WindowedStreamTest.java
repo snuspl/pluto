@@ -31,7 +31,7 @@ import org.junit.Test;
 public class WindowedStreamTest {
 
   private final WindowedStream<Tuple2<String, Integer>> windowedStream
-      = new REEFNetworkSourceStream<String>(APITestParameters.TEST_REEF_NETWORK_SOURCE_CONF)
+      = new REEFNetworkSourceStream<String>(APITestParameters.LOCAL_REEF_NETWORK_SOURCE_CONF)
       .map(s -> new Tuple2<>(s, 1))
       /* Creates a test windowed stream with 5 sec size and emits windowed stream every 1 sec */
       .window(new TimeSizePolicy(5000), new TimeEmitPolicy(1000));
