@@ -15,6 +15,9 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.api.functions.MISTBiFunction;
+import edu.snu.mist.api.functions.MISTFunction;
+import edu.snu.mist.api.functions.MISTPredicate;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import edu.snu.mist.common.AdjacentListDAG;
@@ -42,9 +45,6 @@ import org.apache.reef.tang.exceptions.InjectionException;
 import javax.inject.Inject;
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.logging.Logger;
 
 /**
@@ -124,28 +124,28 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
         throw new IllegalArgumentException("MISTTask: ApplyStatefulOperator is currently not supported!");
       }
       case FILTER: {
-        final Predicate predicate = (Predicate) deserializeLambda(functionList.get(0));
+        final MISTPredicate predicate = (MISTPredicate) deserializeLambda(functionList.get(0));
         final Injector injector = Tang.Factory.getTang().newInjector(cb.build());
-        injector.bindVolatileInstance(Predicate.class, predicate);
+        injector.bindVolatileInstance(MISTPredicate.class, predicate);
         return injector.getInstance(FilterOperator.class);
       }
       case FLAT_MAP: {
-        final Function flatMapFunc = (Function) deserializeLambda(functionList.get(0));
+        final MISTFunction flatMapFunc = (MISTFunction) deserializeLambda(functionList.get(0));
         final Injector injector = Tang.Factory.getTang().newInjector(cb.build());
-        injector.bindVolatileInstance(Function.class, flatMapFunc);
+        injector.bindVolatileInstance(MISTFunction.class, flatMapFunc);
         return injector.getInstance(FlatMapOperator.class);
       }
       case MAP: {
-        final Function mapFunc = (Function) deserializeLambda(functionList.get(0));
+        final MISTFunction mapFunc = (MISTFunction) deserializeLambda(functionList.get(0));
         final Injector injector = Tang.Factory.getTang().newInjector(cb.build());
-        injector.bindVolatileInstance(Function.class, mapFunc);
+        injector.bindVolatileInstance(MISTFunction.class, mapFunc);
         return injector.getInstance(MapOperator.class);
       }
       case REDUCE_BY_KEY: {
         cb.bindNamedParameter(KeyIndex.class, iOpInfo.getKeyIndex().toString());
-        final BiFunction reduceFunc = (BiFunction) deserializeLambda(functionList.get(0));
+        final MISTBiFunction reduceFunc = (MISTBiFunction) deserializeLambda(functionList.get(0));
         final Injector injector = Tang.Factory.getTang().newInjector(cb.build());
-        injector.bindVolatileInstance(BiFunction.class, reduceFunc);
+        injector.bindVolatileInstance(MISTBiFunction.class, reduceFunc);
         return injector.getInstance(ReduceByKeyOperator.class);
       }
       case REDUCE_BY_KEY_WINDOW: {
@@ -167,7 +167,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     final DAG<Operator> operators = new AdjacentListDAG<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
     // Deserialize vertices
-    for (final Vertex vertex : logicalPlan.getVertices()) {
+    for (final AvroVertex vertex : logicalPlan.getVertices()) {
       switch (vertex.getVertexType()) {
         case SOURCE: {
           final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();

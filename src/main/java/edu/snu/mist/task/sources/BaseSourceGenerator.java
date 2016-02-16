@@ -143,4 +143,32 @@ public abstract class BaseSourceGenerator<I> implements SourceGenerator<I> {
   public void setOutputEmitter(final OutputEmitter<I> emitter) {
     this.outputEmitter = emitter;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    final BaseSourceGenerator that = (BaseSourceGenerator) o;
+
+    if (!identifier.equals(that.identifier)) {
+      return false;
+    }
+    if (!queryId.equals(that.queryId)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = identifier.hashCode();
+    result = 31 * result + queryId.hashCode();
+    return result;
+  }
 }

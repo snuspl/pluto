@@ -56,7 +56,7 @@
               "name": "LogicalInfo",
               "type":
               {
-                "name": "Vertex",
+                "name": "AvroVertex",
                 "type": "record",
                 "fields":
                 [

@@ -15,6 +15,9 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.api.functions.MISTBiFunction;
+import edu.snu.mist.api.functions.MISTFunction;
+import edu.snu.mist.api.functions.MISTPredicate;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
@@ -29,6 +32,7 @@ import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sources.BaseSourceGenerator;
 import edu.snu.mist.task.sources.SourceGenerator;
 import junit.framework.Assert;
+import org.apache.avro.specific.SpecificRecord;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
@@ -41,9 +45,6 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -84,15 +85,15 @@ public final class QuerySubmitterTest {
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
     // UDF functions for operators
-    final Function<String, List<String>> flatMapFunc = (input) -> Arrays.asList(input.split(" "));
-    final Predicate<String> filterFunc =
+    final MISTFunction<String, List<String>> flatMapFunc = (input) -> Arrays.asList(input.split(" "));
+    final MISTPredicate<String> filterFunc =
         (input) -> !(input.equals("a") || input.equals("or") || input.equals("the") || input.equals("of")
         || input.equals("in") || input.equals("at") || input.equals("that")
         || input.equals("out") || input.equals("were"));
-    final Function<String, Tuple2<String, Integer>> toTupleMapFunc = (input) -> new Tuple2<>(input, 1);
-    final BiFunction<Integer, Integer, Integer> reduceByKeyFunc = (oldVal, newVal) -> oldVal + newVal;
-    final Function<Map<String, Integer>, String> toStringMapFunc = (input) -> input.toString();
-    final Function<Map<String, Integer>, Integer> totalCountMapFunc =
+    final MISTFunction<String, Tuple2<String, Integer>> toTupleMapFunc = (input) -> new Tuple2<>(input, 1);
+    final MISTBiFunction<Integer, Integer, Integer> reduceByKeyFunc = (oldVal, newVal) -> oldVal + newVal;
+    final MISTFunction<Map<String, Integer>, String> toStringMapFunc = (input) -> input.toString();
+    final MISTFunction<Map<String, Integer>, Integer> totalCountMapFunc =
         (input) -> input.values().stream().reduce(0, (x, y) -> x + y);
 
     // Expected results
@@ -126,17 +127,17 @@ public final class QuerySubmitterTest {
     jcb.bindNamedParameter(NumExecutors.class, Integer.toString(4));
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final Operator flatMap = createOperator(
-        queryId, "flatMap", Function.class, flatMapFunc, FlatMapOperator.class);
+        queryId, "flatMap", MISTFunction.class, flatMapFunc, FlatMapOperator.class);
     final Operator filter = createOperator(
-        queryId, "filter", Predicate.class, filterFunc, FilterOperator.class);
+        queryId, "filter", MISTPredicate.class, filterFunc, FilterOperator.class);
     final Operator toTupleMap = createOperator(
-        queryId, "toTupleMap", Function.class, toTupleMapFunc, MapOperator.class);
+        queryId, "toTupleMap", MISTFunction.class, toTupleMapFunc, MapOperator.class);
     final Operator reduceByKey = createOperator(
-        queryId, "reduceByKey", BiFunction.class, reduceByKeyFunc, ReduceByKeyOperator.class);
+        queryId, "reduceByKey", MISTBiFunction.class, reduceByKeyFunc, ReduceByKeyOperator.class);
     final Operator toStringMap = createOperator(
-        queryId, "toStringMap", Function.class, toStringMapFunc, MapOperator.class);
+        queryId, "toStringMap", MISTFunction.class, toStringMapFunc, MapOperator.class);
     final Operator totalCountMap = createOperator(
-        queryId, "totalCountMap", Function.class, totalCountMapFunc, MapOperator.class);
+        queryId, "totalCountMap", MISTFunction.class, totalCountMapFunc, MapOperator.class);
 
     // Create sinks
     final List<String> sink1Result = new LinkedList<>();
@@ -281,6 +282,11 @@ public final class QuerySubmitterTest {
     public void releaseResources() throws Exception {
       // do nothing
     }
+
+    @Override
+    public SpecificRecord getAttribute() {
+      return null;
+    }
   }
 
   /**
@@ -292,7 +298,7 @@ public final class QuerySubmitterTest {
     private final CountDownLatch countDownLatch;
 
     TestSink(final List<I> result,
-          final CountDownLatch countDownLatch) {
+             final CountDownLatch countDownLatch) {
       this.result = result;
       this.countDownLatch = countDownLatch;
     }
@@ -315,6 +321,11 @@ public final class QuerySubmitterTest {
 
     @Override
     public Identifier getQueryIdentifier() {
+      return null;
+    }
+
+    @Override
+    public SpecificRecord getAttribute() {
       return null;
     }
   }

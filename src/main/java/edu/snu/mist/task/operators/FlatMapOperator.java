@@ -16,14 +16,20 @@
 package edu.snu.mist.task.operators;
 
 import edu.snu.mist.api.StreamType;
+import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.common.parameters.QueryId;
+import edu.snu.mist.formats.avro.InstantOperatorInfo;
+import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
 import edu.snu.mist.task.operators.parameters.OperatorId;
+import org.apache.avro.specific.SpecificRecord;
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -38,13 +44,13 @@ public final class FlatMapOperator<I, O> extends StatelessOperator<I, O> {
   /**
    * FlatMap function.
    */
-  private final Function<I, List<O>> flatMapFunc;
+  private final MISTFunction<I, List<O>> flatMapFunc;
 
   @Inject
   private FlatMapOperator(@Parameter(QueryId.class) final String queryId,
                           @Parameter(OperatorId.class) final String operatorId,
                           final StringIdentifierFactory idfactory,
-                          final Function<I, List<O>> flatMapFunc) {
+                          final MISTFunction<I, List<O>> flatMapFunc) {
     super(idfactory.getNewInstance(queryId), idfactory.getNewInstance(operatorId));
     this.flatMapFunc = flatMapFunc;
   }
@@ -66,5 +72,17 @@ public final class FlatMapOperator<I, O> extends StatelessOperator<I, O> {
   @Override
   public StreamType.OperatorType getOperatorType() {
     return StreamType.OperatorType.FLAT_MAP;
+  }
+
+  @Override
+  public SpecificRecord getAttribute() {
+    final InstantOperatorInfo.Builder iOpInfoBuilder = InstantOperatorInfo.newBuilder();
+    iOpInfoBuilder.setInstantOperatorType(InstantOperatorTypeEnum.FLAT_MAP);
+    final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
+    serializedFunctionList.add(ByteBuffer.wrap(
+        SerializationUtils.serialize(flatMapFunc)));
+    iOpInfoBuilder.setFunctions(serializedFunctionList);
+    iOpInfoBuilder.setKeyIndex(null);
+    return iOpInfoBuilder.build();
   }
 }

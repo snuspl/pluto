@@ -37,10 +37,16 @@ public interface PhysicalPlan<E> {
   DAG<E> getOperators();
 
   /**
-   * Gets the map containing SourceGenerator and its next operators.
+   * Gets sources.
+   * @return sources
+   */
+  Set<SourceGenerator> getSources();
+
+  /**
+   * Gets the map of source id and its next operators.
    * @return a map
    */
-  Map<SourceGenerator, Set<E>> getSourceMap();
+  Map<String, Set<E>> getSourceMap();
 
   /**
    * Gets the map of operator and sinks.

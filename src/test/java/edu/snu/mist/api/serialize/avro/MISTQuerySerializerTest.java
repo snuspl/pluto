@@ -88,13 +88,13 @@ public final class MISTQuerySerializerTest {
         .getQuery();
     final MISTQuerySerializer serializer = Tang.Factory.getTang().newInjector().getInstance(MISTQuerySerializer.class);
     final LogicalPlan logicalPlan = serializer.queryToLogicalPlan(complexQuery);
-    final List<Vertex> vertices = logicalPlan.getVertices();
+    final List<AvroVertex> vertices = logicalPlan.getVertices();
     Assert.assertEquals(7, vertices.size());
 
     // Stores indexes for flatMap, filter, map, window, reduceByKeyWindow, reefNetworkOutput in order
     final List<Integer> vertexIndexes = Arrays.asList(new Integer[7]);
     int index = 0;
-    for (final Vertex vertex : vertices) {
+    for (final AvroVertex vertex : vertices) {
       if (vertex.getVertexType() == VertexTypeEnum.SINK) {
         // Test for sink vertex
         final SinkInfo sinkInfo = (SinkInfo) vertex.getAttributes();
@@ -223,13 +223,13 @@ public final class MISTQuerySerializerTest {
         .getQuery();
     final MISTQuerySerializer serializer = Tang.Factory.getTang().newInjector().getInstance(MISTQuerySerializer.class);
     final LogicalPlan logicalPlan = serializer.queryToLogicalPlan(textSocketQuery);
-    final List<Vertex> vertices = logicalPlan.getVertices();
+    final List<AvroVertex> vertices = logicalPlan.getVertices();
     Assert.assertEquals(3, vertices.size());
 
     // Stores indexes for flatMap, filter, map, window, reduceByKeyWindow, reefNetworkOutput in order
     final List<Integer> vertexIndexes = Arrays.asList(new Integer[3]);
     int index = 0;
-    for (final Vertex vertex : vertices) {
+    for (final AvroVertex vertex : vertices) {
       if (vertex.getVertexType() == VertexTypeEnum.SINK) {
         // Test for sink vertex
         final SinkInfo sinkInfo = (SinkInfo) vertex.getAttributes();

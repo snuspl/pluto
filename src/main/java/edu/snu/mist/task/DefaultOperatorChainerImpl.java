@@ -19,7 +19,6 @@ import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.task.operators.Operator;
 import edu.snu.mist.task.sinks.Sink;
-import edu.snu.mist.task.sources.SourceGenerator;
 
 import javax.inject.Inject;
 import java.util.HashMap;
@@ -72,7 +71,7 @@ final class DefaultOperatorChainerImpl implements OperatorChainer {
   @Override
   public PhysicalPlan<OperatorChain> chainOperators(final PhysicalPlan<Operator> plan) {
     // This is a map of source and OperatorChains which are following sources
-    final Map<SourceGenerator, Set<OperatorChain>> sourceMap = new HashMap<>();
+    final Map<String, Set<OperatorChain>> sourceMap = new HashMap<>();
     // This is a map of OperatorChain and Sinks. The OperatorChain is followed by Sinks.
     final Map<OperatorChain, Set<Sink>> sinkMap = new HashMap<>();
     final DAG<OperatorChain> operatorChainDAG = new AdjacentListDAG<>();
@@ -81,7 +80,7 @@ final class DefaultOperatorChainerImpl implements OperatorChainer {
 
     // It traverses the DAG of operators in DFS order
     // from the root operators which are following sources.
-    for (final Map.Entry<SourceGenerator, Set<Operator>> entry : plan.getSourceMap().entrySet()) {
+    for (final Map.Entry<String, Set<Operator>> entry : plan.getSourceMap().entrySet()) {
       // This is the root operators which are directly connected to sources.
       final Set<Operator> rootOperators = entry.getValue();
       final Set<OperatorChain> operatorChains = new HashSet<>();
@@ -102,7 +101,7 @@ final class DefaultOperatorChainerImpl implements OperatorChainer {
       }
       sourceMap.put(entry.getKey(), operatorChains);
     }
-    return new DefaultPhysicalPlanImpl<>(sourceMap, operatorChainDAG, sinkMap);
+    return new DefaultPhysicalPlanImpl<>(plan.getSources(), sourceMap, operatorChainDAG, sinkMap);
   }
 
   /**

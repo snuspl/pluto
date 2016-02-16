@@ -16,13 +16,20 @@
 package edu.snu.mist.task.operators;
 
 import edu.snu.mist.api.StreamType;
+import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.common.parameters.QueryId;
+import edu.snu.mist.formats.avro.InstantOperatorInfo;
+import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
 import edu.snu.mist.task.operators.parameters.OperatorId;
+import org.apache.avro.specific.SpecificRecord;
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.function.Function;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,10 +44,10 @@ public final class MapOperator<I, O> extends StatelessOperator<I, O> {
   /**
    * Map function.
    */
-  private final Function<I, O> mapFunc;
+  private final MISTFunction<I, O> mapFunc;
 
   @Inject
-  private MapOperator(final Function<I, O> mapFunc,
+  private MapOperator(final MISTFunction<I, O> mapFunc,
                       @Parameter(QueryId.class) final String queryId,
                       @Parameter(OperatorId.class) final String operatorId,
                       final StringIdentifierFactory idfactory) {
@@ -61,5 +68,17 @@ public final class MapOperator<I, O> extends StatelessOperator<I, O> {
   @Override
   public StreamType.OperatorType getOperatorType() {
     return StreamType.OperatorType.MAP;
+  }
+
+  @Override
+  public SpecificRecord getAttribute() {
+    final InstantOperatorInfo.Builder iOpInfoBuilder = InstantOperatorInfo.newBuilder();
+    iOpInfoBuilder.setInstantOperatorType(InstantOperatorTypeEnum.MAP);
+    final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
+    serializedFunctionList.add(ByteBuffer.wrap(
+        SerializationUtils.serialize(mapFunc)));
+    iOpInfoBuilder.setFunctions(serializedFunctionList);
+    iOpInfoBuilder.setKeyIndex(null);
+    return iOpInfoBuilder.build();
   }
 }

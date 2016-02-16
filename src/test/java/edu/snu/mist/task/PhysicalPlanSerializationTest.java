@@ -22,31 +22,21 @@ import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 import edu.snu.mist.api.sources.TextSocketSourceStream;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import edu.snu.mist.api.types.Tuple2;
-import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.LogicalPlan;
-import edu.snu.mist.task.operators.*;
-import edu.snu.mist.task.sinks.Sink;
-import edu.snu.mist.task.sinks.TextSocketSink;
-import edu.snu.mist.task.sources.SourceGenerator;
-import edu.snu.mist.task.sources.TextSocketStreamGenerator;
+import edu.snu.mist.task.operators.Operator;
+import junit.framework.Assert;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Arrays;
-import java.util.Map;
-import java.util.Set;
 
-/**
- * Test class for DefaultPhysicalPlanGenerator.
- */
-public final class DefaultPhysicalPlanGeneratorTest {
+public final class PhysicalPlanSerializationTest {
 
   /**
    * ServerSocket used for text socket sink connection.
@@ -73,11 +63,12 @@ public final class DefaultPhysicalPlanGeneratorTest {
   }
 
   /**
-   * Round-trip test of de-serializing LogicalPlan.
+   * Test whether serializaton/deserialization of physical plan correctly works or not.
+   * It serializes and deserializes a physical plan and compare the deserialized plan with original physical plan.
    * @throws InjectionException
    */
   @Test
-  public void testPhysicalPlanGenerator() throws InjectionException {
+  public void physicalPlanSerializationTest() throws InjectionException {
     final MISTQuery query = new TextSocketSourceStream<String>(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
         .flatMap(s -> Arrays.asList(s.split(" ")))
         .filter(s -> s.startsWith("A"))
@@ -89,37 +80,16 @@ public final class DefaultPhysicalPlanGeneratorTest {
     final MISTQuerySerializer querySerializer = Tang.Factory.getTang().newInjector()
         .getInstance(MISTQuerySerializer.class);
     final LogicalPlan logicalPlan = querySerializer.queryToLogicalPlan(query);
+    final String queryId = "query-test";
     final PhysicalPlanGenerator ppg = Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
-    final Tuple<String, LogicalPlan> tuple = new Tuple<>("query-test", logicalPlan);
+    final Tuple<String, LogicalPlan> tuple = new Tuple<>(queryId, logicalPlan);
     final PhysicalPlan<Operator> physicalPlan = ppg.generate(tuple);
 
-    final Map<String, Set<Operator>> sourceMap = physicalPlan.getSourceMap();
-    Assert.assertEquals(1, physicalPlan.getSources().size());
-    Assert.assertEquals(1, sourceMap.keySet().size());
-    final SourceGenerator source = physicalPlan.getSources().iterator().next();
-    Assert.assertTrue(source instanceof TextSocketStreamGenerator);
-    Assert.assertEquals(1, sourceMap.get(source.getIdentifier().toString()).size());
-    final Operator operator1 = sourceMap.get(source.getIdentifier().toString()).iterator().next();
-    Assert.assertTrue(operator1 instanceof FlatMapOperator);
+    final PhysicalPlan<Operator> serialDeserializedPlan =
+        PhysicalPlanDeserializer.deserialize(PhysicalPlanSerializer.serialize(queryId, physicalPlan));
 
-    final DAG<Operator> operators = physicalPlan.getOperators();
-    Assert.assertEquals(1, operators.getRootVertices().size());
-    Assert.assertEquals(operator1, operators.getRootVertices().iterator().next());
-    Assert.assertEquals(1, operators.getNeighbors(operator1).size());
-    final Operator operator2 = operators.getNeighbors(operator1).iterator().next();
-    Assert.assertTrue(operator2 instanceof FilterOperator);
-    Assert.assertEquals(1, operators.getNeighbors(operator2).size());
-    final Operator operator3 = operators.getNeighbors(operator2).iterator().next();
-    Assert.assertTrue(operator3 instanceof MapOperator);
-    Assert.assertEquals(1, operators.getNeighbors(operator3).size());
-    final Operator operator4 = operators.getNeighbors(operator3).iterator().next();
-    Assert.assertTrue(operator4 instanceof ReduceByKeyOperator);
-
-    final Map<Operator, Set<Sink>> sinkMap = physicalPlan.getSinkMap();
-    Assert.assertEquals(1, sinkMap.keySet().size());
-    Assert.assertTrue(sinkMap.containsKey(operator4));
-    Assert.assertEquals(1, sinkMap.get(operator4).size());
-    final Sink sink = sinkMap.get(operator4).iterator().next();
-    Assert.assertTrue(sink instanceof TextSocketSink);
+    Assert.assertEquals(physicalPlan.getOperators(), serialDeserializedPlan.getOperators());
+    Assert.assertEquals(physicalPlan.getSinkMap(), serialDeserializedPlan.getSinkMap());
+    Assert.assertEquals(physicalPlan.getSourceMap(), serialDeserializedPlan.getSourceMap());
   }
 }

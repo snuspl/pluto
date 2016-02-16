@@ -33,7 +33,7 @@
             "type": "array",
             "items":
             {
-              "name": "Vertex",
+              "name": "AvroVertex",
               "type": "record",
               "fields":
               [

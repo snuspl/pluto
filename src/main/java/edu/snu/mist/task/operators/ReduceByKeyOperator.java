@@ -16,17 +16,24 @@
 package edu.snu.mist.task.operators;
 
 import edu.snu.mist.api.StreamType;
+import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.parameters.QueryId;
+import edu.snu.mist.formats.avro.InstantOperatorInfo;
+import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
 import edu.snu.mist.task.operators.parameters.KeyIndex;
 import edu.snu.mist.task.operators.parameters.OperatorId;
+import org.apache.avro.specific.SpecificRecord;
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.function.BiFunction;
+import java.util.List;
 
 /**
  * This operator reduces the value by key.
@@ -42,7 +49,7 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
   /**
    * A reduce function.
    */
-  private final BiFunction<V, V, V> reduceFunc;
+  private final MISTBiFunction<V, V, V> reduceFunc;
 
   /**
    * An index of key.
@@ -57,7 +64,7 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
    * @param idFactory identifier factory
    */
   @Inject
-  private ReduceByKeyOperator(final BiFunction<V, V, V> reduceFunc,
+  private ReduceByKeyOperator(final MISTBiFunction<V, V, V> reduceFunc,
                               @Parameter(QueryId.class) final String queryId,
                               @Parameter(OperatorId.class) final String operatorId,
                               @Parameter(KeyIndex.class) final int keyIndex,
@@ -108,5 +115,17 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
   @Override
   public StreamType.OperatorType getOperatorType() {
     return StreamType.OperatorType.REDUCE_BY_KEY;
+  }
+
+  @Override
+  public SpecificRecord getAttribute() {
+    final InstantOperatorInfo.Builder iOpInfoBuilder = InstantOperatorInfo.newBuilder();
+    iOpInfoBuilder.setInstantOperatorType(InstantOperatorTypeEnum.REDUCE_BY_KEY);
+    final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
+    serializedFunctionList.add(ByteBuffer.wrap(
+        SerializationUtils.serialize(reduceFunc)));
+    iOpInfoBuilder.setFunctions(serializedFunctionList);
+    iOpInfoBuilder.setKeyIndex(keyIndex);
+    return iOpInfoBuilder.build();
   }
 }

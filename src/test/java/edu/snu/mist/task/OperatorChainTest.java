@@ -18,6 +18,7 @@ package edu.snu.mist.task;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.task.operators.BaseOperator;
 import edu.snu.mist.task.operators.Operator;
+import org.apache.avro.specific.SpecificRecord;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -108,6 +109,11 @@ public final class OperatorChainTest {
     public StreamType.OperatorType getOperatorType() {
       return StreamType.OperatorType.MAP;
     }
+
+    @Override
+    public SpecificRecord getAttribute() {
+      return null;
+    }
   }
 
   /**
@@ -128,6 +134,11 @@ public final class OperatorChainTest {
     public StreamType.OperatorType getOperatorType() {
       return StreamType.OperatorType.MAP;
     }
+
+    @Override
+    public SpecificRecord getAttribute() {
+      return null;
+    }
   }
 
   /**
@@ -147,6 +158,11 @@ public final class OperatorChainTest {
     @Override
     public StreamType.OperatorType getOperatorType() {
       return StreamType.OperatorType.MAP;
+    }
+
+    @Override
+    public SpecificRecord getAttribute() {
+      return null;
     }
   }
 }
