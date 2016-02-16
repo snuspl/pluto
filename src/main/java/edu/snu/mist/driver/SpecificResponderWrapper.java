@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.driver;
 
-import mist.MistTaskProvider;
+import edu.snu.mist.formats.avro.MistTaskProvider;
 import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.reef.tang.ExternalConstructor;
 

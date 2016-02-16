@@ -20,31 +20,61 @@
   * The driver receives the message, picks some tasks which are suitable for running the queries,
   * and returns the list of tasks' ip addresses to the clients.
   */
-{"namespace": "mist",
- "protocol": "MistTaskProvider",
-
- "types": [
-     {"name": "QueryInfo", "type": "record",
-      "fields": [ /* TODO[MIST-92]: Define avro RPC protocol between client and driver */
+{
+  "namespace": "edu.snu.mist.formats.avro",
+  "protocol": "MistTaskProvider",
+  "types":
+  [
+    {
+      "name": "QueryInfo",
+      "type": "record",
+      "fields":
+      [ /* TODO[MIST-92]: Define avro RPC protocol between client and driver */
       ]
-     },
-     {"name": "IPAddress", "type": "record",
-      "fields": [
-          {"name": "hostAddress", "type": "string"},
-          {"name": "port", "type": "int"}
+    },
+    {
+      "name": "IPAddress",
+      "type": "record",
+      "fields":
+      [
+        {
+          "name": "hostAddress",
+          "type": "string"
+        },
+        {
+          "name": "port",
+          "type": "int"
+        }
       ]
-     },
-     {"name": "TaskList", "type": "record",
-      "fields": [
-          {"name": "tasks", "type": {"type": "array", "items": "IPAddress"}}
+    },
+    {
+      "name": "TaskList",
+      "type": "record",
+      "fields":
+      [
+        {
+          "name": "tasks",
+          "type":
+          {
+            "type": "array",
+            "items": "IPAddress"
+          }
+        }
       ]
-     }
- ],
-
- "messages": {
-     "getTasks": {
-         "request": [{"name": "queryInfo", "type": "QueryInfo"}],
-         "response": "TaskList"
-     }
- }
+    }
+  ],
+  "messages":
+  {
+    "getTasks":
+    {
+      "request":
+      [
+        {
+          "name": "queryInfo",
+          "type": "QueryInfo"
+        }
+      ],
+      "response": "TaskList"
+    }
+  }
 }

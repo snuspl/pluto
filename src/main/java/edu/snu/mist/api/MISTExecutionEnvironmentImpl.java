@@ -16,10 +16,7 @@
 package edu.snu.mist.api;
 
 import edu.snu.mist.api.serialize.avro.MISTQuerySerializer;
-import edu.snu.mist.formats.avro.ClientToTaskMessage;
-import edu.snu.mist.formats.avro.LogicalPlan;
-import edu.snu.mist.formats.avro.QuerySubmissionResult;
-import mist.MistTaskProvider;
+import edu.snu.mist.formats.avro.*;
 import org.apache.avro.ipc.NettyTransceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.reef.tang.Injector;
@@ -61,14 +58,14 @@ public final class MISTExecutionEnvironmentImpl implements MISTExecutionEnvironm
     final NettyTransceiver clientToDriver = new NettyTransceiver(new InetSocketAddress(serverAddr, serverPort));
     final MistTaskProvider proxyToDriver =
         SpecificRequestor.getClient(MistTaskProvider.class, clientToDriver);
-    final mist.TaskList taskList = proxyToDriver.getTasks(new mist.QueryInfo());
-    final java.util.List<mist.IPAddress> tasks = taskList.getTasks();
+    final TaskList taskList = proxyToDriver.getTasks(new QueryInfo());
+    final java.util.List<IPAddress> tasks = taskList.getTasks();
 
     // Step 2: Change the query to a LogicalPlan
     final LogicalPlan logicalPlan = querySerializer.queryToLogicalPlan(queryToSubmit);
 
     // Step 3: Send the LogicalPlan to one of the tasks and get QuerySubmissionResult
-    final mist.IPAddress task = tasks.get(0);
+    final IPAddress task = tasks.get(0);
     final NettyTransceiver clientToTask = new NettyTransceiver(
         new InetSocketAddress(task.getHostAddress().toString(), task.getPort()));
     final ClientToTaskMessage proxyToTask =
