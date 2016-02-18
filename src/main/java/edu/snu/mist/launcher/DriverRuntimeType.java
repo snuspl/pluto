@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.driver.parameters;
+package edu.snu.mist.launcher;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "if it is local, it runs MistDriver and MistTasks on local environment," +
-    "else, it runs on yarn environment", short_name = "local", default_value = "false")
-public final class IsLocal implements Name<Boolean> {
+@NamedParameter(doc = "Type of the MIST Driver runtime", short_name = "runtime", default_value = "LOCAL")
+public final class DriverRuntimeType implements Name<String> {
   // empty
 }
