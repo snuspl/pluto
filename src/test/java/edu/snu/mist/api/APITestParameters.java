@@ -36,31 +36,31 @@ public final class APITestParameters {
     // Do nothing here
   }
 
-  public static final SourceConfiguration TEST_REEF_NETWORK_SOURCE_CONF =
+  public static final SourceConfiguration LOCAL_REEF_NETWORK_SOURCE_CONF =
       new REEFNetworkSourceConfigurationBuilderImpl()
       .set(REEFNetworkSourceParameters.NAME_SERVER_HOSTNAME, "localhost")
-      .set(REEFNetworkSourceParameters.NAME_SERVICE_PORT, 8080)
+      .set(REEFNetworkSourceParameters.NAME_SERVICE_PORT, 13666)
       .set(REEFNetworkSourceParameters.CONNECTION_ID, "TestConn")
       .set(REEFNetworkSourceParameters.SENDER_ID, "TestSender")
       .set(REEFNetworkSourceParameters.CODEC, StringCodec.class)
       .build();
 
-  public static final SourceConfiguration TEST_TEXT_SOCKET_SOURCE_CONF =
+  public static final SourceConfiguration LOCAL_TEXT_SOCKET_SOURCE_CONF =
       new TextSocketSourceConfigurationBuilderImpl()
       .set(TextSocketSourceParameters.SOCKET_HOST_ADDRESS, "localhost")
-      .set(TextSocketSourceParameters.SOCKET_HOST_PORT, 8080)
+      .set(TextSocketSourceParameters.SOCKET_HOST_PORT, 13666)
       .build();
 
-  public static final SinkConfiguration TEST_REEF_NETWORK_SINK_CONF = new REEFNetworkSinkConfigurationBuilderImpl()
+  public static final SinkConfiguration LOCAL_REEF_NETWORK_SINK_CONF = new REEFNetworkSinkConfigurationBuilderImpl()
       .set(REEFNetworkSinkParameters.NAME_SERVER_HOSTNAME, "localhost")
-      .set(REEFNetworkSinkParameters.NAME_SERVICE_PORT, 8088)
+      .set(REEFNetworkSinkParameters.NAME_SERVICE_PORT, 13667)
       .set(REEFNetworkSinkParameters.CONNECTION_ID, "TestConn")
       .set(REEFNetworkSinkParameters.RECEIVER_ID, "TestReceiver")
       .set(REEFNetworkSinkParameters.CODEC, StringCodec.class)
       .build();
 
-  public static final SinkConfiguration TEST_TEXT_SOCKET_SINK_CONF = new TextSocketSinkConfigurationBuilderImpl()
+  public static final SinkConfiguration LOCAL_TEXT_SOCKET_SINK_CONF = new TextSocketSinkConfigurationBuilderImpl()
       .set(TextSocketSinkParameters.SOCKET_HOST_ADDRESS, "localhost")
-      .set(TextSocketSinkParameters.SOCKET_HOST_PORT, 8088)
+      .set(TextSocketSinkParameters.SOCKET_HOST_PORT, 13667)
       .build();
 }

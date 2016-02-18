@@ -15,22 +15,17 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.formats.avro.LogicalPlan;
-import edu.snu.mist.task.operators.Operator;
-import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
-import org.apache.reef.tang.exceptions.InjectionException;
 
 /**
- * This interface is for generating physical plan from logical plan.
- * This deserializes the logical plan and creates physical plan.
+ * This interface contains necessary methods for generating operator IDs.
  */
-@DefaultImplementation(DefaultPhysicalPlanGeneratorImpl.class)
-public interface PhysicalPlanGenerator {
+@DefaultImplementation(DefaultOperatorIdGeneratorImpl.class)
+public interface OperatorIdGenerator {
+
   /**
-   * Generates the physical plan by deserializing the logical plan.
-   * @param queryIdAndLogicalPlan the tuple of queryId and logical plan
-   * @return physical plan
+   * Generates operator Id.
+   * @return generated operator Id
    */
-  PhysicalPlan<Operator> generate(Tuple<String, LogicalPlan> queryIdAndLogicalPlan) throws InjectionException;
+  String generate();
 }

@@ -31,7 +31,7 @@ import java.util.function.Function;
 public class InstantOperatorStreamTest {
 
   private final MapOperatorStream<String, Tuple2<String, Integer>> filteredMappedStream =
-      new REEFNetworkSourceStream<String>(APITestParameters.TEST_REEF_NETWORK_SOURCE_CONF)
+      new REEFNetworkSourceStream<String>(APITestParameters.LOCAL_REEF_NETWORK_SOURCE_CONF)
           .filter(s -> s.contains("A"))
           .map(s -> new Tuple2<>(s, 1));
 

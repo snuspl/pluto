@@ -67,10 +67,10 @@ public final class MISTQuerySerializerTest {
   /**
    * Common configuration for each type of source / sink.
    */
-  private final SourceConfiguration reefNetworkSourceConf = APITestParameters.TEST_REEF_NETWORK_SOURCE_CONF;
-  private final SourceConfiguration textSocketSourceConf = APITestParameters.TEST_TEXT_SOCKET_SOURCE_CONF;
-  private final SinkConfiguration reefNetworkSinkConf = APITestParameters.TEST_REEF_NETWORK_SINK_CONF;
-  private final SinkConfiguration textSocketSinkConf = APITestParameters.TEST_TEXT_SOCKET_SINK_CONF;
+  private final SourceConfiguration reefNetworkSourceConf = APITestParameters.LOCAL_REEF_NETWORK_SOURCE_CONF;
+  private final SourceConfiguration textSocketSourceConf = APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF;
+  private final SinkConfiguration reefNetworkSinkConf = APITestParameters.LOCAL_REEF_NETWORK_SINK_CONF;
+  private final SinkConfiguration textSocketSinkConf = APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF;
 
   /**
    * This method tests a serialization of a complex query, containing 7 vertices.
