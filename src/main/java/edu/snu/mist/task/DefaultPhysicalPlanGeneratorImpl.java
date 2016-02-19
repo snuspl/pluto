@@ -64,9 +64,14 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
    */
   private TextSocketStreamGenerator getTextSocketStreamGenerator(final Map<CharSequence, Object> sourceConf)
     throws IllegalArgumentException, InjectionException {
+    final Map<String, Object> sourceConfString = new HashMap<>();
+    for (final CharSequence charSeqKey : sourceConf.keySet()) {
+      sourceConfString.put(charSeqKey.toString(), sourceConf.get(charSeqKey));
+    }
     final JavaConfigurationBuilder cb = Tang.Factory.getTang().newConfigurationBuilder();
-    final String socketHostAddress = (String) sourceConf.get(TextSocketSourceParameters.SOCKET_HOST_ADDRESS);
-    final String socketHostPort = sourceConf.get(TextSocketSourceParameters.SOCKET_HOST_PORT).toString();
+    final String socketHostAddress = (String) sourceConfString.get(TextSocketSourceParameters.SOCKET_HOST_ADDRESS);
+    final String socketHostPort = sourceConfString.get(TextSocketSourceParameters.SOCKET_HOST_PORT).toString();
+
     cb.bindNamedParameter(SocketServerIp.class, socketHostAddress);
     cb.bindNamedParameter(SocketServerPort.class, socketHostPort);
     return Tang.Factory.getTang().newInjector(cb.build()).getInstance(TextSocketStreamGenerator.class);
@@ -77,9 +82,13 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
    */
   private TextSocketSink getTextSocketSink(final Map<CharSequence, Object> sinkConf)
     throws IllegalArgumentException, InjectionException {
+    final Map<String, Object> sinkConfString = new HashMap<>();
+    for (final CharSequence charSeqKey : sinkConf.keySet()) {
+      sinkConfString.put(charSeqKey.toString(), sinkConf.get(charSeqKey));
+    }
     final JavaConfigurationBuilder cb = Tang.Factory.getTang().newConfigurationBuilder();
-    final String socketHostAddress = (String) sinkConf.get(TextSocketSinkParameters.SOCKET_HOST_ADDRESS);
-    final String socketHostPort = sinkConf.get(TextSocketSinkParameters.SOCKET_HOST_PORT).toString();
+    final String socketHostAddress = (String) sinkConfString.get(TextSocketSinkParameters.SOCKET_HOST_ADDRESS);
+    final String socketHostPort = sinkConfString.get(TextSocketSinkParameters.SOCKET_HOST_PORT).toString();
     cb.bindNamedParameter(SocketServerIp.class, socketHostAddress);
     cb.bindNamedParameter(SocketServerPort.class, socketHostPort);
     return Tang.Factory.getTang().newInjector(cb.build()).getInstance(TextSocketSink.class);
