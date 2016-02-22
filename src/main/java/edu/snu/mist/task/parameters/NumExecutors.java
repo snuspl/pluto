@@ -18,6 +18,6 @@ package edu.snu.mist.task.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The number of mist executors")
+@NamedParameter(doc = "The number of mist executors", short_name = "num_executors")
 public final class NumExecutors implements Name<Integer> {
 }
