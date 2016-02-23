@@ -54,7 +54,7 @@ public final class MistLauncher {
    */
   public enum RuntimeType {
     LOCAL,
-    YARN;
+    YARN
   }
 
   /**
@@ -69,7 +69,11 @@ public final class MistLauncher {
 
   @Inject
   private MistLauncher(@Parameter(DriverRuntimeType.class) final String runtimeType) {
-    this.mistRuntimeConf = getRuntimeConfiguration(MistLauncher.RuntimeType.valueOf(runtimeType));
+    try {
+      this.mistRuntimeConf = getRuntimeConfiguration(MistLauncher.RuntimeType.valueOf(runtimeType));
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(runtimeType + " Runtime Type is not supported yet.");
+    }
   }
 
   /**
@@ -109,7 +113,7 @@ public final class MistLauncher {
   }
 
   /**
-   * Instantiate a launcher for the given Configuration.
+   * Instantiate a launcher for the given option.
    *
    * @param runtimeType whether the driver run locally or in Yarn executor
    * @return a MistLauncher based on the given option
@@ -119,8 +123,18 @@ public final class MistLauncher {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(DriverRuntimeType.class, runtimeType.name());
     final Configuration mistRuntimeConf = jcb.build();
+    return getLauncherFromConf(mistRuntimeConf);
+  }
+
+  /**
+   * Instantiate a launcher for the given Configuration.
+   * @param runtimeConf Configuration for the MistLauncher
+   * @return a MistLauncher based on the given option
+   * @throws InjectionException on configuration errors
+   */
+  public static MistLauncher getLauncherFromConf(final Configuration runtimeConf) throws InjectionException {
     return Tang.Factory.getTang()
-        .newInjector(mistRuntimeConf)
+        .newInjector(runtimeConf)
         .getInstance(MistLauncher.class);
   }
 
@@ -135,13 +149,14 @@ public final class MistLauncher {
   }
 
   /**
-   * Run the Mist Driver.
+   * Run the Mist Driver for the given options.
    * @param numTaskCores the number of cores for tasks
    * @param numExecutors the number of executors
    * @param numTasks the number of tasks
    * @param rpcServerPort the RPC Server Port
    * @param taskMemorySize the Memory size of the task
    * @return a status of the driver
+   * @throws InjectionException on configuration errors
    */
   public LauncherStatus run(final int numTaskCores, final int numExecutors, final int numTasks,
                             final int rpcServerPort, final int taskMemorySize) throws InjectionException {
@@ -153,7 +168,17 @@ public final class MistLauncher {
     jcb.bindNamedParameter(TaskMemorySize.class, Integer.toString(taskMemorySize));
     final Configuration driverConf = getDriverConfiguration(jcb.build());
 
-    final DriverLauncher launcher =  DriverLauncher.getLauncher(mistRuntimeConf);
+    return runFromConf(driverConf);
+  }
+
+  /**
+   * Run the Mist Driver for the given Configuration.
+   * @param driverConf The Configuration for the driver
+   * @return a status of the driver
+   * @throws InjectionException on configuration errors
+   */
+  public LauncherStatus runFromConf(final Configuration driverConf) throws InjectionException {
+    final DriverLauncher launcher = DriverLauncher.getLauncher(mistRuntimeConf);
     final LauncherStatus status = timeOut == 0 ? launcher.run(driverConf) : launcher.run(driverConf, timeOut);
 
     LOG.log(Level.INFO, "Mist completed: {0}", status);
