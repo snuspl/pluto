@@ -49,8 +49,11 @@ public final class Mist {
         .registerShortNameOfClass(NumExecutors.class)
         .registerShortNameOfClass(NumTasks.class)
         .registerShortNameOfClass(RPCServerPort.class)
-        .registerShortNameOfClass(TaskMemorySize.class);
-    commandLine.processCommandLine(args);
+        .registerShortNameOfClass(TaskMemorySize.class)
+        .processCommandLine(args);
+    if (commandLine == null) { // Option '?' was entered and processCommandLine printed the help.
+      return null;
+    }
     return jcb.build();
   }
 
@@ -60,7 +63,12 @@ public final class Mist {
    */
   public static void main(final String[] args) throws Exception {
     final Configuration commandLineConf = getCommandLineConf(args);
-    final LauncherStatus status = MistLauncher.getLauncherFromConf(commandLineConf).runFromConf(commandLineConf);
+    if (commandLineConf == null) {
+      return;
+    }
+    final LauncherStatus status = MistLauncher
+        .getLauncherFromConf(commandLineConf)
+        .runFromConf(commandLineConf);
     LOG.log(Level.INFO, "Mist completed: {0}", status);
   }
 

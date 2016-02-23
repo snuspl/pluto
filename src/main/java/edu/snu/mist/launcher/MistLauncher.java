@@ -166,9 +166,8 @@ public final class MistLauncher {
     jcb.bindNamedParameter(NumTasks.class, Integer.toString(numTasks));
     jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
     jcb.bindNamedParameter(TaskMemorySize.class, Integer.toString(taskMemorySize));
-    final Configuration driverConf = getDriverConfiguration(jcb.build());
 
-    return runFromConf(driverConf);
+    return runFromConf(jcb.build());
   }
 
   /**
@@ -179,7 +178,8 @@ public final class MistLauncher {
    */
   public LauncherStatus runFromConf(final Configuration driverConf) throws InjectionException {
     final DriverLauncher launcher = DriverLauncher.getLauncher(mistRuntimeConf);
-    final LauncherStatus status = timeOut == 0 ? launcher.run(driverConf) : launcher.run(driverConf, timeOut);
+    final Configuration mistDriverConf = getDriverConfiguration(driverConf);
+    final LauncherStatus status = timeOut == 0 ? launcher.run(mistDriverConf) : launcher.run(mistDriverConf, timeOut);
 
     LOG.log(Level.INFO, "Mist completed: {0}", status);
 
