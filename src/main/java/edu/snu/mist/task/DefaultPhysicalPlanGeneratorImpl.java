@@ -69,7 +69,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       sourceConfString.put(charSeqKey.toString(), sourceConf.get(charSeqKey));
     }
     final JavaConfigurationBuilder cb = Tang.Factory.getTang().newConfigurationBuilder();
-    final String socketHostAddress = (String) sourceConfString.get(TextSocketSourceParameters.SOCKET_HOST_ADDRESS);
+    final String socketHostAddress = sourceConfString.get(TextSocketSourceParameters.SOCKET_HOST_ADDRESS).toString();
     final String socketHostPort = sourceConfString.get(TextSocketSourceParameters.SOCKET_HOST_PORT).toString();
 
     cb.bindNamedParameter(SocketServerIp.class, socketHostAddress);
@@ -87,7 +87,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       sinkConfString.put(charSeqKey.toString(), sinkConf.get(charSeqKey));
     }
     final JavaConfigurationBuilder cb = Tang.Factory.getTang().newConfigurationBuilder();
-    final String socketHostAddress = (String) sinkConfString.get(TextSocketSinkParameters.SOCKET_HOST_ADDRESS);
+    final String socketHostAddress = sinkConfString.get(TextSocketSinkParameters.SOCKET_HOST_ADDRESS).toString();
     final String socketHostPort = sinkConfString.get(TextSocketSinkParameters.SOCKET_HOST_PORT).toString();
     cb.bindNamedParameter(SocketServerIp.class, socketHostAddress);
     cb.bindNamedParameter(SocketServerPort.class, socketHostPort);
