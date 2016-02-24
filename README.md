@@ -26,13 +26,13 @@ MIST is a micro stream processing system built on top of [Apache REEF](http://re
     
 
 ### MIST examples
-
 #### HelloMist
+
 1. Description
 
-The example shows how to implement a simple stateless query and submit it to the MIST.
-The code sets the environment(Hostnames and ports of MIST, source, sink), generates a simple stateless query, and submits it to the MIST.
-The query reads strings from a source server, filter strings which start with "HelloMist:", trim "HelloMist:" part of the filtered strings, and send them to a sink server.
+    The example shows how to implement a simple stateless query and submit it to the MIST.
+    The code sets the environment(Hostnames and ports of MIST, source, sink), generates a simple stateless query, and submits it to the MIST.
+    The query reads strings from a source server, filter strings which start with "HelloMist:", trim "HelloMist:" part of the filtered strings, and send them to a sink server.
 
 2. Run HelloMist
     ```
