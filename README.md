@@ -7,6 +7,7 @@ MIST is a micro stream processing system built on top of [Apache REEF](http://re
 1. Build MIST:
     ```
     git clone https://github.com/cmssnu/mist
+    Set $MIST_HOME
     cd mist
     mvn clean install
     ```
