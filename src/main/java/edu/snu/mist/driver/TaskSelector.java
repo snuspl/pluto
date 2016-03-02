@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.driver;
 
-import mist.MistTaskProvider;
+import edu.snu.mist.formats.avro.MistTaskProvider;
 import org.apache.reef.driver.task.RunningTask;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 

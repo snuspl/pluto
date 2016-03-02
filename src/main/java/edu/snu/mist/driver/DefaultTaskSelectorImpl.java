@@ -15,9 +15,9 @@
  */
 package edu.snu.mist.driver;
 
-import mist.IPAddress;
-import mist.QueryInfo;
-import mist.TaskList;
+import edu.snu.mist.formats.avro.IPAddress;
+import edu.snu.mist.formats.avro.QueryInfo;
+import edu.snu.mist.formats.avro.TaskList;
 import org.apache.avro.AvroRemoteException;
 import org.apache.reef.driver.task.RunningTask;
 import org.apache.reef.io.Tuple;

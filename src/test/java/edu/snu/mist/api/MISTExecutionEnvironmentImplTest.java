@@ -18,12 +18,7 @@ package edu.snu.mist.api;
 
 import edu.snu.mist.api.sources.REEFNetworkSourceStream;
 import edu.snu.mist.api.types.Tuple2;
-import edu.snu.mist.formats.avro.ClientToTaskMessage;
-import edu.snu.mist.formats.avro.LogicalPlan;
-import edu.snu.mist.formats.avro.QuerySubmissionResult;
-import mist.MistTaskProvider;
-import mist.QueryInfo;
-import mist.TaskList;
+import edu.snu.mist.formats.avro.*;
 import org.apache.avro.AvroRemoteException;
 import org.apache.avro.ipc.NettyServer;
 import org.apache.avro.ipc.Server;
@@ -49,7 +44,7 @@ public class MISTExecutionEnvironmentImplTest {
   private class MockDriverServer implements MistTaskProvider {
     @Override
     public TaskList getTasks(final QueryInfo queryInfo) throws AvroRemoteException {
-      return new TaskList(Arrays.asList(new mist.IPAddress(hostName, taskPortNum)));
+      return new TaskList(Arrays.asList(new IPAddress(hostName, taskPortNum)));
     }
   }
 
