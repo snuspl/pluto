@@ -25,6 +25,7 @@ import org.apache.reef.tang.exceptions.InjectionException;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.List;
 
 /**
  * The basic implementation class for MISTExecutionEnvironment.
@@ -59,7 +60,7 @@ public final class MISTExecutionEnvironmentImpl implements MISTExecutionEnvironm
     final MistTaskProvider proxyToDriver =
         SpecificRequestor.getClient(MistTaskProvider.class, clientToDriver);
     final TaskList taskList = proxyToDriver.getTasks(new QueryInfo());
-    final java.util.List<IPAddress> tasks = taskList.getTasks();
+    final List<IPAddress> tasks = taskList.getTasks();
 
     // Step 2: Change the query to a LogicalPlan
     final LogicalPlan logicalPlan = querySerializer.queryToLogicalPlan(queryToSubmit);
