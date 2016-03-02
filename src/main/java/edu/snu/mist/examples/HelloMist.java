@@ -66,7 +66,7 @@ public final class HelloMist {
    * @return an Option from the names and description
    */
   private static Option setOption(final String shortArg, final String longArg, final String description) {
-    final Option option = new Option(shortArg, longArg, false, description);
+    final Option option = new Option(shortArg, longArg, true, description);
     option.setOptionalArg(true);
     return option;
   }
