@@ -15,8 +15,10 @@
  */
 package edu.snu.mist.task.sinks;
 
+import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.task.common.parameters.SocketServerIp;
 import edu.snu.mist.task.common.parameters.SocketServerPort;
+import edu.snu.mist.task.sinks.parameters.SinkId;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -108,6 +110,8 @@ public final class SocketSinkTest {
     // wait until server socket is created.
     serverCreated.await();
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(QueryId.class, "testQuery");
+    jcb.bindNamedParameter(SinkId.class, "testSink");
     jcb.bindNamedParameter(SocketServerIp.class, serverIpAddress);
     jcb.bindNamedParameter(SocketServerPort.class, Integer.toString(port));
     jcb.bindImplementation(Sink.class, TextSocketSink.class);
@@ -115,7 +119,6 @@ public final class SocketSinkTest {
     try (final Sink<String> sink = injector.getInstance(Sink.class)) {
       inputStream.stream().forEach(sink::handle);
       endOfReceiving.await();
-    } finally {
       Assert.assertEquals("TextSocketSink should send " + inputStream,
           inputStream, result);
     }

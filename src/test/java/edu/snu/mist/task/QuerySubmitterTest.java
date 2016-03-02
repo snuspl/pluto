@@ -30,10 +30,12 @@ import edu.snu.mist.task.sources.BaseSourceGenerator;
 import edu.snu.mist.task.sources.SourceGenerator;
 import junit.framework.Assert;
 import org.apache.reef.io.Tuple;
+import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
+import org.apache.reef.wake.Identifier;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -115,7 +117,9 @@ public final class QuerySubmitterTest {
     final CountDownLatch countDownAllOutputs = new CountDownLatch(intermediateResult.size() * 2);
 
     // Create source
-    final SourceGenerator src = new TestSourceGenerator(inputs);
+    final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
+    final SourceGenerator src = new TestSourceGenerator(inputs,
+        identifierFactory.getNewInstance(queryId), identifierFactory.getNewInstance("testSource"));
 
     // Create operators
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
@@ -257,8 +261,9 @@ public final class QuerySubmitterTest {
    */
   final class TestSourceGenerator extends BaseSourceGenerator<String> {
     private final Iterator<String> inputs;
-    TestSourceGenerator(final List<String> inputs) {
-      super(1000);
+    TestSourceGenerator(final List<String> inputs, final Identifier queryId,
+                        final Identifier sourceId) {
+      super(1000, queryId, sourceId);
       this.inputs = inputs.iterator();
     }
 
@@ -301,6 +306,16 @@ public final class QuerySubmitterTest {
     public void handle(final I input) {
       result.add(input);
       countDownLatch.countDown();
+    }
+
+    @Override
+    public Identifier getIdentifier() {
+      return null;
+    }
+
+    @Override
+    public Identifier getQueryIdentifier() {
+      return null;
     }
   }
 }

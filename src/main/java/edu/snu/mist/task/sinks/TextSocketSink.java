@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 package edu.snu.mist.task.sinks;
+
+import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.task.common.parameters.SocketServerIp;
 import edu.snu.mist.task.common.parameters.SocketServerPort;
+import edu.snu.mist.task.sinks.parameters.SinkId;
+import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.annotations.Parameter;
+import org.apache.reef.wake.Identifier;
 import org.apache.reef.wake.impl.SingleThreadStage;
 
 import javax.inject.Inject;
@@ -48,10 +53,25 @@ public final class TextSocketSink<I> implements Sink<I> {
    */
   private final SingleThreadStage<I> singleThreadStage;
 
+  /**
+   * Query id.
+   */
+  private final Identifier queryId;
+
+  /**
+   * Sink id.
+   */
+  private final Identifier sinkId;
+
   @Inject
   private TextSocketSink(
+      @Parameter(QueryId.class) final String queryId,
+      @Parameter(SinkId.class) final String sinkId,
       @Parameter(SocketServerIp.class) final String serverIp,
-      @Parameter(SocketServerPort.class) final int serverPort) throws IOException {
+      @Parameter(SocketServerPort.class) final int serverPort,
+      final StringIdentifierFactory identifierFactory) throws IOException {
+    this.queryId = identifierFactory.getNewInstance(queryId);
+    this.sinkId = identifierFactory.getNewInstance(sinkId);
     this.socket = new Socket(serverIp, serverPort);
     this.writer = new PrintWriter(socket.getOutputStream(), true);
     // TODO[MIST-152]: Threads of Sink should be managed judiciously.
@@ -70,4 +90,13 @@ public final class TextSocketSink<I> implements Sink<I> {
     singleThreadStage.close();
   }
 
+  @Override
+  public Identifier getIdentifier() {
+    return sinkId;
+  }
+
+  @Override
+  public Identifier getQueryIdentifier() {
+    return queryId;
+  }
 }
