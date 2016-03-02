@@ -28,8 +28,10 @@ import edu.snu.mist.task.operators.parameters.KeyIndex;
 import edu.snu.mist.task.operators.parameters.OperatorId;
 import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sinks.TextSocketSink;
+import edu.snu.mist.task.sinks.parameters.SinkId;
 import edu.snu.mist.task.sources.SourceGenerator;
 import edu.snu.mist.task.sources.TextSocketStreamGenerator;
+import edu.snu.mist.task.sources.parameters.SourceId;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
@@ -62,7 +64,8 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   /*
    * This private method makes a TextSocketStreamGenerator from a source configuration.
    */
-  private TextSocketStreamGenerator getTextSocketStreamGenerator(final Map<CharSequence, Object> sourceConf)
+  private TextSocketStreamGenerator getTextSocketStreamGenerator(final String queryId,
+                                                                 final Map<CharSequence, Object> sourceConf)
     throws IllegalArgumentException, InjectionException {
     final Map<String, Object> sourceConfString = new HashMap<>();
     for (final CharSequence charSeqKey : sourceConf.keySet()) {
@@ -74,13 +77,15 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
 
     cb.bindNamedParameter(SocketServerIp.class, socketHostAddress);
     cb.bindNamedParameter(SocketServerPort.class, socketHostPort);
+    cb.bindNamedParameter(QueryId.class, queryId);
+    cb.bindNamedParameter(SourceId.class, operatorIdGenerator.generate());
     return Tang.Factory.getTang().newInjector(cb.build()).getInstance(TextSocketStreamGenerator.class);
   }
 
   /*
    * This private method makes a TextSocketSink from a sink configuration.
    */
-  private TextSocketSink getTextSocketSink(final Map<CharSequence, Object> sinkConf)
+  private TextSocketSink getTextSocketSink(final String queryId, final Map<CharSequence, Object> sinkConf)
     throws IllegalArgumentException, InjectionException {
     final Map<String, Object> sinkConfString = new HashMap<>();
     for (final CharSequence charSeqKey : sinkConf.keySet()) {
@@ -91,6 +96,8 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     final String socketHostPort = sinkConfString.get(TextSocketSinkParameters.SOCKET_HOST_PORT).toString();
     cb.bindNamedParameter(SocketServerIp.class, socketHostAddress);
     cb.bindNamedParameter(SocketServerPort.class, socketHostPort);
+    cb.bindNamedParameter(QueryId.class, queryId);
+    cb.bindNamedParameter(SinkId.class, operatorIdGenerator.generate());
     return Tang.Factory.getTang().newInjector(cb.build()).getInstance(TextSocketSink.class);
   }
 
@@ -167,7 +174,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
           switch (sourceInfo.getSourceType()) {
             case TEXT_SOCKET_SOURCE: {
               final TextSocketStreamGenerator textSocketStreamGenerator
-                  = getTextSocketStreamGenerator(sourceInfo.getSourceConfiguration());
+                  = getTextSocketStreamGenerator(queryId, sourceInfo.getSourceConfiguration());
               deserializedVertices.add(textSocketStreamGenerator);
               break;
             }
@@ -194,7 +201,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
           final SinkInfo sinkInfo = (SinkInfo) vertex.getAttributes();
           switch (sinkInfo.getSinkType()) {
             case TEXT_SOCKET_SINK: {
-              final TextSocketSink textSocketSink = getTextSocketSink(sinkInfo.getSinkConfiguration());
+              final TextSocketSink textSocketSink = getTextSocketSink(queryId, sinkInfo.getSinkConfiguration());
               deserializedVertices.add(textSocketSink);
               break;
             }

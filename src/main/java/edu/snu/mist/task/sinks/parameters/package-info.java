@@ -13,24 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.sinks;
-
-import edu.snu.mist.task.common.InputHandler;
-import org.apache.reef.wake.Identifier;
-
 /**
- * Sink consumes inputs and does final process, such as print, save input to database and so on.
+ * This package contains parameters for sinks.
  */
-public interface Sink<I> extends InputHandler<I>, AutoCloseable {
-
-  /**
-   * Identifier of sink.
-   */
-  Identifier getIdentifier();
-
-  /**
-   * Gets the query identifier containing this sink.
-   * @return an identifier
-   */
-  Identifier getQueryIdentifier();
-}
+package edu.snu.mist.task.sinks.parameters;

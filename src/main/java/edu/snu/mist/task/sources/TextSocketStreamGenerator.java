@@ -15,9 +15,12 @@
  */
 package edu.snu.mist.task.sources;
 
+import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.task.common.parameters.SocketServerIp;
 import edu.snu.mist.task.common.parameters.SocketServerPort;
 import edu.snu.mist.task.sources.parameters.DataFetchSleepTime;
+import edu.snu.mist.task.sources.parameters.SourceId;
+import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -48,8 +51,12 @@ public final class TextSocketStreamGenerator extends BaseSourceGenerator<String>
   private TextSocketStreamGenerator(
       @Parameter(SocketServerIp.class) final String serverIp,
       @Parameter(SocketServerPort.class) final int serverPort,
-      @Parameter(DataFetchSleepTime.class) final long sleepTime) throws IOException {
-    super(sleepTime);
+      @Parameter(DataFetchSleepTime.class) final long sleepTime,
+      @Parameter(SourceId.class) final String sourceId,
+      @Parameter(QueryId.class) final String queryId,
+      final StringIdentifierFactory identifierFactory) throws IOException {
+    super(sleepTime, identifierFactory.getNewInstance(queryId),
+        identifierFactory.getNewInstance(sourceId));
     this.socket = new Socket(serverIp, serverPort);
     this.bf = new BufferedReader(new InputStreamReader(socket.getInputStream()));
   }
