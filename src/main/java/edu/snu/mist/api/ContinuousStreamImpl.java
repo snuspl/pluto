@@ -106,4 +106,9 @@ public abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implemen
   public Sink textSocketOutput(final SinkConfiguration sinkConfiguration) {
     return new SinkImpl(this, StreamType.SinkType.TEXT_SOCKET_SINK, sinkConfiguration);
   }
+
+  @Override
+  public Sink textKafkaOutput(final SinkConfiguration sinkConfiguration) {
+    return new SinkImpl(this, StreamType.SinkType.TEXT_KAFKA_SINK, sinkConfiguration);
+  }
 }

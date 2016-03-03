@@ -37,7 +37,7 @@ public final class SinkInfoProviderImpl implements SinkInfoProvider {
 
   @Inject
   private SinkInfoProviderImpl() {
-
+    // Not called.
   }
 
   @Override
@@ -48,6 +48,8 @@ public final class SinkInfoProviderImpl implements SinkInfoProvider {
       sinkInfoBuilder.setSinkType(SinkTypeEnum.REEF_NETWORK_SINK);
     } else if (sink.getSinkType() == StreamType.SinkType.TEXT_SOCKET_SINK) {
       sinkInfoBuilder.setSinkType(SinkTypeEnum.TEXT_SOCKET_SINK);
+    } else if (sink.getSinkType() == StreamType.SinkType.TEXT_KAFKA_SINK) {
+      sinkInfoBuilder.setSinkType(SinkTypeEnum.TEXT_KAFKA_SINK);
     } else {
       throw new IllegalStateException("Sink type is illegal!");
     }

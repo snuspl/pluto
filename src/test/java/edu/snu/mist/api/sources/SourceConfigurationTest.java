@@ -15,11 +15,9 @@
  */
 package edu.snu.mist.api.sources;
 
-import edu.snu.mist.api.sources.builder.REEFNetworkSourceConfigurationBuilderImpl;
-import edu.snu.mist.api.sources.builder.SourceConfigurationBuilder;
-import edu.snu.mist.api.sources.builder.SourceConfiguration;
-import edu.snu.mist.api.sources.builder.TextSocketSourceConfigurationBuilderImpl;
+import edu.snu.mist.api.sources.builder.*;
 import edu.snu.mist.api.sources.parameters.REEFNetworkSourceParameters;
+import edu.snu.mist.api.sources.parameters.TextKafkaSourceParameters;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import org.apache.reef.wake.remote.impl.StringCodec;
 import org.junit.Assert;
@@ -44,6 +42,14 @@ public class SourceConfigurationTest {
    */
   private final String socketHostName = "localhost2";
   private final int socketPort = 8088;
+
+  /**
+   * Configuration values for TextKafkaSource.
+   */
+  private final String kafkaHostName = "localhost3";
+  private final int kafkaPort = 8088;
+  private final String kafkaTopicName = "testTopic";
+  private final int kafkaNumPartition = 1;
 
   /**
    * Test for REEFNetworkSource configuration builder.
@@ -84,6 +90,28 @@ public class SourceConfigurationTest {
         textSocketSourceConfiguration.getConfigurationValue(TextSocketSourceParameters.SOCKET_HOST_ADDRESS));
     Assert.assertEquals(socketPort,
         textSocketSourceConfiguration.getConfigurationValue(TextSocketSourceParameters.SOCKET_HOST_PORT));
+  }
+
+  /**
+   * Test for TextKafkaSource configuration builder.
+   */
+  @Test
+  public void testTextKafkaSourceConfBuiler() {
+    final SourceConfiguration textKafkaSourceConfiguration = new TextKafkaSourceConfigurationBuilderImpl()
+        .set(TextKafkaSourceParameters.KAFKA_HOST_ADDRESS, kafkaHostName)
+        .set(TextKafkaSourceParameters.KAFKA_HOST_PORT, kafkaPort)
+        .set(TextKafkaSourceParameters.KAFKA_TOPIC_NAME, kafkaTopicName)
+        .set(TextKafkaSourceParameters.KAFKA_NUM_PARTITION, kafkaNumPartition)
+        .build();
+
+    Assert.assertEquals(textKafkaSourceConfiguration.getConfigurationValue(TextKafkaSourceParameters
+        .KAFKA_HOST_ADDRESS), kafkaHostName);
+    Assert.assertEquals(textKafkaSourceConfiguration.getConfigurationValue(TextKafkaSourceParameters
+        .KAFKA_HOST_PORT), kafkaPort);
+    Assert.assertEquals(textKafkaSourceConfiguration.getConfigurationValue(TextKafkaSourceParameters
+        .KAFKA_TOPIC_NAME), kafkaTopicName);
+    Assert.assertEquals(textKafkaSourceConfiguration.getConfigurationValue(TextKafkaSourceParameters
+        .KAFKA_NUM_PARTITION), kafkaNumPartition);
   }
 
   /**

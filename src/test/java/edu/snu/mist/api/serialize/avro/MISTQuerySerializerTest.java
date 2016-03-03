@@ -22,11 +22,14 @@ import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTPredicate;
 import edu.snu.mist.api.sink.builder.SinkConfiguration;
 import edu.snu.mist.api.sink.parameters.REEFNetworkSinkParameters;
+import edu.snu.mist.api.sink.parameters.TextKafkaSinkParameters;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 import edu.snu.mist.api.sources.REEFNetworkSourceStream;
+import edu.snu.mist.api.sources.TextKafkaSourceStream;
 import edu.snu.mist.api.sources.TextSocketSourceStream;
 import edu.snu.mist.api.sources.builder.SourceConfiguration;
 import edu.snu.mist.api.sources.parameters.REEFNetworkSourceParameters;
+import edu.snu.mist.api.sources.parameters.TextKafkaSourceParameters;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.api.window.*;
@@ -69,8 +72,10 @@ public final class MISTQuerySerializerTest {
    */
   private final SourceConfiguration reefNetworkSourceConf = APITestParameters.LOCAL_REEF_NETWORK_SOURCE_CONF;
   private final SourceConfiguration textSocketSourceConf = APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF;
+  private final SourceConfiguration textKafkaSourceConf = APITestParameters.LOCAL_TEXT_KAFKA_SOURCE_CONF;
   private final SinkConfiguration reefNetworkSinkConf = APITestParameters.LOCAL_REEF_NETWORK_SINK_CONF;
   private final SinkConfiguration textSocketSinkConf = APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF;
+  private final SinkConfiguration textKafkaSinkConf = APITestParameters.LOCAL_TEXT_KAFKA_SINK_CONF;
 
   /**
    * This method tests a serialization of a complex query, containing 7 vertices.
@@ -271,7 +276,88 @@ public final class MISTQuerySerializerTest {
               sourceConfiguration.get(TextSocketSourceParameters.SOCKET_HOST_PORT));
           vertexIndexes.set(0, index);
         } else {
-          Assert.fail("Unexpected Sink type detected during the test! Should be TEXT_SOCKET_SINK");
+          Assert.fail("Unexpected Sink type detected during the test! Should be TEXT_SOCKET_SOURCE");
+        }
+      } else {
+        Assert.fail("Unexpected vertex type detected! Should be one of [SOURCE, INSTANT_OPERATOR, SINK]");
+      }
+      index += 1;
+    }
+    final List<Edge> edges = logicalPlan.getEdges();
+    final List<Edge> expectedEdges = Arrays.asList(
+        Edge.newBuilder().setFrom(vertexIndexes.get(0)).setTo(vertexIndexes.get(1)).build(),
+        Edge.newBuilder().setFrom(vertexIndexes.get(1)).setTo(vertexIndexes.get(2)).build());
+    Assert.assertEquals(new HashSet<>(expectedEdges), new HashSet<>(edges));
+  }
+
+  /**
+   * This method tests the serialization / deserialization of TextKafkaSource/Sink.
+   * @throws InjectionException
+   */
+  @Test
+  public void mistTextKafkaSerializeTest() throws InjectionException {
+    final MISTQuery textKafkaQuery = new TextKafkaSourceStream(textKafkaSourceConf)
+        .flatMap(expectedFlatMapFunc)
+        .textKafkaOutput(textKafkaSinkConf)
+        .getQuery();
+    final MISTQuerySerializer serializer = Tang.Factory.getTang().newInjector().getInstance(MISTQuerySerializer.class);
+    final LogicalPlan logicalPlan = serializer.queryToLogicalPlan(textKafkaQuery);
+    final List<Vertex> vertices = logicalPlan.getVertices();
+    Assert.assertEquals(3, vertices.size());
+
+    // Stores indexes for flatMap, filter, map, window, reduceByKeyWindow, reefNetworkOutput in order
+    final List<Integer> vertexIndexes = Arrays.asList(new Integer[3]);
+    int index = 0;
+    for (final Vertex vertex : vertices) {
+      if (vertex.getVertexType() == VertexTypeEnum.SINK) {
+        // Test for sink vertex
+        final SinkInfo sinkInfo = (SinkInfo) vertex.getAttributes();
+        final Map<CharSequence, Object> sinkConfiguration = sinkInfo.getSinkConfiguration();
+        if (sinkInfo.getSinkType() == SinkTypeEnum.TEXT_KAFKA_SINK) {
+          Assert.assertEquals(textKafkaSinkConf.getConfigurationValue(TextKafkaSinkParameters.KAFKA_HOST_ADDRESS),
+              sinkConfiguration.get(TextKafkaSinkParameters.KAFKA_HOST_ADDRESS));
+          Assert.assertEquals(textKafkaSinkConf.getConfigurationValue(TextKafkaSinkParameters.KAFKA_HOST_PORT),
+              sinkConfiguration.get(TextKafkaSinkParameters.KAFKA_HOST_PORT));
+          Assert.assertEquals(textKafkaSinkConf.getConfigurationValue(TextKafkaSinkParameters.KAFKA_NUM_PARTITION),
+              sinkConfiguration.get(TextKafkaSinkParameters.KAFKA_NUM_PARTITION));
+          Assert.assertEquals(textKafkaSinkConf.getConfigurationValue(TextKafkaSinkParameters.KAFKA_TOPIC_NAME),
+              sinkConfiguration.get(TextKafkaSinkParameters.KAFKA_TOPIC_NAME));
+          vertexIndexes.set(2, index);
+        } else {
+          Assert.fail("Unexpected Sink type detected during the test! Should be TEXT_KAFKA_SINK");
+        }
+      } else if (vertex.getVertexType() == VertexTypeEnum.INSTANT_OPERATOR) {
+        // Test for instantOperator vertex
+        final InstantOperatorInfo instantOperatorInfo = (InstantOperatorInfo) vertex.getAttributes();
+        final List<ByteBuffer> functionList = instantOperatorInfo.getFunctions();
+        final Integer keyIndex = instantOperatorInfo.getKeyIndex();
+        if (instantOperatorInfo.getInstantOperatorType() == InstantOperatorTypeEnum.FLAT_MAP) {
+          byte[] serializedFlatMapFunc = new byte[functionList.get(0).remaining()];
+          functionList.get(0).get(serializedFlatMapFunc);
+          final Function flatMapFunc =
+              (Function) SerializationUtils.deserialize(serializedFlatMapFunc);
+          Assert.assertEquals(expectedFlatMapFunc.apply("A B C"), flatMapFunc.apply("A B C"));
+          Assert.assertEquals(keyIndex, null);
+          vertexIndexes.set(1, index);
+        } else {
+          Assert.fail("Unexpected InstantOperator type detected! Should be FLAT_MAP");
+        }
+      } else if (vertex.getVertexType() == VertexTypeEnum.SOURCE) {
+        // Test for source vertex
+        final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
+        final Map<CharSequence, Object> sourceConfiguration = sourceInfo.getSourceConfiguration();
+        if (sourceInfo.getSourceType() == SourceTypeEnum.TEXT_KAFKA_SOURCE) {
+          Assert.assertEquals(textKafkaSourceConf.getConfigurationValue(TextKafkaSourceParameters.KAFKA_HOST_ADDRESS),
+              sourceConfiguration.get(TextKafkaSourceParameters.KAFKA_HOST_ADDRESS));
+          Assert.assertEquals(textKafkaSourceConf.getConfigurationValue(TextKafkaSourceParameters.KAFKA_HOST_PORT),
+              sourceConfiguration.get(TextKafkaSourceParameters.KAFKA_HOST_PORT));
+          Assert.assertEquals(textKafkaSourceConf.getConfigurationValue(TextKafkaSourceParameters.KAFKA_TOPIC_NAME),
+              sourceConfiguration.get(TextKafkaSourceParameters.KAFKA_TOPIC_NAME));
+          Assert.assertEquals(textKafkaSourceConf.getConfigurationValue(TextKafkaSourceParameters.KAFKA_NUM_PARTITION),
+              sourceConfiguration.get(TextKafkaSourceParameters.KAFKA_NUM_PARTITION));
+          vertexIndexes.set(0, index);
+        } else {
+          Assert.fail("Unexpected Sink type detected during the test! Should be TEXT_KAFKA_SOURCE");
         }
       } else {
         Assert.fail("Unexpected vertex type detected! Should be one of [SOURCE, INSTANT_OPERATOR, SINK]");

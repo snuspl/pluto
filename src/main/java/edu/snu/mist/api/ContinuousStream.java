@@ -104,4 +104,11 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    * @return new sink for the current stream
    */
   Sink textSocketOutput(SinkConfiguration sinkConfiguration);
+
+  /**
+   * It defines a text Kafka output Sink for the current stream according to the SinkConfiguration.
+   * @param sinkConfiguration
+   * @return new sink for the current stream
+   */
+  Sink textKafkaOutput(SinkConfiguration sinkConfiguration);
 }

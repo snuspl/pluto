@@ -41,6 +41,10 @@ public final class SourceSerializeInfo {
           .put(REEFNetworkSourceParameters.SENDER_ID, SerializedType.AvroType.STRING)
           .put(TextSocketSourceParameters.SOCKET_HOST_ADDRESS, SerializedType.AvroType.STRING)
           .put(TextSocketSourceParameters.SOCKET_HOST_PORT, SerializedType.AvroType.INT)
+          .put(TextKafkaSourceParameters.KAFKA_HOST_ADDRESS, SerializedType.AvroType.STRING)
+          .put(TextKafkaSourceParameters.KAFKA_HOST_PORT, SerializedType.AvroType.INT)
+          .put(TextKafkaSourceParameters.KAFKA_TOPIC_NAME, SerializedType.AvroType.STRING)
+          .put(TextKafkaSourceParameters.KAFKA_NUM_PARTITION, SerializedType.AvroType.INT)
           .build();
 
   /**
