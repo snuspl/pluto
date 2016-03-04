@@ -26,6 +26,8 @@ import org.apache.reef.tang.exceptions.InjectionException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The basic implementation class for MISTExecutionEnvironment.
@@ -35,17 +37,22 @@ import java.util.List;
  * transform QuerySubmissionResult to APIQuerySubmissionResult and return it.
  */
 public final class MISTExecutionEnvironmentImpl implements MISTExecutionEnvironment {
-  private final String serverAddr;
-  private final int serverPort;
   private final MISTQuerySerializer querySerializer;
-  private final Injector injector;
+  private final MistTaskProvider proxyToDriver;
+  private final List<IPAddress> tasks;
+  private final ConcurrentMap<IPAddress, ClientToTaskMessage> taskProxyMap;
 
   public MISTExecutionEnvironmentImpl(final String serverAddr,
-                                      final int serverPort) throws InjectionException {
-    this.serverAddr = serverAddr;
-    this.serverPort = serverPort;
-    injector = Tang.Factory.getTang().newInjector();
+                                      final int serverPort) throws InjectionException, IOException {
+
+    final Injector injector = Tang.Factory.getTang().newInjector();
     querySerializer = injector.getInstance(MISTQuerySerializer.class);
+    // Step 1: Get a task list from Driver
+    final NettyTransceiver clientToDriver = new NettyTransceiver(new InetSocketAddress(serverAddr, serverPort));
+    this.proxyToDriver = SpecificRequestor.getClient(MistTaskProvider.class, clientToDriver);
+    final TaskList taskList = proxyToDriver.getTasks(new QueryInfo());
+    this.tasks = taskList.getTasks();
+    this.taskProxyMap = new ConcurrentHashMap<IPAddress, ClientToTaskMessage>();
   }
 
   /**
@@ -55,26 +62,25 @@ public final class MISTExecutionEnvironmentImpl implements MISTExecutionEnvironm
    */
   @Override
   public APIQuerySubmissionResult submit(final MISTQuery queryToSubmit) throws IOException {
-    // Step 1: Get a task list from Driver
-    final NettyTransceiver clientToDriver = new NettyTransceiver(new InetSocketAddress(serverAddr, serverPort));
-    final MistTaskProvider proxyToDriver =
-        SpecificRequestor.getClient(MistTaskProvider.class, clientToDriver);
-    final TaskList taskList = proxyToDriver.getTasks(new QueryInfo());
-    final List<IPAddress> tasks = taskList.getTasks();
-
     // Step 2: Change the query to a LogicalPlan
     final LogicalPlan logicalPlan = querySerializer.queryToLogicalPlan(queryToSubmit);
 
     // Step 3: Send the LogicalPlan to one of the tasks and get QuerySubmissionResult
     final IPAddress task = tasks.get(0);
-    final NettyTransceiver clientToTask = new NettyTransceiver(
-        new InetSocketAddress(task.getHostAddress().toString(), task.getPort()));
-    final ClientToTaskMessage proxyToTask =
-        SpecificRequestor.getClient(ClientToTaskMessage.class, clientToTask);
+
+    ClientToTaskMessage proxyToTask = taskProxyMap.get(task);
+    if (proxyToTask == null) {
+      final NettyTransceiver clientToTask = new NettyTransceiver(
+              new InetSocketAddress(task.getHostAddress().toString(), task.getPort()));
+      final ClientToTaskMessage proxy = SpecificRequestor.getClient(ClientToTaskMessage.class, clientToTask);
+      taskProxyMap.putIfAbsent(task, proxy);
+      proxyToTask = taskProxyMap.get(task);
+    }
+
     final QuerySubmissionResult querySubmissionResult = proxyToTask.sendQueries(logicalPlan);
 
     // Step 4: Transform QuerySubmissionResult to APIQuerySubmissionResult
-    APIQuerySubmissionResult apiQuerySubmissionResult =
+    final APIQuerySubmissionResult apiQuerySubmissionResult =
         new APIQuerySubmissionResultImpl(querySubmissionResult.getQueryId());
     return apiQuerySubmissionResult;
   }
