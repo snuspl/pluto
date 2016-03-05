@@ -82,12 +82,12 @@ public final class TextKafkaStreamGenerator implements SourceGenerator<String>{
   /**
    * The number of threads to assign for each topic.
    */
-  private final int NUM_THREADS = 1;
+  private final int numThreads = 1;
 
   /**
    * The KafkaStreams for a certain topic.
    */
-  List<KafkaStream<byte[], byte[]>> streams;
+  private final List<KafkaStream<byte[], byte[]>> streams;
 
   /**
    * In order for KafkaStreams to work, the Zookeeper and Kafka server must be running.
@@ -109,19 +109,19 @@ public final class TextKafkaStreamGenerator implements SourceGenerator<String>{
     this.identifier = identifierFactory.getNewInstance(sourceId);
 
     //Property setup for kafka consumer.
-    Properties props = new Properties();
+    final Properties props = new Properties();
     props.put("group.id", "group1");
     props.put("zookeeper.connect", zkAddress+":"+zkPort);
-    ConsumerConfig consumerConfig = new ConsumerConfig(props);
+    final ConsumerConfig consumerConfig = new ConsumerConfig(props);
 
     //Creating the kafka consumer
     consumer = Consumer.createJavaConsumerConnector(consumerConfig);
-    Map<String, Integer> topicCountMap = new HashMap<>();
+    final Map<String, Integer> topicCountMap = new HashMap<>();
 
     //We assume that only one thread is dedicated to the consumer group. Thus, one thread reads from the single topic.
     //TODO [MIST-205] : One kafka source to read inputs from multiple sources.
-    topicCountMap.put(topic, NUM_THREADS); //Assign a certain number of threads to the topic.
-    Map<String, List<KafkaStream<byte[], byte[]>>> consumerMap = consumer.createMessageStreams(topicCountMap);
+    topicCountMap.put(topic, numThreads); //Assign a certain number of threads to the topic.
+    final Map<String, List<KafkaStream<byte[], byte[]>>> consumerMap = consumer.createMessageStreams(topicCountMap);
     streams = consumerMap.get(topic);
   }
 

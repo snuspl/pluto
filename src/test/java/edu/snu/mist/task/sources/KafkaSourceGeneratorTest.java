@@ -97,16 +97,16 @@ public final class KafkaSourceGeneratorTest {
     Thread.sleep(3000);
 
     //Producer property setup. Producer connects to KafkaServer, not the zookeeper server.
-    Properties props = new Properties();
+    final Properties props = new Properties();
     props.put("metadata.broker.list", kafkaAddress + ":" + kafkaPort);
     props.put("serializer.class", "kafka.serializer.StringEncoder");
 
-    ProducerConfig producerConfig = new ProducerConfig(props);
-    Producer<String, String> producer = new Producer<>(producerConfig);
+    final ProducerConfig producerConfig = new ProducerConfig(props);
+    final Producer<String, String> producer = new Producer<>(producerConfig);
 
-    KeyedMessage<String, String> message1 = new KeyedMessage<>("testTopic", inputStream.get(0));
-    KeyedMessage<String, String> message2 = new KeyedMessage<>("testTopic", inputStream.get(1));
-    KeyedMessage<String, String> message3 = new KeyedMessage<>("testTopic", inputStream.get(2));
+    final KeyedMessage<String, String> message1 = new KeyedMessage<>("testTopic", inputStream.get(0));
+    final KeyedMessage<String, String> message2 = new KeyedMessage<>("testTopic", inputStream.get(1));
+    final KeyedMessage<String, String> message3 = new KeyedMessage<>("testTopic", inputStream.get(2));
 
     //Producer sends the messages to the KafkaServer.
     producer.send(message1);
