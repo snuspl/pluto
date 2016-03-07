@@ -37,21 +37,25 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public final class TextKafkaStreamGenerator implements SourceGenerator<String>{
+/**
+ * This implementation of SourceGenerator uses Kafka to receive inputs.
+ * It is assumed that one consumer receives inputs from one topic.
+ */
+public final class TextKafkaStreamGenerator implements SourceGenerator<String> {
   /**
    * An output emitter.
    */
-  protected OutputEmitter<String> outputEmitter;
+  private OutputEmitter<String> outputEmitter;
 
   /**
    * A flag for close.
    */
-  protected final AtomicBoolean closed;
+  private final AtomicBoolean closed;
 
   /**
    * A flag for start.
    */
-  protected final AtomicBoolean started;
+  private final AtomicBoolean started;
 
   /**
    * An executor service running this source generator.
@@ -67,12 +71,12 @@ public final class TextKafkaStreamGenerator implements SourceGenerator<String>{
   /**
    * Identifier of SourceGenerator.
    */
-  protected final Identifier identifier;
+  private final Identifier identifier;
 
   /**
    * Identifier of Query.
    */
-  protected final Identifier queryId;
+  private final Identifier queryId;
 
   /**
    * The Kafka consumer.
@@ -126,16 +130,16 @@ public final class TextKafkaStreamGenerator implements SourceGenerator<String>{
   }
 
   @Override
-  public void start(){
-    if (started.compareAndSet(false, true)){
-      for (final KafkaStream<byte[], byte[]> stream: streams){
+  public void start() {
+    if (started.compareAndSet(false, true)) {
+      for (final KafkaStream<byte[], byte[]> stream: streams) {
         executorService.execute(new Runnable() {
           @Override
           public void run() {
             while (!closed.get()) {
               try {
                 String input = null;
-                ConsumerIterator<byte[], byte[]> it = stream.iterator();
+                final ConsumerIterator<byte[], byte[]> it = stream.iterator();
                 while(it.hasNext()){
                   input = new String(it.next().message());
                   if (outputEmitter == null) {
@@ -147,7 +151,7 @@ public final class TextKafkaStreamGenerator implements SourceGenerator<String>{
                     outputEmitter.emit(input);
                   }
                 }
-              } catch (final InterruptedException e){
+              } catch (final InterruptedException e) {
                 e.printStackTrace();
               }
             }
@@ -162,7 +166,7 @@ public final class TextKafkaStreamGenerator implements SourceGenerator<String>{
    * This method is called just once.
    * @throws Exception
    */
-  public void releaseResources() throws Exception{
+  public void releaseResources() throws Exception {
     consumer.shutdown();
   }
 
