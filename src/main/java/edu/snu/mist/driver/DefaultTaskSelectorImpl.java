@@ -105,7 +105,7 @@ final class DefaultTaskSelectorImpl implements TaskSelector {
     for (final Tuple<InetSocketAddress, Connection<DriverTaskMessage>> value : taskAddrAndConnMap.values()) {
       final IPAddress ipAddress = new IPAddress();
       final InetSocketAddress inetSocketAddress = value.getKey();
-      ipAddress.setHostAddress(inetSocketAddress.getAddress().getHostAddress());
+      ipAddress.setHostAddress(inetSocketAddress.getHostName());
       ipAddress.setPort(rpcServerPort);
       taskLists.add(ipAddress);
     }
