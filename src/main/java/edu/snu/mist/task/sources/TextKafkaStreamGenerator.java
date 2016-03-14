@@ -115,7 +115,7 @@ public final class TextKafkaStreamGenerator implements SourceGenerator<String> {
     //Property setup for kafka consumer.
     final Properties props = new Properties();
     props.put("group.id", "group1");
-    props.put("zookeeper.connect", zkAddress+":"+zkPort);
+    props.put("zookeeper.connect", String.format("%s:%s", zkAddress, zkPort));
     final ConsumerConfig consumerConfig = new ConsumerConfig(props);
 
     //Creating the kafka consumer
@@ -123,7 +123,7 @@ public final class TextKafkaStreamGenerator implements SourceGenerator<String> {
     final Map<String, Integer> topicCountMap = new HashMap<>();
 
     //We assume that only one thread is dedicated to the consumer group. Thus, one thread reads from the single topic.
-    //TODO [MIST-205] : One kafka source to read inputs from multiple sources.
+    //TODO [MIST-205] : One kafka consumer to read inputs from multiple sources.
     topicCountMap.put(topic, numThreads); //Assign a certain number of threads to the topic.
     final Map<String, List<KafkaStream<byte[], byte[]>>> consumerMap = consumer.createMessageStreams(topicCountMap);
     streams = consumerMap.get(topic);
@@ -138,7 +138,7 @@ public final class TextKafkaStreamGenerator implements SourceGenerator<String> {
           public void run() {
             while (!closed.get()) {
               try {
-                String input = null;
+                String input;
                 final ConsumerIterator<byte[], byte[]> it = stream.iterator();
                 while(it.hasNext()){
                   input = new String(it.next().message());
