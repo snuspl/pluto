@@ -16,13 +16,20 @@
 package edu.snu.mist.task.operators;
 
 import edu.snu.mist.api.StreamType;
+import edu.snu.mist.api.functions.MISTPredicate;
 import edu.snu.mist.common.parameters.QueryId;
+import edu.snu.mist.formats.avro.InstantOperatorInfo;
+import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
 import edu.snu.mist.task.operators.parameters.OperatorId;
+import org.apache.avro.specific.SpecificRecord;
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.function.Predicate;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,10 +43,10 @@ public final class FilterOperator<I> extends StatelessOperator<I, I> {
   /**
    * Filter function.
    */
-  private final Predicate<I> filterFunc;
+  private final MISTPredicate<I> filterFunc;
 
   @Inject
-  private FilterOperator(final Predicate<I> filterFunc,
+  private FilterOperator(final MISTPredicate<I> filterFunc,
                          @Parameter(QueryId.class) final String queryId,
                          @Parameter(OperatorId.class) final String operatorId,
                          final StringIdentifierFactory idfactory) {
@@ -63,5 +70,17 @@ public final class FilterOperator<I> extends StatelessOperator<I, I> {
   @Override
   public StreamType.OperatorType getOperatorType() {
     return StreamType.OperatorType.FILTER;
+  }
+
+  @Override
+  public SpecificRecord getAttribute() {
+    final InstantOperatorInfo.Builder iOpInfoBuilder = InstantOperatorInfo.newBuilder();
+    iOpInfoBuilder.setInstantOperatorType(InstantOperatorTypeEnum.FILTER);
+    final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
+    serializedFunctionList.add(ByteBuffer.wrap(
+        SerializationUtils.serialize(filterFunc)));
+    iOpInfoBuilder.setFunctions(serializedFunctionList);
+    iOpInfoBuilder.setKeyIndex(null);
+    return iOpInfoBuilder.build();
   }
 }

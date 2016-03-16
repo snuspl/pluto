@@ -21,7 +21,7 @@ import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sources.SourceStream;
 import edu.snu.mist.formats.avro.Edge;
 import edu.snu.mist.formats.avro.LogicalPlan;
-import edu.snu.mist.formats.avro.Vertex;
+import edu.snu.mist.formats.avro.AvroVertex;
 import edu.snu.mist.formats.avro.VertexTypeEnum;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -49,8 +49,8 @@ public final class MISTQuerySerializerImpl implements MISTQuerySerializer {
     this.instantOperatorInfoProvider = injector.getInstance(InstantOperatorInfoProvider.class);
   }
 
-  private Vertex buildAvroVertex(final Object apiVertex) {
-    Vertex.Builder vertexBuilder = Vertex.newBuilder();
+  private AvroVertex buildAvroVertex(final Object apiVertex) {
+    AvroVertex.Builder vertexBuilder = AvroVertex.newBuilder();
     if (apiVertex instanceof Sink) {
       vertexBuilder.setVertexType(VertexTypeEnum.SINK);
       vertexBuilder.setAttributes(sinkInfoProvider.getSinkInfo((Sink) apiVertex));
@@ -107,7 +107,7 @@ public final class MISTQuerySerializerImpl implements MISTQuerySerializer {
       }
     }
     // Serialize each apiVertices via avro.
-    final List<Vertex> serializedVertices = new ArrayList<>();
+    final List<AvroVertex> serializedVertices = new ArrayList<>();
     for (Object apiVertex : apiVertices) {
       serializedVertices.add(buildAvroVertex(apiVertex));
     }

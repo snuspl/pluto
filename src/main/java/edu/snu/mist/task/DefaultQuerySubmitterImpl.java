@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2016 Seoul National University
  *
@@ -128,8 +129,8 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
       }
     }
 
-    for (final SourceGenerator src : chainPhysicalPlan.getSourceMap().keySet()) {
-      final Set<OperatorChain> nextOps = chainPhysicalPlan.getSourceMap().get(src);
+    for (final SourceGenerator src : chainPhysicalPlan.getSources()) {
+      final Set<OperatorChain> nextOps = chainPhysicalPlan.getSourceMap().get(src.getIdentifier().toString());
       // Sets SourceOutputEmitter to the sources
       src.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
       // 5) starts to receive input data stream from the source

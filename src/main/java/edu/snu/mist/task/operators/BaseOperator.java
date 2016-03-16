@@ -60,7 +60,35 @@ public abstract class BaseOperator<I, O> implements Operator<I, O> {
   }
 
   @Override
-  public Identifier getOperatorIdentifier() {
+  public Identifier getIdentifier() {
     return operatorId;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    final BaseOperator that = (BaseOperator) o;
+
+    if (!operatorId.equals(that.operatorId)) {
+      return false;
+    }
+    if (!queryId.equals(that.queryId)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = queryId.hashCode();
+    result = 31 * result + operatorId.hashCode();
+    return result;
   }
 }

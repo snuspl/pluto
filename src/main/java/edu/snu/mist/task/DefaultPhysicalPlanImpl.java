@@ -19,6 +19,7 @@ import edu.snu.mist.common.DAG;
 import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sources.SourceGenerator;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,7 +32,7 @@ final class DefaultPhysicalPlanImpl<E> implements PhysicalPlan<E> {
   /**
    * A map of source generator and operators.
    */
-  private final Map<SourceGenerator, Set<E>> sourceMap;
+  private final Map<String, Set<E>> sourceMap;
 
   /**
    * A DAG of operators.
@@ -43,12 +44,28 @@ final class DefaultPhysicalPlanImpl<E> implements PhysicalPlan<E> {
    */
   private final Map<E, Set<Sink>> sinkMap;
 
-  public DefaultPhysicalPlanImpl(final Map<SourceGenerator, Set<E>> sourceMap,
+  private final Set<SourceGenerator> sources;
+
+  public DefaultPhysicalPlanImpl(final Map<SourceGenerator, Set<E>> sourceAndOperatorMap,
                                  final DAG<E> operators,
                                  final Map<E, Set<Sink>> sinkMap) {
-    this.sourceMap = sourceMap;
     this.operators = operators;
     this.sinkMap = sinkMap;
+    this.sources = sourceAndOperatorMap.keySet();
+    this.sourceMap = new HashMap<>();
+    for (final Map.Entry<SourceGenerator, Set<E>> entry : sourceAndOperatorMap.entrySet()) {
+      this.sourceMap.put(entry.getKey().getIdentifier().toString(), entry.getValue());
+    }
+  }
+
+  public DefaultPhysicalPlanImpl(final Set<SourceGenerator> sources,
+                                 final Map<String, Set<E>> sourceMap,
+                                 final DAG<E> operators,
+                                 final Map<E, Set<Sink>> sinkMap) {
+    this.operators = operators;
+    this.sinkMap = sinkMap;
+    this.sources = sources;
+    this.sourceMap = sourceMap;
   }
 
   @Override
@@ -57,7 +74,12 @@ final class DefaultPhysicalPlanImpl<E> implements PhysicalPlan<E> {
   }
 
   @Override
-  public Map<SourceGenerator, Set<E>> getSourceMap() {
+  public Set<SourceGenerator> getSources() {
+    return sources;
+  }
+
+  @Override
+  public Map<String, Set<E>> getSourceMap() {
     return sourceMap;
   }
 

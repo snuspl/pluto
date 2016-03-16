@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2016 Seoul National University
  *
@@ -14,21 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.sources;
+package edu.snu.mist.task.common;
 
-import edu.snu.mist.task.common.Vertex;
-import edu.snu.mist.task.common.OutputEmittable;
+import org.apache.avro.specific.SpecificRecord;
+import org.apache.reef.wake.Identifier;
 
 /**
- * SourceGenerator generates input stream.
- * It supports fetching input data from external systems, such as kafka and HDFS,
- * or receives input data from IoT devices and network connection.
- * After that, it sends the inputs to the OutputEmitter which forwards the inputs to next Operators.
+ * Common interface for source, operator and sink.
  */
-public interface SourceGenerator<I> extends OutputEmittable<I>, AutoCloseable, Vertex {
+public interface Vertex {
 
   /**
-   * Starts to generate source stream and forwards inputs to the OutputEmitter.
+   * Get the vertex identifier.
+   * @return an identifier
    */
-  void start();
+  Identifier getIdentifier();
+
+  /**
+   * Get the query identifier containing this vertex.
+   * @return an identifier
+   */
+  Identifier getQueryIdentifier();
+
+  /**
+   * Get the attribute of the vertex.
+   * @return attribute
+   */
+  SpecificRecord getAttribute();
 }

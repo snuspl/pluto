@@ -16,28 +16,15 @@
 package edu.snu.mist.task.operators;
 
 import edu.snu.mist.api.StreamType;
+import edu.snu.mist.task.common.Vertex;
 import edu.snu.mist.task.common.InputHandler;
 import edu.snu.mist.task.common.OutputEmittable;
-import org.apache.reef.wake.Identifier;
 
 /**
  * This is an interface of mist physical operator which runs actual computation.
  * Operator receives an input, does computation, and emits an output to OutputEmitter.
  */
-public interface Operator<I, O> extends InputHandler<I>, OutputEmittable<O> {
-
-  /**
-   * Gets the operator identifier.
-   * @return an identifier
-   */
-  Identifier getOperatorIdentifier();
-
-  /**
-   * Gets the query identifier containing this operator.
-   * @return an identifier
-   */
-  Identifier getQueryIdentifier();
-
+public interface Operator<I, O> extends InputHandler<I>, OutputEmittable<O>, Vertex {
   /**
    * Gets the type of operator.
    * @return operator type

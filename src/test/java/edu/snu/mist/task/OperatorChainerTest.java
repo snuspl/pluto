@@ -21,6 +21,7 @@ import edu.snu.mist.common.GraphUtils;
 import edu.snu.mist.task.operators.Operator;
 import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sources.SourceGenerator;
+import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -53,8 +54,11 @@ public final class OperatorChainerTest {
     final Map<SourceGenerator, Set<Operator>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
+    final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
     final SourceGenerator src1 = mock(SourceGenerator.class);
+    when(src1.getIdentifier()).thenReturn(identifierFactory.getNewInstance("src1"));
     final SourceGenerator src2 = mock(SourceGenerator.class);
+    when(src2.getIdentifier()).thenReturn(identifierFactory.getNewInstance("src2"));
 
     final Operator op11 = mock(Operator.class);
     when(op11.toString()).thenReturn("op11");
@@ -163,18 +167,18 @@ public final class OperatorChainerTest {
     Assert.assertEquals("The number of OperatorChain should be 5", 5, num);
 
     // src map
-    final Map<SourceGenerator, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
+    final Map<String, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
     Assert.assertEquals("The number of SourceGenerator should be 2", 2, chainedSrcMap.size());
 
     final Set<OperatorChain> src1OpChain = new HashSet<>();
     src1OpChain.add(op11op12);
     Assert.assertEquals("The mapped OperatorChain of src1 should be [op11->op12]",
-        src1OpChain, chainedSrcMap.get(src1));
+        src1OpChain, chainedSrcMap.get(src1.getIdentifier().toString()));
 
     final Set<OperatorChain> src2OpChain = new HashSet<>();
     src2OpChain.add(op21op22);
     Assert.assertEquals("The mapped OperatorChain of src2 should be [op21->op22]",
-        src2OpChain, chainedSrcMap.get(src2));
+        src2OpChain, chainedSrcMap.get(src2.getIdentifier().toString()));
 
     // sink map
     final Map<OperatorChain, Set<Sink>> chainedSinkMap = chainedPhysicalPlan.getSinkMap();
@@ -206,7 +210,9 @@ public final class OperatorChainerTest {
     final Map<SourceGenerator, Set<Operator>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
+    final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
     final SourceGenerator src1 = mock(SourceGenerator.class);
+    when(src1.getIdentifier()).thenReturn(identifierFactory.getNewInstance("src1"));
     final Operator op11 = mock(Operator.class);
     when(op11.toString()).thenReturn("op11");
     final Operator op12 = mock(Operator.class);
@@ -263,12 +269,12 @@ public final class OperatorChainerTest {
     Assert.assertEquals("The number of OperatorChain should be 1", 1, num);
 
     // src map
-    final Map<SourceGenerator, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
+    final Map<String, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
     Assert.assertEquals("The number of SourceGenerator should be 1", 1, chainedSrcMap.size());
     final Set<OperatorChain> src1OpChain = new HashSet<>();
     src1OpChain.add(op11op12op13);
     Assert.assertEquals("The mapped OperatorChain of src1 should be [op11->op12->op13]",
-        src1OpChain, chainedSrcMap.get(src1));
+        src1OpChain, chainedSrcMap.get(src1.getIdentifier().toString()));
 
     // sink map
     final Map<OperatorChain, Set<Sink>> chainedSinkMap = chainedPhysicalPlan.getSinkMap();
@@ -297,7 +303,9 @@ public final class OperatorChainerTest {
     final Map<SourceGenerator, Set<Operator>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
+    final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
     final SourceGenerator src1 = mock(SourceGenerator.class);
+    when(src1.getIdentifier()).thenReturn(identifierFactory.getNewInstance("src1"));
     final Operator op11 = mock(Operator.class);
     when(op11.toString()).thenReturn("op11");
     final Operator op12 = mock(Operator.class);
@@ -382,13 +390,13 @@ public final class OperatorChainerTest {
     Assert.assertEquals("The number of OperatorChain should be 4", 4, num);
 
     // src map
-    final Map<SourceGenerator, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
+    final Map<String, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
     Assert.assertEquals("The number of SourceGenerator should be 1", 1, chainedSrcMap.size());
 
     final Set<OperatorChain> src1OpChain = new HashSet<>();
     src1OpChain.add(op11op12);
     Assert.assertEquals("The mapped OperatorChain of src1 should be [op11->op12]",
-        src1OpChain, chainedSrcMap.get(src1));
+        src1OpChain, chainedSrcMap.get(src1.getIdentifier().toString()));
 
     // sink map
     final Map<OperatorChain, Set<Sink>> chainedSinkMap = chainedPhysicalPlan.getSinkMap();
@@ -429,9 +437,13 @@ public final class OperatorChainerTest {
     final Map<SourceGenerator, Set<Operator>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
+    final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
     final SourceGenerator src1 = mock(SourceGenerator.class);
+    when(src1.getIdentifier()).thenReturn(identifierFactory.getNewInstance("src1"));
     final SourceGenerator src2 = mock(SourceGenerator.class);
+    when(src2.getIdentifier()).thenReturn(identifierFactory.getNewInstance("src2"));
     final SourceGenerator src3 = mock(SourceGenerator.class);
+    when(src3.getIdentifier()).thenReturn(identifierFactory.getNewInstance("src3"));
 
     final Operator op11 = mock(Operator.class);
     when(op11.toString()).thenReturn("op11");
@@ -517,23 +529,23 @@ public final class OperatorChainerTest {
     Assert.assertEquals("The number of OperatorChain should be 4", 4, num);
 
     // src map
-    final Map<SourceGenerator, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
+    final Map<String, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
     Assert.assertEquals("The number of SourceGenerator should be 3", 3, chainedSrcMap.size());
 
     final Set<OperatorChain> src1OpChain = new HashSet<>();
     src1OpChain.add(op11op12);
     Assert.assertEquals("The mapped OperatorChain of src1 should be [op11->op12]",
-        src1OpChain, chainedSrcMap.get(src1));
+        src1OpChain, chainedSrcMap.get(src1.getIdentifier().toString()));
 
     final Set<OperatorChain> src2OpChain = new HashSet<>();
     src2OpChain.add(op21chain);
     Assert.assertEquals("The mapped OperatorChain of src2 should be [op21]",
-        src2OpChain, chainedSrcMap.get(src2));
+        src2OpChain, chainedSrcMap.get(src2.getIdentifier().toString()));
 
     final Set<OperatorChain> src3OpChain = new HashSet<>();
     src3OpChain.add(op31chain);
     Assert.assertEquals("The mapped OperatorChain of src3 should be [op31]",
-        src3OpChain, chainedSrcMap.get(src3));
+        src3OpChain, chainedSrcMap.get(src3.getIdentifier().toString()));
 
     // sink map
     final Map<OperatorChain, Set<Sink>> chainedSinkMap = chainedPhysicalPlan.getSinkMap();
@@ -564,9 +576,13 @@ public final class OperatorChainerTest {
     final Map<SourceGenerator, Set<Operator>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
+    final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
     final SourceGenerator src1 = mock(SourceGenerator.class);
+    when(src1.getIdentifier()).thenReturn(identifierFactory.getNewInstance("src1"));
     final SourceGenerator src2 = mock(SourceGenerator.class);
+    when(src2.getIdentifier()).thenReturn(identifierFactory.getNewInstance("src2"));
     final SourceGenerator src3 = mock(SourceGenerator.class);
+    when(src3.getIdentifier()).thenReturn(identifierFactory.getNewInstance("src3"));
 
     final Operator opA = mock(Operator.class);
     when(opA.toString()).thenReturn("opA");
@@ -662,13 +678,13 @@ public final class OperatorChainerTest {
     Assert.assertEquals("The number of OperatorChain should be 5", 5, num);
 
     // src map
-    final Map<SourceGenerator, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
+    final Map<String, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
     Assert.assertEquals("The number of SourceGenerator should be 1", 1, chainedSrcMap.size());
 
     final Set<OperatorChain> src1OpChain = new HashSet<>();
     src1OpChain.add(opAchain);
     Assert.assertEquals("The mapped OperatorChain of src1 should be [opA]",
-        src1OpChain, chainedSrcMap.get(src1));
+        src1OpChain, chainedSrcMap.get(src1.getIdentifier().toString()));
 
     // sink map
     final Map<OperatorChain, Set<Sink>> chainedSinkMap = chainedPhysicalPlan.getSinkMap();

@@ -15,10 +15,20 @@
  */
 package edu.snu.mist.task.sinks;
 
+import edu.snu.mist.api.SerializedType;
+import edu.snu.mist.api.sink.builder.SinkConfiguration;
+import edu.snu.mist.api.sink.builder.SinkConfigurationBuilder;
+import edu.snu.mist.api.sink.builder.TextSocketSinkConfigurationBuilderImpl;
+import edu.snu.mist.api.sink.parameters.SinkSerializeInfo;
+import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 import edu.snu.mist.common.parameters.QueryId;
+import edu.snu.mist.formats.avro.SinkInfo;
+import edu.snu.mist.formats.avro.SinkTypeEnum;
 import edu.snu.mist.task.common.parameters.SocketServerIp;
 import edu.snu.mist.task.common.parameters.SocketServerPort;
 import edu.snu.mist.task.sinks.parameters.SinkId;
+import org.apache.avro.specific.SpecificRecord;
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.wake.Identifier;
@@ -27,7 +37,11 @@ import org.apache.reef.wake.impl.SingleThreadStage;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This sink sends data using socket.
@@ -98,5 +112,55 @@ public final class TextSocketSink<I> implements Sink<I> {
   @Override
   public Identifier getQueryIdentifier() {
     return queryId;
+  }
+
+  @Override
+  public SpecificRecord getAttribute() {
+    final SinkInfo.Builder sinkInfoBuilder = SinkInfo.newBuilder();
+    sinkInfoBuilder.setSinkType(SinkTypeEnum.TEXT_SOCKET_SINK);
+    // Serialize SinkInfo
+    final SinkConfigurationBuilder sinkConfigurationBuilder = new TextSocketSinkConfigurationBuilderImpl();
+    sinkConfigurationBuilder.set(TextSocketSinkParameters.SOCKET_HOST_ADDRESS, socket.getInetAddress().getHostName());
+    sinkConfigurationBuilder.set(TextSocketSinkParameters.SOCKET_HOST_PORT, socket.getPort());
+    final SinkConfiguration sinkConf = sinkConfigurationBuilder.build();
+    final Map<CharSequence, Object> serializedSinkConf = new HashMap<>();
+    for (final String confKey : sinkConf.getConfigurationKeys()) {
+      final Object value = sinkConf.getConfigurationValue(confKey);
+      if (SinkSerializeInfo.getAvroSerializedTypeInfo(confKey) != SerializedType.AvroType.BYTES) {
+        serializedSinkConf.put(confKey, value);
+      } else {
+        serializedSinkConf.put(confKey, ByteBuffer.wrap(SerializationUtils.serialize((Serializable) value)));
+      }
+    }
+    sinkInfoBuilder.setSinkConfiguration(serializedSinkConf);
+    return sinkInfoBuilder.build();
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    final TextSocketSink that = (TextSocketSink) o;
+
+    if (!queryId.equals(that.queryId)) {
+      return false;
+    }
+    if (!sinkId.equals(that.sinkId)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = queryId.hashCode();
+    result = 31 * result + sinkId.hashCode();
+    return result;
   }
 }

@@ -16,6 +16,7 @@
 package edu.snu.mist.task.operators;
 
 import com.google.common.collect.ImmutableList;
+import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.task.operators.parameters.KeyIndex;
@@ -31,7 +32,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.logging.Logger;
 
 public final class StatefulOperatorTest {
@@ -93,8 +93,8 @@ public final class StatefulOperatorTest {
     jcb.bindNamedParameter(KeyIndex.class, 0+"");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     // Reduce function for word count
-    final BiFunction<Integer, Integer, Integer> wordCountFunc = (oldVal, val) -> oldVal + val;
-    injector.bindVolatileInstance(BiFunction.class, wordCountFunc);
+    final MISTBiFunction<Integer, Integer, Integer> wordCountFunc = (oldVal, val) -> oldVal + val;
+    injector.bindVolatileInstance(MISTBiFunction.class, wordCountFunc);
     final ReduceByKeyOperator<String, Integer> wcOperator = injector.getInstance(ReduceByKeyOperator.class);
 
     // output test

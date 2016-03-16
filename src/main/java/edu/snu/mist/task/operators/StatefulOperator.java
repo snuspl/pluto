@@ -73,7 +73,7 @@ public abstract class StatefulOperator<I, S extends Serializable, O> extends Bas
     final S intermediateState = updateState(input, state);
     final O output = generateOutput(intermediateState);
     LOG.log(Level.FINE, "{0} updates the state {1} with input {2} to {3}, and generates {4}",
-        new Object[]{getOperatorIdentifier(), state, input, intermediateState, output});
+        new Object[]{getIdentifier(), state, input, intermediateState, output});
     if (output != null) {
       outputEmitter.emit(output);
     }
