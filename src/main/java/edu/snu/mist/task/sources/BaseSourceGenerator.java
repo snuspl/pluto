@@ -113,7 +113,6 @@ public abstract class BaseSourceGenerator<I> implements SourceGenerator<I> {
    */
   public abstract I nextInput() throws IOException;
 
-
   /**
    * Releases IO resources.
    * This method is called just once.

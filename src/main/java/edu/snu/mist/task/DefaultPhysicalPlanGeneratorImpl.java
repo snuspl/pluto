@@ -29,9 +29,13 @@ import edu.snu.mist.task.operators.parameters.OperatorId;
 import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sinks.TextSocketSink;
 import edu.snu.mist.task.sinks.parameters.SinkId;
+import edu.snu.mist.task.sources.TextKafkaStreamGenerator;
 import edu.snu.mist.task.sources.SourceGenerator;
 import edu.snu.mist.task.sources.TextSocketStreamGenerator;
+import edu.snu.mist.task.sources.parameters.KafkaTopicName;
 import edu.snu.mist.task.sources.parameters.SourceId;
+import edu.snu.mist.task.sources.parameters.ZkSourceAddress;
+import edu.snu.mist.task.sources.parameters.ZkSourcePort;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
@@ -80,6 +84,32 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     cb.bindNamedParameter(QueryId.class, queryId);
     cb.bindNamedParameter(SourceId.class, operatorIdGenerator.generate());
     return Tang.Factory.getTang().newInjector(cb.build()).getInstance(TextSocketStreamGenerator.class);
+  }
+
+  /**
+   * This private method makes a TextKafkaStreamGenerator from a source configuration.
+   */
+  private TextKafkaStreamGenerator getTextKafkaStreamGenerator(final String queryId,
+                                                           final Map<CharSequence, Object> sourceConf)
+      throws IllegalArgumentException, InjectionException {
+    final Map<String, Object> sourceConfString = new HashMap<>();
+    for (final CharSequence charSeqKey : sourceConf.keySet()) {
+      sourceConfString.put(charSeqKey.toString(), sourceConf.get(charSeqKey));
+    }
+
+    final JavaConfigurationBuilder cb = Tang.Factory.getTang().newConfigurationBuilder();
+    //TextKafkaSourceParameters.ZK_SOURCE_ADDRESS,ZK_SOURCE_PORT,KAFKA_TOPIC_NAME
+    final String zkSourceAddress = sourceConfString.get("ZkSourceAddress").toString();
+    final String zkSourcePort = sourceConfString.get("ZkSourcePort").toString();
+    final String kafkaTopicName = sourceConfString.get("KafkaTopicName").toString();
+
+    cb.bindNamedParameter(ZkSourceAddress.class, zkSourceAddress);
+    cb.bindNamedParameter(ZkSourcePort.class, zkSourcePort);
+    cb.bindNamedParameter(KafkaTopicName.class, kafkaTopicName);
+    cb.bindNamedParameter(QueryId.class, queryId);
+    cb.bindNamedParameter(SourceId.class, operatorIdGenerator.generate());
+
+    return Tang.Factory.getTang().newInjector(cb.build()).getInstance(TextKafkaStreamGenerator.class);
   }
 
   /*
@@ -178,6 +208,12 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
               deserializedVertices.add(textSocketStreamGenerator);
               break;
             }
+            /*case TEXT_KAFKA_SOURCE: {
+              final TextKafkaStreamGenerator textKafkaStreamGenerator
+                  = getTextKafkaStreamGenerator(queryId, sourceInfo.getSourceConfiguration());
+              deserializedVertices.add(textKafkaStreamGenerator);
+              break;
+            }*/
             case REEF_NETWORK_SOURCE: {
               throw new IllegalArgumentException("MISTTask: REEF_NETWORK_SOURCE is currently not supported!");
             }
