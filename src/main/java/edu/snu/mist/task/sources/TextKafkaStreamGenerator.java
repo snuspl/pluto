@@ -124,7 +124,8 @@ public final class TextKafkaStreamGenerator implements SourceGenerator<String> {
 
     //We assume that only one thread is dedicated to the consumer group. Thus, one thread reads from the single topic.
     //TODO [MIST-205] : One kafka consumer to read inputs from multiple sources.
-    topicCountMap.put(topic, numThreads); //Assign a certain number of threads to the topic.
+    //Assign a certain number of threads to the topic. We assumed there is only one thread assigned to that topic.
+    topicCountMap.put(topic, numThreads);
     final Map<String, List<KafkaStream<byte[], byte[]>>> consumerMap = consumer.createMessageStreams(topicCountMap);
     streams = consumerMap.get(topic);
   }
@@ -132,32 +133,31 @@ public final class TextKafkaStreamGenerator implements SourceGenerator<String> {
   @Override
   public void start() {
     if (started.compareAndSet(false, true)) {
-      for (final KafkaStream<byte[], byte[]> stream: streams) {
-        executorService.execute(new Runnable() {
-          @Override
-          public void run() {
-            while (!closed.get()) {
-              try {
-                String input;
-                final ConsumerIterator<byte[], byte[]> it = stream.iterator();
-                while(it.hasNext()){
-                  input = new String(it.next().message());
-                  if (outputEmitter == null) {
-                    throw new RuntimeException("OutputEmitter should be set in " + BaseSourceGenerator.class.getName());
-                  }
-                  if (input.equals("")) { //"" signifies that the input is empty.
-                    Thread.sleep(sleepTime);
-                  } else {
-                    outputEmitter.emit(input);
-                  }
+      final KafkaStream<byte[], byte[]> stream = streams.get(0); //Since there is only one stream.
+      executorService.execute(new Runnable() {
+        @Override
+        public void run() {
+          while (!closed.get()) {
+            try {
+              String input;
+              final ConsumerIterator<byte[], byte[]> it = stream.iterator();
+              while(it.hasNext()){
+                input = new String(it.next().message());
+                if (outputEmitter == null) {
+                  throw new RuntimeException("OutputEmitter should be set in " + BaseSourceGenerator.class.getName());
                 }
-              } catch (final InterruptedException e) {
-                e.printStackTrace();
+                if (input.equals("")) { //"" signifies that the input is empty.
+                  Thread.sleep(sleepTime);
+                } else {
+                  outputEmitter.emit(input);
+                }
               }
+            } catch (final InterruptedException e) {
+              e.printStackTrace();
             }
           }
-        });
-      }
+        }
+      });
     }
   }
 
@@ -166,7 +166,7 @@ public final class TextKafkaStreamGenerator implements SourceGenerator<String> {
    * This method is called just once.
    * @throws Exception
    */
-  public void releaseResources() throws Exception {
+  private void releaseResources() throws Exception {
     consumer.shutdown();
   }
 

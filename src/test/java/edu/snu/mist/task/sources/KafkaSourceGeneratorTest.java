@@ -31,14 +31,11 @@ import org.apache.reef.tang.Tang;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Logger;
 
 public final class KafkaSourceGeneratorTest {
-
-  private static final Logger LOG = Logger.getLogger(KafkaSourceGeneratorTest.class.getName());
-
   /**
    * Zookeeper port for the Kafka consumer to connect to. 2181 is the default Zookeeper port.
    */
@@ -82,38 +79,44 @@ public final class KafkaSourceGeneratorTest {
     jcb.bindImplementation(SourceGenerator.class, TextKafkaStreamGenerator.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
 
-    final SourceGenerator<String> sourceGenerator = injector.getInstance(SourceGenerator.class);
+    //Try is used to auto-close the sourceGenerator.
+    try (final SourceGenerator<String> sourceGenerator = injector.getInstance(SourceGenerator.class)) {
+      final CountDownLatch latch = new CountDownLatch(inputStream.size());
 
-    //As the consumer thread is setting up, the other thread sleeps for 3 seconds.
-    serverExecutor.execute(new Runnable() {
-      public void run() {
-        sourceGenerator.setOutputEmitter((data) -> {
-          result.add(data);
-        });
-        sourceGenerator.start();
-      }
-    });
+      serverExecutor.execute(new Runnable() {
+        public void run() {
+          sourceGenerator.setOutputEmitter((data) -> {
+            result.add(data);
+            //The consumer counts down the latch when the data is received by the outputEmitter.
+            latch.countDown();
+          });
+          //The sourceGenerator and the consumer starts.
+          sourceGenerator.start();
+        }
+      });
 
-    Thread.sleep(3000);
+      //Producer property setup. Producer connects to KafkaServer, not the zookeeper server.
+      final Properties props = new Properties();
+      props.put("metadata.broker.list", String.format("%s:%s", kafkaAddress, kafkaPort));
+      props.put("serializer.class", "kafka.serializer.StringEncoder");
 
-    //Producer property setup. Producer connects to KafkaServer, not the zookeeper server.
-    final Properties props = new Properties();
-    props.put("metadata.broker.list", kafkaAddress + ":" + kafkaPort);
-    props.put("serializer.class", "kafka.serializer.StringEncoder");
+      final ProducerConfig producerConfig = new ProducerConfig(props);
+      final Producer<String, String> producer = new Producer<>(producerConfig);
 
-    final ProducerConfig producerConfig = new ProducerConfig(props);
-    final Producer<String, String> producer = new Producer<>(producerConfig);
+      final KeyedMessage<String, String> message1 = new KeyedMessage<>("testTopic", inputStream.get(0));
+      final KeyedMessage<String, String> message2 = new KeyedMessage<>("testTopic", inputStream.get(1));
+      final KeyedMessage<String, String> message3 = new KeyedMessage<>("testTopic", inputStream.get(2));
 
-    final KeyedMessage<String, String> message1 = new KeyedMessage<>("testTopic", inputStream.get(0));
-    final KeyedMessage<String, String> message2 = new KeyedMessage<>("testTopic", inputStream.get(1));
-    final KeyedMessage<String, String> message3 = new KeyedMessage<>("testTopic", inputStream.get(2));
+      //Producer sends the messages to the KafkaServer.
+      producer.send(message1);
+      producer.send(message2);
+      producer.send(message3);
 
-    //Producer sends the messages to the KafkaServer.
-    producer.send(message1);
-    producer.send(message2);
-    producer.send(message3);
-    producer.close();
+      //This thread waits for the consumer to receive the inputs.
+      latch.await();
 
-    Assert.assertEquals(inputStream, result);
+      producer.close();
+      Assert.assertEquals("Result was : " + result, inputStream, result);
+    }
   }
 }
