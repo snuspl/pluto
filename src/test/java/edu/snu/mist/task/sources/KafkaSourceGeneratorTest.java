@@ -34,8 +34,13 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public final class KafkaSourceGeneratorTest {
+
+  private static final Logger LOG = Logger.getLogger(KafkaSourceGeneratorTest.class.getName());
+
   /**
    * Zookeeper port for the Kafka consumer to connect to. 2181 is the default Zookeeper port.
    */
@@ -89,9 +94,11 @@ public final class KafkaSourceGeneratorTest {
             result.add(data);
             //The consumer counts down the latch when the data is received by the outputEmitter.
             latch.countDown();
+            LOG.log(Level.INFO, "Consumer received data. Latch countdown : " + latch.getCount());
           });
           //The sourceGenerator and the consumer starts.
           sourceGenerator.start();
+          LOG.log(Level.INFO, "SourceGenerator start.");
         }
       });
 
@@ -111,6 +118,8 @@ public final class KafkaSourceGeneratorTest {
       producer.send(message1);
       producer.send(message2);
       producer.send(message3);
+
+      LOG.log(Level.INFO, "Messages sent by producer.");
 
       //This thread waits for the consumer to receive the inputs.
       latch.await();
