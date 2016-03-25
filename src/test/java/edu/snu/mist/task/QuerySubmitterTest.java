@@ -26,8 +26,8 @@ import edu.snu.mist.task.operators.parameters.OperatorId;
 import edu.snu.mist.task.parameters.NumExecutors;
 import edu.snu.mist.task.parameters.NumSubmitterThreads;
 import edu.snu.mist.task.sinks.Sink;
-import edu.snu.mist.task.sources.BaseSourceGenerator;
-import edu.snu.mist.task.sources.SourceGenerator;
+import edu.snu.mist.task.sources.BaseSource;
+import edu.snu.mist.task.sources.Source;
 import junit.framework.Assert;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
@@ -80,7 +80,7 @@ public final class QuerySubmitterTest {
         "a mist rose out of the river",
         "the peaks were shrouded in mist");
 
-    final Map<SourceGenerator, Set<Operator>> sourceMap = new HashMap<>();
+    final Map<Source, Set<Operator>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
     // UDF functions for operators
@@ -118,7 +118,7 @@ public final class QuerySubmitterTest {
 
     // Create source
     final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
-    final SourceGenerator src = new TestSourceGenerator(inputs,
+    final Source src = new TestSource(inputs,
         identifierFactory.getNewInstance(queryId), identifierFactory.getNewInstance("testSource"));
 
     // Create operators
@@ -259,10 +259,10 @@ public final class QuerySubmitterTest {
   /**
    * Test source generator which generates inputs from List.
    */
-  final class TestSourceGenerator extends BaseSourceGenerator<String> {
+  final class TestSource extends BaseSource<String> {
     private final Iterator<String> inputs;
-    TestSourceGenerator(final List<String> inputs, final Identifier queryId,
-                        final Identifier sourceId) {
+    TestSource(final List<String> inputs, final Identifier queryId,
+               final Identifier sourceId) {
       super(1000, queryId, sourceId);
       this.inputs = inputs.iterator();
     }

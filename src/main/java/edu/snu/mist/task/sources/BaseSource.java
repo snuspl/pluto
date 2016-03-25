@@ -24,12 +24,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * This is base class for SourceGenerator.
+ * This is base class for Source.
  * This uses a single dedicated thread to fetch data from the socket server.
  * But, if the number of socket stream generator increases, this thread allocation could be a bottleneck.
- * TODO[MIST-152]: Threads of SourceGenerator should be managed judiciously
+ * TODO[MIST-152]: Threads of Source should be managed judiciously
  */
-public abstract class BaseSourceGenerator<I> implements SourceGenerator<I> {
+public abstract class BaseSource<I> implements Source<I> {
   /**
    * An output emitter.
    */
@@ -47,7 +47,7 @@ public abstract class BaseSourceGenerator<I> implements SourceGenerator<I> {
 
   /**
    * An executor service running this source generator.
-   * TODO[MIST-152]: Threads of SourceGenerator should be managed judiciously.
+   * TODO[MIST-152]: Threads of Source should be managed judiciously.
    */
   private final ExecutorService executorService;
 
@@ -57,7 +57,7 @@ public abstract class BaseSourceGenerator<I> implements SourceGenerator<I> {
   private final long sleepTime;
 
   /**
-   * Identifier of SourceGenerator.
+   * Identifier of Source.
    */
   protected final Identifier identifier;
 
@@ -66,10 +66,10 @@ public abstract class BaseSourceGenerator<I> implements SourceGenerator<I> {
    */
   protected final Identifier queryId;
 
-  public BaseSourceGenerator(final long sleepTime,
-                             final Identifier queryId,
-                             final Identifier identifier) {
-    // TODO[MIST-152]: Threads of SourceGenerator should be managed judiciously.
+  public BaseSource(final long sleepTime,
+                    final Identifier queryId,
+                    final Identifier identifier) {
+    // TODO[MIST-152]: Threads of Source should be managed judiciously.
     this.executorService = Executors.newSingleThreadExecutor();
     this.closed = new AtomicBoolean(false);
     this.started = new AtomicBoolean(false);
@@ -88,7 +88,7 @@ public abstract class BaseSourceGenerator<I> implements SourceGenerator<I> {
             final I input = nextInput();
             if (outputEmitter == null) {
               throw new RuntimeException("OutputEmitter should be set in " +
-                  BaseSourceGenerator.class.getName());
+                  BaseSource.class.getName());
             }
             if (input == null) {
               Thread.sleep(sleepTime);

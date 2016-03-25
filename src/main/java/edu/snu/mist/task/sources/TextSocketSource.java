@@ -30,12 +30,12 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 
 /**
- * This source generator fetches data stream from socket server and generates String inputs.
+ * This source fetches data stream from socket server and generates String inputs.
  * This uses a single dedicated thread to fetch data from the socket server.
  * But, if the number of socket stream generator increases, this thread allocation could be a bottleneck.
- * TODO[MIST-152]: Threads of SourceGenerator should be managed judiciously.
+ * TODO[MIST-152]: Threads of Source should be managed judiciously.
  */
-public final class TextSocketStreamGenerator extends BaseSourceGenerator<String> {
+public final class TextSocketSource extends BaseSource<String> {
 
   /**
    * A client socket.
@@ -48,7 +48,7 @@ public final class TextSocketStreamGenerator extends BaseSourceGenerator<String>
   private final BufferedReader bf;
 
   @Inject
-  private TextSocketStreamGenerator(
+  private TextSocketSource(
       @Parameter(SocketServerIp.class) final String serverIp,
       @Parameter(SocketServerPort.class) final int serverPort,
       @Parameter(DataFetchSleepTime.class) final long sleepTime,

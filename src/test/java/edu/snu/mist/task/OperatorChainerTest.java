@@ -20,7 +20,7 @@ import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.GraphUtils;
 import edu.snu.mist.task.operators.Operator;
 import edu.snu.mist.task.sinks.Sink;
-import edu.snu.mist.task.sources.SourceGenerator;
+import edu.snu.mist.task.sources.Source;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -50,11 +50,11 @@ public final class OperatorChainerTest {
   public void testComplexOperatorChaining() throws InjectionException {
     // Build a physical plan
     final DAG<Operator> operatorDAG = new AdjacentListDAG<>();
-    final Map<SourceGenerator, Set<Operator>> sourceMap = new HashMap<>();
+    final Map<Source, Set<Operator>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
-    final SourceGenerator src1 = mock(SourceGenerator.class);
-    final SourceGenerator src2 = mock(SourceGenerator.class);
+    final Source src1 = mock(Source.class);
+    final Source src2 = mock(Source.class);
 
     final Operator op11 = mock(Operator.class);
     when(op11.toString()).thenReturn("op11");
@@ -163,8 +163,8 @@ public final class OperatorChainerTest {
     Assert.assertEquals("The number of OperatorChain should be 5", 5, num);
 
     // src map
-    final Map<SourceGenerator, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
-    Assert.assertEquals("The number of SourceGenerator should be 2", 2, chainedSrcMap.size());
+    final Map<Source, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
+    Assert.assertEquals("The number of Source should be 2", 2, chainedSrcMap.size());
 
     final Set<OperatorChain> src1OpChain = new HashSet<>();
     src1OpChain.add(op11op12);
@@ -203,10 +203,10 @@ public final class OperatorChainerTest {
   public void testSequentialChaining() throws InjectionException {
     // Build a physical plan
     final DAG<Operator> operatorDAG = new AdjacentListDAG<>();
-    final Map<SourceGenerator, Set<Operator>> sourceMap = new HashMap<>();
+    final Map<Source, Set<Operator>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
-    final SourceGenerator src1 = mock(SourceGenerator.class);
+    final Source src1 = mock(Source.class);
     final Operator op11 = mock(Operator.class);
     when(op11.toString()).thenReturn("op11");
     final Operator op12 = mock(Operator.class);
@@ -263,8 +263,8 @@ public final class OperatorChainerTest {
     Assert.assertEquals("The number of OperatorChain should be 1", 1, num);
 
     // src map
-    final Map<SourceGenerator, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
-    Assert.assertEquals("The number of SourceGenerator should be 1", 1, chainedSrcMap.size());
+    final Map<Source, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
+    Assert.assertEquals("The number of Source should be 1", 1, chainedSrcMap.size());
     final Set<OperatorChain> src1OpChain = new HashSet<>();
     src1OpChain.add(op11op12op13);
     Assert.assertEquals("The mapped OperatorChain of src1 should be [op11->op12->op13]",
@@ -294,10 +294,10 @@ public final class OperatorChainerTest {
   public void testBranchTest() throws InjectionException {
     // Build a physical plan
     final DAG<Operator> operatorDAG = new AdjacentListDAG<>();
-    final Map<SourceGenerator, Set<Operator>> sourceMap = new HashMap<>();
+    final Map<Source, Set<Operator>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
-    final SourceGenerator src1 = mock(SourceGenerator.class);
+    final Source src1 = mock(Source.class);
     final Operator op11 = mock(Operator.class);
     when(op11.toString()).thenReturn("op11");
     final Operator op12 = mock(Operator.class);
@@ -382,8 +382,8 @@ public final class OperatorChainerTest {
     Assert.assertEquals("The number of OperatorChain should be 4", 4, num);
 
     // src map
-    final Map<SourceGenerator, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
-    Assert.assertEquals("The number of SourceGenerator should be 1", 1, chainedSrcMap.size());
+    final Map<Source, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
+    Assert.assertEquals("The number of Source should be 1", 1, chainedSrcMap.size());
 
     final Set<OperatorChain> src1OpChain = new HashSet<>();
     src1OpChain.add(op11op12);
@@ -426,12 +426,12 @@ public final class OperatorChainerTest {
   public void testMergingOperatorChaining() throws InjectionException {
     // Build a physical plan
     final DAG<Operator> operatorDAG = new AdjacentListDAG<>();
-    final Map<SourceGenerator, Set<Operator>> sourceMap = new HashMap<>();
+    final Map<Source, Set<Operator>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
-    final SourceGenerator src1 = mock(SourceGenerator.class);
-    final SourceGenerator src2 = mock(SourceGenerator.class);
-    final SourceGenerator src3 = mock(SourceGenerator.class);
+    final Source src1 = mock(Source.class);
+    final Source src2 = mock(Source.class);
+    final Source src3 = mock(Source.class);
 
     final Operator op11 = mock(Operator.class);
     when(op11.toString()).thenReturn("op11");
@@ -517,8 +517,8 @@ public final class OperatorChainerTest {
     Assert.assertEquals("The number of OperatorChain should be 4", 4, num);
 
     // src map
-    final Map<SourceGenerator, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
-    Assert.assertEquals("The number of SourceGenerator should be 3", 3, chainedSrcMap.size());
+    final Map<Source, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
+    Assert.assertEquals("The number of Source should be 3", 3, chainedSrcMap.size());
 
     final Set<OperatorChain> src1OpChain = new HashSet<>();
     src1OpChain.add(op11op12);
@@ -561,12 +561,12 @@ public final class OperatorChainerTest {
   public void testForkAndMergeChaining() throws InjectionException {
     // Build a physical plan
     final DAG<Operator> operatorDAG = new AdjacentListDAG<>();
-    final Map<SourceGenerator, Set<Operator>> sourceMap = new HashMap<>();
+    final Map<Source, Set<Operator>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
-    final SourceGenerator src1 = mock(SourceGenerator.class);
-    final SourceGenerator src2 = mock(SourceGenerator.class);
-    final SourceGenerator src3 = mock(SourceGenerator.class);
+    final Source src1 = mock(Source.class);
+    final Source src2 = mock(Source.class);
+    final Source src3 = mock(Source.class);
 
     final Operator opA = mock(Operator.class);
     when(opA.toString()).thenReturn("opA");
@@ -662,8 +662,8 @@ public final class OperatorChainerTest {
     Assert.assertEquals("The number of OperatorChain should be 5", 5, num);
 
     // src map
-    final Map<SourceGenerator, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
-    Assert.assertEquals("The number of SourceGenerator should be 1", 1, chainedSrcMap.size());
+    final Map<Source, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
+    Assert.assertEquals("The number of Source should be 1", 1, chainedSrcMap.size());
 
     final Set<OperatorChain> src1OpChain = new HashSet<>();
     src1OpChain.add(opAchain);

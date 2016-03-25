@@ -20,7 +20,7 @@ import edu.snu.mist.common.GraphUtils;
 import edu.snu.mist.formats.avro.LogicalPlan;
 import edu.snu.mist.task.operators.Operator;
 import edu.snu.mist.task.parameters.NumSubmitterThreads;
-import edu.snu.mist.task.sources.SourceGenerator;
+import edu.snu.mist.task.sources.Source;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.annotations.Parameter;
@@ -40,7 +40,7 @@ import java.util.logging.Logger;
  * 1) receives logical plans from clients and converts the logical plans to physical plans,
  * 2) chains the physical operators and make OperatorChain,
  * 3) allocates the OperatorChains to the MistExecutors,
- * 4) and sets the OutputEmitters of the SourceGenerator and OperatorChains
+ * 4) and sets the OutputEmitters of the Source and OperatorChains
  * to forward their outputs to next OperatorChains.
  * 5) starts to receive input data stream from the source of the query.
  */
@@ -128,7 +128,7 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
       }
     }
 
-    for (final SourceGenerator src : chainPhysicalPlan.getSourceMap().keySet()) {
+    for (final Source src : chainPhysicalPlan.getSourceMap().keySet()) {
       final Set<OperatorChain> nextOps = chainPhysicalPlan.getSourceMap().get(src);
       // Sets SourceOutputEmitter to the sources
       src.setOutputEmitter(new SourceOutputEmitter<>(nextOps));

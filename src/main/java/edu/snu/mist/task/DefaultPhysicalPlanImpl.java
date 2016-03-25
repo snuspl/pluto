@@ -17,7 +17,7 @@ package edu.snu.mist.task;
 
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.task.sinks.Sink;
-import edu.snu.mist.task.sources.SourceGenerator;
+import edu.snu.mist.task.sources.Source;
 
 import java.util.Map;
 import java.util.Set;
@@ -31,7 +31,7 @@ final class DefaultPhysicalPlanImpl<E> implements PhysicalPlan<E> {
   /**
    * A map of source generator and operators.
    */
-  private final Map<SourceGenerator, Set<E>> sourceMap;
+  private final Map<Source, Set<E>> sourceMap;
 
   /**
    * A DAG of operators.
@@ -43,7 +43,7 @@ final class DefaultPhysicalPlanImpl<E> implements PhysicalPlan<E> {
    */
   private final Map<E, Set<Sink>> sinkMap;
 
-  public DefaultPhysicalPlanImpl(final Map<SourceGenerator, Set<E>> sourceMap,
+  public DefaultPhysicalPlanImpl(final Map<Source, Set<E>> sourceMap,
                                  final DAG<E> operators,
                                  final Map<E, Set<Sink>> sinkMap) {
     this.sourceMap = sourceMap;
@@ -57,7 +57,7 @@ final class DefaultPhysicalPlanImpl<E> implements PhysicalPlan<E> {
   }
 
   @Override
-  public Map<SourceGenerator, Set<E>> getSourceMap() {
+  public Map<Source, Set<E>> getSourceMap() {
     return sourceMap;
   }
 
