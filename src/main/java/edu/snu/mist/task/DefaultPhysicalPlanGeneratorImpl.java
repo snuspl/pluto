@@ -29,8 +29,8 @@ import edu.snu.mist.task.operators.parameters.OperatorId;
 import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sinks.TextSocketSink;
 import edu.snu.mist.task.sinks.parameters.SinkId;
-import edu.snu.mist.task.sources.SourceGenerator;
-import edu.snu.mist.task.sources.TextSocketStreamGenerator;
+import edu.snu.mist.task.sources.Source;
+import edu.snu.mist.task.sources.TextSocketSource;
 import edu.snu.mist.task.sources.parameters.SourceId;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.reef.io.Tuple;
@@ -62,10 +62,10 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   }
 
   /*
-   * This private method makes a TextSocketStreamGenerator from a source configuration.
+   * This private method makes a TextSocketSource from a source configuration.
    */
-  private TextSocketStreamGenerator getTextSocketStreamGenerator(final String queryId,
-                                                                 final Map<CharSequence, Object> sourceConf)
+  private TextSocketSource getTextSocketSource(final String queryId,
+                                               final Map<CharSequence, Object> sourceConf)
     throws IllegalArgumentException, InjectionException {
     final Map<String, Object> sourceConfString = new HashMap<>();
     for (final CharSequence charSeqKey : sourceConf.keySet()) {
@@ -79,7 +79,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     cb.bindNamedParameter(SocketServerPort.class, socketHostPort);
     cb.bindNamedParameter(QueryId.class, queryId);
     cb.bindNamedParameter(SourceId.class, operatorIdGenerator.generate());
-    return Tang.Factory.getTang().newInjector(cb.build()).getInstance(TextSocketStreamGenerator.class);
+    return Tang.Factory.getTang().newInjector(cb.build()).getInstance(TextSocketSource.class);
   }
 
   /*
@@ -163,7 +163,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     final String queryId = queryIdAndLogicalPlan.getKey();
     final LogicalPlan logicalPlan = queryIdAndLogicalPlan.getValue();
     final List<Object> deserializedVertices = new ArrayList<>();
-    final Map<SourceGenerator, Set<Operator>> sourceMap = new HashMap<>();
+    final Map<Source, Set<Operator>> sourceMap = new HashMap<>();
     final DAG<Operator> operators = new AdjacentListDAG<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
     // Deserialize vertices
@@ -173,9 +173,9 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
           final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
           switch (sourceInfo.getSourceType()) {
             case TEXT_SOCKET_SOURCE: {
-              final TextSocketStreamGenerator textSocketStreamGenerator
-                  = getTextSocketStreamGenerator(queryId, sourceInfo.getSourceConfiguration());
-              deserializedVertices.add(textSocketStreamGenerator);
+              final TextSocketSource textSocketSource
+                  = getTextSocketSource(queryId, sourceInfo.getSourceConfiguration());
+              deserializedVertices.add(textSocketSource);
               break;
             }
             case REEF_NETWORK_SOURCE: {
@@ -228,7 +228,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       switch (logicalPlan.getVertices().get(srcIndex).getVertexType()) {
         case SOURCE: {
           if (!sourceMap.containsKey(deserializedSrcVertex)) {
-            sourceMap.put((SourceGenerator) deserializedSrcVertex, new HashSet<>());
+            sourceMap.put((Source) deserializedSrcVertex, new HashSet<>());
           }
           sourceMap.get(deserializedSrcVertex).add((Operator) deserializedDstVertex);
           break;
@@ -251,8 +251,8 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
               break;
             }
             default: {
-              // ToVertex type is SourceGenerator, but it's illegal!
-              throw new IllegalArgumentException("MISTTask: Invalid edge detected! SourceGenerator cannot have" +
+              // ToVertex type is Source, but it's illegal!
+              throw new IllegalArgumentException("MISTTask: Invalid edge detected! Source cannot have" +
                   " ingoing edges!");
             }
           }

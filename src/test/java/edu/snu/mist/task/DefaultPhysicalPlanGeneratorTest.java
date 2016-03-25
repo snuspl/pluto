@@ -27,8 +27,8 @@ import edu.snu.mist.formats.avro.LogicalPlan;
 import edu.snu.mist.task.operators.*;
 import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sinks.TextSocketSink;
-import edu.snu.mist.task.sources.SourceGenerator;
-import edu.snu.mist.task.sources.TextSocketStreamGenerator;
+import edu.snu.mist.task.sources.Source;
+import edu.snu.mist.task.sources.TextSocketSource;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -93,10 +93,10 @@ public final class DefaultPhysicalPlanGeneratorTest {
     final Tuple<String, LogicalPlan> tuple = new Tuple<>("query-test", logicalPlan);
     final PhysicalPlan<Operator> physicalPlan = ppg.generate(tuple);
 
-    final Map<SourceGenerator, Set<Operator>> sourceMap = physicalPlan.getSourceMap();
+    final Map<Source, Set<Operator>> sourceMap = physicalPlan.getSourceMap();
     Assert.assertEquals(1, sourceMap.keySet().size());
-    final SourceGenerator source = sourceMap.keySet().iterator().next();
-    Assert.assertTrue(source instanceof TextSocketStreamGenerator);
+    final Source source = sourceMap.keySet().iterator().next();
+    Assert.assertTrue(source instanceof TextSocketSource);
     Assert.assertEquals(1, sourceMap.get(source).size());
     final Operator operator1 = sourceMap.get(source).iterator().next();
     Assert.assertTrue(operator1 instanceof FlatMapOperator);

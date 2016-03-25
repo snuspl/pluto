@@ -20,20 +20,20 @@ import edu.snu.mist.task.common.OutputEmittable;
 import org.apache.reef.wake.Identifier;
 
 /**
- * SourceGenerator generates input stream.
- * It supports fetching input data from external systems, such as kafka and HDFS,
+ * Source receives input stream.
+ * It fetches input data from external systems, such as kafka and HDFS,
  * or receives input data from IoT devices and network connection.
  * After that, it sends the inputs to the OutputEmitter which forwards the inputs to next Operators.
  */
-public interface SourceGenerator<I> extends OutputEmittable<I>, AutoCloseable {
+public interface Source<I> extends OutputEmittable<I>, AutoCloseable {
 
   /**
-   * Starts to generate source stream and forwards inputs to the OutputEmitter.
+   * Starts to receive source stream and forwards inputs to the OutputEmitter.
    */
   void start();
 
   /**
-   * Identifier of source generator.
+   * Identifier of source.
    */
   Identifier getIdentifier();
 

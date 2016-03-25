@@ -39,9 +39,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
-public final class SocketSourceGeneratorTest {
+public final class SocketSourceTest {
 
-  private static final Logger LOG = Logger.getLogger(SocketSourceGeneratorTest.class.getName());
+  private static final Logger LOG = Logger.getLogger(SocketSourceTest.class.getName());
 
   /**
    * Server socket.
@@ -69,12 +69,12 @@ public final class SocketSourceGeneratorTest {
   }
 
   /**
-   * Test whether TextSocketStreamGenerator fetches input stream
+   * Test whether TextSocketSource fetches input stream
    * from socket server and generates data correctly.
    * @throws Exception
    */
   @Test
-  public void testSocketSourceGenerator() throws Exception {
+  public void testSocketSource() throws Exception {
     final List<String> inputStream = Arrays.asList(
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
         "In in leo nec erat fringilla mattis eu non massa.",
@@ -101,17 +101,17 @@ public final class SocketSourceGeneratorTest {
     jcb.bindNamedParameter(SourceId.class, "testSource");
     jcb.bindNamedParameter(SocketServerIp.class, serverIpAddress);
     jcb.bindNamedParameter(SocketServerPort.class,  Integer.toString(port));
-    jcb.bindImplementation(SourceGenerator.class, TextSocketStreamGenerator.class);
+    jcb.bindImplementation(Source.class, TextSocketSource.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    try (final SourceGenerator<String> sourceGenerator = injector.getInstance(SourceGenerator.class)) {
-      sourceGenerator.setOutputEmitter((data) -> {
+    try (final Source<String> source = injector.getInstance(Source.class)) {
+      source.setOutputEmitter((data) -> {
         result.add(data);
         countDownLatch.countDown();
       });
-      sourceGenerator.start();
+      source.start();
       countDownLatch.await();
     } finally {
-      Assert.assertEquals("SourceGenerator should generate " + inputStream,
+      Assert.assertEquals("Source should generate " + inputStream,
           inputStream, result);
     }
   }
