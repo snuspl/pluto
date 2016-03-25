@@ -23,17 +23,13 @@ import edu.snu.mist.common.ExternalJarObjectInputStream;
 import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.driver.parameters.TempFolderPath;
 import edu.snu.mist.formats.avro.*;
-import edu.snu.mist.task.common.parameters.SocketServerIp;
-import edu.snu.mist.task.common.parameters.SocketServerPort;
 import edu.snu.mist.task.operators.*;
 import edu.snu.mist.task.operators.parameters.KeyIndex;
 import edu.snu.mist.task.operators.parameters.OperatorId;
+import edu.snu.mist.task.sinks.NettyTextSinkFactory;
 import edu.snu.mist.task.sinks.Sink;
-import edu.snu.mist.task.sinks.TextSocketSink;
-import edu.snu.mist.task.sinks.parameters.SinkId;
+import edu.snu.mist.task.sources.NettyTextSourceFactory;
 import edu.snu.mist.task.sources.Source;
-import edu.snu.mist.task.sources.TextSocketSource;
-import edu.snu.mist.task.sources.parameters.SourceId;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.reef.io.Tuple;
@@ -64,21 +60,27 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   private static final Logger LOG = Logger.getLogger(DefaultPhysicalPlanGeneratorImpl.class.getName());
 
   private final OperatorIdGenerator operatorIdGenerator;
+  private final NettyTextSourceFactory sourceFactory;
+  private final NettyTextSinkFactory sinkFactory;
   private final String tmpFolderPath;
 
   @Inject
   private DefaultPhysicalPlanGeneratorImpl(final OperatorIdGenerator operatorIdGenerator,
-                                           @Parameter(TempFolderPath.class) final String tmpFolderPath) {
+                                           @Parameter(TempFolderPath.class) final String tmpFolderPath,
+                                           final NettyTextSourceFactory sourceFactory,
+                                           final NettyTextSinkFactory sinkFactory) {
     this.operatorIdGenerator = operatorIdGenerator;
+    this.sourceFactory = sourceFactory;
+    this.sinkFactory = sinkFactory;
     this.tmpFolderPath = tmpFolderPath;
   }
 
   /*
-   * This private method makes a TextSocketSource from a source configuration.
+   * This private method makes a NettyTextSocketSource from a source configuration.
    */
-  private TextSocketSource getTextSocketSource(final String queryId,
+  private Source getNettyTextSocketSource(final String queryId,
                                                final Map<CharSequence, Object> sourceConf)
-    throws IllegalArgumentException, InjectionException {
+      throws IllegalArgumentException, InjectionException {
     final Map<String, Object> sourceConfString = new HashMap<>();
     for (final CharSequence charSeqKey : sourceConf.keySet()) {
       sourceConfString.put(charSeqKey.toString(), sourceConf.get(charSeqKey));
@@ -86,19 +88,20 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     final JavaConfigurationBuilder cb = Tang.Factory.getTang().newConfigurationBuilder();
     final String socketHostAddress = sourceConfString.get(TextSocketSourceParameters.SOCKET_HOST_ADDRESS).toString();
     final String socketHostPort = sourceConfString.get(TextSocketSourceParameters.SOCKET_HOST_PORT).toString();
-
-    cb.bindNamedParameter(SocketServerIp.class, socketHostAddress);
-    cb.bindNamedParameter(SocketServerPort.class, socketHostPort);
-    cb.bindNamedParameter(QueryId.class, queryId);
-    cb.bindNamedParameter(SourceId.class, operatorIdGenerator.generate());
-    return Tang.Factory.getTang().newInjector(cb.build()).getInstance(TextSocketSource.class);
+    try {
+      return sourceFactory.newSource(queryId,
+          operatorIdGenerator.generate(), socketHostAddress, Integer.valueOf(socketHostPort));
+    } catch (final Exception e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
+    }
   }
 
   /*
-   * This private method makes a TextSocketSink from a sink configuration.
+   * This private method makes a NettyTextSocketSink from a sink configuration.
    */
-  private TextSocketSink getTextSocketSink(final String queryId, final Map<CharSequence, Object> sinkConf)
-    throws IllegalArgumentException, InjectionException {
+  private Sink getNettyTextSocketSink(final String queryId, final Map<CharSequence, Object> sinkConf)
+      throws IllegalArgumentException, InjectionException {
     final Map<String, Object> sinkConfString = new HashMap<>();
     for (final CharSequence charSeqKey : sinkConf.keySet()) {
       sinkConfString.put(charSeqKey.toString(), sinkConf.get(charSeqKey));
@@ -106,11 +109,13 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     final JavaConfigurationBuilder cb = Tang.Factory.getTang().newConfigurationBuilder();
     final String socketHostAddress = sinkConfString.get(TextSocketSinkParameters.SOCKET_HOST_ADDRESS).toString();
     final String socketHostPort = sinkConfString.get(TextSocketSinkParameters.SOCKET_HOST_PORT).toString();
-    cb.bindNamedParameter(SocketServerIp.class, socketHostAddress);
-    cb.bindNamedParameter(SocketServerPort.class, socketHostPort);
-    cb.bindNamedParameter(QueryId.class, queryId);
-    cb.bindNamedParameter(SinkId.class, operatorIdGenerator.generate());
-    return Tang.Factory.getTang().newInjector(cb.build()).getInstance(TextSocketSink.class);
+    try {
+      return sinkFactory.newSink(queryId, operatorIdGenerator.generate(),
+          socketHostAddress, Integer.valueOf(socketHostPort));
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
+    }
   }
 
   /*
@@ -207,8 +212,8 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
           final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
           switch (sourceInfo.getSourceType()) {
             case TEXT_SOCKET_SOURCE: {
-              final TextSocketSource textSocketSource
-                  = getTextSocketSource(queryId, sourceInfo.getSourceConfiguration());
+              final Source textSocketSource
+                  = getNettyTextSocketSource(queryId, sourceInfo.getSourceConfiguration());
               deserializedVertices.add(textSocketSource);
               break;
             }
@@ -235,7 +240,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
           final SinkInfo sinkInfo = (SinkInfo) vertex.getAttributes();
           switch (sinkInfo.getSinkType()) {
             case TEXT_SOCKET_SINK: {
-              final TextSocketSink textSocketSink = getTextSocketSink(queryId, sinkInfo.getSinkConfiguration());
+              final Sink textSocketSink = getNettyTextSocketSink(queryId, sinkInfo.getSinkConfiguration());
               deserializedVertices.add(textSocketSink);
               break;
             }

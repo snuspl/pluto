@@ -25,10 +25,10 @@ import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.LogicalPlan;
 import edu.snu.mist.task.operators.*;
+import edu.snu.mist.task.sinks.NettyTextSink;
 import edu.snu.mist.task.sinks.Sink;
-import edu.snu.mist.task.sinks.TextSocketSink;
+import edu.snu.mist.task.sources.NettyTextSource;
 import edu.snu.mist.task.sources.Source;
-import edu.snu.mist.task.sources.TextSocketSource;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -98,7 +98,7 @@ public final class DefaultPhysicalPlanGeneratorTest {
     final Map<Source, Set<Operator>> sourceMap = physicalPlan.getSourceMap();
     Assert.assertEquals(1, sourceMap.keySet().size());
     final Source source = sourceMap.keySet().iterator().next();
-    Assert.assertTrue(source instanceof TextSocketSource);
+    Assert.assertTrue(source instanceof NettyTextSource);
     Assert.assertEquals(1, sourceMap.get(source).size());
     final Operator operator1 = sourceMap.get(source).iterator().next();
     Assert.assertTrue(operator1 instanceof FlatMapOperator);
@@ -121,6 +121,6 @@ public final class DefaultPhysicalPlanGeneratorTest {
     Assert.assertTrue(sinkMap.containsKey(operator4));
     Assert.assertEquals(1, sinkMap.get(operator4).size());
     final Sink sink = sinkMap.get(operator4).iterator().next();
-    Assert.assertTrue(sink instanceof TextSocketSink);
+    Assert.assertTrue(sink instanceof NettyTextSink);
   }
 }
