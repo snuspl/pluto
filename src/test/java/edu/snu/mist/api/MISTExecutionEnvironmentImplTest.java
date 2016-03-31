@@ -29,6 +29,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 
 /**
@@ -59,7 +60,7 @@ public class MISTExecutionEnvironmentImplTest {
    * Test for MISTExecutionEnvironmentImpl.
    */
   @Test
-  public void testMISTExecutionEnvironment() throws IOException, InjectionException {
+  public void testMISTExecutionEnvironment() throws IOException, InjectionException, URISyntaxException {
     // Step 1: Launch mock RPC Server
     final Server driverServer = new NettyServer(new SpecificResponder(MistTaskProvider.class, new MockDriverServer()),
         new InetSocketAddress(driverPortNum));

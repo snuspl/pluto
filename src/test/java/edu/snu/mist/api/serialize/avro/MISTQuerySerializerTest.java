@@ -37,6 +37,8 @@ import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.function.BiFunction;
@@ -77,7 +79,7 @@ public final class MISTQuerySerializerTest {
    * @throws InjectionException
    */
   @Test
-  public void mistComplexQuerySerializeTest() throws InjectionException {
+  public void mistComplexQuerySerializeTest() throws InjectionException, IOException, URISyntaxException {
     final MISTQuery complexQuery = new REEFNetworkSourceStream<String>(reefNetworkSourceConf)
         .flatMap(expectedFlatMapFunc)
         .filter(expectedFilterPredicate)
@@ -216,7 +218,7 @@ public final class MISTQuerySerializerTest {
    * @throws InjectionException
    */
   @Test
-  public void mistTextSocketSerializeTest() throws InjectionException {
+  public void mistTextSocketSerializeTest() throws InjectionException, IOException, URISyntaxException {
     final MISTQuery textSocketQuery = new TextSocketSourceStream<String>(textSocketSourceConf)
         .flatMap(expectedFlatMapFunc)
         .textSocketOutput(textSocketSinkConf)

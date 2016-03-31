@@ -28,6 +28,12 @@ import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 /**
@@ -39,14 +45,33 @@ public final class MISTQuerySerializerImpl implements MISTQuerySerializer {
   private final SinkInfoProvider sinkInfoProvider;
   private final WindowOperatorInfoProvider windowOperatorInfoProvider;
   private final InstantOperatorInfoProvider instantOperatorInfoProvider;
+  private final String runningJarPathString;
 
   @Inject
-  private MISTQuerySerializerImpl() throws InjectionException {
+  private MISTQuerySerializerImpl(final String runningJarPath) throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     this.sourceInfoProvider = injector.getInstance(SourceInfoProvider.class);
     this.sinkInfoProvider = injector.getInstance(SinkInfoProvider.class);
     this.windowOperatorInfoProvider = injector.getInstance(WindowOperatorInfoProvider.class);
     this.instantOperatorInfoProvider = injector.getInstance(InstantOperatorInfoProvider.class);
+    this.runningJarPathString = runningJarPath;
+  }
+
+  @Inject
+  private MISTQuerySerializerImpl() throws InjectionException, URISyntaxException {
+    final Injector injector = Tang.Factory.getTang().newInjector();
+    this.sourceInfoProvider = injector.getInstance(SourceInfoProvider.class);
+    this.sinkInfoProvider = injector.getInstance(SinkInfoProvider.class);
+    this.windowOperatorInfoProvider = injector.getInstance(WindowOperatorInfoProvider.class);
+    this.instantOperatorInfoProvider = injector.getInstance(InstantOperatorInfoProvider.class);
+    final String jarPathCandidate = MISTQuerySerializerImpl.class.getProtectionDomain().getCodeSource().getLocation()
+        .toURI().toString();
+    System.out.println("Hey~ Hey~:" + jarPathCandidate);
+    if (!jarPathCandidate.endsWith(".jar")) {
+      this.runningJarPathString = null;
+    } else {
+      this.runningJarPathString = jarPathCandidate;
+    }
   }
 
   private Vertex buildAvroVertex(final Object apiVertex) {
@@ -71,10 +96,23 @@ public final class MISTQuerySerializerImpl implements MISTQuerySerializer {
   }
 
   @Override
-  public LogicalPlan queryToLogicalPlan(final MISTQuery query) {
+  public LogicalPlan queryToLogicalPlan(final MISTQuery query) throws IOException, URISyntaxException {
     final List<Object> apiVertices = new ArrayList<>();
     final List<Edge> edges = new ArrayList<>();
     final Queue<Object> queue = new LinkedList<>();
+    final byte[] runningJarBytes;
+    final boolean isJarSerialized;
+    if (runningJarPathString == null) {
+      runningJarBytes = new byte[1];
+      runningJarBytes[0] = 0;
+      isJarSerialized = false;
+    } else {
+      // Serialize running JAR file first
+      final File runningJarFile = new File(runningJarPathString.substring(5));
+      final Path runningJarPath = runningJarFile.toPath();
+      runningJarBytes = Files.readAllBytes(runningJarPath);
+      isJarSerialized = true;
+    }
     // Traverse queries in BFS order
     apiVertices.addAll(query.getQuerySinks());
     queue.addAll(query.getQuerySinks());
@@ -114,6 +152,8 @@ public final class MISTQuerySerializerImpl implements MISTQuerySerializer {
     // Build logical plan using serialized vertices and edges.
     final LogicalPlan.Builder logicalPlanBuilder = LogicalPlan.newBuilder();
     final LogicalPlan logicalPlan = logicalPlanBuilder
+        .setIsJarSerialized(isJarSerialized)
+        .setJar(ByteBuffer.wrap(runningJarBytes))
         .setVertices(serializedVertices)
         .setEdges(edges)
         .build();
