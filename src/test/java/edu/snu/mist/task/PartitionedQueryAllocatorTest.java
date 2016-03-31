@@ -73,4 +73,25 @@ public final class PartitionedQueryAllocatorTest {
       index = (index + 1) % numExecutors;
     }
   }
+
+  @Test
+  public void simpleExecutorChainAllocatorTest() throws InjectionException {
+    final int numQueries = 10;
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    // Create a chain allocator which creates a executor for each query.
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final SimplePartitionedQueryImpl simpleExecutorChainAllocator =
+        injector.getInstance(SimplePartitionedQueryImpl.class);
+
+    for (int i = 0; i < numQueries; i++) {
+      // DAG<OperatorChain> == a query
+      final DAG<PartitionedQuery> partitionedQueryDAG = new AdjacentListDAG<>();
+      final PartitionedQuery partitionedQuery = new DefaultPartitionedQuery();
+      partitionedQueryDAG.addVertex(partitionedQuery);
+      simpleExecutorChainAllocator.allocate(partitionedQueryDAG);
+      final List<MistExecutor> executors = simpleExecutorChainAllocator.getExecutors();
+      Assert.assertEquals("Assigned executor should be " + executors.get(i).getIdentifier(),
+          executors.get(i), partitionedQuery.getExecutor());
+    }
+  }
 }
