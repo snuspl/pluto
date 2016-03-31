@@ -43,6 +43,7 @@ public final class ThreadExecutorTest {
     executor.close();
   }
 
+  /*
   @Test(timeout = 5000L)
   public void dynamicSingleThreadExecutorTest() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
@@ -63,4 +64,5 @@ public final class ThreadExecutorTest {
     countDownLatch.await();
     executor.close();
   }
+  */
 }
