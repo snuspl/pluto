@@ -21,28 +21,28 @@ import edu.snu.mist.task.executor.MistExecutor;
 import java.util.Set;
 
 /**
- * This emitter emits the outputs to the next OperatorChains that get inputs from the sources.
+ * This emitter emits the outputs to the next PartitionedQueries that get inputs from the sources.
  * It always submits jobs to MistExecutors.
  *  @param <I>
  */
 final class SourceOutputEmitter<I> implements OutputEmitter<I> {
 
   /**
-   * Next OperatorChains.
+   * Next PartitionedQueries.
    */
-  private final Set<OperatorChain> nextOps;
+  private final Set<PartitionedQuery> nextOps;
 
-  public SourceOutputEmitter(final Set<OperatorChain> nextOps) {
+  public SourceOutputEmitter(final Set<PartitionedQuery> nextOps) {
     this.nextOps = nextOps;
   }
 
   @Override
   public void emit(final I input) {
-    for (final OperatorChain nextOp : nextOps) {
+    for (final PartitionedQuery nextOp : nextOps) {
       final MistExecutor executor = nextOp.getExecutor();
-      final OperatorChainJob operatorChainJob = new DefaultOperatorChainJob(nextOp, input);
+      final PartitionedQueryTask partitionedQueryTask = new DefaultPartitionedQueryTask(nextOp, input);
       // Always submits a job to the MistExecutor when inputs are received.
-      executor.submit(operatorChainJob);
+      executor.submit(partitionedQueryTask);
     }
   }
 }

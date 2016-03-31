@@ -30,45 +30,45 @@ import org.junit.Test;
 import java.util.Iterator;
 import java.util.List;
 
-public final class OperatorChainAllocatorTest {
+public final class PartitionedQueryAllocatorTest {
 
   /**
-   * Test if the OperatorChainAllocator allocates 10 operatorChains which are sequentially connected
+   * Test if the PartitionedQueryAllocator allocates 10 partitionedQueries which are sequentially connected
    * to 4 executors in round-robin way.
    * @throws InjectionException
    */
   @Test
   public void roundRobinAllocationTest() throws InjectionException {
     final int numExecutors = 4;
-    final int numOperatorChains = 10;
+    final int numPartitionedQueries = 10;
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     // Create 4 MistExecutors
     jcb.bindNamedParameter(NumExecutors.class, Integer.toString(4));
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final ExecutorListProvider executorListProvider = injector.getInstance(ExecutorListProvider.class);
-    final DAG<OperatorChain> operatorChainDAG = new AdjacentListDAG<>();
-    final OperatorChainAllocator operatorChainAllocator =
-        injector.getInstance(DefaultOperatorChainAllocatorImpl.class);
+    final DAG<PartitionedQuery> partitionedQueryDAG = new AdjacentListDAG<>();
+    final PartitionedQueryAllocator partitionedQueryAllocator =
+        injector.getInstance(DefaultPartitionedQueryAllocatorImpl.class);
 
-    // Create 10 OperatorChains which are sequentially connected.
-    OperatorChain src = new DefaultOperatorChain();
-    operatorChainDAG.addVertex(src);
-    for (int i = 1; i < numOperatorChains; i++) {
-      final OperatorChain dest = new DefaultOperatorChain();
-      operatorChainDAG.addVertex(dest);
-      operatorChainDAG.addEdge(src, dest);
+    // Create 10 PartitionedQueries which are sequentially connected.
+    PartitionedQuery src = new DefaultPartitionedQuery();
+    partitionedQueryDAG.addVertex(src);
+    for (int i = 1; i < numPartitionedQueries; i++) {
+      final PartitionedQuery dest = new DefaultPartitionedQuery();
+      partitionedQueryDAG.addVertex(dest);
+      partitionedQueryDAG.addEdge(src, dest);
       src = dest;
     }
 
-    operatorChainAllocator.allocate(operatorChainDAG);
-    // check if the OperatorChains are allocated to the MistExecutors in round-robin way
-    final Iterator<OperatorChain> operatorChainIterator = GraphUtils.topologicalSort(operatorChainDAG);
+    partitionedQueryAllocator.allocate(partitionedQueryDAG);
+    // check if the PartitionedQueries are allocated to the MistExecutors in round-robin way
+    final Iterator<PartitionedQuery> partitionedQueryIterator = GraphUtils.topologicalSort(partitionedQueryDAG);
     final List<MistExecutor> executors = executorListProvider.getExecutors();
     int index = 0;
-    while (operatorChainIterator.hasNext()) {
-      final OperatorChain operatorChain = operatorChainIterator.next();
+    while (partitionedQueryIterator.hasNext()) {
+      final PartitionedQuery partitionedQuery = partitionedQueryIterator.next();
       Assert.assertEquals("Assigned executor should be " + executors.get(index).getIdentifier(),
-          executors.get(index), operatorChain.getExecutor());
+          executors.get(index), partitionedQuery.getExecutor());
       // circular
       index = (index + 1) % numExecutors;
     }

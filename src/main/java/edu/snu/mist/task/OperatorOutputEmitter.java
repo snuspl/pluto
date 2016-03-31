@@ -21,44 +21,44 @@ import edu.snu.mist.task.executor.MistExecutor;
 import java.util.Set;
 
 /**
- * This emitter forwards current OperatorChain's outputs as next OperatorChains' inputs.
+ * This emitter forwards current PartitionedQuery's outputs as next PartitionedQueries' inputs.
  */
 final class OperatorOutputEmitter implements OutputEmitter {
 
   /**
-   * Current OperatorChain.
+   * Current PartitionedQuery.
    */
-  private final OperatorChain currChain;
+  private final PartitionedQuery currChain;
 
   /**
-   * Next OperatorChains.
+   * Next PartitionedQueries.
    */
-  private final Set<OperatorChain> nextChains;
+  private final Set<PartitionedQuery> nextChains;
 
-  OperatorOutputEmitter(final OperatorChain currChain,
-                        final Set<OperatorChain> nextChains) {
+  OperatorOutputEmitter(final PartitionedQuery currChain,
+                        final Set<PartitionedQuery> nextChains) {
     this.currChain = currChain;
     this.nextChains = nextChains;
   }
 
   /**
-   * This method emits the outputs to next OperatorChains.
-   * If the Executor of the current OperatorChain is same as that of next OperatorChain,
-   * the OutputEmitter directly forwards outputs of the current OperatorChain
-   * as inputs of the next OperatorChain.
-   * Otherwise, the OutputEmitter submits a job to the Executor of the next OperatorChain.
+   * This method emits the outputs to next PartitionedQueries.
+   * If the Executor of the current PartitionedQuery is same as that of next PartitionedQuery,
+   * the OutputEmitter directly forwards outputs of the current PartitionedQuery
+   * as inputs of the next PartitionedQuery.
+   * Otherwise, the OutputEmitter submits a job to the Executor of the next PartitionedQuery.
    * @param output an output
    */
   @Override
   public void emit(final Object output) {
     final MistExecutor srcExecutor = currChain.getExecutor();
-    for (final OperatorChain nextChain : nextChains) {
+    for (final PartitionedQuery nextChain : nextChains) {
       final MistExecutor destExecutor = nextChain.getExecutor();
       if (srcExecutor.equals(destExecutor)) {
         nextChain.handle(output);
       } else {
-        final OperatorChainJob operatorChainJob = new DefaultOperatorChainJob(nextChain, output);
-        destExecutor.submit(operatorChainJob);
+        final PartitionedQueryTask partitionedQueryTask = new DefaultPartitionedQueryTask(nextChain, output);
+        destExecutor.submit(partitionedQueryTask);
       }
     }
   }

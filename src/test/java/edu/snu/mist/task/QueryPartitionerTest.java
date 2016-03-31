@@ -33,8 +33,8 @@ import java.util.logging.Logger;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public final class OperatorChainerTest {
-  private static final Logger LOG = Logger.getLogger(OperatorChainerTest.class.getName());
+public final class QueryPartitionerTest {
+  private static final Logger LOG = Logger.getLogger(QueryPartitionerTest.class.getName());
 
   /**
    * Test complex chaining (branch and merge exist).
@@ -47,7 +47,7 @@ public final class OperatorChainerTest {
    * src2 -> [op21 -> op22] ->        -> [op23] -> sink2.
    */
   @Test
-  public void testComplexOperatorChaining() throws InjectionException {
+  public void testComplexQueryPartitioning() throws InjectionException {
     // Build a physical plan
     final DAG<Operator> operatorDAG = new AdjacentListDAG<>();
     final Map<Source, Set<Operator>> sourceMap = new HashMap<>();
@@ -102,83 +102,83 @@ public final class OperatorChainerTest {
     final PhysicalPlan<Operator> physicalPlan =
         new DefaultPhysicalPlanImpl<>(sourceMap, operatorDAG, sinkMap);
     final Injector injector = Tang.Factory.getTang().newInjector();
-    final OperatorChainer operatorChainer =
-        injector.getInstance(OperatorChainer.class);
+    final QueryPartitioner queryPartitioner =
+        injector.getInstance(QueryPartitioner.class);
 
     // convert
-    final PhysicalPlan<OperatorChain> chainedPhysicalPlan =
-        operatorChainer.chainOperators(physicalPlan);
+    final PhysicalPlan<PartitionedQuery> chainedPhysicalPlan =
+        queryPartitioner.chainOperators(physicalPlan);
 
     // check
 
-    final OperatorChain op11op12 = new DefaultOperatorChain();
+    final PartitionedQuery op11op12 = new DefaultPartitionedQuery();
     op11op12.insertToTail(op11); op11op12.insertToTail(op12);
 
-    final OperatorChain op13chain = new DefaultOperatorChain();
+    final PartitionedQuery op13chain = new DefaultPartitionedQuery();
     op13chain.insertToTail(op13);
 
-    final OperatorChain op14op15 = new DefaultOperatorChain();
+    final PartitionedQuery op14op15 = new DefaultPartitionedQuery();
     op14op15.insertToTail(op14); op14op15.insertToTail(op15);
 
-    final OperatorChain op21op22 = new DefaultOperatorChain();
+    final PartitionedQuery op21op22 = new DefaultPartitionedQuery();
     op21op22.insertToTail(op21); op21op22.insertToTail(op22);
 
-    final OperatorChain op23chain = new DefaultOperatorChain();
+    final PartitionedQuery op23chain = new DefaultPartitionedQuery();
     op23chain.insertToTail(op23);
 
-    final DAG<OperatorChain> operatorChainDAG = chainedPhysicalPlan.getOperators();
-    final Iterator<OperatorChain> iterator = GraphUtils.topologicalSort(operatorChainDAG);
+    final DAG<PartitionedQuery> partitionedQueryDAG = chainedPhysicalPlan.getOperators();
+    final Iterator<PartitionedQuery> iterator = GraphUtils.topologicalSort(partitionedQueryDAG);
     int num = 0;
 
     // check
     while (iterator.hasNext()) {
-      final OperatorChain operatorChain = iterator.next();
-      if (operatorChain.equals(op11op12)) {
-        final Set<OperatorChain> op11op12neighbor = new HashSet<>();
+      final PartitionedQuery partitionedQuery = iterator.next();
+      if (partitionedQuery.equals(op11op12)) {
+        final Set<PartitionedQuery> op11op12neighbor = new HashSet<>();
         op11op12neighbor.add(op13chain);
         Assert.assertEquals("[op11->op12]'s neighbor should be  [op13]",
-            op11op12neighbor, operatorChainDAG.getNeighbors(operatorChain));
-      } else if (operatorChain.equals(op13chain)) {
-        final Set<OperatorChain> op13neighbor = new HashSet<>();
+            op11op12neighbor, partitionedQueryDAG.getNeighbors(partitionedQuery));
+      } else if (partitionedQuery.equals(op13chain)) {
+        final Set<PartitionedQuery> op13neighbor = new HashSet<>();
         op13neighbor.add(op14op15);
         op13neighbor.add(op23chain);
         Assert.assertEquals("[op13]'s neighbor should be  [op14->op15], [op23]",
-            op13neighbor, operatorChainDAG.getNeighbors(operatorChain));
-      } else if (operatorChain.equals(op14op15)) {
+            op13neighbor, partitionedQueryDAG.getNeighbors(partitionedQuery));
+      } else if (partitionedQuery.equals(op14op15)) {
         Assert.assertEquals("[op13->op15]'s neighbor should be empty",
-            0, operatorChainDAG.getNeighbors(operatorChain).size());
-      } else if (operatorChain.equals(op21op22)) {
-        final Set<OperatorChain> op2122neighbor = new HashSet<>();
+            0, partitionedQueryDAG.getNeighbors(partitionedQuery).size());
+      } else if (partitionedQuery.equals(op21op22)) {
+        final Set<PartitionedQuery> op2122neighbor = new HashSet<>();
         op2122neighbor.add(op13chain);
         Assert.assertEquals("[op21->op22]'s neighbor should be  [op13]",
-            op2122neighbor, operatorChainDAG.getNeighbors(operatorChain));
-      } else if (operatorChain.equals(op23chain)) {
+            op2122neighbor, partitionedQueryDAG.getNeighbors(partitionedQuery));
+      } else if (partitionedQuery.equals(op23chain)) {
         Assert.assertEquals("[op23]'s neighbor should be empty",
-            0, operatorChainDAG.getNeighbors(operatorChain).size());
+            0, partitionedQueryDAG.getNeighbors(partitionedQuery).size());
       } else {
-        throw new RuntimeException("OperatorChain mismatched: " + operatorChain);
+        throw new RuntimeException("PartitionedQuery mismatched: " + partitionedQuery);
       }
       num += 1;
     }
-    Assert.assertEquals("The number of OperatorChain should be 5", 5, num);
+    Assert.assertEquals("The number of PartitionedQuery should be 5", 5, num);
 
     // src map
-    final Map<Source, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
+    final Map<Source, Set<PartitionedQuery>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
     Assert.assertEquals("The number of Source should be 2", 2, chainedSrcMap.size());
 
-    final Set<OperatorChain> src1OpChain = new HashSet<>();
+    final Set<PartitionedQuery> src1OpChain = new HashSet<>();
     src1OpChain.add(op11op12);
-    Assert.assertEquals("The mapped OperatorChain of src1 should be [op11->op12]",
+    Assert.assertEquals("The mapped PartitionedQuery of src1 should be [op11->op12]",
         src1OpChain, chainedSrcMap.get(src1));
 
-    final Set<OperatorChain> src2OpChain = new HashSet<>();
+    final Set<PartitionedQuery> src2OpChain = new HashSet<>();
     src2OpChain.add(op21op22);
-    Assert.assertEquals("The mapped OperatorChain of src2 should be [op21->op22]",
+    Assert.assertEquals("The mapped PartitionedQuery of src2 should be [op21->op22]",
         src2OpChain, chainedSrcMap.get(src2));
 
     // sink map
-    final Map<OperatorChain, Set<Sink>> chainedSinkMap = chainedPhysicalPlan.getSinkMap();
-    Assert.assertEquals("The number of OperatorChains connected to Sink should be 2", 2, chainedSinkMap.size());
+    final Map<PartitionedQuery, Set<Sink>> chainedSinkMap = chainedPhysicalPlan.getSinkMap();
+    Assert.assertEquals("The number of PartitionedQueries connected to Sink should be 2", 2, chainedSinkMap.size());
 
     final Set<Sink> sink1Set = new HashSet<>();
     sink1Set.add(sink1);
@@ -233,46 +233,46 @@ public final class OperatorChainerTest {
     final PhysicalPlan<Operator> physicalPlan =
         new DefaultPhysicalPlanImpl<>(sourceMap, operatorDAG, sinkMap);
     final Injector injector = Tang.Factory.getTang().newInjector();
-    final OperatorChainer operatorChainer =
-        injector.getInstance(OperatorChainer.class);
+    final QueryPartitioner queryPartitioner =
+        injector.getInstance(QueryPartitioner.class);
 
-    // Create OperatorChain's plan
-    final PhysicalPlan<OperatorChain> chainedPhysicalPlan =
-        operatorChainer.chainOperators(physicalPlan);
+    // Create PartitionedQuery's plan
+    final PhysicalPlan<PartitionedQuery> chainedPhysicalPlan =
+        queryPartitioner.chainOperators(physicalPlan);
 
     // check
-    final OperatorChain op11op12op13 = new DefaultOperatorChain();
+    final PartitionedQuery op11op12op13 = new DefaultPartitionedQuery();
     op11op12op13.insertToTail(op11);
     op11op12op13.insertToTail(op12);
     op11op12op13.insertToTail(op13);
 
-    final DAG<OperatorChain> operatorChainDAG = chainedPhysicalPlan.getOperators();
-    final Iterator<OperatorChain> iterator = GraphUtils.topologicalSort(operatorChainDAG);
+    final DAG<PartitionedQuery> partitionedQueryDAG = chainedPhysicalPlan.getOperators();
+    final Iterator<PartitionedQuery> iterator = GraphUtils.topologicalSort(partitionedQueryDAG);
     int num = 0;
 
     while (iterator.hasNext()) {
-      final OperatorChain operatorChain = iterator.next();
-      if (operatorChain.equals(op11op12op13)) {
+      final PartitionedQuery partitionedQuery = iterator.next();
+      if (partitionedQuery.equals(op11op12op13)) {
         Assert.assertEquals("[op11->op12->op13]'s neighbor should be  empty",
-            0, operatorChainDAG.getNeighbors(operatorChain).size());
+            0, partitionedQueryDAG.getNeighbors(partitionedQuery).size());
       } else {
-        throw new RuntimeException("OperatorChain mismatched: " + operatorChain);
+        throw new RuntimeException("PartitionedQuery mismatched: " + partitionedQuery);
       }
       num += 1;
     }
-    Assert.assertEquals("The number of OperatorChain should be 1", 1, num);
+    Assert.assertEquals("The number of PartitionedQuery should be 1", 1, num);
 
     // src map
-    final Map<Source, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
+    final Map<Source, Set<PartitionedQuery>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
     Assert.assertEquals("The number of Source should be 1", 1, chainedSrcMap.size());
-    final Set<OperatorChain> src1OpChain = new HashSet<>();
+    final Set<PartitionedQuery> src1OpChain = new HashSet<>();
     src1OpChain.add(op11op12op13);
-    Assert.assertEquals("The mapped OperatorChain of src1 should be [op11->op12->op13]",
+    Assert.assertEquals("The mapped PartitionedQuery of src1 should be [op11->op12->op13]",
         src1OpChain, chainedSrcMap.get(src1));
 
     // sink map
-    final Map<OperatorChain, Set<Sink>> chainedSinkMap = chainedPhysicalPlan.getSinkMap();
-    Assert.assertEquals("The number of OperatorChains connected to Sink should be 1", 1, chainedSinkMap.size());
+    final Map<PartitionedQuery, Set<Sink>> chainedSinkMap = chainedPhysicalPlan.getSinkMap();
+    Assert.assertEquals("The number of PartitionedQueries connected to Sink should be 1", 1, chainedSinkMap.size());
     final Set<Sink> sink1Set = new HashSet<>();
     sink1Set.add(sink1);
     Assert.assertEquals("The mapped Sink of [op11->op12->op13] should be sink1",
@@ -332,67 +332,67 @@ public final class OperatorChainerTest {
     final PhysicalPlan<Operator> physicalPlan =
         new DefaultPhysicalPlanImpl<>(sourceMap, operatorDAG, sinkMap);
     final Injector injector = Tang.Factory.getTang().newInjector();
-    final OperatorChainer operatorChainer =
-        injector.getInstance(OperatorChainer.class);
+    final QueryPartitioner queryPartitioner =
+        injector.getInstance(QueryPartitioner.class);
 
     // convert
-    final PhysicalPlan<OperatorChain> chainedPhysicalPlan =
-        operatorChainer.chainOperators(physicalPlan);
+    final PhysicalPlan<PartitionedQuery> chainedPhysicalPlan =
+        queryPartitioner.chainOperators(physicalPlan);
 
     // check
-    final OperatorChain op11op12 = new DefaultOperatorChain();
+    final PartitionedQuery op11op12 = new DefaultPartitionedQuery();
     op11op12.insertToTail(op11); op11op12.insertToTail(op12);
 
-    final OperatorChain op13chain = new DefaultOperatorChain();
+    final PartitionedQuery op13chain = new DefaultPartitionedQuery();
     op13chain.insertToTail(op13);
 
-    final OperatorChain op14chain = new DefaultOperatorChain();
+    final PartitionedQuery op14chain = new DefaultPartitionedQuery();
     op14chain.insertToTail(op14);
 
-    final OperatorChain op15chain = new DefaultOperatorChain();
+    final PartitionedQuery op15chain = new DefaultPartitionedQuery();
     op15chain.insertToTail(op15);
 
-    final DAG<OperatorChain> operatorChainDAG = chainedPhysicalPlan.getOperators();
-    final Iterator<OperatorChain> iterator = GraphUtils.topologicalSort(operatorChainDAG);
+    final DAG<PartitionedQuery> partitionedQueryDAG = chainedPhysicalPlan.getOperators();
+    final Iterator<PartitionedQuery> iterator = GraphUtils.topologicalSort(partitionedQueryDAG);
     int num = 0;
 
     while (iterator.hasNext()) {
-      final OperatorChain operatorChain = iterator.next();
-      if (operatorChain.equals(op11op12)) {
-        final Set<OperatorChain> op11op12neighbor = new HashSet<>();
+      final PartitionedQuery partitionedQuery = iterator.next();
+      if (partitionedQuery.equals(op11op12)) {
+        final Set<PartitionedQuery> op11op12neighbor = new HashSet<>();
         op11op12neighbor.add(op13chain);
         op11op12neighbor.add(op14chain);
         op11op12neighbor.add(op15chain);
         Assert.assertEquals("[op11->op12]'s neighbor should be  [op13], [op14] and [op15]",
-            op11op12neighbor, operatorChainDAG.getNeighbors(operatorChain));
-      } else if (operatorChain.equals(op13chain)) {
+            op11op12neighbor, partitionedQueryDAG.getNeighbors(partitionedQuery));
+      } else if (partitionedQuery.equals(op13chain)) {
         Assert.assertEquals("[op13]'s neighbor should be empty",
-            0, operatorChainDAG.getNeighbors(operatorChain).size());
-      } else if (operatorChain.equals(op14chain)) {
+            0, partitionedQueryDAG.getNeighbors(partitionedQuery).size());
+      } else if (partitionedQuery.equals(op14chain)) {
         Assert.assertEquals("[op14]'s neighbor should be empty",
-            0, operatorChainDAG.getNeighbors(operatorChain).size());
-      } else if (operatorChain.equals(op15chain)) {
+            0, partitionedQueryDAG.getNeighbors(partitionedQuery).size());
+      } else if (partitionedQuery.equals(op15chain)) {
         Assert.assertEquals("[op15]'s neighbor should be empty",
-            0, operatorChainDAG.getNeighbors(operatorChain).size());
+            0, partitionedQueryDAG.getNeighbors(partitionedQuery).size());
       } else {
-        throw new RuntimeException("OperatorChain mismatched: " + operatorChain);
+        throw new RuntimeException("PartitionedQuery mismatched: " + partitionedQuery);
       }
       num += 1;
     }
-    Assert.assertEquals("The number of OperatorChain should be 4", 4, num);
+    Assert.assertEquals("The number of PartitionedQuery should be 4", 4, num);
 
     // src map
-    final Map<Source, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
+    final Map<Source, Set<PartitionedQuery>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
     Assert.assertEquals("The number of Source should be 1", 1, chainedSrcMap.size());
 
-    final Set<OperatorChain> src1OpChain = new HashSet<>();
+    final Set<PartitionedQuery> src1OpChain = new HashSet<>();
     src1OpChain.add(op11op12);
-    Assert.assertEquals("The mapped OperatorChain of src1 should be [op11->op12]",
+    Assert.assertEquals("The mapped PartitionedQuery of src1 should be [op11->op12]",
         src1OpChain, chainedSrcMap.get(src1));
 
     // sink map
-    final Map<OperatorChain, Set<Sink>> chainedSinkMap = chainedPhysicalPlan.getSinkMap();
-    Assert.assertEquals("The number of OperatorChains connected to Sink should be 3", 3, chainedSinkMap.size());
+    final Map<PartitionedQuery, Set<Sink>> chainedSinkMap = chainedPhysicalPlan.getSinkMap();
+    Assert.assertEquals("The number of PartitionedQueries connected to Sink should be 3", 3, chainedSinkMap.size());
     final Set<Sink> sink1Set = new HashSet<>();
     sink1Set.add(sink1);
     Assert.assertEquals("The mapped Sink of [op13] should be sink1",
@@ -423,7 +423,7 @@ public final class OperatorChainerTest {
    * src3 ---------> [op31] ->
    */
   @Test
-  public void testMergingOperatorChaining() throws InjectionException {
+  public void testMergingQueryPartitioning() throws InjectionException {
     // Build a physical plan
     final DAG<Operator> operatorDAG = new AdjacentListDAG<>();
     final Map<Source, Set<Operator>> sourceMap = new HashMap<>();
@@ -468,76 +468,76 @@ public final class OperatorChainerTest {
     final PhysicalPlan<Operator> physicalPlan =
         new DefaultPhysicalPlanImpl<>(sourceMap, operatorDAG, sinkMap);
     final Injector injector = Tang.Factory.getTang().newInjector();
-    final OperatorChainer operatorChainer =
-        injector.getInstance(OperatorChainer.class);
+    final QueryPartitioner queryPartitioner =
+        injector.getInstance(QueryPartitioner.class);
 
     // convert
-    final PhysicalPlan<OperatorChain> chainedPhysicalPlan =
-        operatorChainer.chainOperators(physicalPlan);
+    final PhysicalPlan<PartitionedQuery> chainedPhysicalPlan =
+        queryPartitioner.chainOperators(physicalPlan);
 
     // check
-    final OperatorChain op11op12 = new DefaultOperatorChain();
+    final PartitionedQuery op11op12 = new DefaultPartitionedQuery();
     op11op12.insertToTail(op11); op11op12.insertToTail(op12);
 
-    final OperatorChain op13chain = new DefaultOperatorChain();
+    final PartitionedQuery op13chain = new DefaultPartitionedQuery();
     op13chain.insertToTail(op13);
 
-    final OperatorChain op21chain = new DefaultOperatorChain();
+    final PartitionedQuery op21chain = new DefaultPartitionedQuery();
     op21chain.insertToTail(op21);
 
-    final OperatorChain op31chain = new DefaultOperatorChain();
+    final PartitionedQuery op31chain = new DefaultPartitionedQuery();
     op31chain.insertToTail(op31);
 
-    final DAG<OperatorChain> operatorChainDAG = chainedPhysicalPlan.getOperators();
-    final Iterator<OperatorChain> iterator = GraphUtils.topologicalSort(operatorChainDAG);
+    final DAG<PartitionedQuery> partitionedQueryDAG = chainedPhysicalPlan.getOperators();
+    final Iterator<PartitionedQuery> iterator = GraphUtils.topologicalSort(partitionedQueryDAG);
     int num = 0;
 
     // check
-    final Set<OperatorChain> neighbors = new HashSet<>();
+    final Set<PartitionedQuery> neighbors = new HashSet<>();
     neighbors.add(op13chain);
     while (iterator.hasNext()) {
-      final OperatorChain operatorChain = iterator.next();
-      if (operatorChain.equals(op11op12)) {
+      final PartitionedQuery partitionedQuery = iterator.next();
+      if (partitionedQuery.equals(op11op12)) {
         Assert.assertEquals("[op11->op12]'s neighbor should be  [op13]",
-            neighbors, operatorChainDAG.getNeighbors(operatorChain));
-      } else if (operatorChain.equals(op13chain)) {
+            neighbors, partitionedQueryDAG.getNeighbors(partitionedQuery));
+      } else if (partitionedQuery.equals(op13chain)) {
         Assert.assertEquals("[op13]'s neighbor should be empty",
-            0, operatorChainDAG.getNeighbors(operatorChain).size());
-      } else if (operatorChain.equals(op21chain)) {
+            0, partitionedQueryDAG.getNeighbors(partitionedQuery).size());
+      } else if (partitionedQuery.equals(op21chain)) {
         Assert.assertEquals("[op21]'s neighbor should be [op13]",
-            neighbors, operatorChainDAG.getNeighbors(operatorChain));
-      } else if (operatorChain.equals(op31chain)) {
+            neighbors, partitionedQueryDAG.getNeighbors(partitionedQuery));
+      } else if (partitionedQuery.equals(op31chain)) {
         Assert.assertEquals("[op31]'s neighbor should be [op13]",
-            neighbors, operatorChainDAG.getNeighbors(operatorChain));
+            neighbors, partitionedQueryDAG.getNeighbors(partitionedQuery));
       } else {
-        throw new RuntimeException("OperatorChain mismatched: " + operatorChain);
+        throw new RuntimeException("PartitionedQuery mismatched: " + partitionedQuery);
       }
       num += 1;
     }
-    Assert.assertEquals("The number of OperatorChain should be 4", 4, num);
+    Assert.assertEquals("The number of PartitionedQuery should be 4", 4, num);
 
     // src map
-    final Map<Source, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
+    final Map<Source, Set<PartitionedQuery>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
     Assert.assertEquals("The number of Source should be 3", 3, chainedSrcMap.size());
 
-    final Set<OperatorChain> src1OpChain = new HashSet<>();
+    final Set<PartitionedQuery> src1OpChain = new HashSet<>();
     src1OpChain.add(op11op12);
-    Assert.assertEquals("The mapped OperatorChain of src1 should be [op11->op12]",
+    Assert.assertEquals("The mapped PartitionedQuery of src1 should be [op11->op12]",
         src1OpChain, chainedSrcMap.get(src1));
 
-    final Set<OperatorChain> src2OpChain = new HashSet<>();
+    final Set<PartitionedQuery> src2OpChain = new HashSet<>();
     src2OpChain.add(op21chain);
-    Assert.assertEquals("The mapped OperatorChain of src2 should be [op21]",
+    Assert.assertEquals("The mapped PartitionedQuery of src2 should be [op21]",
         src2OpChain, chainedSrcMap.get(src2));
 
-    final Set<OperatorChain> src3OpChain = new HashSet<>();
+    final Set<PartitionedQuery> src3OpChain = new HashSet<>();
     src3OpChain.add(op31chain);
-    Assert.assertEquals("The mapped OperatorChain of src3 should be [op31]",
+    Assert.assertEquals("The mapped PartitionedQuery of src3 should be [op31]",
         src3OpChain, chainedSrcMap.get(src3));
 
     // sink map
-    final Map<OperatorChain, Set<Sink>> chainedSinkMap = chainedPhysicalPlan.getSinkMap();
-    Assert.assertEquals("The number of OperatorChains connected to Sink should be 1", 1, chainedSinkMap.size());
+    final Map<PartitionedQuery, Set<Sink>> chainedSinkMap = chainedPhysicalPlan.getSinkMap();
+    Assert.assertEquals("The number of PartitionedQueries connected to Sink should be 1", 1, chainedSinkMap.size());
 
     final Set<Sink> sink1Set = new HashSet<>();
     sink1Set.add(sink1);
@@ -603,76 +603,76 @@ public final class OperatorChainerTest {
     final PhysicalPlan<Operator> physicalPlan =
         new DefaultPhysicalPlanImpl<>(sourceMap, operatorDAG, sinkMap);
     final Injector injector = Tang.Factory.getTang().newInjector();
-    final OperatorChainer operatorChainer =
-        injector.getInstance(OperatorChainer.class);
+    final QueryPartitioner queryPartitioner =
+        injector.getInstance(QueryPartitioner.class);
 
     // convert
-    final PhysicalPlan<OperatorChain> chainedPhysicalPlan =
-        operatorChainer.chainOperators(physicalPlan);
+    final PhysicalPlan<PartitionedQuery> chainedPhysicalPlan =
+        queryPartitioner.chainOperators(physicalPlan);
 
     // check
-    final OperatorChain opAchain = new DefaultOperatorChain();
+    final PartitionedQuery opAchain = new DefaultPartitionedQuery();
     opAchain.insertToTail(opA);
 
-    final OperatorChain opB1chain = new DefaultOperatorChain();
+    final PartitionedQuery opB1chain = new DefaultPartitionedQuery();
     opB1chain.insertToTail(opB1);
 
-    final OperatorChain opB2chain = new DefaultOperatorChain();
+    final PartitionedQuery opB2chain = new DefaultPartitionedQuery();
     opB2chain.insertToTail(opB2);
 
-    final OperatorChain opB3chain = new DefaultOperatorChain();
+    final PartitionedQuery opB3chain = new DefaultPartitionedQuery();
     opB3chain.insertToTail(opB3);
 
-    final OperatorChain opCchain = new DefaultOperatorChain();
+    final PartitionedQuery opCchain = new DefaultPartitionedQuery();
     opCchain.insertToTail(opC);
 
-    final DAG<OperatorChain> operatorChainDAG = chainedPhysicalPlan.getOperators();
-    final Iterator<OperatorChain> iterator = GraphUtils.topologicalSort(operatorChainDAG);
+    final DAG<PartitionedQuery> partitionedQueryDAG = chainedPhysicalPlan.getOperators();
+    final Iterator<PartitionedQuery> iterator = GraphUtils.topologicalSort(partitionedQueryDAG);
     int num = 0;
 
     // check
-    final Set<OperatorChain> neighbors = new HashSet<>();
+    final Set<PartitionedQuery> neighbors = new HashSet<>();
     neighbors.add(opCchain);
     while (iterator.hasNext()) {
-      final OperatorChain operatorChain = iterator.next();
-      if (operatorChain.equals(opAchain)) {
-        final Set<OperatorChain> opAneighbors = new HashSet<>();
+      final PartitionedQuery partitionedQuery = iterator.next();
+      if (partitionedQuery.equals(opAchain)) {
+        final Set<PartitionedQuery> opAneighbors = new HashSet<>();
         opAneighbors.add(opB1chain);
         opAneighbors.add(opB2chain);
         opAneighbors.add(opB3chain);
         Assert.assertEquals("[opA]'s neighbor should be  [opB-1], [opB-2], and [opB-3]",
-            opAneighbors, operatorChainDAG.getNeighbors(operatorChain));
-      } else if (operatorChain.equals(opB1chain)) {
+            opAneighbors, partitionedQueryDAG.getNeighbors(partitionedQuery));
+      } else if (partitionedQuery.equals(opB1chain)) {
         Assert.assertEquals("[opB1chain]'s neighbor should be [opC]",
-            neighbors, operatorChainDAG.getNeighbors(operatorChain));
-      } else if (operatorChain.equals(opB2chain)) {
+            neighbors, partitionedQueryDAG.getNeighbors(partitionedQuery));
+      } else if (partitionedQuery.equals(opB2chain)) {
         Assert.assertEquals("[opB2chain]'s neighbor should be [opC]",
-            neighbors, operatorChainDAG.getNeighbors(operatorChain));
-      } else if (operatorChain.equals(opB3chain)) {
+            neighbors, partitionedQueryDAG.getNeighbors(partitionedQuery));
+      } else if (partitionedQuery.equals(opB3chain)) {
         Assert.assertEquals("[opB3chain]'s neighbor should be [opC]",
-            neighbors, operatorChainDAG.getNeighbors(operatorChain));
-      } else if (operatorChain.equals(opCchain)) {
+            neighbors, partitionedQueryDAG.getNeighbors(partitionedQuery));
+      } else if (partitionedQuery.equals(opCchain)) {
         Assert.assertEquals("[opCchain]'s neighbor should be empty",
-            0, operatorChainDAG.getNeighbors(operatorChain).size());
+            0, partitionedQueryDAG.getNeighbors(partitionedQuery).size());
       } else {
-        throw new RuntimeException("OperatorChain mismatched: " + operatorChain);
+        throw new RuntimeException("PartitionedQuery mismatched: " + partitionedQuery);
       }
       num += 1;
     }
-    Assert.assertEquals("The number of OperatorChain should be 5", 5, num);
+    Assert.assertEquals("The number of PartitionedQuery should be 5", 5, num);
 
     // src map
-    final Map<Source, Set<OperatorChain>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
+    final Map<Source, Set<PartitionedQuery>> chainedSrcMap = chainedPhysicalPlan.getSourceMap();
     Assert.assertEquals("The number of Source should be 1", 1, chainedSrcMap.size());
 
-    final Set<OperatorChain> src1OpChain = new HashSet<>();
+    final Set<PartitionedQuery> src1OpChain = new HashSet<>();
     src1OpChain.add(opAchain);
-    Assert.assertEquals("The mapped OperatorChain of src1 should be [opA]",
+    Assert.assertEquals("The mapped PartitionedQuery of src1 should be [opA]",
         src1OpChain, chainedSrcMap.get(src1));
 
     // sink map
-    final Map<OperatorChain, Set<Sink>> chainedSinkMap = chainedPhysicalPlan.getSinkMap();
-    Assert.assertEquals("The number of OperatorChains connected to Sink should be 1", 1, chainedSinkMap.size());
+    final Map<PartitionedQuery, Set<Sink>> chainedSinkMap = chainedPhysicalPlan.getSinkMap();
+    Assert.assertEquals("The number of PartitionedQueries connected to Sink should be 1", 1, chainedSinkMap.size());
 
     final Set<Sink> sink1Set = new HashSet<>();
     sink1Set.add(sink1);

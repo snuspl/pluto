@@ -24,7 +24,7 @@ import java.util.Set;
 
 /**
  * A default implementation of physical plan.
- * @param <E> Operator or OperatorChain
+ * @param <E> Operator or PartitionedQuery
  */
 final class DefaultPhysicalPlanImpl<E> implements PhysicalPlan<E> {
 

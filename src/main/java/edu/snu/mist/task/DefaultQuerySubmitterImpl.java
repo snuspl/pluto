@@ -38,10 +38,10 @@ import java.util.logging.Logger;
 /**
  * DefaultQuerySubmitterImpl does the following things:
  * 1) receives logical plans from clients and converts the logical plans to physical plans,
- * 2) chains the physical operators and make OperatorChain,
- * 3) allocates the OperatorChains to the MistExecutors,
- * 4) and sets the OutputEmitters of the Source and OperatorChains
- * to forward their outputs to next OperatorChains.
+ * 2) chains the physical operators and make PartitionedQuery,
+ * 3) allocates the PartitionedQueries to the MistExecutors,
+ * 4) and sets the OutputEmitters of the Source and PartitionedQueries
+ * to forward their outputs to next PartitionedQueries.
  * 5) starts to receive input data stream from the source of the query.
  */
 @SuppressWarnings("unchecked")
@@ -56,19 +56,19 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
   /**
    * Map of query id and physical plan.
    */
-  private final ConcurrentMap<String, PhysicalPlan<OperatorChain>> physicalPlanMap;
+  private final ConcurrentMap<String, PhysicalPlan<PartitionedQuery>> physicalPlanMap;
 
   /**
    * Default query submitter in MistTask.
-   * @param operatorChainer the converter which chains operators and makes OperatorChains
-   * @param chainAllocator the allocator which allocates a OperatorChain to a MistExecutor
+   * @param queryPartitioner the converter which chains operators and makes PartitionedQueries
+   * @param chainAllocator the allocator which allocates a PartitionedQuery to a MistExecutor
    * @param physicalPlanGenerator the physical plan generator which generates physical plan from logical paln
    * @param idfactory identifier factory
    * @param numThreads the number of threads for the query submitter
    */
   @Inject
-  private DefaultQuerySubmitterImpl(final OperatorChainer operatorChainer,
-                                    final OperatorChainAllocator chainAllocator,
+  private DefaultQuerySubmitterImpl(final QueryPartitioner queryPartitioner,
+                                    final PartitionedQueryAllocator chainAllocator,
                                     final PhysicalPlanGenerator physicalPlanGenerator,
                                     final StringIdentifierFactory idfactory,
                                     @Parameter(NumSubmitterThreads.class) final int numThreads) {
@@ -83,13 +83,13 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
         return;
       }
 
-      // 2) Chains the physical operators and makes OperatorChain.
-      final PhysicalPlan<OperatorChain> chainedPlan =
-          operatorChainer.chainOperators(physicalPlan);
+      // 2) Chains the physical operators and makes PartitionedQuery.
+      final PhysicalPlan<PartitionedQuery> chainedPlan =
+          queryPartitioner.chainOperators(physicalPlan);
       physicalPlanMap.putIfAbsent(tuple.getKey(), chainedPlan);
-      final DAG<OperatorChain> chainedOperators = chainedPlan.getOperators();
+      final DAG<PartitionedQuery> chainedOperators = chainedPlan.getOperators();
 
-      // 3) Allocates the OperatorChains to the MistExecutors
+      // 3) Allocates the PartitionedQueries to the MistExecutors
       chainAllocator.allocate(chainedOperators);
 
       // 4) Sets output emitters and 5) starts to receive input data stream from the source
@@ -110,26 +110,26 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
   /**
    * Sets the OutputEmitters of the sources, operators and sinks
    * and starts to receive input data stream from the sources.
-   * @param chainPhysicalPlan physical plan of OperatorChain
+   * @param chainPhysicalPlan physical plan of PartitionedQuery
    */
-  private void start(final PhysicalPlan<OperatorChain> chainPhysicalPlan) {
-    final DAG<OperatorChain> chainedOperators = chainPhysicalPlan.getOperators();
+  private void start(final PhysicalPlan<PartitionedQuery> chainPhysicalPlan) {
+    final DAG<PartitionedQuery> chainedOperators = chainPhysicalPlan.getOperators();
     // 4) Sets output emitters
-    final Iterator<OperatorChain> iterator = GraphUtils.topologicalSort(chainedOperators);
+    final Iterator<PartitionedQuery> iterator = GraphUtils.topologicalSort(chainedOperators);
     while (iterator.hasNext()) {
-      final OperatorChain operatorChain = iterator.next();
-      final Set<OperatorChain> neighbors = chainedOperators.getNeighbors(operatorChain);
+      final PartitionedQuery partitionedQuery = iterator.next();
+      final Set<PartitionedQuery> neighbors = chainedOperators.getNeighbors(partitionedQuery);
       if (neighbors.size() == 0) {
-        // Sets SinkEmitter to the OperatorChains which are followed by Sinks.
-        operatorChain.setOutputEmitter(new SinkEmitter<>(
-            chainPhysicalPlan.getSinkMap().get(operatorChain)));
+        // Sets SinkEmitter to the PartitionedQueries which are followed by Sinks.
+        partitionedQuery.setOutputEmitter(new SinkEmitter<>(
+            chainPhysicalPlan.getSinkMap().get(partitionedQuery)));
       } else {
-        operatorChain.setOutputEmitter(new OperatorOutputEmitter(operatorChain, neighbors));
+        partitionedQuery.setOutputEmitter(new OperatorOutputEmitter(partitionedQuery, neighbors));
       }
     }
 
     for (final Source src : chainPhysicalPlan.getSourceMap().keySet()) {
-      final Set<OperatorChain> nextOps = chainPhysicalPlan.getSourceMap().get(src);
+      final Set<PartitionedQuery> nextOps = chainPhysicalPlan.getSourceMap().get(src);
       // Sets SourceOutputEmitter to the sources
       src.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
       // 5) starts to receive input data stream from the source
