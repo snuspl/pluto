@@ -24,12 +24,12 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Default implementation of OperatorChain.
+ * Default implementation of PartitionedQuery.
  * It uses List to chain operators.
- * TODO[MIST-70]: Consider concurrency issue in execution of OperatorChain
+ * TODO[MIST-70]: Consider concurrency issue in execution of PartitionedQuery
  */
 @SuppressWarnings("unchecked")
-final class DefaultOperatorChain implements OperatorChain {
+final class DefaultPartitionedQuery implements PartitionedQuery {
 
   /**
    * A chain of operators.
@@ -37,17 +37,17 @@ final class DefaultOperatorChain implements OperatorChain {
   private final List<Operator> operators;
 
   /**
-   * An output emitter which forwards outputs to next OperatorChains.
+   * An output emitter which forwards outputs to next PartitionedQueries.
    */
   private OutputEmitter outputEmitter;
 
   /**
-   * An executor executing this OperatorChain.
+   * An executor executing this PartitionedQuery.
    */
   private MistExecutor mistExecutor;
 
   @Inject
-  DefaultOperatorChain() {
+  DefaultPartitionedQuery() {
     this.operators = new LinkedList<>();
   }
 
@@ -104,7 +104,7 @@ final class DefaultOperatorChain implements OperatorChain {
   @Override
   public void handle(final Object input) {
     if (outputEmitter == null) {
-      throw new RuntimeException("OutputEmitter should be set in OperatorChain");
+      throw new RuntimeException("OutputEmitter should be set in PartitionedQuery");
     }
     if (operators.size() == 0) {
       throw new RuntimeException("The number of operators should be greater than zero");
@@ -136,7 +136,7 @@ final class DefaultOperatorChain implements OperatorChain {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final DefaultOperatorChain that = (DefaultOperatorChain) o;
+    final DefaultPartitionedQuery that = (DefaultPartitionedQuery) o;
     if (!operators.equals(that.operators)) {
       return false;
     }

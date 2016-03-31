@@ -15,21 +15,21 @@
  */
 package edu.snu.mist.task.executor;
 
-import edu.snu.mist.task.OperatorChainJob;
+import edu.snu.mist.task.PartitionedQueryTask;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.wake.Identifier;
 
 /**
- * Mist Executor runs OperatorChainJobs on a single thread.
+ * Mist Executor runs PartitionedQueryTasks on a single thread.
  */
 @DefaultImplementation(DefaultMistExecutor.class)
 public interface MistExecutor {
 
   /**
-   * Submits a OperatorChainJob, schedules the job, and runs the job.
-   * @param operatorChainJob a OperatorChain
+   * Submits a PartitionedQueryTask, schedules the job, and runs the job.
+   * @param partitionedQueryTask a PartitionedQuery
    */
-  void submit(OperatorChainJob operatorChainJob);
+  void submit(PartitionedQueryTask partitionedQueryTask);
 
   /**
    * Closes the executor releasing threads.

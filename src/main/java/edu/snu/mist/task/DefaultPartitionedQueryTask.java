@@ -15,18 +15,33 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.common.DAG;
-import org.apache.reef.tang.annotations.DefaultImplementation;
-
 /**
- * This interface allocates OperatorChains represented as a DAG to MistExecutors.
+ * This class is a default implementation of PartitionedQueryTask.
  */
-@DefaultImplementation(DefaultOperatorChainAllocatorImpl.class)
-public interface OperatorChainAllocator {
+final class DefaultPartitionedQueryTask implements PartitionedQueryTask {
 
   /**
-   * Allocates the OperatorChain represented as a DAG to MistExecutors.
-   * @param dag a DAG of OperatorChain
+   * A PartitionedQuery for computing inputs.
    */
-  void allocate(final DAG<OperatorChain> dag);
+  private PartitionedQuery partitionedQuery;
+
+  /**
+   * An input for the PartitionedQueryStage.
+   */
+  private Object input;
+
+  DefaultPartitionedQueryTask(final PartitionedQuery partitionedQuery,
+                              final Object input) {
+    this.partitionedQuery = partitionedQuery;
+    this.input = input;
+  }
+
+  /**
+   * Runs actual computation.
+   */
+  @SuppressWarnings("unchecked")
+  @Override
+  public void run() {
+    partitionedQuery.handle(input);
+  }
 }

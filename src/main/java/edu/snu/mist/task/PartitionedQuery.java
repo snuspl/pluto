@@ -24,11 +24,11 @@ import edu.snu.mist.task.operators.Operator;
  * This interface chains operators as a list and executes them in order
  * from the first to the last operator.
  *
- * OperatorChain is the unit of execution which is assigned to a mist executor by MistTask.
+ * PartitionedQuery is the unit of execution which is assigned to a mist executor by MistTask.
  * It receives inputs, performs computations through the list of operators,
- * and forwards final outputs to an OutputEmitter which sends the outputs to next OperatorChains.
+ * and forwards final outputs to an OutputEmitter which sends the outputs to next PartitionedQueries.
  */
-public interface OperatorChain extends InputHandler, OutputEmittable {
+public interface PartitionedQuery extends InputHandler, OutputEmittable {
 
   /**
    * Inserts an operator to the head of the chain.
@@ -55,7 +55,7 @@ public interface OperatorChain extends InputHandler, OutputEmittable {
   Operator removeFromHead();
 
   /**
-   * Sets a mist executor for executing this OperatorChain.
+   * Sets a mist executor for executing this PartitionedQuery.
    * @param executor an executor
    */
   void setExecutor(final MistExecutor executor);

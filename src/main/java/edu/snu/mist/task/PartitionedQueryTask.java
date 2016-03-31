@@ -18,10 +18,10 @@ package edu.snu.mist.task;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * OperatorChainJob executes a OperatorChain with an input.
+ * PartitionedQueryTask executes a PartitionedQuery with an input.
  * It calls operator.onNext(inputs) when .run() is called.
  */
-@DefaultImplementation(DefaultOperatorChainJob.class)
-public interface OperatorChainJob extends Runnable {
+@DefaultImplementation(DefaultPartitionedQueryTask.class)
+public interface PartitionedQueryTask extends Runnable {
 
 }
