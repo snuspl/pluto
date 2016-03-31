@@ -34,26 +34,26 @@ import java.util.concurrent.atomic.AtomicInteger;
  * A chain allocator for simple executor model.
  * The simple executor model creates an executor for each query.
  */
-final class SimpleExecutorChainAllocatorImpl implements OperatorChainAllocator {
+final class SimplePartitionedQueryImpl implements PartitionedQueryAllocator {
 
   private final List<MistExecutor> executors;
   private final AtomicInteger index;
 
   @Inject
-  private SimpleExecutorChainAllocatorImpl() {
+  private SimplePartitionedQueryImpl() {
     this.executors = new LinkedList<>();
     this.index = new AtomicInteger();
   }
 
   /**
    * This creates a new MistExecutor for the query.
-   * @param dag a DAG of OperatorChain
+   * @param dag a DAG of PartitionedQuery
    */
   @Override
-  public void allocate(final DAG<OperatorChain> dag) {
-    final Iterator<OperatorChain> operatorChainIterator = GraphUtils.topologicalSort(dag);
-    while (operatorChainIterator.hasNext()) {
-      final OperatorChain operatorChain = operatorChainIterator.next();
+  public void allocate(final DAG<PartitionedQuery> dag) {
+    final Iterator<PartitionedQuery> partitionedQueryIterator = GraphUtils.topologicalSort(dag);
+    while (partitionedQueryIterator.hasNext()) {
+      final PartitionedQuery partitionedQuery = partitionedQueryIterator.next();
       final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
       final StringBuffer sb = new StringBuffer();
       sb.append("MistExecutor-"); sb.append(index.getAndIncrement());
@@ -63,7 +63,7 @@ final class SimpleExecutorChainAllocatorImpl implements OperatorChainAllocator {
       try {
         executor = injector.getInstance(MistExecutor.class);
         executors.add(executor);
-        operatorChain.setExecutor(executor);
+        partitionedQuery.setExecutor(executor);
       } catch (final InjectionException e) {
         e.printStackTrace();
         throw new RuntimeException(e);

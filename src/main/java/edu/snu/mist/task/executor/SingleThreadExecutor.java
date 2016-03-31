@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.task.executor;
 
-import edu.snu.mist.task.OperatorChainJob;
+import edu.snu.mist.task.PartitionedQueryTask;
 import edu.snu.mist.task.executor.parameters.MistExecutorId;
 import edu.snu.mist.task.executor.queues.SchedulingQueue;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
@@ -76,13 +76,13 @@ final class SingleThreadExecutor implements MistExecutor {
   }
 
   /**
-   * Submits a OperatorChainJob to the thread pool executor.
+   * Submits a PartitionedQueryTask to the thread pool executor.
    * The thread pool executor pushes the job into the queue and the job is scheduled.
-   * @param operatorChainJob a OperatorChainJob
+   * @param partitionedQueryTask a PartitionedQueryTask
    */
   @Override
-  public void submit(final OperatorChainJob operatorChainJob) {
-    queue.add(operatorChainJob);
+  public void submit(final PartitionedQueryTask partitionedQueryTask) {
+    queue.add(partitionedQueryTask);
   }
 
   /**
