@@ -15,33 +15,19 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.task.operators.Operator;
+import org.apache.reef.tang.annotations.DefaultImplementation;
+
 /**
- * This class is a default implementation of OperatorChainJob.
+ * This interface converts a PhysicalPlan<Operator> to a PhysicalPlan<PartitionedQuery>
+ * by chaining the operators.
  */
-final class DefaultOperatorChainJob implements OperatorChainJob {
-
+@DefaultImplementation(DefaultQueryPartitionerImpl.class)
+public interface QueryPartitioner {
   /**
-   * A OperatorChain for computing inputs.
+   * Chains the operators and converts the PhysicalPlan<Operator> to the PhysicalPlan<PartitionedQuery>.
+   * @param plan a plan
+   * @return a physical plan which contains PartitionedQuery.
    */
-  private OperatorChain operatorChain;
-
-  /**
-   * An input for the OperatorChainStage.
-   */
-  private Object input;
-
-  DefaultOperatorChainJob(final OperatorChain operatorChain,
-                          final Object input) {
-    this.operatorChain = operatorChain;
-    this.input = input;
-  }
-
-  /**
-   * Runs actual computation.
-   */
-  @SuppressWarnings("unchecked")
-  @Override
-  public void run() {
-    operatorChain.handle(input);
-  }
+  PhysicalPlan<PartitionedQuery> chainOperators(PhysicalPlan<Operator> plan);
 }

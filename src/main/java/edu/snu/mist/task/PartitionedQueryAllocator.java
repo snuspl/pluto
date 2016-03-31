@@ -15,19 +15,18 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.task.operators.Operator;
+import edu.snu.mist.common.DAG;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * This interface converts a PhysicalPlan<Operator> to a PhysicalPlan<OperatorChain>
- * by chaining the operators.
+ * This interface allocates PartitionedQueries represented as a DAG to MistExecutors.
  */
-@DefaultImplementation(DefaultOperatorChainerImpl.class)
-public interface OperatorChainer {
+@DefaultImplementation(DefaultPartitionedQueryAllocatorImpl.class)
+public interface PartitionedQueryAllocator {
+
   /**
-   * Chains the operators and converts the PhysicalPlan<Operator> to the PhysicalPlan<OperatorChain>.
-   * @param plan a plan
-   * @return a physical plan which contains OperatorChain.
+   * Allocates the PartitionedQuery represented as a DAG to MistExecutors.
+   * @param dag a DAG of PartitionedQuery
    */
-  PhysicalPlan<OperatorChain> chainOperators(PhysicalPlan<Operator> plan);
+  void allocate(final DAG<PartitionedQuery> dag);
 }

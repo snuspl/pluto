@@ -29,22 +29,22 @@ import org.junit.Test;
 import java.util.LinkedList;
 import java.util.List;
 
-public final class OperatorChainTest {
-  // TODO[MIST-70]: Consider concurrency issue in execution of OperatorChain
+public final class PartitionedQueryTest {
+  // TODO[MIST-70]: Consider concurrency issue in execution of PartitionedQuery
 
   /**
-   * Tests whether the OperatorChain correctly executes the chained operators.
+   * Tests whether the PartitionedQuery correctly executes the chained operators.
    * @throws InjectionException
    */
   @SuppressWarnings("unchecked")
   @Test
-  public void operatorChainExecutionTest() throws InjectionException {
+  public void partitionedQueryExecutionTest() throws InjectionException {
 
     final List<Integer> result = new LinkedList<>();
     final Integer input = 3;
 
-    final OperatorChain operatorChain = new DefaultOperatorChain();
-    operatorChain.setOutputEmitter(output -> result.add((Integer) output));
+    final PartitionedQuery partitionedQuery = new DefaultPartitionedQuery();
+    partitionedQuery.setOutputEmitter(output -> result.add((Integer) output));
 
     final Injector injector = Tang.Factory.getTang().newInjector();
     final StringIdentifierFactory idFactory = injector.getInstance(StringIdentifierFactory.class);
@@ -59,34 +59,34 @@ public final class OperatorChainTest {
 
     // 2 * (input * input + 1)
     final Integer expected1 = 2 * (input * input + 1);
-    operatorChain.insertToHead(doubleOp);
-    operatorChain.insertToHead(incOp);
-    operatorChain.insertToHead(squareOp);
-    operatorChain.handle(input);
+    partitionedQuery.insertToHead(doubleOp);
+    partitionedQuery.insertToHead(incOp);
+    partitionedQuery.insertToHead(squareOp);
+    partitionedQuery.handle(input);
     Assert.assertEquals(expected1, result.remove(0));
 
     // 2 * (input + 1)
-    operatorChain.removeFromHead();
+    partitionedQuery.removeFromHead();
     final Integer expected2 = 2 * (input + 1);
-    operatorChain.handle(input);
+    partitionedQuery.handle(input);
     Assert.assertEquals(expected2, result.remove(0));
 
     // input + 1
-    operatorChain.removeFromTail();
+    partitionedQuery.removeFromTail();
     final Integer expected3 = input + 1;
-    operatorChain.handle(input);
+    partitionedQuery.handle(input);
     Assert.assertEquals(expected3, result.remove(0));
 
     // 2 * input + 1
-    operatorChain.insertToHead(doubleOp);
+    partitionedQuery.insertToHead(doubleOp);
     final Integer expected4 = 2 * input + 1;
-    operatorChain.handle(input);
+    partitionedQuery.handle(input);
     Assert.assertEquals(expected4, result.remove(0));
 
     // (2 * input + 1) * (2 * input + 1)
-    operatorChain.insertToTail(squareOp);
+    partitionedQuery.insertToTail(squareOp);
     final Integer expected5 = (2 * input + 1) * (2 * input + 1);
-    operatorChain.handle(input);
+    partitionedQuery.handle(input);
     Assert.assertEquals(expected5, result.remove(0));
   }
 

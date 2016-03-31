@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.task.executor;
 
-import edu.snu.mist.task.OperatorChainJob;
+import edu.snu.mist.task.PartitionedQueryTask;
 import edu.snu.mist.task.executor.parameters.MistExecutorId;
 import edu.snu.mist.task.executor.queues.FIFOQueue;
 import edu.snu.mist.task.executor.queues.SchedulingQueue;
@@ -32,7 +32,7 @@ import java.util.List;
 public final class ExecutorJobSchedulingTest {
 
   /**
-   * A list storing outputs of OperatorChainJobs.
+   * A list storing outputs of PartitionedQueryTasks.
    */
   private List<Integer> outputs;
 
@@ -42,11 +42,11 @@ public final class ExecutorJobSchedulingTest {
   }
 
   /**
-   * This test submits multiple `OperatorChainJob`s to MistExecutor with FIFO queue
+   * This test submits multiple `PartitionedQueryTask`s to MistExecutor with FIFO queue
    * and checks the jobs are executed in FIFO order.
    *
-   * Submits 100 `OperatorChainJob`s and checks the jobs are executed in FIFO order.
-   * First `OperatorChainJob` executes while loop during 2 seconds,
+   * Submits 100 `PartitionedQueryTask`s and checks the jobs are executed in FIFO order.
+   * First `PartitionedQueryTask` executes while loop during 2 seconds,
    * to delay next 99 tasks and see the delayed tasks are scheduled in FIFO order.
    * @throws Exception
    */
@@ -58,7 +58,7 @@ public final class ExecutorJobSchedulingTest {
     jcb.bindNamedParameter(MistExecutorId.class, "MistTestExecutor");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final MistExecutor executor = injector.getInstance(MistExecutor.class);
-    final OperatorChainJob firstJob = () -> {
+    final PartitionedQueryTask firstJob = () -> {
       final long startTime = System.currentTimeMillis();
       while (System.currentTimeMillis() - startTime < 2000) {
         // empty
@@ -70,7 +70,7 @@ public final class ExecutorJobSchedulingTest {
     executor.submit(firstJob);
     for (int i = 1; i < numTasks; i++) {
       final int input = i;
-      final OperatorChainJob simpleJob = () -> {
+      final PartitionedQueryTask simpleJob = () -> {
         outputs.add(input);
         System.out.println("simple-op-" + input);
       };

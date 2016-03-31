@@ -24,10 +24,10 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * A default operator chain allocator,
- * which allocates OperatorChains to MistExecutors in round-robin way.
+ * A default partitioned query allocator,
+ * which allocates PartitionedQueries to MistExecutors in round-robin way.
  */
-final class DefaultOperatorChainAllocatorImpl implements OperatorChainAllocator {
+final class DefaultPartitionedQueryAllocatorImpl implements PartitionedQueryAllocator {
 
   /**
    * A list of MistExecutors.
@@ -40,22 +40,22 @@ final class DefaultOperatorChainAllocatorImpl implements OperatorChainAllocator 
   private int index;
 
   @Inject
-  private DefaultOperatorChainAllocatorImpl(
+  private DefaultPartitionedQueryAllocatorImpl(
       final ExecutorListProvider executorListProvider) {
     this.executors = executorListProvider.getExecutors();
     this.index = 0;
   }
 
   /**
-   * This allocates OperatorChains to MistExecutors in round-robin way.
-   * @param dag a DAG of OperatorChain
+   * This allocates PartitionedQueries to MistExecutors in round-robin way.
+   * @param dag a DAG of PartitionedQuery
    */
   @Override
-  public void allocate(final DAG<OperatorChain> dag) {
-    final Iterator<OperatorChain> operatorChainIterator = GraphUtils.topologicalSort(dag);
-    while (operatorChainIterator.hasNext()) {
-      final OperatorChain operatorChain = operatorChainIterator.next();
-      operatorChain.setExecutor(executors.get(index));
+  public void allocate(final DAG<PartitionedQuery> dag) {
+    final Iterator<PartitionedQuery> partitionedQueryIterator = GraphUtils.topologicalSort(dag);
+    while (partitionedQueryIterator.hasNext()) {
+      final PartitionedQuery partitionedQuery = partitionedQueryIterator.next();
+      partitionedQuery.setExecutor(executors.get(index));
       index = (index + 1) % executors.size();
     }
   }
