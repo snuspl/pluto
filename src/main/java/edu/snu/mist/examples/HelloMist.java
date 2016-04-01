@@ -32,6 +32,7 @@ import org.apache.commons.cli.*;
 import org.apache.reef.tang.exceptions.InjectionException;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 
 /**
  * Example client which submits a stateless query.
@@ -94,7 +95,7 @@ public final class HelloMist {
    * @throws IOException
    * @throws InjectionException
    */
-  public static APIQuerySubmissionResult submitQuery() throws IOException, InjectionException {
+  public static APIQuerySubmissionResult submitQuery() throws IOException, InjectionException, URISyntaxException {
     final SourceConfiguration localTextSocketSourceConf = new TextSocketSourceConfigurationBuilderImpl()
         .set(TextSocketSourceParameters.SOCKET_HOST_ADDRESS, sourceHost)
         .set(TextSocketSourceParameters.SOCKET_HOST_PORT, sourcePort)

@@ -25,6 +25,7 @@ import org.apache.reef.tang.exceptions.InjectionException;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,7 +62,7 @@ public final class MISTExecutionEnvironmentImpl implements MISTExecutionEnvironm
    * @return the result of the submitted query.
    */
   @Override
-  public APIQuerySubmissionResult submit(final MISTQuery queryToSubmit) throws IOException {
+  public APIQuerySubmissionResult submit(final MISTQuery queryToSubmit) throws IOException, URISyntaxException {
     // Step 2: Change the query to a LogicalPlan
     final LogicalPlan logicalPlan = querySerializer.queryToLogicalPlan(queryToSubmit);
 

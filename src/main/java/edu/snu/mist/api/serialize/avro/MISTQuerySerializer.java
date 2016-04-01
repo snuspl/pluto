@@ -19,6 +19,9 @@ import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.formats.avro.LogicalPlan;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+
 /**
  * This interface contains necessary methods for serializing MISTQueries.
  */
@@ -30,5 +33,5 @@ public interface MISTQuerySerializer {
    * @param query a query which a user wants to serialize.
    * @return serialized LogicalPlan.
    */
-  LogicalPlan queryToLogicalPlan(MISTQuery query);
+  LogicalPlan queryToLogicalPlan(MISTQuery query) throws IOException, URISyntaxException;
 }

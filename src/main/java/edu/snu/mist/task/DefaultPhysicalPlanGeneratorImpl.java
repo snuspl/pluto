@@ -19,6 +19,7 @@ import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.common.ExternalJarObjectInputStream;
 import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.formats.avro.*;
 import edu.snu.mist.task.common.parameters.SocketServerIp;
@@ -32,6 +33,7 @@ import edu.snu.mist.task.sinks.parameters.SinkId;
 import edu.snu.mist.task.sources.Source;
 import edu.snu.mist.task.sources.TextSocketSource;
 import edu.snu.mist.task.sources.parameters.SourceId;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
@@ -40,11 +42,16 @@ import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -104,17 +111,25 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   /*
    * This private method de-serializes byte-serialized lambdas
    */
-  private Object deserializeLambda(final ByteBuffer serializedLambda) {
+  private Object deserializeLambda(final ByteBuffer serializedLambda, final ClassLoader classLoader)
+      throws IOException, ClassNotFoundException {
     byte[] serializedByteArray = new byte[serializedLambda.remaining()];
     serializedLambda.get(serializedByteArray);
-    return SerializationUtils.deserialize(serializedByteArray);
+    if (classLoader == null) {
+      return SerializationUtils.deserialize(serializedByteArray);
+    } else {
+      ExternalJarObjectInputStream stream = new ExternalJarObjectInputStream(
+          classLoader, serializedByteArray);
+      return stream.readObject();
+    }
   }
 
   /*
    * This private method gets instant operator from the serialized instant operator info.
    */
-  private Operator getInstantOperator(final String queryId, final InstantOperatorInfo iOpInfo)
-      throws IllegalArgumentException, InjectionException {
+  private Operator getInstantOperator(final String queryId, final InstantOperatorInfo iOpInfo,
+                                      final ClassLoader classLoader)
+      throws IllegalArgumentException, InjectionException, IOException, ClassNotFoundException {
     final JavaConfigurationBuilder cb = Tang.Factory.getTang().newConfigurationBuilder();
     cb.bindNamedParameter(QueryId.class, queryId);
     cb.bindNamedParameter(OperatorId.class, operatorIdGenerator.generate());
@@ -124,26 +139,26 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
         throw new IllegalArgumentException("MISTTask: ApplyStatefulOperator is currently not supported!");
       }
       case FILTER: {
-        final Predicate predicate = (Predicate) deserializeLambda(functionList.get(0));
+        final Predicate predicate = (Predicate) deserializeLambda(functionList.get(0), classLoader);
         final Injector injector = Tang.Factory.getTang().newInjector(cb.build());
         injector.bindVolatileInstance(Predicate.class, predicate);
         return injector.getInstance(FilterOperator.class);
       }
       case FLAT_MAP: {
-        final Function flatMapFunc = (Function) deserializeLambda(functionList.get(0));
+        final Function flatMapFunc = (Function) deserializeLambda(functionList.get(0), classLoader);
         final Injector injector = Tang.Factory.getTang().newInjector(cb.build());
         injector.bindVolatileInstance(Function.class, flatMapFunc);
         return injector.getInstance(FlatMapOperator.class);
       }
       case MAP: {
-        final Function mapFunc = (Function) deserializeLambda(functionList.get(0));
+        final Function mapFunc = (Function) deserializeLambda(functionList.get(0), classLoader);
         final Injector injector = Tang.Factory.getTang().newInjector(cb.build());
         injector.bindVolatileInstance(Function.class, mapFunc);
         return injector.getInstance(MapOperator.class);
       }
       case REDUCE_BY_KEY: {
         cb.bindNamedParameter(KeyIndex.class, iOpInfo.getKeyIndex().toString());
-        final BiFunction reduceFunc = (BiFunction) deserializeLambda(functionList.get(0));
+        final BiFunction reduceFunc = (BiFunction) deserializeLambda(functionList.get(0), classLoader);
         final Injector injector = Tang.Factory.getTang().newInjector(cb.build());
         injector.bindVolatileInstance(BiFunction.class, reduceFunc);
         return injector.getInstance(ReduceByKeyOperator.class);
@@ -166,6 +181,26 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     final Map<Source, Set<Operator>> sourceMap = new HashMap<>();
     final DAG<Operator> operators = new AdjacentListDAG<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
+
+    // Deserialize Jar
+    final ClassLoader userQueryClassLoader;
+    if (!queryIdAndLogicalPlan.getValue().getIsJarSerialized()) {
+      userQueryClassLoader = null;
+    } else {
+      final String jarFilePath;
+      jarFilePath = String.format("./%s.jar", queryId);
+      final ByteBuffer byteBufferJar = queryIdAndLogicalPlan.getValue().getJar();
+      final byte[] byteArrayJar = new byte[byteBufferJar.remaining()];
+      byteBufferJar.get(byteArrayJar);
+      try {
+        FileUtils.writeByteArrayToFile(new File(jarFilePath), byteArrayJar);
+        userQueryClassLoader = new URLClassLoader(new URL[]{new URL(jarFilePath)});
+      } catch (IOException e) {
+        LOG.log(Level.FINE, "Cannot save jar location ");
+        return null;
+      }
+    }
+
     // Deserialize vertices
     for (final Vertex vertex : logicalPlan.getVertices()) {
       switch (vertex.getVertexType()) {
@@ -189,10 +224,15 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
         }
         case INSTANT_OPERATOR: {
           final InstantOperatorInfo iOpInfo = (InstantOperatorInfo) vertex.getAttributes();
-          final Operator operator = getInstantOperator(queryId, iOpInfo);
-          deserializedVertices.add(operator);
-          operators.addVertex(operator);
-          break;
+          try {
+            final Operator operator = getInstantOperator(queryId, iOpInfo, userQueryClassLoader);
+            deserializedVertices.add(operator);
+            operators.addVertex(operator);
+            break;
+          } catch (Exception e) {
+            LOG.log(Level.FINE, e.toString());
+            return null;
+          }
         }
         case WINDOW_OPERATOR: {
           throw new IllegalArgumentException("MISTTask: WindowOperator is currently not supported!");

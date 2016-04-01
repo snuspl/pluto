@@ -27,6 +27,14 @@
       "fields":
       [
         {
+          "name": "IsJarSerialized",
+          "type": "boolean"
+        },
+        {
+          "name": "Jar",
+          "type": "bytes"
+        },
+        {
           "name": "Vertices",
           "type":
           {

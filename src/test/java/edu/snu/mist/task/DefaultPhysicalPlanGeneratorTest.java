@@ -39,6 +39,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
@@ -77,7 +78,7 @@ public final class DefaultPhysicalPlanGeneratorTest {
    * @throws InjectionException
    */
   @Test
-  public void testPhysicalPlanGenerator() throws InjectionException {
+  public void testPhysicalPlanGenerator() throws InjectionException, IOException, URISyntaxException {
     final MISTQuery query = new TextSocketSourceStream<String>(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
         .flatMap(s -> Arrays.asList(s.split(" ")))
         .filter(s -> s.startsWith("A"))
