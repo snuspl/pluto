@@ -13,20 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task;
+package edu.snu.mist.task.queues;
 
-import edu.snu.mist.common.DAG;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
+import java.util.Queue;
+
 /**
- * This interface allocates PartitionedQueries represented as a DAG to MistExecutors.
+ * This is an interface of a queue of a query.
  */
-@DefaultImplementation(DefaultPartitionedQueryAllocatorImpl.class)
-public interface PartitionedQueryAllocator {
+@DefaultImplementation(DefaultPartitionedQueryQueue.class)
+public interface PartitionedQueryQueue extends Queue<Runnable> {
 
   /**
-   * Allocates the PartitionedQuery represented as a DAG to MistExecutors.
-   * @param dag a DAG of PartitionedQuery
+   * Return a task from the queue.
+   * It returns null if 1) it is empty or
+   * 2) previously polled task is not finished in order to guarantee sequential processing.
+   * @return a task
    */
-  void allocate(final DAG<PartitionedQuery> dag);
+  @Override
+  Runnable poll();
+
+  /**
+   * Get polling rate how many tasks are actually polled.
+   * @return polling rate
+   */
+  double pollingRate();
 }

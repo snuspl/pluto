@@ -16,7 +16,7 @@
 package edu.snu.mist.task;
 
 import edu.snu.mist.task.common.OutputEmitter;
-import edu.snu.mist.task.executor.MistExecutor;
+import edu.snu.mist.task.queues.PartitionedQueryQueue;
 
 import java.util.Set;
 
@@ -30,19 +30,17 @@ final class SourceOutputEmitter<I> implements OutputEmitter<I> {
   /**
    * Next PartitionedQueries.
    */
-  private final Set<PartitionedQuery> nextOps;
+  private final Set<PartitionedQuery> nextPartitionedQueries;
 
-  public SourceOutputEmitter(final Set<PartitionedQuery> nextOps) {
-    this.nextOps = nextOps;
+  public SourceOutputEmitter(final Set<PartitionedQuery> nextPartitionedQueries) {
+    this.nextPartitionedQueries = nextPartitionedQueries;
   }
 
   @Override
   public void emit(final I input) {
-    for (final PartitionedQuery nextOp : nextOps) {
-      final MistExecutor executor = nextOp.getExecutor();
-      final PartitionedQueryTask partitionedQueryTask = new DefaultPartitionedQueryTask(nextOp, input);
-      // Always submits a job to the MistExecutor when inputs are received.
-      executor.submit(partitionedQueryTask);
+    for (final PartitionedQuery nextQuery : nextPartitionedQueries) {
+      final PartitionedQueryQueue queue = nextQuery.getQueue();
+      queue.add(new DefaultPartitionedQueryTask(nextQuery, input));
     }
   }
 }

@@ -13,33 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.executor;
+package edu.snu.mist.task;
 
-import edu.snu.mist.task.PartitionedQueryTask;
+import edu.snu.mist.task.queues.PartitionedQueryQueue;
 import org.apache.reef.tang.annotations.DefaultImplementation;
-import org.apache.reef.wake.Identifier;
 
 /**
- * Mist Executor runs PartitionedQueryTasks on a single thread.
+ * This interface manages queues of partitioned queries.
  */
-@DefaultImplementation(DefaultMistExecutor.class)
-public interface MistExecutor {
+@DefaultImplementation(RandomlyPickQueueManager.class)
+public interface PartitionedQueryQueueManager {
 
   /**
-   * Submits a PartitionedQueryTask, schedules the job, and runs the job.
-   * @param partitionedQueryTask a PartitionedQuery
+   * Insert a partitioned query queue.
+   * @param queue partitioned query queue
    */
-  void submit(PartitionedQueryTask partitionedQueryTask);
+  void insert(PartitionedQueryQueue queue);
 
   /**
-   * Closes the executor releasing threads.
-   * @throws Exception
+   * Delete a partitioned query queue.
+   * @param queue partitioned query queue
    */
-  void close() throws Exception;
+  void delete(PartitionedQueryQueue queue);
 
   /**
-   * Gets an identifier.
-   * @return an identifier
+   * Pick a partitioned query queue.
+   * @return a partitioned query queue.
    */
-  Identifier getIdentifier();
+  PartitionedQueryQueue pickQueue();
 }

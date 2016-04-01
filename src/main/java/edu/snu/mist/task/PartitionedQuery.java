@@ -17,8 +17,8 @@ package edu.snu.mist.task;
 
 import edu.snu.mist.task.common.InputHandler;
 import edu.snu.mist.task.common.OutputEmittable;
-import edu.snu.mist.task.executor.MistExecutor;
 import edu.snu.mist.task.operators.Operator;
+import edu.snu.mist.task.queues.PartitionedQueryQueue;
 
 /**
  * This interface chains operators as a list and executes them in order
@@ -55,14 +55,8 @@ public interface PartitionedQuery extends InputHandler, OutputEmittable {
   Operator removeFromHead();
 
   /**
-   * Sets a mist executor for executing this PartitionedQuery.
-   * @param executor an executor
+   * Gets a queue for partitioned query's tasks.
+   * @return queue
    */
-  void setExecutor(final MistExecutor executor);
-
-  /**
-   * Gets a mist executor.
-   * @return executor an executor
-   */
-  MistExecutor getExecutor();
+  PartitionedQueryQueue getQueue();
 }

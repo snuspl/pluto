@@ -39,7 +39,7 @@ import java.util.logging.Logger;
  * DefaultQuerySubmitterImpl does the following things:
  * 1) receives logical plans from clients and converts the logical plans to physical plans,
  * 2) chains the physical operators and make PartitionedQuery,
- * 3) allocates the PartitionedQueries to the MistExecutors,
+ * 3) inserts the PartitionedQueries' queues to PartitionedQueryQueueManager,
  * 4) and sets the OutputEmitters of the Source and PartitionedQueries
  * to forward their outputs to next PartitionedQueries.
  * 5) starts to receive input data stream from the source of the query.
@@ -59,20 +59,33 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
   private final ConcurrentMap<String, PhysicalPlan<PartitionedQuery>> physicalPlanMap;
 
   /**
+   * A partitioned query queue manager.
+   */
+  private final PartitionedQueryQueueManager queueManager;
+
+  /**
+   * A thread manager.
+   */
+  private final ThreadManager threadManager;
+
+  /**
    * Default query submitter in MistTask.
    * @param queryPartitioner the converter which chains operators and makes PartitionedQueries
-   * @param chainAllocator the allocator which allocates a PartitionedQuery to a MistExecutor
    * @param physicalPlanGenerator the physical plan generator which generates physical plan from logical paln
    * @param idfactory identifier factory
+   * @param threadManager thread manager
    * @param numThreads the number of threads for the query submitter
    */
   @Inject
   private DefaultQuerySubmitterImpl(final QueryPartitioner queryPartitioner,
-                                    final PartitionedQueryAllocator chainAllocator,
                                     final PhysicalPlanGenerator physicalPlanGenerator,
                                     final StringIdentifierFactory idfactory,
+                                    final ThreadManager threadManager,
+                                    final PartitionedQueryQueueManager queueManager,
                                     @Parameter(NumSubmitterThreads.class) final int numThreads) {
     this.physicalPlanMap = new ConcurrentHashMap<>();
+    this.queueManager = queueManager;
+    this.threadManager = threadManager;
     this.tpStage = new ThreadPoolStage<>((tuple) -> {
       final PhysicalPlan<Operator> physicalPlan;
       try {
@@ -89,8 +102,12 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
       physicalPlanMap.putIfAbsent(tuple.getKey(), chainedPlan);
       final DAG<PartitionedQuery> chainedOperators = chainedPlan.getOperators();
 
-      // 3) Allocates the PartitionedQueries to the MistExecutors
-      chainAllocator.allocate(chainedOperators);
+      // 3) Inserts the PartitionedQueries' queues to PartitionedQueueManager.
+      final Iterator<PartitionedQuery> partitionedQueryIterator = GraphUtils.topologicalSort(chainedOperators);
+      while (partitionedQueryIterator.hasNext()) {
+        final PartitionedQuery partitionedQuery = partitionedQueryIterator.next();
+        queueManager.insert(partitionedQuery.getQueue());
+      }
 
       // 4) Sets output emitters and 5) starts to receive input data stream from the source
       start(chainedPlan);
@@ -105,6 +122,7 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
   @Override
   public void close() throws Exception {
     tpStage.close();
+    threadManager.close();
   }
 
   /**
