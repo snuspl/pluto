@@ -48,6 +48,8 @@ public final class SourceInfoProviderImpl implements SourceInfoProvider {
       sourceInfoBuilder.setSourceType(SourceTypeEnum.REEF_NETWORK_SOURCE);
     } else if (sourceStream.getSourceType() == StreamType.SourceType.TEXT_SOCKET_SOURCE) {
       sourceInfoBuilder.setSourceType(SourceTypeEnum.TEXT_SOCKET_SOURCE);
+    } else if (sourceStream.getSourceType() == StreamType.SourceType.TEXT_KAFKA_SOURCE) {
+      sourceInfoBuilder.setSourceType(SourceTypeEnum.TEXT_KAFKA_SOURCE);
     } else {
       throw new IllegalStateException("Source type is illegal!");
     }

@@ -41,6 +41,10 @@ public final class SinkSerializeInfo {
           .put(REEFNetworkSinkParameters.RECEIVER_ID, SerializedType.AvroType.STRING)
           .put(TextSocketSinkParameters.SOCKET_HOST_ADDRESS, SerializedType.AvroType.STRING)
           .put(TextSocketSinkParameters.SOCKET_HOST_PORT, SerializedType.AvroType.INT)
+          .put(TextKafkaSinkParameters.KAFKA_HOST_ADDRESS, SerializedType.AvroType.STRING)
+          .put(TextKafkaSinkParameters.KAFKA_HOST_PORT, SerializedType.AvroType.INT)
+          .put(TextKafkaSinkParameters.KAFKA_TOPIC_NAME, SerializedType.AvroType.STRING)
+          .put(TextKafkaSinkParameters.KAFKA_NUM_PARTITION, SerializedType.AvroType.INT)
           .build();
 
   /**
