@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * This class implements WindowingOperator based on time.
+ * This class implements WindowOperator based on time.
  * The unit of window size and interval is in seconds.
  *
  * This class slices window size into buckets, which contains the list of inputs,
@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
  * The bucket size is determined by window size and interval.
  * In this implementation, the bucket size is calculated by (interval mod (window_size mod interval))
  *
- * At interval time, this operator collects the buckets satisfying window size
+ * At interval time, this operator collects the buckets until its window size is satisfied
  * and emits the collected data to output emitter.
  *
  * Ex) window size = 5 sec, interval = 2 sec
@@ -51,8 +51,8 @@ import java.util.concurrent.TimeUnit;
  *                     |----|----|----|----|----|
  * @param <I> input type
  */
-public final class TimeWindowingOperator<I>
-    extends BaseOperator<I, WindowedData<I>> implements WindowingOperator<I, Long> {
+public final class TimeWindowOperator<I>
+    extends BaseOperator<I, WindowedData<I>> implements WindowOperator<I, Long> {
 
   /**
    * Buckets of window.
@@ -85,12 +85,12 @@ public final class TimeWindowingOperator<I>
   private final long startTime;
 
   @Inject
-  private TimeWindowingOperator(@Parameter(OperatorId.class) final String operatorId,
-                                @Parameter(QueryId.class) final String queryId,
-                                @Parameter(TimeWindowInterval.class) final int timeWindowInterval,
-                                @Parameter(TimeWindowSize.class) final int timeWindowSize,
-                                @Parameter(TimeWindowStartTime.class) final long startTime,
-                                final StringIdentifierFactory identifierFactory) {
+  private TimeWindowOperator(@Parameter(OperatorId.class) final String operatorId,
+                             @Parameter(QueryId.class) final String queryId,
+                             @Parameter(TimeWindowInterval.class) final int timeWindowInterval,
+                             @Parameter(TimeWindowSize.class) final int timeWindowSize,
+                             @Parameter(TimeWindowStartTime.class) final long startTime,
+                             final StringIdentifierFactory identifierFactory) {
     super(identifierFactory.getNewInstance(queryId), identifierFactory.getNewInstance(operatorId));
     this.buckets = new LinkedList<>();
     this.buckets.add(new LinkedList<>());

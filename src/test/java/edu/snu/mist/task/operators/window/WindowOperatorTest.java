@@ -32,16 +32,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public final class WindowingOperatorTest {
+public final class WindowOperatorTest {
 
   /**
-   * Test whether TimeWindowingOperator emits outputs correctly.
-   * When window size is 4 and interval is 2, TimeWindowingOperator should emit outputs every 2 seconds.
-   * When window size is 5 and interval is 3, TimeWindowingOperator should emit outputs every 3 seconds.
+   * Test whether TimeWindowOperator emits outputs correctly.
+   * When window size is 4 and interval is 2, TimeWindowOperator should emit outputs every 2 seconds.
+   * When window size is 5 and interval is 3, TimeWindowOperator should emit outputs every 3 seconds.
    * @throws InjectionException
    */
   @Test
-  public void testTimeWindowingOperator() throws InjectionException {
+  public void testTimeWindowOperator() throws InjectionException {
     // Test when window size = 4 (sec) and interval = 2 (sec)
     final int windowSize = 4;
     final int windowInterval = 2;
@@ -148,9 +148,9 @@ public final class WindowingOperatorTest {
 
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final List<List<Integer>> results = new LinkedList<>();
-    final TimeWindowingOperator<Integer> timeWindowingOperator =
-        injector.getInstance(TimeWindowingOperator.class);
-    timeWindowingOperator.setOutputEmitter(output -> results.add(output.getData()));
+    final TimeWindowOperator<Integer> timeWindowOperator =
+        injector.getInstance(TimeWindowOperator.class);
+    timeWindowOperator.setOutputEmitter(output -> results.add(output.getData()));
 
     int i = 0;
     while (i < notificationTimes.size()) {
@@ -159,16 +159,16 @@ public final class WindowingOperatorTest {
       final List<Integer> outputList = outputs.get(i);
       if (inputList != null) {
         for (final Integer input : inputList) {
-          timeWindowingOperator.handle(input);
+          timeWindowOperator.handle(input);
         }
       }
-      timeWindowingOperator.windowNotification(notificationTime);
+      timeWindowOperator.windowNotification(notificationTime);
       if (outputList != null) {
-        Assert.assertEquals("WindowingOperator should emit output when time=" + notificationTime,
+        Assert.assertEquals("WindowOperator should emit output when time=" + notificationTime,
             1, results.size());
         Assert.assertEquals("Output should be " + outputList, outputList, results.remove(0));
       } else {
-        Assert.assertEquals("WindowingOperator should not emit output when time=" + notificationTime,
+        Assert.assertEquals("WindowOperator should not emit output when time=" + notificationTime,
             0, results.size());
       }
       i += 1;

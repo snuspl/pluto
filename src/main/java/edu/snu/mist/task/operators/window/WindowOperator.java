@@ -18,10 +18,10 @@ package edu.snu.mist.task.operators.window;
 import edu.snu.mist.task.operators.Operator;
 
 /**
- * WindowingOperator is an operator which collects inputs to provide windowed input data.
+ * WindowOperator is an operator which collects inputs to provide windowed input data.
  * It receives notifications from WindowNotifier and emits the windowed data when necessary.
  *
- * WindowingOperator has two essential parameters: window size and interval.
+ * WindowOperator has two essential parameters: window size and interval.
  * It collects inputs until filling the window size and emits windowed data every interval.
  *
  * Ex) Example of window size and interval.
@@ -33,7 +33,7 @@ import edu.snu.mist.task.operators.Operator;
  * @param <I> input type
  * @param <N> notification type
  */
-public interface WindowingOperator<I, N> extends Operator<I, WindowedData<I>> {
+public interface WindowOperator<I, N> extends Operator<I, WindowedData<I>> {
 
   /**
    * Receive notifications from WindowNotifier.

@@ -15,10 +15,10 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.task.operators.window.WindowingOperator;
+import edu.snu.mist.task.operators.window.WindowOperator;
 
 /**
- * WindowNotifier gives notifications to registered WindowingOperators.
+ * WindowNotifier gives notifications to registered WindowOperators.
  * The window operators emit their windowed data only when receiving the notification
  * at which they should emit the windowed data.
  * This notification can synchronize the emitted data from window operator.
@@ -29,11 +29,11 @@ public interface WindowNotifier extends AutoCloseable {
    * Register a windowing operator for giving notification.
    * @param operator a windowing operator
    */
-  void registerWindowingOperator(WindowingOperator operator);
+  void registerWindowOperator(WindowOperator operator);
 
   /**
    * Unregister a windowing operator for not giving notification.
    * @param operator a windowing operator
    */
-  void unregisterWindowingOperator(WindowingOperator operator);
+  void unregisterWindowOperator(WindowOperator operator);
 }

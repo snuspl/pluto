@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.task.operators.window.WindowingOperator;
+import edu.snu.mist.task.operators.window.WindowOperator;
 import edu.snu.mist.task.parameters.NumScheduledExecutorThreads;
 import edu.snu.mist.task.parameters.TimeWindowPeriod;
 import org.apache.reef.tang.annotations.Parameter;
@@ -27,7 +27,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * This class gives time notification to WindowingOperators every period (default is 1 second).
+ * This class gives time notification to WindowOperators every period (default is 1 second).
  * It gives System.nanoTime() as a notification.
  */
 public final class TimeWindowNotifier implements WindowNotifier {
@@ -40,7 +40,7 @@ public final class TimeWindowNotifier implements WindowNotifier {
   /**
    * Subscribers of notifications.
    */
-  private final ConcurrentLinkedQueue<WindowingOperator> queue;
+  private final ConcurrentLinkedQueue<WindowOperator> queue;
 
   @Inject
   private TimeWindowNotifier(@Parameter(NumScheduledExecutorThreads.class) final int numThreads,
@@ -53,7 +53,7 @@ public final class TimeWindowNotifier implements WindowNotifier {
     // We should improve it.
     this.executor.scheduleAtFixedRate(() -> {
       final long currTime = System.nanoTime();
-      for (final WindowingOperator op : queue) {
+      for (final WindowOperator op : queue) {
         // give notification to a windowing operator.
         op.windowNotification(currTime);
       }
@@ -61,12 +61,12 @@ public final class TimeWindowNotifier implements WindowNotifier {
   }
 
   @Override
-  public void registerWindowingOperator(final WindowingOperator operator) {
+  public void registerWindowOperator(final WindowOperator operator) {
     queue.add(operator);
   }
 
   @Override
-  public void unregisterWindowingOperator(final WindowingOperator operator) {
+  public void unregisterWindowOperator(final WindowOperator operator) {
     queue.remove(operator);
   }
 

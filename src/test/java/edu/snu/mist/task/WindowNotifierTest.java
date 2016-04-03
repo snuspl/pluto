@@ -18,7 +18,7 @@ package edu.snu.mist.task;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.task.operators.BaseOperator;
 import edu.snu.mist.task.operators.window.WindowedData;
-import edu.snu.mist.task.operators.window.WindowingOperator;
+import edu.snu.mist.task.operators.window.WindowOperator;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -42,21 +42,21 @@ public final class WindowNotifierTest {
     final BlockingQueue<Long> timeWindowNotification1 = new LinkedBlockingQueue<>();
     final BlockingQueue<Long> timeWindowNotification2 = new LinkedBlockingQueue<>();
     final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
-    final WindowingOperator<Integer, Long> timeWindowingOperator1 =
-        new TestWindowingOperator(timeWindowNotification1, identifierFactory);
-    final WindowingOperator<Integer, Long> timeWindowingOperator2 =
-        new TestWindowingOperator(timeWindowNotification2, identifierFactory);
+    final WindowOperator<Integer, Long> timeWindowOperator1 =
+        new TestWindowOperator(timeWindowNotification1, identifierFactory);
+    final WindowOperator<Integer, Long> timeWindowOperator2 =
+        new TestWindowOperator(timeWindowNotification2, identifierFactory);
 
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindImplementation(WindowNotifier.class, TimeWindowNotifier.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
 
     try (final WindowNotifier windowNotifier = injector.getInstance(TimeWindowNotifier.class)) {
-      windowNotifier.registerWindowingOperator(timeWindowingOperator1);
+      windowNotifier.registerWindowOperator(timeWindowOperator1);
       timeWindowNotification1.take();
-      windowNotifier.unregisterWindowingOperator(timeWindowingOperator1);
+      windowNotifier.unregisterWindowOperator(timeWindowOperator1);
 
-      windowNotifier.registerWindowingOperator(timeWindowingOperator2);
+      windowNotifier.registerWindowOperator(timeWindowOperator2);
       timeWindowNotification2.take();
       timeWindowNotification2.take();
       Assert.assertEquals(0, timeWindowNotification1.size());
@@ -66,12 +66,12 @@ public final class WindowNotifierTest {
   /**
    * Test class for windowing operator.
    */
-  class TestWindowingOperator extends BaseOperator<Integer, WindowedData<Integer>>
-      implements WindowingOperator<Integer, Long> {
+  class TestWindowOperator extends BaseOperator<Integer, WindowedData<Integer>>
+      implements WindowOperator<Integer, Long> {
     private final BlockingQueue queue;
 
-    public TestWindowingOperator(final BlockingQueue<Long> queue,
-                                 final StringIdentifierFactory identifierFactory) {
+    public TestWindowOperator(final BlockingQueue<Long> queue,
+                              final StringIdentifierFactory identifierFactory) {
       super(identifierFactory.getNewInstance("test-query"), identifierFactory.getNewInstance("test-op"));
       this.queue = queue;
     }
