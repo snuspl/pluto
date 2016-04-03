@@ -18,6 +18,6 @@ package edu.snu.mist.task.operators.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "Start time of time window (nanoseconds)")
+@NamedParameter(doc = "Start time of time window (msec)")
 public final class TimeWindowStartTime implements Name<Long> {
 }

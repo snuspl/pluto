@@ -47,10 +47,10 @@ public final class WindowOperatorTest {
     final int windowInterval = 2;
     // Notification times
     final List<Long> notificationTimes = Arrays.asList(
-        TimeUnit.SECONDS.toNanos(1), TimeUnit.SECONDS.toNanos(2),
-        TimeUnit.SECONDS.toNanos(3), TimeUnit.SECONDS.toNanos(4),
-        TimeUnit.SECONDS.toNanos(5), TimeUnit.SECONDS.toNanos(6),
-        TimeUnit.SECONDS.toNanos(7), TimeUnit.SECONDS.toNanos(8));
+        TimeUnit.SECONDS.toMillis(1), TimeUnit.SECONDS.toMillis(2),
+        TimeUnit.SECONDS.toMillis(3), TimeUnit.SECONDS.toMillis(4),
+        TimeUnit.SECONDS.toMillis(5), TimeUnit.SECONDS.toMillis(6),
+        TimeUnit.SECONDS.toMillis(7), TimeUnit.SECONDS.toMillis(8));
     // Inputs.
     // Null represents no input.
     final List<List<Integer>> inputs = new LinkedList<>();
@@ -81,12 +81,12 @@ public final class WindowOperatorTest {
     final int windowInterval2 = 3;
     // Notification times
     final List<Long> notificationTimes2 = Arrays.asList(
-        TimeUnit.SECONDS.toNanos(1), TimeUnit.SECONDS.toNanos(2),
-        TimeUnit.SECONDS.toNanos(3), TimeUnit.SECONDS.toNanos(4),
-        TimeUnit.SECONDS.toNanos(5), TimeUnit.SECONDS.toNanos(6),
-        TimeUnit.SECONDS.toNanos(7), TimeUnit.SECONDS.toNanos(8),
-        TimeUnit.SECONDS.toNanos(9), TimeUnit.SECONDS.toNanos(10),
-        TimeUnit.SECONDS.toNanos(11), TimeUnit.SECONDS.toNanos(12));
+        TimeUnit.SECONDS.toMillis(1), TimeUnit.SECONDS.toMillis(2),
+        TimeUnit.SECONDS.toMillis(3), TimeUnit.SECONDS.toMillis(4),
+        TimeUnit.SECONDS.toMillis(5), TimeUnit.SECONDS.toMillis(6),
+        TimeUnit.SECONDS.toMillis(7), TimeUnit.SECONDS.toMillis(8),
+        TimeUnit.SECONDS.toMillis(9), TimeUnit.SECONDS.toMillis(10),
+        TimeUnit.SECONDS.toMillis(11), TimeUnit.SECONDS.toMillis(12));
     // Inputs.
     // Null represents no input.
     final List<List<Integer>> inputs2 = new LinkedList<>();

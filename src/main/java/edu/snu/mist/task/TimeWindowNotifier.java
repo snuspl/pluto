@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * This class gives time notification to WindowOperators every period (default is 1 second).
- * It gives System.nanoTime() as a notification.
+ * It gives System.currentTimeMillis() as a notification.
  */
 public final class TimeWindowNotifier implements WindowNotifier {
 
@@ -52,7 +52,7 @@ public final class TimeWindowNotifier implements WindowNotifier {
     // If the number of windowing operators increases, sending notification could be a bottleneck.
     // We should improve it.
     this.executor.scheduleAtFixedRate(() -> {
-      final long currTime = System.nanoTime();
+      final long currTime = System.currentTimeMillis();
       for (final WindowOperator op : queue) {
         // give notification to a windowing operator.
         op.windowNotification(currTime);

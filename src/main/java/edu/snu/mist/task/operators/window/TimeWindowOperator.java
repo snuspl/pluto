@@ -80,7 +80,7 @@ public final class TimeWindowOperator<I>
   private final int timeWindowSize;
 
   /**
-   * Start time of the windowing operator (nanoseconds).
+   * Start time of the windowing operator (msec).
    */
   private final long startTime;
 
@@ -127,11 +127,11 @@ public final class TimeWindowOperator<I>
 
   /**
    * Receive notification and emits or slides buckets.
-   * @param notificationTime tick time (nanoseconds)
+   * @param notificationTime tick time (msec)
    */
   @Override
   public void windowNotification(final Long notificationTime) {
-    final long elapsedTime = TimeUnit.NANOSECONDS.toSeconds(notificationTime - startTime);
+    final long elapsedTime = TimeUnit.MILLISECONDS.toSeconds(notificationTime - startTime);
     // Time to emit windowed data
     if (elapsedTime % timeWindowInterval == 0) {
       // output emit
