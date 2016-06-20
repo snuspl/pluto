@@ -3,6 +3,9 @@ MIST: MIcro STream processing system
 
 MIST is a micro stream processing system built on top of [Apache REEF](http://reef.apache.org/).
 
+### Requirements
+ - Java 1.8
+
 ### How to build and run MIST
 1. Build MIST:
     ```
