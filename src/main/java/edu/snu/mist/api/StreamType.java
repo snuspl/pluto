@@ -47,5 +47,6 @@ public final class StreamType {
   /**
    * The type of operator stream.
    */
-  public static enum OperatorType {FILTER, FLAT_MAP, MAP, REDUCE_BY_KEY, REDUCE_BY_KEY_WINDOW, APPLY_STATEFUL}
+  public static enum OperatorType {FILTER, FLAT_MAP, MAP, REDUCE_BY_KEY, REDUCE_BY_KEY_WINDOW, APPLY_STATEFUL,
+    TIME_WINDOW, WINDOWED}
 }
