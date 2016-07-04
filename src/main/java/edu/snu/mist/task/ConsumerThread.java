@@ -37,9 +37,11 @@ public final class ConsumerThread implements Runnable {
     while (!Thread.currentThread().isInterrupted()) {
       try {
         final PartitionedQueryQueue queue = queueManager.pickQueue();
-        final Runnable r = queue.poll();
-        if (r != null) {
-          r.run();
+        if (queue != null) {
+          final Runnable r = queue.poll();
+          if (r != null) {
+            r.run();
+          }
         }
       } catch (final Exception t) {
         throw t;

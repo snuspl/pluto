@@ -58,7 +58,8 @@ public final class RandomlyPickQueueManager implements PartitionedQueryQueueMana
         return queue;
       } catch (final IllegalArgumentException e) {
         // This can occur when the size of queues is 0.
-        // Loop until we get a queue.
+        // Return null.
+        return null;
       }
     }
   }

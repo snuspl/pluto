@@ -39,6 +39,7 @@ public interface PartitionedQueryQueueManager {
   /**
    * Pick a partitioned query queue.
    * @return a partitioned query queue.
+   * Returns null if there is no queue.
    */
   PartitionedQueryQueue pickQueue();
 }
