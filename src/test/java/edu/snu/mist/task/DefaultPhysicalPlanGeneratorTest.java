@@ -78,7 +78,8 @@ public final class DefaultPhysicalPlanGeneratorTest {
    * @throws InjectionException
    */
   @Test
-  public void testPhysicalPlanGenerator() throws InjectionException, IOException, URISyntaxException {
+  public void testPhysicalPlanGenerator()
+      throws InjectionException, IOException, URISyntaxException, ClassNotFoundException {
     final MISTQuery query = new TextSocketSourceStream<String>(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
         .flatMap(s -> Arrays.asList(s.split(" ")))
         .filter(s -> s.startsWith("A"))

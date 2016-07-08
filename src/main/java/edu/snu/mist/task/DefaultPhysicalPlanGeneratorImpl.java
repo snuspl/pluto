@@ -21,6 +21,7 @@ import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.ExternalJarObjectInputStream;
 import edu.snu.mist.common.parameters.QueryId;
+import edu.snu.mist.driver.parameters.TempFolderPath;
 import edu.snu.mist.formats.avro.*;
 import edu.snu.mist.task.common.parameters.SocketServerIp;
 import edu.snu.mist.task.common.parameters.SocketServerPort;
@@ -39,19 +40,20 @@ import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
+import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -62,10 +64,13 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   private static final Logger LOG = Logger.getLogger(DefaultPhysicalPlanGeneratorImpl.class.getName());
 
   private final OperatorIdGenerator operatorIdGenerator;
+  private final String tmpFolderPath;
 
   @Inject
-  private DefaultPhysicalPlanGeneratorImpl(final OperatorIdGenerator operatorIdGenerator) {
+  private DefaultPhysicalPlanGeneratorImpl(final OperatorIdGenerator operatorIdGenerator,
+                                           @Parameter(TempFolderPath.class) final String tmpFolderPath) {
     this.operatorIdGenerator = operatorIdGenerator;
+    this.tmpFolderPath = tmpFolderPath;
   }
 
   /*
@@ -174,31 +179,25 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
 
   @Override
   public PhysicalPlan<Operator> generate(final Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
-      throws IllegalArgumentException, InjectionException {
+      throws IllegalArgumentException, InjectionException, IOException, ClassNotFoundException {
     final String queryId = queryIdAndLogicalPlan.getKey();
     final LogicalPlan logicalPlan = queryIdAndLogicalPlan.getValue();
     final List<Object> deserializedVertices = new ArrayList<>();
     final Map<Source, Set<Operator>> sourceMap = new HashMap<>();
     final DAG<Operator> operators = new AdjacentListDAG<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
+    final Path jarFilePath = Paths.get(tmpFolderPath, String.format("%s.jar", queryId));
 
     // Deserialize Jar
     final ClassLoader userQueryClassLoader;
     if (!queryIdAndLogicalPlan.getValue().getIsJarSerialized()) {
       userQueryClassLoader = null;
     } else {
-      final String jarFilePath;
-      jarFilePath = String.format("./%s.jar", queryId);
       final ByteBuffer byteBufferJar = queryIdAndLogicalPlan.getValue().getJar();
       final byte[] byteArrayJar = new byte[byteBufferJar.remaining()];
       byteBufferJar.get(byteArrayJar);
-      try {
-        FileUtils.writeByteArrayToFile(new File(jarFilePath), byteArrayJar);
-        userQueryClassLoader = new URLClassLoader(new URL[]{new URL(jarFilePath)});
-      } catch (IOException e) {
-        LOG.log(Level.FINE, "Cannot save jar location ");
-        return null;
-      }
+      FileUtils.writeByteArrayToFile(jarFilePath.toFile(), byteArrayJar);
+      userQueryClassLoader = new URLClassLoader(new URL[]{jarFilePath.toUri().toURL()});
     }
 
     // Deserialize vertices
@@ -224,15 +223,10 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
         }
         case INSTANT_OPERATOR: {
           final InstantOperatorInfo iOpInfo = (InstantOperatorInfo) vertex.getAttributes();
-          try {
-            final Operator operator = getInstantOperator(queryId, iOpInfo, userQueryClassLoader);
-            deserializedVertices.add(operator);
-            operators.addVertex(operator);
-            break;
-          } catch (Exception e) {
-            LOG.log(Level.FINE, e.toString());
-            return null;
-          }
+          final Operator operator = getInstantOperator(queryId, iOpInfo, userQueryClassLoader);
+          deserializedVertices.add(operator);
+          operators.addVertex(operator);
+          break;
         }
         case WINDOW_OPERATOR: {
           throw new IllegalArgumentException("MISTTask: WindowOperator is currently not supported!");
