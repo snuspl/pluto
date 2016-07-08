@@ -16,7 +16,7 @@
 package edu.snu.mist.task;
 
 import edu.snu.mist.task.common.OutputEmitter;
-import edu.snu.mist.task.executor.MistExecutor;
+import edu.snu.mist.task.queues.PartitionedQueryQueue;
 
 import java.util.Set;
 
@@ -33,12 +33,12 @@ final class OperatorOutputEmitter implements OutputEmitter {
   /**
    * Next PartitionedQueries.
    */
-  private final Set<PartitionedQuery> nextChains;
+  private final Set<PartitionedQuery> nextPartitionedQueries;
 
   OperatorOutputEmitter(final PartitionedQuery currChain,
-                        final Set<PartitionedQuery> nextChains) {
+                        final Set<PartitionedQuery> nextPartitionedQueries) {
     this.currChain = currChain;
-    this.nextChains = nextChains;
+    this.nextPartitionedQueries = nextPartitionedQueries;
   }
 
   /**
@@ -51,15 +51,9 @@ final class OperatorOutputEmitter implements OutputEmitter {
    */
   @Override
   public void emit(final Object output) {
-    final MistExecutor srcExecutor = currChain.getExecutor();
-    for (final PartitionedQuery nextChain : nextChains) {
-      final MistExecutor destExecutor = nextChain.getExecutor();
-      if (srcExecutor.equals(destExecutor)) {
-        nextChain.handle(output);
-      } else {
-        final PartitionedQueryTask partitionedQueryTask = new DefaultPartitionedQueryTask(nextChain, output);
-        destExecutor.submit(partitionedQueryTask);
-      }
+    for (final PartitionedQuery nextQuery : nextPartitionedQueries) {
+      final PartitionedQueryQueue queue = nextQuery.getQueue();
+      queue.add(new DefaultPartitionedQueryTask(nextQuery, output));
     }
   }
 }

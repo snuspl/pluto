@@ -15,18 +15,31 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.common.DAG;
+import edu.snu.mist.task.queues.PartitionedQueryQueue;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * This interface allocates PartitionedQueries represented as a DAG to MistExecutors.
+ * This interface manages queues of partitioned queries.
  */
-@DefaultImplementation(DefaultPartitionedQueryAllocatorImpl.class)
-public interface PartitionedQueryAllocator {
+@DefaultImplementation(RandomlyPickQueueManager.class)
+public interface PartitionedQueryQueueManager {
 
   /**
-   * Allocates the PartitionedQuery represented as a DAG to MistExecutors.
-   * @param dag a DAG of PartitionedQuery
+   * Insert a partitioned query queue.
+   * @param queue partitioned query queue
    */
-  void allocate(final DAG<PartitionedQuery> dag);
+  void insert(PartitionedQueryQueue queue);
+
+  /**
+   * Delete a partitioned query queue.
+   * @param queue partitioned query queue
+   */
+  void delete(PartitionedQueryQueue queue);
+
+  /**
+   * Pick a partitioned query queue.
+   * @return a partitioned query queue.
+   * Returns null if there is no queue.
+   */
+  PartitionedQueryQueue pickQueue();
 }

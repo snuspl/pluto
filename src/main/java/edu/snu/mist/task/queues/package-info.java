@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 /**
- * A package of mist executor's scheduling queue.
+ * A package of query queue.
  */
-package edu.snu.mist.task.executor.queues;
+package edu.snu.mist.task.queues;

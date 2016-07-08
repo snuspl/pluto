@@ -16,8 +16,9 @@
 package edu.snu.mist.task;
 
 import edu.snu.mist.task.common.OutputEmitter;
-import edu.snu.mist.task.executor.MistExecutor;
 import edu.snu.mist.task.operators.Operator;
+import edu.snu.mist.task.queues.DefaultPartitionedQueryQueue;
+import edu.snu.mist.task.queues.PartitionedQueryQueue;
 
 import javax.inject.Inject;
 import java.util.LinkedList;
@@ -42,13 +43,14 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
   private OutputEmitter outputEmitter;
 
   /**
-   * An executor executing this PartitionedQuery.
+   * A queue for partitioned query's tasks.
    */
-  private MistExecutor mistExecutor;
+  private final PartitionedQueryQueue queue;
 
   @Inject
   DefaultPartitionedQuery() {
     this.operators = new LinkedList<>();
+    this.queue = new DefaultPartitionedQueryQueue();
   }
 
   @Override
@@ -92,13 +94,8 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
   }
 
   @Override
-  public void setExecutor(final MistExecutor executor) {
-    mistExecutor = executor;
-  }
-
-  @Override
-  public MistExecutor getExecutor() {
-    return mistExecutor;
+  public PartitionedQueryQueue getQueue() {
+    return queue;
   }
 
   @Override

@@ -13,33 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.executor;
+package edu.snu.mist.task.queues;
 
-import edu.snu.mist.task.PartitionedQueryTask;
 import org.apache.reef.tang.annotations.DefaultImplementation;
-import org.apache.reef.wake.Identifier;
+
+import java.util.Queue;
 
 /**
- * Mist Executor runs PartitionedQueryTasks on a single thread.
+ * This is an interface of a queue of a query.
  */
-@DefaultImplementation(DefaultMistExecutor.class)
-public interface MistExecutor {
+@DefaultImplementation(DefaultPartitionedQueryQueue.class)
+public interface PartitionedQueryQueue extends Queue<Runnable> {
 
   /**
-   * Submits a PartitionedQueryTask, schedules the job, and runs the job.
-   * @param partitionedQueryTask a PartitionedQuery
+   * Return a task from the queue.
+   * It returns null if 1) it is empty or
+   * 2) previously polled task is not finished in order to guarantee sequential processing.
+   * @return a task
    */
-  void submit(PartitionedQueryTask partitionedQueryTask);
+  @Override
+  Runnable poll();
 
   /**
-   * Closes the executor releasing threads.
-   * @throws Exception
+   * Get polling rate how many tasks are actually polled.
+   * @return polling rate
    */
-  void close() throws Exception;
-
-  /**
-   * Gets an identifier.
-   * @return an identifier
-   */
-  Identifier getIdentifier();
+  double pollingRate();
 }

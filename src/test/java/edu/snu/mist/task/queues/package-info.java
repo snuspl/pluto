@@ -13,11 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.executor.parameters;
-
-
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
-
-@NamedParameter(doc = "MistExecutor identifier")
-public final class MistExecutorId implements Name<String> {}
+/**
+ * A test package of queues.
+ */
+package edu.snu.mist.task.queues;

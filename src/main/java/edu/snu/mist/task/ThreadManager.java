@@ -13,18 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.executor.queues;
+package edu.snu.mist.task;
 
-import javax.inject.Inject;
-import java.util.concurrent.LinkedBlockingQueue;
+import org.apache.reef.tang.annotations.DefaultImplementation;
+
+import java.util.Set;
 
 /**
- * A simple FIFO queue which inherits linked blocking queue.
+ * This interface is for thread management.
  */
-public final class FIFOQueue extends LinkedBlockingQueue<Runnable> implements SchedulingQueue {
+@DefaultImplementation(FixedThreadManager.class)
+public interface ThreadManager extends AutoCloseable {
 
-  @Inject
-  private FIFOQueue() {
-    super();
-  }
+  /**
+   * Returns the threads which are managed by ThreadManager.
+   * @return a set of threads.
+   */
+  Set<Thread> getThreads();
 }
