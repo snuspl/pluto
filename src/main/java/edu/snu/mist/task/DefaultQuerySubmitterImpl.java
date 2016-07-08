@@ -24,7 +24,6 @@ import edu.snu.mist.task.sources.Source;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.annotations.Parameter;
-import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.wake.impl.ThreadPoolStage;
 
 import javax.inject.Inject;
@@ -91,8 +90,9 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
       try {
         // 1) Converts the logical plan to the physical plan
         physicalPlan = physicalPlanGenerator.generate(tuple);
-      } catch (final InjectionException e) {
-        LOG.log(Level.INFO, "Injection Exception occurred during de-serializing LogicalPlans!");
+      } catch (final Exception e) {
+        e.printStackTrace();
+        LOG.log(Level.SEVERE,  "Injection Exception occurred during de-serializing LogicalPlans");
         return;
       }
 

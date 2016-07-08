@@ -66,7 +66,6 @@ public final class MISTQuerySerializerImpl implements MISTQuerySerializer {
     this.instantOperatorInfoProvider = injector.getInstance(InstantOperatorInfoProvider.class);
     final String jarPathCandidate = MISTQuerySerializerImpl.class.getProtectionDomain().getCodeSource().getLocation()
         .toURI().toString();
-    System.out.println("Hey~ Hey~:" + jarPathCandidate);
     if (!jarPathCandidate.endsWith(".jar")) {
       this.runningJarPathString = null;
     } else {

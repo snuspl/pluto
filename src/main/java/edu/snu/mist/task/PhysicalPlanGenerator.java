@@ -21,6 +21,8 @@ import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.tang.exceptions.InjectionException;
 
+import java.io.IOException;
+
 /**
  * This interface is for generating physical plan from logical plan.
  * This deserializes the logical plan and creates physical plan.
@@ -32,5 +34,6 @@ public interface PhysicalPlanGenerator {
    * @param queryIdAndLogicalPlan the tuple of queryId and logical plan
    * @return physical plan
    */
-  PhysicalPlan<Operator> generate(Tuple<String, LogicalPlan> queryIdAndLogicalPlan) throws InjectionException;
+  PhysicalPlan<Operator> generate(Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
+      throws InjectionException, IOException, ClassNotFoundException;
 }
