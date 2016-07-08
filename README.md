@@ -10,8 +10,8 @@ MIST is a micro stream processing system built on top of [Apache REEF](http://re
 1. Build MIST:
     ```
     git clone https://github.com/cmssnu/mist
-    Set $MIST_HOME
     cd mist
+    Set $MIST_HOME (export MIST_HOME=`pwd`)
     mvn clean install
     ```
 
@@ -46,7 +46,7 @@ MIST is a micro stream processing system built on top of [Apache REEF](http://re
     # 2. Launch source server (You can simply use netcat)
      nc -lk 20331
     # 3. Run a script for HelloMist
-    ./bin/run-hellomist.sh
+    ./bin/run_hellomist.sh
     [-? Print help]
     [-d Address of running MIST driver in the form of hostname:port]
     [-s Address of running source server in the form of hostname:port]
