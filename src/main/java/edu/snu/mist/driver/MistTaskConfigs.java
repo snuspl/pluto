@@ -24,7 +24,7 @@ import edu.snu.mist.driver.parameters.TempFolderPath;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import edu.snu.mist.task.DefaultClientToTaskMessageImpl;
 import edu.snu.mist.task.TaskSpecificResponderWrapper;
-import edu.snu.mist.task.parameters.NumExecutors;
+import edu.snu.mist.task.parameters.NumThreads;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.reef.tang.Configuration;
@@ -52,9 +52,9 @@ final class MistTaskConfigs {
   private final int taskMemSize;
 
   /**
-   * The number of executors of a MistTask.
+   * The number of threads of a MistTask.
    */
-  private final int numTaskExecutors;
+  private final int numTaskThreads;
 
   /**
    * The number of cores of a MistTask.
@@ -74,12 +74,12 @@ final class MistTaskConfigs {
   @Inject
   private MistTaskConfigs(@Parameter(NumTasks.class) final int numTasks,
                           @Parameter(TaskMemorySize.class) final int taskMemSize,
-                          @Parameter(NumExecutors.class) final int numTaskExecutors,
+                          @Parameter(NumThreads.class) final int numTaskThreads,
                           @Parameter(NumTaskCores.class) final int numTaskCores,
                           @Parameter(RPCServerPort.class) final int rpcServerPort,
                           @Parameter(TempFolderPath.class) final String tempFolderPath) {
     this.numTasks = numTasks;
-    this.numTaskExecutors = numTaskExecutors;
+    this.numTaskThreads = numTaskThreads;
     this.taskMemSize = taskMemSize;
     this.numTaskCores = numTaskCores;
     this.tempFolderPath = tempFolderPath;
@@ -94,8 +94,8 @@ final class MistTaskConfigs {
     return taskMemSize;
   }
 
-  public int getNumTaskExecutors() {
-    return numTaskExecutors;
+  public int getNumTaskThreads() {
+    return numTaskThreads;
   }
 
   public int getNumTaskCores() {
@@ -116,7 +116,7 @@ final class MistTaskConfigs {
     // Parameter
     jcb.bindNamedParameter(NumTasks.class, Integer.toString(numTasks));
     jcb.bindNamedParameter(TaskMemorySize.class, Integer.toString(taskMemSize));
-    jcb.bindNamedParameter(NumExecutors.class, Integer.toString(numTaskExecutors));
+    jcb.bindNamedParameter(NumThreads.class, Integer.toString(numTaskThreads));
     jcb.bindNamedParameter(NumTaskCores.class, Integer.toString(numTaskCores));
     jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
     jcb.bindNamedParameter(TempFolderPath.class, tempFolderPath);

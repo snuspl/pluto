@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.task.parameters.NumExecutors;
+import edu.snu.mist.task.parameters.NumThreads;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -33,7 +33,7 @@ public class ThreadManagerTest {
   public void fixedThreadManagerTest() throws Exception {
     final int numThreads = 5;
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(NumExecutors.class, Integer.toString(numThreads));
+    jcb.bindNamedParameter(NumThreads.class, Integer.toString(numThreads));
 
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final FixedThreadManager threadManager = injector.getInstance(FixedThreadManager.class);

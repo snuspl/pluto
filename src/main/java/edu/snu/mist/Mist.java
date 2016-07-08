@@ -22,7 +22,7 @@ import edu.snu.mist.driver.parameters.NumTasks;
 import edu.snu.mist.driver.parameters.TaskMemorySize;
 import edu.snu.mist.launcher.DriverRuntimeType;
 import edu.snu.mist.launcher.MistLauncher;
-import edu.snu.mist.task.parameters.NumExecutors;
+import edu.snu.mist.task.parameters.NumThreads;
 import org.apache.reef.client.LauncherStatus;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -46,7 +46,7 @@ public final class Mist {
     final CommandLine commandLine = new CommandLine(jcb)
         .registerShortNameOfClass(DriverRuntimeType.class)
         .registerShortNameOfClass(NumTaskCores.class)
-        .registerShortNameOfClass(NumExecutors.class)
+        .registerShortNameOfClass(NumThreads.class)
         .registerShortNameOfClass(NumTasks.class)
         .registerShortNameOfClass(RPCServerPort.class)
         .registerShortNameOfClass(TaskMemorySize.class)
