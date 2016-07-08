@@ -38,8 +38,12 @@ public final class DefaultPartitionedQueryQueue
     if (isEmpty() || isTaskRunning.get()) {
       return null;
     }
-    // Return null if the previously polled task is not finished.
+    // Return null if the queue is empty or the previously polled task is not finished.
     if (isTaskRunning.compareAndSet(false, true)) {
+      if (isEmpty()) {
+        isTaskRunning.set(false);
+        return null;
+      }
       final Runnable task = super.poll();
       return () -> {
         task.run();
