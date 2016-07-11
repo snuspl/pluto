@@ -23,8 +23,8 @@ import edu.snu.mist.formats.avro.LogicalPlan;
 import edu.snu.mist.task.operators.*;
 import edu.snu.mist.task.operators.parameters.KeyIndex;
 import edu.snu.mist.task.operators.parameters.OperatorId;
-import edu.snu.mist.task.parameters.NumExecutors;
 import edu.snu.mist.task.parameters.NumSubmitterThreads;
+import edu.snu.mist.task.parameters.NumThreads;
 import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sources.BaseSource;
 import edu.snu.mist.task.sources.Source;
@@ -123,7 +123,7 @@ public final class QuerySubmitterTest {
 
     // Create operators
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(NumExecutors.class, Integer.toString(4));
+    jcb.bindNamedParameter(NumThreads.class, Integer.toString(4));
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final Operator flatMap = createOperator(
         queryId, "flatMap", Function.class, flatMapFunc, FlatMapOperator.class);

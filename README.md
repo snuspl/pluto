@@ -20,7 +20,7 @@ MIST is a micro stream processing system built on top of [Apache REEF](http://re
     ```
     ./bin/start.sh
     [-? Print help]
-    -num_executors The number of MIST executors
+    -num_threads The number of MIST threads
     -num_task_cores The number of cores of MIST task
     [-num_tasks The number of mist tasks]
     [-port The port number of the RPC server]
@@ -42,7 +42,7 @@ MIST is a micro stream processing system built on top of [Apache REEF](http://re
     ```
     # 0. Build MIST first!(See above)
     # 1. Run MIST
-    ./bin/start.sh -num_executors 1 -num_task_cores 1 -task_mem_size 1024
+    ./bin/start.sh -num_threads 1 -num_task_cores 1 -task_mem_size 1024
     # 2. Launch source server (You can simply use netcat)
      nc -lk 20331
     # 3. Run a script for HelloMist

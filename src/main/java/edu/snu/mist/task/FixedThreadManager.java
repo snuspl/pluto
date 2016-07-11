@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.task.parameters.NumExecutors;
+import edu.snu.mist.task.parameters.NumThreads;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -33,7 +33,7 @@ public final class FixedThreadManager implements ThreadManager {
   private final Set<Thread> threads;
 
   @Inject
-  private FixedThreadManager(@Parameter(NumExecutors.class) final int numThreads,
+  private FixedThreadManager(@Parameter(NumThreads.class) final int numThreads,
                              final PartitionedQueryQueueManager queueManager) {
     this.threads = new HashSet<>();
     for (int i = 0; i < numThreads; i++) {
