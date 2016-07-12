@@ -1,4 +1,4 @@
-MIST: MIcro STream processing system
+MIST: MIcro STream processing system 
 ====================================
 
 MIST is a micro stream processing system built on top of [Apache REEF](http://reef.apache.org/).  
