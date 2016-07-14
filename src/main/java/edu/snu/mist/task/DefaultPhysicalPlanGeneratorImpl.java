@@ -171,6 +171,10 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       case REDUCE_BY_KEY_WINDOW: {
         throw new IllegalArgumentException("MISTTask: ReduceByKeyWindowOperator is currently not supported!");
       }
+      case UNION: {
+        final Injector injector = Tang.Factory.getTang().newInjector(cb.build());
+        return injector.getInstance(UnionOperator.class);
+      }
       default: {
         throw new IllegalArgumentException("MISTTask: Invalid InstantOperatorType detected!");
       }
