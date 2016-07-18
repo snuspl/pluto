@@ -50,6 +50,8 @@ public final class InstantOperatorInfoProviderImpl implements InstantOperatorInf
       return getReduceByKeyOpInfo((ReduceByKeyOperatorStream) iOpStream);
     } else if (iOpStream.getOperatorType() == StreamType.OperatorType.REDUCE_BY_KEY_WINDOW) {
       return getReduceByKeyWindowInfo((ReduceByKeyWindowOperatorStream) iOpStream);
+    } else if (iOpStream.getOperatorType() == StreamType.OperatorType.UNION) {
+      return getUnionOpInfo((UnionOperatorStream) iOpStream);
     } else {
       throw new IllegalStateException("Illegal InstantOperatorStream type!");
     }
@@ -121,6 +123,15 @@ public final class InstantOperatorInfoProviderImpl implements InstantOperatorInf
         reduceByKeyWindowOperatorStream.getReduceFunction())));
     iOpInfoBuilder.setFunctions(serializedFunctionList);
     iOpInfoBuilder.setKeyIndex(reduceByKeyWindowOperatorStream.getKeyFieldIndex());
+    return iOpInfoBuilder.build();
+  }
+
+  private InstantOperatorInfo getUnionOpInfo(final UnionOperatorStream unionOperatorStream) {
+    final InstantOperatorInfo.Builder iOpInfoBuilder = InstantOperatorInfo.newBuilder();
+    iOpInfoBuilder.setInstantOperatorType(InstantOperatorTypeEnum.UNION);
+    final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
+    iOpInfoBuilder.setFunctions(serializedFunctionList);
+    iOpInfoBuilder.setKeyIndex(null);
     return iOpInfoBuilder.build();
   }
 }

@@ -35,8 +35,7 @@ public abstract class InstantOperatorStream<IN, OUT> extends ContinuousStreamImp
     this.operatorType = operatorType;
   }
 
-  public InstantOperatorStream(final StreamType.OperatorType operatorType,
-                               final Set<MISTStream> inputStreams) {
+  public InstantOperatorStream(final StreamType.OperatorType operatorType, final Set<MISTStream> inputStreams) {
     super(StreamType.ContinuousType.OPERATOR, inputStreams);
     this.operatorType = operatorType;
   }

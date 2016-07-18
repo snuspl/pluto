@@ -119,7 +119,7 @@
                               "type": "enum",
                               "symbols":
                               [
-                                "APPLY_STATEFUL", "FILTER", "FLAT_MAP", "MAP", "REDUCE_BY_KEY", "REDUCE_BY_KEY_WINDOW"
+                                "APPLY_STATEFUL", "FILTER", "FLAT_MAP", "MAP", "REDUCE_BY_KEY", "REDUCE_BY_KEY_WINDOW", "UNION"
                               ]
                             }
                           },
