@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api;
+package edu.snu.mist.examples;
 
+import edu.snu.mist.api.*;
 import edu.snu.mist.api.serialize.avro.MISTQuerySerializer;
 import edu.snu.mist.formats.avro.*;
 import org.apache.avro.ipc.NettyTransceiver;
@@ -27,33 +28,33 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.util.List;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
- * The basic implementation class for MISTExecutionEnvironment.
- * It uses avro RPC for communication with the Driver and the Task.
- * It gets a task list from Driver, change the query to a LogicalPlan,
- * send the LogicalPlan to one of the tasks and get QuerySubmissionResult,
- * transform QuerySubmissionResult to APIQuerySubmissionResult and return it.
+ * A simplified version of MISTDefaultExecutionEnvironmentImpl when running tests and examples.
+ * When you run your test or examples of MIST, you don't need to submit a separate jar file to MIST.
+ * In this case, you can use this implementation class for simplicity.
+ *
+ * @see MISTDefaultExecutionEnvironmentImpl
  */
-public final class MISTExecutionEnvironmentImpl implements MISTExecutionEnvironment {
+public final class MISTTestExecutionEnvironmentImpl implements MISTExecutionEnvironment {
   private final MISTQuerySerializer querySerializer;
   private final MistTaskProvider proxyToDriver;
   private final List<IPAddress> tasks;
   private final ConcurrentMap<IPAddress, ClientToTaskMessage> taskProxyMap;
 
-  public MISTExecutionEnvironmentImpl(final String serverAddr,
-                                      final int serverPort) throws InjectionException, IOException {
-
+  public MISTTestExecutionEnvironmentImpl(final String serverHost,
+                                          final int serverPort) throws InjectionException,
+      IOException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     querySerializer = injector.getInstance(MISTQuerySerializer.class);
     // Step 1: Get a task list from Driver
-    final NettyTransceiver clientToDriver = new NettyTransceiver(new InetSocketAddress(serverAddr, serverPort));
+    final NettyTransceiver clientToDriver = new NettyTransceiver(new InetSocketAddress(serverHost, serverPort));
     this.proxyToDriver = SpecificRequestor.getClient(MistTaskProvider.class, clientToDriver);
     final TaskList taskList = proxyToDriver.getTasks(new QueryInfo());
     this.tasks = taskList.getTasks();
-    this.taskProxyMap = new ConcurrentHashMap<IPAddress, ClientToTaskMessage>();
+    this.taskProxyMap = new ConcurrentHashMap<>();
   }
 
   /**
@@ -72,7 +73,7 @@ public final class MISTExecutionEnvironmentImpl implements MISTExecutionEnvironm
     ClientToTaskMessage proxyToTask = taskProxyMap.get(task);
     if (proxyToTask == null) {
       final NettyTransceiver clientToTask = new NettyTransceiver(
-              new InetSocketAddress(task.getHostAddress().toString(), task.getPort()));
+          new InetSocketAddress(task.getHostAddress().toString(), task.getPort()));
       final ClientToTaskMessage proxy = SpecificRequestor.getClient(ClientToTaskMessage.class, clientToTask);
       taskProxyMap.putIfAbsent(task, proxy);
       proxyToTask = taskProxyMap.get(task);

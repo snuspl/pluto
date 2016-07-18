@@ -16,10 +16,7 @@
 
 package edu.snu.mist.examples;
 
-import edu.snu.mist.api.APIQuerySubmissionResult;
-import edu.snu.mist.api.MISTExecutionEnvironment;
-import edu.snu.mist.api.MISTExecutionEnvironmentImpl;
-import edu.snu.mist.api.MISTQuery;
+import edu.snu.mist.api.*;
 import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sink.builder.SinkConfiguration;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfigurationBuilderImpl;
@@ -112,7 +109,7 @@ public final class HelloMist {
         .textSocketOutput(localTextSocketSinkConf);
     final MISTQuery query = sink.getQuery();
 
-    final MISTExecutionEnvironment executionEnvironment = new MISTExecutionEnvironmentImpl(driverHost, driverPort);
+    final MISTExecutionEnvironment executionEnvironment = new MISTTestExecutionEnvironmentImpl(driverHost, driverPort);
     return executionEnvironment.submit(query);
   }
 

@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
-package edu.snu.mist.api;
+package edu.snu.mist.examples;
 
+import edu.snu.mist.api.APIQuerySubmissionResult;
+import edu.snu.mist.api.APITestParameters;
+import edu.snu.mist.api.MISTExecutionEnvironment;
+import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.sources.REEFNetworkSourceStream;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.formats.avro.*;
@@ -33,11 +37,11 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 
 /**
- * The test class for MISTExecutionEnvironmentImpl.
+ * The test class for MISTTestExecutionEnvironmentImpl.
  */
-public class MISTExecutionEnvironmentImplTest {
+public class MISTTestExecutionEnvironmentImplTest {
 
-  private final String hostName = "localhost";
+  private final String driverHost = "localhost";
   private final int driverPortNum = 65111;
   private final int taskPortNum = 65110;
   private final String testQueryResult = "TestQueryResult";
@@ -45,7 +49,7 @@ public class MISTExecutionEnvironmentImplTest {
   private class MockDriverServer implements MistTaskProvider {
     @Override
     public TaskList getTasks(final QueryInfo queryInfo) throws AvroRemoteException {
-      return new TaskList(Arrays.asList(new IPAddress(hostName, taskPortNum)));
+      return new TaskList(Arrays.asList(new IPAddress(driverHost, taskPortNum)));
     }
   }
 
@@ -57,10 +61,11 @@ public class MISTExecutionEnvironmentImplTest {
   }
 
   /**
-   * Test for MISTExecutionEnvironmentImpl.
+   * This unit test creates a mocking driver & task and tests whether a test query can be
+   * serialized and sent via MISTTestExecutionEnvironmentImpl.
    */
   @Test
-  public void testMISTExecutionEnvironment() throws IOException, InjectionException, URISyntaxException {
+  public void testMISTTestExecutionEnvironment() throws IOException, InjectionException, URISyntaxException {
     // Step 1: Launch mock RPC Server
     final Server driverServer = new NettyServer(new SpecificResponder(MistTaskProvider.class, new MockDriverServer()),
         new InetSocketAddress(driverPortNum));
@@ -76,8 +81,11 @@ public class MISTExecutionEnvironmentImplTest {
         .getQuery();
 
     // Step 3: Send a query and check whether the query comes to the task correctly
-    final MISTExecutionEnvironment executionEnvironment = new MISTExecutionEnvironmentImpl(hostName, driverPortNum);
+    final MISTExecutionEnvironment executionEnvironment = new MISTTestExecutionEnvironmentImpl(driverHost,
+        driverPortNum);
     final APIQuerySubmissionResult result = executionEnvironment.submit(query);
     Assert.assertEquals(result.getQueryId(), testQueryResult);
+    driverServer.close();
+    taskServer.close();
   }
 }
