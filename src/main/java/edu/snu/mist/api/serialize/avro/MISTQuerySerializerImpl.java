@@ -17,6 +17,7 @@ package edu.snu.mist.api.serialize.avro;
 
 import edu.snu.mist.api.*;
 import edu.snu.mist.api.operators.*;
+import edu.snu.mist.api.serialize.avro.params.RunningJarPath;
 import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sources.SourceStream;
 import edu.snu.mist.formats.avro.Edge;
@@ -25,6 +26,7 @@ import edu.snu.mist.formats.avro.Vertex;
 import edu.snu.mist.formats.avro.VertexTypeEnum;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
+import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
@@ -48,29 +50,28 @@ public final class MISTQuerySerializerImpl implements MISTQuerySerializer {
   private final String runningJarPathString;
 
   @Inject
-  private MISTQuerySerializerImpl(final String runningJarPath) throws InjectionException {
+  private MISTQuerySerializerImpl(
+      @Parameter(RunningJarPath.class) final String runningJarPath) throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     this.sourceInfoProvider = injector.getInstance(SourceInfoProvider.class);
     this.sinkInfoProvider = injector.getInstance(SinkInfoProvider.class);
     this.windowOperatorInfoProvider = injector.getInstance(WindowOperatorInfoProvider.class);
     this.instantOperatorInfoProvider = injector.getInstance(InstantOperatorInfoProvider.class);
-    this.runningJarPathString = runningJarPath;
+    if (runningJarPath.endsWith(".jar")) {
+      this.runningJarPathString = runningJarPath;
+    } else {
+      throw new IllegalArgumentException("Client running jar path should end with '.jar'");
+    }
   }
 
   @Inject
-  private MISTQuerySerializerImpl() throws InjectionException, URISyntaxException {
+  private MISTQuerySerializerImpl() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     this.sourceInfoProvider = injector.getInstance(SourceInfoProvider.class);
     this.sinkInfoProvider = injector.getInstance(SinkInfoProvider.class);
     this.windowOperatorInfoProvider = injector.getInstance(WindowOperatorInfoProvider.class);
     this.instantOperatorInfoProvider = injector.getInstance(InstantOperatorInfoProvider.class);
-    final String jarPathCandidate = MISTQuerySerializerImpl.class.getProtectionDomain().getCodeSource().getLocation()
-        .toURI().toString();
-    if (!jarPathCandidate.endsWith(".jar")) {
-      this.runningJarPathString = null;
-    } else {
-      this.runningJarPathString = jarPathCandidate;
-    }
+    this.runningJarPathString = null;
   }
 
   private Vertex buildAvroVertex(final Object apiVertex) {
@@ -107,7 +108,7 @@ public final class MISTQuerySerializerImpl implements MISTQuerySerializer {
       isJarSerialized = false;
     } else {
       // Serialize running JAR file first
-      final File runningJarFile = new File(runningJarPathString.substring(5));
+      final File runningJarFile = new File(runningJarPathString);
       final Path runningJarPath = runningJarFile.toPath();
       runningJarBytes = Files.readAllBytes(runningJarPath);
       isJarSerialized = true;

@@ -128,7 +128,7 @@ public final class UnionMist {
         .textSocketOutput(localTextSocketSinkConf);
 
     final MISTQuery query = sink.getQuery();
-    final MISTExecutionEnvironment executionEnvironment = new MISTExecutionEnvironmentImpl(driverHost, driverPort);
+    final MISTExecutionEnvironment executionEnvironment = new MISTTestExecutionEnvironmentImpl(driverHost, driverPort);
     return executionEnvironment.submit(query);
   }
 
