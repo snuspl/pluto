@@ -16,6 +16,7 @@
 package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.APITestParameters;
+import edu.snu.mist.api.Exceptions.StreamTypeMismatchException;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.sources.REEFNetworkSourceStream;
 import edu.snu.mist.api.types.Tuple2;
@@ -106,5 +107,23 @@ public class InstantOperatorStreamTest {
     Assert.assertEquals(1, firstResult);
     Assert.assertEquals(1, secondState);
     Assert.assertEquals(1, secondResult);
+  }
+
+  private final MapOperatorStream<String, Tuple2<String, Integer>> filteredMappedStream2 =
+          new REEFNetworkSourceStream<String>(APITestParameters.LOCAL_REEF_NETWORK_SOURCE_CONF)
+                  .filter(s -> s.contains("A"))
+                  .map(s -> new Tuple2<>(s, 1));
+
+  /**
+   * Test for union operator.
+   */
+  @Test
+  public void testUnionOperatorStream() throws StreamTypeMismatchException {
+    final UnionOperatorStream<Tuple2<String, Integer>> unifiedStream
+        = filteredMappedStream.union(filteredMappedStream2);
+
+    Assert.assertEquals(unifiedStream.getBasicType(), StreamType.BasicType.CONTINUOUS);
+    Assert.assertEquals(unifiedStream.getContinuousType(), StreamType.ContinuousType.OPERATOR);
+    Assert.assertEquals(unifiedStream.getOperatorType(), StreamType.OperatorType.UNION);
   }
 }

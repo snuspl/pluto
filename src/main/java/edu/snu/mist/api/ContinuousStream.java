@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.api;
 
+import edu.snu.mist.api.Exceptions.StreamTypeMismatchException;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTPredicate;
@@ -82,6 +83,14 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    */
   <S, OUT> ApplyStatefulOperatorStream<T, OUT, S> applyStateful(MISTBiFunction<T, S, S> updateStateFunc,
                                                                 MISTFunction<S, OUT> produceResultFunc);
+
+  /**
+   * Applies union operation to the current stream and input continuous stream passed as a parameter.
+   * Both two streams for union should be continuous stream type.
+   * @param inputStream the stream to be unified with this stream
+   * @return new unified stream after applying type-checking
+   */
+  UnionOperatorStream<T> union(final ContinuousStream<T> inputStream) throws StreamTypeMismatchException;
 
   /**
    * It creates a new WindowsStream according to the policy defined in windowSizePolicy and windowEmitPolicy.

@@ -16,6 +16,7 @@
 
 package edu.snu.mist.api;
 
+import edu.snu.mist.api.Exceptions.StreamTypeMismatchException;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTPredicate;
@@ -26,6 +27,7 @@ import edu.snu.mist.api.sink.builder.SinkConfiguration;
 import edu.snu.mist.api.window.WindowEmitPolicy;
 import edu.snu.mist.api.window.WindowSizePolicy;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -89,6 +91,19 @@ public abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implemen
       final MISTBiFunction<T, S, S> updateStateFunc,
       final MISTFunction<S, OUT> produceResultFunc) {
     return new ApplyStatefulOperatorStream<>(this, updateStateFunc, produceResultFunc);
+  }
+
+  @Override
+  public UnionOperatorStream<T> union(final ContinuousStream<T> inputStream) throws StreamTypeMismatchException {
+
+    if (TypeChecker.checkTypesEqual(this, inputStream)) {
+      final Set<ContinuousStream<T>> unifiedStream = new HashSet<>();
+      unifiedStream.add(this);
+      unifiedStream.add(inputStream);
+      return new UnionOperatorStream<>(unifiedStream);
+    } else {
+      throw new StreamTypeMismatchException("Cannot perform union between streams having different data types!");
+    }
   }
 
   @Override
