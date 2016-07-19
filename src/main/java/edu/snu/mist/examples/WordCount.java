@@ -114,6 +114,7 @@ public final class WordCount {
         .filter(s -> isAlpha(s))
         .map(s -> new Tuple2(s, 1))
         .reduceByKey(0, String.class, reduceFunction)
+        .map(s -> s.toString())
         .textSocketOutput(localTextSocketSinkConf);
     final MISTQuery query = sink.getQuery();
 

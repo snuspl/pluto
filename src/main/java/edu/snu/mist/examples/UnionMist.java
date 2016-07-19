@@ -125,6 +125,7 @@ public final class UnionMist {
     final Sink sink = sourceStream1
         .union(sourceStream2)
         .reduceByKey(0, String.class, reduceFunction)
+        .map(s -> s.toString())
         .textSocketOutput(localTextSocketSinkConf);
 
     final MISTQuery query = sink.getQuery();
