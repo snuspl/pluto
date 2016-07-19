@@ -19,7 +19,7 @@ import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.GraphUtils;
 import edu.snu.mist.formats.avro.LogicalPlan;
 import edu.snu.mist.task.operators.Operator;
-import edu.snu.mist.task.parameters.NumSubmitterThreads;
+import edu.snu.mist.task.parameters.NumQueryReceiverThreads;
 import edu.snu.mist.task.sources.Source;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
@@ -35,7 +35,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * DefaultQuerySubmitterImpl does the following things:
+ * DefaultQueryReceiverImpl does the following things:
  * 1) receives logical plans from clients and converts the logical plans to physical plans,
  * 2) chains the physical operators and make PartitionedQuery,
  * 3) inserts the PartitionedQueries' queues to PartitionedQueryQueueManager,
@@ -44,9 +44,9 @@ import java.util.logging.Logger;
  * 5) starts to receive input data stream from the source of the query.
  */
 @SuppressWarnings("unchecked")
-final class DefaultQuerySubmitterImpl implements QuerySubmitter {
+final class DefaultQueryReceiverImpl implements QueryReceiver {
 
-  private static final Logger LOG = Logger.getLogger(DefaultQuerySubmitterImpl.class.getName());
+  private static final Logger LOG = Logger.getLogger(DefaultQueryReceiverImpl.class.getName());
   /**
    * Thread pool stage for executing the query submission logic.
    */
@@ -68,20 +68,20 @@ final class DefaultQuerySubmitterImpl implements QuerySubmitter {
   private final ThreadManager threadManager;
 
   /**
-   * Default query submitter in MistTask.
+   * Default query receiver in MistTask.
    * @param queryPartitioner the converter which chains operators and makes PartitionedQueries
    * @param physicalPlanGenerator the physical plan generator which generates physical plan from logical paln
    * @param idfactory identifier factory
    * @param threadManager thread manager
-   * @param numThreads the number of threads for the query submitter
+   * @param numThreads the number of threads for the query receiver
    */
   @Inject
-  private DefaultQuerySubmitterImpl(final QueryPartitioner queryPartitioner,
-                                    final PhysicalPlanGenerator physicalPlanGenerator,
-                                    final StringIdentifierFactory idfactory,
-                                    final ThreadManager threadManager,
-                                    final PartitionedQueryQueueManager queueManager,
-                                    @Parameter(NumSubmitterThreads.class) final int numThreads) {
+  private DefaultQueryReceiverImpl(final QueryPartitioner queryPartitioner,
+                                   final PhysicalPlanGenerator physicalPlanGenerator,
+                                   final StringIdentifierFactory idfactory,
+                                   final ThreadManager threadManager,
+                                   final PartitionedQueryQueueManager queueManager,
+                                   @Parameter(NumQueryReceiverThreads.class) final int numThreads) {
     this.physicalPlanMap = new ConcurrentHashMap<>();
     this.queueManager = queueManager;
     this.threadManager = threadManager;
