@@ -13,11 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.parameters;
+package edu.snu.mist.task;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import edu.snu.mist.formats.avro.LogicalPlan;
+import org.apache.reef.io.Tuple;
+import org.apache.reef.tang.annotations.DefaultImplementation;
+import org.apache.reef.wake.EStage;
 
-@NamedParameter(doc = "The number of threads of QuerySubmitter", default_value = "10")
-public final class NumSubmitterThreads implements Name<Integer> {
+/**
+ * This interface receives a tuple of queryId and logical plan,
+ * converts the logical plan to the physical plan,
+ * chains operators, allocates the chains into Executors,
+ * and starts to receive input data stream of the query.
+ */
+@DefaultImplementation(DefaultQueryReceiverImpl.class)
+public interface QueryReceiver extends EStage<Tuple<String, LogicalPlan>> {
+
 }

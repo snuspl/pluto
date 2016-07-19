@@ -22,6 +22,7 @@ import edu.snu.mist.driver.parameters.NumTasks;
 import edu.snu.mist.driver.parameters.TaskMemorySize;
 import edu.snu.mist.launcher.DriverRuntimeType;
 import edu.snu.mist.launcher.MistLauncher;
+import edu.snu.mist.task.parameters.NumQueryReceiverThreads;
 import edu.snu.mist.task.parameters.NumThreads;
 import org.apache.reef.client.LauncherStatus;
 import org.apache.reef.tang.Configuration;
@@ -48,6 +49,7 @@ public final class Mist {
         .registerShortNameOfClass(NumTaskCores.class)
         .registerShortNameOfClass(NumThreads.class)
         .registerShortNameOfClass(NumTasks.class)
+        .registerShortNameOfClass(NumQueryReceiverThreads.class)
         .registerShortNameOfClass(RPCServerPort.class)
         .registerShortNameOfClass(TaskMemorySize.class)
         .processCommandLine(args);

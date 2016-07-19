@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 
 /**
  * A runtime engine running mist queries.
- * The actual query submission logic is performed by QuerySubmitter.
+ * The submitted queries are handled by QueryReceiver.
  */
 public final class MistTask implements Task {
   private static final Logger LOG = Logger.getLogger(MistTask.class.getName());

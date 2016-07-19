@@ -23,7 +23,7 @@ import edu.snu.mist.formats.avro.LogicalPlan;
 import edu.snu.mist.task.operators.*;
 import edu.snu.mist.task.operators.parameters.KeyIndex;
 import edu.snu.mist.task.operators.parameters.OperatorId;
-import edu.snu.mist.task.parameters.NumSubmitterThreads;
+import edu.snu.mist.task.parameters.NumQueryReceiverThreads;
 import edu.snu.mist.task.parameters.NumThreads;
 import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sources.BaseSource;
@@ -50,8 +50,8 @@ import java.util.stream.Collectors;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public final class QuerySubmitterTest {
-  private static final Logger LOG = Logger.getLogger(QuerySubmitterTest.class.getName());
+public final class QueryReceiverTest {
+  private static final Logger LOG = Logger.getLogger(QueryReceiverTest.class.getName());
 
   /**
    * Build the query which consists of:
@@ -67,7 +67,7 @@ public final class QuerySubmitterTest {
    * The toStringMap operator changes the outputs to string and send it to sink1.
    * The totalCountMap operator calculates the total number of occurrence of words and send it to sink2.
    *
-   * This test will verify QuerySubmitter submits the query without any error
+   * This test will verify QueryReceiver handles the query without any error
    * and the operators are executed correctly.
    */
   @SuppressWarnings("unchecked")
@@ -171,21 +171,21 @@ public final class QuerySubmitterTest {
     final PhysicalPlan<Operator> physicalPlan =
         new DefaultPhysicalPlanImpl<>(sourceMap, operatorDAG, sinkMap);
 
-    // Fake logical plan of QuerySubmitter
+    // Fake logical plan of QueryReceiver
     final Tuple<String, LogicalPlan> tuple = new Tuple<>(queryId, new LogicalPlan());
 
     // Create mock PhysicalPlanGenerator. It returns the above physical plan
     final PhysicalPlanGenerator physicalPlanGenerator = mock(PhysicalPlanGenerator.class);
     when(physicalPlanGenerator.generate(tuple)).thenReturn(physicalPlan);
 
-    // Create QuerySubmitter
+    // Create QueryReceiver
     injector.bindVolatileInstance(PhysicalPlanGenerator.class, physicalPlanGenerator);
-    injector.bindVolatileParameter(NumSubmitterThreads.class, 1);
+    injector.bindVolatileParameter(NumQueryReceiverThreads.class, 1);
 
     // Submit the fake logical plan
     // The operators in the physical plan are executed
-    final QuerySubmitter querySubmitter = injector.getInstance(QuerySubmitter.class);
-    querySubmitter.onNext(tuple);
+    final QueryReceiver queryReceiver = injector.getInstance(QueryReceiver.class);
+    queryReceiver.onNext(tuple);
 
     // Wait until all of the outputs are generated
     countDownAllOutputs.await();
@@ -193,7 +193,7 @@ public final class QuerySubmitterTest {
     Assert.assertEquals(expectedSink1Output, sink1Result);
     Assert.assertEquals(expectedSink2Output, sink2Result);
     src.close();
-    querySubmitter.close();
+    queryReceiver.close();
   }
 
   /**
