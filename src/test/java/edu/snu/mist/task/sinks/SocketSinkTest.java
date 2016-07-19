@@ -15,29 +15,11 @@
  */
 package edu.snu.mist.task.sinks;
 
-import edu.snu.mist.common.parameters.QueryId;
-import edu.snu.mist.task.common.parameters.SocketServerIp;
-import edu.snu.mist.task.common.parameters.SocketServerPort;
-import edu.snu.mist.task.sinks.parameters.SinkId;
-import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.JavaConfigurationBuilder;
-import org.apache.reef.tang.Tang;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Test;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 public final class SocketSinkTest {
@@ -73,7 +55,7 @@ public final class SocketSinkTest {
    * Test whether TextSocketSink writes data stream to socket correctly.
    * In this test, Sink sends three strings to server socket.
    * @throws Exception
-   */
+
   @Test
   public void testSocketSink() throws Exception {
     final CountDownLatch serverCreated = new CountDownLatch(1);
@@ -123,4 +105,5 @@ public final class SocketSinkTest {
           inputStream, result);
     }
   }
+   */
 }
