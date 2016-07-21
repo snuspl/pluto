@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common;
 
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -84,4 +85,10 @@ public interface DAG<V> {
    * @throws java.util.NoSuchElementException if the vertex v does not exist.
    */
   int getInDegree(V v);
+
+  /**
+   * Returns the iterator of vertices.
+   * @return iterator
+   */
+  Iterator<V> getIterator();
 }

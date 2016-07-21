@@ -42,10 +42,16 @@ public final class AdjacentListDAG<V> implements DAG<V> {
    */
   private final Set<V> rootVertices;
 
+  /**
+   * A set of vertices.
+   */
+  private final Set<V> vertices;
+
   public AdjacentListDAG() {
     this.adjacent = new HashMap<>();
     this.inDegrees = new HashMap<>();
     this.rootVertices = new HashSet<>();
+    this.vertices = new HashSet<>();
   }
 
   @Override
@@ -74,6 +80,7 @@ public final class AdjacentListDAG<V> implements DAG<V> {
       adjacent.put(v, new HashSet<>());
       inDegrees.put(v, 0);
       rootVertices.add(v);
+      vertices.add(v);
       return true;
     } else {
       LOG.log(Level.WARNING, "The vertex {0} already exists", new Object[]{v});
@@ -84,6 +91,7 @@ public final class AdjacentListDAG<V> implements DAG<V> {
   @Override
   public boolean removeVertex(final V v) {
     final Set<V> neighbors = adjacent.remove(v);
+    vertices.remove(v);
     if (neighbors != null) {
       inDegrees.remove(v);
       // update inDegrees of neighbor vertices
@@ -150,5 +158,10 @@ public final class AdjacentListDAG<V> implements DAG<V> {
       throw new NoSuchElementException("No src vertex " + v);
     }
     return inDegree;
+  }
+
+  @Override
+  public Iterator<V> getIterator() {
+    return vertices.iterator();
   }
 }
