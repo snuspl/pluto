@@ -33,7 +33,7 @@ public class MistLauncherTest {
   public void testMistLauncher() throws InjectionException {
     final LauncherStatus status = MistLauncher
         .getLauncher(MistLauncher.RuntimeType.LOCAL)
-        .setTimeout(1000)
+        .setTimeout(4000)
         .run(1, 1, 1, 7777, 2048);
     Assert.assertEquals(LauncherStatus.FORCE_CLOSED, status);
   }
