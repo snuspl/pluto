@@ -16,8 +16,11 @@
 package edu.snu.mist.task;
 
 import org.apache.avro.ipc.Server;
+import org.apache.reef.tang.annotations.Unit;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.task.Task;
+import org.apache.reef.task.events.CloseEvent;
+import org.apache.reef.wake.EventHandler;
 
 import javax.inject.Inject;
 import java.util.concurrent.CountDownLatch;
@@ -28,6 +31,7 @@ import java.util.logging.Logger;
  * A runtime engine running mist queries.
  * The submitted queries are handled by QueryReceiver.
  */
+@Unit
 public final class MistTask implements Task {
   private static final Logger LOG = Logger.getLogger(MistTask.class.getName());
 
@@ -36,21 +40,39 @@ public final class MistTask implements Task {
    */
   private final CountDownLatch countDownLatch;
 
+  private final Server server;
+  private final QueryReceiver receiver;
+
   /**
    * Default constructor of MistTask.
    * @param server rpc server for receiving queries
    * @throws InjectionException
    */
   @Inject
-  private MistTask(final Server server) throws InjectionException {
+  private MistTask(final Server server,
+                   final QueryReceiver receiver) throws InjectionException {
     this.countDownLatch = new CountDownLatch(1);
+    this.server = server;
+    this.receiver = receiver;
   }
-
 
   @Override
   public byte[] call(final byte[] bytes) throws Exception {
     LOG.log(Level.INFO, "MistTask is started");
     countDownLatch.await();
+    server.close();
+    receiver.close();
     return new byte[0];
+  }
+
+  /**
+   * A handler for closing the task.
+   */
+  public final class TaskCloseHandler implements EventHandler<CloseEvent> {
+    @Override
+    public void onNext(final CloseEvent closeEvent) {
+      LOG.log(Level.INFO, "Closing Task");
+      countDownLatch.countDown();
+    }
   }
 }

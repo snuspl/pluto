@@ -93,7 +93,7 @@ public final class MistLauncher {
   /**
    * @return the configuration of the Mist driver.
    */
-  private static Configuration getDriverConfiguration(final Configuration conf) {
+  public static Configuration getDriverConfiguration(final Configuration conf) {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder(conf);
     jcb.bindImplementation(NameResolver.class, LocalNameResolverImpl.class);
     jcb.bindImplementation(IdentifierFactory.class, StringIdentifierFactory.class);

@@ -151,6 +151,7 @@ public final class MistDriver {
       final Configuration taskConfiguration = TaskConfiguration.CONF
           .set(TaskConfiguration.IDENTIFIER, taskId)
           .set(TaskConfiguration.TASK, MistTask.class)
+          .set(TaskConfiguration.ON_CLOSE, MistTask.TaskCloseHandler.class)
           .build();
       // submit a task
       activeContext.submitTask(

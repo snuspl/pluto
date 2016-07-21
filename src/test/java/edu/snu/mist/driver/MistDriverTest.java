@@ -15,27 +15,18 @@
  */
 package edu.snu.mist.driver;
 
-import edu.snu.mist.common.rpc.AvroRPCNettyServerWrapper;
-import edu.snu.mist.launcher.DriverRuntimeType;
 import edu.snu.mist.driver.parameters.NumTaskCores;
 import edu.snu.mist.driver.parameters.TaskMemorySize;
+import edu.snu.mist.launcher.DriverRuntimeType;
+import edu.snu.mist.launcher.MistLauncher;
 import edu.snu.mist.task.parameters.NumThreads;
-import org.apache.avro.ipc.Server;
-import org.apache.avro.ipc.specific.SpecificResponder;
-import org.apache.reef.client.DriverConfiguration;
 import org.apache.reef.client.LauncherStatus;
-import org.apache.reef.io.network.naming.LocalNameResolverImpl;
-import org.apache.reef.io.network.naming.NameResolver;
-import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.runtime.local.client.LocalRuntimeConfiguration;
 import org.apache.reef.tang.Configuration;
-import org.apache.reef.tang.Configurations;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
-import org.apache.reef.util.EnvironmentUtils;
 import org.apache.reef.util.Optional;
-import org.apache.reef.wake.IdentifierFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -48,10 +39,6 @@ public final class MistDriverTest {
   @Test
   public void launchDriverTest() throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindImplementation(NameResolver.class, LocalNameResolverImpl.class);
-    jcb.bindImplementation(IdentifierFactory.class, StringIdentifierFactory.class);
-    jcb.bindConstructor(SpecificResponder.class, SpecificResponderWrapper.class);
-    jcb.bindConstructor(Server.class, AvroRPCNettyServerWrapper.class);
     jcb.bindNamedParameter(DriverRuntimeType.class, "LOCAL");
     jcb.bindNamedParameter(NumTaskCores.class, "1");
     jcb.bindNamedParameter(NumThreads.class, "1");
@@ -59,18 +46,9 @@ public final class MistDriverTest {
 
     final Configuration runtimeConf = LocalRuntimeConfiguration.CONF
         .build();
+    final Configuration driverConf = MistLauncher.getDriverConfiguration(jcb.build());
 
-    final Configuration driverConf = DriverConfiguration.CONF
-        .set(DriverConfiguration.GLOBAL_LIBRARIES, EnvironmentUtils.getClassLocation(MistDriver.class))
-        .set(DriverConfiguration.DRIVER_IDENTIFIER, "MistDriverTest")
-        .set(DriverConfiguration.ON_DRIVER_STARTED, MistDriver.StartHandler.class)
-        .set(DriverConfiguration.ON_EVALUATOR_ALLOCATED, MistDriver.EvaluatorAllocatedHandler.class)
-        .set(DriverConfiguration.ON_CONTEXT_ACTIVE, MistDriver.ActiveContextHandler.class)
-        .set(DriverConfiguration.ON_TASK_RUNNING, MistDriver.RunningTaskHandler.class)
-        .build();
-
-    final LauncherStatus state = TestLauncher.run(runtimeConf, Configurations
-        .merge(jcb.build(), driverConf), 5000);
+    final LauncherStatus state = TestLauncher.run(runtimeConf, driverConf, 5000);
     final Optional<Throwable> err = state.getError();
     System.out.println("Job state after execution: " + state);
     System.out.println("Error: " + err.get());
