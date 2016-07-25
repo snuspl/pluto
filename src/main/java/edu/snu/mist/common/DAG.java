@@ -15,14 +15,13 @@
  */
 package edu.snu.mist.common;
 
-import java.util.Iterator;
 import java.util.Set;
 
 /**
  * This interface represents Directed Acyclic Graph (DAG).
  * @param <V> vertex
  */
-public interface DAG<V> {
+public interface DAG<V> extends Iterable<V> {
 
   /**
    * Gets root vertices for graph traversal.
@@ -85,10 +84,4 @@ public interface DAG<V> {
    * @throws java.util.NoSuchElementException if the vertex v does not exist.
    */
   int getInDegree(V v);
-
-  /**
-   * Returns the iterator of vertices.
-   * @return iterator
-   */
-  Iterator<V> getIterator();
 }

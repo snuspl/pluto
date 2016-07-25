@@ -102,7 +102,7 @@ final class DefaultQueryReceiverImpl implements QueryReceiver {
       final DAG<PartitionedQuery> chainedOperators = chainedPlan.getOperators();
 
       // 3) Inserts the PartitionedQueries' queues to PartitionedQueueManager.
-      final Iterator<PartitionedQuery> partitionedQueryIterator = chainedOperators.getIterator();
+      final Iterator<PartitionedQuery> partitionedQueryIterator = chainedOperators.iterator();
       while (partitionedQueryIterator.hasNext()) {
         final PartitionedQuery partitionedQuery = partitionedQueryIterator.next();
         queueManager.insert(partitionedQuery.getQueue());
@@ -132,7 +132,7 @@ final class DefaultQueryReceiverImpl implements QueryReceiver {
   private void start(final PhysicalPlan<PartitionedQuery> chainPhysicalPlan) {
     final DAG<PartitionedQuery> chainedOperators = chainPhysicalPlan.getOperators();
     // 4) Sets output emitters
-    final Iterator<PartitionedQuery> iterator = chainedOperators.getIterator();
+    final Iterator<PartitionedQuery> iterator = chainedOperators.iterator();
     while (iterator.hasNext()) {
       final PartitionedQuery partitionedQuery = iterator.next();
       final Set<PartitionedQuery> neighbors = chainedOperators.getNeighbors(partitionedQuery);

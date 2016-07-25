@@ -161,7 +161,7 @@ public final class AdjacentListDAG<V> implements DAG<V> {
   }
 
   @Override
-  public Iterator<V> getIterator() {
+  public Iterator<V> iterator() {
     return vertices.iterator();
   }
 }

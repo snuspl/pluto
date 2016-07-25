@@ -104,7 +104,7 @@ public final class AdjacentListDAGTest {
     expected.addAll(Arrays.asList(1, 2, 3, 5));
 
     final Set<Integer> result = new HashSet<>();
-    final Iterator<Integer> iterator = dag.getIterator();
+    final Iterator<Integer> iterator = dag.iterator();
     while (iterator.hasNext()) {
       result.add(iterator.next());
     }
