@@ -28,6 +28,7 @@ import org.apache.reef.wake.impl.ThreadPoolStage;
 
 import javax.inject.Inject;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -146,8 +147,10 @@ final class DefaultQueryReceiverImpl implements QueryReceiver {
       }
     }
 
-    for (final Source src : chainPhysicalPlan.getSourceMap().keySet()) {
-      final Set<PartitionedQuery> nextOps = chainPhysicalPlan.getSourceMap().get(src);
+    for (final Map.Entry<Source, Set<PartitionedQuery>> entry :
+        chainPhysicalPlan.getSourceMap().entrySet()) {
+      final Set<PartitionedQuery> nextOps = entry.getValue();
+      final Source src = entry.getKey();
       // Sets SourceOutputEmitter to the sources
       src.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
       // 5) starts to receive input data stream from the source
