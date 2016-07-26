@@ -18,6 +18,8 @@ package edu.snu.mist.task.operators;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.parameters.QueryId;
+import edu.snu.mist.task.common.MistDataEvent;
+import edu.snu.mist.task.common.MistWatermarkEvent;
 import edu.snu.mist.task.operators.parameters.KeyIndex;
 import edu.snu.mist.task.operators.parameters.OperatorId;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
@@ -27,6 +29,8 @@ import javax.inject.Inject;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.function.BiFunction;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This operator reduces the value by key.
@@ -37,7 +41,8 @@ import java.util.function.BiFunction;
  * This can be changed to Map when we support non-serializable state.
  */
 public final class ReduceByKeyOperator<K extends Serializable, V extends Serializable>
-    extends StatefulOperator<Tuple2, HashMap<K, V>, HashMap<K, V>> {
+    extends OneStreamOperator {
+  private static final Logger LOG = Logger.getLogger(ReduceByKeyOperator.class.getName());
 
   /**
    * A reduce function.
@@ -48,6 +53,11 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
    * An index of key.
    */
   private final int keyIndex;
+
+  /**
+   * KeyValue state.
+   */
+  private HashMap<K, V> state;
 
   /**
    * @param reduceFunc reduce function
@@ -65,10 +75,10 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
     super(idFactory.getNewInstance(queryId), idFactory.getNewInstance(operatorId));
     this.reduceFunc = reduceFunc;
     this.keyIndex = keyIndex;
+    this.state = createInitialState();
   }
 
-  @Override
-  protected HashMap<K, V> createInitialState() {
+  private HashMap<K, V> createInitialState() {
     return new HashMap<>();
   }
 
@@ -77,13 +87,12 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
    * It creates a new map whenever it updates the state.
    * This produces immutable output.
    * @param input input tuple
-   * @param state previous state
+   * @param st previous state
    * @return output
    */
   @SuppressWarnings("unchecked")
-  @Override
-  protected HashMap<K, V> updateState(final Tuple2 input, final HashMap<K, V> state) {
-    final HashMap<K, V> newState = new HashMap<>(state);
+  private HashMap<K, V> updateState(final Tuple2 input, final HashMap<K, V> st) {
+    final HashMap<K, V> newState = new HashMap<>(st);
     final K key = (K)input.get(keyIndex);
     final V val = (V)input.get(1 - keyIndex);
     final V oldVal = newState.get(key);
@@ -100,13 +109,28 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
    * @param finalState state
    * @return output
    */
-  @Override
-  protected HashMap<K, V> generateOutput(final HashMap<K, V> finalState) {
+  private HashMap<K, V> generateOutput(final HashMap<K, V> finalState) {
     return finalState;
   }
 
   @Override
   public StreamType.OperatorType getOperatorType() {
     return StreamType.OperatorType.REDUCE_BY_KEY;
+  }
+
+  @Override
+  public void processLeftData(final MistDataEvent input) {
+    final HashMap<K, V> intermediateState = updateState((Tuple2)input.getValue(), state);
+    final HashMap<K, V> output = generateOutput(intermediateState);
+    LOG.log(Level.FINE, "{0} updates the state {1} with input {2} to {3}, and generates {4}",
+        new Object[]{getOperatorIdentifier(), state, input, intermediateState, output});
+    input.setValue(output);
+    outputEmitter.emitData(input);
+    state = intermediateState;
+  }
+
+  @Override
+  public void processLeftWatermark(final MistWatermarkEvent input) {
+    outputEmitter.emitWatermark(input);
   }
 }

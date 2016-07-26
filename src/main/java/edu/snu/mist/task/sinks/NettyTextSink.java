@@ -40,7 +40,7 @@ public final class NettyTextSink implements Sink<String> {
   /**
    * Output emitter.
    */
-  private OutputEmitter<String> outputEmitter;
+  private OutputEmitter outputEmitter;
 
   /**
    * Netty channel.

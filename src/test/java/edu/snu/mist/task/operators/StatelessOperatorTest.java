@@ -17,7 +17,9 @@ package edu.snu.mist.task.operators;
 
 import com.google.common.collect.ImmutableList;
 import edu.snu.mist.common.parameters.QueryId;
+import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.operators.parameters.OperatorId;
+import edu.snu.mist.task.utils.TestOutputEmitter;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -34,15 +36,19 @@ import java.util.function.Predicate;
 
 public final class StatelessOperatorTest {
 
-  private <I, O> void testStatelessOperator(final List<I> inputStream,
+  private <O> void testStatelessOperator(final List<MistDataEvent> inputStream,
                                             final List<O> expected,
-                                            final Operator<I, O> operator) {
+                                            final Operator operator) {
     final List<O> result = new LinkedList<>();
-    operator.setOutputEmitter(output -> result.add(output));
-    inputStream.stream().forEach(operator::handle);
+    operator.setOutputEmitter(new TestOutputEmitter<>(result));
+    inputStream.stream().forEach(operator::processLeftData);
     System.out.println("expected: " + expected);
     System.out.println("result: " + result);
     Assert.assertEquals(expected, result);
+  }
+
+  private MistDataEvent createEvent(final String val) {
+    return new MistDataEvent(val, System.currentTimeMillis());
   }
 
   /**
@@ -52,10 +58,11 @@ public final class StatelessOperatorTest {
   @Test
   public void testMapOperation() throws InjectionException {
     // input stream
-    final List<String> inputStream = ImmutableList.of("a", "b", "d", "b", "c");
+    final List<MistDataEvent> inputStream = ImmutableList.of(createEvent("a"),
+        createEvent("b"), createEvent("d"), createEvent("b"), createEvent("c"));
     // expected output
-    final Tuple[] outputs = {new Tuple("a", 1), new Tuple("b", 1),
-        new Tuple("d", 1), new Tuple("b", 1), new Tuple("c", 1)};
+    final Tuple[] outputs = {new Tuple<>("a", 1), new Tuple<>("b", 1),
+        new Tuple<>("d", 1), new Tuple<>("b", 1), new Tuple<>("c", 1)};
     final List<Tuple> expected = Arrays.asList(outputs);
 
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
@@ -63,7 +70,7 @@ public final class StatelessOperatorTest {
     jcb.bindNamedParameter(OperatorId.class, "testMapOperator");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     // map function: convert string to tuple
-    final Function<String, Tuple> mapFunc = (mapInput) -> new Tuple(mapInput, 1);
+    final Function<String, Tuple> mapFunc = (mapInput) -> new Tuple<>(mapInput, 1);
 
     injector.bindVolatileInstance(Function.class, mapFunc);
     final MapOperator<String, Tuple> mapOperator = injector.getInstance(MapOperator.class);
@@ -77,10 +84,10 @@ public final class StatelessOperatorTest {
   @Test
   public void testFilterOperator() throws InjectionException {
     // input stream
-    final List<String> inputStream = ImmutableList.of(
-        "alpha", "gamma", "bravo", "area",
-        "charlie", "delta", "application",
-        "echo", "ally", "foxtrot");
+    final List<MistDataEvent> inputStream = ImmutableList.of(
+        createEvent("alpha"), createEvent("gamma"), createEvent("bravo"), createEvent("area"),
+        createEvent("charlie"), createEvent("delta"), createEvent("application"),
+        createEvent("echo"), createEvent("ally"), createEvent("foxtrot"));
 
     // expected output
     final List<String> expected = Arrays.asList("alpha", "area", "application", "ally");
@@ -104,7 +111,8 @@ public final class StatelessOperatorTest {
   @Test
   public void testFlatMapOperation() throws InjectionException {
     // input stream
-    final List<String> inputStream = ImmutableList.of("a b c", "b c d", "d e f");
+    final List<MistDataEvent> inputStream = ImmutableList.of(
+        createEvent("a b c"), createEvent("b c d"), createEvent("d e f"));
     // expected output
     final String[] outputs = {"a", "b", "c", "b", "c", "d", "d", "e", "f"};
     final List<String> expected = Arrays.asList(outputs);

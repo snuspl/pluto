@@ -20,6 +20,8 @@ import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.formats.avro.LogicalPlan;
+import edu.snu.mist.task.common.MistDataEvent;
+import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.operators.*;
 import edu.snu.mist.task.operators.parameters.KeyIndex;
 import edu.snu.mist.task.operators.parameters.OperatorId;
@@ -80,7 +82,7 @@ public final class QueryReceiverTest {
         "a mist rose out of the river",
         "the peaks were shrouded in mist");
 
-    final Map<Source, Map<Operator, MistEvent.Direction>> sourceMap = new HashMap<>();
+    final Map<Source, Map<Operator, MistDataEvent.Direction>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
     // UDF functions for operators
@@ -145,19 +147,19 @@ public final class QueryReceiverTest {
     final Sink sink2 = new TestSink<Integer>(sink2Result, countDownAllOutputs);
 
     // Create DAG of operators
-    final DAG<Operator, MistEvent.Direction> operatorDAG = new AdjacentListDAG<>();
+    final DAG<Operator, MistDataEvent.Direction> operatorDAG = new AdjacentListDAG<>();
     operatorDAG.addVertex(flatMap); operatorDAG.addVertex(filter);
     operatorDAG.addVertex(toTupleMap); operatorDAG.addVertex(reduceByKey);
     operatorDAG.addVertex(toStringMap); operatorDAG.addVertex(totalCountMap);
 
-    operatorDAG.addEdge(flatMap, filter, MistEvent.Direction.LEFT); 
+    operatorDAG.addEdge(flatMap, filter, MistEvent.Direction.LEFT);
     operatorDAG.addEdge(filter, toTupleMap, MistEvent.Direction.LEFT);
     operatorDAG.addEdge(toTupleMap, reduceByKey, MistEvent.Direction.LEFT);
     operatorDAG.addEdge(reduceByKey, toStringMap, MistEvent.Direction.LEFT);
     operatorDAG.addEdge(reduceByKey, totalCountMap, MistEvent.Direction.LEFT);
 
     // Create source map
-    final Map<Operator, MistEvent.Direction> src1Ops = new HashMap<>();
+    final Map<Operator, MistDataEvent.Direction> src1Ops = new HashMap<>();
     src1Ops.put(flatMap, MistEvent.Direction.LEFT);
     sourceMap.put(src, src1Ops);
 
@@ -169,7 +171,7 @@ public final class QueryReceiverTest {
     sinkMap.put(totalCountMap, sinksForTotalCountOp);
 
     // Build a physical plan
-    final PhysicalPlan<Operator, MistEvent.Direction> physicalPlan =
+    final PhysicalPlan<Operator, MistDataEvent.Direction> physicalPlan =
         new DefaultPhysicalPlanImpl<>(sourceMap, operatorDAG, sinkMap);
 
     // Fake logical plan of QueryReceiver

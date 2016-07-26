@@ -13,24 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task;
+package edu.snu.mist.task.common;
 
 /**
- * This class contains information of an event.
- * TODO: [MIST-268] Change and extend Operator API for processing multiple streams
+ * This interface represents events of Mist.
+ * MistEvent can be data or watermark. e
  */
-public final class MistEvent {
+public interface MistEvent {
   /**
    * The type of events.
    */
-  public static enum EventType {
+  enum EventType {
     DATA, // DATA: actual event data stream
     WATERMARK, // WATERMARK: watermark data
   }
+
+  boolean isData();
 
   /**
    * The type of event direction. Union operator should get two events: LEFT/RIGHT events.
    * One direction operator always receive LEFT event.
    */
-  public static enum Direction {LEFT, RIGHT}
+  enum Direction {LEFT, RIGHT}
 }

@@ -17,6 +17,8 @@ package edu.snu.mist.task.operators;
 
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.common.parameters.QueryId;
+import edu.snu.mist.task.common.MistDataEvent;
+import edu.snu.mist.task.common.MistWatermarkEvent;
 import edu.snu.mist.task.operators.parameters.OperatorId;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.annotations.Parameter;
@@ -30,7 +32,7 @@ import java.util.logging.Logger;
  * Filter operator which filters input stream.
  * @param <I> input type
  */
-public final class FilterOperator<I> extends StatelessOperator<I, I> {
+public final class FilterOperator<I> extends OneStreamOperator {
   private static final Logger LOG = Logger.getLogger(FilterOperator.class.getName());
 
   /**
@@ -47,17 +49,22 @@ public final class FilterOperator<I> extends StatelessOperator<I, I> {
     this.filterFunc = filterFunc;
   }
 
-
   /**
    * Filters the input.
    */
   @Override
-  public void handle(final I input) {
-    if (filterFunc.test(input)) {
+  public void processLeftData(final MistDataEvent input) {
+    final I value = (I)input.getValue();
+    if (filterFunc.test(value)) {
       LOG.log(Level.FINE, "{0} Filters {1}",
-          new Object[]{FilterOperator.class, input});
-      outputEmitter.emit(input);
+          new Object[]{FilterOperator.class, value});
+      outputEmitter.emitData(input);
     }
+  }
+
+  @Override
+  public void processLeftWatermark(final MistWatermarkEvent input) {
+    outputEmitter.emitWatermark(input);
   }
 
   @Override

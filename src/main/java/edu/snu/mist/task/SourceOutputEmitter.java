@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.task.common.MistDataEvent;
+import edu.snu.mist.task.common.MistWatermarkEvent;
 import edu.snu.mist.task.common.OutputEmitter;
 
 import java.util.Map;
@@ -24,21 +26,41 @@ import java.util.Map;
  * It always submits jobs to MistExecutors.
  *  @param <I>
  */
-final class SourceOutputEmitter<I> implements OutputEmitter<I> {
+final class SourceOutputEmitter<I> implements OutputEmitter {
 
   /**
    * Next PartitionedQueries.
    */
-  private final Map<PartitionedQuery, MistEvent.Direction> nextPartitionedQueries;
+  private final Map<PartitionedQuery, MistDataEvent.Direction> nextPartitionedQueries;
 
-  public SourceOutputEmitter(final Map<PartitionedQuery, MistEvent.Direction> nextPartitionedQueries) {
+  public SourceOutputEmitter(final Map<PartitionedQuery, MistDataEvent.Direction> nextPartitionedQueries) {
     this.nextPartitionedQueries = nextPartitionedQueries;
   }
 
   @Override
-  public void emit(final I input) {
-    for (final Map.Entry<PartitionedQuery, MistEvent.Direction> nextQuery : nextPartitionedQueries.entrySet()) {
-      nextQuery.getKey().addNextEvent(input);
+  public void emitData(final MistDataEvent data) {
+    if (nextPartitionedQueries.size() == 1) {
+      for (final Map.Entry<PartitionedQuery, MistDataEvent.Direction> nextQuery :
+          nextPartitionedQueries.entrySet()) {
+        final MistDataEvent.Direction direction = nextQuery.getValue();
+        nextQuery.getKey().addNextEvent(data, direction);
+      }
+    } else {
+      for (final Map.Entry<PartitionedQuery, MistDataEvent.Direction> nextQuery :
+          nextPartitionedQueries.entrySet()) {
+        final MistDataEvent.Direction direction = nextQuery.getValue();
+        final MistDataEvent event = new MistDataEvent(data.getValue(), data.getTimestamp());
+        nextQuery.getKey().addNextEvent(event, direction);
+      }
+    }
+  }
+
+  @Override
+  public void emitWatermark(final MistWatermarkEvent watermark) {
+    for (final Map.Entry<PartitionedQuery, MistDataEvent.Direction> nextQuery :
+        nextPartitionedQueries.entrySet()) {
+      final MistDataEvent.Direction direction = nextQuery.getValue();
+      nextQuery.getKey().addNextEvent(watermark, direction);
     }
   }
 }

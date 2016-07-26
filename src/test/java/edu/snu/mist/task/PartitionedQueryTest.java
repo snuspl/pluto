@@ -16,8 +16,12 @@
 package edu.snu.mist.task;
 
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.task.operators.BaseOperator;
+import edu.snu.mist.task.common.MistDataEvent;
+import edu.snu.mist.task.common.MistEvent;
+import edu.snu.mist.task.common.MistWatermarkEvent;
+import edu.snu.mist.task.operators.OneStreamOperator;
 import edu.snu.mist.task.operators.Operator;
+import edu.snu.mist.task.utils.TestOutputEmitter;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -32,6 +36,10 @@ import java.util.List;
 public final class PartitionedQueryTest {
   // TODO[MIST-70]: Consider concurrency issue in execution of PartitionedQuery
 
+  private MistDataEvent createEvent(final int val) {
+    return new MistDataEvent(val, System.currentTimeMillis());
+  }
+
   /**
    * Tests whether the PartitionedQuery correctly executes the chained operators.
    * @throws InjectionException
@@ -44,7 +52,7 @@ public final class PartitionedQueryTest {
     final Integer input = 3;
 
     final PartitionedQuery partitionedQuery = new DefaultPartitionedQuery();
-    partitionedQuery.setOutputEmitter(output -> result.add((Integer) output));
+    partitionedQuery.setOutputEmitter(new TestOutputEmitter<>(result));
 
     final Injector injector = Tang.Factory.getTang().newInjector();
     final StringIdentifierFactory idFactory = injector.getInstance(StringIdentifierFactory.class);
@@ -53,44 +61,44 @@ public final class PartitionedQueryTest {
     final Identifier incOpId = idFactory.getNewInstance("incOp");
     final Identifier doubleOpId = idFactory.getNewInstance("doubleOp");
 
-    final Operator<Integer, Integer> squareOp = new SquareOperator(queryId, squareOpId);
-    final Operator<Integer, Integer> incOp = new IncrementOperator(queryId, incOpId);
-    final Operator<Integer, Integer> doubleOp = new DoubleOperator(queryId, doubleOpId);
+    final Operator squareOp = new SquareOperator(queryId, squareOpId);
+    final Operator incOp = new IncrementOperator(queryId, incOpId);
+    final Operator doubleOp = new DoubleOperator(queryId, doubleOpId);
 
     // 2 * (input * input + 1)
     final Integer expected1 = 2 * (input * input + 1);
     partitionedQuery.insertToHead(doubleOp);
     partitionedQuery.insertToHead(incOp);
     partitionedQuery.insertToHead(squareOp);
-    partitionedQuery.addNextEvent(input);
+    partitionedQuery.addNextEvent(createEvent(input), MistEvent.Direction.LEFT);
     partitionedQuery.processNextEvent();
     Assert.assertEquals(expected1, result.remove(0));
 
     // 2 * (input + 1)
     partitionedQuery.removeFromHead();
     final Integer expected2 = 2 * (input + 1);
-    partitionedQuery.addNextEvent(input);
+    partitionedQuery.addNextEvent(createEvent(input), MistEvent.Direction.LEFT);
     partitionedQuery.processNextEvent();
     Assert.assertEquals(expected2, result.remove(0));
 
     // input + 1
     partitionedQuery.removeFromTail();
     final Integer expected3 = input + 1;
-    partitionedQuery.addNextEvent(input);
+    partitionedQuery.addNextEvent(createEvent(input), MistEvent.Direction.LEFT);
     partitionedQuery.processNextEvent();
     Assert.assertEquals(expected3, result.remove(0));
 
     // 2 * input + 1
     partitionedQuery.insertToHead(doubleOp);
     final Integer expected4 = 2 * input + 1;
-    partitionedQuery.addNextEvent(input);
+    partitionedQuery.addNextEvent(createEvent(input), MistEvent.Direction.LEFT);
     partitionedQuery.processNextEvent();
     Assert.assertEquals(expected4, result.remove(0));
 
     // (2 * input + 1) * (2 * input + 1)
     partitionedQuery.insertToTail(squareOp);
     final Integer expected5 = (2 * input + 1) * (2 * input + 1);
-    partitionedQuery.addNextEvent(input);
+    partitionedQuery.addNextEvent(createEvent(input), MistEvent.Direction.LEFT);
     partitionedQuery.processNextEvent();
     Assert.assertEquals(expected5, result.remove(0));
   }
@@ -98,15 +106,23 @@ public final class PartitionedQueryTest {
   /**
    * This emits squared inputs.
    */
-  class SquareOperator extends BaseOperator<Integer, Integer> {
+  class SquareOperator extends OneStreamOperator {
     SquareOperator(final Identifier queryId,
                    final Identifier operatorId) {
       super(queryId, operatorId);
     }
 
     @Override
-    public void handle(final Integer input) {
-      outputEmitter.emit(input * input);
+    public void processLeftData(final MistDataEvent data) {
+      final int i = (int)data.getValue();
+      final int val = i * i;
+      data.setValue(val);
+      outputEmitter.emitData(data);
+    }
+
+    @Override
+    public void processLeftWatermark(final MistWatermarkEvent watermark) {
+      // do nothing
     }
 
     @Override
@@ -118,15 +134,22 @@ public final class PartitionedQueryTest {
   /**
    * This increments the input.
    */
-  class IncrementOperator extends BaseOperator<Integer, Integer> {
+  class IncrementOperator extends OneStreamOperator {
     IncrementOperator(final Identifier queryId,
                       final Identifier operatorId) {
       super(queryId, operatorId);
     }
 
     @Override
-    public void handle(final Integer input) {
-      outputEmitter.emit(input + 1);
+    public void processLeftData(final MistDataEvent data) {
+      final int val = (int)data.getValue() + 1;
+      data.setValue(val);
+      outputEmitter.emitData(data);
+    }
+
+    @Override
+    public void processLeftWatermark(final MistWatermarkEvent watermark) {
+      // do nothing
     }
 
     @Override
@@ -138,15 +161,22 @@ public final class PartitionedQueryTest {
   /**
    * This doubles the input.
    */
-  class DoubleOperator extends BaseOperator<Integer, Integer> {
+  class DoubleOperator extends OneStreamOperator {
     DoubleOperator(final Identifier queryId,
                    final Identifier operatorId) {
       super(queryId, operatorId);
     }
 
     @Override
-    public void handle(final Integer input) {
-      outputEmitter.emit(input * 2);
+    public void processLeftData(final MistDataEvent data) {
+      final int val = (int)data.getValue() * 2;
+      data.setValue(val);
+      outputEmitter.emitData(data);
+    }
+
+    @Override
+    public void processLeftWatermark(final MistWatermarkEvent watermark) {
+      // do nothing
     }
 
     @Override

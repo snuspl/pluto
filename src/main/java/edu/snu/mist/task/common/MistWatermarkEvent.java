@@ -16,12 +16,28 @@
 package edu.snu.mist.task.common;
 
 /**
- * This interface can push outputs to next operators.
+ * This class represents watermark event.
  */
-public interface OutputEmittable {
+public final class MistWatermarkEvent implements MistEvent {
   /**
-   * Sets an output emitter which forwards outputs to next operators.
-   * @param emitter an output emitter
+   * Timestamp for the WATERMARK.
    */
-  void setOutputEmitter(final OutputEmitter emitter);
+  private long timestamp;
+
+  public MistWatermarkEvent(final long timestamp) {
+    this.timestamp = timestamp;
+  }
+
+  public long getTimestamp() {
+    return timestamp;
+  }
+
+  public void setTimestamp(final long ts) {
+    timestamp = ts;
+  }
+
+  @Override
+  public boolean isData() {
+    return false;
+  }
 }

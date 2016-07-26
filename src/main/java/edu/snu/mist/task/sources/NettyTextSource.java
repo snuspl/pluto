@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task.sources;
 
+import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.OutputEmitter;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -62,7 +63,7 @@ public final class NettyTextSource implements Source<String> {
   /**
    * Output emitter.
    */
-  private OutputEmitter<String> outputEmitter;
+  private OutputEmitter outputEmitter;
 
   /**
    * Socket address for data stream server.
@@ -97,7 +98,8 @@ public final class NettyTextSource implements Source<String> {
         final ChannelFuture channelFuture;
         channelFuture = clientBootstrap.connect(serverSocketAddress);
         channel = channelFuture.channel();
-        channelMap.putIfAbsent(channel, (input) -> outputEmitter.emit(input));
+        channelMap.putIfAbsent(channel, (input) ->
+            outputEmitter.emitData(new MistDataEvent(input, System.currentTimeMillis())));
       }
     }
   }
@@ -121,7 +123,7 @@ public final class NettyTextSource implements Source<String> {
   }
 
   @Override
-  public void setOutputEmitter(final OutputEmitter<String> emitter) {
+  public void setOutputEmitter(final OutputEmitter emitter) {
     outputEmitter = emitter;
   }
 }

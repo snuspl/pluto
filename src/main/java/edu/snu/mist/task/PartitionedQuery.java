@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.common.OutputEmittable;
 import edu.snu.mist.task.operators.Operator;
 
@@ -60,8 +61,10 @@ public interface PartitionedQuery extends OutputEmittable {
   boolean processNextEvent();
 
   /**
-   * Add an event to the queue.
+   * Add an event to the queue with direction.
+   * @param event event
+   * @param direction upstream direction of the event
    * @return true if the event is enqueued, otherwise false.
    */
-  boolean addNextEvent(Object event);
+  boolean addNextEvent(MistEvent event, MistEvent.Direction direction);
 }

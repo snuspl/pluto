@@ -15,7 +15,8 @@
  */
 package edu.snu.mist.common;
 
-import edu.snu.mist.task.MistEvent;
+import edu.snu.mist.task.common.MistDataEvent;
+import edu.snu.mist.task.common.MistEvent;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,7 +27,7 @@ import java.util.Set;
 
 public final class GraphUtilsTest {
 
-  private DAG<Integer, MistEvent.Direction> srcDAG = new AdjacentListDAG<>();
+  private DAG<Integer, MistDataEvent.Direction> srcDAG = new AdjacentListDAG<>();
 
   @Before
   public void setUp() {
@@ -53,7 +54,7 @@ public final class GraphUtilsTest {
    */
   @Test
   public void copyGraphTest() {
-    final DAG<Integer, MistEvent.Direction> destDAG = new AdjacentListDAG<>();
+    final DAG<Integer, MistDataEvent.Direction> destDAG = new AdjacentListDAG<>();
     GraphUtils.copy(srcDAG, destDAG);
 
     final Set<Integer> expectedRoot = new HashSet<>();

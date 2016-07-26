@@ -20,15 +20,12 @@ import org.apache.reef.wake.Identifier;
 import java.util.logging.Logger;
 
 /**
- * Stateless operator transforms inputs by doing computation
- * and immediately pushes the results to the OutputEmitter without state modification.
- * @param <I> input
- * @param <O> output
+ * This abstract class is for two stream (LEFT/RIGHT) events.
  */
-public abstract class StatelessOperator<I, O> extends BaseOperator<I, O> {
-  private static final Logger LOG = Logger.getLogger(StatelessOperator.class.getName());
+public abstract class TwoStreamOperator extends BaseOperator {
+  private static final Logger LOG = Logger.getLogger(TwoStreamOperator.class.getName());
 
-  public StatelessOperator(final Identifier queryId,
+  public TwoStreamOperator(final Identifier queryId,
                            final Identifier operatorId) {
     super(queryId, operatorId);
   }

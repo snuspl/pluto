@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.operators.Operator;
 import org.apache.reef.wake.EventHandler;
 
@@ -23,7 +24,7 @@ import javax.inject.Inject;
 // TODO[MIST-68]: Receive and deserialize logical plans into physical plans.
 final class DefaultLogicalPlanReceiverImpl implements LogicalPlanReceiver {
 
-  private EventHandler<PhysicalPlan<Operator, MistEvent.Direction>> eventHandler;
+  private EventHandler<PhysicalPlan<Operator, MistDataEvent.Direction>> eventHandler;
 
   @Inject
   private DefaultLogicalPlanReceiverImpl() {
@@ -31,7 +32,7 @@ final class DefaultLogicalPlanReceiverImpl implements LogicalPlanReceiver {
   }
 
   @Override
-  public void setHandler(final EventHandler<PhysicalPlan<Operator, MistEvent.Direction>> handler) {
+  public void setHandler(final EventHandler<PhysicalPlan<Operator, MistDataEvent.Direction>> handler) {
     eventHandler = handler;
   }
 }

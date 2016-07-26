@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task.sources;
 
+import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.OutputEmitter;
 import org.apache.reef.wake.Identifier;
 
@@ -33,7 +34,7 @@ public abstract class BaseSource<I> implements Source<I> {
   /**
    * An output emitter.
    */
-  protected OutputEmitter<I> outputEmitter;
+  protected OutputEmitter outputEmitter;
 
   /**
    * A flag for close.
@@ -93,7 +94,7 @@ public abstract class BaseSource<I> implements Source<I> {
             if (input == null) {
               Thread.sleep(sleepTime);
             } else {
-              outputEmitter.emit(input);
+              outputEmitter.emitData(new MistDataEvent(input, System.currentTimeMillis()));
             }
           } catch (final IOException e) {
             e.printStackTrace();
@@ -140,7 +141,7 @@ public abstract class BaseSource<I> implements Source<I> {
   }
 
   @Override
-  public void setOutputEmitter(final OutputEmitter<I> emitter) {
+  public void setOutputEmitter(final OutputEmitter emitter) {
     this.outputEmitter = emitter;
   }
 }

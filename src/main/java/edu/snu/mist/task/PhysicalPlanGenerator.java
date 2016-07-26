@@ -16,6 +16,7 @@
 package edu.snu.mist.task;
 
 import edu.snu.mist.formats.avro.LogicalPlan;
+import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.operators.Operator;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
@@ -34,6 +35,6 @@ public interface PhysicalPlanGenerator {
    * @param queryIdAndLogicalPlan the tuple of queryId and logical plan
    * @return physical plan
    */
-  PhysicalPlan<Operator, MistEvent.Direction> generate(Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
+  PhysicalPlan<Operator, MistDataEvent.Direction> generate(Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
       throws InjectionException, IOException, ClassNotFoundException;
 }

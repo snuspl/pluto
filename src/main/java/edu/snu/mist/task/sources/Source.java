@@ -25,7 +25,7 @@ import org.apache.reef.wake.Identifier;
  * or receives input data from IoT devices and network connection.
  * After that, it sends the inputs to the OutputEmitter which forwards the inputs to next Operators.
  */
-public interface Source<I> extends OutputEmittable<I>, AutoCloseable {
+public interface Source<I> extends OutputEmittable, AutoCloseable {
 
   /**
    * Starts to receive source stream and forwards inputs to the OutputEmitter.
