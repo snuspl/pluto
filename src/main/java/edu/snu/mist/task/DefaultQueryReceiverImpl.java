@@ -38,7 +38,7 @@ import java.util.logging.Logger;
  * DefaultQueryReceiverImpl does the following things:
  * 1) receives logical plans from clients and converts the logical plans to physical plans,
  * 2) chains the physical operators and make PartitionedQuery,
- * 3) inserts the PartitionedQueries' queues to PartitionedQueryQueueManager,
+ * 3) inserts the PartitionedQueries to PartitionedQueryManager,
  * 4) and sets the OutputEmitters of the Source and PartitionedQueries
  * to forward their outputs to next PartitionedQueries.
  * 5) starts to receive input data stream from the source of the query.
@@ -58,9 +58,9 @@ final class DefaultQueryReceiverImpl implements QueryReceiver {
   private final ConcurrentMap<String, PhysicalPlan<PartitionedQuery>> physicalPlanMap;
 
   /**
-   * A partitioned query queue manager.
+   * A partitioned query manager.
    */
-  private final PartitionedQueryQueueManager queueManager;
+  private final PartitionedQueryManager queryManager;
 
   /**
    * A thread manager.
@@ -80,10 +80,10 @@ final class DefaultQueryReceiverImpl implements QueryReceiver {
                                    final PhysicalPlanGenerator physicalPlanGenerator,
                                    final StringIdentifierFactory idfactory,
                                    final ThreadManager threadManager,
-                                   final PartitionedQueryQueueManager queueManager,
+                                   final PartitionedQueryManager queryManager,
                                    @Parameter(NumQueryReceiverThreads.class) final int numThreads) {
     this.physicalPlanMap = new ConcurrentHashMap<>();
-    this.queueManager = queueManager;
+    this.queryManager = queryManager;
     this.threadManager = threadManager;
     this.tpStage = new ThreadPoolStage<>((tuple) -> {
       final PhysicalPlan<Operator> physicalPlan;
@@ -106,7 +106,7 @@ final class DefaultQueryReceiverImpl implements QueryReceiver {
       final Iterator<PartitionedQuery> partitionedQueryIterator = GraphUtils.topologicalSort(chainedOperators);
       while (partitionedQueryIterator.hasNext()) {
         final PartitionedQuery partitionedQuery = partitionedQueryIterator.next();
-        queueManager.insert(partitionedQuery.getQueue());
+        queryManager.insert(partitionedQuery);
       }
 
       // 4) Sets output emitters and 5) starts to receive input data stream from the source

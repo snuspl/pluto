@@ -62,31 +62,36 @@ public final class PartitionedQueryTest {
     partitionedQuery.insertToHead(doubleOp);
     partitionedQuery.insertToHead(incOp);
     partitionedQuery.insertToHead(squareOp);
-    partitionedQuery.handle(input);
+    partitionedQuery.addNextEvent(input);
+    partitionedQuery.processNextEvent();
     Assert.assertEquals(expected1, result.remove(0));
 
     // 2 * (input + 1)
     partitionedQuery.removeFromHead();
     final Integer expected2 = 2 * (input + 1);
-    partitionedQuery.handle(input);
+    partitionedQuery.addNextEvent(input);
+    partitionedQuery.processNextEvent();
     Assert.assertEquals(expected2, result.remove(0));
 
     // input + 1
     partitionedQuery.removeFromTail();
     final Integer expected3 = input + 1;
-    partitionedQuery.handle(input);
+    partitionedQuery.addNextEvent(input);
+    partitionedQuery.processNextEvent();
     Assert.assertEquals(expected3, result.remove(0));
 
     // 2 * input + 1
     partitionedQuery.insertToHead(doubleOp);
     final Integer expected4 = 2 * input + 1;
-    partitionedQuery.handle(input);
+    partitionedQuery.addNextEvent(input);
+    partitionedQuery.processNextEvent();
     Assert.assertEquals(expected4, result.remove(0));
 
     // (2 * input + 1) * (2 * input + 1)
     partitionedQuery.insertToTail(squareOp);
     final Integer expected5 = (2 * input + 1) * (2 * input + 1);
-    partitionedQuery.handle(input);
+    partitionedQuery.addNextEvent(input);
+    partitionedQuery.processNextEvent();
     Assert.assertEquals(expected5, result.remove(0));
   }
 

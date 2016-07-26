@@ -15,33 +15,28 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.task.queues.PartitionedQueryQueue;
-
 /**
- * This class consumes tasks from a queue
- * by picking up the queue from PartitionedQueryQueueManager.
+ * This class processes events of queries
+ * by picking up one query from PartitionedQueryManager.
  */
-public final class ConsumerThread implements Runnable {
+public final class EventProcessor implements Runnable {
 
   /**
-   * A partitioned query queue manager for picking up a queue which contains next tasks.
+   * A partitioned query manager for picking up a query for event processing.
    */
-  private final PartitionedQueryQueueManager queueManager;
+  private final PartitionedQueryManager queryManager;
 
-  public ConsumerThread(final PartitionedQueryQueueManager queueManager) {
-    this.queueManager = queueManager;
+  public EventProcessor(final PartitionedQueryManager queryManager) {
+    this.queryManager = queryManager;
   }
 
   @Override
   public void run() {
     while (!Thread.currentThread().isInterrupted()) {
       try {
-        final PartitionedQueryQueue queue = queueManager.pickQueue();
-        if (queue != null) {
-          final Runnable r = queue.poll();
-          if (r != null) {
-            r.run();
-          }
+        final PartitionedQuery query = queryManager.pickQuery();
+        if (query != null) {
+          query.processNextEvent();
         }
       } catch (final Exception t) {
         throw t;

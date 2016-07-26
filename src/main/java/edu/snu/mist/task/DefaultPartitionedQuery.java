@@ -17,12 +17,13 @@ package edu.snu.mist.task;
 
 import edu.snu.mist.task.common.OutputEmitter;
 import edu.snu.mist.task.operators.Operator;
-import edu.snu.mist.task.queues.DefaultPartitionedQueryQueue;
-import edu.snu.mist.task.queues.PartitionedQueryQueue;
 
 import javax.inject.Inject;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Default implementation of PartitionedQuery.
@@ -31,6 +32,11 @@ import java.util.List;
  */
 @SuppressWarnings("unchecked")
 final class DefaultPartitionedQuery implements PartitionedQuery {
+
+  private enum Status {
+    RUNNING, // When the query processes an event
+    READY, // When the query does not process an event
+  }
 
   /**
    * A chain of operators.
@@ -43,14 +49,20 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
   private OutputEmitter outputEmitter;
 
   /**
-   * A queue for partitioned query's tasks.
+   * A queue for the partitioned query's events.
    */
-  private final PartitionedQueryQueue queue;
+  private final Queue queue;
+
+  /**
+   * Status of the partitioned query.
+   */
+  private final AtomicReference<Status> status;
 
   @Inject
   DefaultPartitionedQuery() {
     this.operators = new LinkedList<>();
-    this.queue = new DefaultPartitionedQueryQueue();
+    this.queue = new ConcurrentLinkedQueue();
+    this.status = new AtomicReference<>(Status.READY);
   }
 
   @Override
@@ -94,12 +106,31 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
   }
 
   @Override
-  public PartitionedQueryQueue getQueue() {
-    return queue;
+  public boolean processNextEvent() {
+    if (queue.isEmpty() || status.get() == Status.RUNNING) {
+      return false;
+    }
+    // Return false if the queue is empty or the previously event processing is not finished.
+    if (status.compareAndSet(Status.READY, Status.RUNNING)) {
+      if (queue.isEmpty()) {
+        status.set(Status.READY);
+        return false;
+      }
+      final Object event = queue.poll();
+      process(event);
+      status.set(Status.READY);
+      return true;
+    } else {
+      return false;
+    }
   }
 
   @Override
-  public void handle(final Object input) {
+  public boolean addNextEvent(final Object event) {
+    return queue.add(event);
+  }
+
+  private void process(final Object input) {
     if (outputEmitter == null) {
       throw new RuntimeException("OutputEmitter should be set in PartitionedQuery");
     }

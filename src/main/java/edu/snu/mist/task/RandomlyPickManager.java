@@ -15,24 +15,22 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.task.queues.PartitionedQueryQueue;
-
 import javax.inject.Inject;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * This class picks a queue randomly.
- * It uses Random class for picking up a queue randomly.
+ * This class picks a query randomly.
+ * It uses Random class for picking up a query randomly.
  */
-public final class RandomlyPickQueueManager implements PartitionedQueryQueueManager {
+public final class RandomlyPickManager implements PartitionedQueryManager {
 
-  private final List<PartitionedQueryQueue> queues;
+  private final List<PartitionedQuery> queues;
   private final Random random;
 
   @Inject
-  private RandomlyPickQueueManager() {
+  private RandomlyPickManager() {
     // [MIST-#]: For concurrency, it uses CopyOnWriteArrayList.
     // This could be a performance bottleneck.
     this.queues = new CopyOnWriteArrayList<>();
@@ -40,22 +38,22 @@ public final class RandomlyPickQueueManager implements PartitionedQueryQueueMana
   }
 
   @Override
-  public void insert(final PartitionedQueryQueue queue) {
-    queues.add(queue);
+  public void insert(final PartitionedQuery query) {
+    queues.add(query);
   }
 
   @Override
-  public void delete(final PartitionedQueryQueue queue) {
-    queues.remove(queue);
+  public void delete(final PartitionedQuery query) {
+    queues.remove(query);
   }
 
   @Override
-  public PartitionedQueryQueue pickQueue() {
+  public PartitionedQuery pickQuery() {
     while (true) {
       try {
         final int pick = random.nextInt(queues.size());
-        final PartitionedQueryQueue queue = queues.get(pick);
-        return queue;
+        final PartitionedQuery query = queues.get(pick);
+        return query;
       } catch (final IllegalArgumentException e) {
         // This can occur when the size of queues is 0.
         // Return null.

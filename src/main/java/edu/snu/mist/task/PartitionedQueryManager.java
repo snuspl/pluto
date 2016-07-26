@@ -13,30 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.queues;
+package edu.snu.mist.task;
 
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
-import java.util.Queue;
-
 /**
- * This is an interface of a queue of a query.
+ * This interface manages partitioned queries.
  */
-@DefaultImplementation(DefaultPartitionedQueryQueue.class)
-public interface PartitionedQueryQueue extends Queue<Runnable> {
+@DefaultImplementation(RandomlyPickManager.class)
+public interface PartitionedQueryManager {
 
   /**
-   * Return a task from the queue.
-   * It returns null if 1) it is empty or
-   * 2) previously polled task is not finished in order to guarantee sequential processing.
-   * @return a task
+   * Insert a partitioned query.
+   * @param query partitioned query
    */
-  @Override
-  Runnable poll();
+  void insert(PartitionedQuery query);
 
   /**
-   * Get polling rate how many tasks are actually polled.
-   * @return polling rate
+   * Delete a partitioned query.
+   * @param query partitioned query
    */
-  double pollingRate();
+  void delete(PartitionedQuery query);
+
+  /**
+   * Pick a partitioned query.
+   * @return a partitioned query.
+   * Returns null if there is no query.
+   */
+  PartitionedQuery pickQuery();
 }
