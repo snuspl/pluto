@@ -82,8 +82,8 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
                                                final Map<CharSequence, Object> sourceConf)
       throws IllegalArgumentException, InjectionException {
     final Map<String, Object> sourceConfString = new HashMap<>();
-    for (final CharSequence charSeqKey : sourceConf.keySet()) {
-      sourceConfString.put(charSeqKey.toString(), sourceConf.get(charSeqKey));
+    for (final Map.Entry<CharSequence, Object> entry : sourceConf.entrySet()) {
+      sourceConfString.put(entry.getKey().toString(), entry.getValue());
     }
     final JavaConfigurationBuilder cb = Tang.Factory.getTang().newConfigurationBuilder();
     final String socketHostAddress = sourceConfString.get(TextSocketSourceParameters.SOCKET_HOST_ADDRESS).toString();
@@ -103,8 +103,8 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   private Sink getNettyTextSocketSink(final String queryId, final Map<CharSequence, Object> sinkConf)
       throws IllegalArgumentException, InjectionException {
     final Map<String, Object> sinkConfString = new HashMap<>();
-    for (final CharSequence charSeqKey : sinkConf.keySet()) {
-      sinkConfString.put(charSeqKey.toString(), sinkConf.get(charSeqKey));
+    for (final Map.Entry<CharSequence, Object> entry : sinkConf.entrySet()) {
+      sinkConfString.put(entry.getKey().toString(), entry.getValue());
     }
     final JavaConfigurationBuilder cb = Tang.Factory.getTang().newConfigurationBuilder();
     final String socketHostAddress = sinkConfString.get(TextSocketSinkParameters.SOCKET_HOST_ADDRESS).toString();
