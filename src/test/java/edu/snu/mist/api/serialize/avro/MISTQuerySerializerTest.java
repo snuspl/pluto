@@ -204,12 +204,12 @@ public final class MISTQuerySerializerTest {
     }
     final List<Edge> edges = logicalPlan.getEdges();
     final List<Edge> expectedEdges = Arrays.asList(
-        Edge.newBuilder().setFrom(vertexIndexes.get(0)).setTo(vertexIndexes.get(1)).build(),
-        Edge.newBuilder().setFrom(vertexIndexes.get(1)).setTo(vertexIndexes.get(2)).build(),
-        Edge.newBuilder().setFrom(vertexIndexes.get(2)).setTo(vertexIndexes.get(3)).build(),
-        Edge.newBuilder().setFrom(vertexIndexes.get(3)).setTo(vertexIndexes.get(4)).build(),
-        Edge.newBuilder().setFrom(vertexIndexes.get(4)).setTo(vertexIndexes.get(5)).build(),
-        Edge.newBuilder().setFrom(vertexIndexes.get(5)).setTo(vertexIndexes.get(6)).build());
+        Edge.newBuilder().setFrom(vertexIndexes.get(0)).setTo(vertexIndexes.get(1)).setIsLeft(true).build(),
+        Edge.newBuilder().setFrom(vertexIndexes.get(1)).setTo(vertexIndexes.get(2)).setIsLeft(true).build(),
+        Edge.newBuilder().setFrom(vertexIndexes.get(2)).setTo(vertexIndexes.get(3)).setIsLeft(true).build(),
+        Edge.newBuilder().setFrom(vertexIndexes.get(3)).setTo(vertexIndexes.get(4)).setIsLeft(true).build(),
+        Edge.newBuilder().setFrom(vertexIndexes.get(4)).setTo(vertexIndexes.get(5)).setIsLeft(true).build(),
+        Edge.newBuilder().setFrom(vertexIndexes.get(5)).setTo(vertexIndexes.get(6)).setIsLeft(true).build());
     Assert.assertEquals(new HashSet<>(expectedEdges), new HashSet<>(edges));
   }
 
@@ -282,8 +282,8 @@ public final class MISTQuerySerializerTest {
     }
     final List<Edge> edges = logicalPlan.getEdges();
     final List<Edge> expectedEdges = Arrays.asList(
-        Edge.newBuilder().setFrom(vertexIndexes.get(0)).setTo(vertexIndexes.get(1)).build(),
-        Edge.newBuilder().setFrom(vertexIndexes.get(1)).setTo(vertexIndexes.get(2)).build());
+        Edge.newBuilder().setFrom(vertexIndexes.get(0)).setTo(vertexIndexes.get(1)).setIsLeft(true).build(),
+        Edge.newBuilder().setFrom(vertexIndexes.get(1)).setTo(vertexIndexes.get(2)).setIsLeft(true).build());
     Assert.assertEquals(new HashSet<>(expectedEdges), new HashSet<>(edges));
   }
 }

@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.task.common.OutputEmitter;
 
 import java.util.Set;
@@ -29,9 +30,9 @@ final class SourceOutputEmitter<I> implements OutputEmitter<I> {
   /**
    * Next PartitionedQueries.
    */
-  private final Set<PartitionedQuery> nextPartitionedQueries;
+  private final Set<Tuple2<PartitionedQuery, Boolean>> nextPartitionedQueries;
 
-  public SourceOutputEmitter(final Set<PartitionedQuery> nextPartitionedQueries) {
+  public SourceOutputEmitter(final Set<Tuple2<PartitionedQuery, Boolean>> nextPartitionedQueries) {
     this.nextPartitionedQueries = nextPartitionedQueries;
   }
 

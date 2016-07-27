@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.common;
 
+import edu.snu.mist.api.types.Tuple2;
+
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,13 +26,13 @@ import java.util.logging.Logger;
  * This implementation is not thread-safe.
  * @param <V> vertex type
  */
-public final class AdjacentListDAG<V> implements DAG<V> {
+public final class AdjacentListDAG<V, I> implements DAG<V, I> {
   private static final Logger LOG = Logger.getLogger(AdjacentListDAG.class.getName());
 
   /**
    * An adjacent list.
    */
-  private final Map<V, Set<V>> adjacent;
+  private final Map<V, Set<Tuple2<V, I>>> adjacent;
 
   /**
    * A map for in-degree of vertices.
@@ -55,17 +57,23 @@ public final class AdjacentListDAG<V> implements DAG<V> {
 
   @Override
   public boolean isAdjacent(final V v1, final V v2) {
-    final Set<V> adjs = adjacent.get(v1);
-    return adjs.contains(v2);
+    final Set<Tuple2<V, I>> adjs = adjacent.get(v1);
+
+    for (final Tuple2 edge : adjs) {
+      if (edge.get(0).equals(v2)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override
-  public Set<V> getNeighbors(final V v) {
-    final Set<V> adjs = adjacent.get(v);
-    if (adjs == null) {
+  public Set<Tuple2<V, I>> getEdges(final V v) {
+    final Set<Tuple2<V, I>> adjEdges = adjacent.get(v);
+    if (adjEdges == null) {
       throw new NoSuchElementException("No src vertex " + v);
     }
-    return adjs;
+    return adjEdges;
   }
 
   @Override
@@ -83,12 +91,13 @@ public final class AdjacentListDAG<V> implements DAG<V> {
 
   @Override
   public boolean removeVertex(final V v) {
-    final Set<V> neighbors = adjacent.remove(v);
-    if (neighbors != null) {
+    final Set<Tuple2<V, I>> edges = adjacent.remove(v);
+    if (edges != null) {
       inDegrees.remove(v);
       // update inDegrees of neighbor vertices
       // and update rootVertices
-      for (final V neighbor : neighbors) {
+      for (final Tuple2<V, I> edge : edges) {
+        final V neighbor = (V) edge.get(0);
         final int inDegree = inDegrees.get(neighbor) - 1;
         inDegrees.put(neighbor, inDegree);
         if (inDegree == 0) {
@@ -104,13 +113,13 @@ public final class AdjacentListDAG<V> implements DAG<V> {
   }
 
   @Override
-  public boolean addEdge(final V v1, final V v2) {
-    final Set<V> adjs = getNeighbors(v1);
-    if (adjs == null) {
+  public boolean addEdge(final V v1, final V v2, final I i) {
+    final Set<Tuple2<V, I>> adjEdges = getEdges(v1);
+    if (adjEdges == null) {
       throw new NoSuchElementException("No src vertex " + v1);
     }
 
-    if (adjs.add(v2)) {
+    if (adjEdges.add(new Tuple2<>(v2, i))) {
       final int inDegree = inDegrees.get(v2);
       inDegrees.put(v2, inDegree + 1);
       if (inDegree == 0) {
@@ -124,13 +133,13 @@ public final class AdjacentListDAG<V> implements DAG<V> {
   }
 
   @Override
-  public boolean removeEdge(final V v1, final V v2) {
-    final Set<V> adjs = getNeighbors(v1);
-    if (adjs == null) {
+  public boolean removeEdge(final V v1, final V v2, final I i) {
+    final Set<Tuple2<V, I>> adjEdges = getEdges(v1);
+    if (adjEdges == null) {
       throw new NoSuchElementException("No src vertex " + v1);
     }
 
-    if (adjs.remove(v2)) {
+    if (adjEdges.remove(new Tuple2<>(v2, i))) {
       final int inDegree = inDegrees.get(v2);
       inDegrees.put(v2, inDegree - 1);
       if (inDegree == 1) {

@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sources.Source;
@@ -28,19 +29,19 @@ import java.util.Set;
  * TODO[MIST-68]: Receive and deserialize logical plans into physical plans.
  * @param <E> Operator or PartitionedQuery
  */
-public interface PhysicalPlan<E> {
+public interface PhysicalPlan<E, I> {
 
   /**
    * Gets the DAG of operators.
    * @return a DAG
    */
-  DAG<E> getOperators();
+  DAG<E, I> getOperators();
 
   /**
    * Gets the map containing Source and its next operators.
    * @return a map
    */
-  Map<Source, Set<E>> getSourceMap();
+  Map<Source, Set<Tuple2<E, I>>> getSourceMap();
 
   /**
    * Gets the map of operator and sinks.

@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.task.operators.Operator;
@@ -70,22 +71,23 @@ final class DefaultQueryPartitionerImpl implements QueryPartitioner {
    * @return physical plan consisting of PartitionedQuery
    */
   @Override
-  public PhysicalPlan<PartitionedQuery> chainOperators(final PhysicalPlan<Operator> plan) {
+  public PhysicalPlan<PartitionedQuery, Boolean> chainOperators(final PhysicalPlan<Operator, Boolean> plan) {
     // This is a map of source and PartitionedQueries which are following sources
-    final Map<Source, Set<PartitionedQuery>> sourceMap = new HashMap<>();
+    final Map<Source, Set<Tuple2<PartitionedQuery, Boolean>>> sourceMap = new HashMap<>();
     // This is a map of PartitionedQuery and Sinks. The PartitionedQuery is followed by Sinks.
     final Map<PartitionedQuery, Set<Sink>> sinkMap = new HashMap<>();
-    final DAG<PartitionedQuery> partitionedQueryDAG = new AdjacentListDAG<>();
+    final DAG<PartitionedQuery, Boolean> partitionedQueryDAG = new AdjacentListDAG<>();
     // This map is used for marking visited operators.
     final Map<Operator, PartitionedQuery> partitionedQueryMap = new HashMap<>();
 
     // It traverses the DAG of operators in DFS order
     // from the root operators which are following sources.
-    for (final Map.Entry<Source, Set<Operator>> entry : plan.getSourceMap().entrySet()) {
+    for (final Map.Entry<Source, Set<Tuple2<Operator, Boolean>>> entry : plan.getSourceMap().entrySet()) {
       // This is the root operators which are directly connected to sources.
-      final Set<Operator> rootOperators = entry.getValue();
+      final Set<Tuple2<Operator, Boolean>> rootOperatorEdges = entry.getValue();
       final Set<PartitionedQuery> partitionedQueries = new HashSet<>();
-      for (final Operator rootOperator : rootOperators) {
+      for (final Tuple2<Operator, Boolean> rootOperatorEdge : rootOperatorEdges) {
+        final Operator rootOperator = (Operator) rootOperatorEdge.get(0);
         PartitionedQuery currOpChain = partitionedQueryMap.get(rootOperator);
         // Check whether this operator is already visited.
         if (currOpChain == null) {

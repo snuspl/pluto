@@ -15,13 +15,16 @@
  */
 package edu.snu.mist.common;
 
+import edu.snu.mist.api.types.Tuple2;
+
 import java.util.Set;
 
 /**
  * This interface represents Directed Acyclic Graph (DAG).
+ * @param <I> edge information
  * @param <V> vertex
  */
-public interface DAG<V> {
+public interface DAG<V, I> {
 
   /**
    * Gets root vertices for graph traversal.
@@ -38,12 +41,12 @@ public interface DAG<V> {
   boolean isAdjacent(V v, V w);
 
   /**
-   * Gets all vertices w such that there is an edge from the vertices v to w.
+   * Gets all vertices w such that there is an edge from the vertices v to w, and edge information also.
    * @param v src vertex
    * @return neighbor vertices of v
    * @throws java.util.NoSuchElementException if the vertex v does not exist.
    */
-  Set<V> getNeighbors(V v);
+  Set<Tuple2<V, I>> getEdges(V v);
 
   /**
    * Adds the vertex v, if it is not there.
@@ -63,19 +66,21 @@ public interface DAG<V> {
    * Adds the edge from the vertices v to w, if it is not there.
    * @param v src vertex
    * @param w dest vertex
+   * @param i edge information
    * @return true if the edge is added, false if the edge already exists between v and w
    * @throws java.util.NoSuchElementException if the vertex v does not exist
    */
-  boolean addEdge(V v, V w);
+  boolean addEdge(V v, V w, I i);
 
   /**
    * Removes the edge from the vertices v to w, if it is there.
    * @param v src vertex
    * @param w dest vertex
+   * @param i edge information
    * @return true if the edge is removed, false if the edge does not exist between v and w
    * @throws java.util.NoSuchElementException if the vertex v or w do not exist
    */
-  boolean removeEdge(V v, V w);
+  boolean removeEdge(V v, V w, I i);
 
   /**
    * Gets the in-degree of vertex v.
