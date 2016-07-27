@@ -105,12 +105,13 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
     return operators.remove(0);
   }
 
+  // Return false if the queue is empty or the previously event processing is not finished.
   @Override
   public boolean processNextEvent() {
     if (queue.isEmpty() || status.get() == Status.RUNNING) {
       return false;
     }
-    // Return false if the queue is empty or the previously event processing is not finished.
+
     if (status.compareAndSet(Status.READY, Status.RUNNING)) {
       if (queue.isEmpty()) {
         status.set(Status.READY);
