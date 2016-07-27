@@ -19,9 +19,7 @@ import com.google.common.collect.ImmutableList;
 import junit.framework.Assert;
 import org.junit.Test;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public final class AdjacentListDAGTest {
 
@@ -89,5 +87,28 @@ public final class AdjacentListDAGTest {
     final List<Integer> expectedRoot4 = ImmutableList.of(1, 2, 3, 4);
     Assert.assertEquals("Root vertices should be " + expectedRoot4,
         new HashSet<>(expectedRoot4), dag.getRootVertices());
+  }
+
+  /**
+   * Test whether the iterator returns all vertices correctly.
+   */
+  @Test
+  public void vertexIteratorTest() {
+    final DAG<Integer> dag = new AdjacentListDAG<>();
+    dag.addVertex(1); dag.addVertex(2); dag.addVertex(3); dag.addVertex(4);
+    dag.removeVertex(2); dag.removeVertex(4);
+    dag.addVertex(2);
+    dag.addVertex(5);
+
+    final Set<Integer> expected = new HashSet<>();
+    expected.addAll(Arrays.asList(1, 2, 3, 5));
+
+    final Set<Integer> result = new HashSet<>();
+    final Iterator<Integer> iterator = dag.iterator();
+    while (iterator.hasNext()) {
+      result.add(iterator.next());
+    }
+
+    Assert.assertEquals(expected, result);
   }
 }

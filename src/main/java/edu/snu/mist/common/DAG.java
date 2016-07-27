@@ -21,7 +21,7 @@ import java.util.Set;
  * This interface represents Directed Acyclic Graph (DAG).
  * @param <V> vertex
  */
-public interface DAG<V> {
+public interface DAG<V> extends Iterable<V> {
 
   /**
    * Gets root vertices for graph traversal.

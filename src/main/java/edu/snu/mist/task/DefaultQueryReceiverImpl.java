@@ -16,7 +16,6 @@
 package edu.snu.mist.task;
 
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.common.GraphUtils;
 import edu.snu.mist.formats.avro.LogicalPlan;
 import edu.snu.mist.task.operators.Operator;
 import edu.snu.mist.task.parameters.NumQueryReceiverThreads;
@@ -104,7 +103,7 @@ final class DefaultQueryReceiverImpl implements QueryReceiver {
       final DAG<PartitionedQuery> chainedOperators = chainedPlan.getOperators();
 
       // 3) Inserts the PartitionedQueries' queues to PartitionedQueueManager.
-      final Iterator<PartitionedQuery> partitionedQueryIterator = GraphUtils.topologicalSort(chainedOperators);
+      final Iterator<PartitionedQuery> partitionedQueryIterator = chainedOperators.iterator();
       while (partitionedQueryIterator.hasNext()) {
         final PartitionedQuery partitionedQuery = partitionedQueryIterator.next();
         queryManager.insert(partitionedQuery);
@@ -134,7 +133,7 @@ final class DefaultQueryReceiverImpl implements QueryReceiver {
   private void start(final PhysicalPlan<PartitionedQuery> chainPhysicalPlan) {
     final DAG<PartitionedQuery> chainedOperators = chainPhysicalPlan.getOperators();
     // 4) Sets output emitters
-    final Iterator<PartitionedQuery> iterator = GraphUtils.topologicalSort(chainedOperators);
+    final Iterator<PartitionedQuery> iterator = chainedOperators.iterator();
     while (iterator.hasNext()) {
       final PartitionedQuery partitionedQuery = iterator.next();
       final Set<PartitionedQuery> neighbors = chainedOperators.getNeighbors(partitionedQuery);
