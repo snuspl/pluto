@@ -58,6 +58,8 @@ public final class RandomlyPickManager implements PartitionedQueryManager {
         // This can occur when the size of queues is 0.
         // Return null.
         return null;
+      } catch (final IndexOutOfBoundsException e) {
+        return null;
       }
     }
   }

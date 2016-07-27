@@ -111,7 +111,6 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
     if (queue.isEmpty() || status.get() == Status.RUNNING) {
       return false;
     }
-
     if (status.compareAndSet(Status.READY, Status.RUNNING)) {
       if (queue.isEmpty()) {
         status.set(Status.READY);
@@ -153,7 +152,9 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
     this.outputEmitter = emitter;
     if (operators.size() > 0) {
       final Operator lastOperator = operators.get(operators.size() - 1);
-      lastOperator.setOutputEmitter(outputEmitter::emit);
+      if (outputEmitter != null) {
+        lastOperator.setOutputEmitter(outputEmitter::emit);
+      }
     }
   }
 

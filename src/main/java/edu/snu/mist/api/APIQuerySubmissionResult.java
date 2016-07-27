@@ -15,9 +15,12 @@
  */
 package edu.snu.mist.api;
 
+import edu.snu.mist.formats.avro.IPAddress;
+
 /**
  * This interface is the basic representation of query result.
  */
 public interface APIQuerySubmissionResult {
   String getQueryId();
+  IPAddress getTaskAddress();
 }
