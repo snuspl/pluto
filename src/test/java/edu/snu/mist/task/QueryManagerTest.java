@@ -15,33 +15,31 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.task.queues.DefaultPartitionedQueryQueue;
-import edu.snu.mist.task.queues.PartitionedQueryQueue;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Test;
 
-public class QueueManagerTest {
+public class QueryManagerTest {
 
   /**
-   * Test whether RandomlyPickQueueManager selects a queue.
+   * Test whether RandomlyPickManager selects a query.
    */
   @Test
-  public void randomPickQueueManagerTest() throws InjectionException {
+  public void randomPickManagerTest() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
-    final RandomlyPickQueueManager queueManager = injector.getInstance(RandomlyPickQueueManager.class);
+    final RandomlyPickManager queryManager = injector.getInstance(RandomlyPickManager.class);
 
-    // Select a queue
-    final PartitionedQueryQueue queue = new DefaultPartitionedQueryQueue();
-    queueManager.insert(queue);
-    final PartitionedQueryQueue selectedQueue = queueManager.pickQueue();
-    Assert.assertEquals(queue, selectedQueue);
+    // Select a query
+    final PartitionedQuery query = new DefaultPartitionedQuery();
+    queryManager.insert(query);
+    final PartitionedQuery selectedQuery = queryManager.pickQuery();
+    Assert.assertEquals(query, selectedQuery);
 
-    // When QueueManager has no queue, it should returns null
-    queueManager.delete(queue);
-    final PartitionedQueryQueue q = queueManager.pickQueue();
+    // When QueryManager has no query, it should returns null
+    queryManager.delete(query);
+    final PartitionedQuery q = queryManager.pickQuery();
     Assert.assertEquals(null, q);
   }
 }

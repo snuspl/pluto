@@ -16,7 +16,6 @@
 package edu.snu.mist.task;
 
 import edu.snu.mist.task.common.OutputEmitter;
-import edu.snu.mist.task.queues.PartitionedQueryQueue;
 
 import java.util.Set;
 
@@ -39,8 +38,7 @@ final class SourceOutputEmitter<I> implements OutputEmitter<I> {
   @Override
   public void emit(final I input) {
     for (final PartitionedQuery nextQuery : nextPartitionedQueries) {
-      final PartitionedQueryQueue queue = nextQuery.getQueue();
-      queue.add(new DefaultPartitionedQueryTask(nextQuery, input));
+      nextQuery.addNextEvent(input);
     }
   }
 }

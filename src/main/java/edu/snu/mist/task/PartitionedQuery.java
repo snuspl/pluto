@@ -15,10 +15,8 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.task.common.InputHandler;
 import edu.snu.mist.task.common.OutputEmittable;
 import edu.snu.mist.task.operators.Operator;
-import edu.snu.mist.task.queues.PartitionedQueryQueue;
 
 /**
  * This interface chains operators as a list and executes them in order
@@ -28,7 +26,7 @@ import edu.snu.mist.task.queues.PartitionedQueryQueue;
  * It receives inputs, performs computations through the list of operators,
  * and forwards final outputs to an OutputEmitter which sends the outputs to next PartitionedQueries.
  */
-public interface PartitionedQuery extends InputHandler, OutputEmittable {
+public interface PartitionedQuery extends OutputEmittable {
 
   /**
    * Inserts an operator to the head of the chain.
@@ -55,8 +53,15 @@ public interface PartitionedQuery extends InputHandler, OutputEmittable {
   Operator removeFromHead();
 
   /**
-   * Gets a queue for partitioned query's tasks.
-   * @return queue
+   * Process the next event from the queue.
+   * @return true if there exists an event.
+   * Uf the queue is empty or running an event, it returns false.
    */
-  PartitionedQueryQueue getQueue();
+  boolean processNextEvent();
+
+  /**
+   * Add an event to the queue.
+   * @return true if the event is enqueued, otherwise false.
+   */
+  boolean addNextEvent(Object event);
 }
