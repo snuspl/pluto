@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.task.common.OutputEmitter;
 
 import java.util.Set;
@@ -32,10 +33,10 @@ final class OperatorOutputEmitter implements OutputEmitter {
   /**
    * Next PartitionedQueries.
    */
-  private final Set<PartitionedQuery> nextPartitionedQueries;
+  private final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> nextPartitionedQueries;
 
   OperatorOutputEmitter(final PartitionedQuery currChain,
-                        final Set<PartitionedQuery> nextPartitionedQueries) {
+                        final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> nextPartitionedQueries) {
     this.currChain = currChain;
     this.nextPartitionedQueries = nextPartitionedQueries;
   }
@@ -50,8 +51,8 @@ final class OperatorOutputEmitter implements OutputEmitter {
    */
   @Override
   public void emit(final Object output) {
-    for (final PartitionedQuery nextQuery : nextPartitionedQueries) {
-      nextQuery.addNextEvent(output);
+    for (final Tuple2<PartitionedQuery, MistEvent.Direction> nextQuery : nextPartitionedQueries) {
+      ((PartitionedQuery) nextQuery.get(0)).addNextEvent(output);
     }
   }
 }

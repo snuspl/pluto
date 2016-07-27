@@ -30,16 +30,16 @@ final class SourceOutputEmitter<I> implements OutputEmitter<I> {
   /**
    * Next PartitionedQueries.
    */
-  private final Set<Tuple2<PartitionedQuery, Boolean>> nextPartitionedQueries;
+  private final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> nextPartitionedQueries;
 
-  public SourceOutputEmitter(final Set<Tuple2<PartitionedQuery, Boolean>> nextPartitionedQueries) {
+  public SourceOutputEmitter(final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> nextPartitionedQueries) {
     this.nextPartitionedQueries = nextPartitionedQueries;
   }
 
   @Override
   public void emit(final I input) {
-    for (final PartitionedQuery nextQuery : nextPartitionedQueries) {
-      nextQuery.addNextEvent(input);
+    for (final Tuple2<PartitionedQuery, MistEvent.Direction> nextQuery : nextPartitionedQueries) {
+      ((PartitionedQuery) nextQuery.get(0)).addNextEvent(input);
     }
   }
 }

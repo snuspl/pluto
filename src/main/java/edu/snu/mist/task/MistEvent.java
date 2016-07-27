@@ -27,4 +27,10 @@ public final class MistEvent {
     DATA, // DATA: actual event data stream
     WATERMARK, // WATERMARK: watermark data
   }
+
+  /**
+   * The type of event direction. Union operator should get two events: LEFT/RIGHT events.
+   * One direction operator always receive LEFT event.
+   */
+  public static enum Direction {LEFT, RIGHT}
 }
