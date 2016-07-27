@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api;
+package edu.snu.mist.task;
 
-import edu.snu.mist.formats.avro.IPAddress;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * This interface is the basic representation of query result.
+ * This interface receives a queryId, gets the correspond chained operators,
+ * cuts the chain and closes sink and source channel.
  */
-public interface APIQuerySubmissionResult {
-  String getQueryId();
-  IPAddress getTask();
+@DefaultImplementation(DefaultQueryDeleterImpl.class)
+public interface QueryDeleter {
+  boolean delete(String queryId);
 }

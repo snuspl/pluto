@@ -26,7 +26,8 @@ import javax.inject.Inject;
 /**
  * This class implements the RPC protocol of ClientToTaskMessage.
  * It creates the query id and returns it to users.
- * Also, it submits the tuple of queryId and logical plan to QueryReceiver in order to execute the query.
+ * Also, it submits the tuple of queryId and logical plan to QueryReceiver in order to execute the query,
+ * or submits the queryId to QueryDeleter to delete query.
  */
 public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage {
 
@@ -40,11 +41,18 @@ public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage
    */
   private final QueryIdGenerator queryIdGenerator;
 
+  /**
+   * A query deleter which receives the submitted queryId.
+   */
+  private final QueryDeleter queryDeleter;
+
   @Inject
   private DefaultClientToTaskMessageImpl(final QueryIdGenerator queryIdGenerator,
-                                         final QueryReceiver queryReceiver) {
+                                         final QueryReceiver queryReceiver,
+                                         final QueryDeleter queryDeleter) {
     this.queryIdGenerator = queryIdGenerator;
     this.queryReceiver = queryReceiver;
+    this.queryDeleter = queryDeleter;
   }
 
   @Override
@@ -55,5 +63,10 @@ public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage
     final QuerySubmissionResult querySubmissionResult = new QuerySubmissionResult();
     querySubmissionResult.setQueryId(queryId);
     return querySubmissionResult;
+  }
+
+  @Override
+  public boolean deleteQueries(final CharSequence queryId) throws AvroRemoteException {
+    return queryDeleter.delete(queryId.toString());
   }
 }
