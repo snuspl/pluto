@@ -15,10 +15,12 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.formats.avro.LogicalPlan;
-import org.apache.reef.io.Tuple;
-import org.apache.reef.tang.annotations.DefaultImplementation;
-import org.apache.reef.wake.EStage;
+    import edu.snu.mist.formats.avro.LogicalPlan;
+    import org.apache.reef.io.Tuple;
+    import org.apache.reef.tang.annotations.DefaultImplementation;
+    import org.apache.reef.wake.EStage;
+
+    import java.util.concurrent.ConcurrentMap;
 
 /**
  * This interface receives a tuple of queryId and logical plan,
@@ -28,5 +30,5 @@ import org.apache.reef.wake.EStage;
  */
 @DefaultImplementation(DefaultQueryReceiverImpl.class)
 public interface QueryReceiver extends EStage<Tuple<String, LogicalPlan>> {
-
+  ConcurrentMap<String, PhysicalPlan<PartitionedQuery>> getPhysicalPlanMap();
 }

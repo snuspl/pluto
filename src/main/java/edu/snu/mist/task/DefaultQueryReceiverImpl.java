@@ -157,4 +157,9 @@ final class DefaultQueryReceiverImpl implements QueryReceiver {
       src.start();
     }
   }
+
+  @Override
+  public ConcurrentMap<String, PhysicalPlan<PartitionedQuery>> getPhysicalPlanMap() {
+    return this.physicalPlanMap;
+  }
 }

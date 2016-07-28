@@ -252,6 +252,17 @@
         }
       ],
       "response": "QuerySubmissionResult"
+    },
+    "deleteQueries":
+    {
+      "request":
+      [
+        {
+          "name": "queryId",
+          "type": "string"
+        }
+      ],
+      "response": "boolean"
     }
   }
 }

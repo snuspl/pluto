@@ -113,6 +113,18 @@ public final class HelloMist {
     return executionEnvironment.submit(query);
   }
 
+
+  /**
+   * Delete a submitted query.
+   * @param result
+   * @return result of deletion
+   * @throws IOException
+   */
+  public static boolean deleteQuery(final APIQuerySubmissionResult result) throws IOException {
+    final MISTQueryDeletion queryDeletion = new MISTDefaultQueryDeletionImpl();
+    return queryDeletion.delete(result.getQueryId(), result.getTask());
+  }
+
   /**
    * Set the environment(Hostname and port of driver, source, and sink) and submit a query.
    * @param args command line parameters
@@ -143,6 +155,13 @@ public final class HelloMist {
 
     final APIQuerySubmissionResult result = submitQuery();
     System.out.println("Query submission result: " + result.getQueryId());
+    Thread.sleep(10000);
+
+    if (deleteQuery(result)) {
+      System.out.println(result.getQueryId() + " is deleted.");
+    } else {
+      System.out.println("Deletion failed");
+    }
   }
 
   private HelloMist(){

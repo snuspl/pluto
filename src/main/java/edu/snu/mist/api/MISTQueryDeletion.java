@@ -17,10 +17,12 @@ package edu.snu.mist.api;
 
 import edu.snu.mist.formats.avro.IPAddress;
 
+import java.io.IOException;
+
+
 /**
- * This interface is the basic representation of query result.
+ * MIST Client can delete queries via this class.
  */
-public interface APIQuerySubmissionResult {
-  String getQueryId();
-  IPAddress getTask();
+public interface MISTQueryDeletion {
+  boolean delete(String queryId, IPAddress task) throws IOException;
 }
