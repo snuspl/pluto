@@ -268,11 +268,11 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       final Object deserializedSrcVertex = deserializedVertices.get(srcIndex);
       final int dstIndex = edge.getTo();
       final Object deserializedDstVertex = deserializedVertices.get(dstIndex);
-      MistEvent.Direction isLeft;
+      MistEvent.Direction direction;
       if (edge.getIsLeft()) {
-        isLeft = MistEvent.Direction.LEFT;
+        direction = MistEvent.Direction.LEFT;
       } else {
-        isLeft = MistEvent.Direction.RIGHT;
+        direction = MistEvent.Direction.RIGHT;
       }
 
       switch (logicalPlan.getVertices().get(srcIndex).getVertexType()) {
@@ -280,13 +280,13 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
           if (!sourceMap.containsKey(deserializedSrcVertex)) {
             sourceMap.put((Source) deserializedSrcVertex, new HashMap<>());
           }
-          sourceMap.get(deserializedSrcVertex).put((Operator) deserializedDstVertex, isLeft);
+          sourceMap.get(deserializedSrcVertex).put((Operator) deserializedDstVertex, direction);
           break;
         }
         case INSTANT_OPERATOR: {
           switch (logicalPlan.getVertices().get(dstIndex).getVertexType()) {
             case INSTANT_OPERATOR: {
-              operators.addEdge((Operator) deserializedSrcVertex, (Operator) deserializedDstVertex, isLeft);
+              operators.addEdge((Operator) deserializedSrcVertex, (Operator) deserializedDstVertex, direction);
               break;
             }
             case WINDOW_OPERATOR: {

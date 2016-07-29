@@ -42,7 +42,7 @@ public interface DAG<V, I> {
   /**
    * Gets all vertices w such that there is an edge from the vertices v to w, and edge information also.
    * @param v src vertex
-   * @return neighbor vertices of v
+   * @return edges map that having neighbor vertices of v as it's key and the direction as it's value
    * @throws java.util.NoSuchElementException if the vertex v does not exist.
    */
   Map<V, I> getEdges(V v);

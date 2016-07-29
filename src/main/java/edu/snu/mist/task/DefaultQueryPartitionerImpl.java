@@ -83,10 +83,9 @@ final class DefaultQueryPartitionerImpl implements QueryPartitioner {
       // This is the root operators which are directly connected to sources.
       final Map<Operator, MistEvent.Direction> rootOperatorEdges = entry.getValue();
       final Map<PartitionedQuery, MistEvent.Direction> partitionedQueries = new HashMap<>();
-      final Iterator<Operator> rootOperators = rootOperatorEdges.keySet().iterator();
-      while (rootOperators.hasNext()) {
-        final Operator rootOperator = rootOperators.next();
-        final MistEvent.Direction edgeDirection = rootOperatorEdges.get(rootOperator);
+      for (final Map.Entry<Operator, MistEvent.Direction> opAndEdge : rootOperatorEdges.entrySet()) {
+        final Operator rootOperator = opAndEdge.getKey();
+        final MistEvent.Direction edgeDirection = opAndEdge.getValue();
         PartitionedQuery currOpChain = partitionedQueryMap.get(rootOperator);
         // Check whether this operator is already visited.
         if (currOpChain == null) {
@@ -127,10 +126,9 @@ final class DefaultQueryPartitionerImpl implements QueryPartitioner {
                                    final MistEvent.Direction direction) {
     final DAG<Operator, MistEvent.Direction> dag = plan.getOperators();
     final Map<Operator, MistEvent.Direction> nextEdges = dag.getEdges(currentOp);
-    final Iterator<Operator> nextOps = nextEdges.keySet().iterator();
-    while (nextOps.hasNext()) {
-      final Operator nextOp = nextOps.next();
-      final MistEvent.Direction edgeDirection = nextEdges.get(nextOp);
+    for (final Map.Entry<Operator, MistEvent.Direction> opAndEdge : nextEdges.entrySet()) {
+      final Operator nextOp = opAndEdge.getKey();
+      final MistEvent.Direction edgeDirection = opAndEdge.getValue();
       if (nextEdges.size() > 1 || dag.getInDegree(nextOp) > 1) {
         // the current operator is 2) branching (have multiple next ops)
         // or the next operator is 3) merging operator (have multiple incoming edges)

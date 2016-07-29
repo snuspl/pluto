@@ -57,13 +57,7 @@ public final class AdjacentListDAG<V, I> implements DAG<V, I> {
   @Override
   public boolean isAdjacent(final V v1, final V v2) {
     final Map<V, I> adjs = adjacent.get(v1);
-
-    for (final Map.Entry<V, I> edge : adjs.entrySet()) {
-      if (edge.getKey().equals(v2)) {
-        return true;
-      }
-    }
-    return false;
+    return adjs.containsKey(v2);
   }
 
   @Override
@@ -108,13 +102,7 @@ public final class AdjacentListDAG<V, I> implements DAG<V, I> {
       // We have to remove edge that destination vertex is v.
       // This operation is very expensive.
       for (Map.Entry<V, Map<V, I>> entry : adjacent.entrySet()) {
-        final Iterator<V> dests = entry.getValue().keySet().iterator();
-        while (dests.hasNext()) {
-          final V dest = dests.next();
-          if (dest.equals(v)) {
-            entry.getValue().remove(dest, entry.getValue().get(dest));
-          }
-        }
+        entry.getValue().remove(v);
       }
       return true;
     } else {
@@ -130,7 +118,8 @@ public final class AdjacentListDAG<V, I> implements DAG<V, I> {
       throw new NoSuchElementException("No src vertex " + v1);
     }
 
-    if (adjEdges.put(v2, i) == null) {
+    if (!adjEdges.containsKey(v2)) {
+      adjEdges.put(v2, i);
       final int inDegree = inDegrees.get(v2);
       inDegrees.put(v2, inDegree + 1);
       if (inDegree == 0) {
