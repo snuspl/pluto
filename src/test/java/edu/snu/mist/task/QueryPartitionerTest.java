@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.GraphUtils;
@@ -51,7 +50,7 @@ public final class QueryPartitionerTest {
   public void testComplexQueryPartitioning() throws InjectionException {
     // Build a physical plan
     final DAG<Operator, MistEvent.Direction> operatorDAG = new AdjacentListDAG<>();
-    final Map<Source, Set<Tuple2<Operator, MistEvent.Direction>>> sourceMap = new HashMap<>();
+    final Map<Source, Map<Operator, MistEvent.Direction>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
     final Source src1 = mock(Source.class);
@@ -91,10 +90,10 @@ public final class QueryPartitionerTest {
     operatorDAG.addEdge(op21, op22, MistEvent.Direction.LEFT);
     operatorDAG.addEdge(op22, op13, MistEvent.Direction.RIGHT);
 
-    final Set<Tuple2<Operator, MistEvent.Direction>> src1Ops = new HashSet<>();
-    final Set<Tuple2<Operator, MistEvent.Direction>> src2Ops = new HashSet<>();
-    src1Ops.add(new Tuple2<>(op11, MistEvent.Direction.LEFT));
-    src2Ops.add(new Tuple2<>(op21, MistEvent.Direction.LEFT));
+    final Map<Operator, MistEvent.Direction> src1Ops = new HashMap<>();
+    final Map<Operator, MistEvent.Direction> src2Ops = new HashMap<>();
+    src1Ops.put(op11, MistEvent.Direction.LEFT);
+    src2Ops.put(op21, MistEvent.Direction.LEFT);
     sourceMap.put(src1, src1Ops);
     sourceMap.put(src2, src2Ops);
 
@@ -139,22 +138,22 @@ public final class QueryPartitionerTest {
     while (iterator.hasNext()) {
       final PartitionedQuery partitionedQuery = iterator.next();
       if (partitionedQuery.equals(op11op12)) {
-        final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> op11op12neighbor = new HashSet<>();
-        op11op12neighbor.add(new Tuple2<>(op13chain, MistEvent.Direction.LEFT));
+        final Map<PartitionedQuery, MistEvent.Direction> op11op12neighbor = new HashMap<>();
+        op11op12neighbor.put(op13chain, MistEvent.Direction.LEFT);
         Assert.assertEquals("[op11->op12]'s neighbor should be  [op13]",
             op11op12neighbor, partitionedQueryDAG.getEdges(partitionedQuery));
       } else if (partitionedQuery.equals(op13chain)) {
-        final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> op13neighbor = new HashSet<>();
-        op13neighbor.add(new Tuple2<>(op14op15, MistEvent.Direction.LEFT));
-        op13neighbor.add(new Tuple2<>(op23chain, MistEvent.Direction.LEFT));
+        final Map<PartitionedQuery, MistEvent.Direction> op13neighbor = new HashMap<>();
+        op13neighbor.put(op14op15, MistEvent.Direction.LEFT);
+        op13neighbor.put(op23chain, MistEvent.Direction.LEFT);
         Assert.assertEquals("[op13]'s neighbor should be  [op14->op15], [op23]",
             op13neighbor, partitionedQueryDAG.getEdges(partitionedQuery));
       } else if (partitionedQuery.equals(op14op15)) {
         Assert.assertEquals("[op13->op15]'s neighbor should be empty",
             0, partitionedQueryDAG.getEdges(partitionedQuery).size());
       } else if (partitionedQuery.equals(op21op22)) {
-        final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> op2122neighbor = new HashSet<>();
-        op2122neighbor.add(new Tuple2<>(op13chain, MistEvent.Direction.RIGHT));
+        final Map<PartitionedQuery, MistEvent.Direction> op2122neighbor = new HashMap<>();
+        op2122neighbor.put(op13chain, MistEvent.Direction.RIGHT);
         Assert.assertEquals("[op21->op22]'s neighbor should be  [op13]",
             op2122neighbor, partitionedQueryDAG.getEdges(partitionedQuery));
       } else if (partitionedQuery.equals(op23chain)) {
@@ -168,17 +167,17 @@ public final class QueryPartitionerTest {
     Assert.assertEquals("The number of PartitionedQuery should be 5", 5, num);
 
     // src map
-    final Map<Source, Set<Tuple2<PartitionedQuery, MistEvent.Direction>>> chainedSrcMap =
+    final Map<Source, Map<PartitionedQuery, MistEvent.Direction>> chainedSrcMap =
         chainedPhysicalPlan.getSourceMap();
     Assert.assertEquals("The number of Source should be 2", 2, chainedSrcMap.size());
 
-    final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> src1OpChain = new HashSet<>();
-    src1OpChain.add(new Tuple2<>(op11op12, MistEvent.Direction.LEFT));
+    final Map<PartitionedQuery, MistEvent.Direction> src1OpChain = new HashMap<>();
+    src1OpChain.put(op11op12, MistEvent.Direction.LEFT);
     Assert.assertEquals("The mapped PartitionedQuery of src1 should be [op11->op12]",
         src1OpChain, chainedSrcMap.get(src1));
 
-    final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> src2OpChain = new HashSet<>();
-    src2OpChain.add(new Tuple2<>(op21op22, MistEvent.Direction.LEFT));
+    final Map<PartitionedQuery, MistEvent.Direction> src2OpChain = new HashMap<>();
+    src2OpChain.put(op21op22, MistEvent.Direction.LEFT);
     Assert.assertEquals("The mapped PartitionedQuery of src2 should be [op21->op22]",
         src2OpChain, chainedSrcMap.get(src2));
 
@@ -209,7 +208,7 @@ public final class QueryPartitionerTest {
   public void testSequentialChaining() throws InjectionException {
     // Build a physical plan
     final DAG<Operator, MistEvent.Direction> operatorDAG = new AdjacentListDAG<>();
-    final Map<Source, Set<Tuple2<Operator, MistEvent.Direction>>> sourceMap = new HashMap<>();
+    final Map<Source, Map<Operator, MistEvent.Direction>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
     final Source src1 = mock(Source.class);
@@ -228,8 +227,8 @@ public final class QueryPartitionerTest {
     operatorDAG.addEdge(op11, op12, MistEvent.Direction.LEFT);
     operatorDAG.addEdge(op12, op13, MistEvent.Direction.LEFT);
 
-    final Set<Tuple2<Operator, MistEvent.Direction>> src1Ops = new HashSet<>();
-    src1Ops.add(new Tuple2<>(op11, MistEvent.Direction.LEFT));
+    final Map<Operator, MistEvent.Direction> src1Ops = new HashMap<>();
+    src1Ops.put(op11, MistEvent.Direction.LEFT);
     sourceMap.put(src1, src1Ops);
 
     final Set<Sink> op13Sinks = new HashSet<>();
@@ -269,11 +268,11 @@ public final class QueryPartitionerTest {
     Assert.assertEquals("The number of PartitionedQuery should be 1", 1, num);
 
     // src map
-    final Map<Source, Set<Tuple2<PartitionedQuery, MistEvent.Direction>>> chainedSrcMap =
+    final Map<Source, Map<PartitionedQuery, MistEvent.Direction>> chainedSrcMap =
         chainedPhysicalPlan.getSourceMap();
     Assert.assertEquals("The number of Source should be 1", 1, chainedSrcMap.size());
-    final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> src1OpChain = new HashSet<>();
-    src1OpChain.add(new Tuple2<>(op11op12op13, MistEvent.Direction.LEFT));
+    final Map<PartitionedQuery, MistEvent.Direction> src1OpChain = new HashMap<>();
+    src1OpChain.put(op11op12op13, MistEvent.Direction.LEFT);
     Assert.assertEquals("The mapped PartitionedQuery of src1 should be [op11->op12->op13]",
         src1OpChain, chainedSrcMap.get(src1));
 
@@ -301,7 +300,7 @@ public final class QueryPartitionerTest {
   public void testBranchTest() throws InjectionException {
     // Build a physical plan
     final DAG<Operator, MistEvent.Direction> operatorDAG = new AdjacentListDAG<>();
-    final Map<Source, Set<Tuple2<Operator, MistEvent.Direction>>> sourceMap = new HashMap<>();
+    final Map<Source, Map<Operator, MistEvent.Direction>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
     final Source src1 = mock(Source.class);
@@ -328,8 +327,8 @@ public final class QueryPartitionerTest {
     operatorDAG.addEdge(op12, op14, MistEvent.Direction.LEFT);
     operatorDAG.addEdge(op12, op15, MistEvent.Direction.LEFT);
 
-    final Set<Tuple2<Operator, MistEvent.Direction>> src1Ops = new HashSet<>();
-    src1Ops.add(new Tuple2<>(op11, MistEvent.Direction.LEFT));
+    final Map<Operator, MistEvent.Direction> src1Ops = new HashMap<>();
+    src1Ops.put(op11, MistEvent.Direction.LEFT);
     sourceMap.put(src1, src1Ops);
 
     final Set<Sink> op13Sinks = new HashSet<>();
@@ -368,10 +367,10 @@ public final class QueryPartitionerTest {
     while (iterator.hasNext()) {
       final PartitionedQuery partitionedQuery = iterator.next();
       if (partitionedQuery.equals(op11op12)) {
-        final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> op11op12neighbor = new HashSet<>();
-        op11op12neighbor.add(new Tuple2<>(op13chain, MistEvent.Direction.LEFT));
-        op11op12neighbor.add(new Tuple2<>(op14chain, MistEvent.Direction.LEFT));
-        op11op12neighbor.add(new Tuple2<>(op15chain, MistEvent.Direction.LEFT));
+        final Map<PartitionedQuery, MistEvent.Direction> op11op12neighbor = new HashMap<>();
+        op11op12neighbor.put(op13chain, MistEvent.Direction.LEFT);
+        op11op12neighbor.put(op14chain, MistEvent.Direction.LEFT);
+        op11op12neighbor.put(op15chain, MistEvent.Direction.LEFT);
         Assert.assertEquals("[op11->op12]'s neighbor should be  [op13], [op14] and [op15]",
             op11op12neighbor, partitionedQueryDAG.getEdges(partitionedQuery));
       } else if (partitionedQuery.equals(op13chain)) {
@@ -391,12 +390,12 @@ public final class QueryPartitionerTest {
     Assert.assertEquals("The number of PartitionedQuery should be 4", 4, num);
 
     // src map
-    final Map<Source, Set<Tuple2<PartitionedQuery, MistEvent.Direction>>> chainedSrcMap =
+    final Map<Source, Map<PartitionedQuery, MistEvent.Direction>> chainedSrcMap =
         chainedPhysicalPlan.getSourceMap();
     Assert.assertEquals("The number of Source should be 1", 1, chainedSrcMap.size());
 
-    final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> src1OpChain = new HashSet<>();
-    src1OpChain.add(new Tuple2<>(op11op12, MistEvent.Direction.LEFT));
+    final Map<PartitionedQuery, MistEvent.Direction> src1OpChain = new HashMap<>();
+    src1OpChain.put(op11op12, MistEvent.Direction.LEFT);
     Assert.assertEquals("The mapped PartitionedQuery of src1 should be [op11->op12]",
         src1OpChain, chainedSrcMap.get(src1));
 
@@ -436,7 +435,7 @@ public final class QueryPartitionerTest {
   public void testMergingQueryPartitioning() throws InjectionException {
     // Build a physical plan
     final DAG<Operator, MistEvent.Direction> operatorDAG = new AdjacentListDAG<>();
-    final Map<Source, Set<Tuple2<Operator, MistEvent.Direction>>> sourceMap = new HashMap<>();
+    final Map<Source, Map<Operator, MistEvent.Direction>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
     final Source src1 = mock(Source.class);
@@ -468,12 +467,12 @@ public final class QueryPartitionerTest {
     operatorDAG.addEdge(op13, op14, MistEvent.Direction.LEFT);
     operatorDAG.addEdge(op31, op14, MistEvent.Direction.RIGHT);
 
-    final Set<Tuple2<Operator, MistEvent.Direction>> src1Ops = new HashSet<>();
-    final Set<Tuple2<Operator, MistEvent.Direction>> src2Ops = new HashSet<>();
-    final Set<Tuple2<Operator, MistEvent.Direction>> src3Ops = new HashSet<>();
-    src1Ops.add(new Tuple2<>(op11, MistEvent.Direction.LEFT));
-    src2Ops.add(new Tuple2<>(op21, MistEvent.Direction.LEFT));
-    src3Ops.add(new Tuple2<>(op31, MistEvent.Direction.LEFT));
+    final Map<Operator, MistEvent.Direction> src1Ops = new HashMap<>();
+    final Map<Operator, MistEvent.Direction> src2Ops = new HashMap<>();
+    final Map<Operator, MistEvent.Direction> src3Ops = new HashMap<>();
+    src1Ops.put(op11, MistEvent.Direction.LEFT);
+    src2Ops.put(op21, MistEvent.Direction.LEFT);
+    src3Ops.put(op31, MistEvent.Direction.LEFT);
     sourceMap.put(src1, src1Ops);
     sourceMap.put(src2, src2Ops);
     sourceMap.put(src3, src3Ops);
@@ -514,25 +513,25 @@ public final class QueryPartitionerTest {
 
     // check
     while (iterator.hasNext()) {
-      final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> neighbors = new HashSet<>();
+      final Map<PartitionedQuery, MistEvent.Direction> neighbors = new HashMap<>();
       final PartitionedQuery partitionedQuery = iterator.next();
       if (partitionedQuery.equals(op11op12)) {
-        neighbors.add(new Tuple2<>(op13chain, MistEvent.Direction.LEFT));
+        neighbors.put(op13chain, MistEvent.Direction.LEFT);
         Assert.assertEquals("[op11->op12]'s neighbor should be [op13]",
             neighbors, partitionedQueryDAG.getEdges(partitionedQuery));
       } else if (partitionedQuery.equals(op13chain)) {
-        neighbors.add(new Tuple2<>(op14chain, MistEvent.Direction.LEFT));
+        neighbors.put(op14chain, MistEvent.Direction.LEFT);
         Assert.assertEquals("[op13]'s neighbor should be [op14]",
             neighbors, partitionedQueryDAG.getEdges(partitionedQuery));
       } else if (partitionedQuery.equals(op14chain)) {
         Assert.assertEquals("[op14]'s neighbor should be empty",
             0, partitionedQueryDAG.getEdges(partitionedQuery).size());
       } else if (partitionedQuery.equals(op21chain)) {
-        neighbors.add(new Tuple2<>(op13chain, MistEvent.Direction.RIGHT));
+        neighbors.put(op13chain, MistEvent.Direction.RIGHT);
         Assert.assertEquals("[op21]'s neighbor should be [op13]",
             neighbors, partitionedQueryDAG.getEdges(partitionedQuery));
       } else if (partitionedQuery.equals(op31chain)) {
-        neighbors.add(new Tuple2<>(op14chain, MistEvent.Direction.RIGHT));
+        neighbors.put(op14chain, MistEvent.Direction.RIGHT);
         Assert.assertEquals("[op31]'s neighbor should be [op14]",
             neighbors, partitionedQueryDAG.getEdges(partitionedQuery));
       } else {
@@ -543,22 +542,22 @@ public final class QueryPartitionerTest {
     Assert.assertEquals("The number of PartitionedQuery should be 5", 5, num);
 
     // src map
-    final Map<Source, Set<Tuple2<PartitionedQuery, MistEvent.Direction>>> chainedSrcMap =
+    final Map<Source, Map<PartitionedQuery, MistEvent.Direction>> chainedSrcMap =
         chainedPhysicalPlan.getSourceMap();
     Assert.assertEquals("The number of Source should be 3", 3, chainedSrcMap.size());
 
-    final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> src1OpChain = new HashSet<>();
-    src1OpChain.add(new Tuple2<>(op11op12, MistEvent.Direction.LEFT));
+    final Map<PartitionedQuery, MistEvent.Direction> src1OpChain = new HashMap<>();
+    src1OpChain.put(op11op12, MistEvent.Direction.LEFT);
     Assert.assertEquals("The mapped PartitionedQuery of src1 should be [op11->op12]",
         src1OpChain, chainedSrcMap.get(src1));
 
-    final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> src2OpChain = new HashSet<>();
-    src2OpChain.add(new Tuple2<>(op21chain, MistEvent.Direction.LEFT));
+    final Map<PartitionedQuery, MistEvent.Direction> src2OpChain = new HashMap<>();
+    src2OpChain.put(op21chain, MistEvent.Direction.LEFT);
     Assert.assertEquals("The mapped PartitionedQuery of src2 should be [op21]",
         src2OpChain, chainedSrcMap.get(src2));
 
-    final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> src3OpChain = new HashSet<>();
-    src3OpChain.add(new Tuple2<>(op31chain, MistEvent.Direction.LEFT));
+    final Map<PartitionedQuery, MistEvent.Direction> src3OpChain = new HashMap<>();
+    src3OpChain.put(op31chain, MistEvent.Direction.LEFT);
     Assert.assertEquals("The mapped PartitionedQuery of src3 should be [op31]",
         src3OpChain, chainedSrcMap.get(src3));
 
@@ -588,7 +587,7 @@ public final class QueryPartitionerTest {
   public void testForkAndMergeChaining() throws InjectionException {
     // Build a physical plan
     final DAG<Operator, MistEvent.Direction> operatorDAG = new AdjacentListDAG<>();
-    final Map<Source, Set<Tuple2<Operator, MistEvent.Direction>>> sourceMap = new HashMap<>();
+    final Map<Source, Map<Operator, MistEvent.Direction>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
     final Source src1 = mock(Source.class);
@@ -620,8 +619,8 @@ public final class QueryPartitionerTest {
     operatorDAG.addEdge(opC, opD, MistEvent.Direction.LEFT);
     operatorDAG.addEdge(opB3, opD, MistEvent.Direction.RIGHT);
 
-    final Set<Tuple2<Operator, MistEvent.Direction>> src1Ops = new HashSet<>();
-    src1Ops.add(new Tuple2<>(opA, MistEvent.Direction.LEFT));
+    final Map<Operator, MistEvent.Direction> src1Ops = new HashMap<>();
+    src1Ops.put(opA, MistEvent.Direction.LEFT);
     sourceMap.put(src1, src1Ops);
 
     final Set<Sink> opDSinks = new HashSet<>();
@@ -663,28 +662,28 @@ public final class QueryPartitionerTest {
 
     // check
     while (iterator.hasNext()) {
-      final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> neighbors = new HashSet<>();
+      final Map<PartitionedQuery, MistEvent.Direction> neighbors = new HashMap<>();
       final PartitionedQuery partitionedQuery = iterator.next();
       if (partitionedQuery.equals(opAchain)) {
-        neighbors.add(new Tuple2<>(opB1chain, MistEvent.Direction.LEFT));
-        neighbors.add(new Tuple2<>(opB2chain, MistEvent.Direction.LEFT));
-        neighbors.add(new Tuple2<>(opB3chain, MistEvent.Direction.LEFT));
+        neighbors.put(opB1chain, MistEvent.Direction.LEFT);
+        neighbors.put(opB2chain, MistEvent.Direction.LEFT);
+        neighbors.put(opB3chain, MistEvent.Direction.LEFT);
         Assert.assertEquals("[opA]'s neighbor should be  [opB-1], [opB-2], and [opB-3]",
             neighbors, partitionedQueryDAG.getEdges(partitionedQuery));
       } else if (partitionedQuery.equals(opB1chain)) {
-        neighbors.add(new Tuple2<>(opCchain, MistEvent.Direction.LEFT));
+        neighbors.put(opCchain, MistEvent.Direction.LEFT);
         Assert.assertEquals("[opB1chain]'s neighbor should be [opC]",
             neighbors, partitionedQueryDAG.getEdges(partitionedQuery));
       } else if (partitionedQuery.equals(opB2chain)) {
-        neighbors.add(new Tuple2<>(opCchain, MistEvent.Direction.RIGHT));
+        neighbors.put(opCchain, MistEvent.Direction.RIGHT);
         Assert.assertEquals("[opB2chain]'s neighbor should be [opC]",
             neighbors, partitionedQueryDAG.getEdges(partitionedQuery));
       } else if (partitionedQuery.equals(opB3chain)) {
-        neighbors.add(new Tuple2<>(opDchain, MistEvent.Direction.RIGHT));
+        neighbors.put(opDchain, MistEvent.Direction.RIGHT);
         Assert.assertEquals("[opB3chain]'s neighbor should be [opD]",
             neighbors, partitionedQueryDAG.getEdges(partitionedQuery));
       } else if (partitionedQuery.equals(opCchain)) {
-        neighbors.add(new Tuple2<>(opDchain, MistEvent.Direction.LEFT));
+        neighbors.put(opDchain, MistEvent.Direction.LEFT);
         Assert.assertEquals("[opCchain]'s neighbor should be [opD]",
                 neighbors, partitionedQueryDAG.getEdges(partitionedQuery));
       } else if (partitionedQuery.equals(opDchain)) {
@@ -698,12 +697,12 @@ public final class QueryPartitionerTest {
     Assert.assertEquals("The number of PartitionedQuery should be 6", 6, num);
 
     // src map
-    final Map<Source, Set<Tuple2<PartitionedQuery, MistEvent.Direction>>> chainedSrcMap = 
+    final Map<Source, Map<PartitionedQuery, MistEvent.Direction>> chainedSrcMap =
       chainedPhysicalPlan.getSourceMap();
     Assert.assertEquals("The number of Source should be 1", 1, chainedSrcMap.size());
 
-    final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> src1OpChain = new HashSet<>();
-    src1OpChain.add(new Tuple2<>(opAchain, MistEvent.Direction.LEFT));
+    final Map<PartitionedQuery, MistEvent.Direction> src1OpChain = new HashMap<>();
+    src1OpChain.put(opAchain, MistEvent.Direction.LEFT);
     Assert.assertEquals("The mapped PartitionedQuery of src1 should be [opA]",
         src1OpChain, chainedSrcMap.get(src1));
 

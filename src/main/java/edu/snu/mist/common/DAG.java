@@ -15,8 +15,7 @@
  */
 package edu.snu.mist.common;
 
-import edu.snu.mist.api.types.Tuple2;
-
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -46,7 +45,7 @@ public interface DAG<V, I> {
    * @return neighbor vertices of v
    * @throws java.util.NoSuchElementException if the vertex v does not exist.
    */
-  Set<Tuple2<V, I>> getEdges(V v);
+  Map<V, I> getEdges(V v);
 
   /**
    * Adds the vertex v, if it is not there.
@@ -76,11 +75,10 @@ public interface DAG<V, I> {
    * Removes the edge from the vertices v to w, if it is there.
    * @param v src vertex
    * @param w dest vertex
-   * @param i edge information
    * @return true if the edge is removed, false if the edge does not exist between v and w
    * @throws java.util.NoSuchElementException if the vertex v or w do not exist
    */
-  boolean removeEdge(V v, V w, I i);
+  boolean removeEdge(V v, V w);
 
   /**
    * Gets the in-degree of vertex v.

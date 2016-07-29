@@ -15,8 +15,6 @@
  */
 package edu.snu.mist.common;
 
-import edu.snu.mist.api.types.Tuple2;
-
 import java.util.*;
 
 /**
@@ -49,11 +47,11 @@ public final class GraphUtils {
    * @param destDAG a dest DAG
    */
   private static <V, I> void dfsCopy(final DAG<V, I> srcDAG, final V src, final DAG<V, I> destDAG) {
-    final Set<Tuple2<V, I>> edges = srcDAG.getEdges(src);
-    for (final Tuple2<V, I> edge : edges) {
-      if (destDAG.addVertex((V) edge.get(0))) {
-        destDAG.addEdge(src, (V) edge.get(0), (I) edge.get(1));
-        dfsCopy(srcDAG, (V) edge.get(0), destDAG);
+    final Map<V, I> edges = srcDAG.getEdges(src);
+    for (final Map.Entry<V, I> edge : edges.entrySet()) {
+      if (destDAG.addVertex(edge.getKey())) {
+        destDAG.addEdge(src, edge.getKey(), edge.getValue());
+        dfsCopy(srcDAG, edge.getKey(), destDAG);
       }
     }
   }

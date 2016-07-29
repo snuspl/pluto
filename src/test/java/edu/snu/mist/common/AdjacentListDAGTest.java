@@ -18,12 +18,9 @@ package edu.snu.mist.common;
 import com.google.common.collect.ImmutableList;
 import junit.framework.Assert;
 import org.junit.Test;
-import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.task.MistEvent;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public final class AdjacentListDAGTest {
 
@@ -63,13 +60,15 @@ public final class AdjacentListDAGTest {
     Assert.assertEquals("Root vertices should be " + expectedRoot,
         new HashSet<>(expectedRoot), dag.getRootVertices());
 
-    final Set<Tuple2<Integer, MistEvent.Direction>> n = dag.getEdges(1);
-    Assert.assertEquals(new HashSet<>(ImmutableList.of(new Tuple2<>(3, MistEvent.Direction.LEFT))), n);
+    final Map<Integer, MistEvent.Direction> n = dag.getEdges(1);
+    Map<Integer, MistEvent.Direction> expectedEdges = new HashMap<>();
+    expectedEdges.put(3, MistEvent.Direction.LEFT);
+    Assert.assertEquals(expectedEdges, n);
     Assert.assertEquals(2, dag.getInDegree(4));
     Assert.assertEquals(1, dag.getInDegree(3));
     Assert.assertEquals(0, dag.getInDegree(1));
 
-    dag.removeEdge(1, 3, MistEvent.Direction.LEFT);
+    dag.removeEdge(1, 3);
     Assert.assertFalse(dag.isAdjacent(1, 3));
     Assert.assertEquals(dag.getInDegree(3), 0);
     // check root vertices
@@ -77,7 +76,7 @@ public final class AdjacentListDAGTest {
     Assert.assertEquals("Root vertices should be " + expectedRoot2,
         new HashSet<>(expectedRoot2), dag.getRootVertices());
 
-    dag.removeEdge(3, 4, MistEvent.Direction.LEFT);
+    dag.removeEdge(3, 4);
     Assert.assertFalse(dag.isAdjacent(3, 4));
     Assert.assertEquals(dag.getInDegree(4), 1);
     // check root vertices
@@ -85,7 +84,7 @@ public final class AdjacentListDAGTest {
     Assert.assertEquals("Root vertices should be " + expectedRoot3,
         new HashSet<>(expectedRoot3), dag.getRootVertices());
 
-    dag.removeEdge(2, 4, MistEvent.Direction.RIGHT);
+    dag.removeEdge(2, 4);
     Assert.assertFalse(dag.isAdjacent(2, 4));
     Assert.assertEquals(dag.getInDegree(4), 0);
     // check root vertices

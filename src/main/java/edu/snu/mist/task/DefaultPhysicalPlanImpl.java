@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sources.Source;
@@ -32,7 +31,7 @@ final class DefaultPhysicalPlanImpl<E, I> implements PhysicalPlan<E, I> {
   /**
    * A map of source generator and operators.
    */
-  private final Map<Source, Set<Tuple2<E, I>>> sourceMap;
+  private final Map<Source, Map<E, I>> sourceMap;
 
   /**
    * A DAG of operators.
@@ -44,7 +43,7 @@ final class DefaultPhysicalPlanImpl<E, I> implements PhysicalPlan<E, I> {
    */
   private final Map<E, Set<Sink>> sinkMap;
 
-  public DefaultPhysicalPlanImpl(final Map<Source, Set<Tuple2<E, I>>> sourceMap,
+  public DefaultPhysicalPlanImpl(final Map<Source, Map<E, I>> sourceMap,
                                  final DAG<E, I> operators,
                                  final Map<E, Set<Sink>> sinkMap) {
     this.sourceMap = sourceMap;
@@ -58,7 +57,7 @@ final class DefaultPhysicalPlanImpl<E, I> implements PhysicalPlan<E, I> {
   }
 
   @Override
-  public Map<Source, Set<Tuple2<E, I>>> getSourceMap() {
+  public Map<Source, Map<E, I>> getSourceMap() {
     return sourceMap;
   }
 

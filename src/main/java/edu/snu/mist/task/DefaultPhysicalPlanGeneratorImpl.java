@@ -17,7 +17,6 @@ package edu.snu.mist.task;
 
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
-import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.ExternalJarObjectInputStream;
@@ -193,7 +192,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     final String queryId = queryIdAndLogicalPlan.getKey();
     final LogicalPlan logicalPlan = queryIdAndLogicalPlan.getValue();
     final List<Object> deserializedVertices = new ArrayList<>();
-    final Map<Source, Set<Tuple2<Operator, MistEvent.Direction>>> sourceMap = new HashMap<>();
+    final Map<Source, Map<Operator, MistEvent.Direction>> sourceMap = new HashMap<>();
     final DAG<Operator, MistEvent.Direction> operators = new AdjacentListDAG<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
     final Path jarFilePath = Paths.get(tmpFolderPath, String.format("%s.jar", queryId));
@@ -279,9 +278,9 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       switch (logicalPlan.getVertices().get(srcIndex).getVertexType()) {
         case SOURCE: {
           if (!sourceMap.containsKey(deserializedSrcVertex)) {
-            sourceMap.put((Source) deserializedSrcVertex, new HashSet<>());
+            sourceMap.put((Source) deserializedSrcVertex, new HashMap<>());
           }
-          sourceMap.get(deserializedSrcVertex).add(new Tuple2(deserializedDstVertex, isLeft));
+          sourceMap.get(deserializedSrcVertex).put((Operator) deserializedDstVertex, isLeft);
           break;
         }
         case INSTANT_OPERATOR: {

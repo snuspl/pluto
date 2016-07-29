@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sources.Source;
@@ -41,7 +40,7 @@ public interface PhysicalPlan<E, I> {
    * Gets the map containing Source and its next operators.
    * @return a map
    */
-  Map<Source, Set<Tuple2<E, I>>> getSourceMap();
+  Map<Source, Map<E, I>> getSourceMap();
 
   /**
    * Gets the map of operator and sinks.

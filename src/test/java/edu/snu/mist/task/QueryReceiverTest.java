@@ -80,7 +80,7 @@ public final class QueryReceiverTest {
         "a mist rose out of the river",
         "the peaks were shrouded in mist");
 
-    final Map<Source, Set<Tuple2<Operator, MistEvent.Direction>>> sourceMap = new HashMap<>();
+    final Map<Source, Map<Operator, MistEvent.Direction>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
     // UDF functions for operators
@@ -157,8 +157,8 @@ public final class QueryReceiverTest {
     operatorDAG.addEdge(reduceByKey, totalCountMap, MistEvent.Direction.LEFT);
 
     // Create source map
-    final Set<Tuple2<Operator, MistEvent.Direction>> src1Ops = new HashSet<>();
-    src1Ops.add(new Tuple2<>(flatMap, MistEvent.Direction.LEFT));
+    final Map<Operator, MistEvent.Direction> src1Ops = new HashMap<>();
+    src1Ops.put(flatMap, MistEvent.Direction.LEFT);
     sourceMap.put(src, src1Ops);
 
     // Create sink map

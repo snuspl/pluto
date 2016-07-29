@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.GraphUtils;
 import edu.snu.mist.formats.avro.LogicalPlan;
@@ -30,7 +29,6 @@ import org.apache.reef.wake.impl.ThreadPoolStage;
 import javax.inject.Inject;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
@@ -138,7 +136,7 @@ final class DefaultQueryReceiverImpl implements QueryReceiver {
     final Iterator<PartitionedQuery> iterator = GraphUtils.topologicalSort(chainedOperators);
     while (iterator.hasNext()) {
       final PartitionedQuery partitionedQuery = iterator.next();
-      final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> edges = chainedOperators.getEdges(partitionedQuery);
+      final Map<PartitionedQuery, MistEvent.Direction> edges = chainedOperators.getEdges(partitionedQuery);
       if (edges.size() == 0) {
         // Sets SinkEmitter to the PartitionedQueries which are followed by Sinks.
         partitionedQuery.setOutputEmitter(new SinkEmitter<>(
@@ -148,9 +146,9 @@ final class DefaultQueryReceiverImpl implements QueryReceiver {
       }
     }
 
-    for (final Map.Entry<Source, Set<Tuple2<PartitionedQuery, MistEvent.Direction>>> entry :
+    for (final Map.Entry<Source, Map<PartitionedQuery, MistEvent.Direction>> entry :
         chainPhysicalPlan.getSourceMap().entrySet()) {
-      final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> nextOps = entry.getValue();
+      final Map<PartitionedQuery, MistEvent.Direction> nextOps = entry.getValue();
       final Source src = entry.getKey();
       // Sets SourceOutputEmitter to the sources
       src.setOutputEmitter(new SourceOutputEmitter<>(nextOps));

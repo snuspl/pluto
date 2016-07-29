@@ -37,7 +37,6 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The implementation class for MISTQuerySerializer interface.
@@ -131,7 +130,10 @@ public final class MISTQuerySerializerImpl implements MISTQuerySerializer {
         throw new IllegalStateException("apiVertex is neither Sink nor MISTStream!");
       }
       if (precedingStreams != null) {
-        AtomicBoolean isLeftEdge = new AtomicBoolean(true);
+        // The number of precedingStreams is one or two.
+        // For the first preceding stream, the edge between it and current stream is set to be left.
+        // For the second preceding stream, if exists, the edge is set to be right.
+        boolean isLeftEdge = true;
 
         for (MISTStream precedingStream : precedingStreams) {
           if (!apiVertices.contains(precedingStream)) {
@@ -139,14 +141,14 @@ public final class MISTQuerySerializerImpl implements MISTQuerySerializer {
             queue.add(precedingStream);
           }
           final int fromIndex = apiVertices.indexOf(precedingStream);
-          Edge.Builder newEdgeBuilder = Edge.newBuilder()
+          final Edge.Builder newEdgeBuilder = Edge.newBuilder()
               .setFrom(fromIndex)
               .setTo(toIndex);
 
-          if (isLeftEdge.get()) {
+          if (isLeftEdge) {
             Edge newEdge = newEdgeBuilder.setIsLeft(true)
                 .build();
-            isLeftEdge.set(false);
+            isLeftEdge = false;
             edges.add(newEdge);
           } else {
             Edge newEdge = newEdgeBuilder.setIsLeft(false)

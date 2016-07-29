@@ -15,8 +15,6 @@
  */
 package edu.snu.mist.common;
 
-import edu.snu.mist.api.types.Tuple2;
-
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,6 +23,7 @@ import java.util.logging.Logger;
  * This implements adjacent list, which will be used to implement DAG.
  * This implementation is not thread-safe.
  * @param <V> vertex type
+ * @param <I> edge information type
  */
 public final class AdjacentListDAG<V, I> implements DAG<V, I> {
   private static final Logger LOG = Logger.getLogger(AdjacentListDAG.class.getName());
@@ -32,7 +31,7 @@ public final class AdjacentListDAG<V, I> implements DAG<V, I> {
   /**
    * An adjacent list.
    */
-  private final Map<V, Set<Tuple2<V, I>>> adjacent;
+  private final Map<V, Map<V, I>> adjacent;
 
   /**
    * A map for in-degree of vertices.
@@ -57,10 +56,10 @@ public final class AdjacentListDAG<V, I> implements DAG<V, I> {
 
   @Override
   public boolean isAdjacent(final V v1, final V v2) {
-    final Set<Tuple2<V, I>> adjs = adjacent.get(v1);
+    final Map<V, I> adjs = adjacent.get(v1);
 
-    for (final Tuple2 edge : adjs) {
-      if (edge.get(0).equals(v2)) {
+    for (final Map.Entry<V, I> edge : adjs.entrySet()) {
+      if (edge.getKey().equals(v2)) {
         return true;
       }
     }
@@ -68,8 +67,8 @@ public final class AdjacentListDAG<V, I> implements DAG<V, I> {
   }
 
   @Override
-  public Set<Tuple2<V, I>> getEdges(final V v) {
-    final Set<Tuple2<V, I>> adjEdges = adjacent.get(v);
+  public Map<V, I> getEdges(final V v) {
+    final Map<V, I> adjEdges = adjacent.get(v);
     if (adjEdges == null) {
       throw new NoSuchElementException("No src vertex " + v);
     }
@@ -79,7 +78,7 @@ public final class AdjacentListDAG<V, I> implements DAG<V, I> {
   @Override
   public boolean addVertex(final V v) {
     if (!adjacent.containsKey(v)) {
-      adjacent.put(v, new HashSet<>());
+      adjacent.put(v, new HashMap<>());
       inDegrees.put(v, 0);
       rootVertices.add(v);
       return true;
@@ -91,13 +90,13 @@ public final class AdjacentListDAG<V, I> implements DAG<V, I> {
 
   @Override
   public boolean removeVertex(final V v) {
-    final Set<Tuple2<V, I>> edges = adjacent.remove(v);
+    final Map<V, I> edges = adjacent.remove(v);
     if (edges != null) {
       inDegrees.remove(v);
       // update inDegrees of neighbor vertices
       // and update rootVertices
-      for (final Tuple2<V, I> edge : edges) {
-        final V neighbor = (V) edge.get(0);
+      for (final Map.Entry<V, I> edge : edges.entrySet()) {
+        final V neighbor = edge.getKey();
         final int inDegree = inDegrees.get(neighbor) - 1;
         inDegrees.put(neighbor, inDegree);
         if (inDegree == 0) {
@@ -105,6 +104,18 @@ public final class AdjacentListDAG<V, I> implements DAG<V, I> {
         }
       }
       rootVertices.remove(v);
+
+      // We have to remove edge that destination vertex is v.
+      // This operation is very expensive.
+      for (Map.Entry<V, Map<V, I>> entry : adjacent.entrySet()) {
+        final Iterator<V> dests = entry.getValue().keySet().iterator();
+        while (dests.hasNext()) {
+          final V dest = dests.next();
+          if (dest.equals(v)) {
+            entry.getValue().remove(dest, entry.getValue().get(dest));
+          }
+        }
+      }
       return true;
     } else {
       LOG.log(Level.WARNING, "The vertex {0} does exists", new Object[]{v});
@@ -114,12 +125,12 @@ public final class AdjacentListDAG<V, I> implements DAG<V, I> {
 
   @Override
   public boolean addEdge(final V v1, final V v2, final I i) {
-    final Set<Tuple2<V, I>> adjEdges = getEdges(v1);
+    final Map<V, I> adjEdges = getEdges(v1);
     if (adjEdges == null) {
       throw new NoSuchElementException("No src vertex " + v1);
     }
 
-    if (adjEdges.add(new Tuple2<>(v2, i))) {
+    if (adjEdges.put(v2, i) == null) {
       final int inDegree = inDegrees.get(v2);
       inDegrees.put(v2, inDegree + 1);
       if (inDegree == 0) {
@@ -133,13 +144,13 @@ public final class AdjacentListDAG<V, I> implements DAG<V, I> {
   }
 
   @Override
-  public boolean removeEdge(final V v1, final V v2, final I i) {
-    final Set<Tuple2<V, I>> adjEdges = getEdges(v1);
+  public boolean removeEdge(final V v1, final V v2) {
+    final Map<V, I> adjEdges = getEdges(v1);
     if (adjEdges == null) {
       throw new NoSuchElementException("No src vertex " + v1);
     }
 
-    if (adjEdges.remove(new Tuple2<>(v2, i))) {
+    if (adjEdges.remove(v2) != null) {
       final int inDegree = inDegrees.get(v2);
       inDegrees.put(v2, inDegree - 1);
       if (inDegree == 1) {

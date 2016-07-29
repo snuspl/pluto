@@ -15,10 +15,9 @@
  */
 package edu.snu.mist.task;
 
-import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.task.common.OutputEmitter;
 
-import java.util.Set;
+import java.util.Map;
 
 /**
  * This emitter emits the outputs to the next PartitionedQueries that get inputs from the sources.
@@ -30,16 +29,16 @@ final class SourceOutputEmitter<I> implements OutputEmitter<I> {
   /**
    * Next PartitionedQueries.
    */
-  private final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> nextPartitionedQueries;
+  private final Map<PartitionedQuery, MistEvent.Direction> nextPartitionedQueries;
 
-  public SourceOutputEmitter(final Set<Tuple2<PartitionedQuery, MistEvent.Direction>> nextPartitionedQueries) {
+  public SourceOutputEmitter(final Map<PartitionedQuery, MistEvent.Direction> nextPartitionedQueries) {
     this.nextPartitionedQueries = nextPartitionedQueries;
   }
 
   @Override
   public void emit(final I input) {
-    for (final Tuple2<PartitionedQuery, MistEvent.Direction> nextQuery : nextPartitionedQueries) {
-      ((PartitionedQuery) nextQuery.get(0)).addNextEvent(input);
+    for (final Map.Entry<PartitionedQuery, MistEvent.Direction> nextQuery : nextPartitionedQueries.entrySet()) {
+      nextQuery.getKey().addNextEvent(input);
     }
   }
 }
