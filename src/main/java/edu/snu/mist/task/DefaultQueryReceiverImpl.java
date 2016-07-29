@@ -29,7 +29,6 @@ import org.apache.reef.wake.impl.ThreadPoolStage;
 import javax.inject.Inject;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
@@ -56,7 +55,7 @@ final class DefaultQueryReceiverImpl implements QueryReceiver {
   /**
    * Map of query id and physical plan.
    */
-  private final ConcurrentMap<String, PhysicalPlan<PartitionedQuery>> physicalPlanMap;
+  private final ConcurrentMap<String, PhysicalPlan<PartitionedQuery, MistEvent.Direction>> physicalPlanMap;
 
   /**
    * A partitioned query manager.
@@ -87,7 +86,7 @@ final class DefaultQueryReceiverImpl implements QueryReceiver {
     this.queryManager = queryManager;
     this.threadManager = threadManager;
     this.tpStage = new ThreadPoolStage<>((tuple) -> {
-      final PhysicalPlan<Operator> physicalPlan;
+      final PhysicalPlan<Operator, MistEvent.Direction> physicalPlan;
       try {
         // 1) Converts the logical plan to the physical plan
         physicalPlan = physicalPlanGenerator.generate(tuple);
@@ -98,10 +97,10 @@ final class DefaultQueryReceiverImpl implements QueryReceiver {
       }
 
       // 2) Chains the physical operators and makes PartitionedQuery.
-      final PhysicalPlan<PartitionedQuery> chainedPlan =
+      final PhysicalPlan<PartitionedQuery, MistEvent.Direction> chainedPlan =
           queryPartitioner.chainOperators(physicalPlan);
       physicalPlanMap.putIfAbsent(tuple.getKey(), chainedPlan);
-      final DAG<PartitionedQuery> chainedOperators = chainedPlan.getOperators();
+      final DAG<PartitionedQuery, MistEvent.Direction> chainedOperators = chainedPlan.getOperators();
 
       // 3) Inserts the PartitionedQueries' queues to PartitionedQueueManager.
       final Iterator<PartitionedQuery> partitionedQueryIterator = GraphUtils.topologicalSort(chainedOperators);
@@ -131,25 +130,25 @@ final class DefaultQueryReceiverImpl implements QueryReceiver {
    * and starts to receive input data stream from the sources.
    * @param chainPhysicalPlan physical plan of PartitionedQuery
    */
-  private void start(final PhysicalPlan<PartitionedQuery> chainPhysicalPlan) {
-    final DAG<PartitionedQuery> chainedOperators = chainPhysicalPlan.getOperators();
+  private void start(final PhysicalPlan<PartitionedQuery, MistEvent.Direction> chainPhysicalPlan) {
+    final DAG<PartitionedQuery, MistEvent.Direction> chainedOperators = chainPhysicalPlan.getOperators();
     // 4) Sets output emitters
     final Iterator<PartitionedQuery> iterator = GraphUtils.topologicalSort(chainedOperators);
     while (iterator.hasNext()) {
       final PartitionedQuery partitionedQuery = iterator.next();
-      final Set<PartitionedQuery> neighbors = chainedOperators.getNeighbors(partitionedQuery);
-      if (neighbors.size() == 0) {
+      final Map<PartitionedQuery, MistEvent.Direction> edges = chainedOperators.getEdges(partitionedQuery);
+      if (edges.size() == 0) {
         // Sets SinkEmitter to the PartitionedQueries which are followed by Sinks.
         partitionedQuery.setOutputEmitter(new SinkEmitter<>(
             chainPhysicalPlan.getSinkMap().get(partitionedQuery)));
       } else {
-        partitionedQuery.setOutputEmitter(new OperatorOutputEmitter(partitionedQuery, neighbors));
+        partitionedQuery.setOutputEmitter(new OperatorOutputEmitter(partitionedQuery, edges));
       }
     }
 
-    for (final Map.Entry<Source, Set<PartitionedQuery>> entry :
+    for (final Map.Entry<Source, Map<PartitionedQuery, MistEvent.Direction>> entry :
         chainPhysicalPlan.getSourceMap().entrySet()) {
-      final Set<PartitionedQuery> nextOps = entry.getValue();
+      final Map<PartitionedQuery, MistEvent.Direction> nextOps = entry.getValue();
       final Source src = entry.getKey();
       // Sets SourceOutputEmitter to the sources
       src.setOutputEmitter(new SourceOutputEmitter<>(nextOps));

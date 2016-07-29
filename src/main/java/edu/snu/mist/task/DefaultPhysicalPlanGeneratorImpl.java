@@ -187,13 +187,13 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   }
 
   @Override
-  public PhysicalPlan<Operator> generate(final Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
+  public PhysicalPlan<Operator, MistEvent.Direction> generate(final Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
       throws IllegalArgumentException, InjectionException, IOException, ClassNotFoundException {
     final String queryId = queryIdAndLogicalPlan.getKey();
     final LogicalPlan logicalPlan = queryIdAndLogicalPlan.getValue();
     final List<Object> deserializedVertices = new ArrayList<>();
-    final Map<Source, Set<Operator>> sourceMap = new HashMap<>();
-    final DAG<Operator> operators = new AdjacentListDAG<>();
+    final Map<Source, Map<Operator, MistEvent.Direction>> sourceMap = new HashMap<>();
+    final DAG<Operator, MistEvent.Direction> operators = new AdjacentListDAG<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
     final Path jarFilePath = Paths.get(tmpFolderPath, String.format("%s.jar", queryId));
 
@@ -268,18 +268,25 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       final Object deserializedSrcVertex = deserializedVertices.get(srcIndex);
       final int dstIndex = edge.getTo();
       final Object deserializedDstVertex = deserializedVertices.get(dstIndex);
+      MistEvent.Direction direction;
+      if (edge.getIsLeft()) {
+        direction = MistEvent.Direction.LEFT;
+      } else {
+        direction = MistEvent.Direction.RIGHT;
+      }
+
       switch (logicalPlan.getVertices().get(srcIndex).getVertexType()) {
         case SOURCE: {
           if (!sourceMap.containsKey(deserializedSrcVertex)) {
-            sourceMap.put((Source) deserializedSrcVertex, new HashSet<>());
+            sourceMap.put((Source) deserializedSrcVertex, new HashMap<>());
           }
-          sourceMap.get(deserializedSrcVertex).add((Operator) deserializedDstVertex);
+          sourceMap.get(deserializedSrcVertex).put((Operator) deserializedDstVertex, direction);
           break;
         }
         case INSTANT_OPERATOR: {
           switch (logicalPlan.getVertices().get(dstIndex).getVertexType()) {
             case INSTANT_OPERATOR: {
-              operators.addEdge((Operator) deserializedSrcVertex, (Operator) deserializedDstVertex);
+              operators.addEdge((Operator) deserializedSrcVertex, (Operator) deserializedDstVertex, direction);
               break;
             }
             case WINDOW_OPERATOR: {

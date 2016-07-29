@@ -22,10 +22,7 @@ import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sources.Source;
 
 import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * This is a default implementation of query partitioning.
@@ -70,22 +67,25 @@ final class DefaultQueryPartitionerImpl implements QueryPartitioner {
    * @return physical plan consisting of PartitionedQuery
    */
   @Override
-  public PhysicalPlan<PartitionedQuery> chainOperators(final PhysicalPlan<Operator> plan) {
+  public PhysicalPlan<PartitionedQuery, MistEvent.Direction> chainOperators(
+          final PhysicalPlan<Operator, MistEvent.Direction> plan) {
     // This is a map of source and PartitionedQueries which are following sources
-    final Map<Source, Set<PartitionedQuery>> sourceMap = new HashMap<>();
+    final Map<Source, Map<PartitionedQuery, MistEvent.Direction>> sourceMap = new HashMap<>();
     // This is a map of PartitionedQuery and Sinks. The PartitionedQuery is followed by Sinks.
     final Map<PartitionedQuery, Set<Sink>> sinkMap = new HashMap<>();
-    final DAG<PartitionedQuery> partitionedQueryDAG = new AdjacentListDAG<>();
+    final DAG<PartitionedQuery, MistEvent.Direction> partitionedQueryDAG = new AdjacentListDAG<>();
     // This map is used for marking visited operators.
     final Map<Operator, PartitionedQuery> partitionedQueryMap = new HashMap<>();
 
     // It traverses the DAG of operators in DFS order
     // from the root operators which are following sources.
-    for (final Map.Entry<Source, Set<Operator>> entry : plan.getSourceMap().entrySet()) {
+    for (final Map.Entry<Source, Map<Operator, MistEvent.Direction>> entry : plan.getSourceMap().entrySet()) {
       // This is the root operators which are directly connected to sources.
-      final Set<Operator> rootOperators = entry.getValue();
-      final Set<PartitionedQuery> partitionedQueries = new HashSet<>();
-      for (final Operator rootOperator : rootOperators) {
+      final Map<Operator, MistEvent.Direction> rootOperatorEdges = entry.getValue();
+      final Map<PartitionedQuery, MistEvent.Direction> partitionedQueries = new HashMap<>();
+      for (final Map.Entry<Operator, MistEvent.Direction> opAndEdge : rootOperatorEdges.entrySet()) {
+        final Operator rootOperator = opAndEdge.getKey();
+        final MistEvent.Direction edgeDirection = opAndEdge.getValue();
         PartitionedQuery currOpChain = partitionedQueryMap.get(rootOperator);
         // Check whether this operator is already visited.
         if (currOpChain == null) {
@@ -96,9 +96,9 @@ final class DefaultQueryPartitionerImpl implements QueryPartitioner {
           currOpChain.insertToTail(rootOperator);
           // Traverse in DFS order
           chainOperatorHelper(plan, partitionedQueryMap, partitionedQueryDAG, sinkMap,
-              rootOperator, null, currOpChain);
+              rootOperator, null, currOpChain, edgeDirection);
         }
-        partitionedQueries.add(currOpChain);
+        partitionedQueries.put(currOpChain, edgeDirection);
       }
       sourceMap.put(entry.getKey(), partitionedQueries);
     }
@@ -114,50 +114,57 @@ final class DefaultQueryPartitionerImpl implements QueryPartitioner {
    * @param currentOp current operator for traversing the DAG of operators
    * @param prevChain previous PartitionedQuery
    * @param currChain current PartitionedQuery
+   * @param direction direction from previous chain to current chain
    */
-  private void chainOperatorHelper(final PhysicalPlan<Operator> plan,
+  private void chainOperatorHelper(final PhysicalPlan<Operator, MistEvent.Direction> plan,
                                    final Map<Operator, PartitionedQuery> partitionedQueryMap,
-                                   final DAG<PartitionedQuery> partitionedQueryDAG,
+                                   final DAG<PartitionedQuery, MistEvent.Direction> partitionedQueryDAG,
                                    final Map<PartitionedQuery, Set<Sink>> sinkMap,
                                    final Operator currentOp,
                                    final PartitionedQuery prevChain,
-                                   final PartitionedQuery currChain) {
-    final DAG<Operator> dag = plan.getOperators();
-    final Set<Operator> nextOps = dag.getNeighbors(currentOp);
-    for (final Operator nextOp : nextOps) {
-      if (nextOps.size() > 1 || dag.getInDegree(nextOp) > 1) {
+                                   final PartitionedQuery currChain,
+                                   final MistEvent.Direction direction) {
+    final DAG<Operator, MistEvent.Direction> dag = plan.getOperators();
+    final Map<Operator, MistEvent.Direction> nextEdges = dag.getEdges(currentOp);
+    for (final Map.Entry<Operator, MistEvent.Direction> opAndEdge : nextEdges.entrySet()) {
+      final Operator nextOp = opAndEdge.getKey();
+      final MistEvent.Direction edgeDirection = opAndEdge.getValue();
+      if (nextEdges.size() > 1 || dag.getInDegree(nextOp) > 1) {
         // the current operator is 2) branching (have multiple next ops)
         // or the next operator is 3) merging operator (have multiple incoming edges)
         // so try to create a new PartitionedQuery for the next operator.
         partitionedQueryDAG.addVertex(currChain);
         if (prevChain != null) {
-          partitionedQueryDAG.addEdge(prevChain, currChain);
+          partitionedQueryDAG.addEdge(prevChain, currChain, direction);
         }
         if (partitionedQueryMap.get(nextOp) == null) {
           // create a new partitionedQuery
           final PartitionedQuery newChain = new DefaultPartitionedQuery();
           newChain.insertToTail(nextOp);
           partitionedQueryMap.put(nextOp, newChain);
-          chainOperatorHelper(plan, partitionedQueryMap, partitionedQueryDAG, sinkMap, nextOp, currChain, newChain);
+          chainOperatorHelper(plan, partitionedQueryMap, partitionedQueryDAG, sinkMap, nextOp, currChain, newChain,
+              edgeDirection);
         } else {
           // The next operator is already visited so finish the chaining.
-          partitionedQueryDAG.addEdge(currChain, partitionedQueryMap.get(nextOp));
+          partitionedQueryDAG.addEdge(currChain, partitionedQueryMap.get(nextOp),
+              edgeDirection);
         }
       } else {
         // 1) The next operator is sequentially following the current operator
         // so add the next operator to the current PartitionedQuery
         currChain.insertToTail(nextOp);
         partitionedQueryMap.put(nextOp, currChain);
-        chainOperatorHelper(plan, partitionedQueryMap, partitionedQueryDAG, sinkMap, nextOp, prevChain, currChain);
+        chainOperatorHelper(plan, partitionedQueryMap, partitionedQueryDAG, sinkMap, nextOp, prevChain, currChain,
+            edgeDirection);
       }
     }
 
-    if (nextOps.size() == 0) {
+    if (nextEdges.size() == 0) {
       // This operator is followed by Sink.
       // So finish the chaining at the current operator.
       partitionedQueryDAG.addVertex(currChain);
       if (prevChain != null) {
-        partitionedQueryDAG.addEdge(prevChain, currChain);
+        partitionedQueryDAG.addEdge(prevChain, currChain, direction);
       }
 
       if (sinkMap.get(currChain) == null) {

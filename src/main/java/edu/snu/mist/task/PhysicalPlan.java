@@ -28,19 +28,19 @@ import java.util.Set;
  * TODO[MIST-68]: Receive and deserialize logical plans into physical plans.
  * @param <E> Operator or PartitionedQuery
  */
-public interface PhysicalPlan<E> {
+public interface PhysicalPlan<E, I> {
 
   /**
    * Gets the DAG of operators.
    * @return a DAG
    */
-  DAG<E> getOperators();
+  DAG<E, I> getOperators();
 
   /**
    * Gets the map containing Source and its next operators.
    * @return a map
    */
-  Map<Source, Set<E>> getSourceMap();
+  Map<Source, Map<E, I>> getSourceMap();
 
   /**
    * Gets the map of operator and sinks.

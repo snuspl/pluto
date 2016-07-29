@@ -29,5 +29,5 @@ public interface QueryPartitioner {
    * @param plan a plan
    * @return a physical plan which contains PartitionedQuery.
    */
-  PhysicalPlan<PartitionedQuery> chainOperators(PhysicalPlan<Operator> plan);
+  PhysicalPlan<PartitionedQuery, MistEvent.Direction> chainOperators(PhysicalPlan<Operator, MistEvent.Direction> plan);
 }

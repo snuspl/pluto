@@ -17,7 +17,7 @@ package edu.snu.mist.task;
 
 import edu.snu.mist.task.common.OutputEmitter;
 
-import java.util.Set;
+import java.util.Map;
 
 /**
  * This emitter forwards current PartitionedQuery's outputs as next PartitionedQueries' inputs.
@@ -32,10 +32,10 @@ final class OperatorOutputEmitter implements OutputEmitter {
   /**
    * Next PartitionedQueries.
    */
-  private final Set<PartitionedQuery> nextPartitionedQueries;
+  private final Map<PartitionedQuery, MistEvent.Direction> nextPartitionedQueries;
 
   OperatorOutputEmitter(final PartitionedQuery currChain,
-                        final Set<PartitionedQuery> nextPartitionedQueries) {
+                        final Map<PartitionedQuery, MistEvent.Direction> nextPartitionedQueries) {
     this.currChain = currChain;
     this.nextPartitionedQueries = nextPartitionedQueries;
   }
@@ -50,8 +50,8 @@ final class OperatorOutputEmitter implements OutputEmitter {
    */
   @Override
   public void emit(final Object output) {
-    for (final PartitionedQuery nextQuery : nextPartitionedQueries) {
-      nextQuery.addNextEvent(output);
+    for (final Map.Entry<PartitionedQuery, MistEvent.Direction> nextQuery : nextPartitionedQueries.entrySet()) {
+      nextQuery.getKey().addNextEvent(output);
     }
   }
 }

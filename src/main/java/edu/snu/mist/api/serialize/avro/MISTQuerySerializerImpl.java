@@ -130,17 +130,31 @@ public final class MISTQuerySerializerImpl implements MISTQuerySerializer {
         throw new IllegalStateException("apiVertex is neither Sink nor MISTStream!");
       }
       if (precedingStreams != null) {
+        // The number of precedingStreams is one or two.
+        // For the first preceding stream, the edge between it and current stream is set to be left.
+        // For the second preceding stream, if exists, the edge is set to be right.
+        boolean isLeftEdge = true;
+
         for (MISTStream precedingStream : precedingStreams) {
           if (!apiVertices.contains(precedingStream)) {
             apiVertices.add(precedingStream);
             queue.add(precedingStream);
           }
           final int fromIndex = apiVertices.indexOf(precedingStream);
-          Edge newEdge = Edge.newBuilder()
+          final Edge.Builder newEdgeBuilder = Edge.newBuilder()
               .setFrom(fromIndex)
-              .setTo(toIndex)
-              .build();
-          edges.add(newEdge);
+              .setTo(toIndex);
+
+          if (isLeftEdge) {
+            Edge newEdge = newEdgeBuilder.setIsLeft(true)
+                .build();
+            isLeftEdge = false;
+            edges.add(newEdge);
+          } else {
+            Edge newEdge = newEdgeBuilder.setIsLeft(false)
+                .build();
+            edges.add(newEdge);
+          }
         }
       }
     }

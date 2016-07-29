@@ -33,7 +33,7 @@ public final class GraphUtils {
    * @param dest dest DAG
    * @param <V> type of vertex
    */
-  public static <V> void copy(final DAG<V> src, final DAG<V> dest) {
+  public static <V, I> void copy(final DAG<V, I> src, final DAG<V, I> dest) {
     for (final V rootVertex : src.getRootVertices()) {
       dest.addVertex(rootVertex);
       dfsCopy(src, rootVertex, dest);
@@ -46,12 +46,12 @@ public final class GraphUtils {
    * @param src src vertex
    * @param destDAG a dest DAG
    */
-  private static <V> void dfsCopy(final DAG<V> srcDAG, final V src, final DAG<V> destDAG) {
-    final Set<V> neighbors = srcDAG.getNeighbors(src);
-    for (final V neighbor : neighbors) {
-      if (destDAG.addVertex(neighbor)) {
-        destDAG.addEdge(src, neighbor);
-        dfsCopy(srcDAG, neighbor, destDAG);
+  private static <V, I> void dfsCopy(final DAG<V, I> srcDAG, final V src, final DAG<V, I> destDAG) {
+    final Map<V, I> edges = srcDAG.getEdges(src);
+    for (final Map.Entry<V, I> edge : edges.entrySet()) {
+      if (destDAG.addVertex(edge.getKey())) {
+        destDAG.addEdge(src, edge.getKey(), edge.getValue());
+        dfsCopy(srcDAG, edge.getKey(), destDAG);
       }
     }
   }
@@ -62,9 +62,9 @@ public final class GraphUtils {
    * @param <V> type of vertex
    * @return an iterator
    */
-  public static <V> Iterator<V> topologicalSort(final DAG<V> dag) {
+  public static <V, I> Iterator<V> topologicalSort(final DAG<V, I> dag) {
     final List<V> list = new LinkedList<>();
-    final DAG<V> newDAG = new AdjacentListDAG<>();
+    final DAG<V, I> newDAG = new AdjacentListDAG<>();
     copy(dag, newDAG);
 
     while (true) {

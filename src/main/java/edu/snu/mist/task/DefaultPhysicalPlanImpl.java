@@ -26,25 +26,25 @@ import java.util.Set;
  * A default implementation of physical plan.
  * @param <E> Operator or PartitionedQuery
  */
-final class DefaultPhysicalPlanImpl<E> implements PhysicalPlan<E> {
+final class DefaultPhysicalPlanImpl<E, I> implements PhysicalPlan<E, I> {
 
   /**
    * A map of source generator and operators.
    */
-  private final Map<Source, Set<E>> sourceMap;
+  private final Map<Source, Map<E, I>> sourceMap;
 
   /**
    * A DAG of operators.
    */
-  private final DAG<E> operators;
+  private final DAG<E, I> operators;
 
   /**
    * A map of operator and sinks.
    */
   private final Map<E, Set<Sink>> sinkMap;
 
-  public DefaultPhysicalPlanImpl(final Map<Source, Set<E>> sourceMap,
-                                 final DAG<E> operators,
+  public DefaultPhysicalPlanImpl(final Map<Source, Map<E, I>> sourceMap,
+                                 final DAG<E, I> operators,
                                  final Map<E, Set<Sink>> sinkMap) {
     this.sourceMap = sourceMap;
     this.operators = operators;
@@ -52,12 +52,12 @@ final class DefaultPhysicalPlanImpl<E> implements PhysicalPlan<E> {
   }
 
   @Override
-  public DAG<E> getOperators() {
+  public DAG<E, I> getOperators() {
     return operators;
   }
 
   @Override
-  public Map<Source, Set<E>> getSourceMap() {
+  public Map<Source, Map<E, I>> getSourceMap() {
     return sourceMap;
   }
 
