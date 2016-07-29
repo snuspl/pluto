@@ -80,7 +80,7 @@ public final class QueryReceiverTest {
         "a mist rose out of the river",
         "the peaks were shrouded in mist");
 
-    final Map<Source, Set<Operator>> sourceMap = new HashMap<>();
+    final Map<Source, Set<Tuple2<Operator, MistEvent.Direction>>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
     // UDF functions for operators
@@ -145,19 +145,20 @@ public final class QueryReceiverTest {
     final Sink sink2 = new TestSink<Integer>(sink2Result, countDownAllOutputs);
 
     // Create DAG of operators
-    final DAG<Operator> operatorDAG = new AdjacentListDAG<>();
+    final DAG<Operator, MistEvent.Direction> operatorDAG = new AdjacentListDAG<>();
     operatorDAG.addVertex(flatMap); operatorDAG.addVertex(filter);
     operatorDAG.addVertex(toTupleMap); operatorDAG.addVertex(reduceByKey);
     operatorDAG.addVertex(toStringMap); operatorDAG.addVertex(totalCountMap);
 
-    operatorDAG.addEdge(flatMap, filter); operatorDAG.addEdge(filter, toTupleMap);
-    operatorDAG.addEdge(toTupleMap, reduceByKey);
-    operatorDAG.addEdge(reduceByKey, toStringMap);
-    operatorDAG.addEdge(reduceByKey, totalCountMap);
+    operatorDAG.addEdge(flatMap, filter, MistEvent.Direction.LEFT); 
+    operatorDAG.addEdge(filter, toTupleMap, MistEvent.Direction.LEFT);
+    operatorDAG.addEdge(toTupleMap, reduceByKey, MistEvent.Direction.LEFT);
+    operatorDAG.addEdge(reduceByKey, toStringMap, MistEvent.Direction.LEFT);
+    operatorDAG.addEdge(reduceByKey, totalCountMap, MistEvent.Direction.LEFT);
 
     // Create source map
-    final Set<Operator> src1Ops = new HashSet<>();
-    src1Ops.add(flatMap);
+    final Set<Tuple2<Operator, MistEvent.Direction>> src1Ops = new HashSet<>();
+    src1Ops.add(new Tuple2<>(flatMap, MistEvent.Direction.LEFT));
     sourceMap.put(src, src1Ops);
 
     // Create sink map
@@ -168,7 +169,7 @@ public final class QueryReceiverTest {
     sinkMap.put(totalCountMap, sinksForTotalCountOp);
 
     // Build a physical plan
-    final PhysicalPlan<Operator> physicalPlan =
+    final PhysicalPlan<Operator, MistEvent.Direction> physicalPlan =
         new DefaultPhysicalPlanImpl<>(sourceMap, operatorDAG, sinkMap);
 
     // Fake logical plan of QueryReceiver

@@ -93,27 +93,27 @@ public final class DefaultPhysicalPlanGeneratorTest {
     final LogicalPlan logicalPlan = querySerializer.queryToLogicalPlan(query);
     final PhysicalPlanGenerator ppg = Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
     final Tuple<String, LogicalPlan> tuple = new Tuple<>("query-test", logicalPlan);
-    final PhysicalPlan<Operator> physicalPlan = ppg.generate(tuple);
+    final PhysicalPlan<Operator, MistEvent.Direction> physicalPlan = ppg.generate(tuple);
 
-    final Map<Source, Set<Operator>> sourceMap = physicalPlan.getSourceMap();
+    final Map<Source, Set<Tuple2<Operator, MistEvent.Direction>>> sourceMap = physicalPlan.getSourceMap();
     Assert.assertEquals(1, sourceMap.keySet().size());
     final Source source = sourceMap.keySet().iterator().next();
     Assert.assertTrue(source instanceof NettyTextSource);
     Assert.assertEquals(1, sourceMap.get(source).size());
-    final Operator operator1 = sourceMap.get(source).iterator().next();
-    Assert.assertTrue(operator1 instanceof FlatMapOperator);
 
-    final DAG<Operator> operators = physicalPlan.getOperators();
+    final Operator operator1 = (Operator) sourceMap.get(source).iterator().next().get(0);
+    Assert.assertTrue(operator1 instanceof FlatMapOperator);
+    final DAG<Operator, MistEvent.Direction> operators = physicalPlan.getOperators();
     Assert.assertEquals(1, operators.getRootVertices().size());
     Assert.assertEquals(operator1, operators.getRootVertices().iterator().next());
-    Assert.assertEquals(1, operators.getNeighbors(operator1).size());
-    final Operator operator2 = operators.getNeighbors(operator1).iterator().next();
+    Assert.assertEquals(1, operators.getEdges(operator1).size());
+    final Operator operator2 = (Operator) operators.getEdges(operator1).iterator().next().get(0);
     Assert.assertTrue(operator2 instanceof FilterOperator);
-    Assert.assertEquals(1, operators.getNeighbors(operator2).size());
-    final Operator operator3 = operators.getNeighbors(operator2).iterator().next();
+    Assert.assertEquals(1, operators.getEdges(operator2).size());
+    final Operator operator3 = (Operator) operators.getEdges(operator2).iterator().next().get(0);
     Assert.assertTrue(operator3 instanceof MapOperator);
-    Assert.assertEquals(1, operators.getNeighbors(operator3).size());
-    final Operator operator4 = operators.getNeighbors(operator3).iterator().next();
+    Assert.assertEquals(1, operators.getEdges(operator3).size());
+    final Operator operator4 = (Operator) operators.getEdges(operator3).iterator().next().get(0);
     Assert.assertTrue(operator4 instanceof ReduceByKeyOperator);
 
     final Map<Operator, Set<Sink>> sinkMap = physicalPlan.getSinkMap();

@@ -133,7 +133,7 @@ public final class MISTQuerySerializerImpl implements MISTQuerySerializer {
       if (precedingStreams != null) {
         AtomicBoolean isLeftEdge = new AtomicBoolean(true);
 
-        for (final MISTStream precedingStream : precedingStreams) {
+        for (MISTStream precedingStream : precedingStreams) {
           if (!apiVertices.contains(precedingStream)) {
             apiVertices.add(precedingStream);
             queue.add(precedingStream);

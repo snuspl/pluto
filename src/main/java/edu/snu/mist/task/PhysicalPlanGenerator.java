@@ -34,6 +34,6 @@ public interface PhysicalPlanGenerator {
    * @param queryIdAndLogicalPlan the tuple of queryId and logical plan
    * @return physical plan
    */
-  PhysicalPlan<Operator> generate(Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
+  PhysicalPlan<Operator, MistEvent.Direction> generate(Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
       throws InjectionException, IOException, ClassNotFoundException;
 }

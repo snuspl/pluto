@@ -18,6 +18,8 @@ package edu.snu.mist.common;
 import com.google.common.collect.ImmutableList;
 import junit.framework.Assert;
 import org.junit.Test;
+import edu.snu.mist.api.types.Tuple2;
+import edu.snu.mist.task.MistEvent;
 
 import java.util.HashSet;
 import java.util.List;
@@ -28,7 +30,7 @@ public final class AdjacentListDAGTest {
   @Test
   public void addVertexTest() {
     final List<Integer> expected = ImmutableList.of(1, 2, 3, 4);
-    final DAG<Integer> dag = new AdjacentListDAG<>();
+    final DAG<Integer, MistEvent.Direction> dag = new AdjacentListDAG<>();
     dag.addVertex(1); dag.addVertex(2); dag.addVertex(3); dag.addVertex(4);
     Assert.assertEquals(new HashSet<>(expected), dag.getRootVertices());
   }
@@ -36,7 +38,7 @@ public final class AdjacentListDAGTest {
   @Test
   public void removeVertexTest() {
     final List<Integer> expected = ImmutableList.of(1, 3);
-    final DAG<Integer> dag = new AdjacentListDAG<>();
+    final DAG<Integer, MistEvent.Direction> dag = new AdjacentListDAG<>();
     dag.addVertex(1); dag.addVertex(2); dag.addVertex(3); dag.addVertex(4);
     dag.removeVertex(2); dag.removeVertex(4);
     Assert.assertEquals(new HashSet<>(expected), dag.getRootVertices());
@@ -44,9 +46,10 @@ public final class AdjacentListDAGTest {
 
   @Test
   public void addAndRemoveEdgeTest() {
-    final DAG<Integer> dag = new AdjacentListDAG<>();
+    final DAG<Integer, MistEvent.Direction> dag = new AdjacentListDAG<>();
     dag.addVertex(1); dag.addVertex(2); dag.addVertex(3); dag.addVertex(4);
-    dag.addEdge(1, 3); dag.addEdge(3, 4); dag.addEdge(2, 4);
+    dag.addEdge(1, 3, MistEvent.Direction.LEFT); dag.addEdge(3, 4, MistEvent.Direction.LEFT); 
+    dag.addEdge(2, 4, MistEvent.Direction.RIGHT);
 
     Assert.assertTrue(dag.isAdjacent(1, 3));
     Assert.assertTrue(dag.isAdjacent(3, 4));
@@ -60,13 +63,13 @@ public final class AdjacentListDAGTest {
     Assert.assertEquals("Root vertices should be " + expectedRoot,
         new HashSet<>(expectedRoot), dag.getRootVertices());
 
-    final Set<Integer> n = dag.getNeighbors(1);
-    Assert.assertEquals(new HashSet<>(ImmutableList.of(3)), n);
+    final Set<Tuple2<Integer, MistEvent.Direction>> n = dag.getEdges(1);
+    Assert.assertEquals(new HashSet<>(ImmutableList.of(new Tuple2<>(3, MistEvent.Direction.LEFT))), n);
     Assert.assertEquals(2, dag.getInDegree(4));
     Assert.assertEquals(1, dag.getInDegree(3));
     Assert.assertEquals(0, dag.getInDegree(1));
 
-    dag.removeEdge(1, 3);
+    dag.removeEdge(1, 3, MistEvent.Direction.LEFT);
     Assert.assertFalse(dag.isAdjacent(1, 3));
     Assert.assertEquals(dag.getInDegree(3), 0);
     // check root vertices
@@ -74,7 +77,7 @@ public final class AdjacentListDAGTest {
     Assert.assertEquals("Root vertices should be " + expectedRoot2,
         new HashSet<>(expectedRoot2), dag.getRootVertices());
 
-    dag.removeEdge(3, 4);
+    dag.removeEdge(3, 4, MistEvent.Direction.LEFT);
     Assert.assertFalse(dag.isAdjacent(3, 4));
     Assert.assertEquals(dag.getInDegree(4), 1);
     // check root vertices
@@ -82,7 +85,7 @@ public final class AdjacentListDAGTest {
     Assert.assertEquals("Root vertices should be " + expectedRoot3,
         new HashSet<>(expectedRoot3), dag.getRootVertices());
 
-    dag.removeEdge(2, 4);
+    dag.removeEdge(2, 4, MistEvent.Direction.RIGHT);
     Assert.assertFalse(dag.isAdjacent(2, 4));
     Assert.assertEquals(dag.getInDegree(4), 0);
     // check root vertices

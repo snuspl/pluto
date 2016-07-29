@@ -23,7 +23,7 @@ import javax.inject.Inject;
 // TODO[MIST-68]: Receive and deserialize logical plans into physical plans.
 final class DefaultLogicalPlanReceiverImpl implements LogicalPlanReceiver {
 
-  private EventHandler<PhysicalPlan<Operator>> eventHandler;
+  private EventHandler<PhysicalPlan<Operator, MistEvent.Direction>> eventHandler;
 
   @Inject
   private DefaultLogicalPlanReceiverImpl() {
@@ -31,7 +31,7 @@ final class DefaultLogicalPlanReceiverImpl implements LogicalPlanReceiver {
   }
 
   @Override
-  public void setHandler(final EventHandler<PhysicalPlan<Operator>> handler) {
+  public void setHandler(final EventHandler<PhysicalPlan<Operator, MistEvent.Direction>> handler) {
     eventHandler = handler;
   }
 }

@@ -71,7 +71,8 @@ final class DefaultQueryPartitionerImpl implements QueryPartitioner {
    * @return physical plan consisting of PartitionedQuery
    */
   @Override
-  public PhysicalPlan<PartitionedQuery, MistEvent.Direction> chainOperators(final PhysicalPlan<Operator, MistEvent.Direction> plan) {
+  public PhysicalPlan<PartitionedQuery, MistEvent.Direction> chainOperators(
+          final PhysicalPlan<Operator, MistEvent.Direction> plan) {
     // This is a map of source and PartitionedQueries which are following sources
     final Map<Source, Set<Tuple2<PartitionedQuery, MistEvent.Direction>>> sourceMap = new HashMap<>();
     // This is a map of PartitionedQuery and Sinks. The PartitionedQuery is followed by Sinks.
@@ -98,7 +99,7 @@ final class DefaultQueryPartitionerImpl implements QueryPartitioner {
           currOpChain.insertToTail(rootOperator);
           // Traverse in DFS order
           chainOperatorHelper(plan, partitionedQueryMap, partitionedQueryDAG, sinkMap,
-              rootOperator, null, currOpChain, MistEvent.Direction.LEFT);
+              rootOperator, null, currOpChain, (MistEvent.Direction) rootOperatorEdge.get(1));
         }
         partitionedQueries.add(new Tuple2(currOpChain, rootOperatorEdge.get(1)));
       }
@@ -143,17 +144,20 @@ final class DefaultQueryPartitionerImpl implements QueryPartitioner {
           final PartitionedQuery newChain = new DefaultPartitionedQuery();
           newChain.insertToTail(nextOp);
           partitionedQueryMap.put(nextOp, newChain);
-          chainOperatorHelper(plan, partitionedQueryMap, partitionedQueryDAG, sinkMap, nextOp, currChain, newChain, (MistEvent.Direction) nextEdge.get(1));
+          chainOperatorHelper(plan, partitionedQueryMap, partitionedQueryDAG, sinkMap, nextOp, currChain, newChain,
+              (MistEvent.Direction) nextEdge.get(1));
         } else {
           // The next operator is already visited so finish the chaining.
-          partitionedQueryDAG.addEdge(currChain, partitionedQueryMap.get(nextOp), (MistEvent.Direction) nextEdge.get(1));
+          partitionedQueryDAG.addEdge(currChain, partitionedQueryMap.get(nextOp),
+                  (MistEvent.Direction) nextEdge.get(1));
         }
       } else {
         // 1) The next operator is sequentially following the current operator
         // so add the next operator to the current PartitionedQuery
         currChain.insertToTail(nextOp);
         partitionedQueryMap.put(nextOp, currChain);
-        chainOperatorHelper(plan, partitionedQueryMap, partitionedQueryDAG, sinkMap, nextOp, prevChain, currChain, (MistEvent.Direction) nextEdge.get(1));
+        chainOperatorHelper(plan, partitionedQueryMap, partitionedQueryDAG, sinkMap, nextOp, prevChain, currChain,
+            (MistEvent.Direction) nextEdge.get(1));
       }
     }
 

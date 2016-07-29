@@ -29,5 +29,5 @@ public interface LogicalPlanReceiver {
    * Sets an event handler which handles PhysicalPlans.
    * @param handler a handler
    */
-  void setHandler(final EventHandler<PhysicalPlan<Operator>> handler);
+  void setHandler(final EventHandler<PhysicalPlan<Operator, MistEvent.Direction>> handler);
 }
