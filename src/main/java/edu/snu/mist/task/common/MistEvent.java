@@ -23,16 +23,24 @@ public interface MistEvent {
   /**
    * The type of events.
    */
-  enum EventType {
+  public static enum EventType {
     DATA, // DATA: actual event data stream
     WATERMARK, // WATERMARK: watermark data
   }
-
-  boolean isData();
 
   /**
    * The type of event direction. Union operator should get two events: LEFT/RIGHT events.
    * One direction operator always receive LEFT event.
    */
-  enum Direction {LEFT, RIGHT}
+  public static enum Direction {LEFT, RIGHT}
+
+  /**
+   * Return true if it is DATA type, false if it is WATERMARK.
+   */
+  boolean isData();
+
+  /**
+   * Get timestamp of the MistEvent.
+   */
+  long getTimestamp();
 }

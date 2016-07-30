@@ -18,6 +18,7 @@ package edu.snu.mist.task.operators;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.task.common.MistDataEvent;
+import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
 import edu.snu.mist.task.operators.parameters.OperatorId;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
@@ -31,13 +32,16 @@ import java.util.logging.Logger;
 /**
  * Union operator which unifies two upstreams.
  * We suppose the upstream events are always ordered.
- * TODO: [MIST-#] Consider out-of-order upstreams in Union operator.
+ *
+ * This operator has two queues: leftUpstreamQueue and rightUpstreamQueue.
+ * Each queue contains MistDataEvent and MistWatermarkEvent.
+ * The operator drains events from the queues to the next operator until watermark timestamp.
  */
 public final class UnionOperator extends TwoStreamOperator {
   private static final Logger LOG = Logger.getLogger(UnionOperator.class.getName());
 
-  private final Queue<MistDataEvent> leftUpstreamDataQueue;
-  private final Queue<MistDataEvent> rightUpstreamDataQueue;
+  private final Queue<MistEvent> leftUpstreamQueue;
+  private final Queue<MistEvent> rightUpstreamQueue;
   private long recentLeftWatermark;
   private long recentRightWatermark;
 
@@ -46,8 +50,8 @@ public final class UnionOperator extends TwoStreamOperator {
                         @Parameter(OperatorId.class) final String operatorId,
                         final StringIdentifierFactory idfactory) {
     super(idfactory.getNewInstance(queryId), idfactory.getNewInstance(operatorId));
-    this.leftUpstreamDataQueue = new LinkedBlockingQueue<>();
-    this.rightUpstreamDataQueue = new LinkedBlockingQueue<>();
+    this.leftUpstreamQueue = new LinkedBlockingQueue<>();
+    this.rightUpstreamQueue = new LinkedBlockingQueue<>();
     this.recentLeftWatermark = 0L;
     this.recentRightWatermark = 0L;
   }
@@ -63,7 +67,7 @@ public final class UnionOperator extends TwoStreamOperator {
    * @param queue queue
    * @return timestamp
    */
-  private long peekTimestamp(final Queue<MistDataEvent> queue) {
+  private long peekTimestamp(final Queue<MistEvent> queue) {
     return queue.peek().getTimestamp();
   }
 
@@ -72,25 +76,29 @@ public final class UnionOperator extends TwoStreamOperator {
    * @param queue queue
    * @param timestamp timestamp
    */
-  private void drainUntilTimestamp(final Queue<MistDataEvent> queue, final long timestamp) {
+  private void drainUntilTimestamp(final Queue<MistEvent> queue, final long timestamp) {
     // The events in the queue is ordered by timestamp, so just peeks one by one
-    while (!queue.isEmpty() && queue.peek().getTimestamp() <= timestamp) {
-      final MistDataEvent input = queue.poll();
-      outputEmitter.emitData(input);
+    while (!queue.isEmpty() && peekTimestamp(queue) <= timestamp) {
+      final MistEvent event = queue.poll();
+      if (event.isData()) {
+        outputEmitter.emitData((MistDataEvent)event);
+      } else {
+        outputEmitter.emitWatermark((MistWatermarkEvent)event);
+      }
     }
   }
 
   /**
    * Emits events which have less timestamp than the required timestamp
-   * from the leftUpstreamDataQueue and rightUpstreamDataQueue.
+   * from the leftUpstreamQueue and rightUpstreamQueue.
    * @param timestamp timestamp
    */
   private void drainUntilTimestamp(final long timestamp) {
     // The events in the queue is ordered by timestamp, so just peeks one by one
-    while (!leftUpstreamDataQueue.isEmpty() && !rightUpstreamDataQueue.isEmpty()) {
+    while (!leftUpstreamQueue.isEmpty() && !rightUpstreamQueue.isEmpty()) {
       // Pick minimum timestamp from left and right queue.
-      long leftTs = peekTimestamp(leftUpstreamDataQueue);
-      long rightTs = peekTimestamp(rightUpstreamDataQueue);
+      long leftTs = peekTimestamp(leftUpstreamQueue);
+      long rightTs = peekTimestamp(rightUpstreamQueue);
 
       // End of the drain
       if (leftTs > timestamp && rightTs > timestamp) {
@@ -98,69 +106,89 @@ public final class UnionOperator extends TwoStreamOperator {
       }
 
       if (leftTs <= rightTs) {
-        final MistDataEvent input = leftUpstreamDataQueue.poll();
-        outputEmitter.emitData(input);
+        final MistEvent event = leftUpstreamQueue.poll();
+        if (event.isData()) {
+          outputEmitter.emitData((MistDataEvent)event);
+        } else {
+          outputEmitter.emitWatermark((MistWatermarkEvent) event);
+        }
       } else {
-        final MistDataEvent input = rightUpstreamDataQueue.poll();
-        outputEmitter.emitData(input);
+        final MistEvent event = rightUpstreamQueue.poll();
+        if (event.isData()) {
+          outputEmitter.emitData((MistDataEvent)event);
+        } else {
+          outputEmitter.emitWatermark((MistWatermarkEvent)event);
+        }
       }
     }
 
     // If one of the upstreamQueues is not empty, then drain events from the queue
-    if (!(leftUpstreamDataQueue.isEmpty() && rightUpstreamDataQueue.isEmpty())) {
-      if (leftUpstreamDataQueue.isEmpty()) {
+    if (!(leftUpstreamQueue.isEmpty() && rightUpstreamQueue.isEmpty())) {
+      if (leftUpstreamQueue.isEmpty()) {
         // Drain from right upstream queue.
-        drainUntilTimestamp(rightUpstreamDataQueue, timestamp);
+        drainUntilTimestamp(rightUpstreamQueue, timestamp);
       } else {
         // Drain from left upstream queue.
-        drainUntilTimestamp(leftUpstreamDataQueue, timestamp);
+        drainUntilTimestamp(leftUpstreamQueue, timestamp);
       }
     }
   }
 
   @Override
-  public void processLeftData(final MistDataEvent input) {
-    final long timestamp = input.getTimestamp();
-    // TODO: [MIST-#] : Consider late events in which the timestamp is less than watermark.
-    // For simplicity, we drop events if the timestamp is lower than watermark!
-    if (recentLeftWatermark < timestamp) {
-      recentLeftWatermark = timestamp;
-      final long minimumWatermark = Math.min(recentLeftWatermark, recentRightWatermark);
-      leftUpstreamDataQueue.add(input);
-      drainUntilTimestamp(minimumWatermark);
+  public void processLeftData(final MistDataEvent event) {
+    final long timestamp = event.getTimestamp();
+    if (recentLeftWatermark > timestamp) {
+      throw new RuntimeException("The upstream events should be ordered by timestamp.");
+    }
+    recentLeftWatermark = timestamp;
+    final long minimumWatermark = Math.min(recentLeftWatermark, recentRightWatermark);
+    leftUpstreamQueue.add(event);
+    drainUntilTimestamp(minimumWatermark);
+  }
+
+  @Override
+  public void processRightData(final MistDataEvent event) {
+    final long timestamp = event.getTimestamp();
+    if (recentRightWatermark > timestamp) {
+      throw new RuntimeException("The upstream events should be ordered by timestamp.");
+    }
+    recentRightWatermark = timestamp;
+    final long minimumWatermark = Math.min(recentLeftWatermark, recentRightWatermark);
+    rightUpstreamQueue.add(event);
+    drainUntilTimestamp(minimumWatermark);
+  }
+
+  @Override
+  public void processLeftWatermark(final MistWatermarkEvent event) {
+    if (event.getTimestamp() < recentLeftWatermark) {
+      throw new RuntimeException("The timestamp of watermark should be greater or equal " +
+          "than the previous event timestamp.");
+    }
+    recentLeftWatermark = event.getTimestamp();
+    final long minimumWatermark = Math.min(recentLeftWatermark, recentRightWatermark);
+    // Drain events until this watermark
+    drainUntilTimestamp(minimumWatermark);
+    if (recentLeftWatermark <= recentRightWatermark) {
+      outputEmitter.emitWatermark(event);
+    } else {
+      leftUpstreamQueue.add(event);
     }
   }
 
   @Override
-  public void processRightData(final MistDataEvent input) {
-    final long timestamp = input.getTimestamp();
-    // TODO: [MIST-#] : Consider late events in which the timestamp is less than watermark.
-    // For simplicity, we drop events if the timestamp is lower than watermark!
-    if (recentRightWatermark < timestamp) {
-      recentRightWatermark = timestamp;
-      final long minimumWatermark = Math.min(recentLeftWatermark, recentRightWatermark);
-      rightUpstreamDataQueue.add(input);
-      drainUntilTimestamp(minimumWatermark);
+  public void processRightWatermark(final MistWatermarkEvent event) {
+    if (event.getTimestamp() < recentRightWatermark) {
+      throw new RuntimeException("The timestamp of watermark should be greater or equal " +
+          "than the previous event timestamp.");
     }
-  }
-
-  @Override
-  public void processLeftWatermark(final MistWatermarkEvent input) {
-    recentLeftWatermark = input.getTimestamp();
+    recentRightWatermark = event.getTimestamp();
     final long minimumWatermark = Math.min(recentLeftWatermark, recentRightWatermark);
     // Drain events until this watermark
     drainUntilTimestamp(minimumWatermark);
-    input.setTimestamp(minimumWatermark);
-    outputEmitter.emitWatermark(input);
-  }
-
-  @Override
-  public void processRightWatermark(final MistWatermarkEvent input) {
-    recentRightWatermark = input.getTimestamp();
-    final long minimumWatermark = Math.min(recentLeftWatermark, recentRightWatermark);
-    // Drain events until this watermark
-    drainUntilTimestamp(minimumWatermark);
-    input.setTimestamp(minimumWatermark);
-    outputEmitter.emitWatermark(input);
+    if (recentRightWatermark <= recentLeftWatermark) {
+      outputEmitter.emitWatermark(event);
+    } else {
+      rightUpstreamQueue.add(event);
+    }
   }
 }

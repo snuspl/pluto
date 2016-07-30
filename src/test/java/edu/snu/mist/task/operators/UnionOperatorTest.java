@@ -49,6 +49,7 @@ public final class UnionOperatorTest {
     final MistDataEvent f = new MistDataEvent("f", 4L);
     final MistWatermarkEvent rw1 = new MistWatermarkEvent(4L);
     final MistDataEvent g = new MistDataEvent("g", 6L);
+    final MistWatermarkEvent rw2 = new MistWatermarkEvent(11L);
 
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(QueryId.class, "testQuery");
@@ -60,8 +61,8 @@ public final class UnionOperatorTest {
     unionOperator.setOutputEmitter(new SimpleOutputEmitter(result));
 
     // Test:
-    //  * Left: ---W:10 -- c ---- b ------- a ---->
-    //  * Right -g------------W:4--- f--e--d------>
+    //  * Left: -----------W:10 -- c ---- b ------- a ---->
+    //  * Right -W:11 -- g------------W:4--- f--e--d------>
     // Merged stream: ----g--c--f--b--e--d--a-->
     unionOperator.processLeftData(a);
     Assert.assertEquals(0, result.size());
@@ -81,21 +82,24 @@ public final class UnionOperatorTest {
     Assert.assertEquals(b, result.get(3));
 
     unionOperator.processRightWatermark(rw1);
-    Assert.assertEquals(5, result.size());
-    Assert.assertEquals(rw1, result.get(4));
+    Assert.assertEquals(4, result.size());
 
     unionOperator.processLeftData(c);
     Assert.assertEquals(6, result.size());
-    Assert.assertEquals(f, result.get(5));
+    Assert.assertEquals(f, result.get(4));
+    Assert.assertEquals(rw1, result.get(5));
 
     unionOperator.processLeftWatermark(lw1);
-    Assert.assertEquals(7, result.size());
-    Assert.assertEquals(lw1, result.get(6));
+    Assert.assertEquals(6, result.size());
 
     unionOperator.processRightData(g);
+    Assert.assertEquals(8, result.size());
+    Assert.assertEquals(c, result.get(6));
+    Assert.assertEquals(g, result.get(7));
+
+    unionOperator.processRightWatermark(rw2);
     Assert.assertEquals(9, result.size());
-    Assert.assertEquals(c, result.get(7));
-    Assert.assertEquals(g, result.get(8));
+    Assert.assertEquals(lw1, result.get(8));
   }
 
   /**
