@@ -24,7 +24,7 @@ package edu.snu.mist.task.common;
 public final class MistDataEvent implements MistEvent {
 
   /**
-   * Value of the data. It could be null if the event type is WATERMARK.
+   * Value of the data.
    */
   private Object value;
 

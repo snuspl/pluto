@@ -17,7 +17,7 @@ package edu.snu.mist.task.common;
 
 /**
  * This interface represents events of Mist.
- * MistEvent can be data or watermark. e
+ * MistEvent can be data or watermark.
  */
 public interface MistEvent {
   /**
