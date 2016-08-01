@@ -17,13 +17,15 @@ package edu.snu.mist.task;
 
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.task.common.MistDataEvent;
+import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.operators.Operator;
 import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sources.Source;
 
 import javax.inject.Inject;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * This is a default implementation of query partitioning.
@@ -68,25 +70,25 @@ final class DefaultQueryPartitionerImpl implements QueryPartitioner {
    * @return physical plan consisting of PartitionedQuery
    */
   @Override
-  public PhysicalPlan<PartitionedQuery, MistDataEvent.Direction> chainOperators(
-          final PhysicalPlan<Operator, MistDataEvent.Direction> plan) {
+  public PhysicalPlan<PartitionedQuery, MistEvent.Direction> chainOperators(
+          final PhysicalPlan<Operator, MistEvent.Direction> plan) {
     // This is a map of source and PartitionedQueries which are following sources
-    final Map<Source, Map<PartitionedQuery, MistDataEvent.Direction>> sourceMap = new HashMap<>();
+    final Map<Source, Map<PartitionedQuery, MistEvent.Direction>> sourceMap = new HashMap<>();
     // This is a map of PartitionedQuery and Sinks. The PartitionedQuery is followed by Sinks.
     final Map<PartitionedQuery, Set<Sink>> sinkMap = new HashMap<>();
-    final DAG<PartitionedQuery, MistDataEvent.Direction> partitionedQueryDAG = new AdjacentListDAG<>();
+    final DAG<PartitionedQuery, MistEvent.Direction> partitionedQueryDAG = new AdjacentListDAG<>();
     // This map is used for marking visited operators.
     final Map<Operator, PartitionedQuery> partitionedQueryMap = new HashMap<>();
 
     // It traverses the DAG of operators in DFS order
     // from the root operators which are following sources.
-    for (final Map.Entry<Source, Map<Operator, MistDataEvent.Direction>> entry : plan.getSourceMap().entrySet()) {
+    for (final Map.Entry<Source, Map<Operator, MistEvent.Direction>> entry : plan.getSourceMap().entrySet()) {
       // This is the root operators which are directly connected to sources.
-      final Map<Operator, MistDataEvent.Direction> rootOperatorEdges = entry.getValue();
-      final Map<PartitionedQuery, MistDataEvent.Direction> partitionedQueries = new HashMap<>();
-      for (final Map.Entry<Operator, MistDataEvent.Direction> opAndEdge : rootOperatorEdges.entrySet()) {
+      final Map<Operator, MistEvent.Direction> rootOperatorEdges = entry.getValue();
+      final Map<PartitionedQuery, MistEvent.Direction> partitionedQueries = new HashMap<>();
+      for (final Map.Entry<Operator, MistEvent.Direction> opAndEdge : rootOperatorEdges.entrySet()) {
         final Operator rootOperator = opAndEdge.getKey();
-        final MistDataEvent.Direction edgeDirection = opAndEdge.getValue();
+        final MistEvent.Direction edgeDirection = opAndEdge.getValue();
         PartitionedQuery currOpChain = partitionedQueryMap.get(rootOperator);
         // Check whether this operator is already visited.
         if (currOpChain == null) {
@@ -117,19 +119,19 @@ final class DefaultQueryPartitionerImpl implements QueryPartitioner {
    * @param currChain current PartitionedQuery
    * @param direction direction from previous chain to current chain
    */
-  private void chainOperatorHelper(final PhysicalPlan<Operator, MistDataEvent.Direction> plan,
+  private void chainOperatorHelper(final PhysicalPlan<Operator, MistEvent.Direction> plan,
                                    final Map<Operator, PartitionedQuery> partitionedQueryMap,
-                                   final DAG<PartitionedQuery, MistDataEvent.Direction> partitionedQueryDAG,
+                                   final DAG<PartitionedQuery, MistEvent.Direction> partitionedQueryDAG,
                                    final Map<PartitionedQuery, Set<Sink>> sinkMap,
                                    final Operator currentOp,
                                    final PartitionedQuery prevChain,
                                    final PartitionedQuery currChain,
-                                   final MistDataEvent.Direction direction) {
-    final DAG<Operator, MistDataEvent.Direction> dag = plan.getOperators();
-    final Map<Operator, MistDataEvent.Direction> nextEdges = dag.getEdges(currentOp);
-    for (final Map.Entry<Operator, MistDataEvent.Direction> opAndEdge : nextEdges.entrySet()) {
+                                   final MistEvent.Direction direction) {
+    final DAG<Operator, MistEvent.Direction> dag = plan.getOperators();
+    final Map<Operator, MistEvent.Direction> nextEdges = dag.getEdges(currentOp);
+    for (final Map.Entry<Operator, MistEvent.Direction> opAndEdge : nextEdges.entrySet()) {
       final Operator nextOp = opAndEdge.getKey();
-      final MistDataEvent.Direction edgeDirection = opAndEdge.getValue();
+      final MistEvent.Direction edgeDirection = opAndEdge.getValue();
       if (nextEdges.size() > 1 || dag.getInDegree(nextOp) > 1) {
         // the current operator is 2) branching (have multiple next ops)
         // or the next operator is 3) merging operator (have multiple incoming edges)

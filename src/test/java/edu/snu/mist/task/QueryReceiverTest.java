@@ -82,7 +82,7 @@ public final class QueryReceiverTest {
         "a mist rose out of the river",
         "the peaks were shrouded in mist");
 
-    final Map<Source, Map<Operator, MistDataEvent.Direction>> sourceMap = new HashMap<>();
+    final Map<Source, Map<Operator, MistEvent.Direction>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
     // UDF functions for operators
@@ -147,7 +147,7 @@ public final class QueryReceiverTest {
     final Sink sink2 = new TestSink<Integer>(sink2Result, countDownAllOutputs);
 
     // Create DAG of operators
-    final DAG<Operator, MistDataEvent.Direction> operatorDAG = new AdjacentListDAG<>();
+    final DAG<Operator, MistEvent.Direction> operatorDAG = new AdjacentListDAG<>();
     operatorDAG.addVertex(flatMap); operatorDAG.addVertex(filter);
     operatorDAG.addVertex(toTupleMap); operatorDAG.addVertex(reduceByKey);
     operatorDAG.addVertex(toStringMap); operatorDAG.addVertex(totalCountMap);
@@ -159,7 +159,7 @@ public final class QueryReceiverTest {
     operatorDAG.addEdge(reduceByKey, totalCountMap, MistEvent.Direction.LEFT);
 
     // Create source map
-    final Map<Operator, MistDataEvent.Direction> src1Ops = new HashMap<>();
+    final Map<Operator, MistEvent.Direction> src1Ops = new HashMap<>();
     src1Ops.put(flatMap, MistEvent.Direction.LEFT);
     sourceMap.put(src, src1Ops);
 
