@@ -25,7 +25,6 @@ import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import edu.snu.mist.task.DefaultClientToTaskMessageImpl;
 import edu.snu.mist.task.TaskSpecificResponderWrapper;
 import edu.snu.mist.task.parameters.NumPeriodicSchedulerThreads;
-import edu.snu.mist.task.parameters.NumQueryManagerThreads;
 import edu.snu.mist.task.parameters.NumThreads;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
@@ -59,11 +58,6 @@ final class MistTaskConfigs {
   private final int numTaskThreads;
 
   /**
-   * The number of threads for receiving queries in MistTask.
-   */
-  private final int numManagerThreads;
-
-  /**
    * The number of cores of a MistTask.
    */
   private final int numTaskCores;
@@ -89,7 +83,6 @@ final class MistTaskConfigs {
                           @Parameter(NumThreads.class) final int numTaskThreads,
                           @Parameter(NumTaskCores.class) final int numTaskCores,
                           @Parameter(RPCServerPort.class) final int rpcServerPort,
-                          @Parameter(NumQueryManagerThreads.class) final int numManagerThreads,
                           @Parameter(TempFolderPath.class) final String tempFolderPath,
                           @Parameter(NumPeriodicSchedulerThreads.class) final int numSchedulerThreads) {
     this.numTasks = numTasks;
@@ -97,7 +90,6 @@ final class MistTaskConfigs {
     this.taskMemSize = taskMemSize;
     this.numTaskCores = numTaskCores;
     this.tempFolderPath = tempFolderPath;
-    this.numManagerThreads = numManagerThreads;
     this.rpcServerPort = rpcServerPort + 10 > MAX_PORT_NUM ? rpcServerPort - 10 : rpcServerPort + 10;
     this.numSchedulerThreads = numSchedulerThreads;
   }
@@ -126,10 +118,6 @@ final class MistTaskConfigs {
     return tempFolderPath;
   }
 
-  public int getNumManagerThreads() {
-    return numManagerThreads;
-  }
-
   public int getNumSchedulerThreads() {
     return numSchedulerThreads;
   }
@@ -144,8 +132,8 @@ final class MistTaskConfigs {
     jcb.bindNamedParameter(NumTaskCores.class, Integer.toString(numTaskCores));
     jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
     jcb.bindNamedParameter(TempFolderPath.class, tempFolderPath);
-    jcb.bindNamedParameter(NumQueryManagerThreads.class, Integer.toString(numManagerThreads));
     jcb.bindNamedParameter(NumPeriodicSchedulerThreads.class, Integer.toString(numSchedulerThreads));
+
 
     // Implementation
     jcb.bindImplementation(ClientToTaskMessage.class, DefaultClientToTaskMessageImpl.class);

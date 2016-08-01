@@ -20,15 +20,15 @@ import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.GraphUtils;
 import edu.snu.mist.formats.avro.LogicalPlan;
 import edu.snu.mist.task.operators.Operator;
-import edu.snu.mist.task.parameters.NumQueryManagerThreads;
 import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sources.Source;
+import edu.snu.mist.task.stores.PlanStore;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
-import org.apache.reef.tang.annotations.Parameter;
-import org.apache.reef.wake.impl.ThreadPoolStage;
+
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -40,7 +40,8 @@ import java.util.logging.Logger;
 
 /**
  * DefaultQueryManagerImpl starts the query by doing the following things:
- * 1) receives logical plans from clients and converts the logical plans to physical plans,
+ * 1) receives logical plans from clients stores the logical plan to disk and
+ * converts the logical plans to physical plans,
  * 2) chains the physical operators and make PartitionedQuery,
  * 3) inserts the PartitionedQueries to PartitionedQueryManager,
  * 4) and sets the OutputEmitters of the Source and PartitionedQueries
@@ -51,15 +52,13 @@ import java.util.logging.Logger;
  * 2) and deletes PartitionedQueries from the PartitionedQueryManager,
  * 3) and sets the OutputEmitters of the Source and PartitionedQueries to null,
  * 4) and closes the channel of Source and Sink.
+ * Stops the query by just deleting the query.
+ * Resume the query by loading logical plan and starting the query.
  */
 @SuppressWarnings("unchecked")
 final class DefaultQueryManagerImpl implements QueryManager {
 
   private static final Logger LOG = Logger.getLogger(DefaultQueryManagerImpl.class.getName());
-  /**
-   * Thread pool stage for executing the query submission logic.
-   */
-  private final ThreadPoolStage<Tuple<String, LogicalPlan>> tpStage;
 
   /**
    * Map of query id and physical plan.
@@ -82,12 +81,26 @@ final class DefaultQueryManagerImpl implements QueryManager {
   private final ScheduledExecutorService scheduler;
 
   /**
+   * A plan store.
+   */
+  private final PlanStore planStore;
+
+  /**
+   * A physical plan generator.
+   */
+  private final PhysicalPlanGenerator physicalPlanGenerator;
+
+  /**
+   * A query partitioner.
+   */
+  private final QueryPartitioner queryPartitioner;
+
+  /**
    * Default query manager in MistTask.
    * @param queryPartitioner the converter which chains operators and makes PartitionedQueries
-   * @param physicalPlanGenerator the physical plan generator which generates physical plan from logical paln
+   * @param physicalPlanGenerator the physical plan generator which generates physical plan from logical plan
    * @param idfactory identifier factory
    * @param threadManager thread manager
-   * @param numThreads the number of threads for the query manager
    */
   @Inject
   private DefaultQueryManagerImpl(final QueryPartitioner queryPartitioner,
@@ -95,48 +108,49 @@ final class DefaultQueryManagerImpl implements QueryManager {
                                    final StringIdentifierFactory idfactory,
                                    final ThreadManager threadManager,
                                    final PartitionedQueryManager partitionedQueryManager,
-                                   @Parameter(NumQueryManagerThreads.class) final int numThreads,
-                                   final ScheduledExecutorServiceWrapper schedulerWrapper) {
+                                   final ScheduledExecutorServiceWrapper schedulerWrapper,
+                                   final PlanStore planStore) {
     this.physicalPlanMap = new ConcurrentHashMap<>();
     this.partitionedQueryManager = partitionedQueryManager;
+    this.queryPartitioner = queryPartitioner;
+    this.physicalPlanGenerator = physicalPlanGenerator;
     this.threadManager = threadManager;
     this.scheduler = schedulerWrapper.getScheduler();
-    this.tpStage = new ThreadPoolStage<>((tuple) -> {
-      final PhysicalPlan<Operator, StreamType.Direction> physicalPlan;
-      try {
-        // 1) Converts the logical plan to the physical plan
-        physicalPlan = physicalPlanGenerator.generate(tuple);
-      } catch (final Exception e) {
-        e.printStackTrace();
-        LOG.log(Level.SEVERE, "Injection Exception occurred during de-serializing LogicalPlans");
-        return;
-      }
-
-      // 2) Chains the physical operators and makes PartitionedQuery.
-      final PhysicalPlan<PartitionedQuery, StreamType.Direction> chainedPlan =
-          queryPartitioner.chainOperators(physicalPlan);
-      physicalPlanMap.putIfAbsent(tuple.getKey(), chainedPlan);
-      final DAG<PartitionedQuery, StreamType.Direction> chainedOperators = chainedPlan.getOperators();
-
-      // 3) Inserts the PartitionedQueries' queues to PartitionedQueryManager.
-      final Iterator<PartitionedQuery> partitionedQueryIterator = GraphUtils.topologicalSort(chainedOperators);
-      while (partitionedQueryIterator.hasNext()) {
-        final PartitionedQuery partitionedQuery = partitionedQueryIterator.next();
-        partitionedQueryManager.insert(partitionedQuery);
-      }
-
-      // 4) Sets output emitters and 5) starts to receive input data stream from the source
-      start(chainedPlan);
-    }, numThreads);
+    this.planStore = planStore;
   }
 
   public void create(final Tuple<String, LogicalPlan> tuple) {
-    tpStage.onNext(tuple);
+    final PhysicalPlan<Operator, StreamType.Direction> physicalPlan;
+    try {
+      // 1) Saves the logical plan to the disk and
+      // converts the logical plan to the physical plan
+      planStore.save(tuple);
+      physicalPlan = physicalPlanGenerator.generate(tuple);
+    } catch (final Exception e) {
+      e.printStackTrace();
+      LOG.log(Level.SEVERE,  "Injection Exception occurred during de-serializing LogicalPlans");
+      return;
+    }
+
+    // 2) Chains the physical operators and makes PartitionedQuery.
+    final PhysicalPlan<PartitionedQuery, StreamType.Direction> chainedPlan =
+        queryPartitioner.chainOperators(physicalPlan);
+    physicalPlanMap.putIfAbsent(tuple.getKey(), chainedPlan);
+    final DAG<PartitionedQuery, StreamType.Direction> chainedOperators = chainedPlan.getOperators();
+
+    // 3) Inserts the PartitionedQueries' queues to PartitionedQueryManager.
+    final Iterator<PartitionedQuery> partitionedQueryIterator = GraphUtils.topologicalSort(chainedOperators);
+    while (partitionedQueryIterator.hasNext()) {
+      final PartitionedQuery partitionedQuery = partitionedQueryIterator.next();
+      partitionedQueryManager.insert(partitionedQuery);
+    }
+
+    // 4) Sets output emitters and 5) starts to receive input data stream from the source
+    start(chainedPlan);
   }
 
   @Override
   public void close() throws Exception {
-    tpStage.close();
     scheduler.shutdown();
     threadManager.close();
   }
@@ -174,14 +188,23 @@ final class DefaultQueryManagerImpl implements QueryManager {
   }
 
   /**
-   * Deletes the PartitionedQueries from PartitionedQueryManager.
+   * Deletes the PartitionedQueries from PartitionedQueryManager ann
+   * deletes corresponding logical plan from disk.
    * @param queryId
-   * @return if the task has the query corresponding to the queryId,
-   * and deletes this query successfully, it returns true.
-   * Otherwise it returns false.
+   * @return if the task has the chainedPlan corresponding to the queryId,
+   * it returns true. Otherwise it returns false.
    */
   @Override
   public boolean delete(final String queryId) {
+    try {
+      planStore.delete(queryId);
+    } catch (final IOException e) {
+      e.printStackTrace();
+    }
+    return deleteChainedPlan(queryId);
+  }
+
+  private boolean deleteChainedPlan(final String queryId) {
     final PhysicalPlan<PartitionedQuery, StreamType.Direction> chainedPlan = physicalPlanMap.remove(queryId);
 
     if (chainedPlan != null) {
@@ -226,5 +249,39 @@ final class DefaultQueryManagerImpl implements QueryManager {
         e.printStackTrace();
       }
     }
+  }
+
+  /**
+   * For now, we stop the only stateless query, so we just deletes the query.
+   * TODO[MIST-289]: Implement stop and resume the stateful query.
+   * @param queryId
+   * @return if the task has the query corresponding to the queryId,
+   * it returns true. Otherwise it returns false.
+   */
+  @Override
+  public boolean stop(final String queryId) {
+    return delete(queryId);
+  }
+
+  /**
+   * Loads the logical plan and starts the query.
+   * TODO[MIST-291]: What happen if stop/delete/resume are executed concurrently?
+   * @param queryId
+   * @return if the disk has the logical plan corresponding to the queryId,
+   * it returns true. Otherwise it returns false.
+   */
+  @Override
+  public boolean resume(final String queryId) {
+    try {
+      final LogicalPlan logicalPlan = planStore.load(queryId);
+      if (logicalPlan != null) {
+        create(new Tuple<>(queryId, logicalPlan));
+        return true;
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+      return false;
+    }
+    return false;
   }
 }

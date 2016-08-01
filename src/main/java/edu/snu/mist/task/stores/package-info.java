@@ -13,12 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.parameters;
-
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
-
-@NamedParameter(doc = "The number of threads of QueryManager",
-    short_name = "num_manager_threads", default_value = "10")
-public final class NumQueryManagerThreads implements Name<Integer> {
-}
+/**
+ * This package contains save and load operators which save and load the logical plan.
+ */
+package edu.snu.mist.task.stores;

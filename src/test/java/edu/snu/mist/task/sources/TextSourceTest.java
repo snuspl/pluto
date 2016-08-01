@@ -148,7 +148,7 @@ public final class TextSourceTest {
     final int numData = 3;
     final int numWatermarkToWait = 5;
     final long period = 100;
-    final long epsilon = 3;
+    final long epsilon = 10;
     final List<String> inputStream = Arrays.asList(
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
         "In in leo nec erat fringilla mattis eu non massa.",

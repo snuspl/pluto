@@ -27,7 +27,7 @@ import javax.inject.Inject;
  * This class implements the RPC protocol of ClientToTaskMessage.
  * It creates the query id and returns it to users.
  * Also, it submits the tuple of queryId and logical plan to QueryManager in order to execute the query,
- * or submits the queryId to delete query.
+ * or submits the queryId to delete, stop and resume the corresponding query.
  */
 public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage {
   /**
@@ -60,5 +60,15 @@ public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage
   @Override
   public boolean deleteQueries(final CharSequence queryId) throws AvroRemoteException {
     return queryManager.delete(queryId.toString());
+  }
+
+  @Override
+  public boolean stopQueries(final CharSequence queryId) throws AvroRemoteException {
+    return queryManager.stop(queryId.toString());
+  }
+
+  @Override
+  public boolean resumeQueries(final CharSequence queryId) throws AvroRemoteException {
+    return queryManager.resume(queryId.toString());
   }
 }

@@ -37,13 +37,9 @@ public final class SinkServer implements Runnable {
     try {
       System.out.println("SinkServer running");
       final ServerSocket serverSocket = new ServerSocket(port);
-      final Socket socket = serverSocket.accept();
-      final BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
       while (true) {
-        final String line = in.readLine();
-        if (line != null) {
-          System.out.println("SinkServer reads a string: " + line);
-        }
+        final Socket socket = serverSocket.accept();
+        new Thread(new ConcurrentServer(socket)).start();
       }
     } catch (final IOException e) {
       e.printStackTrace();
@@ -51,6 +47,33 @@ public final class SinkServer implements Runnable {
     } catch (final Exception e) {
       e.printStackTrace();
       throw new RuntimeException(e);
+    }
+  }
+
+  class ConcurrentServer implements Runnable {
+    private final Socket socket;
+
+    public ConcurrentServer(final Socket socket) {
+      this.socket = socket;
+    }
+
+    @Override
+    public void run() {
+      try {
+        final BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        while (true) {
+          final String line = in.readLine();
+          if (line != null) {
+            System.out.println("SinkServer reads a string: " + line);
+          }
+        }
+      } catch (final IOException e) {
+        e.printStackTrace();
+        throw new RuntimeException(e);
+      } catch (final Exception e) {
+        e.printStackTrace();
+        throw new RuntimeException(e);
+      }
     }
   }
 }

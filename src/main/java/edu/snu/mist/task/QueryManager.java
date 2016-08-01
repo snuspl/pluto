@@ -19,9 +19,10 @@ import edu.snu.mist.formats.avro.LogicalPlan;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
+
 /**
  * This interface receives a tuple of queryId and logical plan,
- * converts the logical plan to the physical plan,
+ * saves the logical plan to PlanStore and converts the logical plan to the physical plan,
  * chains operators, allocates the chains into Executors,
  * and starts to receive input data stream of the query.
  * And this interface receives a queryId, gets the correspond chained operators,
@@ -43,4 +44,20 @@ public interface QueryManager extends AutoCloseable {
    * Otherwise it returns false.
    */
   boolean delete(String queryId);
+
+  /**
+   * Stopes the query corresponding to the queryId submitted by client.
+   * @param queryId
+   * @return if stops this query successfully, it returns true.
+   * Otherwise it returns false.
+   */
+  boolean stop(String queryId);
+
+  /**
+   * Resumes the query corresponding to the queryId submitted by client.
+   * @param queryId
+   * @return if resumes this query successfully, it returns true.
+   * Otherwise it returns false.
+   */
+  boolean resume(String queryId);
 }
