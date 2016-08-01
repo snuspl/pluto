@@ -15,23 +15,32 @@
  */
 package edu.snu.mist.api;
 
+import edu.snu.mist.formats.avro.IPAddress;
+
 /**
  * Basic Implementation of APIQuerySubmissionResult.
  */
 public class APIQuerySubmissionResultImpl implements APIQuerySubmissionResult {
 
   private final String queryId;
+  private final IPAddress taskAddress;
 
-  public APIQuerySubmissionResultImpl(final String queryId) {
+  public APIQuerySubmissionResultImpl(final String queryId, final IPAddress taskAddress) {
     this.queryId = queryId;
+    this.taskAddress = taskAddress;
   }
 
-  public APIQuerySubmissionResultImpl(final CharSequence queryId) {
-    this.queryId = queryId.toString();
+  public APIQuerySubmissionResultImpl(final CharSequence queryId, final IPAddress taskAddress) {
+    this(queryId.toString(), taskAddress);
   }
 
   @Override
   public String getQueryId() {
     return this.queryId;
+  }
+
+  @Override
+  public IPAddress getTaskAddress() {
+    return this.taskAddress;
   }
 }

@@ -79,7 +79,7 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
     ClientToTaskMessage proxyToTask = taskProxyMap.get(task);
     if (proxyToTask == null) {
       final NettyTransceiver clientToTask = new NettyTransceiver(
-              new InetSocketAddress(task.getHostAddress().toString(), task.getPort()));
+          new InetSocketAddress(task.getHostAddress().toString(), task.getPort()));
       final ClientToTaskMessage proxy = SpecificRequestor.getClient(ClientToTaskMessage.class, clientToTask);
       taskProxyMap.putIfAbsent(task, proxy);
       proxyToTask = taskProxyMap.get(task);
@@ -89,7 +89,7 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
 
     // Step 4: Transform QuerySubmissionResult to APIQuerySubmissionResult
     final APIQuerySubmissionResult apiQuerySubmissionResult =
-        new APIQuerySubmissionResultImpl(querySubmissionResult.getQueryId());
+        new APIQuerySubmissionResultImpl(querySubmissionResult.getQueryId(), task);
     return apiQuerySubmissionResult;
   }
 }
