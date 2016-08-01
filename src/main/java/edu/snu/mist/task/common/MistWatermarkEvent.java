@@ -32,10 +32,6 @@ public final class MistWatermarkEvent implements MistEvent {
     return timestamp;
   }
 
-  public void setTimestamp(final long ts) {
-    timestamp = ts;
-  }
-
   @Override
   public boolean isData() {
     return false;

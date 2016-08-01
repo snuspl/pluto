@@ -55,10 +55,6 @@ public final class MistDataEvent implements MistEvent {
     value = v;
   }
 
-  public void setTimestamp(final long ts) {
-    timestamp = ts;
-  }
-
   @Override
   public boolean isData() {
     return true;
