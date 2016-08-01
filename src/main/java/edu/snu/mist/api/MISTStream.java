@@ -15,22 +15,14 @@
  */
 package edu.snu.mist.api;
 
-import java.util.Set;
-
 /**
  * This interface is the basic representation of all types of MIST streams,
  * both for ContinuousMistStream or WindowedMistStream.
  */
-public interface MISTStream<T> {
+public interface MISTStream<T> extends AvroVertexSerializable {
   /**
    * Get the type of MISTStream - continuous? or windowed?
    * @return the type of this MISTStream
    */
   StreamType.BasicType getBasicType();
-
-  /**
-   * The the preceding input stream of this stream. If not present (e.g. SourceStream), it just returns null.
-   * @return the set of preceding input streams of this stream
-   */
-  Set<MISTStream> getInputStreams();
 }

@@ -15,17 +15,12 @@
  */
 package edu.snu.mist.api;
 
-import edu.snu.mist.api.sink.builder.REEFNetworkSinkConfigurationBuilderImpl;
 import edu.snu.mist.api.sink.builder.SinkConfiguration;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfigurationBuilderImpl;
-import edu.snu.mist.api.sink.parameters.REEFNetworkSinkParameters;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
-import edu.snu.mist.api.sources.builder.REEFNetworkSourceConfigurationBuilderImpl;
 import edu.snu.mist.api.sources.builder.SourceConfiguration;
 import edu.snu.mist.api.sources.builder.TextSocketSourceConfigurationBuilderImpl;
-import edu.snu.mist.api.sources.parameters.REEFNetworkSourceParameters;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
-import org.apache.reef.wake.remote.impl.StringCodec;
 
 /**
  * This class contains necessary parameters for API testing.
@@ -36,27 +31,10 @@ public final class APITestParameters {
     // Do nothing here
   }
 
-  public static final SourceConfiguration LOCAL_REEF_NETWORK_SOURCE_CONF =
-      new REEFNetworkSourceConfigurationBuilderImpl()
-      .set(REEFNetworkSourceParameters.NAME_SERVER_HOSTNAME, "localhost")
-      .set(REEFNetworkSourceParameters.NAME_SERVICE_PORT, 13666)
-      .set(REEFNetworkSourceParameters.CONNECTION_ID, "TestConn")
-      .set(REEFNetworkSourceParameters.SENDER_ID, "TestSender")
-      .set(REEFNetworkSourceParameters.CODEC, StringCodec.class)
-      .build();
-
   public static final SourceConfiguration LOCAL_TEXT_SOCKET_SOURCE_CONF =
       new TextSocketSourceConfigurationBuilderImpl()
       .set(TextSocketSourceParameters.SOCKET_HOST_ADDRESS, "localhost")
       .set(TextSocketSourceParameters.SOCKET_HOST_PORT, 13666)
-      .build();
-
-  public static final SinkConfiguration LOCAL_REEF_NETWORK_SINK_CONF = new REEFNetworkSinkConfigurationBuilderImpl()
-      .set(REEFNetworkSinkParameters.NAME_SERVER_HOSTNAME, "localhost")
-      .set(REEFNetworkSinkParameters.NAME_SERVICE_PORT, 13667)
-      .set(REEFNetworkSinkParameters.CONNECTION_ID, "TestConn")
-      .set(REEFNetworkSinkParameters.RECEIVER_ID, "TestReceiver")
-      .set(REEFNetworkSinkParameters.CODEC, StringCodec.class)
       .build();
 
   public static final SinkConfiguration LOCAL_TEXT_SOCKET_SINK_CONF = new TextSocketSinkConfigurationBuilderImpl()

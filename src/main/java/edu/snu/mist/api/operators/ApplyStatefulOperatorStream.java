@@ -15,10 +15,18 @@
  */
 package edu.snu.mist.api.operators;
 
-import edu.snu.mist.api.ContinuousStream;
+import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
+import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.InstantOperatorInfo;
+import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
+import org.apache.commons.lang.SerializationUtils;
+
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class implements the necessary methods for getting information
@@ -35,10 +43,10 @@ public final class ApplyStatefulOperatorStream<IN, OUT, S> extends InstantOperat
    */
   private final MISTFunction<S, OUT> produceResultFunc;
 
-  public ApplyStatefulOperatorStream(final ContinuousStream<IN> precedingStream,
-                                     final MISTBiFunction<IN, S, S> updateStateFunc,
-                                     final MISTFunction<S, OUT> produceResultFunc) {
-    super(StreamType.OperatorType.APPLY_STATEFUL, precedingStream);
+  public ApplyStatefulOperatorStream(final MISTBiFunction<IN, S, S> updateStateFunc,
+                                     final MISTFunction<S, OUT> produceResultFunc,
+                                     final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
+    super(StreamType.OperatorType.APPLY_STATEFUL, dag);
     this.updateStateFunc = updateStateFunc;
     this.produceResultFunc = produceResultFunc;
   }
@@ -55,5 +63,19 @@ public final class ApplyStatefulOperatorStream<IN, OUT, S> extends InstantOperat
    */
   public MISTFunction<S, OUT> getProduceResultFunc() {
     return produceResultFunc;
+  }
+
+  @Override
+  protected InstantOperatorInfo getInstantOpInfo() {
+    final InstantOperatorInfo.Builder iOpInfoBuilder = InstantOperatorInfo.newBuilder();
+    iOpInfoBuilder.setInstantOperatorType(InstantOperatorTypeEnum.APPLY_STATEFUL);
+    final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
+    serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(
+        updateStateFunc)));
+    serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(
+        produceResultFunc)));
+    iOpInfoBuilder.setFunctions(serializedFunctionList);
+    iOpInfoBuilder.setKeyIndex(null);
+    return iOpInfoBuilder.build();
   }
 }

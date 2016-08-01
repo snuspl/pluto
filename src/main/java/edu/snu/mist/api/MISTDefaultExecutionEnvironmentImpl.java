@@ -15,22 +15,19 @@
  */
 package edu.snu.mist.api;
 
-import edu.snu.mist.api.serialize.avro.MISTQuerySerializer;
-import edu.snu.mist.api.serialize.avro.params.RunningJarPath;
 import edu.snu.mist.formats.avro.*;
 import org.apache.avro.ipc.NettyTransceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
-import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.JavaConfigurationBuilder;
-import org.apache.reef.tang.Tang;
+import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.exceptions.InjectionException;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * The default implementation class for MISTExecutionEnvironment.
@@ -43,18 +40,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * transform QuerySubmissionResult to APIQuerySubmissionResult and return it.
  */
 public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionEnvironment {
-  private final MISTQuerySerializer querySerializer;
   private final MistTaskProvider proxyToDriver;
   private final List<IPAddress> tasks;
   private final ConcurrentMap<IPAddress, ClientToTaskMessage> taskProxyMap;
+  private final String runningJarPath;
 
   public MISTDefaultExecutionEnvironmentImpl(final String serverAddr,
                                              final int serverPort,
                                              final String runningJarPath) throws InjectionException, IOException {
-    final JavaConfigurationBuilder cb = Tang.Factory.getTang().newConfigurationBuilder();
-    cb.bindNamedParameter(RunningJarPath.class, runningJarPath);
-    final Injector injector = Tang.Factory.getTang().newInjector(cb.build());
-    querySerializer = injector.getInstance(MISTQuerySerializer.class);
+    this.runningJarPath = runningJarPath;
     // Step 1: Get a task list from Driver
     final NettyTransceiver clientToDriver = new NettyTransceiver(new InetSocketAddress(serverAddr, serverPort));
     this.proxyToDriver = SpecificRequestor.getClient(MistTaskProvider.class, clientToDriver);
@@ -70,10 +64,19 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
    */
   @Override
   public APIQuerySubmissionResult submit(final MISTQuery queryToSubmit) throws IOException, URISyntaxException {
-    // Step 2: Change the query to a LogicalPlan
-    final LogicalPlan logicalPlan = querySerializer.queryToLogicalPlan(queryToSubmit);
+    final byte[] jarBytes = JarFileUtils.serializeJarFile(runningJarPath);
 
-    // Step 3: Send the LogicalPlan to one of the tasks and get QuerySubmissionResult
+    // Build logical plan using serialized vertices and edges.
+    final Tuple<List<Vertex>, List<Edge>> serializedDag = queryToSubmit.getSerializedDAG();
+    final LogicalPlan.Builder logicalPlanBuilder = LogicalPlan.newBuilder();
+    final LogicalPlan logicalPlan = logicalPlanBuilder
+        .setIsJarSerialized(true)
+        .setJar(ByteBuffer.wrap(jarBytes))
+        .setVertices(serializedDag.getKey())
+        .setEdges(serializedDag.getValue())
+        .build();
+
+    //Send the LogicalPlan to one of the tasks and get QuerySubmissionResult
     final IPAddress task = tasks.get(0);
 
     ClientToTaskMessage proxyToTask = taskProxyMap.get(task);

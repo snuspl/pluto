@@ -15,50 +15,31 @@
  */
 package edu.snu.mist.api;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import edu.snu.mist.common.DAG;
 
 /**
  * The basic implementation class for MISTStream.
  */
-public class MISTStreamImpl<OUT> implements MISTStream<OUT> {
+public abstract class MISTStreamImpl<OUT> implements MISTStream<OUT> {
 
   /**
    * The type of this stream (continuous or windowed).
    */
   private final StreamType.BasicType streamType;
+
   /**
-   * A set of the previous streams which are right before this stream. It can be more than one in case of
-   * join, union, or other transformations which get multiple input streams.
+   * DAG of the query.
    */
-  private final Set<MISTStream> inputStreams;
+  protected final DAG<AvroVertexSerializable, StreamType.Direction> dag;
 
-  public MISTStreamImpl(final StreamType.BasicType streamType, final MISTStream inputStream) {
+  public MISTStreamImpl(final StreamType.BasicType streamType,
+                        final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
     this.streamType = streamType;
-    this.inputStreams = new HashSet<>(Arrays.asList(inputStream));
-  }
-
-  public MISTStreamImpl(final StreamType.BasicType streamType, final Set<MISTStream> inputStreams) {
-    this.streamType = streamType;
-    this.inputStreams = inputStreams;
-  }
-
-  public MISTStreamImpl(final StreamType.BasicType streamType) {
-    this.streamType = streamType;
-    this.inputStreams = null;
+    this.dag = dag;
   }
 
   @Override
   public StreamType.BasicType getBasicType() {
     return streamType;
-  }
-
-  /**
-   * @return A set of the preceding streams
-   */
-  @Override
-  public Set<MISTStream> getInputStreams() {
-    return inputStreams;
   }
 }

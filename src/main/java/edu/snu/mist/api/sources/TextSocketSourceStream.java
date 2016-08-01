@@ -15,15 +15,24 @@
  */
 package edu.snu.mist.api.sources;
 
+import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.sources.builder.SourceConfiguration;
+import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.SourceTypeEnum;
 
 /**
  * This class represents a SourceStream from the text socket source.
  */
-public final class TextSocketSourceStream<T> extends SourceStream<T> {
+public final class TextSocketSourceStream<T> extends BaseSourceStream<T> {
 
-  public TextSocketSourceStream(final SourceConfiguration sourceConfiguration) {
-    super(StreamType.SourceType.TEXT_SOCKET_SOURCE, sourceConfiguration);
+  public TextSocketSourceStream(final SourceConfiguration sourceConfiguration,
+                                final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
+    super(StreamType.SourceType.TEXT_SOCKET_SOURCE, sourceConfiguration, dag);
+  }
+
+  @Override
+  protected SourceTypeEnum getSourceTypeEnum() {
+    return SourceTypeEnum.TEXT_SOCKET_SOURCE;
   }
 }

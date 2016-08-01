@@ -15,9 +15,12 @@
  */
 package edu.snu.mist.api;
 
-import edu.snu.mist.api.sink.Sink;
+import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.Edge;
+import edu.snu.mist.formats.avro.Vertex;
+import org.apache.reef.io.Tuple;
 
-import java.util.Set;
+import java.util.List;
 
 /**
  * This interface represents the stream query defined by users via MIST API.
@@ -25,7 +28,12 @@ import java.util.Set;
 public interface MISTQuery {
 
   /**
-   * @return The set of Sinks belonging to this query.
+   * Get the serialized vertices and edges of the DAG.
    */
-  Set<Sink> getQuerySinks();
+  Tuple<List<Vertex>, List<Edge>> getSerializedDAG();
+
+  /**
+   * Get the DAG of the query.
+   */
+  DAG<AvroVertexSerializable, StreamType.Direction> getDAG();
 }

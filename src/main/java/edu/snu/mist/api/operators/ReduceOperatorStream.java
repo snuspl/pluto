@@ -16,9 +16,10 @@
 package edu.snu.mist.api.operators;
 
 
-import edu.snu.mist.api.MISTStream;
+import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.functions.MISTBiFunction;
+import edu.snu.mist.common.DAG;
 
 import java.util.Map;
 
@@ -37,11 +38,13 @@ public abstract class ReduceOperatorStream<IN, K, V> extends InstantOperatorStre
    */
   protected final int keyFieldIndex;
 
-  protected ReduceOperatorStream(final StreamType.OperatorType operatorName, final MISTStream<IN> precedingStream,
-                                 final int keyFieldIndex, final Class<K> keyType,
-                                 final MISTBiFunction<V, V, V> reduceFunc) {
+  protected ReduceOperatorStream(final StreamType.OperatorType operatorName,
+                                 final int keyFieldIndex,
+                                 final Class<K> keyType,
+                                 final MISTBiFunction<V, V, V> reduceFunc,
+                                 final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
     // TODO[MIST-63]: Add dynamic type checking routine here.
-    super(operatorName, precedingStream);
+    super(operatorName, dag);
     this.reduceFunc = reduceFunc;
     this.keyFieldIndex = keyFieldIndex;
   }

@@ -13,26 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.serialize.avro;
+package edu.snu.mist.api;
 
-import edu.snu.mist.api.APITestParameters;
-import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTPredicate;
+import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sink.builder.SinkConfiguration;
-import edu.snu.mist.api.sink.parameters.REEFNetworkSinkParameters;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
-import edu.snu.mist.api.sources.REEFNetworkSourceStream;
-import edu.snu.mist.api.sources.TextSocketSourceStream;
 import edu.snu.mist.api.sources.builder.SourceConfiguration;
-import edu.snu.mist.api.sources.parameters.REEFNetworkSourceParameters;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import edu.snu.mist.api.types.Tuple2;
-import edu.snu.mist.api.window.*;
+import edu.snu.mist.api.window.TimeEmitPolicy;
+import edu.snu.mist.api.window.TimeSizePolicy;
+import edu.snu.mist.api.window.WindowEmitPolicy;
+import edu.snu.mist.api.window.WindowSizePolicy;
 import edu.snu.mist.formats.avro.*;
 import org.apache.commons.lang.SerializationUtils;
-import org.apache.reef.tang.Tang;
+import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -40,7 +38,10 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -48,7 +49,7 @@ import java.util.function.Predicate;
 /**
  * This is the test class for serializing MISTQuery into avro LogicalPlan.
  */
-public final class MISTQuerySerializerTest {
+public final class MISTQueryTest {
 
   /**
    * Common functions/policies for each type of operator. Serialized LogicalPlan should contain same Attributes with
@@ -69,9 +70,7 @@ public final class MISTQuerySerializerTest {
   /**
    * Common configuration for each type of source / sink.
    */
-  private final SourceConfiguration reefNetworkSourceConf = APITestParameters.LOCAL_REEF_NETWORK_SOURCE_CONF;
   private final SourceConfiguration textSocketSourceConf = APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF;
-  private final SinkConfiguration reefNetworkSinkConf = APITestParameters.LOCAL_REEF_NETWORK_SINK_CONF;
   private final SinkConfiguration textSocketSinkConf = APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF;
 
   /**
@@ -80,17 +79,17 @@ public final class MISTQuerySerializerTest {
    */
   @Test
   public void mistComplexQuerySerializeTest() throws InjectionException, IOException, URISyntaxException {
-    final MISTQuery complexQuery = new REEFNetworkSourceStream<String>(reefNetworkSourceConf)
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    final Sink sink = queryBuilder.socketTextStream(textSocketSourceConf)
         .flatMap(expectedFlatMapFunc)
         .filter(expectedFilterPredicate)
         .map(expectedMapFunc)
         .window(expectedWindowSizePolicy, expectedWindowEmitPolicy)
         .reduceByKeyWindow(0, String.class, expectedReduceFunc)
-        .reefNetworkOutput(reefNetworkSinkConf)
-        .getQuery();
-    final MISTQuerySerializer serializer = Tang.Factory.getTang().newInjector().getInstance(MISTQuerySerializer.class);
-    final LogicalPlan logicalPlan = serializer.queryToLogicalPlan(complexQuery);
-    final List<Vertex> vertices = logicalPlan.getVertices();
+        .textSocketOutput(textSocketSinkConf);
+    final MISTQuery complexQuery = queryBuilder.build();
+    final Tuple<List<Vertex>, List<Edge>> serializedDAG = complexQuery.getSerializedDAG();
+    final List<Vertex> vertices = serializedDAG.getKey();
     Assert.assertEquals(7, vertices.size());
 
     // Stores indexes for flatMap, filter, map, window, reduceByKeyWindow, reefNetworkOutput in order
@@ -101,23 +100,14 @@ public final class MISTQuerySerializerTest {
         // Test for sink vertex
         final SinkInfo sinkInfo = (SinkInfo) vertex.getAttributes();
         final Map<CharSequence, Object> sinkConfiguration = sinkInfo.getSinkConfiguration();
-        if (sinkInfo.getSinkType() == SinkTypeEnum.REEF_NETWORK_SINK) {
-          Assert.assertEquals(reefNetworkSinkConf.getConfigurationValue(REEFNetworkSinkParameters.NAME_SERVER_HOSTNAME),
-              sinkConfiguration.get(REEFNetworkSinkParameters.NAME_SERVER_HOSTNAME));
-          Assert.assertEquals(reefNetworkSinkConf.getConfigurationValue(REEFNetworkSinkParameters.NAME_SERVICE_PORT),
-              sinkConfiguration.get(REEFNetworkSinkParameters.NAME_SERVICE_PORT));
-          byte[] serializedCodec =
-              new byte[((ByteBuffer) sinkConfiguration.get(REEFNetworkSinkParameters.CODEC)).remaining()];
-          ((ByteBuffer) sinkConfiguration.get(REEFNetworkSinkParameters.CODEC)).get(serializedCodec);
-          Assert.assertEquals(reefNetworkSinkConf.getConfigurationValue(REEFNetworkSinkParameters.CODEC),
-              SerializationUtils.deserialize(serializedCodec));
-          Assert.assertEquals(reefNetworkSinkConf.getConfigurationValue(REEFNetworkSinkParameters.CONNECTION_ID),
-              sinkConfiguration.get(REEFNetworkSinkParameters.CONNECTION_ID));
-          Assert.assertEquals(reefNetworkSinkConf.getConfigurationValue(REEFNetworkSinkParameters.RECEIVER_ID),
-              sinkConfiguration.get(REEFNetworkSinkParameters.RECEIVER_ID));
+        if (sinkInfo.getSinkType() == SinkTypeEnum.TEXT_SOCKET_SINK) {
+          Assert.assertEquals(textSocketSinkConf.getConfigurationValue(TextSocketSinkParameters.SOCKET_HOST_ADDRESS),
+              sinkConfiguration.get(TextSocketSinkParameters.SOCKET_HOST_ADDRESS));
+          Assert.assertEquals(textSocketSinkConf.getConfigurationValue(TextSocketSinkParameters.SOCKET_HOST_PORT),
+              sinkConfiguration.get(TextSocketSinkParameters.SOCKET_HOST_PORT));
           vertexIndexes.set(6, index);
         } else {
-          Assert.fail("Unexpected Sink type detected during the test! Should be REEF_NETWORK_SINK");
+          Assert.fail("Unexpected Sink type detected during the test! Should be TEXT_SOCKET_SINK");
         }
       } else if (vertex.getVertexType() == VertexTypeEnum.INSTANT_OPERATOR) {
         // Test for instantOperator vertex
@@ -176,95 +166,6 @@ public final class MISTQuerySerializerTest {
         // Test for source vertex
         final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
         final Map<CharSequence, Object> sourceConfiguration = sourceInfo.getSourceConfiguration();
-        if (sourceInfo.getSourceType() == SourceTypeEnum.REEF_NETWORK_SOURCE) {
-          Assert.assertEquals(
-              reefNetworkSourceConf.getConfigurationValue(REEFNetworkSourceParameters.NAME_SERVER_HOSTNAME),
-              sourceConfiguration.get(REEFNetworkSourceParameters.NAME_SERVER_HOSTNAME));
-          Assert.assertEquals(
-              reefNetworkSourceConf.getConfigurationValue(REEFNetworkSourceParameters.NAME_SERVICE_PORT),
-              sourceConfiguration.get(REEFNetworkSourceParameters.NAME_SERVICE_PORT));
-          byte[] serializedCodec =
-              new byte[((ByteBuffer) sourceConfiguration.get(REEFNetworkSourceParameters.CODEC)).remaining()];
-          ((ByteBuffer) sourceConfiguration.get(REEFNetworkSourceParameters.CODEC)).get(serializedCodec);
-          Assert.assertEquals(reefNetworkSourceConf.getConfigurationValue(REEFNetworkSourceParameters.CODEC),
-              SerializationUtils.deserialize(serializedCodec));
-          Assert.assertEquals(reefNetworkSourceConf.getConfigurationValue(REEFNetworkSourceParameters.CONNECTION_ID),
-              sourceConfiguration.get(REEFNetworkSourceParameters.CONNECTION_ID));
-          Assert.assertEquals(reefNetworkSourceConf.getConfigurationValue(REEFNetworkSourceParameters.SENDER_ID),
-              sourceConfiguration.get(REEFNetworkSourceParameters.SENDER_ID));
-          vertexIndexes.set(0, index);
-        } else {
-          Assert.fail("Unexpected Sink type detected during the test! Should be REEF_NETWORK_SINK");
-        }
-      } else {
-        Assert.fail("Unexpected vertex type detected!" +
-            "Should be one of [SOURCE, INSTANT_OPERATOR, WINDOW_OPERATOR, SINK]");
-      }
-      index += 1;
-    }
-    final List<Edge> edges = logicalPlan.getEdges();
-    final List<Edge> expectedEdges = Arrays.asList(
-        Edge.newBuilder().setFrom(vertexIndexes.get(0)).setTo(vertexIndexes.get(1)).setIsLeft(true).build(),
-        Edge.newBuilder().setFrom(vertexIndexes.get(1)).setTo(vertexIndexes.get(2)).setIsLeft(true).build(),
-        Edge.newBuilder().setFrom(vertexIndexes.get(2)).setTo(vertexIndexes.get(3)).setIsLeft(true).build(),
-        Edge.newBuilder().setFrom(vertexIndexes.get(3)).setTo(vertexIndexes.get(4)).setIsLeft(true).build(),
-        Edge.newBuilder().setFrom(vertexIndexes.get(4)).setTo(vertexIndexes.get(5)).setIsLeft(true).build(),
-        Edge.newBuilder().setFrom(vertexIndexes.get(5)).setTo(vertexIndexes.get(6)).setIsLeft(true).build());
-    Assert.assertEquals(new HashSet<>(expectedEdges), new HashSet<>(edges));
-  }
-
-  /**
-   * This method tests serialization of TextSocketSource / Sink vertex.
-   * @throws InjectionException
-   */
-  @Test
-  public void mistTextSocketSerializeTest() throws InjectionException, IOException, URISyntaxException {
-    final MISTQuery textSocketQuery = new TextSocketSourceStream<String>(textSocketSourceConf)
-        .flatMap(expectedFlatMapFunc)
-        .textSocketOutput(textSocketSinkConf)
-        .getQuery();
-    final MISTQuerySerializer serializer = Tang.Factory.getTang().newInjector().getInstance(MISTQuerySerializer.class);
-    final LogicalPlan logicalPlan = serializer.queryToLogicalPlan(textSocketQuery);
-    final List<Vertex> vertices = logicalPlan.getVertices();
-    Assert.assertEquals(3, vertices.size());
-
-    // Stores indexes for flatMap, filter, map, window, reduceByKeyWindow, reefNetworkOutput in order
-    final List<Integer> vertexIndexes = Arrays.asList(new Integer[3]);
-    int index = 0;
-    for (final Vertex vertex : vertices) {
-      if (vertex.getVertexType() == VertexTypeEnum.SINK) {
-        // Test for sink vertex
-        final SinkInfo sinkInfo = (SinkInfo) vertex.getAttributes();
-        final Map<CharSequence, Object> sinkConfiguration = sinkInfo.getSinkConfiguration();
-        if (sinkInfo.getSinkType() == SinkTypeEnum.TEXT_SOCKET_SINK) {
-          Assert.assertEquals(textSocketSinkConf.getConfigurationValue(TextSocketSinkParameters.SOCKET_HOST_ADDRESS),
-              sinkConfiguration.get(TextSocketSinkParameters.SOCKET_HOST_ADDRESS));
-          Assert.assertEquals(textSocketSinkConf.getConfigurationValue(TextSocketSinkParameters.SOCKET_HOST_PORT),
-              sinkConfiguration.get(TextSocketSinkParameters.SOCKET_HOST_PORT));
-          vertexIndexes.set(2, index);
-        } else {
-          Assert.fail("Unexpected Sink type detected during the test! Should be TEXT_SOCKET_SINK");
-        }
-      } else if (vertex.getVertexType() == VertexTypeEnum.INSTANT_OPERATOR) {
-        // Test for instantOperator vertex
-        final InstantOperatorInfo instantOperatorInfo = (InstantOperatorInfo) vertex.getAttributes();
-        final List<ByteBuffer> functionList = instantOperatorInfo.getFunctions();
-        final Integer keyIndex = instantOperatorInfo.getKeyIndex();
-        if (instantOperatorInfo.getInstantOperatorType() == InstantOperatorTypeEnum.FLAT_MAP) {
-          byte[] serializedFlatMapFunc = new byte[functionList.get(0).remaining()];
-          functionList.get(0).get(serializedFlatMapFunc);
-          final Function flatMapFunc =
-              (Function) SerializationUtils.deserialize(serializedFlatMapFunc);
-          Assert.assertEquals(expectedFlatMapFunc.apply("A B C"), flatMapFunc.apply("A B C"));
-          Assert.assertEquals(keyIndex, null);
-          vertexIndexes.set(1, index);
-        } else {
-          Assert.fail("Unexpected InstantOperator type detected! Should be FLAT_MAP");
-        }
-      } else if (vertex.getVertexType() == VertexTypeEnum.SOURCE) {
-        // Test for source vertex
-        final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
-        final Map<CharSequence, Object> sourceConfiguration = sourceInfo.getSourceConfiguration();
         if (sourceInfo.getSourceType() == SourceTypeEnum.TEXT_SOCKET_SOURCE) {
           Assert.assertEquals(textSocketSourceConf.getConfigurationValue(
                   TextSocketSourceParameters.SOCKET_HOST_ADDRESS),
@@ -273,17 +174,22 @@ public final class MISTQuerySerializerTest {
               sourceConfiguration.get(TextSocketSourceParameters.SOCKET_HOST_PORT));
           vertexIndexes.set(0, index);
         } else {
-          Assert.fail("Unexpected Sink type detected during the test! Should be TEXT_SOCKET_SINK");
+          Assert.fail("Unexpected Sink type detected during the test! Should be TEXT_SOCKET_SOURCE");
         }
       } else {
-        Assert.fail("Unexpected vertex type detected! Should be one of [SOURCE, INSTANT_OPERATOR, SINK]");
+        Assert.fail("Unexpected vertex type detected!" +
+            "Should be one of [SOURCE, INSTANT_OPERATOR, WINDOW_OPERATOR, SINK]");
       }
       index += 1;
     }
-    final List<Edge> edges = logicalPlan.getEdges();
+    final List<Edge> edges = serializedDAG.getValue();
     final List<Edge> expectedEdges = Arrays.asList(
         Edge.newBuilder().setFrom(vertexIndexes.get(0)).setTo(vertexIndexes.get(1)).setIsLeft(true).build(),
-        Edge.newBuilder().setFrom(vertexIndexes.get(1)).setTo(vertexIndexes.get(2)).setIsLeft(true).build());
+        Edge.newBuilder().setFrom(vertexIndexes.get(1)).setTo(vertexIndexes.get(2)).setIsLeft(true).build(),
+        Edge.newBuilder().setFrom(vertexIndexes.get(2)).setTo(vertexIndexes.get(3)).setIsLeft(true).build(),
+        Edge.newBuilder().setFrom(vertexIndexes.get(3)).setTo(vertexIndexes.get(4)).setIsLeft(true).build(),
+        Edge.newBuilder().setFrom(vertexIndexes.get(4)).setTo(vertexIndexes.get(5)).setIsLeft(true).build(),
+        Edge.newBuilder().setFrom(vertexIndexes.get(5)).setTo(vertexIndexes.get(6)).setIsLeft(true).build());
     Assert.assertEquals(new HashSet<>(expectedEdges), new HashSet<>(edges));
   }
 }

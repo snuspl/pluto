@@ -16,12 +16,13 @@
 
 package edu.snu.mist.examples;
 
-import edu.snu.mist.api.*;
-import edu.snu.mist.api.sink.Sink;
+import edu.snu.mist.api.APIQuerySubmissionResult;
+import edu.snu.mist.api.MISTExecutionEnvironment;
+import edu.snu.mist.api.MISTQuery;
+import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.api.sink.builder.SinkConfiguration;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfigurationBuilderImpl;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
-import edu.snu.mist.api.sources.TextSocketSourceStream;
 import edu.snu.mist.api.sources.builder.SourceConfiguration;
 import edu.snu.mist.api.sources.builder.TextSocketSourceConfigurationBuilderImpl;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
@@ -103,11 +104,12 @@ public final class HelloMist {
         .set(TextSocketSinkParameters.SOCKET_HOST_PORT, SINK_PORT)
         .build();
 
-    final Sink sink = new TextSocketSourceStream<String>(localTextSocketSourceConf)
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    queryBuilder.socketTextStream(localTextSocketSourceConf)
         .filter(s -> s.startsWith("HelloMIST:"))
         .map(s -> s.substring("HelloMIST:".length()).trim())
         .textSocketOutput(localTextSocketSinkConf);
-    final MISTQuery query = sink.getQuery();
+    final MISTQuery query = queryBuilder.build();
 
     final MISTExecutionEnvironment executionEnvironment = new MISTTestExecutionEnvironmentImpl(driverHost, driverPort);
     return executionEnvironment.submit(query);

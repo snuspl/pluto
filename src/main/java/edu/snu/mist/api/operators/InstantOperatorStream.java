@@ -15,11 +15,13 @@
  */
 package edu.snu.mist.api.operators;
 
+import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.ContinuousStreamImpl;
-import edu.snu.mist.api.MISTStream;
 import edu.snu.mist.api.StreamType;
-
-import java.util.Set;
+import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.InstantOperatorInfo;
+import edu.snu.mist.formats.avro.Vertex;
+import edu.snu.mist.formats.avro.VertexTypeEnum;
 
 /**
  * A ContinuousStream created by operation on any kind of MISTStream.
@@ -30,13 +32,9 @@ public abstract class InstantOperatorStream<IN, OUT> extends ContinuousStreamImp
    */
   private final StreamType.OperatorType operatorType;
 
-  public InstantOperatorStream(final StreamType.OperatorType operatorType, final MISTStream<IN> previousStream) {
-    super(StreamType.ContinuousType.OPERATOR, previousStream);
-    this.operatorType = operatorType;
-  }
-
-  public InstantOperatorStream(final StreamType.OperatorType operatorType, final Set<MISTStream> inputStreams) {
-    super(StreamType.ContinuousType.OPERATOR, inputStreams);
+  public InstantOperatorStream(final StreamType.OperatorType operatorType,
+                               final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
+    super(StreamType.ContinuousType.OPERATOR, dag);
     this.operatorType = operatorType;
   }
 
@@ -45,5 +43,18 @@ public abstract class InstantOperatorStream<IN, OUT> extends ContinuousStreamImp
    */
   public StreamType.OperatorType getOperatorType() {
     return operatorType;
+  }
+
+  /**
+   * Get an instant operator info.
+   */
+  protected abstract InstantOperatorInfo getInstantOpInfo();
+
+  @Override
+  public Vertex getSerializedVertex() {
+    final Vertex.Builder vertexBuilder = Vertex.newBuilder();
+    vertexBuilder.setVertexType(VertexTypeEnum.INSTANT_OPERATOR);
+    vertexBuilder.setAttributes(getInstantOpInfo());
+    return vertexBuilder.build();
   }
 }

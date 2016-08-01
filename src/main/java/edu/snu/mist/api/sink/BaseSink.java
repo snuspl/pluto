@@ -13,56 +13,87 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.serialize.avro;
+
+package edu.snu.mist.api.sink;
 
 import edu.snu.mist.api.SerializedType;
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sink.builder.SinkConfiguration;
 import edu.snu.mist.api.sink.parameters.SinkSerializeInfo;
 import edu.snu.mist.formats.avro.SinkInfo;
 import edu.snu.mist.formats.avro.SinkTypeEnum;
+import edu.snu.mist.formats.avro.Vertex;
+import edu.snu.mist.formats.avro.VertexTypeEnum;
 import org.apache.commons.lang.SerializationUtils;
 
-import javax.inject.Inject;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Default implementation class for SinkInfoProvider interface.
+ * The base class for sink.
  */
-public final class SinkInfoProviderImpl implements SinkInfoProvider {
+public abstract class BaseSink implements Sink {
 
-  @Inject
-  private SinkInfoProviderImpl() {
+  /**
+   * The type of this sink.
+   */
+  protected final StreamType.SinkType sinkType;
 
+  /**
+   * The value for sink configuration.
+   */
+  protected final SinkConfiguration sinkConfiguration;
+
+  public BaseSink(final StreamType.SinkType sinkType,
+                  final SinkConfiguration sinkConfiguration) {
+    this.sinkType = sinkType;
+    this.sinkConfiguration = sinkConfiguration;
   }
 
+
+  /**
+   * @return The type of the sink stream
+   */
   @Override
-  public SinkInfo getSinkInfo(final Sink sink) {
+  public StreamType.SinkType getSinkType() {
+    return this.sinkType;
+  }
+
+  /**
+   * @return The SinkConfiguration set for this stream
+   */
+  @Override
+  public SinkConfiguration getSinkConfiguration() {
+    return this.sinkConfiguration;
+  }
+
+  /**
+   * Get avro sink type enum.
+   */
+  protected abstract SinkTypeEnum getSinkTypeEnum();
+
+  @Override
+  public Vertex getSerializedVertex() {
+    final Vertex.Builder vertexBuilder = Vertex.newBuilder();
+    vertexBuilder.setVertexType(VertexTypeEnum.SINK);
     final SinkInfo.Builder sinkInfoBuilder = SinkInfo.newBuilder();
-    // Sink type detection
-    if (sink.getSinkType() == StreamType.SinkType.REEF_NETWORK_SINK) {
-      sinkInfoBuilder.setSinkType(SinkTypeEnum.REEF_NETWORK_SINK);
-    } else if (sink.getSinkType() == StreamType.SinkType.TEXT_SOCKET_SINK) {
-      sinkInfoBuilder.setSinkType(SinkTypeEnum.TEXT_SOCKET_SINK);
-    } else {
-      throw new IllegalStateException("Sink type is illegal!");
-    }
+    sinkInfoBuilder.setSinkType(getSinkTypeEnum());
+
     // Serialize SinkInfo
-    final SinkConfiguration sinkConf = sink.getSinkConfiguration();
     final Map<CharSequence, Object> serializedSinkConf = new HashMap<>();
-    for (final String confKey : sinkConf.getConfigurationKeys()) {
-      final Object value = sinkConf.getConfigurationValue(confKey);
+    for (final String confKey : sinkConfiguration.getConfigurationKeys()) {
+      final Object value = sinkConfiguration.getConfigurationValue(confKey);
       if (SinkSerializeInfo.getAvroSerializedTypeInfo(confKey) != SerializedType.AvroType.BYTES) {
         serializedSinkConf.put(confKey, value);
       } else {
         serializedSinkConf.put(confKey, ByteBuffer.wrap(SerializationUtils.serialize((Serializable) value)));
       }
     }
+
     sinkInfoBuilder.setSinkConfiguration(serializedSinkConf);
-    return sinkInfoBuilder.build();
+    vertexBuilder.setAttributes(sinkInfoBuilder.build());
+    return vertexBuilder.build();
   }
 }

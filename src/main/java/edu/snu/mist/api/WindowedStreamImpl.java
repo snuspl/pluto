@@ -17,8 +17,9 @@ package edu.snu.mist.api;
 
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.operators.ReduceByKeyWindowOperatorStream;
-import edu.snu.mist.api.window.WindowEmitPolicy;
-import edu.snu.mist.api.window.WindowSizePolicy;
+import edu.snu.mist.api.window.*;
+import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.*;
 
 import java.util.Collection;
 
@@ -36,9 +37,10 @@ public final class WindowedStreamImpl<T> extends MISTStreamImpl<Collection<T>> i
    */
   private WindowEmitPolicy windowEmitPolicy;
 
-  public WindowedStreamImpl(final MISTStream inputStream,
-                            final WindowSizePolicy windowSizePolicy, final WindowEmitPolicy windowEmitPolicy) {
-    super(StreamType.BasicType.WINDOWED, inputStream);
+  public WindowedStreamImpl(final WindowSizePolicy windowSizePolicy,
+                            final WindowEmitPolicy windowEmitPolicy,
+                            final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
+    super(StreamType.BasicType.WINDOWED, dag);
     this.windowSizePolicy = windowSizePolicy;
     this.windowEmitPolicy = windowEmitPolicy;
   }
@@ -58,6 +60,33 @@ public final class WindowedStreamImpl<T> extends MISTStreamImpl<Collection<T>> i
       final int keyFieldNum,
       final Class<K> keyType,
       final MISTBiFunction<V, V, V> reduceFunc) {
-    return new ReduceByKeyWindowOperatorStream<>(this, keyFieldNum, keyType, reduceFunc);
+    final ReduceByKeyWindowOperatorStream<T, K, V> downStream =
+        new ReduceByKeyWindowOperatorStream<>(keyFieldNum, keyType, reduceFunc, dag);
+    dag.addVertex(downStream);
+    dag.addEdge(this, downStream, StreamType.Direction.LEFT);
+    return downStream;
+  }
+
+  @Override
+  public Vertex getSerializedVertex() {
+    final Vertex.Builder vertexBuilder = Vertex.newBuilder();
+    vertexBuilder.setVertexType(VertexTypeEnum.WINDOW_OPERATOR);
+    final WindowOperatorInfo.Builder wOpInfoBuilder = WindowOperatorInfo.newBuilder();
+    final WindowSizePolicy sizePolicy = windowSizePolicy;
+    if (sizePolicy.getSizePolicyType() == WindowType.SizePolicy.TIME) {
+      wOpInfoBuilder.setSizePolicyType(SizePolicyTypeEnum.TIME);
+      wOpInfoBuilder.setSizePolicyInfo(((TimeSizePolicy) sizePolicy).getTimeDuration());
+    } else {
+      throw new IllegalStateException("WindowSizePolicy is illegal!");
+    }
+    final WindowEmitPolicy emitPolicy = windowEmitPolicy;
+    if (emitPolicy.getEmitPolicyType() == WindowType.EmitPolicy.TIME) {
+      wOpInfoBuilder.setEmitPolicyType(EmitPolicyTypeEnum.TIME);
+      wOpInfoBuilder.setEmitPolicyInfo(((TimeEmitPolicy) emitPolicy).getTimeInterval());
+    } else {
+      throw new IllegalStateException("WindowEmitPolicy is illegal!");
+    }
+    vertexBuilder.setAttributes(wOpInfoBuilder.build());
+    return vertexBuilder.build();
   }
 }

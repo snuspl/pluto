@@ -15,17 +15,14 @@
  */
 package edu.snu.mist.api.sink;
 
-import edu.snu.mist.api.MISTQuery;
-import edu.snu.mist.api.MISTStream;
+import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.sink.builder.SinkConfiguration;
-
-import java.util.Set;
 
 /**
  * This interface defines necessary methods used for Sink in MIST API.
  */
-public interface Sink {
+public interface Sink extends AvroVertexSerializable {
 
   /**
    * @return The type of this Sink output
@@ -36,14 +33,4 @@ public interface Sink {
    * @return The configuration for this sink.
    */
   SinkConfiguration getSinkConfiguration();
-
-  /**
-   * @return The preceding streams of this sink.
-   */
-  Set<MISTStream> getPrecedingStreams();
-
-  /**
-   * @return A query which contains this sink.
-   */
-  MISTQuery getQuery();
 }

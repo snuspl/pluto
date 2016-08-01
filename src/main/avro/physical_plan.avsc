@@ -89,7 +89,7 @@
                               "type": "enum",
                               "symbols":
                               [
-                                "REEF_NETWORK_SOURCE","TEXT_SOCKET_SOURCE"
+                                "TEXT_SOCKET_SOURCE"
                               ]
                             }
                           },
@@ -195,7 +195,7 @@
                               "type": "enum",
                               "symbols":
                               [
-                                "REEF_NETWORK_SINK", "TEXT_SOCKET_SINK"
+                                "TEXT_SOCKET_SINK"
                               ]
                             }
                           },

@@ -17,14 +17,15 @@ package edu.snu.mist.task;
 
 import edu.snu.mist.api.APITestParameters;
 import edu.snu.mist.api.MISTQuery;
+import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.api.serialize.avro.MISTQuerySerializer;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
-import edu.snu.mist.api.sources.TextSocketSourceStream;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.Edge;
 import edu.snu.mist.formats.avro.LogicalPlan;
+import edu.snu.mist.formats.avro.Vertex;
 import edu.snu.mist.task.operators.*;
 import edu.snu.mist.task.sinks.NettyTextSink;
 import edu.snu.mist.task.sinks.Sink;
@@ -41,7 +42,9 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -81,17 +84,25 @@ public final class DefaultPhysicalPlanGeneratorTest {
   @Test
   public void testPhysicalPlanGenerator()
       throws InjectionException, IOException, URISyntaxException, ClassNotFoundException {
-    final MISTQuery query = new TextSocketSourceStream<String>(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
+    // Generate a query
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    queryBuilder.socketTextStream(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
         .flatMap(s -> Arrays.asList(s.split(" ")))
         .filter(s -> s.startsWith("A"))
         .map(s -> new Tuple2<>(s, 1))
         .reduceByKey(0, String.class, (Integer x, Integer y) -> x + y)
-        .textSocketOutput(APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF)
-        .getQuery();
+        .textSocketOutput(APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF);
+    final MISTQuery query = queryBuilder.build();
+    // Generate logical plan
+    final Tuple<List<Vertex>, List<Edge>> serializedDag = query.getSerializedDAG();
+    final LogicalPlan.Builder logicalPlanBuilder = LogicalPlan.newBuilder();
+    final LogicalPlan logicalPlan = logicalPlanBuilder
+        .setIsJarSerialized(false)
+        .setJar(ByteBuffer.wrap(new byte[1]))
+        .setVertices(serializedDag.getKey())
+            .setEdges(serializedDag.getValue())
+            .build();
 
-    final MISTQuerySerializer querySerializer = Tang.Factory.getTang().newInjector()
-        .getInstance(MISTQuerySerializer.class);
-    final LogicalPlan logicalPlan = querySerializer.queryToLogicalPlan(query);
     final PhysicalPlanGenerator ppg = Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
     final Tuple<String, LogicalPlan> tuple = new Tuple<>("query-test", logicalPlan);
     final PhysicalPlan<Operator, StreamType.Direction> physicalPlan = ppg.generate(tuple);

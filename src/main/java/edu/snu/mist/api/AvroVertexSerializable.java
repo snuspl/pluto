@@ -13,21 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.serialize.avro;
+package edu.snu.mist.api;
 
-import edu.snu.mist.api.sources.SourceStream;
-import edu.snu.mist.formats.avro.SourceInfo;
-import org.apache.reef.tang.annotations.DefaultImplementation;
+import edu.snu.mist.formats.avro.Vertex;
 
 /**
- * This is an interface for getting avro-serialized SourceInfo from MIST API SourceStream.
+ * This interface represents vertices of the DAG representing a query.
+ * Classes implementing this interface can be serialized to avro Vertex.
  */
-@DefaultImplementation(SourceInfoProviderImpl.class)
-public interface SourceInfoProvider {
+public interface AvroVertexSerializable {
 
   /**
-   * @param sourceStream SourceStream defined via MIST API.
-   * @return avro-serialized SourceInfo.
+   * Get a serialized avro vertex.
+   * @return vertex a serialized avro vertex
    */
-  SourceInfo getSourceInfo(SourceStream sourceStream);
+  Vertex getSerializedVertex();
 }

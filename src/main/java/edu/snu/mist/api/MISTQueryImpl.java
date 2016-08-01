@@ -15,11 +15,13 @@
  */
 package edu.snu.mist.api;
 
-import edu.snu.mist.api.sink.Sink;
+import edu.snu.mist.common.DAG;
+import edu.snu.mist.common.GraphUtils;
+import edu.snu.mist.formats.avro.Edge;
+import edu.snu.mist.formats.avro.Vertex;
+import org.apache.reef.io.Tuple;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * The basic implementation class for MISTQuery.
@@ -27,23 +29,53 @@ import java.util.Set;
 public final class MISTQueryImpl implements MISTQuery {
 
   /**
-   * A set of sink.
+   * DAG of the query.
    */
-  private final Set<Sink> querySinks;
+  private final DAG<AvroVertexSerializable, StreamType.Direction> dag;
 
-  public MISTQueryImpl(final Set<Sink> querySinks) {
-    this.querySinks = querySinks;
+  public MISTQueryImpl(final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
+    this.dag = dag;
   }
 
-  public MISTQueryImpl(final Sink querySink) {
-    this.querySinks = new HashSet<>(Arrays.asList(querySink));
-  }
-
-  /**
-   * @return A set of sinks
-   */
   @Override
-  public Set<Sink> getQuerySinks() {
-    return this.querySinks;
+  public Tuple<List<Vertex>, List<Edge>> getSerializedDAG() {
+    final Queue<AvroVertexSerializable> queue = new LinkedList<>();
+    final List<AvroVertexSerializable> vertices = new ArrayList<>();
+    final List<Edge> edges = new ArrayList<>();
+
+    // Put all vertices into a queue
+    final Iterator<AvroVertexSerializable> iterator = GraphUtils.topologicalSort(dag);
+    while (iterator.hasNext()) {
+      final AvroVertexSerializable vertex = iterator.next();
+      queue.add(vertex);
+      vertices.add(vertex);
+    }
+
+    // Visit each vertex and serialize its edges
+    while (!queue.isEmpty()) {
+      final AvroVertexSerializable vertex = queue.remove();
+      final int fromIndex = vertices.indexOf(vertex);
+      final Map<AvroVertexSerializable, StreamType.Direction> neighbors = dag.getEdges(vertex);
+      for (final Map.Entry<AvroVertexSerializable, StreamType.Direction> neighbor : neighbors.entrySet()) {
+        final int toIndex = vertices.indexOf(neighbor.getKey());
+        final Edge.Builder edgeBuilder = Edge.newBuilder()
+            .setFrom(fromIndex)
+            .setTo(toIndex)
+            .setIsLeft(neighbor.getValue() == StreamType.Direction.LEFT);
+        edges.add(edgeBuilder.build());
+      }
+    }
+
+    // Serialize each vertex via avro.
+    final List<Vertex> serializedVertices = new ArrayList<>();
+    for (final AvroVertexSerializable vertex : vertices) {
+      serializedVertices.add(vertex.getSerializedVertex());
+    }
+    return new Tuple<>(serializedVertices, edges);
+  }
+
+  @Override
+  public DAG<AvroVertexSerializable, StreamType.Direction> getDAG() {
+    return dag;
   }
 }

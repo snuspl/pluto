@@ -15,10 +15,16 @@
  */
 package edu.snu.mist.api.operators;
 
-import edu.snu.mist.api.ContinuousStream;
+import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.functions.MISTFunction;
+import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.InstantOperatorInfo;
+import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
+import org.apache.commons.lang.SerializationUtils;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -32,9 +38,9 @@ public final class FlatMapOperatorStream<IN, OUT> extends InstantOperatorStream<
    */
   private final MISTFunction<IN, List<OUT>> flatMapFunc;
 
-  public FlatMapOperatorStream(final ContinuousStream<IN> precedingStream,
-                               final MISTFunction<IN, List<OUT>> flatMapFunc) {
-    super(StreamType.OperatorType.FLAT_MAP, precedingStream);
+  public FlatMapOperatorStream(final MISTFunction<IN, List<OUT>> flatMapFunc,
+                               final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
+    super(StreamType.OperatorType.FLAT_MAP, dag);
     this.flatMapFunc = flatMapFunc;
   }
 
@@ -43,5 +49,17 @@ public final class FlatMapOperatorStream<IN, OUT> extends InstantOperatorStream<
    */
   public MISTFunction<IN, List<OUT>> getFlatMapFunction() {
     return flatMapFunc;
+  }
+
+  @Override
+  protected InstantOperatorInfo getInstantOpInfo() {
+    final InstantOperatorInfo.Builder iOpInfoBuilder = InstantOperatorInfo.newBuilder();
+    iOpInfoBuilder.setInstantOperatorType(InstantOperatorTypeEnum.FLAT_MAP);
+    final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
+    serializedFunctionList.add(ByteBuffer.wrap(
+        SerializationUtils.serialize(flatMapFunc)));
+    iOpInfoBuilder.setFunctions(serializedFunctionList);
+    iOpInfoBuilder.setKeyIndex(null);
+    return iOpInfoBuilder.build();
   }
 }

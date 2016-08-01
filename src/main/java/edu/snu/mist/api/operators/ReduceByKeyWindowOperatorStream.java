@@ -15,11 +15,18 @@
  */
 package edu.snu.mist.api.operators;
 
+import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.api.WindowedStream;
 import edu.snu.mist.api.functions.MISTBiFunction;
+import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.InstantOperatorInfo;
+import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
+import org.apache.commons.lang.SerializationUtils;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * This class implements the necessary methods for getting information about reduceByKeyOnWindow operator.
@@ -29,8 +36,22 @@ import java.util.Collection;
 public final class ReduceByKeyWindowOperatorStream<IN, K, V>
     extends ReduceOperatorStream<Collection<IN>, K, V> {
 
-  public ReduceByKeyWindowOperatorStream(final WindowedStream<IN> precedingStream, final int keyFieldIndex,
-                                         final Class<K> keyType, final MISTBiFunction<V, V, V> reduceFunc) {
-    super(StreamType.OperatorType.REDUCE_BY_KEY_WINDOW, precedingStream, keyFieldIndex, keyType, reduceFunc);
+  public ReduceByKeyWindowOperatorStream(final int keyFieldIndex,
+                                         final Class<K> keyType,
+                                         final MISTBiFunction<V, V, V> reduceFunc,
+                                         final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
+    super(StreamType.OperatorType.REDUCE_BY_KEY_WINDOW, keyFieldIndex, keyType, reduceFunc, dag);
+  }
+
+  @Override
+  protected InstantOperatorInfo getInstantOpInfo() {
+    final InstantOperatorInfo.Builder iOpInfoBuilder = InstantOperatorInfo.newBuilder();
+    iOpInfoBuilder.setInstantOperatorType(InstantOperatorTypeEnum.REDUCE_BY_KEY_WINDOW);
+    final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
+    serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(
+        reduceFunc)));
+    iOpInfoBuilder.setFunctions(serializedFunctionList);
+    iOpInfoBuilder.setKeyIndex(keyFieldIndex);
+    return iOpInfoBuilder.build();
   }
 }

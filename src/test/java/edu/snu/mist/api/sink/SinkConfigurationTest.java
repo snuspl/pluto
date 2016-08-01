@@ -15,13 +15,9 @@
  */
 package edu.snu.mist.api.sink;
 
-import edu.snu.mist.api.sink.builder.REEFNetworkSinkConfigurationBuilderImpl;
 import edu.snu.mist.api.sink.builder.SinkConfiguration;
-import edu.snu.mist.api.sink.builder.SinkConfigurationBuilder;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfigurationBuilderImpl;
-import edu.snu.mist.api.sink.parameters.REEFNetworkSinkParameters;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
-import org.apache.reef.wake.remote.impl.StringCodec;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -31,45 +27,10 @@ import org.junit.Test;
 public class SinkConfigurationTest {
 
   /**
-   * Configuration values for REEFNetworkSink.
-   */
-  private final String nameServerHostName = "localhost";
-  private final int nameServerPort = 8080;
-  private final String connectionId = "TestConn";
-  private final String receiverId = "TestReceiver";
-  private final Class codec = StringCodec.class;
-
-  /**
    * Configuration values for TextSocketSink.
    */
   private final String socketHostName = "localhost2";
   private final int socketPort = 8088;
-
-  /**
-   * Tests whether REEFNetworkSink configuration contains right information or not.
-   */
-  @Test
-  public void testREEFNetworkSinkConfBuilder() {
-
-    final SinkConfiguration reefNetworkSinkConfiguration = new REEFNetworkSinkConfigurationBuilderImpl()
-        .set(REEFNetworkSinkParameters.NAME_SERVER_HOSTNAME, nameServerHostName)
-        .set(REEFNetworkSinkParameters.NAME_SERVICE_PORT, nameServerPort)
-        .set(REEFNetworkSinkParameters.CONNECTION_ID, connectionId)
-        .set(REEFNetworkSinkParameters.RECEIVER_ID, receiverId)
-        .set(REEFNetworkSinkParameters.CODEC, codec)
-        .build();
-
-    Assert.assertEquals(reefNetworkSinkConfiguration.
-        getConfigurationValue(REEFNetworkSinkParameters.NAME_SERVER_HOSTNAME), nameServerHostName);
-    Assert.assertEquals(reefNetworkSinkConfiguration.getConfigurationValue(
-        REEFNetworkSinkParameters.NAME_SERVICE_PORT), nameServerPort);
-    Assert.assertEquals(reefNetworkSinkConfiguration.getConfigurationValue(REEFNetworkSinkParameters.CONNECTION_ID)
-        , connectionId);
-    Assert.assertEquals(reefNetworkSinkConfiguration.getConfigurationValue(REEFNetworkSinkParameters.RECEIVER_ID)
-        , receiverId);
-    Assert.assertEquals(reefNetworkSinkConfiguration.getConfigurationValue(REEFNetworkSinkParameters.CODEC)
-        , codec);
-  }
 
   /**
    * Test whether TextSocketSink configuration contains right information or not.
@@ -85,31 +46,5 @@ public class SinkConfigurationTest {
         textSocketSinkConfiguration.getConfigurationValue(TextSocketSinkParameters.SOCKET_HOST_ADDRESS));
     Assert.assertEquals(socketPort,
         textSocketSinkConfiguration.getConfigurationValue(TextSocketSinkParameters.SOCKET_HOST_PORT));
-  }
-
-
-  /**
-   * Test for duplicate configuration handling in SinkConfigurationBuilder.
-   */
-  @Test(expected = IllegalStateException.class)
-  public void testSinkBuilderDuplicate() {
-    // NCSSinkParameters.NAME_SERVER_HOSTNAME is duplicate!
-    final SinkConfigurationBuilder builder = new REEFNetworkSinkConfigurationBuilderImpl()
-        .set(REEFNetworkSinkParameters.NAME_SERVER_HOSTNAME, nameServerHostName)
-        .set(REEFNetworkSinkParameters.NAME_SERVER_HOSTNAME, "remotehost");
-  }
-
-  /**
-   * Test for missing parameter detection in SinkConfigurationBuilder.
-   */
-  @Test(expected = IllegalStateException.class)
-  public void testSinkBuilderMissingParameter() {
-    // NCSSinkParameters.CODEC is missing!
-    final SinkConfiguration reefNetworkSinkConfiguration = new REEFNetworkSinkConfigurationBuilderImpl()
-        .set(REEFNetworkSinkParameters.NAME_SERVER_HOSTNAME, nameServerHostName)
-        .set(REEFNetworkSinkParameters.NAME_SERVICE_PORT, nameServerPort)
-        .set(REEFNetworkSinkParameters.CONNECTION_ID, connectionId)
-        .set(REEFNetworkSinkParameters.RECEIVER_ID, receiverId)
-        .build();
   }
 }
