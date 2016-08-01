@@ -15,15 +15,10 @@
  */
 package edu.snu.mist.task.operators;
 
-import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
 import edu.snu.mist.task.common.OutputEmitter;
-import edu.snu.mist.task.operators.parameters.OperatorId;
-import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.JavaConfigurationBuilder;
-import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -51,11 +46,7 @@ public final class UnionOperatorTest {
     final MistDataEvent g = new MistDataEvent("g", 6L);
     final MistWatermarkEvent rw2 = new MistWatermarkEvent(11L);
 
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(QueryId.class, "testQuery");
-    jcb.bindNamedParameter(OperatorId.class, "testUnionOperator");
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final UnionOperator unionOperator = injector.getInstance(UnionOperator.class);
+    final UnionOperator unionOperator = new UnionOperator("testQuery", "testUnionOp");
 
     List<MistEvent> result = new LinkedList<>();
     unionOperator.setOutputEmitter(new SimpleOutputEmitter(result));

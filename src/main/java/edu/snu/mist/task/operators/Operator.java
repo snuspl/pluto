@@ -19,7 +19,6 @@ import edu.snu.mist.api.StreamType;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
 import edu.snu.mist.task.common.OutputEmittable;
-import org.apache.reef.wake.Identifier;
 
 /**
  * This is an interface of mist physical operator which runs actual computation.
@@ -31,13 +30,13 @@ public interface Operator extends OutputEmittable {
    * Gets the operator identifier.
    * @return an identifier
    */
-  Identifier getOperatorIdentifier();
+  String getOperatorIdentifier();
 
   /**
    * Gets the query identifier containing this operator.
    * @return an identifier
    */
-  Identifier getQueryIdentifier();
+  String getQueryIdentifier();
 
   /**
    * Gets the type of operator.

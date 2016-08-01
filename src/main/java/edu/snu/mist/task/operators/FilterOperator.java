@@ -16,14 +16,9 @@
 package edu.snu.mist.task.operators;
 
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
-import edu.snu.mist.task.operators.parameters.OperatorId;
-import org.apache.reef.io.network.util.StringIdentifierFactory;
-import org.apache.reef.tang.annotations.Parameter;
 
-import javax.inject.Inject;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,12 +35,10 @@ public final class FilterOperator<I> extends OneStreamOperator {
    */
   private final Predicate<I> filterFunc;
 
-  @Inject
-  private FilterOperator(final Predicate<I> filterFunc,
-                         @Parameter(QueryId.class) final String queryId,
-                         @Parameter(OperatorId.class) final String operatorId,
-                         final StringIdentifierFactory idfactory) {
-    super(idfactory.getNewInstance(queryId), idfactory.getNewInstance(operatorId));
+  public FilterOperator(final String queryId,
+                        final String operatorId,
+                        final Predicate<I> filterFunc) {
+    super(queryId, operatorId);
     this.filterFunc = filterFunc;
   }
 

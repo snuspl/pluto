@@ -21,12 +21,9 @@ import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.ExternalJarObjectInputStream;
-import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.driver.parameters.TempFolderPath;
 import edu.snu.mist.formats.avro.*;
 import edu.snu.mist.task.operators.*;
-import edu.snu.mist.task.operators.parameters.KeyIndex;
-import edu.snu.mist.task.operators.parameters.OperatorId;
 import edu.snu.mist.task.sinks.NettyTextSinkFactory;
 import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sources.NettyTextSourceFactory;
@@ -34,11 +31,7 @@ import edu.snu.mist.task.sources.Source;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.JavaConfigurationBuilder;
-import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
-import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -81,12 +74,11 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
    */
   private Source getNettyTextSocketSource(final String queryId,
                                                final Map<CharSequence, Object> sourceConf)
-      throws IllegalArgumentException, InjectionException {
+      throws IllegalArgumentException {
     final Map<String, Object> sourceConfString = new HashMap<>();
     for (final Map.Entry<CharSequence, Object> entry : sourceConf.entrySet()) {
       sourceConfString.put(entry.getKey().toString(), entry.getValue());
     }
-    final JavaConfigurationBuilder cb = Tang.Factory.getTang().newConfigurationBuilder();
     final String socketHostAddress = sourceConfString.get(TextSocketSourceParameters.SOCKET_HOST_ADDRESS).toString();
     final String socketHostPort = sourceConfString.get(TextSocketSourceParameters.SOCKET_HOST_PORT).toString();
     try {
@@ -102,12 +94,11 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
    * This private method makes a NettyTextSocketSink from a sink configuration.
    */
   private Sink getNettyTextSocketSink(final String queryId, final Map<CharSequence, Object> sinkConf)
-      throws IllegalArgumentException, InjectionException {
+      throws IllegalArgumentException {
     final Map<String, Object> sinkConfString = new HashMap<>();
     for (final Map.Entry<CharSequence, Object> entry : sinkConf.entrySet()) {
       sinkConfString.put(entry.getKey().toString(), entry.getValue());
     }
-    final JavaConfigurationBuilder cb = Tang.Factory.getTang().newConfigurationBuilder();
     final String socketHostAddress = sinkConfString.get(TextSocketSinkParameters.SOCKET_HOST_ADDRESS).toString();
     final String socketHostPort = sinkConfString.get(TextSocketSinkParameters.SOCKET_HOST_PORT).toString();
     try {
@@ -138,12 +129,11 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   /*
    * This private method gets instant operator from the serialized instant operator info.
    */
+  @SuppressWarnings(value="unchecked")
   private Operator getInstantOperator(final String queryId, final InstantOperatorInfo iOpInfo,
                                       final ClassLoader classLoader)
-      throws IllegalArgumentException, InjectionException, IOException, ClassNotFoundException {
-    final JavaConfigurationBuilder cb = Tang.Factory.getTang().newConfigurationBuilder();
-    cb.bindNamedParameter(QueryId.class, queryId);
-    cb.bindNamedParameter(OperatorId.class, operatorIdGenerator.generate());
+      throws IllegalArgumentException, IOException, ClassNotFoundException {
+    final String operatorId = operatorIdGenerator.generate();
     final List<ByteBuffer> functionList = iOpInfo.getFunctions();
     switch (iOpInfo.getInstantOperatorType()) {
       case APPLY_STATEFUL: {
@@ -151,35 +141,26 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       }
       case FILTER: {
         final Predicate predicate = (Predicate) deserializeLambda(functionList.get(0), classLoader);
-        final Injector injector = Tang.Factory.getTang().newInjector(cb.build());
-        injector.bindVolatileInstance(Predicate.class, predicate);
-        return injector.getInstance(FilterOperator.class);
+        return new FilterOperator<>(queryId, operatorId, predicate);
       }
       case FLAT_MAP: {
         final Function flatMapFunc = (Function) deserializeLambda(functionList.get(0), classLoader);
-        final Injector injector = Tang.Factory.getTang().newInjector(cb.build());
-        injector.bindVolatileInstance(Function.class, flatMapFunc);
-        return injector.getInstance(FlatMapOperator.class);
+        return new FlatMapOperator<>(queryId, operatorId, flatMapFunc);
       }
       case MAP: {
         final Function mapFunc = (Function) deserializeLambda(functionList.get(0), classLoader);
-        final Injector injector = Tang.Factory.getTang().newInjector(cb.build());
-        injector.bindVolatileInstance(Function.class, mapFunc);
-        return injector.getInstance(MapOperator.class);
+        return new MapOperator<>(queryId, operatorId, mapFunc);
       }
       case REDUCE_BY_KEY: {
-        cb.bindNamedParameter(KeyIndex.class, iOpInfo.getKeyIndex().toString());
+        final int keyIndex = iOpInfo.getKeyIndex();
         final BiFunction reduceFunc = (BiFunction) deserializeLambda(functionList.get(0), classLoader);
-        final Injector injector = Tang.Factory.getTang().newInjector(cb.build());
-        injector.bindVolatileInstance(BiFunction.class, reduceFunc);
-        return injector.getInstance(ReduceByKeyOperator.class);
+        return new ReduceByKeyOperator<>(queryId, operatorId, keyIndex, reduceFunc);
       }
       case REDUCE_BY_KEY_WINDOW: {
         throw new IllegalArgumentException("MISTTask: ReduceByKeyWindowOperator is currently not supported!");
       }
       case UNION: {
-        final Injector injector = Tang.Factory.getTang().newInjector(cb.build());
-        return injector.getInstance(UnionOperator.class);
+        return new UnionOperator(queryId, operatorId);
       }
       default: {
         throw new IllegalArgumentException("MISTTask: Invalid InstantOperatorType detected!");
@@ -190,7 +171,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   @Override
   public PhysicalPlan<Operator, StreamType.Direction> generate(
       final Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
-      throws IllegalArgumentException, InjectionException, IOException, ClassNotFoundException {
+      throws IllegalArgumentException, IOException, ClassNotFoundException {
     final String queryId = queryIdAndLogicalPlan.getKey();
     final LogicalPlan logicalPlan = queryIdAndLogicalPlan.getValue();
     final List<Object> deserializedVertices = new ArrayList<>();

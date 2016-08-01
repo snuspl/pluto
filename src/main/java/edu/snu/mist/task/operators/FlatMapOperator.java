@@ -16,14 +16,9 @@
 package edu.snu.mist.task.operators;
 
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
-import edu.snu.mist.task.operators.parameters.OperatorId;
-import org.apache.reef.io.network.util.StringIdentifierFactory;
-import org.apache.reef.tang.annotations.Parameter;
 
-import javax.inject.Inject;
 import java.util.List;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -40,12 +35,10 @@ public final class FlatMapOperator<I, O> extends OneStreamOperator {
    */
   private final Function<I, List<O>> flatMapFunc;
 
-  @Inject
-  private FlatMapOperator(@Parameter(QueryId.class) final String queryId,
-                          @Parameter(OperatorId.class) final String operatorId,
-                          final StringIdentifierFactory idfactory,
-                          final Function<I, List<O>> flatMapFunc) {
-    super(idfactory.getNewInstance(queryId), idfactory.getNewInstance(operatorId));
+  public FlatMapOperator(final String queryId,
+                         final String operatorId,
+                         final Function<I, List<O>> flatMapFunc) {
+    super(queryId, operatorId);
     this.flatMapFunc = flatMapFunc;
   }
 

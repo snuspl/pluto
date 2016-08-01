@@ -17,14 +17,8 @@ package edu.snu.mist.task.operators;
 
 import com.google.common.collect.ImmutableList;
 import edu.snu.mist.api.types.Tuple2;
-import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.task.common.MistDataEvent;
-import edu.snu.mist.task.operators.parameters.KeyIndex;
-import edu.snu.mist.task.operators.parameters.OperatorId;
 import edu.snu.mist.task.utils.TestOutputEmitter;
-import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.JavaConfigurationBuilder;
-import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -92,16 +86,14 @@ public final class StatefulOperatorTest {
     expected.add(o5);
     expected.add(o6);
 
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(QueryId.class, "testQuery");
-    jcb.bindNamedParameter(OperatorId.class, "testReduceByKeyOperator");
+    final String queryId = "testQuery";
+    final String operatorId = "testReduceByKeyOperator";
     // Set the key index of tuple
-    jcb.bindNamedParameter(KeyIndex.class, 0+"");
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final int keyIndex = 0;
     // Reduce function for word count
     final BiFunction<Integer, Integer, Integer> wordCountFunc = (oldVal, val) -> oldVal + val;
-    injector.bindVolatileInstance(BiFunction.class, wordCountFunc);
-    final ReduceByKeyOperator<String, Integer> wcOperator = injector.getInstance(ReduceByKeyOperator.class);
+    final ReduceByKeyOperator<String, Integer> wcOperator =
+        new ReduceByKeyOperator<>(queryId, operatorId, keyIndex, wordCountFunc);
 
     // output test
     final List<Map<String, Integer>> result = new LinkedList<>();

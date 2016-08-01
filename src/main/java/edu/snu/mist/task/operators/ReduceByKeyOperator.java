@@ -17,15 +17,9 @@ package edu.snu.mist.task.operators;
 
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.types.Tuple2;
-import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
-import edu.snu.mist.task.operators.parameters.KeyIndex;
-import edu.snu.mist.task.operators.parameters.OperatorId;
-import org.apache.reef.io.network.util.StringIdentifierFactory;
-import org.apache.reef.tang.annotations.Parameter;
 
-import javax.inject.Inject;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.function.BiFunction;
@@ -64,15 +58,12 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
    * @param queryId identifier of the query which contains this operator
    * @param operatorId identifier of operator
    * @param keyIndex index of key
-   * @param idFactory identifier factory
    */
-  @Inject
-  private ReduceByKeyOperator(final BiFunction<V, V, V> reduceFunc,
-                              @Parameter(QueryId.class) final String queryId,
-                              @Parameter(OperatorId.class) final String operatorId,
-                              @Parameter(KeyIndex.class) final int keyIndex,
-                              final StringIdentifierFactory idFactory) {
-    super(idFactory.getNewInstance(queryId), idFactory.getNewInstance(operatorId));
+  public ReduceByKeyOperator(final String queryId,
+                             final String operatorId,
+                             final int keyIndex,
+                             final BiFunction<V, V, V> reduceFunc) {
+    super(queryId, operatorId);
     this.reduceFunc = reduceFunc;
     this.keyIndex = keyIndex;
     this.state = createInitialState();
