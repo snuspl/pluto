@@ -26,14 +26,14 @@ import javax.inject.Inject;
 /**
  * This class implements the RPC protocol of ClientToTaskMessage.
  * It creates the query id and returns it to users.
- * Also, it submits the tuple of queryId and logical plan to QueryReceiver in order to execute the query.
+ * Also, it submits the tuple of queryId and logical plan to QueryManager in order to execute the query,
+ * or submits the queryId to delete query.
  */
 public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage {
-
   /**
-   * A query receiver which receives the submitted query.
+   * A query manager which manages the submitted query.
    */
-  private final QueryReceiver queryReceiver;
+  private final QueryManager queryManager;
 
   /**
    * A generator of query id.
@@ -42,18 +42,23 @@ public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage
 
   @Inject
   private DefaultClientToTaskMessageImpl(final QueryIdGenerator queryIdGenerator,
-                                         final QueryReceiver queryReceiver) {
+                                         final QueryManager queryManager) {
     this.queryIdGenerator = queryIdGenerator;
-    this.queryReceiver = queryReceiver;
+    this.queryManager = queryManager;
   }
 
   @Override
   public QuerySubmissionResult sendQueries(final LogicalPlan logicalPlan) throws AvroRemoteException {
     final String queryId = queryIdGenerator.generate(logicalPlan);
-    queryReceiver.onNext(new Tuple<>(queryId, logicalPlan));
+    queryManager.create(new Tuple<>(queryId, logicalPlan));
     // Return the query Id
     final QuerySubmissionResult querySubmissionResult = new QuerySubmissionResult();
     querySubmissionResult.setQueryId(queryId);
     return querySubmissionResult;
+  }
+
+  @Override
+  public boolean deleteQueries(final CharSequence queryId) throws AvroRemoteException {
+    return queryManager.delete(queryId.toString());
   }
 }

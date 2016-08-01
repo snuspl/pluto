@@ -83,7 +83,7 @@ public final class MISTTestExecutionEnvironmentImpl implements MISTExecutionEnvi
 
     // Step 4: Transform QuerySubmissionResult to APIQuerySubmissionResult
     final APIQuerySubmissionResult apiQuerySubmissionResult =
-        new APIQuerySubmissionResultImpl(querySubmissionResult.getQueryId());
+        new APIQuerySubmissionResultImpl(querySubmissionResult.getQueryId(), task);
     return apiQuerySubmissionResult;
   }
 }

@@ -58,6 +58,10 @@ public class MISTTestExecutionEnvironmentImplTest {
     public QuerySubmissionResult sendQueries(final LogicalPlan logicalPlan) throws AvroRemoteException {
       return new QuerySubmissionResult(testQueryResult);
     }
+    @Override
+    public boolean deleteQueries(final CharSequence queryId) throws AvroRemoteException {
+      return true;
+    }
   }
 
   /**

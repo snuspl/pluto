@@ -20,7 +20,8 @@ import edu.snu.mist.common.GraphUtils;
 import edu.snu.mist.formats.avro.LogicalPlan;
 import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.operators.Operator;
-import edu.snu.mist.task.parameters.NumQueryReceiverThreads;
+import edu.snu.mist.task.parameters.NumQueryManagerThreads;
+import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sources.Source;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
@@ -30,24 +31,30 @@ import org.apache.reef.wake.impl.ThreadPoolStage;
 import javax.inject.Inject;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * DefaultQueryReceiverImpl does the following things:
+ * DefaultQueryManagerImpl starts the query by doing the following things:
  * 1) receives logical plans from clients and converts the logical plans to physical plans,
  * 2) chains the physical operators and make PartitionedQuery,
  * 3) inserts the PartitionedQueries to PartitionedQueryManager,
  * 4) and sets the OutputEmitters of the Source and PartitionedQueries
  * to forward their outputs to next PartitionedQueries.
  * 5) starts to receive input data stream from the source of the query.
+ * And deletes the query by doing the following things:
+ * 1) receives queryId from clients,
+ * 2) and deletes PartitionedQueries from the PartitionedQueryManager,
+ * 3) and sets the OutputEmitters of the Source and PartitionedQueries to null,
+ * 4) and closes the channel of Source and Sink.
  */
 @SuppressWarnings("unchecked")
-final class DefaultQueryReceiverImpl implements QueryReceiver {
+final class DefaultQueryManagerImpl implements QueryManager {
 
-  private static final Logger LOG = Logger.getLogger(DefaultQueryReceiverImpl.class.getName());
+  private static final Logger LOG = Logger.getLogger(DefaultQueryManagerImpl.class.getName());
   /**
    * Thread pool stage for executing the query submission logic.
    */
@@ -61,7 +68,7 @@ final class DefaultQueryReceiverImpl implements QueryReceiver {
   /**
    * A partitioned query manager.
    */
-  private final PartitionedQueryManager queryManager;
+  private final PartitionedQueryManager partitionedQueryManager;
 
   /**
    * A thread manager.
@@ -69,22 +76,22 @@ final class DefaultQueryReceiverImpl implements QueryReceiver {
   private final ThreadManager threadManager;
 
   /**
-   * Default query receiver in MistTask.
+   * Default query manager in MistTask.
    * @param queryPartitioner the converter which chains operators and makes PartitionedQueries
    * @param physicalPlanGenerator the physical plan generator which generates physical plan from logical paln
    * @param idfactory identifier factory
    * @param threadManager thread manager
-   * @param numThreads the number of threads for the query receiver
+   * @param numThreads the number of threads for the query manager
    */
   @Inject
-  private DefaultQueryReceiverImpl(final QueryPartitioner queryPartitioner,
+  private DefaultQueryManagerImpl(final QueryPartitioner queryPartitioner,
                                    final PhysicalPlanGenerator physicalPlanGenerator,
                                    final StringIdentifierFactory idfactory,
                                    final ThreadManager threadManager,
-                                   final PartitionedQueryManager queryManager,
-                                   @Parameter(NumQueryReceiverThreads.class) final int numThreads) {
+                                   final PartitionedQueryManager partitionedQueryManager,
+                                   @Parameter(NumQueryManagerThreads.class) final int numThreads) {
     this.physicalPlanMap = new ConcurrentHashMap<>();
-    this.queryManager = queryManager;
+    this.partitionedQueryManager = partitionedQueryManager;
     this.threadManager = threadManager;
     this.tpStage = new ThreadPoolStage<>((tuple) -> {
       final PhysicalPlan<Operator, MistEvent.Direction> physicalPlan;
@@ -103,11 +110,11 @@ final class DefaultQueryReceiverImpl implements QueryReceiver {
       physicalPlanMap.putIfAbsent(tuple.getKey(), chainedPlan);
       final DAG<PartitionedQuery, MistEvent.Direction> chainedOperators = chainedPlan.getOperators();
 
-      // 3) Inserts the PartitionedQueries' queues to PartitionedQueueManager.
+      // 3) Inserts the PartitionedQueries' queues to PartitionedQueryManager.
       final Iterator<PartitionedQuery> partitionedQueryIterator = GraphUtils.topologicalSort(chainedOperators);
       while (partitionedQueryIterator.hasNext()) {
         final PartitionedQuery partitionedQuery = partitionedQueryIterator.next();
-        queryManager.insert(partitionedQuery);
+        partitionedQueryManager.insert(partitionedQuery);
       }
 
       // 4) Sets output emitters and 5) starts to receive input data stream from the source
@@ -115,8 +122,7 @@ final class DefaultQueryReceiverImpl implements QueryReceiver {
     }, numThreads);
   }
 
-  @Override
-  public void onNext(final Tuple<String, LogicalPlan> tuple) {
+  public void create(final Tuple<String, LogicalPlan> tuple) {
     tpStage.onNext(tuple);
   }
 
@@ -155,6 +161,61 @@ final class DefaultQueryReceiverImpl implements QueryReceiver {
       src.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
       // 5) starts to receive input data stream from the source
       src.start();
+    }
+  }
+
+  /**
+   * Deletes the PartitionedQueries from PartitionedQueryManager.
+   * @param queryId
+   * @return if the task has the query corresponding to the queryId,
+   * and deletes this query successfully, it returns true.
+   * Otherwise it returns false.
+   */
+  @Override
+  public boolean delete(final String queryId) {
+    final PhysicalPlan<PartitionedQuery, MistEvent.Direction> chainedPlan = physicalPlanMap.remove(queryId);
+
+    if (chainedPlan != null) {
+      final DAG<PartitionedQuery, MistEvent.Direction> chainedOperators = chainedPlan.getOperators();
+      final Iterator<PartitionedQuery> partitionedQueryIterator = GraphUtils.topologicalSort(chainedOperators);
+      while (partitionedQueryIterator.hasNext()) {
+        final PartitionedQuery partitionedQuery = partitionedQueryIterator.next();
+        partitionedQueryManager.delete(partitionedQuery);
+      }
+      closeSourceAndSink(chainedPlan);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Sets the OutputEmitters of the sources, operators and sinks to null
+   * and closes the channel of Sink and Source.
+   * @param chainPhysicalPlan
+   */
+  private void closeSourceAndSink(final PhysicalPlan<PartitionedQuery, MistEvent.Direction> chainPhysicalPlan) {
+    for (final Map.Entry<Source, Map<PartitionedQuery, MistEvent.Direction>> entry :
+        chainPhysicalPlan.getSourceMap().entrySet()) {
+      final Source src = entry.getKey();
+      try {
+        src.close();
+      } catch (final Exception e) {
+        e.printStackTrace();
+      }
+      src.setOutputEmitter(null);
+    }
+
+    for (final Map.Entry<PartitionedQuery, Set<Sink>> entry :
+        chainPhysicalPlan.getSinkMap().entrySet()) {
+      final PartitionedQuery partitionedQuery = entry.getKey();
+      partitionedQuery.setOutputEmitter(null);
+      try {
+        for (final Sink sink : entry.getValue()) {
+          sink.close();
+        }
+      } catch (final Exception e) {
+        e.printStackTrace();
+      }
     }
   }
 }

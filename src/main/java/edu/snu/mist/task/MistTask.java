@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 
 /**
  * A runtime engine running mist queries.
- * The submitted queries are handled by QueryReceiver.
+ * The submitted queries are handled by QueryManager.
  */
 @Unit
 public final class MistTask implements Task {
@@ -41,7 +41,7 @@ public final class MistTask implements Task {
   private final CountDownLatch countDownLatch;
 
   private final Server server;
-  private final QueryReceiver receiver;
+  private final QueryManager queryManager;
 
   /**
    * Default constructor of MistTask.
@@ -50,10 +50,10 @@ public final class MistTask implements Task {
    */
   @Inject
   private MistTask(final Server server,
-                   final QueryReceiver receiver) throws InjectionException {
+                   final QueryManager queryManager) throws InjectionException {
     this.countDownLatch = new CountDownLatch(1);
     this.server = server;
-    this.receiver = receiver;
+    this.queryManager = queryManager;
   }
 
   @Override
@@ -61,7 +61,7 @@ public final class MistTask implements Task {
     LOG.log(Level.INFO, "MistTask is started");
     countDownLatch.await();
     server.close();
-    receiver.close();
+    queryManager.close();
     return new byte[0];
   }
 
