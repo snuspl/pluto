@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public final class  QueryPartitionerTest {
+public final class QueryPartitionerTest {
   private static final Logger LOG = Logger.getLogger(QueryPartitionerTest.class.getName());
 
   /**

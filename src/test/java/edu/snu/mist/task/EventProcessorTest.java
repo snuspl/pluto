@@ -66,7 +66,7 @@ public final class EventProcessorTest {
 
     for (int i = 0; i < numTasks; i++) {
       final int data = i;
-      // Add events to  the partitioned queries
+      // Add events to the partitioned queries
       query1.addNextEvent(createEvent(data), StreamType.Direction.LEFT);
       query2.addNextEvent(createEvent(data), StreamType.Direction.LEFT);
       result.add(data);
