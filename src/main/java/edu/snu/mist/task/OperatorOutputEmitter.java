@@ -15,8 +15,8 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.api.StreamType;
 import edu.snu.mist.task.common.MistDataEvent;
-import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
 import edu.snu.mist.task.common.OutputEmitter;
 
@@ -35,10 +35,10 @@ final class OperatorOutputEmitter implements OutputEmitter {
   /**
    * Next PartitionedQueries.
    */
-  private final Map<PartitionedQuery, MistEvent.Direction> nextPartitionedQueries;
+  private final Map<PartitionedQuery, StreamType.Direction> nextPartitionedQueries;
 
   OperatorOutputEmitter(final PartitionedQuery currChain,
-                        final Map<PartitionedQuery, MistEvent.Direction> nextPartitionedQueries) {
+                        final Map<PartitionedQuery, StreamType.Direction> nextPartitionedQueries) {
     this.currChain = currChain;
     this.nextPartitionedQueries = nextPartitionedQueries;
   }
@@ -55,16 +55,16 @@ final class OperatorOutputEmitter implements OutputEmitter {
   public void emitData(final MistDataEvent output) {
     // Optimization: do not create new MistEvent and reuse it if it has one downstream partitioned query.
     if (nextPartitionedQueries.size() == 1) {
-      for (final Map.Entry<PartitionedQuery, MistEvent.Direction> nextQuery :
+      for (final Map.Entry<PartitionedQuery, StreamType.Direction> nextQuery :
           nextPartitionedQueries.entrySet()) {
-        final MistEvent.Direction direction = nextQuery.getValue();
+        final StreamType.Direction direction = nextQuery.getValue();
         nextQuery.getKey().addNextEvent(output, direction);
       }
     } else {
-      for (final Map.Entry<PartitionedQuery, MistEvent.Direction> nextQuery :
+      for (final Map.Entry<PartitionedQuery, StreamType.Direction> nextQuery :
           nextPartitionedQueries.entrySet()) {
         final MistDataEvent event = new MistDataEvent(output.getValue(), output.getTimestamp());
-        final MistEvent.Direction direction = nextQuery.getValue();
+        final StreamType.Direction direction = nextQuery.getValue();
         nextQuery.getKey().addNextEvent(event, direction);
       }
     }
@@ -73,9 +73,9 @@ final class OperatorOutputEmitter implements OutputEmitter {
   @Override
   public void emitWatermark(final MistWatermarkEvent output) {
     // Watermark is not changed, so we just forward watermark to next partitioned queries.
-    for (final Map.Entry<PartitionedQuery, MistEvent.Direction> nextQuery :
+    for (final Map.Entry<PartitionedQuery, StreamType.Direction> nextQuery :
         nextPartitionedQueries.entrySet()) {
-      final MistEvent.Direction direction = nextQuery.getValue();
+      final StreamType.Direction direction = nextQuery.getValue();
       nextQuery.getKey().addNextEvent(output, direction);
     }
   }

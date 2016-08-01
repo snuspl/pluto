@@ -15,10 +15,10 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.api.StreamType;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.GraphUtils;
 import edu.snu.mist.formats.avro.LogicalPlan;
-import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.operators.Operator;
 import edu.snu.mist.task.parameters.NumQueryManagerThreads;
 import edu.snu.mist.task.sinks.Sink;
@@ -63,7 +63,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
   /**
    * Map of query id and physical plan.
    */
-  private final ConcurrentMap<String, PhysicalPlan<PartitionedQuery, MistEvent.Direction>> physicalPlanMap;
+  private final ConcurrentMap<String, PhysicalPlan<PartitionedQuery, StreamType.Direction>> physicalPlanMap;
 
   /**
    * A partitioned query manager.
@@ -94,7 +94,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
     this.partitionedQueryManager = partitionedQueryManager;
     this.threadManager = threadManager;
     this.tpStage = new ThreadPoolStage<>((tuple) -> {
-      final PhysicalPlan<Operator, MistEvent.Direction> physicalPlan;
+      final PhysicalPlan<Operator, StreamType.Direction> physicalPlan;
       try {
         // 1) Converts the logical plan to the physical plan
         physicalPlan = physicalPlanGenerator.generate(tuple);
@@ -105,10 +105,10 @@ final class DefaultQueryManagerImpl implements QueryManager {
       }
 
       // 2) Chains the physical operators and makes PartitionedQuery.
-      final PhysicalPlan<PartitionedQuery, MistEvent.Direction> chainedPlan =
+      final PhysicalPlan<PartitionedQuery, StreamType.Direction> chainedPlan =
           queryPartitioner.chainOperators(physicalPlan);
       physicalPlanMap.putIfAbsent(tuple.getKey(), chainedPlan);
-      final DAG<PartitionedQuery, MistEvent.Direction> chainedOperators = chainedPlan.getOperators();
+      final DAG<PartitionedQuery, StreamType.Direction> chainedOperators = chainedPlan.getOperators();
 
       // 3) Inserts the PartitionedQueries' queues to PartitionedQueryManager.
       final Iterator<PartitionedQuery> partitionedQueryIterator = GraphUtils.topologicalSort(chainedOperators);
@@ -137,13 +137,13 @@ final class DefaultQueryManagerImpl implements QueryManager {
    * and starts to receive input data stream from the sources.
    * @param chainPhysicalPlan physical plan of PartitionedQuery
    */
-  private void start(final PhysicalPlan<PartitionedQuery, MistEvent.Direction> chainPhysicalPlan) {
-    final DAG<PartitionedQuery, MistEvent.Direction> chainedOperators = chainPhysicalPlan.getOperators();
+  private void start(final PhysicalPlan<PartitionedQuery, StreamType.Direction> chainPhysicalPlan) {
+    final DAG<PartitionedQuery, StreamType.Direction> chainedOperators = chainPhysicalPlan.getOperators();
     // 4) Sets output emitters
     final Iterator<PartitionedQuery> iterator = GraphUtils.topologicalSort(chainedOperators);
     while (iterator.hasNext()) {
       final PartitionedQuery partitionedQuery = iterator.next();
-      final Map<PartitionedQuery, MistEvent.Direction> edges = chainedOperators.getEdges(partitionedQuery);
+      final Map<PartitionedQuery, StreamType.Direction> edges = chainedOperators.getEdges(partitionedQuery);
       if (edges.size() == 0) {
         // Sets SinkEmitter to the PartitionedQueries which are followed by Sinks.
         partitionedQuery.setOutputEmitter(new SinkEmitter(
@@ -153,9 +153,9 @@ final class DefaultQueryManagerImpl implements QueryManager {
       }
     }
 
-    for (final Map.Entry<Source, Map<PartitionedQuery, MistEvent.Direction>> entry :
+    for (final Map.Entry<Source, Map<PartitionedQuery, StreamType.Direction>> entry :
         chainPhysicalPlan.getSourceMap().entrySet()) {
-      final Map<PartitionedQuery, MistEvent.Direction> nextOps = entry.getValue();
+      final Map<PartitionedQuery, StreamType.Direction> nextOps = entry.getValue();
       final Source src = entry.getKey();
       // Sets SourceOutputEmitter to the sources
       src.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
@@ -173,10 +173,10 @@ final class DefaultQueryManagerImpl implements QueryManager {
    */
   @Override
   public boolean delete(final String queryId) {
-    final PhysicalPlan<PartitionedQuery, MistEvent.Direction> chainedPlan = physicalPlanMap.remove(queryId);
+    final PhysicalPlan<PartitionedQuery, StreamType.Direction> chainedPlan = physicalPlanMap.remove(queryId);
 
     if (chainedPlan != null) {
-      final DAG<PartitionedQuery, MistEvent.Direction> chainedOperators = chainedPlan.getOperators();
+      final DAG<PartitionedQuery, StreamType.Direction> chainedOperators = chainedPlan.getOperators();
       final Iterator<PartitionedQuery> partitionedQueryIterator = GraphUtils.topologicalSort(chainedOperators);
       while (partitionedQueryIterator.hasNext()) {
         final PartitionedQuery partitionedQuery = partitionedQueryIterator.next();
@@ -193,8 +193,8 @@ final class DefaultQueryManagerImpl implements QueryManager {
    * and closes the channel of Sink and Source.
    * @param chainPhysicalPlan
    */
-  private void closeSourceAndSink(final PhysicalPlan<PartitionedQuery, MistEvent.Direction> chainPhysicalPlan) {
-    for (final Map.Entry<Source, Map<PartitionedQuery, MistEvent.Direction>> entry :
+  private void closeSourceAndSink(final PhysicalPlan<PartitionedQuery, StreamType.Direction> chainPhysicalPlan) {
+    for (final Map.Entry<Source, Map<PartitionedQuery, StreamType.Direction>> entry :
         chainPhysicalPlan.getSourceMap().entrySet()) {
       final Source src = entry.getKey();
       try {

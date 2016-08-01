@@ -17,7 +17,6 @@ package edu.snu.mist.task;
 
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.task.common.MistDataEvent;
-import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
 import edu.snu.mist.task.operators.OneStreamOperator;
 import edu.snu.mist.task.operators.Operator;
@@ -70,35 +69,35 @@ public final class PartitionedQueryTest {
     partitionedQuery.insertToHead(doubleOp);
     partitionedQuery.insertToHead(incOp);
     partitionedQuery.insertToHead(squareOp);
-    partitionedQuery.addNextEvent(createEvent(input), MistEvent.Direction.LEFT);
+    partitionedQuery.addNextEvent(createEvent(input), StreamType.Direction.LEFT);
     partitionedQuery.processNextEvent();
     Assert.assertEquals(expected1, result.remove(0));
 
     // 2 * (input + 1)
     partitionedQuery.removeFromHead();
     final Integer expected2 = 2 * (input + 1);
-    partitionedQuery.addNextEvent(createEvent(input), MistEvent.Direction.LEFT);
+    partitionedQuery.addNextEvent(createEvent(input), StreamType.Direction.LEFT);
     partitionedQuery.processNextEvent();
     Assert.assertEquals(expected2, result.remove(0));
 
     // input + 1
     partitionedQuery.removeFromTail();
     final Integer expected3 = input + 1;
-    partitionedQuery.addNextEvent(createEvent(input), MistEvent.Direction.LEFT);
+    partitionedQuery.addNextEvent(createEvent(input), StreamType.Direction.LEFT);
     partitionedQuery.processNextEvent();
     Assert.assertEquals(expected3, result.remove(0));
 
     // 2 * input + 1
     partitionedQuery.insertToHead(doubleOp);
     final Integer expected4 = 2 * input + 1;
-    partitionedQuery.addNextEvent(createEvent(input), MistEvent.Direction.LEFT);
+    partitionedQuery.addNextEvent(createEvent(input), StreamType.Direction.LEFT);
     partitionedQuery.processNextEvent();
     Assert.assertEquals(expected4, result.remove(0));
 
     // (2 * input + 1) * (2 * input + 1)
     partitionedQuery.insertToTail(squareOp);
     final Integer expected5 = (2 * input + 1) * (2 * input + 1);
-    partitionedQuery.addNextEvent(createEvent(input), MistEvent.Direction.LEFT);
+    partitionedQuery.addNextEvent(createEvent(input), StreamType.Direction.LEFT);
     partitionedQuery.processNextEvent();
     Assert.assertEquals(expected5, result.remove(0));
   }

@@ -17,7 +17,6 @@ package edu.snu.mist.task;
 
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.task.common.MistDataEvent;
-import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
 import edu.snu.mist.task.operators.OneStreamOperator;
 import edu.snu.mist.task.utils.TestOutputEmitter;
@@ -68,8 +67,8 @@ public final class EventProcessorTest {
     for (int i = 0; i < numTasks; i++) {
       final int data = i;
       // Add events to  the partitioned queries
-      query1.addNextEvent(createEvent(data), MistEvent.Direction.LEFT);
-      query2.addNextEvent(createEvent(data), MistEvent.Direction.LEFT);
+      query1.addNextEvent(createEvent(data), StreamType.Direction.LEFT);
+      query2.addNextEvent(createEvent(data), StreamType.Direction.LEFT);
       result.add(data);
     }
 
@@ -115,7 +114,7 @@ public final class EventProcessorTest {
     for (int i = 0; i < numTasks; i++) {
       final int data = i;
       // Add tasks to queues
-      query.addNextEvent(createEvent(data), MistEvent.Direction.LEFT);
+      query.addNextEvent(createEvent(data), StreamType.Direction.LEFT);
       result.add(data);
     }
 

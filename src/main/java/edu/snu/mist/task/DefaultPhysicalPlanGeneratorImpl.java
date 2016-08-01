@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import edu.snu.mist.common.AdjacentListDAG;
@@ -23,7 +24,6 @@ import edu.snu.mist.common.ExternalJarObjectInputStream;
 import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.driver.parameters.TempFolderPath;
 import edu.snu.mist.formats.avro.*;
-import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.operators.*;
 import edu.snu.mist.task.operators.parameters.KeyIndex;
 import edu.snu.mist.task.operators.parameters.OperatorId;
@@ -188,14 +188,14 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   }
 
   @Override
-  public PhysicalPlan<Operator, MistEvent.Direction> generate(
+  public PhysicalPlan<Operator, StreamType.Direction> generate(
       final Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
       throws IllegalArgumentException, InjectionException, IOException, ClassNotFoundException {
     final String queryId = queryIdAndLogicalPlan.getKey();
     final LogicalPlan logicalPlan = queryIdAndLogicalPlan.getValue();
     final List<Object> deserializedVertices = new ArrayList<>();
-    final Map<Source, Map<Operator, MistEvent.Direction>> sourceMap = new HashMap<>();
-    final DAG<Operator, MistEvent.Direction> operators = new AdjacentListDAG<>();
+    final Map<Source, Map<Operator, StreamType.Direction>> sourceMap = new HashMap<>();
+    final DAG<Operator, StreamType.Direction> operators = new AdjacentListDAG<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
     final Path jarFilePath = Paths.get(tmpFolderPath, String.format("%s.jar", queryId));
 
@@ -270,11 +270,11 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       final Object deserializedSrcVertex = deserializedVertices.get(srcIndex);
       final int dstIndex = edge.getTo();
       final Object deserializedDstVertex = deserializedVertices.get(dstIndex);
-      MistEvent.Direction direction;
+      StreamType.Direction direction;
       if (edge.getIsLeft()) {
-        direction = MistEvent.Direction.LEFT;
+        direction = StreamType.Direction.LEFT;
       } else {
-        direction = MistEvent.Direction.RIGHT;
+        direction = StreamType.Direction.RIGHT;
       }
 
       switch (logicalPlan.getVertices().get(srcIndex).getVertexType()) {

@@ -29,12 +29,6 @@ public interface MistEvent {
   }
 
   /**
-   * The type of event direction. Union operator should get two events: LEFT/RIGHT events.
-   * One direction operator always receive LEFT event.
-   */
-  public static enum Direction {LEFT, RIGHT}
-
-  /**
    * Return true if it is DATA type, false if it is WATERMARK.
    */
   boolean isData();

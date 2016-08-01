@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.api.StreamType;
 import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.common.OutputEmittable;
 import edu.snu.mist.task.operators.Operator;
@@ -23,8 +24,8 @@ import edu.snu.mist.task.operators.Operator;
  * This interface chains operators as a list and executes them in order
  * from the first to the last operator.
  *
- * PartitionedQuery is the unit of execution which is assigned to a mist executor by MistTask.
- * It receives inputs, performs computations through the list of operators,
+ * PartitionedQuery is the unit of execution which is processed by EventProcessors.
+ * It queues inputs, performs computations through the list of operators,
  * and forwards final outputs to an OutputEmitter which sends the outputs to next PartitionedQueries.
  */
 public interface PartitionedQuery extends OutputEmittable {
@@ -66,5 +67,5 @@ public interface PartitionedQuery extends OutputEmittable {
    * @param direction upstream direction of the event
    * @return true if the event is enqueued, otherwise false.
    */
-  boolean addNextEvent(MistEvent event, MistEvent.Direction direction);
+  boolean addNextEvent(MistEvent event, StreamType.Direction direction);
 }

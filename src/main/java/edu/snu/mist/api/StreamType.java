@@ -48,4 +48,10 @@ public final class StreamType {
    * The type of operator stream.
    */
   public static enum OperatorType {FILTER, FLAT_MAP, MAP, REDUCE_BY_KEY, REDUCE_BY_KEY_WINDOW, APPLY_STATEFUL, UNION}
+
+  /**
+   * The type of stream direction. Union operator should get two streams: LEFT/RIGHT.
+   * One direction operator always receive LEFT stream.
+   */
+  public static enum Direction {LEFT, RIGHT}
 }
