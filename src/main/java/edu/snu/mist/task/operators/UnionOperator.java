@@ -52,8 +52,8 @@ public final class UnionOperator extends TwoStreamOperator {
     super(idfactory.getNewInstance(queryId), idfactory.getNewInstance(operatorId));
     this.leftUpstreamQueue = new LinkedBlockingQueue<>();
     this.rightUpstreamQueue = new LinkedBlockingQueue<>();
-    this.recentLeftWatermark = 0L;
-    this.recentRightWatermark = 0L;
+    this.recentLeftWatermark = Long.MIN_VALUE;
+    this.recentRightWatermark = Long.MIN_VALUE;
   }
 
 
