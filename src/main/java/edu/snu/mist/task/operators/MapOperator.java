@@ -17,6 +17,8 @@ package edu.snu.mist.task.operators;
 
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.common.parameters.QueryId;
+import edu.snu.mist.task.common.MistDataEvent;
+import edu.snu.mist.task.common.MistWatermarkEvent;
 import edu.snu.mist.task.operators.parameters.OperatorId;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.annotations.Parameter;
@@ -31,7 +33,7 @@ import java.util.logging.Logger;
  * @param <I> input type
  * @param <I> output type
  */
-public final class MapOperator<I, O> extends StatelessOperator<I, O> {
+public final class MapOperator<I, O> extends OneStreamOperator {
   private static final Logger LOG = Logger.getLogger(MapOperator.class.getName());
 
   /**
@@ -52,10 +54,16 @@ public final class MapOperator<I, O> extends StatelessOperator<I, O> {
    * Maps the input to the output.
    */
   @Override
-  public void handle(final I input) {
-    final O output = mapFunc.apply(input);
-    LOG.log(Level.FINE, "{0} maps {1} to {2}", new Object[]{MapOperator.class, input, output});
-    outputEmitter.emit(output);
+  public void processLeftData(final MistDataEvent data) {
+    final O output = mapFunc.apply((I)data.getValue());
+    LOG.log(Level.FINE, "{0} maps {1} to {2}", new Object[]{MapOperator.class, data, output});
+    data.setValue(output);
+    outputEmitter.emitData(data);
+  }
+
+  @Override
+  public void processLeftWatermark(final MistWatermarkEvent watermark) {
+    outputEmitter.emitWatermark(watermark);
   }
 
   @Override

@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.api.StreamType;
 import edu.snu.mist.formats.avro.LogicalPlan;
 import edu.snu.mist.task.operators.Operator;
 import org.apache.reef.io.Tuple;
@@ -34,6 +35,6 @@ public interface PhysicalPlanGenerator {
    * @param queryIdAndLogicalPlan the tuple of queryId and logical plan
    * @return physical plan
    */
-  PhysicalPlan<Operator, MistEvent.Direction> generate(Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
+  PhysicalPlan<Operator, StreamType.Direction> generate(Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
       throws InjectionException, IOException, ClassNotFoundException;
 }

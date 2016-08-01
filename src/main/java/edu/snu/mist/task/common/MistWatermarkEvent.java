@@ -13,23 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.operators;
-
-import org.apache.reef.wake.Identifier;
-
-import java.util.logging.Logger;
+package edu.snu.mist.task.common;
 
 /**
- * Stateless operator transforms inputs by doing computation
- * and immediately pushes the results to the OutputEmitter without state modification.
- * @param <I> input
- * @param <O> output
+ * This class represents watermark event.
  */
-public abstract class StatelessOperator<I, O> extends BaseOperator<I, O> {
-  private static final Logger LOG = Logger.getLogger(StatelessOperator.class.getName());
+public final class MistWatermarkEvent implements MistEvent {
+  /**
+   * Timestamp for the WATERMARK.
+   */
+  private long timestamp;
 
-  public StatelessOperator(final Identifier queryId,
-                           final Identifier operatorId) {
-    super(queryId, operatorId);
+  public MistWatermarkEvent(final long timestamp) {
+    this.timestamp = timestamp;
+  }
+
+  public long getTimestamp() {
+    return timestamp;
+  }
+
+  @Override
+  public boolean isData() {
+    return false;
   }
 }

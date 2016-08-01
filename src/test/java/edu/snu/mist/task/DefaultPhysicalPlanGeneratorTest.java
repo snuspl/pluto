@@ -17,6 +17,7 @@ package edu.snu.mist.task;
 
 import edu.snu.mist.api.APITestParameters;
 import edu.snu.mist.api.MISTQuery;
+import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.serialize.avro.MISTQuerySerializer;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 import edu.snu.mist.api.sources.TextSocketSourceStream;
@@ -93,9 +94,9 @@ public final class DefaultPhysicalPlanGeneratorTest {
     final LogicalPlan logicalPlan = querySerializer.queryToLogicalPlan(query);
     final PhysicalPlanGenerator ppg = Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
     final Tuple<String, LogicalPlan> tuple = new Tuple<>("query-test", logicalPlan);
-    final PhysicalPlan<Operator, MistEvent.Direction> physicalPlan = ppg.generate(tuple);
+    final PhysicalPlan<Operator, StreamType.Direction> physicalPlan = ppg.generate(tuple);
 
-    final Map<Source, Map<Operator, MistEvent.Direction>> sourceMap = physicalPlan.getSourceMap();
+    final Map<Source, Map<Operator, StreamType.Direction>> sourceMap = physicalPlan.getSourceMap();
     Assert.assertEquals(1, sourceMap.keySet().size());
     final Source source = sourceMap.keySet().iterator().next();
     Assert.assertTrue(source instanceof NettyTextSource);
@@ -103,7 +104,7 @@ public final class DefaultPhysicalPlanGeneratorTest {
 
     final Operator operator1 = sourceMap.get(source).entrySet().iterator().next().getKey();
     Assert.assertTrue(operator1 instanceof FlatMapOperator);
-    final DAG<Operator, MistEvent.Direction> operators = physicalPlan.getOperators();
+    final DAG<Operator, StreamType.Direction> operators = physicalPlan.getOperators();
     Assert.assertEquals(1, operators.getRootVertices().size());
     Assert.assertEquals(operator1, operators.getRootVertices().iterator().next());
     Assert.assertEquals(1, operators.getEdges(operator1).size());

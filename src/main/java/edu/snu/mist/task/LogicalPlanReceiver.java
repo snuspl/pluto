@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.api.StreamType;
 import edu.snu.mist.task.operators.Operator;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.wake.EventHandler;
@@ -29,5 +30,5 @@ public interface LogicalPlanReceiver {
    * Sets an event handler which handles PhysicalPlans.
    * @param handler a handler
    */
-  void setHandler(final EventHandler<PhysicalPlan<Operator, MistEvent.Direction>> handler);
+  void setHandler(final EventHandler<PhysicalPlan<Operator, StreamType.Direction>> handler);
 }

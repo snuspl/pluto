@@ -16,7 +16,10 @@
 package edu.snu.mist.task;
 
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.task.operators.BaseOperator;
+import edu.snu.mist.task.common.MistDataEvent;
+import edu.snu.mist.task.common.MistWatermarkEvent;
+import edu.snu.mist.task.operators.OneStreamOperator;
+import edu.snu.mist.task.utils.TestOutputEmitter;
 import junit.framework.Assert;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
@@ -30,6 +33,10 @@ import java.util.LinkedList;
 import java.util.List;
 
 public final class EventProcessorTest {
+
+  private MistDataEvent createEvent(final int val) {
+    return new MistDataEvent(val, System.currentTimeMillis());
+  }
 
   /**
    * Test whether the processor processes events from multiple queries correctly.
@@ -51,17 +58,17 @@ public final class EventProcessorTest {
     final PartitionedQuery query1 = new DefaultPartitionedQuery();
     query1.insertToHead(new TestOperator(
         idfac.getNewInstance("o1"), idfac.getNewInstance("q1")));
-    query1.setOutputEmitter((output) -> list1.add((int)output));
+    query1.setOutputEmitter(new TestOutputEmitter<>(list1));
     final PartitionedQuery query2 = new DefaultPartitionedQuery();
     query2.insertToHead(new TestOperator(
         idfac.getNewInstance("o2"), idfac.getNewInstance("q2")));
-    query2.setOutputEmitter((output) -> list2.add((int)output));
+    query2.setOutputEmitter(new TestOutputEmitter<>(list2));
 
     for (int i = 0; i < numTasks; i++) {
       final int data = i;
-      // Add events to queries
-      query1.addNextEvent(data);
-      query2.addNextEvent(data);
+      // Add events to the partitioned queries
+      query1.addNextEvent(createEvent(data), StreamType.Direction.LEFT);
+      query2.addNextEvent(createEvent(data), StreamType.Direction.LEFT);
       result.add(data);
     }
 
@@ -102,12 +109,12 @@ public final class EventProcessorTest {
     final PartitionedQuery query = new DefaultPartitionedQuery();
     query.insertToHead(new TestOperator(
         idfac.getNewInstance("o1"), idfac.getNewInstance("q1")));
-    query.setOutputEmitter((output) -> list1.add((int)output));
+    query.setOutputEmitter(new TestOutputEmitter<>(list1));
 
     for (int i = 0; i < numTasks; i++) {
       final int data = i;
       // Add tasks to queues
-      query.addNextEvent(data);
+      query.addNextEvent(createEvent(data), StreamType.Direction.LEFT);
       result.add(data);
     }
 
@@ -137,20 +144,25 @@ public final class EventProcessorTest {
    * Test operator for event processor.
    * It just forwards inputs to outputEmitter.
    */
-  class TestOperator extends BaseOperator<Integer, Integer> {
+  class TestOperator extends OneStreamOperator {
     public TestOperator(final Identifier opId,
                         final Identifier queryId) {
       super(opId, queryId);
     }
 
     @Override
-    public StreamType.OperatorType getOperatorType() {
-      return null;
+    public void processLeftData(final MistDataEvent data) {
+      outputEmitter.emitData(data);
     }
 
     @Override
-    public void handle(final Integer input) {
-      outputEmitter.emit(input);
+    public void processLeftWatermark(final MistWatermarkEvent watermark) {
+      // do nothing
+    }
+
+    @Override
+    public StreamType.OperatorType getOperatorType() {
+      return null;
     }
   }
 }

@@ -17,13 +17,18 @@ package edu.snu.mist.task.common;
 
 /**
  * This interface forwards the emitted output as a input of next operators.
- * @param <O> output type
  */
-public interface OutputEmitter<O> {
+public interface OutputEmitter {
 
   /**
    * Emits an output as an input of next operators.
-   * @param output output
+   * @param data data
    */
-  void emit(O output);
+  void emitData(MistDataEvent data);
+
+  /**
+   * Emits an output as an input of next operators.
+   * @param watermark watermark
+   */
+  void emitWatermark(MistWatermarkEvent watermark);
 }

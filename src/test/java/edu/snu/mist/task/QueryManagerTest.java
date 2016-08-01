@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
@@ -80,15 +81,15 @@ public final class QueryManagerTest {
         "a mist rose out of the river",
         "the peaks were shrouded in mist");
 
-    final Map<Source, Map<Operator, MistEvent.Direction>> sourceMap = new HashMap<>();
+    final Map<Source, Map<Operator, StreamType.Direction>> sourceMap = new HashMap<>();
     final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
 
     // UDF functions for operators
     final Function<String, List<String>> flatMapFunc = (input) -> Arrays.asList(input.split(" "));
     final Predicate<String> filterFunc =
         (input) -> !(input.equals("a") || input.equals("or") || input.equals("the") || input.equals("of")
-        || input.equals("in") || input.equals("at") || input.equals("that")
-        || input.equals("out") || input.equals("were"));
+            || input.equals("in") || input.equals("at") || input.equals("that")
+            || input.equals("out") || input.equals("were"));
     final Function<String, Tuple2<String, Integer>> toTupleMapFunc = (input) -> new Tuple2<>(input, 1);
     final BiFunction<Integer, Integer, Integer> reduceByKeyFunc = (oldVal, newVal) -> oldVal + newVal;
     final Function<Map<String, Integer>, String> toStringMapFunc = (input) -> input.toString();
@@ -145,20 +146,20 @@ public final class QueryManagerTest {
     final Sink sink2 = new TestSink<Integer>(sink2Result, countDownAllOutputs);
 
     // Create DAG of operators
-    final DAG<Operator, MistEvent.Direction> operatorDAG = new AdjacentListDAG<>();
+    final DAG<Operator, StreamType.Direction> operatorDAG = new AdjacentListDAG<>();
     operatorDAG.addVertex(flatMap); operatorDAG.addVertex(filter);
     operatorDAG.addVertex(toTupleMap); operatorDAG.addVertex(reduceByKey);
     operatorDAG.addVertex(toStringMap); operatorDAG.addVertex(totalCountMap);
 
-    operatorDAG.addEdge(flatMap, filter, MistEvent.Direction.LEFT); 
-    operatorDAG.addEdge(filter, toTupleMap, MistEvent.Direction.LEFT);
-    operatorDAG.addEdge(toTupleMap, reduceByKey, MistEvent.Direction.LEFT);
-    operatorDAG.addEdge(reduceByKey, toStringMap, MistEvent.Direction.LEFT);
-    operatorDAG.addEdge(reduceByKey, totalCountMap, MistEvent.Direction.LEFT);
+    operatorDAG.addEdge(flatMap, filter, StreamType.Direction.LEFT);
+    operatorDAG.addEdge(filter, toTupleMap, StreamType.Direction.LEFT);
+    operatorDAG.addEdge(toTupleMap, reduceByKey, StreamType.Direction.LEFT);
+    operatorDAG.addEdge(reduceByKey, toStringMap, StreamType.Direction.LEFT);
+    operatorDAG.addEdge(reduceByKey, totalCountMap, StreamType.Direction.LEFT);
 
     // Create source map
-    final Map<Operator, MistEvent.Direction> src1Ops = new HashMap<>();
-    src1Ops.put(flatMap, MistEvent.Direction.LEFT);
+    final Map<Operator, StreamType.Direction> src1Ops = new HashMap<>();
+    src1Ops.put(flatMap, StreamType.Direction.LEFT);
     sourceMap.put(src, src1Ops);
 
     // Create sink map
@@ -169,7 +170,7 @@ public final class QueryManagerTest {
     sinkMap.put(totalCountMap, sinksForTotalCountOp);
 
     // Build a physical plan
-    final PhysicalPlan<Operator, MistEvent.Direction> physicalPlan =
+    final PhysicalPlan<Operator, StreamType.Direction> physicalPlan =
         new DefaultPhysicalPlanImpl<>(sourceMap, operatorDAG, sinkMap);
 
     // Fake logical plan of QueryManager
@@ -293,7 +294,7 @@ public final class QueryManagerTest {
     private final CountDownLatch countDownLatch;
 
     TestSink(final List<I> result,
-          final CountDownLatch countDownLatch) {
+             final CountDownLatch countDownLatch) {
       this.result = result;
       this.countDownLatch = countDownLatch;
     }

@@ -17,6 +17,8 @@ package edu.snu.mist.task.operators;
 
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.common.parameters.QueryId;
+import edu.snu.mist.task.common.MistDataEvent;
+import edu.snu.mist.task.common.MistWatermarkEvent;
 import edu.snu.mist.task.operators.parameters.OperatorId;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.annotations.Parameter;
@@ -29,10 +31,8 @@ import java.util.logging.Logger;
 
 /**
  * Maps and flattens the list of outputs.
- * @param <I> input type
- * @param <O> output type
  */
-public final class FlatMapOperator<I, O> extends StatelessOperator<I, O> {
+public final class FlatMapOperator<I, O> extends OneStreamOperator {
   private static final Logger LOG = Logger.getLogger(FlatMapOperator.class.getName());
 
   /**
@@ -53,18 +53,24 @@ public final class FlatMapOperator<I, O> extends StatelessOperator<I, O> {
    * FlatMaps the list of outputs.
    */
   @Override
-  public void handle(final I input) {
-    final List<O> outputs = flatMapFunc.apply(input);
+  public void processLeftData(final MistDataEvent input) {
+    final I value = (I)input.getValue();
+    final List<O> outputs = flatMapFunc.apply(value);
     LOG.log(Level.FINE, "{0} FlatMaps {1} to {2}",
         new Object[]{FlatMapOperator.class, input, outputs});
     for (final O output : outputs) {
-      outputEmitter.emit(output);
+      final MistDataEvent event = new MistDataEvent(output, input.getTimestamp());
+      outputEmitter.emitData(event);
     }
   }
-
 
   @Override
   public StreamType.OperatorType getOperatorType() {
     return StreamType.OperatorType.FLAT_MAP;
+  }
+
+  @Override
+  public void processLeftWatermark(final MistWatermarkEvent input) {
+    outputEmitter.emitWatermark(input);
   }
 }

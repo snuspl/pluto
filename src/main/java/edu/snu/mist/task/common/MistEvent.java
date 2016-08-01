@@ -16,12 +16,25 @@
 package edu.snu.mist.task.common;
 
 /**
- * This interface can push outputs to next operators.
+ * This interface represents events of Mist.
+ * MistEvent can be data or watermark.
  */
-public interface OutputEmittable {
+public interface MistEvent {
   /**
-   * Sets an output emitter which forwards outputs to next operators.
-   * @param emitter an output emitter
+   * The type of events.
    */
-  void setOutputEmitter(final OutputEmitter emitter);
+  public static enum EventType {
+    DATA, // DATA: actual event data stream
+    WATERMARK, // WATERMARK: watermark data
+  }
+
+  /**
+   * Return true if it is DATA type, false if it is WATERMARK.
+   */
+  boolean isData();
+
+  /**
+   * Get timestamp of the MistEvent.
+   */
+  long getTimestamp();
 }

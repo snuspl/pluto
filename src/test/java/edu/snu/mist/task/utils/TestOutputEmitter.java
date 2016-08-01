@@ -13,38 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task;
+package edu.snu.mist.task.utils;
 
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
 import edu.snu.mist.task.common.OutputEmitter;
-import edu.snu.mist.task.sinks.Sink;
 
-import java.util.Set;
+import java.util.List;
 
 /**
- * This emitter sends the outputs to Sinks.
+ * Test output emitter which just adds the outputs to a list.
+ * @param <E> element type
  */
-final class SinkEmitter implements OutputEmitter {
+public final class TestOutputEmitter<E> implements OutputEmitter {
+  private final List<E> list;
 
-  /**
-   * Next Sinks.
-   */
-  private final Set<Sink> sinks;
-
-  public SinkEmitter(final Set<Sink> sinks) {
-    this.sinks = sinks;
+  public TestOutputEmitter(final List<E> list) {
+    this.list = list;
   }
 
   @Override
   public void emitData(final MistDataEvent data) {
-    for (final Sink sink : sinks) {
-      sink.handle(data.getValue());
-    }
+    list.add((E)data.getValue());
   }
 
   @Override
   public void emitWatermark(final MistWatermarkEvent watermark) {
-    // do nothing because sink doesn't have to handle watermark.
+    // do nothing
   }
 }

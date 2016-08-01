@@ -13,24 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task;
+package edu.snu.mist.task.operators;
+
+import org.apache.reef.wake.Identifier;
+
+import java.util.logging.Logger;
 
 /**
- * This class contains information of an event.
- * TODO: [MIST-268] Change and extend Operator API for processing multiple streams
+ * This abstract class is for two stream (LEFT/RIGHT) events.
  */
-public final class MistEvent {
-  /**
-   * The type of events.
-   */
-  public static enum EventType {
-    DATA, // DATA: actual event data stream
-    WATERMARK, // WATERMARK: watermark data
-  }
+public abstract class TwoStreamOperator extends BaseOperator {
+  private static final Logger LOG = Logger.getLogger(TwoStreamOperator.class.getName());
 
-  /**
-   * The type of event direction. Union operator should get two events: LEFT/RIGHT events.
-   * One direction operator always receive LEFT event.
-   */
-  public static enum Direction {LEFT, RIGHT}
+  public TwoStreamOperator(final Identifier queryId,
+                           final Identifier operatorId) {
+    super(queryId, operatorId);
+  }
 }

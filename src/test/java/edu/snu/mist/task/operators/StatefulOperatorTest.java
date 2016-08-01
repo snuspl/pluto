@@ -18,8 +18,10 @@ package edu.snu.mist.task.operators;
 import com.google.common.collect.ImmutableList;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.parameters.QueryId;
+import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.operators.parameters.KeyIndex;
 import edu.snu.mist.task.operators.parameters.OperatorId;
+import edu.snu.mist.task.utils.TestOutputEmitter;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -37,6 +39,10 @@ import java.util.logging.Logger;
 public final class StatefulOperatorTest {
   private static final Logger LOG = Logger.getLogger(StatefulOperatorTest.class.getName());
 
+  private MistDataEvent createEvent(final String key, final int val) {
+    return new MistDataEvent(new Tuple2<>(key, val), System.currentTimeMillis());
+  }
+
   /**
    * Test whether reduceByKeyOperator generates correct outputs.
    * Input: a list of tuples: ("a", 1), ("b", 1), ("c", 1), ("a", 1), ("d", 1), ("a", 1), ("b", 1)
@@ -52,14 +58,14 @@ public final class StatefulOperatorTest {
   @Test
   public void testReduceByKeyOperator() throws InjectionException {
     // input stream
-    final List<Tuple2<String, Integer>> inputStream =
-        ImmutableList.of(new Tuple2<>("a", 1),
-            new Tuple2<>("b", 1),
-            new Tuple2<>("c", 1),
-            new Tuple2<>("a", 1),
-            new Tuple2<>("d", 1),
-            new Tuple2<>("a", 1),
-            new Tuple2<>("b", 1));
+    final List<MistDataEvent> inputStream =
+        ImmutableList.of(createEvent("a", 1),
+            createEvent("b", 1),
+            createEvent("c", 1),
+            createEvent("a", 1),
+            createEvent("d", 1),
+            createEvent("a", 1),
+            createEvent("b", 1));
 
     // expected output
     final List<Map<String, Integer>> expected = new LinkedList<>();
@@ -99,18 +105,10 @@ public final class StatefulOperatorTest {
 
     // output test
     final List<Map<String, Integer>> result = new LinkedList<>();
-    wcOperator.setOutputEmitter(output -> result.add(output));
-    inputStream.stream().forEach(wcOperator::handle);
+    wcOperator.setOutputEmitter(new TestOutputEmitter<>(result));
+    inputStream.stream().forEach(wcOperator::processLeftData);
     LOG.info("expected: " + expected);
     LOG.info("result: " + result);
     Assert.assertEquals(expected, result);
-
-    // test getState
-    Assert.assertEquals(expected.get(expected.size() - 1), wcOperator.getState());
-    // test setState
-    final HashMap<String, Integer> newMap = new HashMap<>();
-    newMap.put("asdf", 111);
-    wcOperator.setState(newMap);
-    Assert.assertEquals(newMap, wcOperator.getState());
   }
 }

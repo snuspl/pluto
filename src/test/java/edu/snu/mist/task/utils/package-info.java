@@ -13,15 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.common;
-
 /**
- * This interface can push outputs to next operators.
+ * Utility classes for test.
  */
-public interface OutputEmittable {
-  /**
-   * Sets an output emitter which forwards outputs to next operators.
-   * @param emitter an output emitter
-   */
-  void setOutputEmitter(final OutputEmitter emitter);
-}
+package edu.snu.mist.task.utils;

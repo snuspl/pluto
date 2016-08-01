@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.api.StreamType;
 import edu.snu.mist.task.operators.Operator;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
@@ -29,5 +30,6 @@ public interface QueryPartitioner {
    * @param plan a plan
    * @return a physical plan which contains PartitionedQuery.
    */
-  PhysicalPlan<PartitionedQuery, MistEvent.Direction> chainOperators(PhysicalPlan<Operator, MistEvent.Direction> plan);
+  PhysicalPlan<PartitionedQuery, StreamType.Direction> chainOperators(
+      PhysicalPlan<Operator, StreamType.Direction> plan);
 }

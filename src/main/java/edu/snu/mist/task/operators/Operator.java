@@ -16,7 +16,8 @@
 package edu.snu.mist.task.operators;
 
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.task.common.InputHandler;
+import edu.snu.mist.task.common.MistDataEvent;
+import edu.snu.mist.task.common.MistWatermarkEvent;
 import edu.snu.mist.task.common.OutputEmittable;
 import org.apache.reef.wake.Identifier;
 
@@ -24,7 +25,7 @@ import org.apache.reef.wake.Identifier;
  * This is an interface of mist physical operator which runs actual computation.
  * Operator receives an input, does computation, and emits an output to OutputEmitter.
  */
-public interface Operator<I, O> extends InputHandler<I>, OutputEmittable<O> {
+public interface Operator extends OutputEmittable {
 
   /**
    * Gets the operator identifier.
@@ -43,4 +44,28 @@ public interface Operator<I, O> extends InputHandler<I>, OutputEmittable<O> {
    * @return operator type
    */
   StreamType.OperatorType getOperatorType();
+
+  /**
+   * Process data of left upstream.
+   * @param data data
+   */
+  void processLeftData(final MistDataEvent data);
+
+  /**
+   * Process data of right upstream.
+   * @param data data
+   */
+  void processRightData(final MistDataEvent data);
+
+  /**
+   * Process watermark of left upstream.
+   * @param watermark watermark
+   */
+  void processLeftWatermark(final MistWatermarkEvent watermark);
+
+  /**
+   * Process watermark of right upstream.
+   * @param watermark watermark
+   */
+  void processRightWatermark(final MistWatermarkEvent watermark);
 }

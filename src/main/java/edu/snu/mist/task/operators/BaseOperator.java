@@ -22,10 +22,8 @@ import java.util.logging.Logger;
 
 /**
  * This is a base operator which sets an output emitter.
- * @param <I> input
- * @param <O> output
  */
-public abstract class BaseOperator<I, O> implements Operator<I, O> {
+public abstract class BaseOperator implements Operator {
   private static final Logger LOG = Logger.getLogger(BaseOperator.class.getName());
 
   /**
@@ -41,7 +39,7 @@ public abstract class BaseOperator<I, O> implements Operator<I, O> {
   /**
    * An output emitter which forwards outputs to next Operators.
    */
-  protected OutputEmitter<O> outputEmitter;
+  protected OutputEmitter outputEmitter;
 
   public BaseOperator(final Identifier queryId,
                       final Identifier operatorId) {
@@ -50,7 +48,7 @@ public abstract class BaseOperator<I, O> implements Operator<I, O> {
   }
 
   @Override
-  public void setOutputEmitter(final OutputEmitter<O> emitter) {
+  public void setOutputEmitter(final OutputEmitter emitter) {
     this.outputEmitter = emitter;
   }
 

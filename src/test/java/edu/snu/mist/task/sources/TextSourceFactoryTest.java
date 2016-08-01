@@ -17,6 +17,9 @@ package edu.snu.mist.task.sources;
 
 import edu.snu.mist.common.stream.NettyChannelHandler;
 import edu.snu.mist.common.stream.textmessage.NettyTextMessageStreamGenerator;
+import edu.snu.mist.task.common.MistDataEvent;
+import edu.snu.mist.task.common.MistWatermarkEvent;
+import edu.snu.mist.task.common.OutputEmitter;
 import io.netty.channel.ChannelHandlerContext;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
@@ -69,10 +72,7 @@ public final class TextSourceFactoryTest {
 
           final List<String> received = new LinkedList<>();
           results.add(received);
-          source.setOutputEmitter((output) -> {
-            received.add(output);
-            countDownLatch.countDown();
-          });
+          source.setOutputEmitter(new SourceTestOutputEmitter<>(received, countDownLatch));
         }
 
         // Start to receive data stream from stream generator
@@ -125,6 +125,31 @@ public final class TextSourceFactoryTest {
 
     @Override
     public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) throws Exception {
+      // do nothing
+    }
+  }
+
+  /**
+   * Output Emitter for source test.
+   */
+  class SourceTestOutputEmitter<E> implements OutputEmitter {
+    private final List<E> list;
+    private final CountDownLatch countDownLatch;
+
+    public SourceTestOutputEmitter(final List<E> list,
+                                   final CountDownLatch countDownLatch) {
+      this.list = list;
+      this.countDownLatch = countDownLatch;
+    }
+
+    @Override
+    public void emitData(final MistDataEvent data) {
+      list.add((E)data.getValue());
+      countDownLatch.countDown();
+    }
+
+    @Override
+    public void emitWatermark(final MistWatermarkEvent watermark) {
       // do nothing
     }
   }

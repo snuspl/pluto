@@ -15,8 +15,13 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.api.StreamType;
+import edu.snu.mist.task.common.MistDataEvent;
+import edu.snu.mist.task.common.MistEvent;
+import edu.snu.mist.task.common.MistWatermarkEvent;
 import edu.snu.mist.task.common.OutputEmitter;
 import edu.snu.mist.task.operators.Operator;
+import org.apache.reef.io.Tuple;
 
 import javax.inject.Inject;
 import java.util.LinkedList;
@@ -51,7 +56,7 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
   /**
    * A queue for the partitioned query's events.
    */
-  private final Queue queue;
+  private final Queue<Tuple<MistEvent, StreamType.Direction>> queue;
 
   /**
    * Status of the partitioned query.
@@ -61,7 +66,7 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
   @Inject
   DefaultPartitionedQuery() {
     this.operators = new LinkedList<>();
-    this.queue = new ConcurrentLinkedQueue();
+    this.queue = new ConcurrentLinkedQueue<>();
     this.status = new AtomicReference<>(Status.READY);
   }
 
@@ -69,10 +74,10 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
   public void insertToHead(final Operator newOperator) {
     if (!operators.isEmpty()) {
       final Operator firstOperator = operators.get(0);
-      newOperator.setOutputEmitter(firstOperator::handle);
+      newOperator.setOutputEmitter(new NextOperatorEmitter(firstOperator));
     } else {
       if (outputEmitter != null) {
-        newOperator.setOutputEmitter(outputEmitter::emit);
+        newOperator.setOutputEmitter(outputEmitter);
       }
     }
     operators.add(0, newOperator);
@@ -82,10 +87,10 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
   public void insertToTail(final Operator newOperator) {
     if (!operators.isEmpty()) {
       final Operator lastOperator = operators.get(operators.size() - 1);
-      lastOperator.setOutputEmitter(newOperator::handle);
+      lastOperator.setOutputEmitter(new NextOperatorEmitter(newOperator));
     }
     if (outputEmitter != null) {
-      newOperator.setOutputEmitter(outputEmitter::emit);
+      newOperator.setOutputEmitter(outputEmitter);
     }
     operators.add(operators.size(), newOperator);
   }
@@ -95,7 +100,7 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
     final Operator prevLastOperator = operators.remove(operators.size() - 1);
     final Operator lastOperator = operators.get(operators.size() - 1);
     if (outputEmitter != null) {
-      lastOperator.setOutputEmitter(outputEmitter::emit);
+      lastOperator.setOutputEmitter(outputEmitter);
     }
     return prevLastOperator;
   }
@@ -116,7 +121,7 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
         status.set(Status.READY);
         return false;
       }
-      final Object event = queue.poll();
+      final Tuple<MistEvent, StreamType.Direction> event = queue.poll();
       process(event);
       status.set(Status.READY);
       return true;
@@ -126,11 +131,11 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
   }
 
   @Override
-  public boolean addNextEvent(final Object event) {
-    return queue.add(event);
+  public boolean addNextEvent(final MistEvent event, final StreamType.Direction direction) {
+    return queue.add(new Tuple<>(event, direction));
   }
 
-  private void process(final Object input) {
+  private void process(final Tuple<MistEvent, StreamType.Direction> input) {
     if (outputEmitter == null) {
       throw new RuntimeException("OutputEmitter should be set in PartitionedQuery");
     }
@@ -139,7 +144,21 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
     }
     final Operator firstOperator = operators.get(0);
     if (firstOperator != null) {
-      firstOperator.handle(input);
+      final StreamType.Direction direction = input.getValue();
+      final MistEvent event = input.getKey();
+      if (event.isData()) {
+        if (direction == StreamType.Direction.LEFT) {
+          firstOperator.processLeftData((MistDataEvent)event);
+        } else {
+          firstOperator.processRightData((MistDataEvent) event);
+        }
+      } else {
+        if (direction == StreamType.Direction.LEFT) {
+          firstOperator.processLeftWatermark((MistWatermarkEvent) event);
+        } else {
+          firstOperator.processRightWatermark((MistWatermarkEvent) event);
+        }
+      }
     }
   }
 
@@ -153,7 +172,7 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
     if (operators.size() > 0) {
       final Operator lastOperator = operators.get(operators.size() - 1);
       if (outputEmitter != null) {
-        lastOperator.setOutputEmitter(outputEmitter::emit);
+        lastOperator.setOutputEmitter(outputEmitter);
       }
     }
   }
@@ -181,5 +200,29 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
   @Override
   public String toString() {
     return operators.toString();
+  }
+
+
+  /**
+   * An output emitter forwarding events to the next operator.
+   * As partitioned query consists of operator chains, it only has one stream for input.
+   * Thus, it only calls processLeftData/processLeftWatermark.
+   */
+  class NextOperatorEmitter implements OutputEmitter {
+    private final Operator nextOp;
+
+    public NextOperatorEmitter(final Operator nextOp) {
+      this.nextOp = nextOp;
+    }
+
+    @Override
+    public void emitData(final MistDataEvent output) {
+      nextOp.processLeftData(output);
+    }
+
+    @Override
+    public void emitWatermark(final MistWatermarkEvent output) {
+      nextOp.processLeftWatermark(output);
+    }
   }
 }
