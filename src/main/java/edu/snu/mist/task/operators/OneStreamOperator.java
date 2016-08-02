@@ -17,7 +17,6 @@ package edu.snu.mist.task.operators;
 
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
-import org.apache.reef.wake.Identifier;
 
 import java.util.logging.Logger;
 
@@ -28,8 +27,8 @@ import java.util.logging.Logger;
 public abstract class OneStreamOperator extends BaseOperator {
   private static final Logger LOG = Logger.getLogger(OneStreamOperator.class.getName());
 
-  public OneStreamOperator(final Identifier queryId,
-                           final Identifier operatorId) {
+  public OneStreamOperator(final String queryId,
+                           final String operatorId) {
     super(queryId, operatorId);
   }
 

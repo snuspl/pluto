@@ -15,8 +15,6 @@
  */
 package edu.snu.mist.task.operators;
 
-import org.apache.reef.wake.Identifier;
-
 import java.util.logging.Logger;
 
 /**
@@ -25,8 +23,8 @@ import java.util.logging.Logger;
 public abstract class TwoStreamOperator extends BaseOperator {
   private static final Logger LOG = Logger.getLogger(TwoStreamOperator.class.getName());
 
-  public TwoStreamOperator(final Identifier queryId,
-                           final Identifier operatorId) {
+  public TwoStreamOperator(final String queryId,
+                           final String operatorId) {
     super(queryId, operatorId);
   }
 }

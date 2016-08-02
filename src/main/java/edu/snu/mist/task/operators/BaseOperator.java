@@ -16,7 +16,6 @@
 package edu.snu.mist.task.operators;
 
 import edu.snu.mist.task.common.OutputEmitter;
-import org.apache.reef.wake.Identifier;
 
 import java.util.logging.Logger;
 
@@ -29,20 +28,20 @@ public abstract class BaseOperator implements Operator {
   /**
    * An identifier of queryId.
    */
-  protected final Identifier queryId;
+  protected final String queryId;
 
   /**
    * An identifier of operatorId.
    */
-  protected final Identifier operatorId;
+  protected final String operatorId;
 
   /**
    * An output emitter which forwards outputs to next Operators.
    */
   protected OutputEmitter outputEmitter;
 
-  public BaseOperator(final Identifier queryId,
-                      final Identifier operatorId) {
+  public BaseOperator(final String queryId,
+                      final String operatorId) {
     this.queryId = queryId;
     this.operatorId = operatorId;
   }
@@ -53,12 +52,12 @@ public abstract class BaseOperator implements Operator {
   }
 
   @Override
-  public Identifier getQueryIdentifier() {
+  public String getQueryIdentifier() {
     return queryId;
   }
 
   @Override
-  public Identifier getOperatorIdentifier() {
+  public String getOperatorIdentifier() {
     return operatorId;
   }
 }

@@ -25,7 +25,6 @@ import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
-import org.apache.reef.wake.Identifier;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -55,10 +54,10 @@ public final class PartitionedQueryTest {
 
     final Injector injector = Tang.Factory.getTang().newInjector();
     final StringIdentifierFactory idFactory = injector.getInstance(StringIdentifierFactory.class);
-    final Identifier queryId = idFactory.getNewInstance("testQuery");
-    final Identifier squareOpId = idFactory.getNewInstance("squareOp");
-    final Identifier incOpId = idFactory.getNewInstance("incOp");
-    final Identifier doubleOpId = idFactory.getNewInstance("doubleOp");
+    final String queryId = "testQuery";
+    final String squareOpId = "squareOp";
+    final String incOpId = "incOp";
+    final String doubleOpId = "doubleOp";
 
     final Operator squareOp = new SquareOperator(queryId, squareOpId);
     final Operator incOp = new IncrementOperator(queryId, incOpId);
@@ -106,8 +105,8 @@ public final class PartitionedQueryTest {
    * This emits squared inputs.
    */
   class SquareOperator extends OneStreamOperator {
-    SquareOperator(final Identifier queryId,
-                   final Identifier operatorId) {
+    SquareOperator(final String queryId,
+                   final String operatorId) {
       super(queryId, operatorId);
     }
 
@@ -134,8 +133,8 @@ public final class PartitionedQueryTest {
    * This increments the input.
    */
   class IncrementOperator extends OneStreamOperator {
-    IncrementOperator(final Identifier queryId,
-                      final Identifier operatorId) {
+    IncrementOperator(final String queryId,
+                      final String operatorId) {
       super(queryId, operatorId);
     }
 
@@ -161,8 +160,8 @@ public final class PartitionedQueryTest {
    * This doubles the input.
    */
   class DoubleOperator extends OneStreamOperator {
-    DoubleOperator(final Identifier queryId,
-                   final Identifier operatorId) {
+    DoubleOperator(final String queryId,
+                   final String operatorId) {
       super(queryId, operatorId);
     }
 

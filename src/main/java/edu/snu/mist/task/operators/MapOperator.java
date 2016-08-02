@@ -16,14 +16,9 @@
 package edu.snu.mist.task.operators;
 
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
-import edu.snu.mist.task.operators.parameters.OperatorId;
-import org.apache.reef.io.network.util.StringIdentifierFactory;
-import org.apache.reef.tang.annotations.Parameter;
 
-import javax.inject.Inject;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,12 +36,10 @@ public final class MapOperator<I, O> extends OneStreamOperator {
    */
   private final Function<I, O> mapFunc;
 
-  @Inject
-  private MapOperator(final Function<I, O> mapFunc,
-                      @Parameter(QueryId.class) final String queryId,
-                      @Parameter(OperatorId.class) final String operatorId,
-                      final StringIdentifierFactory idfactory) {
-    super(idfactory.getNewInstance(queryId), idfactory.getNewInstance(operatorId));
+  public MapOperator(final String queryId,
+                     final String operatorId,
+                     final Function<I, O> mapFunc) {
+    super(queryId, operatorId);
     this.mapFunc = mapFunc;
   }
 

@@ -19,11 +19,8 @@ import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.formats.avro.LogicalPlan;
 import edu.snu.mist.task.operators.*;
-import edu.snu.mist.task.operators.parameters.KeyIndex;
-import edu.snu.mist.task.operators.parameters.OperatorId;
 import edu.snu.mist.task.parameters.NumQueryManagerThreads;
 import edu.snu.mist.task.parameters.NumThreads;
 import edu.snu.mist.task.sinks.Sink;
@@ -35,7 +32,6 @@ import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
-import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.wake.Identifier;
 import org.junit.Test;
 
@@ -126,18 +122,12 @@ public final class QueryManagerTest {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(NumThreads.class, Integer.toString(4));
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final Operator flatMap = createOperator(
-        queryId, "flatMap", Function.class, flatMapFunc, FlatMapOperator.class);
-    final Operator filter = createOperator(
-        queryId, "filter", Predicate.class, filterFunc, FilterOperator.class);
-    final Operator toTupleMap = createOperator(
-        queryId, "toTupleMap", Function.class, toTupleMapFunc, MapOperator.class);
-    final Operator reduceByKey = createOperator(
-        queryId, "reduceByKey", BiFunction.class, reduceByKeyFunc, ReduceByKeyOperator.class);
-    final Operator toStringMap = createOperator(
-        queryId, "toStringMap", Function.class, toStringMapFunc, MapOperator.class);
-    final Operator totalCountMap = createOperator(
-        queryId, "totalCountMap", Function.class, totalCountMapFunc, MapOperator.class);
+    final Operator flatMap = new FlatMapOperator<>(queryId, "flatMap", flatMapFunc);
+    final Operator filter = new FilterOperator<>(queryId, "filter", filterFunc);
+    final Operator toTupleMap = new MapOperator<>(queryId, "toTupleMap", toTupleMapFunc);
+    final Operator reduceByKey = new ReduceByKeyOperator<>(queryId, "reduceByKey", 0, reduceByKeyFunc);
+    final Operator toStringMap = new MapOperator<>(queryId, "toStringMap", toStringMapFunc);
+    final Operator totalCountMap = new MapOperator<>(queryId, "totalCountMap", totalCountMapFunc);
 
     // Create sinks
     final List<String> sink1Result = new LinkedList<>();
@@ -196,31 +186,6 @@ public final class QueryManagerTest {
     Assert.assertEquals(expectedSink2Output, sink2Result);
     src.close();
     queryManager.close();
-  }
-
-  /**
-   * This function creates the operator.
-   * @param queryId query id
-   * @param operatorId operator id
-   * @param funcClass udf function class
-   * @param func udf function
-   * @param opClass operator class
-   * @param <T> udf function type
-   * @param <O> operator class type
-   * @return an operator
-   * @throws InjectionException
-   */
-  private <T, O extends Operator> Operator createOperator(final String queryId,
-                                                          final String operatorId,
-                                                          final Class<T> funcClass,
-                                                          final T func,
-                                                          final Class<O> opClass) throws InjectionException {
-    final Injector injector = Tang.Factory.getTang().newInjector();
-    injector.bindVolatileParameter(QueryId.class, queryId);
-    injector.bindVolatileParameter(OperatorId.class, operatorId);
-    injector.bindVolatileInstance(funcClass, func);
-    injector.bindVolatileParameter(KeyIndex.class, 0);
-    return injector.getInstance(opClass);
   }
 
   /**

@@ -16,14 +16,9 @@
 package edu.snu.mist.task.operators;
 
 import com.google.common.collect.ImmutableList;
-import edu.snu.mist.common.parameters.QueryId;
 import edu.snu.mist.task.common.MistDataEvent;
-import edu.snu.mist.task.operators.parameters.OperatorId;
 import edu.snu.mist.task.utils.TestOutputEmitter;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.JavaConfigurationBuilder;
-import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -65,15 +60,9 @@ public final class StatelessOperatorTest {
         new Tuple<>("d", 1), new Tuple<>("b", 1), new Tuple<>("c", 1)};
     final List<Tuple> expected = Arrays.asList(outputs);
 
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(QueryId.class, "testQuery");
-    jcb.bindNamedParameter(OperatorId.class, "testMapOperator");
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     // map function: convert string to tuple
     final Function<String, Tuple> mapFunc = (mapInput) -> new Tuple<>(mapInput, 1);
-
-    injector.bindVolatileInstance(Function.class, mapFunc);
-    final MapOperator<String, Tuple> mapOperator = injector.getInstance(MapOperator.class);
+    final MapOperator<String, Tuple> mapOperator = new MapOperator<>("testQuery", "testMapOp", mapFunc);
     testStatelessOperator(inputStream, expected, mapOperator);
   }
 
@@ -92,15 +81,9 @@ public final class StatelessOperatorTest {
     // expected output
     final List<String> expected = Arrays.asList("alpha", "area", "application", "ally");
 
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(QueryId.class, "testQuery");
-    jcb.bindNamedParameter(OperatorId.class, "testMapOperator");
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     // create a filter function
     final Predicate<String> filterFunc = (input) -> input.startsWith("a");
-
-    injector.bindVolatileInstance(Predicate.class, filterFunc);
-    final FilterOperator<String> filterOperator = injector.getInstance(FilterOperator.class);
+    final FilterOperator<String> filterOperator = new FilterOperator<>("testQuery", "testOp", filterFunc);
     testStatelessOperator(inputStream, expected, filterOperator);
   }
 
@@ -117,14 +100,9 @@ public final class StatelessOperatorTest {
     final String[] outputs = {"a", "b", "c", "b", "c", "d", "d", "e", "f"};
     final List<String> expected = Arrays.asList(outputs);
 
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(QueryId.class, "testQuery");
-    jcb.bindNamedParameter(OperatorId.class, "testFlatMapOperator");
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     // map function: splits the string by space.
     final Function<String, List<String>> flatMapFunc = (mapInput) -> Arrays.asList(mapInput.split(" "));
-    injector.bindVolatileInstance(Function.class, flatMapFunc);
-    final FlatMapOperator<String, String> flatMapOperator = injector.getInstance(FlatMapOperator.class);
+    final FlatMapOperator<String, String> flatMapOperator = new FlatMapOperator<>("testQuery", "testOp", flatMapFunc);
     testStatelessOperator(inputStream, expected, flatMapOperator);
   }
 }
