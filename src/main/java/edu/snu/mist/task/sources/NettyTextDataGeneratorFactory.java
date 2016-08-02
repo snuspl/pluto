@@ -30,17 +30,15 @@ import org.apache.reef.wake.EventHandler;
 import org.apache.reef.wake.impl.DefaultThreadFactory;
 
 import javax.inject.Inject;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * This class creates new instance of sources which generating text stream.
+ * This class creates new instance of data generators which generate text stream.
  * It is designed to share a netty instance among sources to reduce the number of I/O threads.
  */
-public final class NettyTextSourceFactory implements TextSourceFactory {
-  private static final String CLASS_NAME = NettyTextSourceFactory.class.getName();
+public final class NettyTextDataGeneratorFactory implements TextDataGeneratorFactory {
+  private static final String CLASS_NAME = NettyTextDataGeneratorFactory.class.getName();
 
   /**
    * Number of threads.
@@ -51,11 +49,6 @@ public final class NettyTextSourceFactory implements TextSourceFactory {
    * Map of channel and handler.
    */
   private ConcurrentMap<Channel, EventHandler<String>> channelMap;
-
-  /**
-   * A set of sources.
-   */
-  private final Set<Source<String>> sources;
 
   /**
    * An identifier factory.
@@ -77,8 +70,8 @@ public final class NettyTextSourceFactory implements TextSourceFactory {
    * @param threads the number of I/O threads
    */
   @Inject
-  private NettyTextSourceFactory(final StringIdentifierFactory identifierFactory,
-                                 @Parameter(NumNettyThreads.class) final int threads) {
+  private NettyTextDataGeneratorFactory(final StringIdentifierFactory identifierFactory,
+                                        @Parameter(NumNettyThreads.class) final int threads) {
     this.threads = threads;
     this.channelMap = new ConcurrentHashMap<>();
     this.clientWorkerGroup = new NioEventLoopGroup(threads,
@@ -90,17 +83,12 @@ public final class NettyTextSourceFactory implements TextSourceFactory {
         .option(ChannelOption.SO_REUSEADDR, true)
         .option(ChannelOption.SO_KEEPALIVE, true);
     this.identifierFactory = identifierFactory;
-    this.sources = new HashSet<>();
   }
 
   @Override
-  public Source<String> newSource(final String queryId,
-                                  final String sourceId,
-                                  final String serverAddress,
-                                  final int port) throws Exception {
-    final Source<String> source = new NettyTextSource(queryId, sourceId, serverAddress, port,
-        clientBootstrap, channelMap, identifierFactory);
-    return source;
+  public DataGenerator<String> newDataGenerator(final String serverAddress,
+                                                final int port) throws Exception {
+    return new NettyTextDataGenerator(serverAddress, port, clientBootstrap, channelMap);
   }
 
   @Override

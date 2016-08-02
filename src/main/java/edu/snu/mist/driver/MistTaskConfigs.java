@@ -24,6 +24,7 @@ import edu.snu.mist.driver.parameters.TempFolderPath;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import edu.snu.mist.task.DefaultClientToTaskMessageImpl;
 import edu.snu.mist.task.TaskSpecificResponderWrapper;
+import edu.snu.mist.task.parameters.NumPeriodicSchedulerThreads;
 import edu.snu.mist.task.parameters.NumQueryManagerThreads;
 import edu.snu.mist.task.parameters.NumThreads;
 import org.apache.avro.ipc.Server;
@@ -77,6 +78,11 @@ final class MistTaskConfigs {
    */
   private final String tempFolderPath;
 
+  /**
+   * The number of threads for the periodic service scheduler.
+   */
+  private final int numSchedulerThreads;
+
   @Inject
   private MistTaskConfigs(@Parameter(NumTasks.class) final int numTasks,
                           @Parameter(TaskMemorySize.class) final int taskMemSize,
@@ -84,7 +90,8 @@ final class MistTaskConfigs {
                           @Parameter(NumTaskCores.class) final int numTaskCores,
                           @Parameter(RPCServerPort.class) final int rpcServerPort,
                           @Parameter(NumQueryManagerThreads.class) final int numManagerThreads,
-                          @Parameter(TempFolderPath.class) final String tempFolderPath) {
+                          @Parameter(TempFolderPath.class) final String tempFolderPath,
+                          @Parameter(NumPeriodicSchedulerThreads.class) final int numSchedulerThreads) {
     this.numTasks = numTasks;
     this.numTaskThreads = numTaskThreads;
     this.taskMemSize = taskMemSize;
@@ -92,6 +99,7 @@ final class MistTaskConfigs {
     this.tempFolderPath = tempFolderPath;
     this.numManagerThreads = numManagerThreads;
     this.rpcServerPort = rpcServerPort + 10 > MAX_PORT_NUM ? rpcServerPort - 10 : rpcServerPort + 10;
+    this.numSchedulerThreads = numSchedulerThreads;
   }
 
   public int getNumTasks() {
@@ -122,6 +130,10 @@ final class MistTaskConfigs {
     return numManagerThreads;
   }
 
+  public int getNumSchedulerThreads() {
+    return numSchedulerThreads;
+  }
+
   public Configuration getConfiguration() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
 
@@ -133,6 +145,7 @@ final class MistTaskConfigs {
     jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
     jcb.bindNamedParameter(TempFolderPath.class, tempFolderPath);
     jcb.bindNamedParameter(NumQueryManagerThreads.class, Integer.toString(numManagerThreads));
+    jcb.bindNamedParameter(NumPeriodicSchedulerThreads.class, Integer.toString(numSchedulerThreads));
 
     // Implementation
     jcb.bindImplementation(ClientToTaskMessage.class, DefaultClientToTaskMessageImpl.class);

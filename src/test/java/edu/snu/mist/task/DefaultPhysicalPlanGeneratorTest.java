@@ -29,7 +29,8 @@ import edu.snu.mist.formats.avro.Vertex;
 import edu.snu.mist.task.operators.*;
 import edu.snu.mist.task.sinks.NettyTextSink;
 import edu.snu.mist.task.sinks.Sink;
-import edu.snu.mist.task.sources.NettyTextSource;
+import edu.snu.mist.task.sources.SourceImpl;
+import edu.snu.mist.task.sources.NettyTextDataGenerator;
 import edu.snu.mist.task.sources.Source;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Tang;
@@ -110,7 +111,8 @@ public final class DefaultPhysicalPlanGeneratorTest {
     final Map<Source, Map<Operator, StreamType.Direction>> sourceMap = physicalPlan.getSourceMap();
     Assert.assertEquals(1, sourceMap.keySet().size());
     final Source source = sourceMap.keySet().iterator().next();
-    Assert.assertTrue(source instanceof NettyTextSource);
+    Assert.assertTrue(source instanceof SourceImpl);
+    Assert.assertTrue(source.getDataGenerator() instanceof NettyTextDataGenerator);
     Assert.assertEquals(1, sourceMap.get(source).size());
 
     final Operator operator1 = sourceMap.get(source).entrySet().iterator().next().getKey();

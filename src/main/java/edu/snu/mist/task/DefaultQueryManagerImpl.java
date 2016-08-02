@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -76,6 +77,11 @@ final class DefaultQueryManagerImpl implements QueryManager {
   private final ThreadManager threadManager;
 
   /**
+   * Scheduler for periodic watermark emission.
+   */
+  private final ScheduledExecutorService scheduler;
+
+  /**
    * Default query manager in MistTask.
    * @param queryPartitioner the converter which chains operators and makes PartitionedQueries
    * @param physicalPlanGenerator the physical plan generator which generates physical plan from logical paln
@@ -89,10 +95,12 @@ final class DefaultQueryManagerImpl implements QueryManager {
                                    final StringIdentifierFactory idfactory,
                                    final ThreadManager threadManager,
                                    final PartitionedQueryManager partitionedQueryManager,
-                                   @Parameter(NumQueryManagerThreads.class) final int numThreads) {
+                                   @Parameter(NumQueryManagerThreads.class) final int numThreads,
+                                   final ScheduledExecutorServiceWrapper schedulerWrapper) {
     this.physicalPlanMap = new ConcurrentHashMap<>();
     this.partitionedQueryManager = partitionedQueryManager;
     this.threadManager = threadManager;
+    this.scheduler = schedulerWrapper.getScheduler();
     this.tpStage = new ThreadPoolStage<>((tuple) -> {
       final PhysicalPlan<Operator, StreamType.Direction> physicalPlan;
       try {
@@ -100,7 +108,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
         physicalPlan = physicalPlanGenerator.generate(tuple);
       } catch (final Exception e) {
         e.printStackTrace();
-        LOG.log(Level.SEVERE,  "Injection Exception occurred during de-serializing LogicalPlans");
+        LOG.log(Level.SEVERE, "Injection Exception occurred during de-serializing LogicalPlans");
         return;
       }
 
@@ -129,6 +137,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
   @Override
   public void close() throws Exception {
     tpStage.close();
+    scheduler.shutdown();
     threadManager.close();
   }
 
@@ -158,7 +167,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
       final Map<PartitionedQuery, StreamType.Direction> nextOps = entry.getValue();
       final Source src = entry.getKey();
       // Sets SourceOutputEmitter to the sources
-      src.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
+      src.getEventGenerator().setOutputEmitter(new SourceOutputEmitter<>(nextOps));
       // 5) starts to receive input data stream from the source
       src.start();
     }
@@ -202,7 +211,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
       } catch (final Exception e) {
         e.printStackTrace();
       }
-      src.setOutputEmitter(null);
+      src.getEventGenerator().setOutputEmitter(null);
     }
 
     for (final Map.Entry<PartitionedQuery, Set<Sink>> entry :

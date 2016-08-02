@@ -16,20 +16,16 @@
 package edu.snu.mist.task.sources;
 
 /**
- * This interface creates new instance of Source.
+ * This interface creates new instance of data generator.
  */
-public interface TextSourceFactory extends AutoCloseable {
+public interface TextDataGeneratorFactory extends AutoCloseable {
 
   /**
    * Create new instance of source.
-   * @param queryId query id
-   * @param sourceId source id
    * @param serverAddress server address
    * @param port server port
    * @return a new source
    */
-  Source<String> newSource(String queryId,
-                           String sourceId,
-                           String serverAddress,
-                           int port) throws Exception;
+  DataGenerator<String> newDataGenerator(String serverAddress,
+                                         int port) throws Exception;
 }
