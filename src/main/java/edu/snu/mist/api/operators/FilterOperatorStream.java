@@ -15,9 +15,17 @@
  */
 package edu.snu.mist.api.operators;
 
-import edu.snu.mist.api.ContinuousStream;
+import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.functions.MISTPredicate;
+import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.InstantOperatorInfo;
+import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
+import org.apache.commons.lang.SerializationUtils;
+
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class implements the necessary methods for getting information
@@ -30,8 +38,9 @@ public final class FilterOperatorStream<T> extends InstantOperatorStream<T, T> {
    */
   private final MISTPredicate<T> filterFunc;
 
-  public FilterOperatorStream(final ContinuousStream<T> precedingStream, final MISTPredicate<T> filterFunc) {
-    super(StreamType.OperatorType.FILTER, precedingStream);
+  public FilterOperatorStream(final MISTPredicate<T> filterFunc,
+                              final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
+    super(StreamType.OperatorType.FILTER, dag);
     this.filterFunc = filterFunc;
   }
 
@@ -40,5 +49,17 @@ public final class FilterOperatorStream<T> extends InstantOperatorStream<T, T> {
    */
   public MISTPredicate<T> getFilterFunction() {
     return filterFunc;
+  }
+
+  @Override
+  protected InstantOperatorInfo getInstantOpInfo() {
+    final InstantOperatorInfo.Builder iOpInfoBuilder = InstantOperatorInfo.newBuilder();
+    iOpInfoBuilder.setInstantOperatorType(InstantOperatorTypeEnum.FILTER);
+    final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
+    serializedFunctionList.add(ByteBuffer.wrap(
+        SerializationUtils.serialize(filterFunc)));
+    iOpInfoBuilder.setFunctions(serializedFunctionList);
+    iOpInfoBuilder.setKeyIndex(null);
+    return iOpInfoBuilder.build();
   }
 }

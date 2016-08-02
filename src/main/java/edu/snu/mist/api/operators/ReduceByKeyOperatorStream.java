@@ -15,9 +15,17 @@
  */
 package edu.snu.mist.api.operators;
 
-import edu.snu.mist.api.ContinuousStream;
+import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.functions.MISTBiFunction;
+import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.InstantOperatorInfo;
+import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
+import org.apache.commons.lang.SerializationUtils;
+
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class implements the necessary methods for getting information
@@ -25,8 +33,22 @@ import edu.snu.mist.api.functions.MISTBiFunction;
  */
 public final class ReduceByKeyOperatorStream<IN, K, V> extends ReduceOperatorStream<IN, K, V> {
 
-  public ReduceByKeyOperatorStream(final ContinuousStream<IN> precedingStream, final int keyFieldIndex,
-                                   final Class<K> keyType, final MISTBiFunction<V, V, V> reduceFunc) {
-    super(StreamType.OperatorType.REDUCE_BY_KEY, precedingStream, keyFieldIndex, keyType, reduceFunc);
+  public ReduceByKeyOperatorStream(final int keyFieldIndex,
+                                   final Class<K> keyType,
+                                   final MISTBiFunction<V, V, V> reduceFunc,
+                                   final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
+    super(StreamType.OperatorType.REDUCE_BY_KEY, keyFieldIndex, keyType, reduceFunc, dag);
+  }
+
+  @Override
+  protected InstantOperatorInfo getInstantOpInfo() {
+    final InstantOperatorInfo.Builder iOpInfoBuilder = InstantOperatorInfo.newBuilder();
+    iOpInfoBuilder.setInstantOperatorType(InstantOperatorTypeEnum.REDUCE_BY_KEY);
+    final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
+    serializedFunctionList.add(ByteBuffer.wrap(
+        SerializationUtils.serialize(reduceFunc)));
+    iOpInfoBuilder.setFunctions(serializedFunctionList);
+    iOpInfoBuilder.setKeyIndex(keyFieldIndex);
+    return iOpInfoBuilder.build();
   }
 }

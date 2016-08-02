@@ -15,10 +15,15 @@
  */
 package edu.snu.mist.api.operators;
 
-import edu.snu.mist.api.ContinuousStream;
+import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.StreamType;
+import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.InstantOperatorInfo;
+import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
 
-import java.util.Set;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class implements the necessary methods for getting information
@@ -26,7 +31,17 @@ import java.util.Set;
  */
 public final class UnionOperatorStream<T> extends InstantOperatorStream<T, T> {
 
-  public UnionOperatorStream(final Set<ContinuousStream<T>> precedingStreams) {
-    super(StreamType.OperatorType.UNION, (Set) precedingStreams);
+  public UnionOperatorStream(final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
+    super(StreamType.OperatorType.UNION, dag);
+  }
+
+  @Override
+  protected InstantOperatorInfo getInstantOpInfo() {
+    final InstantOperatorInfo.Builder iOpInfoBuilder = InstantOperatorInfo.newBuilder();
+    iOpInfoBuilder.setInstantOperatorType(InstantOperatorTypeEnum.UNION);
+    final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
+    iOpInfoBuilder.setFunctions(serializedFunctionList);
+    iOpInfoBuilder.setKeyIndex(null);
+    return iOpInfoBuilder.build();
   }
 }

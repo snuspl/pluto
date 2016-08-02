@@ -223,9 +223,6 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
               deserializedVertices.add(textSocketSource);
               break;
             }
-            case REEF_NETWORK_SOURCE: {
-              throw new IllegalArgumentException("MISTTask: REEF_NETWORK_SOURCE is currently not supported!");
-            }
             default: {
               throw new IllegalArgumentException("MISTTask: Invalid source generator detected in LogicalPlan!");
             }
@@ -249,9 +246,6 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
               final Sink textSocketSink = getNettyTextSocketSink(queryId, sinkInfo.getSinkConfiguration());
               deserializedVertices.add(textSocketSink);
               break;
-            }
-            case REEF_NETWORK_SINK: {
-              throw new IllegalArgumentException("MISTTask: REEF_NETWORK_SINK is currently not supported!");
             }
             default: {
               throw new IllegalArgumentException("MISTTask: Invalid sink detected in LogicalPlan!");

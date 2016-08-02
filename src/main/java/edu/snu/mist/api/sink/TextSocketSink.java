@@ -13,21 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.serialize.avro;
 
-import edu.snu.mist.api.WindowedStream;
-import edu.snu.mist.formats.avro.WindowOperatorInfo;
-import org.apache.reef.tang.annotations.DefaultImplementation;
+package edu.snu.mist.api.sink;
+
+import edu.snu.mist.api.StreamType;
+import edu.snu.mist.api.sink.builder.SinkConfiguration;
+import edu.snu.mist.formats.avro.SinkTypeEnum;
 
 /**
- * This is an interface for getting avro-serialized WindowOperatorInfo from MIST WindowedStream.
+ * TextSocketSink class.
  */
-@DefaultImplementation(WindowOperatorInfoProviderImpl.class)
-public interface WindowOperatorInfoProvider {
+public final class TextSocketSink extends BaseSink {
 
-  /**
-   * @param windowedStream WindowedStream defined via MIST API.
-   * @return avro-serialized WindowOperatorInfo.
-   */
-  WindowOperatorInfo getWindowOperatorInfo(WindowedStream windowedStream);
+  public TextSocketSink(final StreamType.SinkType sinkType,
+                        final SinkConfiguration sinkConfiguration) {
+    super(sinkType, sinkConfiguration);
+  }
+
+  @Override
+  public SinkTypeEnum getSinkTypeEnum() {
+    return SinkTypeEnum.TEXT_SOCKET_SINK;
+  }
 }

@@ -23,7 +23,6 @@ import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sink.builder.SinkConfiguration;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfigurationBuilderImpl;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
-import edu.snu.mist.api.sources.TextSocketSourceStream;
 import edu.snu.mist.api.sources.builder.SourceConfiguration;
 import edu.snu.mist.api.sources.builder.TextSocketSourceConfigurationBuilderImpl;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
@@ -117,9 +116,10 @@ public final class UnionMist {
     // Simple reduce function.
     final MISTBiFunction<Integer, Integer, Integer> reduceFunction = (v1, v2) -> { return v1 + v2; };
 
-    final ContinuousStream sourceStream1 = new TextSocketSourceStream<>(localTextSocketSource1Conf)
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    final ContinuousStream sourceStream1 = queryBuilder.socketTextStream(localTextSocketSource1Conf)
         .map(s -> new Tuple2(s, 1));
-    final ContinuousStream sourceStream2 = new TextSocketSourceStream<>(localTextSocketSource2Conf)
+    final ContinuousStream sourceStream2 = queryBuilder.socketTextStream(localTextSocketSource2Conf)
         .map(s -> new Tuple2(s, 1));
 
     final Sink sink = sourceStream1
@@ -128,7 +128,7 @@ public final class UnionMist {
         .map(s -> s.toString())
         .textSocketOutput(localTextSocketSinkConf);
 
-    final MISTQuery query = sink.getQuery();
+    final MISTQuery query = queryBuilder.build();
     final MISTExecutionEnvironment executionEnvironment = new MISTTestExecutionEnvironmentImpl(driverHost, driverPort);
     return executionEnvironment.submit(query);
   }

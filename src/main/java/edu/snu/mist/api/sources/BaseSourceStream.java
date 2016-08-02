@@ -13,49 +13,59 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.serialize.avro;
+package edu.snu.mist.api.sources;
 
+import edu.snu.mist.api.AvroVertexSerializable;
+import edu.snu.mist.api.ContinuousStreamImpl;
 import edu.snu.mist.api.SerializedType;
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.api.sources.SourceStream;
 import edu.snu.mist.api.sources.builder.SourceConfiguration;
 import edu.snu.mist.api.sources.parameters.SourceSerializeInfo;
+import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.SourceInfo;
 import edu.snu.mist.formats.avro.SourceTypeEnum;
+import edu.snu.mist.formats.avro.Vertex;
+import edu.snu.mist.formats.avro.VertexTypeEnum;
 import org.apache.commons.lang.SerializationUtils;
 
-import javax.inject.Inject;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Default implementation class for SourceInfoProvider.
+ * Stream interface for streams created from various stream sources.
  */
-public final class SourceInfoProviderImpl implements SourceInfoProvider {
+public abstract class BaseSourceStream<T> extends ContinuousStreamImpl<T> {
+  /**
+   * The value for source configuration.
+   */
+  protected final SourceConfiguration sourceConfiguration;
+  /**
+   * The type of this source.
+   */
+  protected final StreamType.SourceType sourceType;
 
-  @Inject
-  SourceInfoProviderImpl() {
-
+  BaseSourceStream(final StreamType.SourceType sourceType,
+                   final SourceConfiguration sourceConfiguration,
+                   final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
+    super(StreamType.ContinuousType.SOURCE, dag);
+    this.sourceType = sourceType;
+    this.sourceConfiguration = sourceConfiguration;
   }
 
+  protected abstract SourceTypeEnum getSourceTypeEnum();
+
   @Override
-  public SourceInfo getSourceInfo(final SourceStream sourceStream) {
+  public Vertex getSerializedVertex() {
+    final Vertex.Builder vertexBuilder = Vertex.newBuilder();
+    vertexBuilder.setVertexType(VertexTypeEnum.SOURCE);
     final SourceInfo.Builder sourceInfoBuilder = SourceInfo.newBuilder();
-    // Source type detection
-    if (sourceStream.getSourceType() == StreamType.SourceType.REEF_NETWORK_SOURCE) {
-      sourceInfoBuilder.setSourceType(SourceTypeEnum.REEF_NETWORK_SOURCE);
-    } else if (sourceStream.getSourceType() == StreamType.SourceType.TEXT_SOCKET_SOURCE) {
-      sourceInfoBuilder.setSourceType(SourceTypeEnum.TEXT_SOCKET_SOURCE);
-    } else {
-      throw new IllegalStateException("Source type is illegal!");
-    }
+    sourceInfoBuilder.setSourceType(getSourceTypeEnum());
     // Serialize SourceInfo
-    final SourceConfiguration sourceConf = sourceStream.getSourceConfiguration();
     final Map<CharSequence, Object> serializedSourceConf = new HashMap<>();
-    for (final String confKey: sourceConf.getConfigurationKeys()) {
-      final Object value = sourceConf.getConfigurationValue(confKey);
+    for (final String confKey: sourceConfiguration.getConfigurationKeys()) {
+      final Object value = sourceConfiguration.getConfigurationValue(confKey);
       if (SourceSerializeInfo.getAvroSerializedTypeInfo(confKey) != SerializedType.AvroType.BYTES) {
         serializedSourceConf.put(confKey, value);
       } else {
@@ -63,6 +73,7 @@ public final class SourceInfoProviderImpl implements SourceInfoProvider {
       }
     }
     sourceInfoBuilder.setSourceConfiguration(serializedSourceConf);
-    return sourceInfoBuilder.build();
+    vertexBuilder.setAttributes(sourceInfoBuilder.build());
+    return vertexBuilder.build();
   }
 }

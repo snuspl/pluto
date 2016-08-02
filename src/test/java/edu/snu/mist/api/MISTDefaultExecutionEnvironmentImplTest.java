@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.api;
 
-import edu.snu.mist.api.sources.REEFNetworkSourceStream;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.formats.avro.*;
 import org.apache.avro.AvroRemoteException;
@@ -74,12 +73,13 @@ public class MISTDefaultExecutionEnvironmentImplTest {
         new InetSocketAddress(taskPortNum));
 
     // Step 2: Generate a new query
-    final MISTQuery query = new REEFNetworkSourceStream<String>(APITestParameters.LOCAL_REEF_NETWORK_SOURCE_CONF)
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    queryBuilder.socketTextStream(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
         .flatMap(s -> Arrays.asList(s.split(" ")))
         .map(s -> new Tuple2<>(s, 1))
         .reduceByKey(0, String.class, (Integer x, Integer y) -> x + y)
-        .reefNetworkOutput(APITestParameters.LOCAL_REEF_NETWORK_SINK_CONF)
-        .getQuery();
+        .textSocketOutput(APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF);
+    final MISTQuery query = queryBuilder.build();
 
     final int suffixStartIndex = mockJarOutName.lastIndexOf(".");
     final String mockJarOutPrefix = mockJarOutName.substring(0, suffixStartIndex);

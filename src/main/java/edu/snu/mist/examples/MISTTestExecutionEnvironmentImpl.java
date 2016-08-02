@@ -16,17 +16,15 @@
 package edu.snu.mist.examples;
 
 import edu.snu.mist.api.*;
-import edu.snu.mist.api.serialize.avro.MISTQuerySerializer;
 import edu.snu.mist.formats.avro.*;
 import org.apache.avro.ipc.NettyTransceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
-import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.Tang;
-import org.apache.reef.tang.exceptions.InjectionException;
+import org.apache.reef.io.Tuple;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -39,16 +37,12 @@ import java.util.concurrent.ConcurrentMap;
  * @see MISTDefaultExecutionEnvironmentImpl
  */
 public final class MISTTestExecutionEnvironmentImpl implements MISTExecutionEnvironment {
-  private final MISTQuerySerializer querySerializer;
   private final MistTaskProvider proxyToDriver;
   private final List<IPAddress> tasks;
   private final ConcurrentMap<IPAddress, ClientToTaskMessage> taskProxyMap;
 
   public MISTTestExecutionEnvironmentImpl(final String serverHost,
-                                          final int serverPort) throws InjectionException,
-      IOException {
-    final Injector injector = Tang.Factory.getTang().newInjector();
-    querySerializer = injector.getInstance(MISTQuerySerializer.class);
+                                          final int serverPort) throws IOException {
     // Step 1: Get a task list from Driver
     final NettyTransceiver clientToDriver = new NettyTransceiver(new InetSocketAddress(serverHost, serverPort));
     this.proxyToDriver = SpecificRequestor.getClient(MistTaskProvider.class, clientToDriver);
@@ -64,10 +58,17 @@ public final class MISTTestExecutionEnvironmentImpl implements MISTExecutionEnvi
    */
   @Override
   public APIQuerySubmissionResult submit(final MISTQuery queryToSubmit) throws IOException, URISyntaxException {
-    // Step 2: Change the query to a LogicalPlan
-    final LogicalPlan logicalPlan = querySerializer.queryToLogicalPlan(queryToSubmit);
+    // Build logical plan using serialized vertices and edges.
+    final Tuple<List<Vertex>, List<Edge>> serializedDag = queryToSubmit.getSerializedDAG();
+    final LogicalPlan.Builder logicalPlanBuilder = LogicalPlan.newBuilder();
+    final LogicalPlan logicalPlan = logicalPlanBuilder
+        .setIsJarSerialized(false)
+        .setJar(ByteBuffer.wrap(new byte[1]))
+        .setVertices(serializedDag.getKey())
+        .setEdges(serializedDag.getValue())
+        .build();
 
-    // Step 3: Send the LogicalPlan to one of the tasks and get QuerySubmissionResult
+    //Send the LogicalPlan to one of the tasks and get QuerySubmissionResult
     final IPAddress task = tasks.get(0);
 
     ClientToTaskMessage proxyToTask = taskProxyMap.get(task);
