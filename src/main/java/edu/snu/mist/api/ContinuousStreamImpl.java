@@ -100,15 +100,12 @@ public abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implemen
 
   @Override
   public UnionOperatorStream<T> union(final ContinuousStream<T> inputStream) throws StreamTypeMismatchException {
-    if (TypeChecker.checkTypesEqual(this, inputStream)) {
-      final UnionOperatorStream<T> downStream = new UnionOperatorStream<>(dag);
-      dag.addVertex(downStream);
-      dag.addEdge(this, downStream, StreamType.Direction.LEFT);
-      dag.addEdge(inputStream, downStream, StreamType.Direction.RIGHT);
-      return downStream;
-    } else {
-      throw new StreamTypeMismatchException("Cannot perform union between streams having different data types!");
-    }
+    // TODO[MIST-245]: Improve type checking.
+    final UnionOperatorStream<T> downStream = new UnionOperatorStream<>(dag);
+    dag.addVertex(downStream);
+    dag.addEdge(this, downStream, StreamType.Direction.LEFT);
+    dag.addEdge(inputStream, downStream, StreamType.Direction.RIGHT);
+    return downStream;
   }
 
   @Override

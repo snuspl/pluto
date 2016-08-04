@@ -38,6 +38,7 @@ public final class TypeChecker {
    */
   public static <T1, T2> boolean checkTypesEqual(final MISTStream<T1> stream1, final MISTStream<T2> stream2) {
     // TODO[MIST-245]: Improve type checking. Type checking in below checks only generic type's name.
+    // It can return false even though two types are equal, so we disable it (MIST-286)
     final Type[] types1 = getStreamType(stream1);
     final Type[] types2 = getStreamType(stream2);
 
