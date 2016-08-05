@@ -35,9 +35,10 @@ import static org.apache.commons.lang3.StringUtils.isAlpha;
 
 /**
  * Example client which submits a word-counting query using reduce-by-key operator
- * and deletes the submitted query after 10 seconds.
+ * and stops the submitted query after 10 seconds and resumes the stopped query
+ * after 10 seconds.
  */
-public final class QueryDeletion {
+public final class StopAndResume {
 
   private static String driverHost = "localhost";
   private static int driverPort = 20332;
@@ -121,8 +122,12 @@ public final class QueryDeletion {
     return executionEnvironment.submit(query);
   }
 
-  public static boolean deleteQuery(final APIQuerySubmissionResult result) throws IOException {
-    return MISTQueryControl.delete(result.getQueryId(), result.getTaskAddress());
+  public static boolean stopQuery(final APIQuerySubmissionResult result) throws IOException {
+    return MISTQueryControl.stop(result.getQueryId(), result.getTaskAddress());
+  }
+
+  public static boolean resumeQuery(final APIQuerySubmissionResult result) throws IOException {
+    return MISTQueryControl.resume(result.getQueryId(), result.getTaskAddress());
   }
 
   /**
@@ -158,13 +163,18 @@ public final class QueryDeletion {
 
     Thread.sleep(10000);
 
-    if(deleteQuery(result)) {
-      System.out.println(result.getQueryId() + " is deleted");
+    if(stopQuery(result)) {
+      System.out.println(result.getQueryId() + " is stopped");
     } else {
       System.out.println("Deleting " + result.getQueryId() + " is failed");
     }
+
+    Thread.sleep(10000);
+    resumeQuery(result);
+    System.out.println(result.getQueryId() + " is resumed");
+
   }
 
-  private QueryDeletion(){
+  private StopAndResume(){
   }
 }

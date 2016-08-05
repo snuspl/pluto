@@ -58,6 +58,14 @@ public class MISTTestExecutionEnvironmentImplTest {
     public boolean deleteQueries(final CharSequence queryId) throws AvroRemoteException {
       return true;
     }
+    @Override
+    public boolean stopQueries(final CharSequence queryId) throws AvroRemoteException {
+      return true;
+    }
+    @Override
+    public boolean resumeQueries(final CharSequence queryId) throws AvroRemoteException {
+      return true;
+    }
   }
 
   /**

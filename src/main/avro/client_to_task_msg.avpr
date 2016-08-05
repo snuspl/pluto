@@ -267,6 +267,28 @@
         }
       ],
       "response": "boolean"
+    },
+    "stopQueries":
+    {
+      "request":
+      [
+        {
+          "name": "queryId",
+          "type": "string"
+        }
+      ],
+      "response": "boolean"
+    },
+    "resumeQueries":
+    {
+      "request":
+      [
+        {
+          "name": "queryId",
+          "type": "string"
+        }
+      ],
+      "response": "boolean"
     }
   }
 }

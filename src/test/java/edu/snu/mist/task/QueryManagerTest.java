@@ -21,10 +21,11 @@ import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.LogicalPlan;
 import edu.snu.mist.task.operators.*;
-import edu.snu.mist.task.parameters.NumQueryManagerThreads;
 import edu.snu.mist.task.parameters.NumThreads;
+import edu.snu.mist.task.parameters.PlanStorePath;
 import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sources.*;
+import edu.snu.mist.task.stores.PlanStore;
 import junit.framework.Assert;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
@@ -34,6 +35,7 @@ import org.apache.reef.tang.Tang;
 import org.apache.reef.wake.Identifier;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -175,9 +177,14 @@ public final class QueryManagerTest {
     final PhysicalPlanGenerator physicalPlanGenerator = mock(PhysicalPlanGenerator.class);
     when(physicalPlanGenerator.generate(tuple)).thenReturn(physicalPlan);
 
+    // Create mock PlanStore. It returns true and the above logical plan
+    final PlanStore planStore = mock(PlanStore.class);
+    when(planStore.save(tuple)).thenReturn(true);
+    when(planStore.load(queryId)).thenReturn(tuple.getValue());
+
     // Create QueryManager
     injector.bindVolatileInstance(PhysicalPlanGenerator.class, physicalPlanGenerator);
-    injector.bindVolatileParameter(NumQueryManagerThreads.class, 1);
+    injector.bindVolatileInstance(PlanStore.class, planStore);
 
     // Submit the fake logical plan
     // The operators in the physical plan are executed
@@ -191,6 +198,17 @@ public final class QueryManagerTest {
     Assert.assertEquals(expectedSink2Output, sink2Result);
     src.close();
     queryManager.close();
+
+    // Delete plan directory and plans
+    final String planStorePath = injector.getNamedInstance(PlanStorePath.class);
+    final File planFolder = new File(planStorePath);
+    if (planFolder.exists()) {
+      final File[] destroy = planFolder.listFiles();
+      for (final File des : destroy) {
+        des.delete();
+      }
+      planFolder.delete();
+    }
   }
 
   /**
