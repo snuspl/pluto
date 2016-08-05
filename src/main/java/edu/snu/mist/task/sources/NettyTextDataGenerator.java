@@ -15,14 +15,10 @@
  */
 package edu.snu.mist.task.sources;
 
-import edu.snu.mist.task.common.MistDataEvent;
-import edu.snu.mist.task.common.OutputEmitter;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.wake.EventHandler;
-import org.apache.reef.wake.Identifier;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -33,22 +29,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * This class receives text data stream via Netty.
  */
-public final class NettyTextSource implements Source<String> {
+public final class NettyTextDataGenerator implements DataGenerator<String> {
 
   /**
    * Started to receive data stream.
    */
   private final AtomicBoolean started;
-
-  /**
-   * Query id.
-   */
-  private final Identifier queryId;
-
-  /**
-   * Source id.
-   */
-  private final Identifier sourceId;
 
   /**
    * Map of netty channel and data stream handler.
@@ -61,11 +47,6 @@ public final class NettyTextSource implements Source<String> {
   private final Bootstrap clientBootstrap;
 
   /**
-   * Output emitter.
-   */
-  private OutputEmitter outputEmitter;
-
-  /**
    * Socket address for data stream server.
    */
   private final SocketAddress serverSocketAddress;
@@ -75,15 +56,15 @@ public final class NettyTextSource implements Source<String> {
    */
   private Channel channel;
 
-  public NettyTextSource(final String queryId,
-                         final String sourceId,
-                         final String serverAddr,
-                         final int port,
-                         final Bootstrap clientBootstrap,
-                         final ConcurrentMap<Channel, EventHandler<String>> channelMap,
-                         final StringIdentifierFactory identifierFactory) throws IOException {
-    this.queryId = identifierFactory.getNewInstance(queryId);
-    this.sourceId = identifierFactory.getNewInstance(sourceId);
+  /**
+   * Event generator which is the destination of fetching data.
+   */
+  private EventGenerator eventGenerator;
+
+  public NettyTextDataGenerator(final String serverAddr,
+                                final int port,
+                                final Bootstrap clientBootstrap,
+                                final ConcurrentMap<Channel, EventHandler<String>> channelMap) throws IOException {
     this.clientBootstrap = clientBootstrap;
     this.channelMap = channelMap;
     this.started = new AtomicBoolean(false);
@@ -93,25 +74,15 @@ public final class NettyTextSource implements Source<String> {
   @Override
   public void start() {
     if (started.compareAndSet(false, true)) {
-      if (outputEmitter != null) {
+      if (eventGenerator != null) {
         // register the data stream handler
         final ChannelFuture channelFuture;
         channelFuture = clientBootstrap.connect(serverSocketAddress);
         channel = channelFuture.channel();
         channelMap.putIfAbsent(channel, (input) ->
-            outputEmitter.emitData(new MistDataEvent(input, System.currentTimeMillis())));
+            eventGenerator.emitData(input));
       }
     }
-  }
-
-  @Override
-  public Identifier getIdentifier() {
-    return sourceId;
-  }
-
-  @Override
-  public Identifier getQueryIdentifier() {
-    return queryId;
   }
 
   @Override
@@ -123,7 +94,7 @@ public final class NettyTextSource implements Source<String> {
   }
 
   @Override
-  public void setOutputEmitter(final OutputEmitter emitter) {
-    outputEmitter = emitter;
+  public void setEventGenerator(final EventGenerator eventGenerator) {
+    this.eventGenerator = eventGenerator;
   }
 }

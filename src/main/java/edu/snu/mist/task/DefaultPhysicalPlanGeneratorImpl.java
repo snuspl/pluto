@@ -26,11 +26,11 @@ import edu.snu.mist.formats.avro.*;
 import edu.snu.mist.task.operators.*;
 import edu.snu.mist.task.sinks.NettyTextSinkFactory;
 import edu.snu.mist.task.sinks.Sink;
-import edu.snu.mist.task.sources.NettyTextSourceFactory;
-import edu.snu.mist.task.sources.Source;
+import edu.snu.mist.task.sources.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.reef.io.Tuple;
+import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -41,6 +41,8 @@ import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -54,26 +56,28 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   private static final Logger LOG = Logger.getLogger(DefaultPhysicalPlanGeneratorImpl.class.getName());
 
   private final OperatorIdGenerator operatorIdGenerator;
-  private final NettyTextSourceFactory sourceFactory;
+  private final NettyTextDataGeneratorFactory dataGeneratorFactory;
   private final NettyTextSinkFactory sinkFactory;
   private final String tmpFolderPath;
+  private final ScheduledExecutorService scheduler;
 
   @Inject
   private DefaultPhysicalPlanGeneratorImpl(final OperatorIdGenerator operatorIdGenerator,
                                            @Parameter(TempFolderPath.class) final String tmpFolderPath,
-                                           final NettyTextSourceFactory sourceFactory,
-                                           final NettyTextSinkFactory sinkFactory) {
+                                           final NettyTextDataGeneratorFactory dataGeneratorFactory,
+                                           final NettyTextSinkFactory sinkFactory,
+                                           final ScheduledExecutorServiceWrapper schedulerWrapper) {
     this.operatorIdGenerator = operatorIdGenerator;
-    this.sourceFactory = sourceFactory;
+    this.dataGeneratorFactory = dataGeneratorFactory;
     this.sinkFactory = sinkFactory;
     this.tmpFolderPath = tmpFolderPath;
+    this.scheduler= schedulerWrapper.getScheduler();
   }
 
   /*
-   * This private method makes a NettyTextSocketSource from a source configuration.
+   * This private method makes a NettyTextDataGenerator from a source configuration.
    */
-  private Source getNettyTextSocketSource(final String queryId,
-                                               final Map<CharSequence, Object> sourceConf)
+  private DataGenerator<String> getNettyTextDataGenerator(final Map<CharSequence, Object> sourceConf)
       throws IllegalArgumentException {
     final Map<String, Object> sourceConfString = new HashMap<>();
     for (final Map.Entry<CharSequence, Object> entry : sourceConf.entrySet()) {
@@ -82,8 +86,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     final String socketHostAddress = sourceConfString.get(TextSocketSourceParameters.SOCKET_HOST_ADDRESS).toString();
     final String socketHostPort = sourceConfString.get(TextSocketSourceParameters.SOCKET_HOST_PORT).toString();
     try {
-      return sourceFactory.newSource(queryId,
-          operatorIdGenerator.generate(), socketHostAddress, Integer.valueOf(socketHostPort));
+      return dataGeneratorFactory.newDataGenerator(socketHostAddress, Integer.valueOf(socketHostPort));
     } catch (final Exception e) {
       e.printStackTrace();
       throw new RuntimeException(e);
@@ -199,8 +202,15 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
           final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
           switch (sourceInfo.getSourceType()) {
             case TEXT_SOCKET_SOURCE: {
-              final Source textSocketSource
-                  = getNettyTextSocketSource(queryId, sourceInfo.getSourceConfiguration());
+              final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
+              final DataGenerator<String> textDataGenerator =
+                  getNettyTextDataGenerator(sourceInfo.getSourceConfiguration());
+              // TODO: [MIST-285] get the text socket's watermark information from user.
+              final EventGenerator<String> eventGenerator =
+                  new PeriodicEventGenerator<>(null, 100L, 0L, TimeUnit.MILLISECONDS, scheduler);
+              final Source<String> textSocketSource = new SourceImpl<>(identifierFactory.getNewInstance(queryId),
+                  identifierFactory.getNewInstance(operatorIdGenerator.generate()),
+                  textDataGenerator, eventGenerator);
               deserializedVertices.add(textSocketSource);
               break;
             }
