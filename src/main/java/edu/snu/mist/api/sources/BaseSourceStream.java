@@ -20,12 +20,10 @@ import edu.snu.mist.api.ContinuousStreamImpl;
 import edu.snu.mist.api.SerializedType;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.sources.builder.SourceConfiguration;
+import edu.snu.mist.api.sources.builder.WatermarkConfiguration;
 import edu.snu.mist.api.sources.parameters.SourceSerializeInfo;
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.formats.avro.SourceInfo;
-import edu.snu.mist.formats.avro.SourceTypeEnum;
-import edu.snu.mist.formats.avro.Vertex;
-import edu.snu.mist.formats.avro.VertexTypeEnum;
+import edu.snu.mist.formats.avro.*;
 import org.apache.commons.lang.SerializationUtils;
 
 import java.io.Serializable;
@@ -41,20 +39,40 @@ public abstract class BaseSourceStream<T> extends ContinuousStreamImpl<T> {
    * The value for source configuration.
    */
   protected final SourceConfiguration sourceConfiguration;
+
   /**
    * The type of this source.
    */
   protected final StreamType.SourceType sourceType;
 
+  /**
+   * The value for watermark configuration.
+   */
+  protected final WatermarkConfiguration watermarkConfiguration;
+
   BaseSourceStream(final StreamType.SourceType sourceType,
                    final SourceConfiguration sourceConfiguration,
-                   final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
+                   final DAG<AvroVertexSerializable, StreamType.Direction> dag,
+                   final WatermarkConfiguration watermarkConfiguration) {
     super(StreamType.ContinuousType.SOURCE, dag);
     this.sourceType = sourceType;
     this.sourceConfiguration = sourceConfiguration;
+    this.watermarkConfiguration = watermarkConfiguration;
   }
 
   protected abstract SourceTypeEnum getSourceTypeEnum();
+
+  /**
+   * Gets the type enum of watermark.
+   * @return the type enum of watermark
+   */
+  protected WatermarkTypeEnum getWatermarkTypeEnum() {
+    if (watermarkConfiguration.getWatermarkType() == StreamType.WatermarkType.PERIODIC) {
+      return WatermarkTypeEnum.PERIODIC;
+    } else {
+      return WatermarkTypeEnum.PUNCTUATED;
+    }
+  }
 
   @Override
   public Vertex getSerializedVertex() {
@@ -62,7 +80,8 @@ public abstract class BaseSourceStream<T> extends ContinuousStreamImpl<T> {
     vertexBuilder.setVertexType(VertexTypeEnum.SOURCE);
     final SourceInfo.Builder sourceInfoBuilder = SourceInfo.newBuilder();
     sourceInfoBuilder.setSourceType(getSourceTypeEnum());
-    // Serialize SourceInfo
+    sourceInfoBuilder.setWatermarkType(getWatermarkTypeEnum());
+    // Serialize SourceConfiguration in SourceInfo
     final Map<CharSequence, Object> serializedSourceConf = new HashMap<>();
     for (final String confKey: sourceConfiguration.getConfigurationKeys()) {
       final Object value = sourceConfiguration.getConfigurationValue(confKey);
@@ -72,7 +91,18 @@ public abstract class BaseSourceStream<T> extends ContinuousStreamImpl<T> {
         serializedSourceConf.put(confKey, ByteBuffer.wrap(SerializationUtils.serialize((Serializable) value)));
       }
     }
+    // Serialize WatermarkConfiguration in SourceInfo
+    final Map<CharSequence, Object> serializedWatermarkConf = new HashMap<>();
+    for (final String confKey: watermarkConfiguration.getConfigurationKeys()) {
+      final Object value = watermarkConfiguration.getConfigurationValue(confKey);
+      if (SourceSerializeInfo.getAvroSerializedTypeInfo(confKey) != SerializedType.AvroType.BYTES) {
+        serializedWatermarkConf.put(confKey, value);
+      } else {
+        serializedWatermarkConf.put(confKey, ByteBuffer.wrap(SerializationUtils.serialize((Serializable) value)));
+      }
+    }
     sourceInfoBuilder.setSourceConfiguration(serializedSourceConf);
+    sourceInfoBuilder.setWatermarkConfiguration(serializedWatermarkConf);
     vertexBuilder.setAttributes(sourceInfoBuilder.build());
     return vertexBuilder.build();
   }

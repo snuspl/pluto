@@ -17,14 +17,13 @@
 package edu.snu.mist.examples;
 
 import edu.snu.mist.api.*;
-import edu.snu.mist.api.Exceptions.StreamTypeMismatchException;
+import edu.snu.mist.api.exceptions.StreamTypeMismatchException;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sink.builder.SinkConfiguration;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfigurationBuilderImpl;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
-import edu.snu.mist.api.sources.builder.SourceConfiguration;
-import edu.snu.mist.api.sources.builder.TextSocketSourceConfigurationBuilderImpl;
+import edu.snu.mist.api.sources.builder.*;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import edu.snu.mist.api.types.Tuple2;
 import org.apache.commons.cli.*;
@@ -100,11 +99,11 @@ public final class UnionMist {
    */
   public static APIQuerySubmissionResult submitQuery() throws IOException, InjectionException,
           URISyntaxException, StreamTypeMismatchException {
-    final SourceConfiguration localTextSocketSource1Conf = new TextSocketSourceConfigurationBuilderImpl()
+    final SourceConfiguration localTextSocketSource1Conf = new TextSocketSourceConfigurationBuilder()
         .set(TextSocketSourceParameters.SOCKET_HOST_ADDRESS, source1Host)
         .set(TextSocketSourceParameters.SOCKET_HOST_PORT, source1Port)
         .build();
-    final SourceConfiguration localTextSocketSource2Conf = new TextSocketSourceConfigurationBuilderImpl()
+    final SourceConfiguration localTextSocketSource2Conf = new TextSocketSourceConfigurationBuilder()
         .set(TextSocketSourceParameters.SOCKET_HOST_ADDRESS, source2Host)
         .set(TextSocketSourceParameters.SOCKET_HOST_PORT, source2Port)
         .build();

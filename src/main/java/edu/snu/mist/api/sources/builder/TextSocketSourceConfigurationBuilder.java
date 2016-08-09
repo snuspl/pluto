@@ -16,15 +16,17 @@
 package edu.snu.mist.api.sources.builder;
 
 import com.google.inject.Inject;
-import edu.snu.mist.api.StreamType;
+import edu.snu.mist.api.configurations.MISTConfiguration;
+import edu.snu.mist.api.configurations.MISTConfigurationBuilderImpl;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 
 import java.util.Arrays;
+import java.util.Map;
 
 /**
  * This class builds SourceConfiguration of TextSocketSourceStream.
  */
-public final class TextSocketSourceConfigurationBuilderImpl extends SourceConfigurationBuilderImpl {
+public final class TextSocketSourceConfigurationBuilder extends MISTConfigurationBuilderImpl {
 
   /**
    * Required parameters for TextSocketSourceStream.
@@ -34,13 +36,18 @@ public final class TextSocketSourceConfigurationBuilderImpl extends SourceConfig
       TextSocketSourceParameters.SOCKET_HOST_PORT
   };
 
+  private final String[] textSocketSourceOptionalParameters = {
+      TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION
+  };
+
   @Inject
-  public TextSocketSourceConfigurationBuilderImpl() {
+  public TextSocketSourceConfigurationBuilder() {
     requiredParameters.addAll(Arrays.asList(textSocketSourceParameters));
+    optionalParameters.addAll(Arrays.asList(textSocketSourceOptionalParameters));
   }
 
   @Override
-  public StreamType.SourceType getSourceType() {
-    return StreamType.SourceType.TEXT_SOCKET_SOURCE;
+  protected <T extends MISTConfiguration> T buildConfigMap(final Map<String, Object> configMap) {
+    return (T) new SourceConfiguration(configMap);
   }
 }

@@ -88,6 +88,29 @@
                               "bytes", "int", "string", "float", "boolean"
                             ]
                           }
+                        },
+                        {
+                          "name": "WatermarkType",
+                          "type":
+                          {
+                            "name": "WatermarkTypeEnum",
+                            "type": "enum",
+                            "symbols":
+                            [
+                              "PERIODIC", "PUNCTUATED"
+                            ]
+                          }
+                        },
+                        {
+                          "name": "WatermarkConfiguration",
+                          "type":
+                          {
+                            "type": "map",
+                            "values":
+                            [
+                              "bytes", "int", "string", "float", "boolean"
+                            ]
+                          }
                         }
                       ]
                     },

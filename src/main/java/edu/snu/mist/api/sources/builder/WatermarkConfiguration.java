@@ -13,19 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.api.sources.builder;
 
-package edu.snu.mist.api.Exceptions;
+import edu.snu.mist.api.StreamType;
+import edu.snu.mist.api.configurations.DefaultMISTConfigurationImpl;
+
+import java.util.Map;
 
 /**
- * Signals that type mismatch is occurred during stream type checking.
+ * The class represents watermark configuration.
  */
-public final class StreamTypeMismatchException extends RuntimeException {
+public abstract class WatermarkConfiguration extends DefaultMISTConfigurationImpl {
 
-    public StreamTypeMismatchException() {
-        super();
-    }
+  public WatermarkConfiguration(final Map<String, Object> configMap) {
+    super(configMap);
+  }
 
-    public StreamTypeMismatchException(final String message) {
-        super(message);
-    }
+  /**
+   * Gets the type of watermark.
+   */
+  public abstract StreamType.WatermarkType getWatermarkType();
 }

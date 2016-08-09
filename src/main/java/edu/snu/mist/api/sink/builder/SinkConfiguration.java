@@ -15,26 +15,15 @@
  */
 package edu.snu.mist.api.sink.builder;
 
-import org.apache.reef.tang.annotations.DefaultImplementation;
+import edu.snu.mist.api.configurations.DefaultMISTConfigurationImpl;
 
-import java.util.Set;
+import java.util.Map;
 
 /**
- * This defines configuration interface necessary for building Sink output.
+ * The class represents the sink configuration.
  */
-@DefaultImplementation(DefaultSinkConfigurationImpl.class)
-public interface SinkConfiguration {
-  /**
-   * Gets the configuration value for the given parameter.
-   * @param parameter
-   * @return the configured value for the given parameter
-   * @throws IllegalStateException throws the exception when tries to get a configuration value for non-existing param.
-   */
-  Object getConfigurationValue(String parameter) throws IllegalStateException;
-
-  /**
-   * Gets the set of all configuration keys for the sink configuration.
-   * @return set of configuration keys.
-   */
-  Set<String> getConfigurationKeys();
+public final class SinkConfiguration extends DefaultMISTConfigurationImpl {
+  public SinkConfiguration(final Map<String, Object> configMap) {
+    super(configMap);
+  }
 }

@@ -40,6 +40,11 @@ public final class StreamType {
   public static enum SourceType {TEXT_SOCKET_SOURCE}
 
   /**
+   * The type of source watermark.
+   */
+  public static enum WatermarkType {PERIODIC, PUNCTUATED}
+
+  /**
    * The type of sink stream.
    */
   public static enum SinkType {TEXT_SOCKET_SINK}

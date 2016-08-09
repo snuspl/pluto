@@ -16,28 +16,21 @@
 package edu.snu.mist.api.sources.parameters;
 
 /**
- * This class contains the list of necessary or optional parameters for TextSocketSourceConfiguration.
+ * This class contains the list of necessary parameters for PunctuatedWatermarkConfiguration.
  */
-public final class TextSocketSourceParameters {
+public final class PunctuatedWatermarkParameters {
 
-  private TextSocketSourceParameters() {
+  private PunctuatedWatermarkParameters() {
     // Not called.
   }
 
   /**
-   * The host address of the source socket stream.
+   * The MISTPredicate that judges whether the input data means punctuated watermark or not.
    */
-  public static final String SOCKET_HOST_ADDRESS = "SocketHostAddress";
-
-
-  /**
-   * The host port of the source socket stream.
-   */
-  public static final String SOCKET_HOST_PORT = "SocketHostPort";
+  public static final String WATERMARK_PREDICATE = "WatermarkPredicate";
 
   /**
-   * The timestamp extraction function of the source socket stream.
-   * This parameter is optional. If it is not set, system consider this stream as processing-time stream.
+   * The MISTFunction that parses timestamp from input indicating punctuated watermark.
    */
-  public static final String TIMESTAMP_EXTRACTION_FUNCTION = "Timestamp extraction function";
+  public static final String PARSING_TIMESTAMP_FROM_WATERMARK = "ParsingTimestampFromWatermark";
 }

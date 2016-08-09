@@ -35,6 +35,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -93,7 +94,7 @@ public final class TextSourceTest {
           final DataGenerator<String> dataGenerator =
               textDataGeneratorFactory.newDataGenerator(SERVER_ADDR, SERVER_PORT);
           final EventGenerator<String> eventGenerator =
-              new PunctuatedEventGenerator<>((input) ->
+              new PunctuatedEventGenerator<>((Function) (input) ->
                   new Tuple<>(input.toString().split(":")[0], Long.parseLong(input.toString().split(":")[1])),
                   (input) -> input.toString().split(":")[0].equals("Watermark"),
                   (input) -> Long.parseLong(input.toString().split(":")[1]));

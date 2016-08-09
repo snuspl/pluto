@@ -13,32 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.sink.builder;
-
-import edu.snu.mist.api.StreamType;
+package edu.snu.mist.api.configurations;
 
 /**
- * This interface defines commonly necessary methods for building MIST SourceStream.
+ * This interface defines necessary methods for building MIST configuration.
  */
-public interface SinkConfigurationBuilder {
+public interface MISTConfigurationBuilder {
   /**
-   * Get the target source type of this builder.
-   * @return The type of sink it configures. Ex) ReefNetworkSink
-   */
-  StreamType.SinkType getSinkType();
-
-  /**
-   * Build key-value configuration for Sink.
+   * Build key-value configuration for MIST SourceStream.
    * @return Key-value configuration
    */
-  SinkConfiguration build();
+  <T extends MISTConfiguration> T build();
 
   /**
    * Sets the configuration for the given param to the given value.
    * @param param the parameter given by users which they want to set
    * @param value the value given by users which they want to set
-   * @return the configured SinkConfigurationBuilder
+   * @return the configured SourceBuilder
    * @throws IllegalStateException throws the exception when tries to get a configuration value for non-existing param.
    */
-  SinkConfigurationBuilder set(String param, Object value) throws IllegalStateException;
+  <T> MISTConfigurationBuilder set(String param, T value) throws IllegalStateException;
 }

@@ -13,33 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.sources.builder;
-
+package edu.snu.mist.api.configurations;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * The default implementation class for SourceConfiguration.
+ * The default implementation class for MISTConfiguration.
  */
-public final class DefaultSourceConfigurationImpl implements SourceConfiguration {
+public abstract class DefaultMISTConfigurationImpl implements MISTConfiguration {
 
   /**
    * A Map contains configuration information.
    */
   private final Map<String, Object> configMap;
 
-  public DefaultSourceConfigurationImpl(final Map<String, Object> configMap) {
+  public DefaultMISTConfigurationImpl(final Map<String, Object> configMap) {
     this.configMap = new HashMap<>();
     this.configMap.putAll(configMap);
   }
 
   @Override
-  public Object getConfigurationValue(final String param) {
+  public <T> T getConfigurationValue(final String param) {
     if (!configMap.containsKey(param)) {
       throw new IllegalStateException("Tried to get a configuration value for non-existing param!");
     }
-    return configMap.get(param);
+    return (T) configMap.get(param);
   }
 
   @Override

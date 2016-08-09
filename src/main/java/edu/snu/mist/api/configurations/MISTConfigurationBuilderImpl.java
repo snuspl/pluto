@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package edu.snu.mist.api.sink.builder;
-
-import edu.snu.mist.api.StreamType;
+package edu.snu.mist.api.configurations;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,24 +24,25 @@ import java.util.stream.Stream;
 
 /**
  * This abstract class implements commonly necessary data structures and
- * methods for building Sink output.
+ * methods for building MIST configuration.
  */
-public abstract class SinkConfigurationBuilderImpl implements SinkConfigurationBuilder {
+public abstract class MISTConfigurationBuilderImpl implements MISTConfigurationBuilder {
 
   /**
-   * Configuration storing map for SinkConfigurationBuilderImpl.
+   * Configuration storing map.
    */
   protected final Map<String, Object> configMap = new HashMap<>();
   /**
    * Set of required configuration parameters.
    */
   protected final Set<String> requiredParameters = new HashSet<>();
+  /**
+   * Set of optional configuration parameters.
+   */
+  protected final Set<String> optionalParameters = new HashSet<>();
 
   @Override
-  public abstract StreamType.SinkType getSinkType();
-
-  @Override
-  public SinkConfiguration build() {
+  public <T extends MISTConfiguration> T build() {
     // Check for missing parameters
     Stream<String> missingParams = requiredParameters.stream()
         .filter(s -> !configMap.containsKey(s));
@@ -56,11 +55,16 @@ public abstract class SinkConfigurationBuilderImpl implements SinkConfigurationB
       stringBuilder.append("]");
       throw new IllegalStateException(stringBuilder.toString());
     }
-    return new DefaultSinkConfigurationImpl(configMap);
+    return buildConfigMap(configMap);
   }
 
+  /**
+   * Build the configMap to MISTConfiguration in sub-class.
+   */
+  protected abstract <T extends MISTConfiguration> T buildConfigMap(final Map<String, Object> configurationMap);
+
   @Override
-  public SinkConfigurationBuilder set(final String key, final Object value) {
+  public <T> MISTConfigurationBuilder set(final String key, final T value) {
     if (configMap.containsKey(key)) {
       throw new IllegalStateException("Attempts to add duplicate configuration!");
     }
