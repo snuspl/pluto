@@ -16,7 +16,10 @@
 package edu.snu.mist.api;
 
 import edu.snu.mist.api.sources.TextSocketSourceStream;
+import edu.snu.mist.api.sources.builder.PeriodicWatermarkConfigurationBuilder;
 import edu.snu.mist.api.sources.builder.SourceConfiguration;
+import edu.snu.mist.api.sources.builder.WatermarkConfiguration;
+import edu.snu.mist.api.sources.parameters.PeriodicWatermarkParameters;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 
@@ -30,6 +33,15 @@ public final class MISTQueryBuilder {
    */
   private final DAG<AvroVertexSerializable, StreamType.Direction> dag;
 
+  /**
+   * The default watermark configuration.
+   */
+  private final WatermarkConfiguration defaultWatermarkConf =
+      new PeriodicWatermarkConfigurationBuilder()
+          .set(PeriodicWatermarkParameters.PERIOD, 100)
+          .set(PeriodicWatermarkParameters.EXPECTED_DELAY, 0)
+          .build();
+
   public MISTQueryBuilder() {
     this.dag = new AdjacentListDAG<>();
   }
@@ -40,7 +52,18 @@ public final class MISTQueryBuilder {
    * @return source stream
    */
   public TextSocketSourceStream<String> socketTextStream(final SourceConfiguration sourceConf) {
-    final TextSocketSourceStream<String> sourceStream = new TextSocketSourceStream<>(sourceConf, dag);
+    return socketTextStream(sourceConf, defaultWatermarkConf);
+  }
+
+  /**
+   * Get socket text stream.
+   * @param sourceConf socket text source
+   * @param watermarkConf watermark configuration
+   * @return source stream
+   */
+  public TextSocketSourceStream<String> socketTextStream(final SourceConfiguration sourceConf,
+                                                         final WatermarkConfiguration watermarkConf) {
+    final TextSocketSourceStream<String> sourceStream = new TextSocketSourceStream<>(sourceConf, dag, watermarkConf);
     dag.addVertex(sourceStream);
     return sourceStream;
   }

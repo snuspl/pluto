@@ -21,7 +21,9 @@ import edu.snu.mist.api.functions.MISTPredicate;
 import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sink.builder.SinkConfiguration;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
+import edu.snu.mist.api.sources.builder.PunctuatedWatermarkConfiguration;
 import edu.snu.mist.api.sources.builder.SourceConfiguration;
+import edu.snu.mist.api.sources.parameters.PunctuatedWatermarkParameters;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.api.window.TimeEmitPolicy;
@@ -70,7 +72,9 @@ public final class MISTQueryTest {
   /**
    * Common configuration for each type of source / sink.
    */
-  private final SourceConfiguration textSocketSourceConf = APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF;
+  private final SourceConfiguration textSocketSourceConf = APITestParameters.LOCAL_TEXT_SOCKET_EVENTTIME_SOURCE_CONF;
+  private final PunctuatedWatermarkConfiguration punctuatedWatermarkConf =
+      APITestParameters.PUNCTUTATED_WATERMARK_CONF;
   private final SinkConfiguration textSocketSinkConf = APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF;
 
   /**
@@ -80,7 +84,7 @@ public final class MISTQueryTest {
   @Test
   public void mistComplexQuerySerializeTest() throws InjectionException, IOException, URISyntaxException {
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
-    final Sink sink = queryBuilder.socketTextStream(textSocketSourceConf)
+    final Sink sink = queryBuilder.socketTextStream(textSocketSourceConf, punctuatedWatermarkConf)
         .flatMap(expectedFlatMapFunc)
         .filter(expectedFilterPredicate)
         .map(expectedMapFunc)
@@ -166,12 +170,47 @@ public final class MISTQueryTest {
         // Test for source vertex
         final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
         final Map<CharSequence, Object> sourceConfiguration = sourceInfo.getSourceConfiguration();
+        final Map<CharSequence, Object> watermarkConfiguration = sourceInfo.getWatermarkConfiguration();
         if (sourceInfo.getSourceType() == SourceTypeEnum.TEXT_SOCKET_SOURCE) {
+          final ByteBuffer extractionFunc = (ByteBuffer) sourceConfiguration.get(
+              TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION);
+          byte[] serializedExtractionFunc = new byte[extractionFunc.remaining()];
+          extractionFunc.get(serializedExtractionFunc);
+          final Function deserializedExtractionFunc =
+              (Function) SerializationUtils.deserialize(serializedExtractionFunc);
           Assert.assertEquals(textSocketSourceConf.getConfigurationValue(
-                  TextSocketSourceParameters.SOCKET_HOST_ADDRESS),
+              TextSocketSourceParameters.SOCKET_HOST_ADDRESS),
               sourceConfiguration.get(TextSocketSourceParameters.SOCKET_HOST_ADDRESS));
           Assert.assertEquals(textSocketSourceConf.getConfigurationValue(TextSocketSourceParameters.SOCKET_HOST_PORT),
               sourceConfiguration.get(TextSocketSourceParameters.SOCKET_HOST_PORT));
+          Assert.assertEquals(
+              ((Function)textSocketSourceConf.getConfigurationValue(
+                  TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION)).apply("HelloMIST:1234"),
+              deserializedExtractionFunc.apply("HelloMIST:1234"));
+          final ByteBuffer parsingFunc = (ByteBuffer) watermarkConfiguration.get(
+              PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK);
+          byte[] serializedParsingFunc = new byte[parsingFunc.remaining()];
+          parsingFunc.get(serializedParsingFunc);
+          final Function deserializedParsingFunc =
+              (Function) SerializationUtils.deserialize(serializedParsingFunc);
+          final ByteBuffer watermarkPred = (ByteBuffer) watermarkConfiguration.get(
+              PunctuatedWatermarkParameters.WATERMARK_PREDICATE);
+          byte[] serializedWatermarkPred = new byte[watermarkPred.remaining()];
+          watermarkPred.get(serializedWatermarkPred);
+          final Function deserializedWatermarkPred =
+              (Function) SerializationUtils.deserialize(serializedWatermarkPred);
+          Assert.assertEquals(
+              ((Function)punctuatedWatermarkConf.getConfigurationValue(
+                  PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK)).apply("Watermark:1234"),
+              deserializedParsingFunc.apply("Watermark:1234"));
+          Assert.assertEquals(
+              ((Function)punctuatedWatermarkConf.getConfigurationValue(
+                  PunctuatedWatermarkParameters.WATERMARK_PREDICATE)).apply("Watermark:1234"),
+              deserializedWatermarkPred.apply("Watermark:1234"));
+          Assert.assertEquals(
+              ((Function)punctuatedWatermarkConf.getConfigurationValue(
+                  PunctuatedWatermarkParameters.WATERMARK_PREDICATE)).apply("Data:1234"),
+              deserializedWatermarkPred.apply("Data:1234"));
           vertexIndexes.set(0, index);
         } else {
           Assert.fail("Unexpected Sink type detected during the test! Should be TEXT_SOCKET_SOURCE");

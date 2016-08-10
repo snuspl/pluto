@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.api;
 
-import edu.snu.mist.api.Exceptions.StreamTypeMismatchException;
+import edu.snu.mist.api.exceptions.StreamTypeMismatchException;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTPredicate;

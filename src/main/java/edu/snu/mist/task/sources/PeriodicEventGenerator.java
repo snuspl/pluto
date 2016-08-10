@@ -39,7 +39,7 @@ public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V>
   private final long expectedDelay;
 
   /**
-   * The time unit of period and expectedDelay.
+   * The unit of time for period and expectedDelay.
    */
   private final TimeUnit timeUnit;
 

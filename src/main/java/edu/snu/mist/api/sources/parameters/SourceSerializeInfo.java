@@ -41,6 +41,11 @@ public final class SourceSerializeInfo {
           .put(REEFNetworkSourceParameters.SENDER_ID, SerializedType.AvroType.STRING)
           .put(TextSocketSourceParameters.SOCKET_HOST_ADDRESS, SerializedType.AvroType.STRING)
           .put(TextSocketSourceParameters.SOCKET_HOST_PORT, SerializedType.AvroType.INT)
+          .put(TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION, SerializedType.AvroType.BYTES)
+          .put(PunctuatedWatermarkParameters.WATERMARK_PREDICATE, SerializedType.AvroType.BYTES)
+          .put(PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK, SerializedType.AvroType.BYTES)
+          .put(PeriodicWatermarkParameters.PERIOD, SerializedType.AvroType.INT)
+          .put(PeriodicWatermarkParameters.EXPECTED_DELAY, SerializedType.AvroType.INT)
           .build();
 
   /**

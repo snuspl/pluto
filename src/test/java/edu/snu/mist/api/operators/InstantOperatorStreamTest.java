@@ -16,7 +16,7 @@
 package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.*;
-import edu.snu.mist.api.Exceptions.StreamTypeMismatchException;
+import edu.snu.mist.api.exceptions.StreamTypeMismatchException;
 import edu.snu.mist.api.sources.BaseSourceStream;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.DAG;

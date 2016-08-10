@@ -16,28 +16,21 @@
 package edu.snu.mist.api.sources.parameters;
 
 /**
- * This class contains the list of necessary or optional parameters for TextSocketSourceConfiguration.
+ * This class contains the list of necessary parameters for PeriodicWatermarkConfiguration.
  */
-public final class TextSocketSourceParameters {
+public final class PeriodicWatermarkParameters {
 
-  private TextSocketSourceParameters() {
+  private PeriodicWatermarkParameters() {
     // Not called.
   }
 
   /**
-   * The host address of the source socket stream.
+   * The period to generate periodic watermark.
    */
-  public static final String SOCKET_HOST_ADDRESS = "SocketHostAddress";
-
-
-  /**
-   * The host port of the source socket stream.
-   */
-  public static final String SOCKET_HOST_PORT = "SocketHostPort";
+  public static final String PERIOD = "Period";
 
   /**
-   * The timestamp extraction function of the source socket stream.
-   * This parameter is optional. If it is not set, system consider this stream as processing-time stream.
+   * The expected maximum delay between the time that data is generated in client-side and received in task-side.
    */
-  public static final String TIMESTAMP_EXTRACTION_FUNCTION = "Timestamp extraction function";
+  public static final String EXPECTED_DELAY = "Expected_Delay";
 }

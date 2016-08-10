@@ -13,17 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.sources.builder;
-
-import edu.snu.mist.api.configurations.DefaultMISTConfigurationImpl;
-
-import java.util.Map;
-
 /**
- * The class represents the source configuration.
+ * A package of exceptions for MIST API.
  */
-public final class SourceConfiguration extends DefaultMISTConfigurationImpl {
-  public SourceConfiguration(final Map<String, Object> configMap) {
-    super(configMap);
-  }
-}
+package edu.snu.mist.api.exceptions;

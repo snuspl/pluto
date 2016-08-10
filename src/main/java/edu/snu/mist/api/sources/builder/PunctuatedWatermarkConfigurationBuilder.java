@@ -13,45 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.sink.builder;
+package edu.snu.mist.api.sources.builder;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.configurations.MISTConfiguration;
 import edu.snu.mist.api.configurations.MISTConfigurationBuilderImpl;
-import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
+import edu.snu.mist.api.sources.parameters.PunctuatedWatermarkParameters;
 
-import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.Map;
 
 /**
- * This class builds SinkConfiguration of TextSocketStreamSink.
+ * This class builds punctuated WatermarkConfiguration.
  */
-public final class TextSocketSinkConfigurationBuilderImpl extends MISTConfigurationBuilderImpl {
+public final class PunctuatedWatermarkConfigurationBuilder extends MISTConfigurationBuilderImpl {
 
   /**
-   * Required parameters for TextSocketSink.
+   * Required parameters for punctuated WatermarkConfiguration.
    */
-  private final String[] textSocketStreamSinkParameters = {
-      TextSocketSinkParameters.SOCKET_HOST_ADDRESS,
-      TextSocketSinkParameters.SOCKET_HOST_PORT
+  private final String[] punctuatedWatermarkParameters = {
+      PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK,
+      PunctuatedWatermarkParameters.WATERMARK_PREDICATE
   };
 
-  @Inject
-  public TextSocketSinkConfigurationBuilderImpl() {
-    requiredParameters.addAll(Arrays.asList(textSocketStreamSinkParameters));
-  }
-
-  /**
-   * Gets the type of sink.
-   * @return the type of sink
-   */
-  public StreamType.SinkType getSinkType() {
-    return StreamType.SinkType.TEXT_SOCKET_SINK;
+  public PunctuatedWatermarkConfigurationBuilder() {
+    requiredParameters.addAll(Arrays.asList(punctuatedWatermarkParameters));
   }
 
   @Override
   protected <T extends MISTConfiguration> T buildConfigMap(final Map<String, Object> configMap) {
-    return (T) new SinkConfiguration(configMap);
+    return (T) new PunctuatedWatermarkConfiguration(configMap);
   }
 }

@@ -24,7 +24,7 @@ import edu.snu.mist.api.sink.builder.SinkConfiguration;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfigurationBuilderImpl;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 import edu.snu.mist.api.sources.builder.SourceConfiguration;
-import edu.snu.mist.api.sources.builder.TextSocketSourceConfigurationBuilderImpl;
+import edu.snu.mist.api.sources.builder.TextSocketSourceConfigurationBuilder;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import org.apache.commons.cli.*;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -94,7 +94,7 @@ public final class HelloMist {
    * @throws InjectionException
    */
   public static APIQuerySubmissionResult submitQuery() throws IOException, InjectionException, URISyntaxException {
-    final SourceConfiguration localTextSocketSourceConf = new TextSocketSourceConfigurationBuilderImpl()
+    final SourceConfiguration localTextSocketSourceConf = new TextSocketSourceConfigurationBuilder()
         .set(TextSocketSourceParameters.SOCKET_HOST_ADDRESS, sourceHost)
         .set(TextSocketSourceParameters.SOCKET_HOST_PORT, sourcePort)
         .build();

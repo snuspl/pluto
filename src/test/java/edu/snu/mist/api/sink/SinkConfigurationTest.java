@@ -30,7 +30,7 @@ public class SinkConfigurationTest {
    * Configuration values for TextSocketSink.
    */
   private final String socketHostName = "localhost2";
-  private final int socketPort = 8088;
+  private final long socketPort = 8088;
 
   /**
    * Test whether TextSocketSink configuration contains right information or not.
@@ -45,6 +45,6 @@ public class SinkConfigurationTest {
     Assert.assertEquals(socketHostName,
         textSocketSinkConfiguration.getConfigurationValue(TextSocketSinkParameters.SOCKET_HOST_ADDRESS));
     Assert.assertEquals(socketPort,
-        textSocketSinkConfiguration.getConfigurationValue(TextSocketSinkParameters.SOCKET_HOST_PORT));
+        (long) textSocketSinkConfiguration.getConfigurationValue(TextSocketSinkParameters.SOCKET_HOST_PORT));
   }
 }

@@ -13,7 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.api.sources.builder;
+
+import edu.snu.mist.api.StreamType;
+
+import java.util.Map;
+
 /**
- * A package of exceptions for MIST API.
+ * * The class represents punctuated watermark configuration.
  */
-package edu.snu.mist.api.Exceptions;
+public final class PunctuatedWatermarkConfiguration extends WatermarkConfiguration {
+
+  public PunctuatedWatermarkConfiguration(final Map<String, Object> configMap) {
+    super(configMap);
+  }
+
+  public StreamType.WatermarkType getWatermarkType() {
+    return StreamType.WatermarkType.PUNCTUATED;
+  };
+}

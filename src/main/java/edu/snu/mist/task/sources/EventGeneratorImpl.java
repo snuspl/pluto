@@ -78,6 +78,10 @@ public abstract class EventGeneratorImpl<I, V> implements EventGenerator<I> {
       return new MistDataEvent(input, getCurrentTimestamp());
     } else {
       Tuple<V, Long> extractionResult = extractTimestampFunc.apply(input);
+      if (extractionResult.getKey() == null || extractionResult.getValue() == null) {
+        throw new IllegalArgumentException("Timestamp extraction from input data is failed. Data is " +
+            extractionResult.getKey().toString() + ", timestamp is " + extractionResult.getValue().toString());
+      }
       return new MistDataEvent(extractionResult.getKey(), extractionResult.getValue());
     }
   }

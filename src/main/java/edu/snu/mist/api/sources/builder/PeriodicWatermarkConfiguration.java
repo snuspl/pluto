@@ -15,15 +15,20 @@
  */
 package edu.snu.mist.api.sources.builder;
 
-import edu.snu.mist.api.configurations.DefaultMISTConfigurationImpl;
+import edu.snu.mist.api.StreamType;
 
 import java.util.Map;
 
 /**
- * The class represents the source configuration.
+ * The class represents periodic watermark configuration.
  */
-public final class SourceConfiguration extends DefaultMISTConfigurationImpl {
-  public SourceConfiguration(final Map<String, Object> configMap) {
+public final class PeriodicWatermarkConfiguration extends WatermarkConfiguration {
+
+  public PeriodicWatermarkConfiguration(final Map<String, Object> configMap) {
     super(configMap);
   }
+
+  public StreamType.WatermarkType getWatermarkType() {
+    return StreamType.WatermarkType.PERIODIC;
+  };
 }

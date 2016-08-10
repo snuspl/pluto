@@ -13,17 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.sources.builder;
 
-import edu.snu.mist.api.configurations.DefaultMISTConfigurationImpl;
-
-import java.util.Map;
+package edu.snu.mist.api.exceptions;
 
 /**
- * The class represents the source configuration.
+ * Signals that type mismatch is occurred during stream type checking.
  */
-public final class SourceConfiguration extends DefaultMISTConfigurationImpl {
-  public SourceConfiguration(final Map<String, Object> configMap) {
-    super(configMap);
-  }
+public final class StreamTypeMismatchException extends RuntimeException {
+
+    public StreamTypeMismatchException() {
+        super();
+    }
+
+    public StreamTypeMismatchException(final String message) {
+        super(message);
+    }
 }
