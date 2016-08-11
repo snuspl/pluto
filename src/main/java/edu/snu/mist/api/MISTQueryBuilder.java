@@ -16,10 +16,9 @@
 package edu.snu.mist.api;
 
 import edu.snu.mist.api.sources.TextSocketSourceStream;
-import edu.snu.mist.api.sources.builder.PeriodicWatermarkConfigurationBuilder;
-import edu.snu.mist.api.sources.builder.SourceConfiguration;
+import edu.snu.mist.api.sources.builder.PeriodicWatermarkConfiguration;
+import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
 import edu.snu.mist.api.sources.builder.WatermarkConfiguration;
-import edu.snu.mist.api.sources.parameters.PeriodicWatermarkParameters;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 
@@ -36,10 +35,10 @@ public final class MISTQueryBuilder {
   /**
    * The default watermark configuration.
    */
-  private final WatermarkConfiguration defaultWatermarkConf =
-      new PeriodicWatermarkConfigurationBuilder()
-          .set(PeriodicWatermarkParameters.PERIOD, 100)
-          .set(PeriodicWatermarkParameters.EXPECTED_DELAY, 0)
+  private final PeriodicWatermarkConfiguration<String> defaultWatermarkConf =
+      PeriodicWatermarkConfiguration.<String>newBuilder()
+          .setWatermarkPeriod(100)
+          .setExpectedDelay(0)
           .build();
 
   public MISTQueryBuilder() {
@@ -51,7 +50,7 @@ public final class MISTQueryBuilder {
    * @param sourceConf socket text source
    * @return source stream
    */
-  public TextSocketSourceStream<String> socketTextStream(final SourceConfiguration sourceConf) {
+  public TextSocketSourceStream socketTextStream(final TextSocketSourceConfiguration sourceConf) {
     return socketTextStream(sourceConf, defaultWatermarkConf);
   }
 
@@ -61,9 +60,9 @@ public final class MISTQueryBuilder {
    * @param watermarkConf watermark configuration
    * @return source stream
    */
-  public TextSocketSourceStream<String> socketTextStream(final SourceConfiguration sourceConf,
-                                                         final WatermarkConfiguration watermarkConf) {
-    final TextSocketSourceStream<String> sourceStream = new TextSocketSourceStream<>(sourceConf, dag, watermarkConf);
+  public TextSocketSourceStream socketTextStream(final TextSocketSourceConfiguration sourceConf,
+                                                 final WatermarkConfiguration<String> watermarkConf) {
+    final TextSocketSourceStream sourceStream = new TextSocketSourceStream(sourceConf, dag, watermarkConf);
     dag.addVertex(sourceStream);
     return sourceStream;
   }
@@ -75,5 +74,4 @@ public final class MISTQueryBuilder {
   public MISTQuery build() {
     return new MISTQueryImpl(dag);
   }
-
 }

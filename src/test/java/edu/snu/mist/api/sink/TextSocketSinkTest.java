@@ -24,7 +24,7 @@ import org.junit.Test;
 import java.util.Map;
 
 /**
- * The test class for SinkConfiguration.
+ * The test class for TextSocketSinkConfiguration.
  */
 public class TextSocketSinkTest {
   /**

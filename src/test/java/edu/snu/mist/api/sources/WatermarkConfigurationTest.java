@@ -16,6 +16,7 @@
 package edu.snu.mist.api.sources;
 
 import edu.snu.mist.api.functions.MISTFunction;
+import edu.snu.mist.api.functions.MISTPredicate;
 import edu.snu.mist.api.sources.builder.*;
 import edu.snu.mist.api.sources.parameters.PeriodicWatermarkParameters;
 import edu.snu.mist.api.sources.parameters.PunctuatedWatermarkParameters;
@@ -26,40 +27,50 @@ import org.junit.Test;
  * The test class for WatermarkConfiguration.
  */
 public class WatermarkConfigurationTest {
-
   /**
-   * Configuration values for WatermarkGenerator.
-   */
-  private final long period = 100;
-  private final long expectedDelay = 0;
-  private final MISTFunction watermarkFunction = input -> input.toString().split(":")[0].equals("Watermark");
-  private final MISTFunction parsingTimestampFunction = input -> Long.parseLong(input.toString().split(":")[1]);
-
-  /**
-   * Test for TestSocketSource configuration builder.
+   * Test for PunctuatedWatermark configuration builder.
    */
   @Test
-  public void testWatermarkConfBuilder() {
-    final PunctuatedWatermarkConfiguration punctuatedWatermarkConfiguration =
-        new PunctuatedWatermarkConfigurationBuilder()
-        .set(PunctuatedWatermarkParameters.WATERMARK_PREDICATE, watermarkFunction)
-        .set(PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK, parsingTimestampFunction)
-        .build();
-    final PeriodicWatermarkConfiguration periodicWatermarkConfiguration =
-        new PeriodicWatermarkConfigurationBuilder()
-        .set(PeriodicWatermarkParameters.EXPECTED_DELAY, expectedDelay)
-        .set(PeriodicWatermarkParameters.PERIOD, period)
+  public void testPunctuatedWatermarkConfBuilder() {
+    /**
+     * Configuration values for Watermark.
+     */
+    final MISTPredicate<String> watermarkPredicate = input -> input.split(":")[0].equals("Watermark");
+    final MISTFunction<String, Long> parsingTimestampFunction = input -> Long.parseLong(input.split(":")[1]);
+
+    final PunctuatedWatermarkConfiguration<String> punctuatedWatermarkConfiguration =
+        PunctuatedWatermarkConfiguration.<String>newBuilder()
+        .setWatermarkPredicate(watermarkPredicate)
+        .setParsingWatermarkFunction(parsingTimestampFunction)
         .build();
 
-    Assert.assertEquals(period,
-        (long) periodicWatermarkConfiguration.getConfigurationValue(PeriodicWatermarkParameters.PERIOD));
-    Assert.assertEquals(expectedDelay,
-        (long) periodicWatermarkConfiguration.getConfigurationValue(PeriodicWatermarkParameters.EXPECTED_DELAY));
-
-    Assert.assertEquals(watermarkFunction,
+    Assert.assertEquals(watermarkPredicate,
         punctuatedWatermarkConfiguration.getConfigurationValue(PunctuatedWatermarkParameters.WATERMARK_PREDICATE));
     Assert.assertEquals(parsingTimestampFunction,
         punctuatedWatermarkConfiguration.getConfigurationValue(
             PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK));
+  }
+
+  /**
+   * Test for PeriodicWatermark configuration builder.
+   */
+  @Test
+  public void testPeriodicWatermarkConfBuilder() {
+    /**
+     * Configuration values for Watermark.
+     */
+    final Integer period = 100;
+    final Integer expectedDelay = 0;
+
+    final PeriodicWatermarkConfiguration periodicWatermarkConfiguration =
+        PeriodicWatermarkConfiguration.newBuilder()
+            .setWatermarkPeriod(period)
+            .setExpectedDelay(expectedDelay)
+            .build();
+
+    Assert.assertEquals(period,
+            periodicWatermarkConfiguration.getConfigurationValue(PeriodicWatermarkParameters.PERIOD));
+    Assert.assertEquals(expectedDelay,
+            periodicWatermarkConfiguration.getConfigurationValue(PeriodicWatermarkParameters.EXPECTED_DELAY));
   }
 }

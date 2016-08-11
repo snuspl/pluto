@@ -15,15 +15,16 @@
  */
 package edu.snu.mist.api.sink.builder;
 
-import edu.snu.mist.api.configurations.DefaultMISTConfigurationImpl;
+import edu.snu.mist.api.configurations.MISTConfigurationImpl;
 
 import java.util.Map;
 
 /**
- * The class represents the sink configuration.
+ * The class represents Sink configuration.
+ * @param <T> the type of source data
  */
-public final class SinkConfiguration extends DefaultMISTConfigurationImpl {
-  public SinkConfiguration(final Map<String, Object> configMap) {
+public abstract class SinkConfiguration<T> extends MISTConfigurationImpl {
+  protected SinkConfiguration(final Map<String, Object> configMap) {
     super(configMap);
   }
 }

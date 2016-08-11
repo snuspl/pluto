@@ -15,15 +15,16 @@
  */
 package edu.snu.mist.api.sources.builder;
 
-import edu.snu.mist.api.configurations.DefaultMISTConfigurationImpl;
+import edu.snu.mist.api.configurations.MISTConfigurationImpl;
 
 import java.util.Map;
 
 /**
- * The class represents the source configuration.
+ * The class represents source configuration.
+ * @param <T> the type of source data
  */
-public final class SourceConfiguration extends DefaultMISTConfigurationImpl {
-  public SourceConfiguration(final Map<String, Object> configMap) {
+public abstract class SourceConfiguration<T> extends MISTConfigurationImpl {
+  protected SourceConfiguration(final Map<String, Object> configMap) {
     super(configMap);
   }
 }

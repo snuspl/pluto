@@ -45,9 +45,9 @@ public final class QueryPartitionerTest {
   public void testComplexQueryPartitioning() throws InjectionException {
     // Build a physical plan
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
-    final TextSocketSourceStream<String> src1 =
+    final TextSocketSourceStream src1 =
         queryBuilder.socketTextStream(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
-    final TextSocketSourceStream<String> src2 =
+    final TextSocketSourceStream src2 =
         queryBuilder.socketTextStream(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
     final ContinuousStream<String> op11 = src1.filter((x) -> true);
     final ContinuousStream<String> op21 = src2.filter((x) -> true);
@@ -127,7 +127,7 @@ public final class QueryPartitionerTest {
   @Test
   public void testSequentialChaining() throws InjectionException {
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
-    final TextSocketSourceStream<String> src1 =
+    final TextSocketSourceStream src1 =
         queryBuilder.socketTextStream(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
     final ContinuousStream<String> op11 = src1.filter((x) -> true);
     final ContinuousStream<String> op12 = op11.filter((x) -> true);
@@ -170,7 +170,7 @@ public final class QueryPartitionerTest {
   @Test
   public void testBranchTest() throws InjectionException {
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
-    final TextSocketSourceStream<String> src1 =
+    final TextSocketSourceStream src1 =
         queryBuilder.socketTextStream(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
     final ContinuousStream<String> op11 = src1.filter((x) -> true);
     final ContinuousStream<String> op12 = op11.filter((x) -> true);
@@ -244,11 +244,11 @@ public final class QueryPartitionerTest {
   @Test
   public void testMergingQueryPartitioning() throws InjectionException {
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
-    final TextSocketSourceStream<String> src1 =
+    final TextSocketSourceStream src1 =
         queryBuilder.socketTextStream(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
-    final TextSocketSourceStream<String> src2 =
+    final TextSocketSourceStream src2 =
         queryBuilder.socketTextStream(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
-    final TextSocketSourceStream<String> src3 =
+    final TextSocketSourceStream src3 =
         queryBuilder.socketTextStream(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
     final ContinuousStream<String> op11 = src1.filter((x) -> true);
     final ContinuousStream<String> op12 = op11.filter((x) -> true);
@@ -332,7 +332,7 @@ public final class QueryPartitionerTest {
   @Test
   public void testForkAndMergeChaining() throws InjectionException {
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
-    final TextSocketSourceStream<String> src1 =
+    final TextSocketSourceStream src1 =
         queryBuilder.socketTextStream(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
     final ContinuousStream<String> opA = src1.filter((x) -> true);
     final ContinuousStream<String> opB1 = opA.filter((x) -> true);

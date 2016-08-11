@@ -15,36 +15,36 @@
  */
 package edu.snu.mist.api.sink;
 
-import edu.snu.mist.api.sink.builder.SinkConfiguration;
-import edu.snu.mist.api.sink.builder.TextSocketSinkConfigurationBuilderImpl;
+import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * The test class for SinkConfiguration.
+ * The test class for TextSocketSinkConfiguration.
  */
-public class SinkConfigurationTest {
+public class TextSocketSinkConfigurationTest {
 
   /**
    * Configuration values for TextSocketSink.
    */
   private final String socketHostName = "localhost2";
-  private final long socketPort = 8088;
+  private final Integer socketPort = 8088;
 
   /**
    * Test whether TextSocketSink configuration contains right information or not.
    */
   @Test
   public void testTextSocketSinkConfBuilder() {
-    final SinkConfiguration textSocketSinkConfiguration = new TextSocketSinkConfigurationBuilderImpl()
-        .set(TextSocketSinkParameters.SOCKET_HOST_ADDRESS, socketHostName)
-        .set(TextSocketSinkParameters.SOCKET_HOST_PORT, socketPort)
+    final TextSocketSinkConfiguration textSocketTextSocketSinkConfiguration =
+        TextSocketSinkConfiguration.newBuilder()
+        .setHostAddress(socketHostName)
+        .setHostPort(socketPort)
         .build();
 
     Assert.assertEquals(socketHostName,
-        textSocketSinkConfiguration.getConfigurationValue(TextSocketSinkParameters.SOCKET_HOST_ADDRESS));
+        textSocketTextSocketSinkConfiguration.getConfigurationValue(TextSocketSinkParameters.SOCKET_HOST_ADDRESS));
     Assert.assertEquals(socketPort,
-        (long) textSocketSinkConfiguration.getConfigurationValue(TextSocketSinkParameters.SOCKET_HOST_PORT));
+        textSocketTextSocketSinkConfiguration.getConfigurationValue(TextSocketSinkParameters.SOCKET_HOST_PORT));
   }
 }

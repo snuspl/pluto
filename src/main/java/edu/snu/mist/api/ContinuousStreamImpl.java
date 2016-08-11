@@ -23,7 +23,7 @@ import edu.snu.mist.api.functions.MISTPredicate;
 import edu.snu.mist.api.operators.*;
 import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sink.TextSocketSink;
-import edu.snu.mist.api.sink.builder.SinkConfiguration;
+import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
 import edu.snu.mist.api.window.WindowEmitPolicy;
 import edu.snu.mist.api.window.WindowSizePolicy;
 import edu.snu.mist.common.DAG;
@@ -119,8 +119,8 @@ public abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implemen
   }
 
   @Override
-  public Sink textSocketOutput(final SinkConfiguration sinkConfiguration) {
-    final Sink sink = new TextSocketSink(StreamType.SinkType.TEXT_SOCKET_SINK, sinkConfiguration);
+  public Sink textSocketOutput(final TextSocketSinkConfiguration textSocketSinkConfiguration) {
+    final Sink sink = new TextSocketSink(StreamType.SinkType.TEXT_SOCKET_SINK, textSocketSinkConfiguration);
     dag.addVertex(sink);
     dag.addEdge(this, sink, StreamType.Direction.LEFT);
     return sink;

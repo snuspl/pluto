@@ -20,12 +20,8 @@ import edu.snu.mist.api.APIQuerySubmissionResult;
 import edu.snu.mist.api.MISTExecutionEnvironment;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
-import edu.snu.mist.api.sink.builder.SinkConfiguration;
-import edu.snu.mist.api.sink.builder.TextSocketSinkConfigurationBuilderImpl;
-import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
-import edu.snu.mist.api.sources.builder.SourceConfiguration;
-import edu.snu.mist.api.sources.builder.TextSocketSourceConfigurationBuilder;
-import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
+import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
+import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
 import org.apache.commons.cli.*;
 import org.apache.reef.tang.exceptions.InjectionException;
 
@@ -94,14 +90,14 @@ public final class HelloMist {
    * @throws InjectionException
    */
   public static APIQuerySubmissionResult submitQuery() throws IOException, InjectionException, URISyntaxException {
-    final SourceConfiguration localTextSocketSourceConf = new TextSocketSourceConfigurationBuilder()
-        .set(TextSocketSourceParameters.SOCKET_HOST_ADDRESS, sourceHost)
-        .set(TextSocketSourceParameters.SOCKET_HOST_PORT, sourcePort)
+    final TextSocketSourceConfiguration localTextSocketSourceConf = TextSocketSourceConfiguration.newBuilder()
+        .setHostAddress(sourceHost)
+        .setHostPort(sourcePort)
         .build();
 
-    final SinkConfiguration localTextSocketSinkConf = new TextSocketSinkConfigurationBuilderImpl()
-        .set(TextSocketSinkParameters.SOCKET_HOST_ADDRESS, SINK_HOST)
-        .set(TextSocketSinkParameters.SOCKET_HOST_PORT, SINK_PORT)
+    final TextSocketSinkConfiguration localTextSocketSinkConf = TextSocketSinkConfiguration.newBuilder()
+        .setHostAddress(SINK_HOST)
+        .setHostPort(SINK_PORT)
         .build();
 
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();

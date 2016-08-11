@@ -21,14 +21,14 @@ import java.util.Set;
 /**
  * The default implementation class for MISTConfiguration.
  */
-public abstract class DefaultMISTConfigurationImpl implements MISTConfiguration {
+public abstract class MISTConfigurationImpl implements MISTConfiguration {
 
   /**
    * A Map contains configuration information.
    */
   private final Map<String, Object> configMap;
 
-  public DefaultMISTConfigurationImpl(final Map<String, Object> configMap) {
+  protected MISTConfigurationImpl(final Map<String, Object> configMap) {
     this.configMap = new HashMap<>();
     this.configMap.putAll(configMap);
   }

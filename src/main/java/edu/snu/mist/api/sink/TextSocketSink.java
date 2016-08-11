@@ -17,17 +17,17 @@
 package edu.snu.mist.api.sink;
 
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.api.sink.builder.SinkConfiguration;
+import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
 import edu.snu.mist.formats.avro.SinkTypeEnum;
 
 /**
  * TextSocketSink class.
  */
-public final class TextSocketSink extends BaseSink {
+public final class TextSocketSink extends BaseSink<String> {
 
   public TextSocketSink(final StreamType.SinkType sinkType,
-                        final SinkConfiguration sinkConfiguration) {
-    super(sinkType, sinkConfiguration);
+                        final TextSocketSinkConfiguration textSocketSinkConfiguration) {
+    super(sinkType, textSocketSinkConfiguration);
   }
 
   @Override

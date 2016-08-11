@@ -19,10 +19,10 @@ import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTPredicate;
 import edu.snu.mist.api.sink.Sink;
-import edu.snu.mist.api.sink.builder.SinkConfiguration;
+import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 import edu.snu.mist.api.sources.builder.PunctuatedWatermarkConfiguration;
-import edu.snu.mist.api.sources.builder.SourceConfiguration;
+import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
 import edu.snu.mist.api.sources.parameters.PunctuatedWatermarkParameters;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import edu.snu.mist.api.types.Tuple2;
@@ -67,19 +67,19 @@ public final class MISTQueryTest {
   private final WindowSizePolicy expectedWindowSizePolicy = new TimeSizePolicy(expectedTimeSize);
   private final WindowEmitPolicy expectedWindowEmitPolicy = new TimeEmitPolicy(expectedTimeEmitInterval);
   private final MISTBiFunction<Integer, Integer, Integer> expectedReduceFunc = (x, y) -> x + y;
-  private final Integer expectedReduceKeyIndex = new Integer(0);
+  private final Integer expectedReduceKeyIndex = 0;
 
   /**
    * Common configuration for each type of source / sink.
    */
-  private final SourceConfiguration textSocketSourceConf = APITestParameters.LOCAL_TEXT_SOCKET_EVENTTIME_SOURCE_CONF;
+  private final TextSocketSourceConfiguration textSocketSourceConf =
+      APITestParameters.LOCAL_TEXT_SOCKET_EVENTTIME_SOURCE_CONF;
   private final PunctuatedWatermarkConfiguration punctuatedWatermarkConf =
-      APITestParameters.PUNCTUTATED_WATERMARK_CONF;
-  private final SinkConfiguration textSocketSinkConf = APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF;
+      APITestParameters.PUNCTUATED_WATERMARK_CONF;
+  private final TextSocketSinkConfiguration textSocketSinkConf = APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF;
 
   private void checkSource(final Vertex vertex) {
     // Test for source vertex
-    //final Vertex vertex = avroVertexChain.getVertexChain().get(0);
     final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
     final Map<CharSequence, Object> sourceConfiguration = sourceInfo.getSourceConfiguration();
 
@@ -109,20 +109,20 @@ public final class MISTQueryTest {
         PunctuatedWatermarkParameters.WATERMARK_PREDICATE);
     byte[] serializedWatermarkPred = new byte[watermarkPred.remaining()];
     watermarkPred.get(serializedWatermarkPred);
-    final Function deserializedWatermarkPred =
-        (Function) SerializationUtils.deserialize(serializedWatermarkPred);
+    final Predicate deserializedWatermarkPred =
+        (Predicate) SerializationUtils.deserialize(serializedWatermarkPred);
     Assert.assertEquals(
         ((Function)punctuatedWatermarkConf.getConfigurationValue(
             PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK)).apply("Watermark:1234"),
         deserializedParsingFunc.apply("Watermark:1234"));
     Assert.assertEquals(
-        ((Function)punctuatedWatermarkConf.getConfigurationValue(
-            PunctuatedWatermarkParameters.WATERMARK_PREDICATE)).apply("Watermark:1234"),
-        deserializedWatermarkPred.apply("Watermark:1234"));
+        ((Predicate)punctuatedWatermarkConf.getConfigurationValue(
+            PunctuatedWatermarkParameters.WATERMARK_PREDICATE)).test("Watermark:1234"),
+        deserializedWatermarkPred.test("Watermark:1234"));
     Assert.assertEquals(
-        ((Function)punctuatedWatermarkConf.getConfigurationValue(
-            PunctuatedWatermarkParameters.WATERMARK_PREDICATE)).apply("Data:1234"),
-        deserializedWatermarkPred.apply("Data:1234"));
+        ((Predicate)punctuatedWatermarkConf.getConfigurationValue(
+            PunctuatedWatermarkParameters.WATERMARK_PREDICATE)).test("Data:1234"),
+        deserializedWatermarkPred.test("Data:1234"));
   }
 
   /**
@@ -204,9 +204,9 @@ public final class MISTQueryTest {
         final Vertex windowVertex = avroVertexChain.getVertexChain().get(3);
         final WindowOperatorInfo windowOperatorInfo = (WindowOperatorInfo) windowVertex.getAttributes();
         Assert.assertEquals(expectedSizePolicyEnum, windowOperatorInfo.getSizePolicyType());
-        Assert.assertEquals(new Long(expectedTimeSize), windowOperatorInfo.getSizePolicyInfo());
+        Assert.assertEquals((long) expectedTimeSize, windowOperatorInfo.getSizePolicyInfo());
         Assert.assertEquals(expectedEmitPolicyEnum, windowOperatorInfo.getEmitPolicyType());
-        Assert.assertEquals(new Long(expectedTimeEmitInterval), windowOperatorInfo.getEmitPolicyInfo());
+        Assert.assertEquals((long) expectedTimeEmitInterval, windowOperatorInfo.getEmitPolicyInfo());
 
         // Test for reduceByKeyWindow
         final Vertex reduceByKeyVertex = avroVertexChain.getVertexChain().get(4);
@@ -222,7 +222,6 @@ public final class MISTQueryTest {
         Assert.assertEquals(expectedReduceFunc.apply(5, 4), reduceFunc.apply(5, 4));
         Assert.assertEquals(expectedReduceKeyIndex, reduceByKeyIndex);
       } else if (avroVertexChain.getAvroVertexChainType() == AvroVertexTypeEnum.SOURCE) {
-        // Test for source vertex
         checkSource(avroVertexChain.getVertexChain().get(0));
       } else {
         Assert.fail("Unexpected vertex type detected!" +

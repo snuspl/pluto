@@ -21,7 +21,7 @@ import java.util.Set;
  * This interface defines necessary methods for storing and getting
  * configuration for source, sink, or watermark.
  */
-public interface MISTConfiguration {
+interface MISTConfiguration {
 
   /**
    * Gets the configuration value for the given parameter.

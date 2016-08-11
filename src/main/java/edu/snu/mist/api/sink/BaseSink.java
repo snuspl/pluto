@@ -33,8 +33,9 @@ import java.util.Map;
 
 /**
  * The base class for sink.
+ * @param <T> the type of sink data
  */
-public abstract class BaseSink implements Sink {
+public abstract class BaseSink<T> implements Sink {
 
   /**
    * The type of this sink.
@@ -44,14 +45,13 @@ public abstract class BaseSink implements Sink {
   /**
    * The value for sink configuration.
    */
-  protected final SinkConfiguration sinkConfiguration;
+  protected final SinkConfiguration<T> sinkConfiguration;
 
   public BaseSink(final StreamType.SinkType sinkType,
-                  final SinkConfiguration sinkConfiguration) {
+                  final SinkConfiguration<T> sinkConfiguration) {
     this.sinkType = sinkType;
     this.sinkConfiguration = sinkConfiguration;
   }
-
 
   /**
    * @return The type of the sink stream

@@ -16,44 +16,43 @@
 package edu.snu.mist.api.sources;
 
 import edu.snu.mist.api.functions.MISTFunction;
-import edu.snu.mist.api.sources.builder.SourceConfiguration;
-import edu.snu.mist.api.sources.builder.TextSocketSourceConfigurationBuilder;
+import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import org.apache.reef.io.Tuple;
 import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * The test class for SourceConfiguration.
+ * The test class for TextSocketSourceConfiguration.
  */
-public class SourceConfigurationTest {
-
+public class TextSocketSourceConfigurationTest {
   /**
    * Configuration values for TextSocketSource.
    */
   private final String socketHostName = "localhost2";
-  private final long socketPort = 8088;
-  private final MISTFunction<String, Tuple<String, Long>> timestampExtractionFunction =
-      (MISTFunction) (input -> new Tuple<>(input.toString().split(":")[0],
-          Long.parseLong(input.toString().split(":")[1])));
+  private final Integer socketPort = 8088;
 
   /**
    * Test for TestSocketSource configuration builder.
    */
   @Test
   public void testTextSocketSourceConfBuilder() {
-    final SourceConfiguration textSocketSourceConfiguration =
-        new TextSocketSourceConfigurationBuilder()
-        .set(TextSocketSourceParameters.SOCKET_HOST_ADDRESS, socketHostName)
-        .set(TextSocketSourceParameters.SOCKET_HOST_PORT, socketPort)
-        .set(TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION, timestampExtractionFunction)
+    final MISTFunction<String, Tuple<String, Long>> timestampExtractionFunction =
+        input -> new Tuple<>(input.split(":")[0], Long.parseLong(input.split(":")[1]));
+
+    final TextSocketSourceConfiguration textSocketTextSocketSourceConfiguration =
+        TextSocketSourceConfiguration.newBuilder()
+        .setHostAddress(socketHostName)
+        .setHostPort(socketPort)
+        .setTimestampExtractionFunction(timestampExtractionFunction)
         .build();
 
     Assert.assertEquals(socketHostName,
-        textSocketSourceConfiguration.getConfigurationValue(TextSocketSourceParameters.SOCKET_HOST_ADDRESS));
+        textSocketTextSocketSourceConfiguration.getConfigurationValue(TextSocketSourceParameters.SOCKET_HOST_ADDRESS));
     Assert.assertEquals(socketPort,
-        (long) textSocketSourceConfiguration.getConfigurationValue(TextSocketSourceParameters.SOCKET_HOST_PORT));
+        textSocketTextSocketSourceConfiguration.getConfigurationValue(TextSocketSourceParameters.SOCKET_HOST_PORT));
     Assert.assertEquals(timestampExtractionFunction,
-        textSocketSourceConfiguration.getConfigurationValue(TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION));
+        textSocketTextSocketSourceConfiguration.getConfigurationValue(
+            TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION));
   }
 }
