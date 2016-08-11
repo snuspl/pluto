@@ -23,8 +23,14 @@ import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
 import edu.snu.mist.api.sources.builder.*;
 import edu.snu.mist.api.types.Tuple2;
-import org.apache.commons.cli.*;
+import edu.snu.mist.examples.parameters.UnionLeftSourceAddress;
+import edu.snu.mist.examples.parameters.UnionRightSourceAddress;
+import org.apache.reef.tang.Configuration;
+import org.apache.reef.tang.Injector;
+import org.apache.reef.tang.JavaConfigurationBuilder;
+import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
+import org.apache.reef.tang.formats.CommandLine;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -33,59 +39,6 @@ import java.net.URISyntaxException;
  * Example client which submits a query unifying two source using union operator.
  */
 public final class UnionMist {
-
-  private static String source1Host = "localhost";
-  private static int source1Port = 20328;
-  private static String source2Host = "localhost";
-  private static int source2Port = 20329;
-  private static final String SINK_HOST = "localhost";
-  private static final int SINK_PORT = 20330;
-  private static String driverHost = "localhost";
-  private static int driverPort = 20332;
-
-  /**
-   * Print command line options.
-   * @param options command line options
-   * @param reason how the user use the options incorrectly
-   */
-  private static void printHelp(final Options options, final String reason) {
-    if (reason != null) {
-      System.out.println(reason);
-    }
-    new HelpFormatter().printHelp("UnionMist", options);
-    System.exit(1);
-  }
-
-  /**
-   * Generate an Option from the parameters.
-   * @param shortArg short name of the argument
-   * @param longArg long name of the argument
-   * @param description description of the argument
-   * @return an Option from the names and description
-   */
-  private static Option setOption(final String shortArg, final String longArg, final String description) {
-    final Option option = new Option(shortArg, longArg, true, description);
-    option.setOptionalArg(true);
-    return option;
-  }
-
-  /**
-   * Bundle options for MIST.
-   * @return the bundled Options
-   */
-  private static Options setOptions() {
-    final Options options = new Options();
-    final Option helpOption = new Option("?", "help", false, "Print help");
-    options.addOption(helpOption);
-    options.addOption(setOption("d", "driver", "Address of running MIST driver" +
-        " in the form of hostname:port (Default: localhost:20332)."));
-    options.addOption(setOption("s1", "source1", "Address of running source server 1" +
-        " in the form of hostname:port (Default: localhost:20328)."));
-    options.addOption(setOption("s2", "source2", "Address of running source server 2" +
-        " in the form of hostname:port (Default: localhost:20329)."));
-    return options;
-  }
-
   /**
    * Submit a query unifying two source.
    * The query reads strings from two source servers, unifies them, and send them to a sink server.
@@ -94,20 +47,16 @@ public final class UnionMist {
    * @throws InjectionException
    * @throws StreamTypeMismatchException
    */
-  public static APIQuerySubmissionResult submitQuery() throws IOException, InjectionException,
-          URISyntaxException, StreamTypeMismatchException {
-    final TextSocketSourceConfiguration localTextSocketSource1Conf = TextSocketSourceConfiguration.newBuilder()
-        .setHostAddress(source1Host)
-        .setHostPort(source1Port)
-        .build();
-    final TextSocketSourceConfiguration localTextSocketSource2Conf = TextSocketSourceConfiguration.newBuilder()
-        .setHostAddress(source2Host)
-        .setHostPort(source2Port)
-        .build();
-    final TextSocketSinkConfiguration localTextSocketSinkConf = TextSocketSinkConfiguration.newBuilder()
-        .setHostAddress(SINK_HOST)
-        .setHostPort(SINK_PORT)
-        .build();
+  public static APIQuerySubmissionResult submitQuery(final Configuration configuration)
+      throws IOException, InjectionException, URISyntaxException, StreamTypeMismatchException {
+    final Injector injector = Tang.Factory.getTang().newInjector(configuration);
+    final String source1Socket = injector.getNamedInstance(UnionLeftSourceAddress.class);
+    final String source2Socket = injector.getNamedInstance(UnionRightSourceAddress.class);
+    final TextSocketSourceConfiguration localTextSocketSource1Conf =
+        MISTExampleUtils.getLocalTextSocketSourceConf(source1Socket);
+    final TextSocketSourceConfiguration localTextSocketSource2Conf =
+        MISTExampleUtils.getLocalTextSocketSourceConf(source2Socket);
+    final TextSocketSinkConfiguration localTextSocketSinkConf = MISTExampleUtils.getLocalTextSocketSinkConf();
 
     // Simple reduce function.
     final MISTBiFunction<Integer, Integer, Integer> reduceFunction = (v1, v2) -> { return v1 + v2; };
@@ -125,8 +74,8 @@ public final class UnionMist {
         .textSocketOutput(localTextSocketSinkConf);
 
     final MISTQuery query = queryBuilder.build();
-    final MISTExecutionEnvironment executionEnvironment = new MISTTestExecutionEnvironmentImpl(driverHost, driverPort);
-    return executionEnvironment.submit(query);
+
+    return MISTExampleUtils.submit(query, configuration);
   }
 
   /**
@@ -135,35 +84,21 @@ public final class UnionMist {
    * @throws Exception
    */
   public static void main(final String[] args) throws Exception {
-    final Options options = setOptions();
-    final Parser parser = new GnuParser();
-    final CommandLine cl = parser.parse(options, args);
-    if (cl.hasOption("?")) {
-      printHelp(options, null);
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+
+    final CommandLine commandLine = MISTExampleUtils.getDefaultCommandLine(jcb)
+        .registerShortNameOfClass(UnionLeftSourceAddress.class) // Additional parameter
+        .registerShortNameOfClass(UnionRightSourceAddress.class) // Additional parameter
+        .processCommandLine(args);
+
+    if (commandLine == null) {  // Option '?' was entered and processCommandLine printed the help.
+      return;
     }
 
-    if (cl.hasOption("d")) {
-      final String[] driverAddr = cl.getOptionValue("d", "localhost:20332").split(":");
-      driverHost = driverAddr[0];
-      driverPort = Integer.parseInt(driverAddr[1]);
-    }
-
-    if (cl.hasOption("s1")) {
-      final String[] sourceAddr = cl.getOptionValue("s1", "localhost:20328").split(":");
-      source1Host = sourceAddr[0];
-      source1Port = Integer.parseInt(sourceAddr[1]);
-    }
-
-    if (cl.hasOption("s2")) {
-      final String[] sourceAddr = cl.getOptionValue("s2", "localhost:20329").split(":");
-      source2Host = sourceAddr[0];
-      source2Port = Integer.parseInt(sourceAddr[1]);
-    }
-
-    Thread sinkServer = new Thread(new SinkServer(SINK_PORT));
+    Thread sinkServer = new Thread(MISTExampleUtils.getSinkServer());
     sinkServer.start();
 
-    final APIQuerySubmissionResult result = submitQuery();
+    final APIQuerySubmissionResult result = submitQuery(jcb.build());
     System.out.println("Query submission result: " + result.getQueryId());
   }
 

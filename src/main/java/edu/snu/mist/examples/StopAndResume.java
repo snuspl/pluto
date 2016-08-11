@@ -21,8 +21,12 @@ import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
 import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
 import edu.snu.mist.api.types.Tuple2;
-import org.apache.commons.cli.*;
+import edu.snu.mist.examples.parameters.SourceAddress;
+import org.apache.reef.tang.Configuration;
+import org.apache.reef.tang.JavaConfigurationBuilder;
+import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
+import org.apache.reef.tang.formats.CommandLine;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -36,54 +40,6 @@ import static org.apache.commons.lang3.StringUtils.isAlpha;
  */
 public final class StopAndResume {
 
-  private static String driverHost = "localhost";
-  private static int driverPort = 20332;
-  private static String sourceHost = "localhost";
-  private static int sourcePort = 20331;
-  private static final String SINK_HOST = "localhost";
-  private static final int SINK_PORT = 20330;
-
-  /**
-   * Print command line options.
-   * @param options command line options
-   * @param reason how the user use the options incorrectly
-   */
-  private static void printHelp(final Options options, final String reason) {
-    if (reason != null) {
-      System.out.println(reason);
-    }
-    new HelpFormatter().printHelp("QueryDeletion", options);
-    System.exit(1);
-  }
-
-  /**
-   * Generate an Option from the parameters.
-   * @param shortArg short name of the argument
-   * @param longArg long name of the argument
-   * @param description description of the argument
-   * @return an Option from the names and description
-   */
-  private static Option setOption(final String shortArg, final String longArg, final String description) {
-    final Option option = new Option(shortArg, longArg, true, description);
-    option.setOptionalArg(true);
-    return option;
-  }
-
-  /**
-   * Bundle options for MIST.
-   * @return the bundled Options
-   */
-  private static Options setOptions() {
-    final Options options = new Options();
-    final Option helpOption = new Option("?", "help", false, "Print help");
-    options.addOption(helpOption);
-    options.addOption(setOption("d", "driver", "Address of running MIST driver" +
-        " in the form of hostname:port (Default: localhost:20332)."));
-    options.addOption(setOption("s", "source", "Address of running source server" +
-        " in the form of hostname:port (Default: localhost:20331)."));
-    return options;
-  }
-
   /**
    * Submit a query containing reduce-by-key operator.
    * The query reads strings from a source server, filters alphabetical words,
@@ -92,16 +48,12 @@ public final class StopAndResume {
    * @throws IOException
    * @throws InjectionException
    */
-  public static APIQuerySubmissionResult submitQuery() throws IOException, InjectionException, URISyntaxException {
-    final TextSocketSourceConfiguration localTextSocketSourceConf = TextSocketSourceConfiguration.newBuilder()
-        .setHostAddress(sourceHost)
-        .setHostPort(sourcePort)
-        .build();
-
-    final TextSocketSinkConfiguration localTextSocketSinkConf = TextSocketSinkConfiguration.newBuilder()
-        .setHostAddress(SINK_HOST)
-        .setHostPort(SINK_PORT)
-        .build();
+  public static APIQuerySubmissionResult submitQuery(final Configuration configuration)
+      throws IOException, InjectionException, URISyntaxException {
+    final String sourceSocket = Tang.Factory.getTang().newInjector(configuration).getNamedInstance(SourceAddress.class);
+    final TextSocketSourceConfiguration localTextSocketSourceConf =
+        MISTExampleUtils.getLocalTextSocketSourceConf(sourceSocket);
+    final TextSocketSinkConfiguration localTextSocketSinkConf = MISTExampleUtils.getLocalTextSocketSinkConf();
 
     // Simple reduce function.
     final MISTBiFunction<Integer, Integer, Integer> reduceFunction = (v1, v2) -> { return v1 + v2; };
@@ -114,8 +66,7 @@ public final class StopAndResume {
         .textSocketOutput(localTextSocketSinkConf);
     final MISTQuery query = queryBuilder.build();
 
-    final MISTExecutionEnvironment executionEnvironment = new MISTTestExecutionEnvironmentImpl(driverHost, driverPort);
-    return executionEnvironment.submit(query);
+    return MISTExampleUtils.submit(query, configuration);
   }
 
   public static boolean stopQuery(final APIQuerySubmissionResult result) throws IOException {
@@ -132,29 +83,20 @@ public final class StopAndResume {
    * @throws Exception
    */
   public static void main(final String[] args) throws Exception {
-    final Options options = setOptions();
-    final Parser parser = new GnuParser();
-    final CommandLine cl = parser.parse(options, args);
-    if (cl.hasOption("?")) {
-      printHelp(options, null);
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+
+    final CommandLine commandLine = MISTExampleUtils.getDefaultCommandLine(jcb)
+        .registerShortNameOfClass(SourceAddress.class) // Additional parameter
+        .processCommandLine(args);
+
+    if (commandLine == null) {  // Option '?' was entered and processCommandLine printed the help.
+      return;
     }
 
-    if (cl.hasOption("d")) {
-      final String[] driverAddr = cl.getOptionValue("d", "localhost:20332").split(":");
-      driverHost = driverAddr[0];
-      driverPort = Integer.parseInt(driverAddr[1]);
-    }
-
-    if (cl.hasOption("s")) {
-      final String[] sourceAddr = cl.getOptionValue("s", "localhost:20331").split(":");
-      sourceHost = sourceAddr[0];
-      sourcePort = Integer.parseInt(sourceAddr[1]);
-    }
-
-    Thread sinkServer = new Thread(new SinkServer(SINK_PORT));
+    Thread sinkServer = new Thread(MISTExampleUtils.getSinkServer());
     sinkServer.start();
 
-    final APIQuerySubmissionResult result = submitQuery();
+    final APIQuerySubmissionResult result = submitQuery(jcb.build());
     System.out.println("Query submission result: " + result.getQueryId());
 
     Thread.sleep(10000);
