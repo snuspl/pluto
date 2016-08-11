@@ -16,12 +16,13 @@
 package edu.snu.mist.task.sinks;
 
 import edu.snu.mist.task.common.InputHandler;
+import edu.snu.mist.task.common.PhysicalVertex;
 import org.apache.reef.wake.Identifier;
 
 /**
  * Sink consumes inputs and does final process, such as print, save input to database and so on.
  */
-public interface Sink<I> extends InputHandler<I>, AutoCloseable {
+public interface Sink<I> extends InputHandler<I>, AutoCloseable, PhysicalVertex {
 
   /**
    * Identifier of sink.

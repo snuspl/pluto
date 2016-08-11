@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task.sources;
 
+import edu.snu.mist.task.common.PhysicalVertex;
 import org.apache.reef.wake.Identifier;
 
 /**
@@ -26,7 +27,7 @@ import org.apache.reef.wake.Identifier;
  * After that, it sends the MistEvent to the OutputEmitter which forwards the inputs to next Operators.
  * @param <T> the type of input data
  */
-public interface Source<T> extends AutoCloseable {
+public interface Source<T> extends AutoCloseable, PhysicalVertex {
 
   /**
    * Starts to receive source stream and forwards inputs to the OutputEmitter.

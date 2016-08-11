@@ -23,9 +23,10 @@ import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.AvroVertexChain;
 import edu.snu.mist.formats.avro.Edge;
 import edu.snu.mist.formats.avro.LogicalPlan;
-import edu.snu.mist.formats.avro.Vertex;
+import edu.snu.mist.task.common.PhysicalVertex;
 import edu.snu.mist.task.operators.*;
 import edu.snu.mist.task.sinks.NettyTextSink;
 import edu.snu.mist.task.sinks.Sink;
@@ -95,46 +96,43 @@ public final class DefaultPhysicalPlanGeneratorTest {
         .textSocketOutput(APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF);
     final MISTQuery query = queryBuilder.build();
     // Generate logical plan
-    final Tuple<List<Vertex>, List<Edge>> serializedDag = query.getSerializedDAG();
+    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getSerializedDAG();
     final LogicalPlan.Builder logicalPlanBuilder = LogicalPlan.newBuilder();
     final LogicalPlan logicalPlan = logicalPlanBuilder
         .setIsJarSerialized(false)
         .setJar(ByteBuffer.wrap(new byte[1]))
-        .setVertices(serializedDag.getKey())
+        .setAvroVertices(serializedDag.getKey())
             .setEdges(serializedDag.getValue())
             .build();
 
     final PhysicalPlanGenerator ppg = Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
     final Tuple<String, LogicalPlan> tuple = new Tuple<>("query-test", logicalPlan);
-    final PhysicalPlan<Operator, StreamType.Direction> physicalPlan = ppg.generate(tuple);
+    final DAG<PhysicalVertex, StreamType.Direction> physicalPlan = ppg.generate(tuple);
 
-    final Map<Source, Map<Operator, StreamType.Direction>> sourceMap = physicalPlan.getSourceMap();
-    Assert.assertEquals(1, sourceMap.keySet().size());
-    final Source source = sourceMap.keySet().iterator().next();
+    final Set<PhysicalVertex> sources = physicalPlan.getRootVertices();
+    Assert.assertEquals(1, sources.size());
+    final Source source = (Source)sources.iterator().next();
     Assert.assertTrue(source instanceof SourceImpl);
     Assert.assertTrue(source.getDataGenerator() instanceof NettyTextDataGenerator);
-    Assert.assertEquals(1, sourceMap.get(source).size());
+    final Map<PhysicalVertex, StreamType.Direction> nextOps = physicalPlan.getEdges(source);
+    Assert.assertEquals(1, nextOps.size());
 
-    final Operator operator1 = sourceMap.get(source).entrySet().iterator().next().getKey();
-    Assert.assertTrue(operator1 instanceof FlatMapOperator);
-    final DAG<Operator, StreamType.Direction> operators = physicalPlan.getOperators();
-    Assert.assertEquals(1, operators.getRootVertices().size());
-    Assert.assertEquals(operator1, operators.getRootVertices().iterator().next());
-    Assert.assertEquals(1, operators.getEdges(operator1).size());
-    final Operator operator2 = operators.getEdges(operator1).entrySet().iterator().next().getKey();
-    Assert.assertTrue(operator2 instanceof FilterOperator);
-    Assert.assertEquals(1, operators.getEdges(operator2).size());
-    final Operator operator3 = operators.getEdges(operator2).entrySet().iterator().next().getKey();
-    Assert.assertTrue(operator3 instanceof MapOperator);
-    Assert.assertEquals(1, operators.getEdges(operator3).size());
-    final Operator operator4 = operators.getEdges(operator3).entrySet().iterator().next().getKey();
-    Assert.assertTrue(operator4 instanceof ReduceByKeyOperator);
-
-    final Map<Operator, Set<Sink>> sinkMap = physicalPlan.getSinkMap();
-    Assert.assertEquals(1, sinkMap.keySet().size());
-    Assert.assertTrue(sinkMap.containsKey(operator4));
-    Assert.assertEquals(1, sinkMap.get(operator4).size());
-    final Sink sink = sinkMap.get(operator4).iterator().next();
+    final PartitionedQuery pq1 = (PartitionedQuery)nextOps.entrySet().iterator().next().getKey();
+    Assert.assertEquals(4, pq1.size());
+    final Operator mapOperator = pq1.removeFromHead();
+    final Operator filterOperator = pq1.removeFromHead();
+    final Operator mapOperator2 = pq1.removeFromHead();
+    final Operator reduceByKeyOperator = pq1.removeFromHead();
+    Assert.assertTrue(mapOperator instanceof FlatMapOperator);
+    Assert.assertTrue(filterOperator instanceof FilterOperator);
+    Assert.assertTrue(mapOperator2 instanceof MapOperator);
+    Assert.assertTrue(reduceByKeyOperator instanceof ReduceByKeyOperator);
+    pq1.insertToTail(mapOperator);
+    pq1.insertToTail(filterOperator);
+    pq1.insertToTail(mapOperator2);
+    pq1.insertToTail(reduceByKeyOperator);
+    final Map<PhysicalVertex, StreamType.Direction> sinks = physicalPlan.getEdges(pq1);
+    final Sink sink = (Sink)sinks.entrySet().iterator().next().getKey();
     Assert.assertTrue(sink instanceof NettyTextSink);
   }
 }

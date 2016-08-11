@@ -16,8 +16,8 @@
 package edu.snu.mist.api;
 
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.AvroVertexChain;
 import edu.snu.mist.formats.avro.Edge;
-import edu.snu.mist.formats.avro.Vertex;
 import org.apache.reef.io.Tuple;
 
 import java.util.List;
@@ -30,7 +30,7 @@ public interface MISTQuery {
   /**
    * Get the serialized vertices and edges of the DAG.
    */
-  Tuple<List<Vertex>, List<Edge>> getSerializedDAG();
+  Tuple<List<AvroVertexChain>, List<Edge>> getSerializedDAG();
 
   /**
    * Get the DAG of the query.

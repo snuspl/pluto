@@ -13,26 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task;
+package edu.snu.mist.task.common;
 
-import edu.snu.mist.api.StreamType;
-import edu.snu.mist.task.operators.Operator;
-import org.apache.reef.wake.EventHandler;
+/**
+ * This interface represents physical vertices of the query.
+ */
+public interface PhysicalVertex {
 
-import javax.inject.Inject;
-
-// TODO[MIST-68]: Receive and deserialize logical plans into physical plans.
-final class DefaultLogicalPlanReceiverImpl implements LogicalPlanReceiver {
-
-  private EventHandler<PhysicalPlan<Operator, StreamType.Direction>> eventHandler;
-
-  @Inject
-  private DefaultLogicalPlanReceiverImpl() {
-
+  public static enum Type {
+    SOURCE,
+    OPERATOR_CHIAN,
+    SINK
   }
 
-  @Override
-  public void setHandler(final EventHandler<PhysicalPlan<Operator, StreamType.Direction>> handler) {
-    eventHandler = handler;
-  }
+  /**
+   * Get the type of the physical vertex.
+   */
+  Type getType();
 }

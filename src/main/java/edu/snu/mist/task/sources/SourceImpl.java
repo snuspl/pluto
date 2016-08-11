@@ -88,4 +88,9 @@ public final class SourceImpl<T> implements Source<T>{
   public EventGenerator<T> getEventGenerator() {
     return eventGenerator;
   }
+
+  @Override
+  public Type getType() {
+    return Type.SOURCE;
+  }
 }

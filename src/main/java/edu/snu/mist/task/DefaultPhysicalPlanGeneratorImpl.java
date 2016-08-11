@@ -25,6 +25,7 @@ import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.ExternalJarObjectInputStream;
 import edu.snu.mist.driver.parameters.TempFolderPath;
 import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.task.common.PhysicalVertex;
 import edu.snu.mist.task.operators.*;
 import edu.snu.mist.task.sinks.NettyTextSinkFactory;
 import edu.snu.mist.task.sinks.Sink;
@@ -42,7 +43,10 @@ import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
@@ -215,16 +219,14 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   }
 
   @Override
-  public PhysicalPlan<Operator, StreamType.Direction> generate(
+  public DAG<PhysicalVertex, StreamType.Direction> generate(
       final Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
       throws IllegalArgumentException, IOException, ClassNotFoundException {
     final String queryId = queryIdAndLogicalPlan.getKey();
     final LogicalPlan logicalPlan = queryIdAndLogicalPlan.getValue();
-    final List<Object> deserializedVertices = new ArrayList<>();
-    final Map<Source, Map<Operator, StreamType.Direction>> sourceMap = new HashMap<>();
-    final DAG<Operator, StreamType.Direction> operators = new AdjacentListDAG<>();
-    final Map<Operator, Set<Sink>> sinkMap = new HashMap<>();
+    final List<PhysicalVertex> deserializedVertices = new ArrayList<>();
     final Path jarFilePath = Paths.get(tmpFolderPath, String.format("%s.jar", queryId));
+    final DAG<PhysicalVertex, StreamType.Direction> dag = new AdjacentListDAG<>();
 
     // Deserialize Jar
     final ClassLoader userQueryClassLoader;
@@ -239,9 +241,10 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     }
 
     // Deserialize vertices
-    for (final Vertex vertex : logicalPlan.getVertices()) {
-      switch (vertex.getVertexType()) {
+    for (final AvroVertexChain avroVertexChain : logicalPlan.getAvroVertices()) {
+      switch (avroVertexChain.getAvroVertexChainType()) {
         case SOURCE: {
+          final Vertex vertex = avroVertexChain.getVertexChain().get(0);
           final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
           switch (sourceInfo.getSourceType()) {
             case TEXT_SOCKET_SOURCE: {
@@ -259,6 +262,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
                   identifierFactory.getNewInstance(operatorIdGenerator.generate()),
                   textDataGenerator, eventGenerator);
               deserializedVertices.add(textSocketSource);
+              dag.addVertex(textSocketSource);
               break;
             }
             default: {
@@ -267,23 +271,37 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
           }
           break;
         }
-        case INSTANT_OPERATOR: {
-          final InstantOperatorInfo iOpInfo = (InstantOperatorInfo) vertex.getAttributes();
-          final Operator operator = getInstantOperator(queryId, iOpInfo, userQueryClassLoader);
-          deserializedVertices.add(operator);
-          operators.addVertex(operator);
+        case OPERATOR_CHAIN: {
+          final PartitionedQuery partitionedQuery = new DefaultPartitionedQuery();
+          deserializedVertices.add(partitionedQuery);
+          for (final Vertex vertex : avroVertexChain.getVertexChain()) {
+            switch (vertex.getVertexType()) {
+              case INSTANT_OPERATOR: {
+                final InstantOperatorInfo iOpInfo = (InstantOperatorInfo) vertex.getAttributes();
+                final Operator operator = getInstantOperator(queryId, iOpInfo, userQueryClassLoader);
+                partitionedQuery.insertToTail(operator);
+                break;
+              }
+              case WINDOW_OPERATOR: {
+                throw new IllegalArgumentException("MISTTask: WindowOperator is currently not supported!");
+              }
+              default: {
+                throw new IllegalArgumentException("MISTTask: Invalid operator type" + vertex.getVertexType());
+              }
+            }
+          }
+          dag.addVertex(partitionedQuery);
           break;
         }
-        case WINDOW_OPERATOR: {
-          throw new IllegalArgumentException("MISTTask: WindowOperator is currently not supported!");
-        }
         case SINK: {
+          final Vertex vertex = avroVertexChain.getVertexChain().get(0);
           final SinkInfo sinkInfo = (SinkInfo) vertex.getAttributes();
           switch (sinkInfo.getSinkType()) {
             case TEXT_SOCKET_SINK: {
               final Map<String, Object> sinkStringConf = getStringConfiguration(sinkInfo.getSinkConfiguration());
               final Sink textSocketSink = getNettyTextSocketSink(queryId, sinkStringConf);
               deserializedVertices.add(textSocketSink);
+              dag.addVertex(textSocketSink);
               break;
             }
             default: {
@@ -297,62 +315,21 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
         }
       }
     }
+
     // Add edge info to physical plan
     for (final Edge edge : logicalPlan.getEdges()) {
       final int srcIndex = edge.getFrom();
-      final Object deserializedSrcVertex = deserializedVertices.get(srcIndex);
+      final PhysicalVertex deserializedSrcVertex = deserializedVertices.get(srcIndex);
       final int dstIndex = edge.getTo();
-      final Object deserializedDstVertex = deserializedVertices.get(dstIndex);
+      final PhysicalVertex deserializedDstVertex = deserializedVertices.get(dstIndex);
       StreamType.Direction direction;
       if (edge.getIsLeft()) {
         direction = StreamType.Direction.LEFT;
       } else {
         direction = StreamType.Direction.RIGHT;
       }
-
-      switch (logicalPlan.getVertices().get(srcIndex).getVertexType()) {
-        case SOURCE: {
-          if (!sourceMap.containsKey(deserializedSrcVertex)) {
-            sourceMap.put((Source) deserializedSrcVertex, new HashMap<>());
-          }
-          sourceMap.get(deserializedSrcVertex).put((Operator) deserializedDstVertex, direction);
-          break;
-        }
-        case INSTANT_OPERATOR: {
-          switch (logicalPlan.getVertices().get(dstIndex).getVertexType()) {
-            case INSTANT_OPERATOR: {
-              operators.addEdge((Operator) deserializedSrcVertex, (Operator) deserializedDstVertex, direction);
-              break;
-            }
-            case WINDOW_OPERATOR: {
-              throw new IllegalStateException("MISTTask: WindowOperator is currently not supported but MIST didn't " +
-                  "catch it in advance!");
-            }
-            case SINK: {
-              if (!sinkMap.containsKey(deserializedSrcVertex)) {
-                sinkMap.put((Operator) deserializedSrcVertex, new HashSet<>());
-              }
-              sinkMap.get(deserializedSrcVertex).add((Sink) deserializedDstVertex);
-              break;
-            }
-            default: {
-              // ToVertex type is Source, but it's illegal!
-              throw new IllegalArgumentException("MISTTask: Invalid edge detected! Source cannot have" +
-                  " ingoing edges!");
-            }
-          }
-          break;
-        }
-        case WINDOW_OPERATOR: {
-          throw new IllegalStateException("MISTTask: WindowOperator is currently not supported but MIST didn't catch" +
-              " it in advance!");
-        }
-        default: {
-          // FromVertex type is guaranteed to be Sink! However, Sink cannot have outgoing edges!
-          throw new IllegalArgumentException("MISTTask: Invalid edge detected! Sink cannot have outgoing edges!");
-        }
-      }
+      dag.addEdge(deserializedSrcVertex, deserializedDstVertex, direction);
     }
-    return new DefaultPhysicalPlanImpl<>(sourceMap, operators, sinkMap);
+    return dag;
   }
 }

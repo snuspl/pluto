@@ -20,6 +20,7 @@ import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.LogicalPlan;
+import edu.snu.mist.task.common.PhysicalVertex;
 import edu.snu.mist.task.operators.*;
 import edu.snu.mist.task.parameters.NumThreads;
 import edu.snu.mist.task.parameters.PlanStorePath;
@@ -117,6 +118,8 @@ public final class QueryManagerTest {
     // Number of expected outputs
     final CountDownLatch countDownAllOutputs = new CountDownLatch(intermediateResult.size() * 2);
 
+    // Create the DAG of the query
+    final DAG<PhysicalVertex, StreamType.Direction> dag = new AdjacentListDAG<>();
     // Create source
     final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
     final DataGenerator dataGenerator = new TestDataGenerator(inputs);
@@ -124,8 +127,13 @@ public final class QueryManagerTest {
         new PunctuatedEventGenerator(null, input -> false, null);
     final Source src = new SourceImpl(identifierFactory.getNewInstance(queryId),
         identifierFactory.getNewInstance("testSource"), dataGenerator, eventGenerator);
+    dag.addVertex(src);
 
-    // Create operators
+    // Create operators and partitioned queries
+    //                     (pq1)                                     (pq2)
+    // src -> [flatMap -> filter -> toTupleMap -> reduceByKey] -> [toStringMap]   -> sink1
+    //                                                         -> [totalCountMap] -> sink2
+    //                                                               (pq3)
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(NumThreads.class, Integer.toString(4));
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
@@ -136,46 +144,40 @@ public final class QueryManagerTest {
     final Operator toStringMap = new MapOperator<>(queryId, "toStringMap", toStringMapFunc);
     final Operator totalCountMap = new MapOperator<>(queryId, "totalCountMap", totalCountMapFunc);
 
+    final PartitionedQuery pq1 = new DefaultPartitionedQuery();
+    pq1.insertToTail(flatMap);
+    pq1.insertToTail(filter);
+    pq1.insertToTail(toTupleMap);
+    pq1.insertToTail(reduceByKey);
+    final PartitionedQuery pq2 = new DefaultPartitionedQuery();
+    pq2.insertToTail(toStringMap);
+    final PartitionedQuery pq3 = new DefaultPartitionedQuery();
+    pq3.insertToTail(totalCountMap);
+
+    // Add dag vertices and edges
+    dag.addVertex(pq1);
+    dag.addEdge(src, pq1, StreamType.Direction.LEFT);
+    dag.addVertex(pq2);
+    dag.addEdge(pq1, pq2, StreamType.Direction.LEFT);
+    dag.addVertex(pq3);
+    dag.addEdge(pq1, pq3, StreamType.Direction.LEFT);
+
     // Create sinks
     final List<String> sink1Result = new LinkedList<>();
     final List<Integer> sink2Result = new LinkedList<>();
     final Sink sink1 = new TestSink<String>(sink1Result, countDownAllOutputs);
     final Sink sink2 = new TestSink<Integer>(sink2Result, countDownAllOutputs);
-
-    // Create DAG of operators
-    final DAG<Operator, StreamType.Direction> operatorDAG = new AdjacentListDAG<>();
-    operatorDAG.addVertex(flatMap); operatorDAG.addVertex(filter);
-    operatorDAG.addVertex(toTupleMap); operatorDAG.addVertex(reduceByKey);
-    operatorDAG.addVertex(toStringMap); operatorDAG.addVertex(totalCountMap);
-
-    operatorDAG.addEdge(flatMap, filter, StreamType.Direction.LEFT);
-    operatorDAG.addEdge(filter, toTupleMap, StreamType.Direction.LEFT);
-    operatorDAG.addEdge(toTupleMap, reduceByKey, StreamType.Direction.LEFT);
-    operatorDAG.addEdge(reduceByKey, toStringMap, StreamType.Direction.LEFT);
-    operatorDAG.addEdge(reduceByKey, totalCountMap, StreamType.Direction.LEFT);
-
-    // Create source map
-    final Map<Operator, StreamType.Direction> src1Ops = new HashMap<>();
-    src1Ops.put(flatMap, StreamType.Direction.LEFT);
-    sourceMap.put(src, src1Ops);
-
-    // Create sink map
-    final Set<Sink> sinksForToStringOp = new HashSet<>();
-    final Set<Sink> sinksForTotalCountOp = new HashSet<>();
-    sinksForToStringOp.add(sink1); sinksForTotalCountOp.add(sink2);
-    sinkMap.put(toStringMap, sinksForToStringOp);
-    sinkMap.put(totalCountMap, sinksForTotalCountOp);
-
-    // Build a physical plan
-    final PhysicalPlan<Operator, StreamType.Direction> physicalPlan =
-        new DefaultPhysicalPlanImpl<>(sourceMap, operatorDAG, sinkMap);
+    dag.addVertex(sink1);
+    dag.addEdge(pq2, sink1, StreamType.Direction.LEFT);
+    dag.addVertex(sink2);
+    dag.addEdge(pq3, sink2, StreamType.Direction.LEFT);
 
     // Fake logical plan of QueryManager
     final Tuple<String, LogicalPlan> tuple = new Tuple<>(queryId, new LogicalPlan());
 
     // Create mock PhysicalPlanGenerator. It returns the above physical plan
     final PhysicalPlanGenerator physicalPlanGenerator = mock(PhysicalPlanGenerator.class);
-    when(physicalPlanGenerator.generate(tuple)).thenReturn(physicalPlan);
+    when(physicalPlanGenerator.generate(tuple)).thenReturn(dag);
 
     // Create mock PlanStore. It returns true and the above logical plan
     final PlanStore planStore = mock(PlanStore.class);
@@ -349,6 +351,11 @@ public final class QueryManagerTest {
     @Override
     public Identifier getQueryIdentifier() {
       return null;
+    }
+
+    @Override
+    public Type getType() {
+      return Type.SINK;
     }
   }
 }

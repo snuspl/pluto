@@ -19,6 +19,8 @@ import edu.snu.mist.api.StreamType;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
 import edu.snu.mist.task.common.OutputEmitter;
+import edu.snu.mist.task.common.PhysicalVertex;
+import edu.snu.mist.task.sinks.Sink;
 
 import java.util.Map;
 
@@ -28,19 +30,59 @@ import java.util.Map;
 final class OperatorOutputEmitter implements OutputEmitter {
 
   /**
-   * Current PartitionedQuery.
-   */
-  private final PartitionedQuery currChain;
-
-  /**
    * Next PartitionedQueries.
    */
-  private final Map<PartitionedQuery, StreamType.Direction> nextPartitionedQueries;
+  private final Map<PhysicalVertex, StreamType.Direction> nextPartitionedQueries;
 
-  OperatorOutputEmitter(final PartitionedQuery currChain,
-                        final Map<PartitionedQuery, StreamType.Direction> nextPartitionedQueries) {
-    this.currChain = currChain;
+  OperatorOutputEmitter(final Map<PhysicalVertex, StreamType.Direction> nextPartitionedQueries) {
     this.nextPartitionedQueries = nextPartitionedQueries;
+  }
+
+  /**
+   * Send data events to the next partitioned query if the next vertex is a partitioned query,
+   * otherwise send the events to the sink.
+   * @param output data output
+   * @param direction direction of upstream
+   * @param nextVertex next vertex (partitioned query or sink)
+   */
+  private void sendData(final MistDataEvent output,
+                        final StreamType.Direction direction,
+                        final PhysicalVertex nextVertex) {
+    switch (nextVertex.getType()) {
+      case OPERATOR_CHIAN: {
+        ((PartitionedQuery)nextVertex).addNextEvent(output, direction);
+        break;
+      }
+      case SINK: {
+        ((Sink)nextVertex).handle(output.getValue());
+        break;
+      }
+      default:
+        throw new RuntimeException("Unkown type: " + nextVertex.getType());
+    }
+  }
+
+  /**
+   * Send watermarks to the next partitioned query if the next vertex is a partitioned query.
+   * @param watermark watermark
+   * @param direction direction of upstream
+   * @param nextVertex next vertex (partitioned query or sink)
+   */
+  private void sendWatermark(final MistWatermarkEvent watermark,
+                             final StreamType.Direction direction,
+                             final PhysicalVertex nextVertex) {
+    switch (nextVertex.getType()) {
+      case OPERATOR_CHIAN: {
+        ((PartitionedQuery)nextVertex).addNextEvent(watermark, direction);
+        break;
+      }
+      case SINK: {
+        // do nothing for sink because sink does not handle watermarks
+        break;
+      }
+      default:
+        throw new RuntimeException("Unkown type: " + nextVertex.getType());
+    }
   }
 
   /**
@@ -55,17 +97,17 @@ final class OperatorOutputEmitter implements OutputEmitter {
   public void emitData(final MistDataEvent output) {
     // Optimization: do not create new MistEvent and reuse it if it has one downstream partitioned query.
     if (nextPartitionedQueries.size() == 1) {
-      for (final Map.Entry<PartitionedQuery, StreamType.Direction> nextQuery :
+      for (final Map.Entry<PhysicalVertex, StreamType.Direction> nextQuery :
           nextPartitionedQueries.entrySet()) {
         final StreamType.Direction direction = nextQuery.getValue();
-        nextQuery.getKey().addNextEvent(output, direction);
+        sendData(output, direction, nextQuery.getKey());
       }
     } else {
-      for (final Map.Entry<PartitionedQuery, StreamType.Direction> nextQuery :
+      for (final Map.Entry<PhysicalVertex, StreamType.Direction> nextQuery :
           nextPartitionedQueries.entrySet()) {
         final MistDataEvent event = new MistDataEvent(output.getValue(), output.getTimestamp());
         final StreamType.Direction direction = nextQuery.getValue();
-        nextQuery.getKey().addNextEvent(event, direction);
+        sendData(event, direction, nextQuery.getKey());
       }
     }
   }
@@ -73,10 +115,10 @@ final class OperatorOutputEmitter implements OutputEmitter {
   @Override
   public void emitWatermark(final MistWatermarkEvent output) {
     // Watermark is not changed, so we just forward watermark to next partitioned queries.
-    for (final Map.Entry<PartitionedQuery, StreamType.Direction> nextQuery :
+    for (final Map.Entry<PhysicalVertex, StreamType.Direction> nextQuery :
         nextPartitionedQueries.entrySet()) {
       final StreamType.Direction direction = nextQuery.getValue();
-      nextQuery.getKey().addNextEvent(output, direction);
+      sendWatermark(output, direction, nextQuery.getKey());
     }
   }
 }

@@ -16,8 +16,9 @@
 package edu.snu.mist.task;
 
 import edu.snu.mist.api.StreamType;
+import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.LogicalPlan;
-import edu.snu.mist.task.operators.Operator;
+import edu.snu.mist.task.common.PhysicalVertex;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
@@ -34,6 +35,6 @@ public interface PhysicalPlanGenerator {
    * @param queryIdAndLogicalPlan the tuple of queryId and logical plan
    * @return physical plan
    */
-  PhysicalPlan<Operator, StreamType.Direction> generate(Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
-      throws IllegalArgumentException, IOException, ClassNotFoundException;
+  DAG<PhysicalVertex, StreamType.Direction> generate(Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
+      throws IOException, ClassNotFoundException;
 }

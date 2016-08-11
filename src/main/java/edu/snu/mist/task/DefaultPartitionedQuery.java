@@ -16,10 +16,7 @@
 package edu.snu.mist.task;
 
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.task.common.MistDataEvent;
-import edu.snu.mist.task.common.MistEvent;
-import edu.snu.mist.task.common.MistWatermarkEvent;
-import edu.snu.mist.task.common.OutputEmitter;
+import edu.snu.mist.task.common.*;
 import edu.snu.mist.task.operators.Operator;
 import org.apache.reef.io.Tuple;
 
@@ -37,6 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @SuppressWarnings("unchecked")
 final class DefaultPartitionedQuery implements PartitionedQuery {
+
 
   private enum Status {
     RUNNING, // When the query processes an event
@@ -133,6 +131,16 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
   @Override
   public boolean addNextEvent(final MistEvent event, final StreamType.Direction direction) {
     return queue.add(new Tuple<>(event, direction));
+  }
+
+  @Override
+  public int size() {
+    return operators.size();
+  }
+
+  @Override
+  public Type getType() {
+    return Type.OPERATOR_CHIAN;
   }
 
   private void process(final Tuple<MistEvent, StreamType.Direction> input) {
