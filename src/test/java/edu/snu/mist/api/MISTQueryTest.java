@@ -77,6 +77,54 @@ public final class MISTQueryTest {
       APITestParameters.PUNCTUTATED_WATERMARK_CONF;
   private final SinkConfiguration textSocketSinkConf = APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF;
 
+  private void checkSource(final Vertex vertex) {
+    // Test for source vertex
+    //final Vertex vertex = avroVertexChain.getVertexChain().get(0);
+    final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
+    final Map<CharSequence, Object> sourceConfiguration = sourceInfo.getSourceConfiguration();
+
+    final Map<CharSequence, Object> watermarkConfiguration = sourceInfo.getWatermarkConfiguration();
+    final ByteBuffer extractionFunc = (ByteBuffer) sourceConfiguration.get(
+        TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION);
+    byte[] serializedExtractionFunc = new byte[extractionFunc.remaining()];
+    extractionFunc.get(serializedExtractionFunc);
+    final Function deserializedExtractionFunc =
+        (Function) SerializationUtils.deserialize(serializedExtractionFunc);
+    Assert.assertEquals(textSocketSourceConf.getConfigurationValue(
+            TextSocketSourceParameters.SOCKET_HOST_ADDRESS),
+        sourceConfiguration.get(TextSocketSourceParameters.SOCKET_HOST_ADDRESS));
+    Assert.assertEquals(textSocketSourceConf.getConfigurationValue(TextSocketSourceParameters.SOCKET_HOST_PORT),
+        sourceConfiguration.get(TextSocketSourceParameters.SOCKET_HOST_PORT));
+    Assert.assertEquals(
+        ((Function)textSocketSourceConf.getConfigurationValue(
+            TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION)).apply("HelloMIST:1234"),
+        deserializedExtractionFunc.apply("HelloMIST:1234"));
+    final ByteBuffer parsingFunc = (ByteBuffer) watermarkConfiguration.get(
+        PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK);
+    byte[] serializedParsingFunc = new byte[parsingFunc.remaining()];
+    parsingFunc.get(serializedParsingFunc);
+    final Function deserializedParsingFunc =
+        (Function) SerializationUtils.deserialize(serializedParsingFunc);
+    final ByteBuffer watermarkPred = (ByteBuffer) watermarkConfiguration.get(
+        PunctuatedWatermarkParameters.WATERMARK_PREDICATE);
+    byte[] serializedWatermarkPred = new byte[watermarkPred.remaining()];
+    watermarkPred.get(serializedWatermarkPred);
+    final Function deserializedWatermarkPred =
+        (Function) SerializationUtils.deserialize(serializedWatermarkPred);
+    Assert.assertEquals(
+        ((Function)punctuatedWatermarkConf.getConfigurationValue(
+            PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK)).apply("Watermark:1234"),
+        deserializedParsingFunc.apply("Watermark:1234"));
+    Assert.assertEquals(
+        ((Function)punctuatedWatermarkConf.getConfigurationValue(
+            PunctuatedWatermarkParameters.WATERMARK_PREDICATE)).apply("Watermark:1234"),
+        deserializedWatermarkPred.apply("Watermark:1234"));
+    Assert.assertEquals(
+        ((Function)punctuatedWatermarkConf.getConfigurationValue(
+            PunctuatedWatermarkParameters.WATERMARK_PREDICATE)).apply("Data:1234"),
+        deserializedWatermarkPred.apply("Data:1234"));
+  }
+
   /**
    * This method tests a serialization of a complex query, containing 7 vertices.
    * @throws InjectionException
@@ -92,16 +140,15 @@ public final class MISTQueryTest {
         .reduceByKeyWindow(0, String.class, expectedReduceFunc)
         .textSocketOutput(textSocketSinkConf);
     final MISTQuery complexQuery = queryBuilder.build();
-    final Tuple<List<Vertex>, List<Edge>> serializedDAG = complexQuery.getSerializedDAG();
-    final List<Vertex> vertices = serializedDAG.getKey();
-    Assert.assertEquals(7, vertices.size());
+    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDAG = complexQuery.getSerializedDAG();
+    final List<AvroVertexChain> vertices = serializedDAG.getKey();
+    Assert.assertEquals(3, vertices.size());
 
     // Stores indexes for flatMap, filter, map, window, reduceByKeyWindow, reefNetworkOutput in order
-    final List<Integer> vertexIndexes = Arrays.asList(new Integer[7]);
-    int index = 0;
-    for (final Vertex vertex : vertices) {
-      if (vertex.getVertexType() == VertexTypeEnum.SINK) {
+    for (final AvroVertexChain avroVertexChain : vertices) {
+      if (avroVertexChain.getAvroVertexChainType() == AvroVertexTypeEnum.SINK) {
         // Test for sink vertex
+        final Vertex vertex = avroVertexChain.getVertexChain().get(0);
         final SinkInfo sinkInfo = (SinkInfo) vertex.getAttributes();
         final Map<CharSequence, Object> sinkConfiguration = sinkInfo.getSinkConfiguration();
         if (sinkInfo.getSinkType() == SinkTypeEnum.TEXT_SOCKET_SINK) {
@@ -109,126 +156,84 @@ public final class MISTQueryTest {
               sinkConfiguration.get(TextSocketSinkParameters.SOCKET_HOST_ADDRESS));
           Assert.assertEquals(textSocketSinkConf.getConfigurationValue(TextSocketSinkParameters.SOCKET_HOST_PORT),
               sinkConfiguration.get(TextSocketSinkParameters.SOCKET_HOST_PORT));
-          vertexIndexes.set(6, index);
         } else {
           Assert.fail("Unexpected Sink type detected during the test! Should be TEXT_SOCKET_SINK");
         }
-      } else if (vertex.getVertexType() == VertexTypeEnum.INSTANT_OPERATOR) {
-        // Test for instantOperator vertex
-        final InstantOperatorInfo instantOperatorInfo = (InstantOperatorInfo) vertex.getAttributes();
-        final List<ByteBuffer> functionList = instantOperatorInfo.getFunctions();
-        final Integer keyIndex = instantOperatorInfo.getKeyIndex();
-        if (instantOperatorInfo.getInstantOperatorType() == InstantOperatorTypeEnum.REDUCE_BY_KEY_WINDOW) {
-          // Test for reduceByKeyWindow vertex
-          byte[] serializedReduceFunc = new byte[functionList.get(0).remaining()];
-          functionList.get(0).get(serializedReduceFunc);
-          final BiFunction reduceFunc =
-              (BiFunction) SerializationUtils.deserialize(serializedReduceFunc);
-          Assert.assertEquals(expectedReduceFunc.apply(1, 2), reduceFunc.apply(1, 2));
-          Assert.assertEquals(expectedReduceFunc.apply(5, 4), reduceFunc.apply(5, 4));
-          Assert.assertEquals(expectedReduceKeyIndex, keyIndex);
-          vertexIndexes.set(5, index);
-        } else if (instantOperatorInfo.getInstantOperatorType() == InstantOperatorTypeEnum.FILTER) {
-          // Test for filter vertex
-          byte[] serializedFilterPredicate = new byte[functionList.get(0).remaining()];
-          functionList.get(0).get(serializedFilterPredicate);
-          final Predicate filterPredicate =
-              (Predicate) SerializationUtils.deserialize(serializedFilterPredicate);
-          Assert.assertEquals(expectedFilterPredicate.test("ABC"), filterPredicate.test("ABC"));
-          Assert.assertEquals(expectedFilterPredicate.test("abc"), filterPredicate.test("abc"));
-          Assert.assertEquals(keyIndex, null);
-          vertexIndexes.set(2, index);
-        } else if (instantOperatorInfo.getInstantOperatorType() == InstantOperatorTypeEnum.MAP) {
-          byte[] serializedMapFunc = new byte[functionList.get(0).remaining()];
-          functionList.get(0).get(serializedMapFunc);
-          final Function mapFunc =
-              (Function) SerializationUtils.deserialize(serializedMapFunc);
-          Assert.assertEquals(expectedMapFunc.apply("ABC"), mapFunc.apply("ABC"));
-          Assert.assertEquals(keyIndex, null);
-          vertexIndexes.set(3, index);
-        } else if (instantOperatorInfo.getInstantOperatorType() == InstantOperatorTypeEnum.FLAT_MAP) {
-          byte[] serializedFlatMapFunc = new byte[functionList.get(0).remaining()];
-          functionList.get(0).get(serializedFlatMapFunc);
-          final Function flatMapFunc =
-              (Function) SerializationUtils.deserialize(serializedFlatMapFunc);
-          Assert.assertEquals(expectedFlatMapFunc.apply("A B C"), flatMapFunc.apply("A B C"));
-          Assert.assertEquals(keyIndex, null);
-          vertexIndexes.set(1, index);
-        } else {
-          Assert.fail("Unexpected InstantOperator type detected!" +
-              "Should be one of [REDUCE_BY_KEY_WINDOW, FILTER, MAP, FLAT_MAP]");
-        }
-      } else if (vertex.getVertexType() == VertexTypeEnum.WINDOW_OPERATOR) {
-        // Test for window vertex
-        final WindowOperatorInfo windowOperatorInfo = (WindowOperatorInfo) vertex.getAttributes();
+      } else if (avroVertexChain.getAvroVertexChainType() == AvroVertexTypeEnum.OPERATOR_CHAIN) {
+        // Test for flatMap vertex
+        final Vertex flatMapVertex = avroVertexChain.getVertexChain().get(0);
+        final InstantOperatorInfo flatMapInfo = (InstantOperatorInfo) flatMapVertex.getAttributes();
+        final List<ByteBuffer> flatMapInfoFunctions = flatMapInfo.getFunctions();
+        final Integer flatMapInfoKeyIndex = flatMapInfo.getKeyIndex();
+
+        byte[] serializedFlatMapFunc = new byte[flatMapInfoFunctions.get(0).remaining()];
+        flatMapInfoFunctions.get(0).get(serializedFlatMapFunc);
+        final Function flatMapFunc =
+            (Function) SerializationUtils.deserialize(serializedFlatMapFunc);
+        Assert.assertEquals(expectedFlatMapFunc.apply("A B C"), flatMapFunc.apply("A B C"));
+        Assert.assertEquals(flatMapInfoKeyIndex, null);
+
+        // Test for filter vertex
+        final Vertex filterVertex = avroVertexChain.getVertexChain().get(1);
+        final InstantOperatorInfo filterInfo = (InstantOperatorInfo) filterVertex.getAttributes();
+        final List<ByteBuffer> filterInfoFunctions = filterInfo.getFunctions();
+        final Integer filterKeyIndex = filterInfo.getKeyIndex();
+
+        byte[] serializedFilterPredicate = new byte[filterInfoFunctions.get(0).remaining()];
+        filterInfoFunctions.get(0).get(serializedFilterPredicate);
+        final Predicate filterPredicate =
+            (Predicate) SerializationUtils.deserialize(serializedFilterPredicate);
+        Assert.assertEquals(expectedFilterPredicate.test("ABC"), filterPredicate.test("ABC"));
+        Assert.assertEquals(expectedFilterPredicate.test("abc"), filterPredicate.test("abc"));
+        Assert.assertEquals(filterKeyIndex, null);
+
+        // Test for map
+        final Vertex mapVertex = avroVertexChain.getVertexChain().get(2);
+        final InstantOperatorInfo mapInfo = (InstantOperatorInfo) mapVertex.getAttributes();
+        final List<ByteBuffer> mapInfoFunctions = mapInfo.getFunctions();
+        final Integer mapKeyIndex = mapInfo.getKeyIndex();
+
+        byte[] serializedMapFunc = new byte[mapInfoFunctions.get(0).remaining()];
+        mapInfoFunctions.get(0).get(serializedMapFunc);
+        final Function mapFunc =
+            (Function) SerializationUtils.deserialize(serializedMapFunc);
+        Assert.assertEquals(expectedMapFunc.apply("ABC"), mapFunc.apply("ABC"));
+        Assert.assertEquals(mapKeyIndex, null);
+
+        // Test for window
+        final Vertex windowVertex = avroVertexChain.getVertexChain().get(3);
+        final WindowOperatorInfo windowOperatorInfo = (WindowOperatorInfo) windowVertex.getAttributes();
         Assert.assertEquals(expectedSizePolicyEnum, windowOperatorInfo.getSizePolicyType());
         Assert.assertEquals(new Long(expectedTimeSize), windowOperatorInfo.getSizePolicyInfo());
         Assert.assertEquals(expectedEmitPolicyEnum, windowOperatorInfo.getEmitPolicyType());
         Assert.assertEquals(new Long(expectedTimeEmitInterval), windowOperatorInfo.getEmitPolicyInfo());
-        vertexIndexes.set(4, index);
-      } else if (vertex.getVertexType() == VertexTypeEnum.SOURCE) {
+
+        // Test for reduceByKeyWindow
+        final Vertex reduceByKeyVertex = avroVertexChain.getVertexChain().get(4);
+        final InstantOperatorInfo reduceByKeyInfo = (InstantOperatorInfo) reduceByKeyVertex.getAttributes();
+        final List<ByteBuffer> reduceByKeyFunctions = reduceByKeyInfo.getFunctions();
+        final Integer reduceByKeyIndex = reduceByKeyInfo.getKeyIndex();
+
+        byte[] serializedReduceFunc = new byte[reduceByKeyFunctions.get(0).remaining()];
+        reduceByKeyFunctions.get(0).get(serializedReduceFunc);
+        final BiFunction reduceFunc =
+            (BiFunction) SerializationUtils.deserialize(serializedReduceFunc);
+        Assert.assertEquals(expectedReduceFunc.apply(1, 2), reduceFunc.apply(1, 2));
+        Assert.assertEquals(expectedReduceFunc.apply(5, 4), reduceFunc.apply(5, 4));
+        Assert.assertEquals(expectedReduceKeyIndex, reduceByKeyIndex);
+      } else if (avroVertexChain.getAvroVertexChainType() == AvroVertexTypeEnum.SOURCE) {
         // Test for source vertex
-        final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
-        final Map<CharSequence, Object> sourceConfiguration = sourceInfo.getSourceConfiguration();
-        final Map<CharSequence, Object> watermarkConfiguration = sourceInfo.getWatermarkConfiguration();
-        if (sourceInfo.getSourceType() == SourceTypeEnum.TEXT_SOCKET_SOURCE) {
-          final ByteBuffer extractionFunc = (ByteBuffer) sourceConfiguration.get(
-              TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION);
-          byte[] serializedExtractionFunc = new byte[extractionFunc.remaining()];
-          extractionFunc.get(serializedExtractionFunc);
-          final Function deserializedExtractionFunc =
-              (Function) SerializationUtils.deserialize(serializedExtractionFunc);
-          Assert.assertEquals(textSocketSourceConf.getConfigurationValue(
-              TextSocketSourceParameters.SOCKET_HOST_ADDRESS),
-              sourceConfiguration.get(TextSocketSourceParameters.SOCKET_HOST_ADDRESS));
-          Assert.assertEquals(textSocketSourceConf.getConfigurationValue(TextSocketSourceParameters.SOCKET_HOST_PORT),
-              sourceConfiguration.get(TextSocketSourceParameters.SOCKET_HOST_PORT));
-          Assert.assertEquals(
-              ((Function)textSocketSourceConf.getConfigurationValue(
-                  TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION)).apply("HelloMIST:1234"),
-              deserializedExtractionFunc.apply("HelloMIST:1234"));
-          final ByteBuffer parsingFunc = (ByteBuffer) watermarkConfiguration.get(
-              PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK);
-          byte[] serializedParsingFunc = new byte[parsingFunc.remaining()];
-          parsingFunc.get(serializedParsingFunc);
-          final Function deserializedParsingFunc =
-              (Function) SerializationUtils.deserialize(serializedParsingFunc);
-          final ByteBuffer watermarkPred = (ByteBuffer) watermarkConfiguration.get(
-              PunctuatedWatermarkParameters.WATERMARK_PREDICATE);
-          byte[] serializedWatermarkPred = new byte[watermarkPred.remaining()];
-          watermarkPred.get(serializedWatermarkPred);
-          final Function deserializedWatermarkPred =
-              (Function) SerializationUtils.deserialize(serializedWatermarkPred);
-          Assert.assertEquals(
-              ((Function)punctuatedWatermarkConf.getConfigurationValue(
-                  PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK)).apply("Watermark:1234"),
-              deserializedParsingFunc.apply("Watermark:1234"));
-          Assert.assertEquals(
-              ((Function)punctuatedWatermarkConf.getConfigurationValue(
-                  PunctuatedWatermarkParameters.WATERMARK_PREDICATE)).apply("Watermark:1234"),
-              deserializedWatermarkPred.apply("Watermark:1234"));
-          Assert.assertEquals(
-              ((Function)punctuatedWatermarkConf.getConfigurationValue(
-                  PunctuatedWatermarkParameters.WATERMARK_PREDICATE)).apply("Data:1234"),
-              deserializedWatermarkPred.apply("Data:1234"));
-          vertexIndexes.set(0, index);
-        } else {
-          Assert.fail("Unexpected Sink type detected during the test! Should be TEXT_SOCKET_SOURCE");
-        }
+        checkSource(avroVertexChain.getVertexChain().get(0));
       } else {
         Assert.fail("Unexpected vertex type detected!" +
-            "Should be one of [SOURCE, INSTANT_OPERATOR, WINDOW_OPERATOR, SINK]");
+            "Should be one of [SOURCE, OPERATOR_CHAIN, SINK]");
       }
-      index += 1;
     }
+
     final List<Edge> edges = serializedDAG.getValue();
     final List<Edge> expectedEdges = Arrays.asList(
-        Edge.newBuilder().setFrom(vertexIndexes.get(0)).setTo(vertexIndexes.get(1)).setIsLeft(true).build(),
-        Edge.newBuilder().setFrom(vertexIndexes.get(1)).setTo(vertexIndexes.get(2)).setIsLeft(true).build(),
-        Edge.newBuilder().setFrom(vertexIndexes.get(2)).setTo(vertexIndexes.get(3)).setIsLeft(true).build(),
-        Edge.newBuilder().setFrom(vertexIndexes.get(3)).setTo(vertexIndexes.get(4)).setIsLeft(true).build(),
-        Edge.newBuilder().setFrom(vertexIndexes.get(4)).setTo(vertexIndexes.get(5)).setIsLeft(true).build(),
-        Edge.newBuilder().setFrom(vertexIndexes.get(5)).setTo(vertexIndexes.get(6)).setIsLeft(true).build());
+        Edge.newBuilder().setFrom(0).setTo(1).setIsLeft(true).build(),
+        Edge.newBuilder().setFrom(1).setTo(2).setIsLeft(true).build());
     Assert.assertEquals(new HashSet<>(expectedEdges), new HashSet<>(edges));
   }
 }

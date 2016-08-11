@@ -35,192 +35,216 @@
           "type": "bytes"
         },
         {
-          "name": "Vertices",
+          "name": "AvroVertices",
           "type":
           {
             "type": "array",
             "items":
             {
-              "name": "Vertex",
+              "name": "AvroVertexChain",
               "type": "record",
               "fields":
               [
                 {
-                  "name": "VertexType",
+                  "name": "AvroVertexChainType",
                   "type":
                   {
-                    "name": "VertexTypeEnum",
+                    "name": "AvroVertexTypeEnum",
                     "type": "enum",
-                    "symbols":
-                    [
-                      "SOURCE", "INSTANT_OPERATOR", "WINDOW_OPERATOR", "SINK"
-                    ]
+                    "symbols": ["SOURCE", "OPERATOR_CHAIN", "SINK"]
                   }
                 },
                 {
-                  "name": "Attributes",
+                  "name": "VertexChain",
                   "type":
-                  [
+                  {
+                    "type": "array",
+                    "items":
                     {
-                      "name": "SourceInfo",
+                      "name": "Vertex",
                       "type": "record",
                       "fields":
                       [
                         {
-                          "name": "SourceType",
+                          "name": "VertexType",
                           "type":
                           {
-                            "name": "SourceTypeEnum",
+                            "name": "VertexTypeEnum",
                             "type": "enum",
                             "symbols":
                             [
-                              "TEXT_SOCKET_SOURCE"
+                              "SOURCE", "INSTANT_OPERATOR", "WINDOW_OPERATOR", "SINK"
                             ]
                           }
                         },
                         {
-                          "name": "SourceConfiguration",
-                          "type":
-                          {
-                            "type": "map",
-                            "values":
-                            [
-                              "bytes", "int", "string", "float", "boolean"
-                            ]
-                          }
-                        },
-                        {
-                          "name": "WatermarkType",
-                          "type":
-                          {
-                            "name": "WatermarkTypeEnum",
-                            "type": "enum",
-                            "symbols":
-                            [
-                              "PERIODIC", "PUNCTUATED"
-                            ]
-                          }
-                        },
-                        {
-                          "name": "WatermarkConfiguration",
-                          "type":
-                          {
-                            "type": "map",
-                            "values":
-                            [
-                              "bytes", "int", "string", "float", "boolean"
-                            ]
-                          }
-                        }
-                      ]
-                    },
-                    {
-                      "name": "InstantOperatorInfo",
-                      "type": "record",
-                      "fields":
-                      [
-                        {
-                          "name": "InstantOperatorType",
-                          "type":
-                          {
-                            "name": "InstantOperatorTypeEnum",
-                            "type": "enum",
-                            "symbols":
-                            [
-                              "APPLY_STATEFUL", "FILTER", "FLAT_MAP", "MAP", "REDUCE_BY_KEY", "REDUCE_BY_KEY_WINDOW", "UNION"
-                            ]
-                          }
-                        },
-                        {
-                          "name": "Functions",
-                          "type":
-                          {
-                            "type": "array",
-                            "items": "bytes"
-                          }
-                        },
-                        {
-                          "name": "KeyIndex",
-                          "type": ["null", "int"]
-                        }
-                      ]
-                    },
-                    {
-                      "name": "WindowOperatorInfo",
-                      "type": "record",
-                      "fields":
-                      [
-                        {
-                          "name": "SizePolicyType",
-                          "type":
-                          {
-                            "name": "SizePolicyTypeEnum",
-                            "type": "enum",
-                            "symbols": ["TIME"]
-                          }
-                        },
-                        {
-                          "name": "SizePolicyInfo",
+                          "name": "Attributes",
                           "type":
                           [
                             {
-                              "name": "TimeDuration",
-                              "type": "int"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "EmitPolicyType",
-                          "type":
-                          {
-                            "name": "EmitPolicyTypeEnum",
-                            "type": "enum",
-                            "symbols": ["TIME"]
-                          }
-                        },
-                        {
-                          "name": "EmitPolicyInfo",
-                          "type":
-                          [
+                              "name": "SourceInfo",
+                              "type": "record",
+                              "fields":
+                              [
+                                {
+                                  "name": "SourceType",
+                                  "type":
+                                  {
+                                    "name": "SourceTypeEnum",
+                                    "type": "enum",
+                                    "symbols":
+                                    [
+                                      "TEXT_SOCKET_SOURCE"
+                                    ]
+                                  }
+                                },
+                                {
+                                  "name": "SourceConfiguration",
+                                  "type":
+                                  {
+                                    "type": "map",
+                                    "values":
+                                    [
+                                      "bytes", "int", "string", "float", "boolean"
+                                    ]
+                                  }
+                                },
+                                {
+                                  "name": "WatermarkType",
+                                  "type":
+                                  {
+                                    "name": "WatermarkTypeEnum",
+                                    "type": "enum",
+                                    "symbols":
+                                    [
+                                      "PERIODIC", "PUNCTUATED"
+                                    ]
+                                  }
+                                },
+                                {
+                                  "name": "WatermarkConfiguration",
+                                  "type":
+                                  {
+                                    "type": "map",
+                                    "values":
+                                    [
+                                      "bytes", "int", "string", "float", "boolean"
+                                    ]
+                                  }
+                                }
+                              ]
+                            },
                             {
-                              "name": "TimeInterval",
-                              "type": "int"
+                              "name": "InstantOperatorInfo",
+                              "type": "record",
+                              "fields":
+                              [
+                                {
+                                  "name": "InstantOperatorType",
+                                  "type":
+                                  {
+                                    "name": "InstantOperatorTypeEnum",
+                                    "type": "enum",
+                                    "symbols":
+                                    [
+                                      "APPLY_STATEFUL", "FILTER", "FLAT_MAP", "MAP", "REDUCE_BY_KEY", "REDUCE_BY_KEY_WINDOW", "UNION"
+                                    ]
+                                  }
+                                },
+                                {
+                                  "name": "Functions",
+                                  "type":
+                                  {
+                                    "type": "array",
+                                    "items": "bytes"
+                                  }
+                                },
+                                {
+                                  "name": "KeyIndex",
+                                  "type": ["null", "int"]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "WindowOperatorInfo",
+                              "type": "record",
+                              "fields":
+                              [
+                                {
+                                  "name": "SizePolicyType",
+                                  "type":
+                                  {
+                                    "name": "SizePolicyTypeEnum",
+                                    "type": "enum",
+                                    "symbols": ["TIME"]
+                                  }
+                                },
+                                {
+                                  "name": "SizePolicyInfo",
+                                  "type":
+                                  [
+                                    {
+                                      "name": "TimeDuration",
+                                      "type": "int"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "EmitPolicyType",
+                                  "type":
+                                  {
+                                    "name": "EmitPolicyTypeEnum",
+                                    "type": "enum",
+                                    "symbols": ["TIME"]
+                                  }
+                                },
+                                {
+                                  "name": "EmitPolicyInfo",
+                                  "type":
+                                  [
+                                    {
+                                      "name": "TimeInterval",
+                                      "type": "int"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "SinkInfo",
+                              "type": "record",
+                              "fields":
+                              [
+                                {
+                                  "name": "SinkType",
+                                  "type":
+                                  {
+                                    "name": "SinkTypeEnum",
+                                    "type": "enum",
+                                    "symbols":
+                                    [
+                                      "TEXT_SOCKET_SINK"
+                                    ]
+                                  }
+                                },
+                                {
+                                  "name": "SinkConfiguration",
+                                  "type":
+                                  {
+                                    "type": "map",
+                                    "values":
+                                    [
+                                      "bytes", "int", "string", "float", "boolean"
+                                    ]
+                                  }
+                                }
+                              ]
                             }
                           ]
-                        }
-                      ]
-                    },
-                    {
-                      "name": "SinkInfo",
-                      "type": "record",
-                      "fields":
-                      [
-                        {
-                          "name": "SinkType",
-                          "type":
-                          {
-                            "name": "SinkTypeEnum",
-                            "type": "enum",
-                            "symbols":
-                            [
-                              "TEXT_SOCKET_SINK"
-                            ]
-                          }
-                        },
-                        {
-                          "name": "SinkConfiguration",
-                          "type":
-                          {
-                            "type": "map",
-                            "values":
-                            [
-                              "bytes", "int", "string", "float", "boolean"
-                            ]
-                          }
                         }
                       ]
                     }
-                  ]
+                  }
                 }
               ]
             }

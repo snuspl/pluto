@@ -20,6 +20,9 @@ import edu.snu.mist.api.APITestParameters;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.api.types.Tuple2;
+import edu.snu.mist.formats.avro.AvroVertexChain;
+import edu.snu.mist.formats.avro.Edge;
+import edu.snu.mist.formats.avro.LogicalPlan;
 import edu.snu.mist.formats.avro.*;
 import edu.snu.mist.task.parameters.PlanStorePath;
 import org.apache.reef.io.Tuple;
@@ -52,12 +55,12 @@ public class PlanStoreTest {
         .textSocketOutput(APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF);
     final MISTQuery query = queryBuilder.build();
     // Generate logical plan
-    final Tuple<List<Vertex>, List<Edge>> serializedDag = query.getSerializedDAG();
+    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getSerializedDAG();
     final LogicalPlan.Builder logicalPlanBuilder = LogicalPlan.newBuilder();
     final LogicalPlan logicalPlan = logicalPlanBuilder
         .setIsJarSerialized(false)
         .setJar(ByteBuffer.wrap(new byte[1]))
-        .setVertices(serializedDag.getKey())
+        .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .build();
 
@@ -75,7 +78,7 @@ public class PlanStoreTest {
     Assert.assertEquals(logicalPlan.getEdges(), loadedPlan.getEdges());
     Assert.assertEquals(logicalPlan.getJar(), loadedPlan.getJar());
     Assert.assertEquals(logicalPlan.getSchema(), loadedPlan.getSchema());
-    testVerticesEqual(logicalPlan.getVertices(), loadedPlan.getVertices());
+    testVerticesEqual(logicalPlan.getAvroVertices(), loadedPlan.getAvroVertices());
     planStore.delete(queryId);
     Assert.assertFalse(new File(planStorePath, queryId + ".plan").exists());
 
@@ -84,34 +87,38 @@ public class PlanStoreTest {
 
   /**
    * Tests that two lists of vertices are equal.
-   * @param vertecies the first list of vertices
-   * @param loadedVertecies the second list of vertices
+   * @param vertices the first list of vertices
+   * @param loadedVertices the second list of vertices
    */
-  private void testVerticesEqual(final List<Vertex> vertecies, final List<Vertex> loadedVertecies) {
-    for(int i=0; i<vertecies.size(); i++) {
-      final Vertex vertex = vertecies.get(i);
-      final Vertex loadedVertex = loadedVertecies.get(i);
-      Assert.assertEquals(vertex.getSchema(), loadedVertex.getSchema());
-      Assert.assertEquals(vertex.getVertexType(), loadedVertex.getVertexType());
+  private void testVerticesEqual(final List<AvroVertexChain> vertices, final List<AvroVertexChain> loadedVertices) {
+    for (int i = 0; i < vertices.size(); i++) {
+      final AvroVertexChain avroVertexChain = vertices.get(i);
+      final AvroVertexChain loadedVertexChain = loadedVertices.get(i);
+      for (int j = 0; j < avroVertexChain.getVertexChain().size(); j++) {
+        final Vertex vertex = avroVertexChain.getVertexChain().get(j);
+        final Vertex loadedVertex = loadedVertexChain.getVertexChain().get(j);
+        Assert.assertEquals(vertex.getSchema(), loadedVertex.getSchema());
+        Assert.assertEquals(vertex.getVertexType(), loadedVertex.getVertexType());
 
-      if (vertex.getAttributes() instanceof SourceInfo) {
-        final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
-        final SourceInfo loadedSourceInfo = (SourceInfo) loadedVertex.getAttributes();
-        final Map<String, Object> stringConf = new HashMap<>();
-        for (final Map.Entry<CharSequence, Object> entry : loadedSourceInfo.getWatermarkConfiguration().entrySet()) {
-          stringConf.put(entry.getKey().toString(), entry.getValue());
+        if (vertex.getAttributes() instanceof SourceInfo) {
+          final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
+          final SourceInfo loadedSourceInfo = (SourceInfo) loadedVertex.getAttributes();
+          final Map<String, Object> stringConf = new HashMap<>();
+          for (final Map.Entry<CharSequence, Object> entry : loadedSourceInfo.getWatermarkConfiguration().entrySet()) {
+            stringConf.put(entry.getKey().toString(), entry.getValue());
+          }
+          Assert.assertEquals(sourceInfo.getSchema(),
+              loadedSourceInfo.getSchema());
+          Assert.assertEquals(sourceInfo.getSourceType(),
+              loadedSourceInfo.getSourceType());
+          Assert.assertEquals(sourceInfo.getSourceConfiguration().toString(),
+              loadedSourceInfo.getSourceConfiguration().toString());
+          Assert.assertEquals(sourceInfo.getWatermarkType(),
+              loadedSourceInfo.getWatermarkType());
+          Assert.assertEquals(sourceInfo.getWatermarkConfiguration(), stringConf);
+        } else {
+          Assert.assertEquals(vertex.getAttributes().toString(), loadedVertex.getAttributes().toString());
         }
-        Assert.assertEquals(sourceInfo.getSchema(),
-            loadedSourceInfo.getSchema());
-        Assert.assertEquals(sourceInfo.getSourceType(),
-            loadedSourceInfo.getSourceType());
-        Assert.assertEquals(sourceInfo.getSourceConfiguration().toString(),
-            loadedSourceInfo.getSourceConfiguration().toString());
-        Assert.assertEquals(sourceInfo.getWatermarkType(),
-            loadedSourceInfo.getWatermarkType());
-        Assert.assertEquals(sourceInfo.getWatermarkConfiguration(), stringConf);
-      } else {
-        Assert.assertEquals(vertex.getAttributes().toString(), loadedVertex.getAttributes().toString());
       }
     }
   }

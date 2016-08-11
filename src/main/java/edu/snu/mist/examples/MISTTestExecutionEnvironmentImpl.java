@@ -59,12 +59,12 @@ public final class MISTTestExecutionEnvironmentImpl implements MISTExecutionEnvi
   @Override
   public APIQuerySubmissionResult submit(final MISTQuery queryToSubmit) throws IOException, URISyntaxException {
     // Build logical plan using serialized vertices and edges.
-    final Tuple<List<Vertex>, List<Edge>> serializedDag = queryToSubmit.getSerializedDAG();
+    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = queryToSubmit.getSerializedDAG();
     final LogicalPlan.Builder logicalPlanBuilder = LogicalPlan.newBuilder();
     final LogicalPlan logicalPlan = logicalPlanBuilder
         .setIsJarSerialized(false)
         .setJar(ByteBuffer.wrap(new byte[1]))
-        .setVertices(serializedDag.getKey())
+        .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .build();
 

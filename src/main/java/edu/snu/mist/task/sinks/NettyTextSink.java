@@ -89,4 +89,9 @@ public final class NettyTextSink implements Sink<String> {
       channel.writeAndFlush(sb.toString());
     }
   }
+
+  @Override
+  public Type getType() {
+    return Type.SINK;
+  }
 }

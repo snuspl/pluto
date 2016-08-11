@@ -67,12 +67,12 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
     final byte[] jarBytes = JarFileUtils.serializeJarFile(runningJarPath);
 
     // Build logical plan using serialized vertices and edges.
-    final Tuple<List<Vertex>, List<Edge>> serializedDag = queryToSubmit.getSerializedDAG();
+    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = queryToSubmit.getSerializedDAG();
     final LogicalPlan.Builder logicalPlanBuilder = LogicalPlan.newBuilder();
     final LogicalPlan logicalPlan = logicalPlanBuilder
         .setIsJarSerialized(true)
         .setJar(ByteBuffer.wrap(jarBytes))
-        .setVertices(serializedDag.getKey())
+        .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .build();
 

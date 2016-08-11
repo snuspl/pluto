@@ -18,6 +18,7 @@ package edu.snu.mist.task;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.common.OutputEmittable;
+import edu.snu.mist.task.common.PhysicalVertex;
 import edu.snu.mist.task.operators.Operator;
 
 /**
@@ -28,7 +29,7 @@ import edu.snu.mist.task.operators.Operator;
  * It queues inputs, performs computations through the list of operators,
  * and forwards final outputs to an OutputEmitter which sends the outputs to next PartitionedQueries.
  */
-public interface PartitionedQuery extends OutputEmittable {
+public interface PartitionedQuery extends OutputEmittable, PhysicalVertex {
 
   /**
    * Inserts an operator to the head of the chain.
@@ -68,4 +69,10 @@ public interface PartitionedQuery extends OutputEmittable {
    * @return true if the event is enqueued, otherwise false.
    */
   boolean addNextEvent(MistEvent event, StreamType.Direction direction);
+
+  /**
+   * Get the size of the partitioned query.
+   * @return the number of operators
+   */
+  int size();
 }
