@@ -21,7 +21,7 @@ import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTPredicate;
 import edu.snu.mist.api.operators.*;
 import edu.snu.mist.api.sink.Sink;
-import edu.snu.mist.api.sink.builder.SinkConfiguration;
+import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
 import edu.snu.mist.api.window.WindowEmitPolicy;
 import edu.snu.mist.api.window.WindowSizePolicy;
 
@@ -101,9 +101,9 @@ public interface ContinuousStream<T> extends MISTStream<T> {
   WindowedStream<T> window(WindowSizePolicy windowSizePolicy, WindowEmitPolicy windowEmitPolicy);
 
   /**
-   * It defines a text socket output Sink for the current stream according to the SinkConfiguration.
+   * It defines a text socket output Sink for the current stream according to the TextSocketSinkConfiguration.
    * @param sinkConfiguration The configuration for sink
    * @return new sink for the current stream
    */
-  Sink textSocketOutput(SinkConfiguration sinkConfiguration);
+  Sink textSocketOutput(TextSocketSinkConfiguration sinkConfiguration);
 }

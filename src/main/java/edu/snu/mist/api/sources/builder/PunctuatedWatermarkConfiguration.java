@@ -16,19 +16,84 @@
 package edu.snu.mist.api.sources.builder;
 
 import edu.snu.mist.api.StreamType;
+import edu.snu.mist.api.configurations.MISTConfigurationBuilderImpl;
+import edu.snu.mist.api.functions.MISTFunction;
+import edu.snu.mist.api.functions.MISTPredicate;
+import edu.snu.mist.api.sources.parameters.PunctuatedWatermarkParameters;
 
+import java.util.Arrays;
 import java.util.Map;
 
 /**
- * * The class represents punctuated watermark configuration.
+ * The class represents punctuated watermark configuration.
+ * @param <T> the type of source data
  */
-public final class PunctuatedWatermarkConfiguration extends WatermarkConfiguration {
+public final class PunctuatedWatermarkConfiguration<T> extends WatermarkConfiguration<T> {
 
-  public PunctuatedWatermarkConfiguration(final Map<String, Object> configMap) {
+  private PunctuatedWatermarkConfiguration(final Map<String, Object> configMap) {
     super(configMap);
   }
 
+  @Override
   public StreamType.WatermarkType getWatermarkType() {
     return StreamType.WatermarkType.PUNCTUATED;
   };
+
+  /**
+   * Gets the builder for Configuration construction.
+   * @param <K> the type of source data that the target configuration will have
+   * @return the builder
+   */
+  public static <K> PunctuatedWatermarkConfigurationBuilder<K> newBuilder() {
+    return new PunctuatedWatermarkConfigurationBuilder<>();
+  }
+
+  /**
+   * This class builds punctuated WatermarkConfiguration.
+   * @param <V> the type of source data that the target configuration will have
+   */
+  public static final class PunctuatedWatermarkConfigurationBuilder<V> extends MISTConfigurationBuilderImpl {
+
+    /**
+     * Required parameters for punctuated WatermarkConfiguration.
+     */
+    private final String[] punctuatedWatermarkParameters = {
+        PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK,
+        PunctuatedWatermarkParameters.WATERMARK_PREDICATE
+    };
+
+    private PunctuatedWatermarkConfigurationBuilder() {
+      requiredParameters.addAll(Arrays.asList(punctuatedWatermarkParameters));
+    }
+
+    /**
+     * Tests that required parameters are set and builds the PunctuatedWatermarkConfiguration.
+     * @return the configuration
+     */
+    public PunctuatedWatermarkConfiguration<V> build() {
+      readyToBuild();
+      return new PunctuatedWatermarkConfiguration<>(configMap);
+    }
+
+    /**
+     * Sets the configuration for the function parsing timestamp from watermark to the given function.
+     * @param function the function given by users which they want to set
+     * @return the configured WatermarkBuilder
+     */
+    public PunctuatedWatermarkConfigurationBuilder<V> setParsingWatermarkFunction(
+        final MISTFunction<V, Long> function) {
+      set(PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK, function);
+      return this;
+    }
+
+    /**
+     * Sets the configuration for the predicate testing whether the input is watermark or not to the given function.
+     * @param predicate the predicate given by users which they want to set
+     * @return the configured WatermarkBuilder
+     */
+    public PunctuatedWatermarkConfigurationBuilder<V> setWatermarkPredicate(final MISTPredicate<V> predicate) {
+      set(PunctuatedWatermarkParameters.WATERMARK_PREDICATE, predicate);
+      return this;
+    }
+  }
 }

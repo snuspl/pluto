@@ -23,10 +23,10 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 /**
- * This abstract class implements commonly necessary data structures and
+ * This abstract class represents necessary data structures and
  * methods for building MIST configuration.
  */
-public abstract class MISTConfigurationBuilderImpl implements MISTConfigurationBuilder {
+public abstract class MISTConfigurationBuilderImpl {
 
   /**
    * Configuration storing map.
@@ -41,8 +41,10 @@ public abstract class MISTConfigurationBuilderImpl implements MISTConfigurationB
    */
   protected final Set<String> optionalParameters = new HashSet<>();
 
-  @Override
-  public <T extends MISTConfiguration> T build() {
+  /**
+   * Tests that all required parameters are assigned already.
+   */
+  protected void readyToBuild() {
     // Check for missing parameters
     Stream<String> missingParams = requiredParameters.stream()
         .filter(s -> !configMap.containsKey(s));
@@ -55,20 +57,18 @@ public abstract class MISTConfigurationBuilderImpl implements MISTConfigurationB
       stringBuilder.append("]");
       throw new IllegalStateException(stringBuilder.toString());
     }
-    return buildConfigMap(configMap);
   }
 
   /**
-   * Build the configMap to MISTConfiguration in sub-class.
+   * Sets the configuration for the given param to the given value.
+   * @param key the key given by users which they want to set
+   * @param value the value given by users which they want to set
+   * @throws IllegalStateException throws the exception when tries to get a configuration value for non-existing param.
    */
-  protected abstract <T extends MISTConfiguration> T buildConfigMap(final Map<String, Object> configurationMap);
-
-  @Override
-  public <T> MISTConfigurationBuilder set(final String key, final T value) {
+  protected <T> void set(final String key, final T value) {
     if (configMap.containsKey(key)) {
       throw new IllegalStateException("Attempts to add duplicate configuration!");
     }
     configMap.put(key, value);
-    return this;
   }
 }

@@ -16,16 +16,17 @@
 package edu.snu.mist.api.sources.builder;
 
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.api.configurations.DefaultMISTConfigurationImpl;
+import edu.snu.mist.api.configurations.MISTConfigurationImpl;
 
 import java.util.Map;
 
 /**
  * The class represents watermark configuration.
+ * @param <T> the type of source data
  */
-public abstract class WatermarkConfiguration extends DefaultMISTConfigurationImpl {
+public abstract class WatermarkConfiguration<T> extends MISTConfigurationImpl {
 
-  public WatermarkConfiguration(final Map<String, Object> configMap) {
+  protected WatermarkConfiguration(final Map<String, Object> configMap) {
     super(configMap);
   }
 

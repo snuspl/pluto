@@ -17,7 +17,7 @@ package edu.snu.mist.api.sources;
 
 import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.api.sources.builder.SourceConfiguration;
+import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
 import edu.snu.mist.api.sources.builder.WatermarkConfiguration;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.SourceTypeEnum;
@@ -25,12 +25,12 @@ import edu.snu.mist.formats.avro.SourceTypeEnum;
 /**
  * This class represents a SourceStream from the text socket source.
  */
-public final class TextSocketSourceStream<T> extends BaseSourceStream<T> {
+public final class TextSocketSourceStream extends BaseSourceStream<String> {
 
-  public TextSocketSourceStream(final SourceConfiguration sourceConfiguration,
+  public TextSocketSourceStream(final TextSocketSourceConfiguration textSocketSourceConfiguration,
                                 final DAG<AvroVertexSerializable, StreamType.Direction> dag,
-                                final WatermarkConfiguration watermarkConfiguration) {
-    super(StreamType.SourceType.TEXT_SOCKET_SOURCE, sourceConfiguration, dag, watermarkConfiguration);
+                                final WatermarkConfiguration<String> watermarkConfiguration) {
+    super(StreamType.SourceType.TEXT_SOCKET_SOURCE, textSocketSourceConfiguration, dag, watermarkConfiguration);
   }
 
   @Override

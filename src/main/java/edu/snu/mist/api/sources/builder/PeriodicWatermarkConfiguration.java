@@ -16,19 +16,90 @@
 package edu.snu.mist.api.sources.builder;
 
 import edu.snu.mist.api.StreamType;
+import edu.snu.mist.api.configurations.MISTConfigurationBuilderImpl;
+import edu.snu.mist.api.sources.parameters.PeriodicWatermarkParameters;
 
+import java.util.Arrays;
 import java.util.Map;
 
 /**
  * The class represents periodic watermark configuration.
+ * @param <T> the type of source data
  */
-public final class PeriodicWatermarkConfiguration extends WatermarkConfiguration {
+public final class PeriodicWatermarkConfiguration<T> extends WatermarkConfiguration<T> {
 
-  public PeriodicWatermarkConfiguration(final Map<String, Object> configMap) {
+  private PeriodicWatermarkConfiguration(final Map<String, Object> configMap) {
     super(configMap);
   }
 
+  @Override
   public StreamType.WatermarkType getWatermarkType() {
     return StreamType.WatermarkType.PERIODIC;
   };
+
+  /**
+   * Gets the builder for Configuration construction.
+   * @param <K> the type of source data that the target configuration will have
+   * @return the builder
+   */
+  public static <K> PeriodicWatermarkConfigurationBuilder<K> newBuilder() {
+    return new PeriodicWatermarkConfigurationBuilder<>();
+  }
+
+  /**
+   * This class builds periodic WatermarkConfiguration.
+   * @param <V> the type of source data that the target configuration will have
+   */
+  public static final class PeriodicWatermarkConfigurationBuilder<V> extends MISTConfigurationBuilderImpl {
+
+    /**
+     * Required parameters for periodic WatermarkConfiguration.
+     */
+    private final String[] periodicWatermarkRequiredParameters = {
+        PeriodicWatermarkParameters.PERIOD
+    };
+
+    /**
+     * Optional parameters for periodic WatermarkConfiguration.
+     */
+    private final String[] periodicWatermarkOptionalParameters = {
+        PeriodicWatermarkParameters.EXPECTED_DELAY
+    };
+
+    private PeriodicWatermarkConfigurationBuilder() {
+      requiredParameters.addAll(Arrays.asList(periodicWatermarkRequiredParameters));
+      optionalParameters.addAll(Arrays.asList(periodicWatermarkOptionalParameters));
+    }
+
+    /**
+     * Tests that required parameters are set and builds the PeriodicWatermarkConfiguration.
+     * @return the configuration
+     */
+    public PeriodicWatermarkConfiguration<V> build() {
+      readyToBuild();
+      return new PeriodicWatermarkConfiguration<>(configMap);
+    }
+
+    /**
+     * Sets the configuration for the watermark period to the given period.
+     * @param period the period given by users which they want to set
+     * @return the configured WatermarkBuilder
+     */
+    public PeriodicWatermarkConfigurationBuilder<V> setWatermarkPeriod(final int period) {
+      set(PeriodicWatermarkParameters.PERIOD, period);
+      return this;
+    }
+
+    /**
+     * Sets the configuration for the expected delay to the given delay.
+     * Expected delay means that the maximum delay between the time of data creation and being received by task.
+     * This is an optional setting for event-time processing.
+     * @param expectedDelay the expected delay given by users which they want to set
+     * @return the configured WatermarkBuilder
+     */
+    public PeriodicWatermarkConfigurationBuilder<V> setExpectedDelay(final int expectedDelay) {
+      set(PeriodicWatermarkParameters.EXPECTED_DELAY, expectedDelay);
+      return this;
+    }
+  }
 }

@@ -38,22 +38,22 @@ public abstract class BaseSourceStream<T> extends ContinuousStreamImpl<T> {
   /**
    * The value for source configuration.
    */
-  protected final SourceConfiguration sourceConfiguration;
+  private final SourceConfiguration<T> sourceConfiguration;
 
   /**
    * The type of this source.
    */
-  protected final StreamType.SourceType sourceType;
+  private final StreamType.SourceType sourceType;
 
   /**
    * The value for watermark configuration.
    */
-  protected final WatermarkConfiguration watermarkConfiguration;
+  private final WatermarkConfiguration watermarkConfiguration;
 
   BaseSourceStream(final StreamType.SourceType sourceType,
-                   final SourceConfiguration sourceConfiguration,
+                   final SourceConfiguration<T> sourceConfiguration,
                    final DAG<AvroVertexSerializable, StreamType.Direction> dag,
-                   final WatermarkConfiguration watermarkConfiguration) {
+                   final WatermarkConfiguration<T> watermarkConfiguration) {
     super(StreamType.ContinuousType.SOURCE, dag);
     this.sourceType = sourceType;
     this.sourceConfiguration = sourceConfiguration;
@@ -66,7 +66,7 @@ public abstract class BaseSourceStream<T> extends ContinuousStreamImpl<T> {
    * Gets the type enum of watermark.
    * @return the type enum of watermark
    */
-  protected WatermarkTypeEnum getWatermarkTypeEnum() {
+  private WatermarkTypeEnum getWatermarkTypeEnum() {
     if (watermarkConfiguration.getWatermarkType() == StreamType.WatermarkType.PERIODIC) {
       return WatermarkTypeEnum.PERIODIC;
     } else {
