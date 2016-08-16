@@ -38,11 +38,12 @@ public final class UnionOperatorTest {
     final MistDataEvent a = new MistDataEvent("a", 1L);
     final MistDataEvent b = new MistDataEvent("b", 3L);
     final MistDataEvent c = new MistDataEvent("c", 5L);
-    final MistWatermarkEvent lw1 = new MistWatermarkEvent(10L);
+    final MistWatermarkEvent lw1 = new MistWatermarkEvent(9L);
+    final MistWatermarkEvent lw2 = new MistWatermarkEvent(10L);
     final MistDataEvent d = new MistDataEvent("d", 1L);
     final MistDataEvent e = new MistDataEvent("e", 2L);
     final MistDataEvent f = new MistDataEvent("f", 4L);
-    final MistWatermarkEvent rw1 = new MistWatermarkEvent(4L);
+    final MistWatermarkEvent rw1 = new MistWatermarkEvent(3L);
     final MistDataEvent g = new MistDataEvent("g", 6L);
     final MistWatermarkEvent rw2 = new MistWatermarkEvent(11L);
 
@@ -52,8 +53,8 @@ public final class UnionOperatorTest {
     unionOperator.setOutputEmitter(new SimpleOutputEmitter(result));
 
     // Test:
-    //  * Left: -----------W:10 -- c ---- b ------- a ---->
-    //  * Right -W:11 -- g------------W:4--- f--e--d------>
+    //  * Left: ----------W:10--W:9--c----b--------a---->
+    //  * Right -W:11 --g--------------W:3--f--e--d------>
     // Merged stream: ----g--c--f--b--e--d--a-->
     unionOperator.processLeftData(a);
     Assert.assertEquals(0, result.size());
@@ -73,14 +74,17 @@ public final class UnionOperatorTest {
     Assert.assertEquals(b, result.get(3));
 
     unionOperator.processRightWatermark(rw1);
-    Assert.assertEquals(4, result.size());
+    Assert.assertEquals(5, result.size());
+    Assert.assertEquals(rw1, result.get(4));
 
     unionOperator.processLeftData(c);
     Assert.assertEquals(6, result.size());
-    Assert.assertEquals(f, result.get(4));
-    Assert.assertEquals(rw1, result.get(5));
+    Assert.assertEquals(f, result.get(5));
 
     unionOperator.processLeftWatermark(lw1);
+    Assert.assertEquals(6, result.size());
+
+    unionOperator.processLeftWatermark(lw2);
     Assert.assertEquals(6, result.size());
 
     unionOperator.processRightData(g);
@@ -90,7 +94,7 @@ public final class UnionOperatorTest {
 
     unionOperator.processRightWatermark(rw2);
     Assert.assertEquals(9, result.size());
-    Assert.assertEquals(lw1, result.get(8));
+    Assert.assertEquals(lw2, result.get(8));
   }
 
   /**
