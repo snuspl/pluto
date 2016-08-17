@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.window;
+package edu.snu.mist.api.functions;
+
+import java.io.Serializable;
+import java.util.function.Supplier;
 
 /**
- * Window policy interface which decides the size of the window inside.
+ * A Java 8 lambda Supplier-compatible interface used in MIST.
  */
-public interface WindowSizePolicy {
-  /**
-   * @return The type of window size policy type.
-   */
-  WindowType.SizePolicy getSizePolicyType();
+public interface MISTSupplier<T> extends Supplier<T>, Serializable {
 }

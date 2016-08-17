@@ -19,19 +19,13 @@ import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.formats.avro.InstantOperatorInfo;
 import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
-import org.apache.commons.lang.SerializationUtils;
-
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * This class implements the necessary methods for getting information
- * about reduceByKey operator.
+ * about reduceByKey operator on continuous stream.
  */
-public final class ReduceByKeyOperatorStream<IN, K, V> extends ReduceOperatorStream<IN, K, V> {
+public final class ReduceByKeyOperatorStream<IN, K, V> extends BaseReduceByKeyOperatorStream<IN, K, V> {
 
   public ReduceByKeyOperatorStream(final int keyFieldIndex,
                                    final Class<K> keyType,
@@ -41,14 +35,7 @@ public final class ReduceByKeyOperatorStream<IN, K, V> extends ReduceOperatorStr
   }
 
   @Override
-  protected InstantOperatorInfo getInstantOpInfo() {
-    final InstantOperatorInfo.Builder iOpInfoBuilder = InstantOperatorInfo.newBuilder();
-    iOpInfoBuilder.setInstantOperatorType(InstantOperatorTypeEnum.REDUCE_BY_KEY);
-    final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
-    serializedFunctionList.add(ByteBuffer.wrap(
-        SerializationUtils.serialize(reduceFunc)));
-    iOpInfoBuilder.setFunctions(serializedFunctionList);
-    iOpInfoBuilder.setKeyIndex(keyFieldIndex);
-    return iOpInfoBuilder.build();
+  protected InstantOperatorTypeEnum getOpTypeEnum() {
+    return InstantOperatorTypeEnum.REDUCE_BY_KEY;
   }
 }

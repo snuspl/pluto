@@ -52,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 /**
@@ -208,6 +209,13 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       }
       case REDUCE_BY_KEY_WINDOW: {
         throw new IllegalArgumentException("MISTTask: ReduceByKeyWindowOperator is currently not supported!");
+      }
+      case AGGREGATE_WINDOW: {
+        final BiFunction updateStateFunc = (BiFunction) deserializeLambda(functionList.get(0), classLoader);
+        final Function produceResultFunc = (Function) deserializeLambda(functionList.get(1), classLoader);
+        final Supplier initializeStateSup = (Supplier) deserializeLambda(functionList.get(2), classLoader);
+        return new AggregateWindowOperator<>(
+            queryId, operatorId, updateStateFunc, produceResultFunc, initializeStateSup);
       }
       case UNION: {
         return new UnionOperator(queryId, operatorId);

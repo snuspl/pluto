@@ -20,14 +20,20 @@ import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.InstantOperatorInfo;
+import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
+import org.apache.commons.lang.SerializationUtils;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
- * This is the common implementation for reduce-like operators/
+ * This is the common implementation for reduce-by-key-like operators/
  * e.g) ReduceByKeyWindow, ReduceByKeyOperator, ...
  */
-public abstract class ReduceOperatorStream<IN, K, V> extends InstantOperatorStream<IN, Map<K, V>> {
+abstract class BaseReduceByKeyOperatorStream<IN, K, V> extends InstantOperatorStream<IN, Map<K, V>> {
 
   /**
    * BiFunction used for reduce operation.
@@ -38,11 +44,11 @@ public abstract class ReduceOperatorStream<IN, K, V> extends InstantOperatorStre
    */
   protected final int keyFieldIndex;
 
-  protected ReduceOperatorStream(final StreamType.OperatorType operatorName,
-                                 final int keyFieldIndex,
-                                 final Class<K> keyType,
-                                 final MISTBiFunction<V, V, V> reduceFunc,
-                                 final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
+  protected BaseReduceByKeyOperatorStream(final StreamType.OperatorType operatorName,
+                                          final int keyFieldIndex,
+                                          final Class<K> keyType,
+                                          final MISTBiFunction<V, V, V> reduceFunc,
+                                          final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
     // TODO[MIST-63]: Add dynamic type checking routine here.
     super(operatorName, dag);
     this.reduceFunc = reduceFunc;
@@ -61,5 +67,21 @@ public abstract class ReduceOperatorStream<IN, K, V> extends InstantOperatorStre
    */
   public int getKeyFieldIndex() {
     return keyFieldIndex;
+  }
+
+  /**
+   * Gets the type enum of operator.
+   */
+  protected abstract InstantOperatorTypeEnum getOpTypeEnum();
+
+  @Override
+  protected InstantOperatorInfo getInstantOpInfo() {
+    final InstantOperatorInfo.Builder iOpInfoBuilder = InstantOperatorInfo.newBuilder();
+    iOpInfoBuilder.setInstantOperatorType(getOpTypeEnum());
+    final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
+    serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(reduceFunc)));
+    iOpInfoBuilder.setFunctions(serializedFunctionList);
+    iOpInfoBuilder.setKeyIndex(keyFieldIndex);
+    return iOpInfoBuilder.build();
   }
 }

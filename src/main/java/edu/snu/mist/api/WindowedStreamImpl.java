@@ -16,6 +16,9 @@
 package edu.snu.mist.api;
 
 import edu.snu.mist.api.functions.MISTBiFunction;
+import edu.snu.mist.api.functions.MISTFunction;
+import edu.snu.mist.api.functions.MISTSupplier;
+import edu.snu.mist.api.operators.AggregateWindowOperatorStream;
 import edu.snu.mist.api.operators.ReduceByKeyWindowOperatorStream;
 import edu.snu.mist.api.window.*;
 import edu.snu.mist.common.DAG;
@@ -62,6 +65,17 @@ public final class WindowedStreamImpl<T> extends MISTStreamImpl<Collection<T>> i
       final MISTBiFunction<V, V, V> reduceFunc) {
     final ReduceByKeyWindowOperatorStream<T, K, V> downStream =
         new ReduceByKeyWindowOperatorStream<>(keyFieldNum, keyType, reduceFunc, dag);
+    dag.addVertex(downStream);
+    dag.addEdge(this, downStream, StreamType.Direction.LEFT);
+    return downStream;
+  }
+
+  @Override
+  public <R, S> AggregateWindowOperatorStream<T, R, S> aggregateWindow(final MISTBiFunction<T, S, S> updateStateFunc,
+                                                                       final MISTFunction<S, R> produceResultFunc,
+                                                                       final MISTSupplier<S> initializeStateSup) {
+    final AggregateWindowOperatorStream<T, R, S> downStream =
+        new AggregateWindowOperatorStream<>(updateStateFunc, produceResultFunc, initializeStateSup, dag);
     dag.addVertex(downStream);
     dag.addEdge(this, downStream, StreamType.Direction.LEFT);
     return downStream;

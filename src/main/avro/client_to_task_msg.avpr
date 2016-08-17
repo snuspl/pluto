@@ -147,7 +147,7 @@
                                     "type": "enum",
                                     "symbols":
                                     [
-                                      "APPLY_STATEFUL", "FILTER", "FLAT_MAP", "MAP", "REDUCE_BY_KEY", "REDUCE_BY_KEY_WINDOW", "UNION"
+                                      "APPLY_STATEFUL", "FILTER", "FLAT_MAP", "MAP", "REDUCE_BY_KEY", "REDUCE_BY_KEY_WINDOW", "UNION", "AGGREGATE_WINDOW"
                                     ]
                                   }
                                 },
