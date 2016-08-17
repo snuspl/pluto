@@ -19,22 +19,18 @@ import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.formats.avro.InstantOperatorInfo;
 import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
-import org.apache.commons.lang.SerializationUtils;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 /**
- * This class implements the necessary methods for getting information about reduceByKeyOnWindow operator.
+ * This class implements the necessary methods for getting information about reduceByKey operator on windowed stream.
  * This is different to ReduceByKeyOperatorStream in that
- * it maintains no internal state inside and just reduces the collected data from the window.
+ * it receives a Collection of input data, and
+ * it maintains no internal state inside but just reduces the collected data from the window.
  */
 public final class ReduceByKeyWindowOperatorStream<IN, K, V>
-    extends ReduceOperatorStream<Collection<IN>, K, V> {
+    extends BaseReduceByKeyOperatorStream<Collection<IN>, K, V> {
 
   public ReduceByKeyWindowOperatorStream(final int keyFieldIndex,
                                          final Class<K> keyType,
@@ -44,14 +40,7 @@ public final class ReduceByKeyWindowOperatorStream<IN, K, V>
   }
 
   @Override
-  protected InstantOperatorInfo getInstantOpInfo() {
-    final InstantOperatorInfo.Builder iOpInfoBuilder = InstantOperatorInfo.newBuilder();
-    iOpInfoBuilder.setInstantOperatorType(InstantOperatorTypeEnum.REDUCE_BY_KEY_WINDOW);
-    final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
-    serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(
-        reduceFunc)));
-    iOpInfoBuilder.setFunctions(serializedFunctionList);
-    iOpInfoBuilder.setKeyIndex(keyFieldIndex);
-    return iOpInfoBuilder.build();
+  protected InstantOperatorTypeEnum getOpTypeEnum() {
+    return InstantOperatorTypeEnum.REDUCE_BY_KEY_WINDOW;
   }
 }

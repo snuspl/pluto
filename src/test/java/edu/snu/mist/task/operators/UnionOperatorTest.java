@@ -49,7 +49,7 @@ public final class UnionOperatorTest {
 
     final UnionOperator unionOperator = new UnionOperator("testQuery", "testUnionOp");
 
-    List<MistEvent> result = new LinkedList<>();
+    final List<MistEvent> result = new LinkedList<>();
     unionOperator.setOutputEmitter(new SimpleOutputEmitter(result));
 
     // Test:

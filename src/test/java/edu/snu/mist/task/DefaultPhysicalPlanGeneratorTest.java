@@ -67,9 +67,9 @@ public final class DefaultPhysicalPlanGeneratorTest {
 
   @Before
   public void setUp() throws IOException {
-    sourceServerSocket = new ServerSocket((Integer) APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF
+    sourceServerSocket = new ServerSocket(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF
       .getConfigurationValue(TextSocketSourceParameters.SOCKET_HOST_PORT));
-    sinkServerSocket = new ServerSocket((Integer) APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF
+    sinkServerSocket = new ServerSocket(APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF
       .getConfigurationValue(TextSocketSinkParameters.SOCKET_HOST_PORT));
   }
 

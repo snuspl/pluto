@@ -16,6 +16,9 @@
 package edu.snu.mist.api;
 
 import edu.snu.mist.api.functions.MISTBiFunction;
+import edu.snu.mist.api.functions.MISTFunction;
+import edu.snu.mist.api.functions.MISTSupplier;
+import edu.snu.mist.api.operators.AggregateWindowOperatorStream;
 import edu.snu.mist.api.operators.ReduceByKeyWindowOperatorStream;
 import edu.snu.mist.api.window.WindowEmitPolicy;
 import edu.snu.mist.api.window.WindowSizePolicy;
@@ -45,4 +48,17 @@ public interface WindowedStream<T> extends MISTStream<Collection<T>> {
    */
   <K, V> ReduceByKeyWindowOperatorStream<T, K, V> reduceByKeyWindow(
       int keyFieldNum, Class<K> keyType, MISTBiFunction<V, V, V> reduceFunc);
+
+  /**
+   * It aggregates the windowed stream by a user-defined aggregation function.
+   * @param updateStateFunc the function that updates temporal state in operator
+   * @param produceResultFunc the function that produces result from temporal state
+   * @param initializeStateSup the supplier that generates state of operation
+   * @param <R> the type of result
+   * @param <S> the type of state
+   * @return new aggregated continuous stream after applying the aggregation function
+   */
+  <R, S> AggregateWindowOperatorStream<T, R, S> aggregateWindow(
+      MISTBiFunction<T, S, S> updateStateFunc, MISTFunction<S, R> produceResultFunc,
+      MISTSupplier<S> initializeStateSup);
 }

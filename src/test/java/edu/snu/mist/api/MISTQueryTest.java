@@ -18,7 +18,7 @@ package edu.snu.mist.api;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTPredicate;
-import edu.snu.mist.api.sink.Sink;
+import edu.snu.mist.api.functions.MISTSupplier;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 import edu.snu.mist.api.sources.builder.PunctuatedWatermarkConfiguration;
@@ -40,13 +40,11 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * This is the test class for serializing MISTQuery into avro LogicalPlan.
@@ -66,6 +64,17 @@ public final class MISTQueryTest {
   private final EmitPolicyTypeEnum expectedEmitPolicyEnum = EmitPolicyTypeEnum.TIME;
   private final WindowSizePolicy expectedWindowSizePolicy = new TimeSizePolicy(expectedTimeSize);
   private final WindowEmitPolicy expectedWindowEmitPolicy = new TimeEmitPolicy(expectedTimeEmitInterval);
+  private final MISTBiFunction<Map<String, Integer>, Integer, Integer> expectedUpdateStateFunc =
+      (map, i) -> {
+        for (Map.Entry<String, Integer> entry : map.entrySet()) {
+          if (entry.getValue() > i) {
+            i = entry.getValue();
+          }
+        }
+        return i;
+      };
+  private final MISTFunction<Integer, String> expectedProduceResultFunc = state -> state.toString();
+  private final MISTSupplier<Integer> expectedInitializeStateSup = () -> Integer.MIN_VALUE;
   private final MISTBiFunction<Integer, Integer, Integer> expectedReduceFunc = (x, y) -> x + y;
   private final Integer expectedReduceKeyIndex = 0;
 
@@ -78,6 +87,10 @@ public final class MISTQueryTest {
       APITestParameters.PUNCTUATED_WATERMARK_CONF;
   private final TextSocketSinkConfiguration textSocketSinkConf = APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF;
 
+  /**
+   * This method checks that whether source is serialized well or not.
+   * @param vertex the source vertex
+   */
   private void checkSource(final Vertex vertex) {
     // Test for source vertex
     final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
@@ -126,18 +139,51 @@ public final class MISTQueryTest {
   }
 
   /**
+   * This method checks that whether aggregateWindow operator is serialized well or not.
+   * @param vertex the aggregateWindow vertex
+   */
+  private void checkAggregateWindow(final Vertex vertex) {
+    // Test for aggregateWindow
+    final InstantOperatorInfo aggregateWindowInfo = (InstantOperatorInfo) vertex.getAttributes();
+    final List<ByteBuffer> aggregateWindowFunctions = aggregateWindowInfo.getFunctions();
+
+    byte[] serializedUpdateStateFunc = new byte[aggregateWindowFunctions.get(0).remaining()];
+    aggregateWindowFunctions.get(0).get(serializedUpdateStateFunc);
+    final BiFunction deserializedUpdateStateFunc =
+        (BiFunction) SerializationUtils.deserialize(serializedUpdateStateFunc);
+    byte[] serializedProduceResultFunc = new byte[aggregateWindowFunctions.get(1).remaining()];
+    aggregateWindowFunctions.get(1).get(serializedProduceResultFunc);
+    final Function deserializedProduceResultFunc =
+        (Function) SerializationUtils.deserialize(serializedProduceResultFunc);
+    byte[] serializedInitializeStateSup = new byte[aggregateWindowFunctions.get(2).remaining()];
+    aggregateWindowFunctions.get(2).get(serializedInitializeStateSup);
+    final Supplier deserializedInitializeStateSup =
+        (Supplier) SerializationUtils.deserialize(serializedInitializeStateSup);
+
+    final Map<String, Integer> tmpMap = new HashMap<>();
+    tmpMap.put("Hello", 10);
+    tmpMap.put("MIST", 5);
+    tmpMap.put("Test", 12);
+    Assert.assertEquals(expectedUpdateStateFunc.apply(tmpMap, 11), deserializedUpdateStateFunc.apply(tmpMap, 11));
+    Assert.assertEquals(expectedProduceResultFunc.apply(12), deserializedProduceResultFunc.apply(12));
+    Assert.assertEquals(expectedInitializeStateSup.get(), deserializedInitializeStateSup.get());
+  }
+
+  /**
    * This method tests a serialization of a complex query, containing 7 vertices.
    * @throws InjectionException
    */
   @Test
   public void mistComplexQuerySerializeTest() throws InjectionException, IOException, URISyntaxException {
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
-    final Sink sink = queryBuilder.socketTextStream(textSocketSourceConf, punctuatedWatermarkConf)
+    queryBuilder.socketTextStream(textSocketSourceConf, punctuatedWatermarkConf)
         .flatMap(expectedFlatMapFunc)
         .filter(expectedFilterPredicate)
         .map(expectedMapFunc)
         .window(expectedWindowSizePolicy, expectedWindowEmitPolicy)
         .reduceByKeyWindow(0, String.class, expectedReduceFunc)
+        .window(expectedWindowSizePolicy, expectedWindowEmitPolicy)
+        .aggregateWindow(expectedUpdateStateFunc, expectedProduceResultFunc, expectedInitializeStateSup)
         .textSocketOutput(textSocketSinkConf);
     final MISTQuery complexQuery = queryBuilder.build();
     final Tuple<List<AvroVertexChain>, List<Edge>> serializedDAG = complexQuery.getSerializedDAG();
@@ -221,6 +267,8 @@ public final class MISTQueryTest {
         Assert.assertEquals(expectedReduceFunc.apply(1, 2), reduceFunc.apply(1, 2));
         Assert.assertEquals(expectedReduceFunc.apply(5, 4), reduceFunc.apply(5, 4));
         Assert.assertEquals(expectedReduceKeyIndex, reduceByKeyIndex);
+
+        checkAggregateWindow(avroVertexChain.getVertexChain().get(6));
       } else if (avroVertexChain.getAvroVertexChainType() == AvroVertexTypeEnum.SOURCE) {
         checkSource(avroVertexChain.getVertexChain().get(0));
       } else {
