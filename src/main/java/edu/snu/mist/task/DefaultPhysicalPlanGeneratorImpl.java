@@ -188,7 +188,11 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     final List<ByteBuffer> functionList = iOpInfo.getFunctions();
     switch (iOpInfo.getInstantOperatorType()) {
       case APPLY_STATEFUL: {
-        throw new IllegalArgumentException("MISTTask: ApplyStatefulOperator is currently not supported!");
+        final BiFunction updateStateFunc = (BiFunction) deserializeLambda(functionList.get(0), classLoader);
+        final Function produceResultFunc = (Function) deserializeLambda(functionList.get(1), classLoader);
+        final Supplier initializeStateSup = (Supplier) deserializeLambda(functionList.get(2), classLoader);
+        return new ApplyStatefulOperator<>(
+            queryId, operatorId, updateStateFunc, produceResultFunc, initializeStateSup);
       }
       case FILTER: {
         final Predicate predicate = (Predicate) deserializeLambda(functionList.get(0), classLoader);

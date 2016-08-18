@@ -100,7 +100,7 @@ public final class UnionOperatorTest {
   /**
    * Simple output emitter which adds events to the list.
    */
-  class SimpleOutputEmitter implements OutputEmitter {
+  private class SimpleOutputEmitter implements OutputEmitter {
     private final List<MistEvent> list;
 
     public SimpleOutputEmitter(final List<MistEvent> list) {
