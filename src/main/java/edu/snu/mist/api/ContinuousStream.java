@@ -19,6 +19,7 @@ import edu.snu.mist.api.exceptions.StreamTypeMismatchException;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTPredicate;
+import edu.snu.mist.api.functions.MISTSupplier;
 import edu.snu.mist.api.operators.*;
 import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
@@ -77,12 +78,14 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    * This stream will produce outputs on every stream input.
    * @param updateStateFunc the function which produces new state with the current state and the input
    * @param produceResultFunc the function which produces result with the updated state and the input
+   * @param initializeStateSup the supplier which generates the initial state
    * @param <S> the type of the operator state
    * @param <OUT> the type of stream output
    * @return new transformed stream after applying the user-defined stateful operation
    */
   <S, OUT> ApplyStatefulOperatorStream<T, OUT, S> applyStateful(MISTBiFunction<T, S, S> updateStateFunc,
-                                                                MISTFunction<S, OUT> produceResultFunc);
+                                                                MISTFunction<S, OUT> produceResultFunc,
+                                                                MISTSupplier<S> initializeStateSup);
 
   /**
    * Applies union operation to the current stream and input continuous stream passed as a parameter.

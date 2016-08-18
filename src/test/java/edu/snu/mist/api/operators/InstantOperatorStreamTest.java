@@ -28,6 +28,7 @@ import org.junit.Test;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * The test class for operator APIs.
@@ -109,7 +110,7 @@ public final class InstantOperatorStreamTest {
       } else {
         return s;
       }
-    }, s -> s);
+    }, s -> s, () -> 0);
 
     Assert.assertEquals(statefulOperatorStream.getBasicType(), StreamType.BasicType.CONTINUOUS);
     Assert.assertEquals(statefulOperatorStream.getContinuousType(), StreamType.ContinuousType.OPERATOR);
@@ -119,9 +120,11 @@ public final class InstantOperatorStreamTest {
         statefulOperatorStream.getUpdateStateFunc();
     final Function<Integer, Integer> produceResultFunc =
         statefulOperatorStream.getProduceResultFunc();
+    final Supplier<Integer> initializeStateSup =
+        statefulOperatorStream.getInitializeStateSup();
 
     /* Simulate two data inputs on UDF stream */
-    final int initialState = 0;
+    final int initialState = initializeStateSup.get();
     final Tuple2 firstInput = new Tuple2<>("ABC", 1);
     final Tuple2 secondInput = new Tuple2<>("BAC", 1);
     final int firstState = stateUpdateFunc.apply(firstInput, initialState);
@@ -129,6 +132,7 @@ public final class InstantOperatorStreamTest {
     final int secondState = stateUpdateFunc.apply(secondInput, firstState);
     final int secondResult = produceResultFunc.apply(secondState);
 
+    Assert.assertEquals(0, initialState);
     Assert.assertEquals(1, firstState);
     Assert.assertEquals(1, firstResult);
     Assert.assertEquals(1, secondState);
