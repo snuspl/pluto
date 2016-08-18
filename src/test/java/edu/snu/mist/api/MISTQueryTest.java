@@ -99,7 +99,7 @@ public final class MISTQueryTest {
     final Map<CharSequence, Object> watermarkConfiguration = sourceInfo.getWatermarkConfiguration();
     final ByteBuffer extractionFunc = (ByteBuffer) sourceConfiguration.get(
         TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION);
-    byte[] serializedExtractionFunc = new byte[extractionFunc.remaining()];
+    final byte[] serializedExtractionFunc = new byte[extractionFunc.remaining()];
     extractionFunc.get(serializedExtractionFunc);
     final Function deserializedExtractionFunc =
         (Function) SerializationUtils.deserialize(serializedExtractionFunc);
@@ -114,13 +114,13 @@ public final class MISTQueryTest {
         deserializedExtractionFunc.apply("HelloMIST:1234"));
     final ByteBuffer parsingFunc = (ByteBuffer) watermarkConfiguration.get(
         PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK);
-    byte[] serializedParsingFunc = new byte[parsingFunc.remaining()];
+    final byte[] serializedParsingFunc = new byte[parsingFunc.remaining()];
     parsingFunc.get(serializedParsingFunc);
     final Function deserializedParsingFunc =
         (Function) SerializationUtils.deserialize(serializedParsingFunc);
     final ByteBuffer watermarkPred = (ByteBuffer) watermarkConfiguration.get(
         PunctuatedWatermarkParameters.WATERMARK_PREDICATE);
-    byte[] serializedWatermarkPred = new byte[watermarkPred.remaining()];
+    final byte[] serializedWatermarkPred = new byte[watermarkPred.remaining()];
     watermarkPred.get(serializedWatermarkPred);
     final Predicate deserializedWatermarkPred =
         (Predicate) SerializationUtils.deserialize(serializedWatermarkPred);
@@ -147,15 +147,15 @@ public final class MISTQueryTest {
     final InstantOperatorInfo aggregateWindowInfo = (InstantOperatorInfo) vertex.getAttributes();
     final List<ByteBuffer> aggregateWindowFunctions = aggregateWindowInfo.getFunctions();
 
-    byte[] serializedUpdateStateFunc = new byte[aggregateWindowFunctions.get(0).remaining()];
+    final byte[] serializedUpdateStateFunc = new byte[aggregateWindowFunctions.get(0).remaining()];
     aggregateWindowFunctions.get(0).get(serializedUpdateStateFunc);
     final BiFunction deserializedUpdateStateFunc =
         (BiFunction) SerializationUtils.deserialize(serializedUpdateStateFunc);
-    byte[] serializedProduceResultFunc = new byte[aggregateWindowFunctions.get(1).remaining()];
+    final byte[] serializedProduceResultFunc = new byte[aggregateWindowFunctions.get(1).remaining()];
     aggregateWindowFunctions.get(1).get(serializedProduceResultFunc);
     final Function deserializedProduceResultFunc =
         (Function) SerializationUtils.deserialize(serializedProduceResultFunc);
-    byte[] serializedInitializeStateSup = new byte[aggregateWindowFunctions.get(2).remaining()];
+    final byte[] serializedInitializeStateSup = new byte[aggregateWindowFunctions.get(2).remaining()];
     aggregateWindowFunctions.get(2).get(serializedInitializeStateSup);
     final Supplier deserializedInitializeStateSup =
         (Supplier) SerializationUtils.deserialize(serializedInitializeStateSup);
@@ -170,7 +170,7 @@ public final class MISTQueryTest {
   }
 
   /**
-   * This method tests a serialization of a complex query, containing 7 vertices.
+   * This method tests a serialization of a complex query, containing 9 vertices.
    * @throws InjectionException
    */
   @Test
@@ -212,7 +212,7 @@ public final class MISTQueryTest {
         final List<ByteBuffer> flatMapInfoFunctions = flatMapInfo.getFunctions();
         final Integer flatMapInfoKeyIndex = flatMapInfo.getKeyIndex();
 
-        byte[] serializedFlatMapFunc = new byte[flatMapInfoFunctions.get(0).remaining()];
+        final byte[] serializedFlatMapFunc = new byte[flatMapInfoFunctions.get(0).remaining()];
         flatMapInfoFunctions.get(0).get(serializedFlatMapFunc);
         final Function flatMapFunc =
             (Function) SerializationUtils.deserialize(serializedFlatMapFunc);
@@ -225,7 +225,7 @@ public final class MISTQueryTest {
         final List<ByteBuffer> filterInfoFunctions = filterInfo.getFunctions();
         final Integer filterKeyIndex = filterInfo.getKeyIndex();
 
-        byte[] serializedFilterPredicate = new byte[filterInfoFunctions.get(0).remaining()];
+        final byte[] serializedFilterPredicate = new byte[filterInfoFunctions.get(0).remaining()];
         filterInfoFunctions.get(0).get(serializedFilterPredicate);
         final Predicate filterPredicate =
             (Predicate) SerializationUtils.deserialize(serializedFilterPredicate);
@@ -239,7 +239,7 @@ public final class MISTQueryTest {
         final List<ByteBuffer> mapInfoFunctions = mapInfo.getFunctions();
         final Integer mapKeyIndex = mapInfo.getKeyIndex();
 
-        byte[] serializedMapFunc = new byte[mapInfoFunctions.get(0).remaining()];
+        final byte[] serializedMapFunc = new byte[mapInfoFunctions.get(0).remaining()];
         mapInfoFunctions.get(0).get(serializedMapFunc);
         final Function mapFunc =
             (Function) SerializationUtils.deserialize(serializedMapFunc);
@@ -260,7 +260,7 @@ public final class MISTQueryTest {
         final List<ByteBuffer> reduceByKeyFunctions = reduceByKeyInfo.getFunctions();
         final Integer reduceByKeyIndex = reduceByKeyInfo.getKeyIndex();
 
-        byte[] serializedReduceFunc = new byte[reduceByKeyFunctions.get(0).remaining()];
+        final byte[] serializedReduceFunc = new byte[reduceByKeyFunctions.get(0).remaining()];
         reduceByKeyFunctions.get(0).get(serializedReduceFunc);
         final BiFunction reduceFunc =
             (BiFunction) SerializationUtils.deserialize(serializedReduceFunc);

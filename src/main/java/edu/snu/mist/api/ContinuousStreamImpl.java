@@ -20,6 +20,7 @@ import edu.snu.mist.api.exceptions.StreamTypeMismatchException;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTPredicate;
+import edu.snu.mist.api.functions.MISTSupplier;
 import edu.snu.mist.api.operators.*;
 import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sink.TextSocketSink;
@@ -90,9 +91,10 @@ public abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implemen
   @Override
   public <S, OUT> ApplyStatefulOperatorStream<T, OUT, S> applyStateful(
       final MISTBiFunction<T, S, S> updateStateFunc,
-      final MISTFunction<S, OUT> produceResultFunc) {
+      final MISTFunction<S, OUT> produceResultFunc,
+      final MISTSupplier<S> initializeState) {
     final ApplyStatefulOperatorStream<T, OUT, S> downStream =
-        new ApplyStatefulOperatorStream<>(updateStateFunc, produceResultFunc, dag);
+        new ApplyStatefulOperatorStream<>(updateStateFunc, produceResultFunc, initializeState, dag);
     dag.addVertex(downStream);
     dag.addEdge(this, downStream, StreamType.Direction.LEFT);
     return downStream;
