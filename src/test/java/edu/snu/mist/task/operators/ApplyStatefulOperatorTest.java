@@ -22,29 +22,27 @@ import edu.snu.mist.task.common.OutputEmitter;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public final class AggregateWindowOperatorTest {
+public final class ApplyStatefulOperatorTest {
 
   /**
-   * Test AggregateWindowOperator.
-   * It calculates the maximum value from the collection.
+   * Test ApplyStatefulOperator.
+   * It calculates the maximum value through some inputs.
    */
   @Test
-  public void testAggregateWindowOperator() {
-    // input stream events
-    final ArrayList<Integer> list = new ArrayList<>();
-    list.add(10);
-    list.add(20);
-    list.add(15);
-    list.add(30);
-    final MistDataEvent collectionEvent = new MistDataEvent(list, 0L);
-    final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(1L);
+  public void testApplyStatefulOperator() {
+    // input events
+    // expected results: 10--20--20--30--watermark--
+    final MistDataEvent data10 = new MistDataEvent(10, 0L);
+    final MistDataEvent data20 = new MistDataEvent(20, 1L);
+    final MistDataEvent data15 = new MistDataEvent(15, 2L);
+    final MistDataEvent data30 = new MistDataEvent(30, 3L);
+    final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(4L);
 
     // functions that dealing with state
     final BiFunction<Integer, Integer, Integer> updateStateFunc =
@@ -55,25 +53,37 @@ public final class AggregateWindowOperatorTest {
             return state;
           }
         };
-    final Function<Integer, String> produceResultFunc = state -> state.toString();
+    final Function<Integer, Integer> produceResultFunc = state -> state;
     final Supplier<Integer> initializeStateSup = () -> Integer.MIN_VALUE;
 
-    final AggregateWindowOperator<Integer, String, Integer> aggregateWindowOperator =
-        new AggregateWindowOperator<>(
+    final ApplyStatefulOperator<Integer, Integer, Integer> applyStatefulOperator =
+        new ApplyStatefulOperator<>(
             "testQuery", "testAggOp", updateStateFunc, produceResultFunc, initializeStateSup);
 
     final List<MistEvent> result = new LinkedList<>();
-    aggregateWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));
+    applyStatefulOperator.setOutputEmitter(new SimpleOutputEmitter(result));
 
-    aggregateWindowOperator.processLeftData(collectionEvent);
+    applyStatefulOperator.processLeftData(data10);
     Assert.assertEquals(1, result.size());
-    Assert.assertTrue(result.get(0) instanceof MistDataEvent);
-    Assert.assertEquals("30", ((MistDataEvent)result.get(0)).getValue());
-    Assert.assertEquals(0L, result.get(0).getTimestamp());
+    Assert.assertEquals(data10, result.get(0));
 
-    aggregateWindowOperator.processLeftWatermark(watermarkEvent);
+    applyStatefulOperator.processLeftData(data20);
     Assert.assertEquals(2, result.size());
-    Assert.assertEquals(watermarkEvent, result.get(1));
+    Assert.assertEquals(data20, result.get(1));
+
+    applyStatefulOperator.processLeftData(data15);
+    Assert.assertEquals(3, result.size());
+    Assert.assertTrue(result.get(2) instanceof MistDataEvent);
+    Assert.assertEquals(20, ((MistDataEvent)result.get(2)).getValue());
+    Assert.assertEquals(2L, result.get(2).getTimestamp());
+
+    applyStatefulOperator.processLeftData(data30);
+    Assert.assertEquals(4, result.size());
+    Assert.assertEquals(data30, result.get(3));
+
+    applyStatefulOperator.processLeftWatermark(watermarkEvent);
+    Assert.assertEquals(5, result.size());
+    Assert.assertEquals(watermarkEvent, result.get(4));
   }
 
   /**

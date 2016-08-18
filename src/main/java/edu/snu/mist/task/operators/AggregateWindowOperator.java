@@ -38,12 +38,12 @@ public final class AggregateWindowOperator<IN, OUT, S>
   private static final Logger LOG = Logger.getLogger(AggregateWindowOperator.class.getName());
 
   /**
-   * The function that update temporal state.
+   * The function that updates the temporal state.
    */
   private final BiFunction<IN, S, S> updateStateFunc;
 
   /**
-   * The function that produce output from temporal state.
+   * The function that produces an output from the temporal state.
    */
   private final Function<S, OUT> produceResultFunc;
 
@@ -55,9 +55,9 @@ public final class AggregateWindowOperator<IN, OUT, S>
   /**
    * @param queryId identifier of the query which contains this operator
    * @param operatorId identifier of operator
-   * @param updateStateFunc the function that updates temporal state.
-   * @param produceResultFunc the function that produces output from temporal state.
-   * @param initializeStateSup the supplier that generates initial state.
+   * @param updateStateFunc the function that updates the temporal state.
+   * @param produceResultFunc the function that produces an output from the temporal state.
+   * @param initializeStateSup the supplier that generates the initial state.
    */
   public AggregateWindowOperator(final String queryId,
                                  final String operatorId,
