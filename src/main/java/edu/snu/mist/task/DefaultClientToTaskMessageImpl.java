@@ -17,7 +17,7 @@ package edu.snu.mist.task;
 
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import edu.snu.mist.formats.avro.LogicalPlan;
-import edu.snu.mist.formats.avro.QuerySubmissionResult;
+import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.avro.AvroRemoteException;
 import org.apache.reef.io.Tuple;
 
@@ -48,27 +48,23 @@ public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage
   }
 
   @Override
-  public QuerySubmissionResult sendQueries(final LogicalPlan logicalPlan) throws AvroRemoteException {
+  public QueryControlResult sendQueries(final LogicalPlan logicalPlan) throws AvroRemoteException {
     final String queryId = queryIdGenerator.generate(logicalPlan);
-    queryManager.create(new Tuple<>(queryId, logicalPlan));
-    // Return the query Id
-    final QuerySubmissionResult querySubmissionResult = new QuerySubmissionResult();
-    querySubmissionResult.setQueryId(queryId);
-    return querySubmissionResult;
+    return queryManager.create(new Tuple<>(queryId, logicalPlan));
   }
 
   @Override
-  public boolean deleteQueries(final CharSequence queryId) throws AvroRemoteException {
+  public QueryControlResult deleteQueries(final CharSequence queryId) throws AvroRemoteException {
     return queryManager.delete(queryId.toString());
   }
 
   @Override
-  public boolean stopQueries(final CharSequence queryId) throws AvroRemoteException {
+  public QueryControlResult stopQueries(final CharSequence queryId) throws AvroRemoteException {
     return queryManager.stop(queryId.toString());
   }
 
   @Override
-  public boolean resumeQueries(final CharSequence queryId) throws AvroRemoteException {
+  public QueryControlResult resumeQueries(final CharSequence queryId) throws AvroRemoteException {
     return queryManager.resume(queryId.toString());
   }
 }

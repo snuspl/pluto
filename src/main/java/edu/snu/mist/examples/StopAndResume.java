@@ -48,7 +48,7 @@ public final class StopAndResume {
    * @throws IOException
    * @throws InjectionException
    */
-  public static APIQuerySubmissionResult submitQuery(final Configuration configuration)
+  public static APIQueryControlResult submitQuery(final Configuration configuration)
       throws IOException, InjectionException, URISyntaxException {
     final String sourceSocket = Tang.Factory.getTang().newInjector(configuration).getNamedInstance(SourceAddress.class);
     final TextSocketSourceConfiguration localTextSocketSourceConf =
@@ -69,13 +69,7 @@ public final class StopAndResume {
     return MISTExampleUtils.submit(query, configuration);
   }
 
-  public static boolean stopQuery(final APIQuerySubmissionResult result) throws IOException {
-    return MISTQueryControl.stop(result.getQueryId(), result.getTaskAddress());
-  }
 
-  public static boolean resumeQuery(final APIQuerySubmissionResult result) throws IOException {
-    return MISTQueryControl.resume(result.getQueryId(), result.getTaskAddress());
-  }
 
   /**
    * Set the environment(Hostname and port of driver, source, and sink) and submit a query.
@@ -96,20 +90,16 @@ public final class StopAndResume {
     Thread sinkServer = new Thread(MISTExampleUtils.getSinkServer());
     sinkServer.start();
 
-    final APIQuerySubmissionResult result = submitQuery(jcb.build());
-    System.out.println("Query submission result: " + result.getQueryId());
+    final APIQueryControlResult result = submitQuery(jcb.build());
+    System.out.println(result.getMsg());
 
     Thread.sleep(10000);
-
-    if(stopQuery(result)) {
-      System.out.println(result.getQueryId() + " is stopped");
-    } else {
-      System.out.println("Deleting " + result.getQueryId() + " is failed");
-    }
+    System.out.println(MISTQueryControl.stop(result.getQueryId(),
+                                    result.getTaskAddress()).getMsg());
 
     Thread.sleep(10000);
-    resumeQuery(result);
-    System.out.println(result.getQueryId() + " is resumed");
+    System.out.println(MISTQueryControl.resume(result.getQueryId(),
+                                    result.getTaskAddress()).getMsg());
 
   }
 

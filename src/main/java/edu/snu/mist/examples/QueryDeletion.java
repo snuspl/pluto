@@ -47,7 +47,7 @@ public final class QueryDeletion {
    * @throws IOException
    * @throws InjectionException
    */
-  public static APIQuerySubmissionResult submitQuery(final Configuration configuration)
+  public static APIQueryControlResult submitQuery(final Configuration configuration)
       throws IOException, InjectionException, URISyntaxException {
     final String sourceSocket = Tang.Factory.getTang().newInjector(configuration).getNamedInstance(SourceAddress.class);
     final TextSocketSourceConfiguration localTextSocketSourceConf =
@@ -66,10 +66,6 @@ public final class QueryDeletion {
     final MISTQuery query = queryBuilder.build();
 
     return MISTExampleUtils.submit(query, configuration);
-  }
-
-  public static boolean deleteQuery(final APIQuerySubmissionResult result) throws IOException {
-    return MISTQueryControl.delete(result.getQueryId(), result.getTaskAddress());
   }
 
   /**
@@ -91,16 +87,13 @@ public final class QueryDeletion {
     Thread sinkServer = new Thread(MISTExampleUtils.getSinkServer());
     sinkServer.start();
 
-    final APIQuerySubmissionResult result = submitQuery(jcb.build());
-    System.out.println("Query submission result: " + result.getQueryId());
+    final APIQueryControlResult result = submitQuery(jcb.build());
+    result.getMsg();
 
     Thread.sleep(10000);
 
-    if(deleteQuery(result)) {
-      System.out.println(result.getQueryId() + " is deleted");
-    } else {
-      System.out.println("Deleting " + result.getQueryId() + " is failed");
-    }
+    System.out.println(MISTQueryControl.delete(result.getQueryId(), result.getTaskAddress()).getMsg());
+
   }
 
   private QueryDeletion(){

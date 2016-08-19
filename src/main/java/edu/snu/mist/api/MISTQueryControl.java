@@ -42,14 +42,16 @@ public final class MISTQueryControl {
    * TODO[MIST-290]: Return a message to Client.
    * @param queryId
    * @param taskAddress
-   * @return if the task has the query corresponding to the queryId
-   * and deletes this query successfully, it returns true.
-   * Otherwise it returns false.
+   * @return It returns a result message of deletion.
    * @throws IOException
    */
-  public static boolean delete(final String queryId, final IPAddress taskAddress) throws IOException {
+  public static APIQueryControlResult delete(final String queryId, final IPAddress taskAddress) throws IOException {
     final ClientToTaskMessage proxy = getProxy(taskAddress);
-    return proxy.deleteQueries(queryId);
+    final QueryControlResult queryControlResult =  proxy.deleteQueries(queryId);
+    final APIQueryControlResult apiQueryControlResult =
+        new APIQueryControlResultImpl(queryControlResult.getQueryId(), taskAddress,
+            queryControlResult.getMsg(), queryControlResult.getIsSuccess());
+    return apiQueryControlResult;
   }
 
   /**
@@ -57,14 +59,16 @@ public final class MISTQueryControl {
    * TODO[MIST-290]: Return a message to Client.
    * @param queryId
    * @param taskAddress
-   * @return if the task has the query corresponding to the queryId
-   * and stops this query successfully, it returns true.
-   * Otherwise it returns false.
+   * @return It returns a result message of stop.
    * @throws IOException
    */
-  public static boolean stop(final String queryId, final IPAddress taskAddress) throws IOException {
+  public static APIQueryControlResult stop(final String queryId, final IPAddress taskAddress) throws IOException {
     final ClientToTaskMessage proxy = getProxy(taskAddress);
-    return proxy.stopQueries(queryId);
+    final QueryControlResult queryControlResult =  proxy.stopQueries(queryId);
+    final APIQueryControlResult apiQueryControlResult =
+        new APIQueryControlResultImpl(queryControlResult.getQueryId(), taskAddress,
+            queryControlResult.getMsg(), queryControlResult.getIsSuccess());
+    return apiQueryControlResult;
   }
 
   /**
@@ -72,14 +76,16 @@ public final class MISTQueryControl {
    * TODO[MIST-290]: Return a message to Client.
    * @param queryId
    * @param taskAddress
-   * @return if the task has the query corresponding to the queryId
-   * and the query has stopped. it resumes this query successfully and returns true.
-   * Otherwise it returns false.
+   * @return It returns a result message of resume.
    * @throws IOException
    */
-  public static boolean resume(final String queryId, final IPAddress taskAddress) throws IOException {
+  public static APIQueryControlResult resume(final String queryId, final IPAddress taskAddress) throws IOException {
     final ClientToTaskMessage proxy = getProxy(taskAddress);
-    return proxy.resumeQueries(queryId);
+    final QueryControlResult queryControlResult =  proxy.resumeQueries(queryId);
+    final APIQueryControlResult apiQueryControlResult =
+        new APIQueryControlResultImpl(queryControlResult.getQueryId(), taskAddress,
+            queryControlResult.getMsg(), queryControlResult.getIsSuccess());
+    return apiQueryControlResult;
   }
 
 

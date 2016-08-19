@@ -19,6 +19,7 @@ import edu.snu.mist.api.StreamType;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.GraphUtils;
 import edu.snu.mist.formats.avro.LogicalPlan;
+import edu.snu.mist.formats.avro.QueryControlResult;
 import edu.snu.mist.task.common.PhysicalVertex;
 import edu.snu.mist.task.sinks.Sink;
 import edu.snu.mist.task.sources.Source;
@@ -107,8 +108,10 @@ final class DefaultQueryManagerImpl implements QueryManager {
     this.planStore = planStore;
   }
 
-  public void create(final Tuple<String, LogicalPlan> tuple) {
+  public QueryControlResult create(final Tuple<String, LogicalPlan> tuple) {
     final DAG<PhysicalVertex, StreamType.Direction> physicalPlan;
+    final QueryControlResult queryControlResult = new QueryControlResult();
+    queryControlResult.setQueryId(tuple.getKey());
     try {
       // 1) Saves the logical plan to the PlanStore and
       // converts the logical plan to the physical plan
@@ -117,12 +120,19 @@ final class DefaultQueryManagerImpl implements QueryManager {
     } catch (final Exception e) {
       e.printStackTrace();
       LOG.log(Level.SEVERE,  "Injection Exception occurred during de-serializing LogicalPlans");
-      return;
+      queryControlResult.setIsSuccess(false);
+      queryControlResult.setMsg(ResultMessage.injectionFailure());
+      return queryControlResult;
     }
     physicalPlanMap.putIfAbsent(tuple.getKey(), physicalPlan);
     // 2) Inserts the PartitionedQueries to PartitionedQueryManager,
     // 3) Sets output emitters and 4) starts to receive input data stream from the source
     start(physicalPlan);
+
+    queryControlResult.setIsSuccess(true);
+    queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
+
+    return queryControlResult;
   }
 
   @Override
@@ -229,52 +239,78 @@ final class DefaultQueryManagerImpl implements QueryManager {
    * Deletes the PartitionedQueries from PartitionedQueryManager and
    * deletes corresponding logical plan from PlanStore.
    * @param queryId query to be deleted
-   * @return if the task has the query corresponding to the queryId,
-   * and deletes this query successfully, it returns true.
-   * Otherwise it returns false.
+   * @return It returns the result message.
    */
   @Override
-  public boolean delete(final String queryId) {
+  public QueryControlResult delete(final String queryId) {
+    final QueryControlResult queryControlResult = new QueryControlResult();
+    queryControlResult.setQueryId(queryId);
     try {
       planStore.delete(queryId);
     } catch (final IOException e) {
       e.printStackTrace();
-      return false;
+      queryControlResult.setIsSuccess(false);
+      queryControlResult.setMsg(ResultMessage.planDeletionFail(queryId));
+      return queryControlResult;
     }
-    return deleteQueryFromManager(queryId);
+    if (deleteQueryFromManager(queryId)) {
+      queryControlResult.setIsSuccess(true);
+      queryControlResult.setMsg(ResultMessage.deleteSuccess(queryId));
+    } else {
+      queryControlResult.setIsSuccess(false);
+      queryControlResult.setMsg(ResultMessage.noQueryId(queryId));
+    }
+    return queryControlResult;
   }
 
   /**
    * For now, we stop the only stateless query, so we just deletes the query.
    * TODO[MIST-289]: Implement stop and resume the stateful query.
    * @param queryId
-   * @return if the task has the query corresponding to the queryId,
-   * it returns true. Otherwise it returns false.
+   * @return It returns the result message.
    */
   @Override
-  public boolean stop(final String queryId) {
-    return deleteQueryFromManager(queryId);
+  public QueryControlResult stop(final String queryId) {
+    final QueryControlResult queryControlResult = new QueryControlResult();
+    queryControlResult.setQueryId(queryId);
+    if (deleteQueryFromManager(queryId)) {
+      queryControlResult.setIsSuccess(true);
+      queryControlResult.setMsg(ResultMessage.stopSuccess(queryId));
+    } else {
+      queryControlResult.setIsSuccess(false);
+      queryControlResult.setMsg(ResultMessage.noQueryId(queryId));
+    }
+    return queryControlResult;
   }
 
   /**
    * Loads the logical plan and starts the query.
    * TODO[MIST-291]: What happen if stop/delete/resume are executed concurrently?
    * @param queryId
-   * @return if the disk has the logical plan corresponding to the queryId,
-   * it returns true. Otherwise it returns false.
+   * @return It returns the result message.
    */
   @Override
-  public boolean resume(final String queryId) {
+  public QueryControlResult resume(final String queryId) {
+    final DAG<PhysicalVertex, StreamType.Direction> physicalPlan;
+    final QueryControlResult queryControlResult = new QueryControlResult();
+    queryControlResult.setQueryId(queryId);
     try {
-      final LogicalPlan logicalPlan = planStore.load(queryId);
-      if (logicalPlan != null) {
-        create(new Tuple<>(queryId, logicalPlan));
-        return true;
-      }
-    } catch (IOException e) {
+      final LogicalPlan loadedPlan = planStore.load(queryId);
+      final Tuple<String, LogicalPlan> tuple = new Tuple<String, LogicalPlan>(queryId, loadedPlan);
+      physicalPlan = physicalPlanGenerator.generate(tuple);
+      physicalPlanMap.putIfAbsent(queryId, physicalPlan);
+      start(physicalPlan);
+      queryControlResult.setIsSuccess(true);
+      queryControlResult.setMsg(ResultMessage.resumeSuccess(queryId));
+    } catch (final IOException e) {
+      queryControlResult.setIsSuccess(false);
+      queryControlResult.setMsg(ResultMessage.noLogicalPlan(queryId));
+    } catch (final Exception e) {
       e.printStackTrace();
-      return false;
+      LOG.log(Level.SEVERE,  "Injection Exception occurred during de-serializing LogicalPlans");
+      queryControlResult.setIsSuccess(false);
+      queryControlResult.setMsg(ResultMessage.injectionFailure());
     }
-    return false;
+    return queryControlResult;
   }
 }

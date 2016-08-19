@@ -47,7 +47,7 @@ public final class UnionMist {
    * @throws InjectionException
    * @throws StreamTypeMismatchException
    */
-  public static APIQuerySubmissionResult submitQuery(final Configuration configuration)
+  public static APIQueryControlResult submitQuery(final Configuration configuration)
       throws IOException, InjectionException, URISyntaxException, StreamTypeMismatchException {
     final Injector injector = Tang.Factory.getTang().newInjector(configuration);
     final String source1Socket = injector.getNamedInstance(UnionLeftSourceAddress.class);
@@ -98,7 +98,7 @@ public final class UnionMist {
     Thread sinkServer = new Thread(MISTExampleUtils.getSinkServer());
     sinkServer.start();
 
-    final APIQuerySubmissionResult result = submitQuery(jcb.build());
+    final APIQueryControlResult result = submitQuery(jcb.build());
     System.out.println("Query submission result: " + result.getQueryId());
   }
 

@@ -51,20 +51,20 @@ public class MISTDefaultExecutionEnvironmentImplTest {
 
   private class MockTaskServer implements ClientToTaskMessage {
     @Override
-    public QuerySubmissionResult sendQueries(final LogicalPlan logicalPlan) throws AvroRemoteException {
-      return new QuerySubmissionResult(testQueryResult);
+    public QueryControlResult sendQueries(final LogicalPlan logicalPlan) throws AvroRemoteException {
+      return new QueryControlResult(testQueryResult, true, testQueryResult);
     }
     @Override
-    public boolean deleteQueries(final CharSequence queryId) throws AvroRemoteException {
-      return true;
+    public QueryControlResult deleteQueries(final CharSequence queryId) throws AvroRemoteException {
+      return new QueryControlResult(testQueryResult, true, testQueryResult);
     }
     @Override
-    public boolean stopQueries(final CharSequence queryId) throws AvroRemoteException {
-      return true;
+    public QueryControlResult stopQueries(final CharSequence queryId) throws AvroRemoteException {
+      return new QueryControlResult(testQueryResult, true, testQueryResult);
     }
     @Override
-    public boolean resumeQueries(final CharSequence queryId) throws AvroRemoteException {
-      return true;
+    public QueryControlResult resumeQueries(final CharSequence queryId) throws AvroRemoteException {
+      return new QueryControlResult(testQueryResult, true, testQueryResult);
     }
   }
 
@@ -99,7 +99,7 @@ public class MISTDefaultExecutionEnvironmentImplTest {
     // Step 3: Send a query and check whether the query comes to the task correctly
     final MISTExecutionEnvironment executionEnvironment = new MISTDefaultExecutionEnvironmentImpl(
         driverHost, driverPortNum, tempJarFile.toString());
-    final APIQuerySubmissionResult result = executionEnvironment.submit(query);
+    final APIQueryControlResult result = executionEnvironment.submit(query);
     Assert.assertEquals(result.getQueryId(), testQueryResult);
     driverServer.close();
     taskServer.close();

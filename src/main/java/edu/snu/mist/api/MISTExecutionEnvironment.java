@@ -25,5 +25,5 @@ import java.net.URISyntaxException;
  * MIST Client can submit queries via this class.
  */
 public interface MISTExecutionEnvironment {
-  APIQuerySubmissionResult submit(MISTQuery queryToSubmit) throws IOException, InjectionException, URISyntaxException;
+  APIQueryControlResult submit(MISTQuery queryToSubmit) throws IOException, InjectionException, URISyntaxException;
 }

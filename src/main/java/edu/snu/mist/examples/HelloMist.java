@@ -16,7 +16,7 @@
 
 package edu.snu.mist.examples;
 
-import edu.snu.mist.api.APIQuerySubmissionResult;
+import edu.snu.mist.api.APIQueryControlResult;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
@@ -43,7 +43,7 @@ public final class HelloMist {
    * @throws IOException
    * @throws InjectionException
    */
-  public static APIQuerySubmissionResult submitQuery(final Configuration configuration)
+  public static APIQueryControlResult submitQuery(final Configuration configuration)
       throws IOException, InjectionException, URISyntaxException {
     final String sourceSocket = Tang.Factory.getTang().newInjector(configuration).getNamedInstance(SourceAddress.class);
     final TextSocketSourceConfiguration localTextSocketSourceConf =
@@ -79,7 +79,7 @@ public final class HelloMist {
     Thread sinkServer = new Thread(MISTExampleUtils.getSinkServer());
     sinkServer.start();
 
-    final APIQuerySubmissionResult result = submitQuery(jcb.build());
+    final APIQueryControlResult result = submitQuery(jcb.build());
 
     System.out.println("Query submission result: " + result.getQueryId());
   }

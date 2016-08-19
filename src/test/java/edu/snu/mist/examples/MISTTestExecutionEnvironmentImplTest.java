@@ -49,25 +49,24 @@ public class MISTTestExecutionEnvironmentImplTest {
     }
   }
 
-  private class MockTaskServer implements  ClientToTaskMessage {
+  private class MockTaskServer implements ClientToTaskMessage {
     @Override
-    public QuerySubmissionResult sendQueries(final LogicalPlan logicalPlan) throws AvroRemoteException {
-      return new QuerySubmissionResult(testQueryResult);
+    public QueryControlResult sendQueries(final LogicalPlan logicalPlan) throws AvroRemoteException {
+      return new QueryControlResult(testQueryResult, true, testQueryResult);
     }
     @Override
-    public boolean deleteQueries(final CharSequence queryId) throws AvroRemoteException {
-      return true;
+    public QueryControlResult deleteQueries(final CharSequence queryId) throws AvroRemoteException {
+      return new QueryControlResult(testQueryResult, true, testQueryResult);
     }
     @Override
-    public boolean stopQueries(final CharSequence queryId) throws AvroRemoteException {
-      return true;
+    public QueryControlResult stopQueries(final CharSequence queryId) throws AvroRemoteException {
+      return new QueryControlResult(testQueryResult, true, testQueryResult);
     }
     @Override
-    public boolean resumeQueries(final CharSequence queryId) throws AvroRemoteException {
-      return true;
+    public QueryControlResult resumeQueries(final CharSequence queryId) throws AvroRemoteException {
+      return new QueryControlResult(testQueryResult, true, testQueryResult);
     }
   }
-
   /**
    * This unit test creates a mocking driver & task and tests whether a test query can be
    * serialized and sent via MISTTestExecutionEnvironmentImpl.
@@ -92,7 +91,7 @@ public class MISTTestExecutionEnvironmentImplTest {
     // Step 3: Send a query and check whether the query comes to the task correctly
     final MISTExecutionEnvironment executionEnvironment = new MISTTestExecutionEnvironmentImpl(driverHost,
         driverPortNum);
-    final APIQuerySubmissionResult result = executionEnvironment.submit(query);
+    final APIQueryControlResult result = executionEnvironment.submit(query);
     Assert.assertEquals(result.getQueryId(), testQueryResult);
     driverServer.close();
     taskServer.close();

@@ -57,7 +57,7 @@ public final class MISTTestExecutionEnvironmentImpl implements MISTExecutionEnvi
    * @return the result of the submitted query.
    */
   @Override
-  public APIQuerySubmissionResult submit(final MISTQuery queryToSubmit) throws IOException, URISyntaxException {
+  public APIQueryControlResult submit(final MISTQuery queryToSubmit) throws IOException, URISyntaxException {
     // Build logical plan using serialized vertices and edges.
     final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = queryToSubmit.getSerializedDAG();
     final LogicalPlan.Builder logicalPlanBuilder = LogicalPlan.newBuilder();
@@ -68,7 +68,7 @@ public final class MISTTestExecutionEnvironmentImpl implements MISTExecutionEnvi
         .setEdges(serializedDag.getValue())
         .build();
 
-    //Send the LogicalPlan to one of the tasks and get QuerySubmissionResult
+    //Send the LogicalPlan to one of the tasks and get QueryControlResult
     final IPAddress task = tasks.get(0);
 
     ClientToTaskMessage proxyToTask = taskProxyMap.get(task);
@@ -80,11 +80,12 @@ public final class MISTTestExecutionEnvironmentImpl implements MISTExecutionEnvi
       proxyToTask = taskProxyMap.get(task);
     }
 
-    final QuerySubmissionResult querySubmissionResult = proxyToTask.sendQueries(logicalPlan);
+    final QueryControlResult queryControlResult = proxyToTask.sendQueries(logicalPlan);
 
-    // Step 4: Transform QuerySubmissionResult to APIQuerySubmissionResult
-    final APIQuerySubmissionResult apiQuerySubmissionResult =
-        new APIQuerySubmissionResultImpl(querySubmissionResult.getQueryId(), task);
-    return apiQuerySubmissionResult;
+    // Step 4: Transform QueryControlResult to APIQueryControlResult
+    final APIQueryControlResult apiQueryControlResult =
+        new APIQueryControlResultImpl(queryControlResult.getQueryId(), task,
+                  queryControlResult.getMsg(), queryControlResult.getIsSuccess());
+    return apiQueryControlResult;
   }
 }
