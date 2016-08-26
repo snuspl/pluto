@@ -19,9 +19,11 @@ import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
+import edu.snu.mist.api.functions.MISTPredicate;
 import edu.snu.mist.api.functions.MISTSupplier;
 import edu.snu.mist.api.operators.*;
 import edu.snu.mist.api.WindowData;
+import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.*;
 import edu.snu.mist.task.common.MistDataEvent;
@@ -31,9 +33,11 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static edu.snu.mist.formats.avro.WindowOperatorTypeEnum.COUNT;
@@ -45,6 +49,9 @@ import static org.mockito.Mockito.mock;
  */
 public class OperatorSerializeTest {
   private final DAG<AvroVertexSerializable, StreamType.Direction> mockDag = mock(DAG.class);
+  private final Integer windowSize = 5000;
+  private final Integer windowEmissionInterval = 1000;
+  private final MISTBiFunction<Integer, Integer, Integer> expectedReduceFunc = (x, y) -> x + y;
 
   /**
    * This method tests a serialization of ApplyStatefulOperator.
@@ -61,7 +68,6 @@ public class OperatorSerializeTest {
         };
     final MISTFunction<Integer, String> expectedProduceResultFunc = state -> state.toString();
     final MISTSupplier<Integer> expectedInitializeStateSup = () -> Integer.MIN_VALUE;
-
     final ApplyStatefulOperatorStream statefulOpStream = new ApplyStatefulOperatorStream<>(
         expectedUpdateStateFunc, expectedProduceResultFunc, expectedInitializeStateSup, mockDag);
     final Vertex serializedVertex = statefulOpStream.getSerializedVertex();
@@ -70,19 +76,9 @@ public class OperatorSerializeTest {
     Assert.assertEquals(serializedVertex.getVertexType(), VertexTypeEnum.INSTANT_OPERATOR);
     final InstantOperatorInfo statefulOpInfo = (InstantOperatorInfo) serializedVertex.getAttributes();
     final List<ByteBuffer> statefulOpFunctions = statefulOpInfo.getFunctions();
-
-    final byte[] serializedUpdateStateFunc = new byte[statefulOpFunctions.get(0).remaining()];
-    statefulOpFunctions.get(0).get(serializedUpdateStateFunc);
-    final BiFunction deserializedUpdateStateFunc =
-        (BiFunction) SerializationUtils.deserialize(serializedUpdateStateFunc);
-    final byte[] serializedProduceResultFunc = new byte[statefulOpFunctions.get(1).remaining()];
-    statefulOpFunctions.get(1).get(serializedProduceResultFunc);
-    final Function deserializedProduceResultFunc =
-        (Function) SerializationUtils.deserialize(serializedProduceResultFunc);
-    final byte[] serializedInitializeStateSup = new byte[statefulOpFunctions.get(2).remaining()];
-    statefulOpFunctions.get(2).get(serializedInitializeStateSup);
-    final Supplier deserializedInitializeStateSup =
-        (Supplier) SerializationUtils.deserialize(serializedInitializeStateSup);
+    final BiFunction deserializedUpdateStateFunc = (BiFunction) deserializeFunction(statefulOpFunctions.get(0));
+    final Function deserializedProduceResultFunc = (Function) deserializeFunction(statefulOpFunctions.get(1));
+    final Supplier deserializedInitializeStateSup = (Supplier) deserializeFunction(statefulOpFunctions.get(2));
 
     Assert.assertEquals(expectedInitializeStateSup.get(), deserializedInitializeStateSup.get());
     Assert.assertEquals(expectedUpdateStateFunc.apply("10", 5), deserializedUpdateStateFunc.apply("10", 5));
@@ -92,12 +88,10 @@ public class OperatorSerializeTest {
   }
 
   /**
-   * This method tests a serialization of time-based GeneralWindowOperator.
+   * This method tests a serialization of time-based FixedSizeWindowOperator.
    */
   @Test
   public void timeWindowStreamSerializationTest() {
-    final Integer windowSize = 5000;
-    final Integer windowEmissionInterval = 1000;
     final TimeWindowOperatorStream timeWindowedStream =
         new TimeWindowOperatorStream(
             windowSize, windowEmissionInterval, mockDag);
@@ -112,12 +106,10 @@ public class OperatorSerializeTest {
   }
 
   /**
-   * This method tests a serialization of count-based GeneralWindowOperator.
+   * This method tests a serialization of count-based FixedSizeWindowOperator.
    */
   @Test
   public void countWindowStreamSerializationTest() {
-    final Integer windowSize = 5000;
-    final Integer windowEmissionInterval = 1000;
     final CountWindowOperatorStream countWindowedStream =
         new CountWindowOperatorStream(
             windowSize, windowEmissionInterval, mockDag);
@@ -137,26 +129,137 @@ public class OperatorSerializeTest {
   @Test
   public void aggregateWindowStreamSerializationTest() {
     final MISTFunction<WindowData<Integer>, String> expectedAggregateFunc =
-        (windowData) -> {
-          return windowData.getDataCollection().toString() + windowData.getStart() + windowData.getEnd();
-        };
+        (windowData) -> windowData.getDataCollection().toString() + windowData.getStart() + windowData.getEnd();
     final AggregateWindowOperatorStream<Integer, String> aggregateStream = new AggregateWindowOperatorStream<>(
         expectedAggregateFunc, mockDag);
     final Vertex serializedVertex = aggregateStream.getSerializedVertex();
 
     // Test whether the vertex is created properly or not.
     Assert.assertEquals(serializedVertex.getVertexType(), VertexTypeEnum.INSTANT_OPERATOR);
-    final InstantOperatorInfo statefulOpInfo = (InstantOperatorInfo) serializedVertex.getAttributes();
-    final List<ByteBuffer> statefulOpFunctions = statefulOpInfo.getFunctions();
-
-    final byte[] serializedAggregateFunc = new byte[statefulOpFunctions.get(0).remaining()];
-    statefulOpFunctions.get(0).get(serializedAggregateFunc);
-    final Function deserializedAggregateFunc =
-        (Function) SerializationUtils.deserialize(serializedAggregateFunc);
-
+    final InstantOperatorInfo aggregateOpInfo = (InstantOperatorInfo) serializedVertex.getAttributes();
+    final List<ByteBuffer> aggregateOpFunctions = aggregateOpInfo.getFunctions();
+    final Function deserializedAggregateFunc = (Function) deserializeFunction(aggregateOpFunctions.get(0));
     final WindowImpl<Integer> windowData = new WindowImpl<>(100, 200);
     windowData.putData(new MistDataEvent(10));
     windowData.putData(new MistDataEvent(20));
+
     Assert.assertEquals(expectedAggregateFunc.apply(windowData), deserializedAggregateFunc.apply(windowData));
+  }
+
+  /**
+   * This method tests a serialization of MapOperator.
+   */
+  @Test
+  public void mapSerializationTest() {
+    final MISTFunction<String, Tuple2<String, Integer>> expectedMapFunc = s -> new Tuple2<>(s, 1);
+    final MapOperatorStream mapOperatorStream = new MapOperatorStream<>(expectedMapFunc, mockDag);
+    final Vertex serializedVertex = mapOperatorStream.getSerializedVertex();
+
+    // Test whether the vertex is created properly or not.
+    Assert.assertEquals(serializedVertex.getVertexType(), VertexTypeEnum.INSTANT_OPERATOR);
+    final InstantOperatorInfo mapOpInfo = (InstantOperatorInfo) serializedVertex.getAttributes();
+    final List<ByteBuffer> mapOpFunctions = mapOpInfo.getFunctions();
+    final Integer mapKeyIndex = mapOpInfo.getKeyIndex();
+    final Function deserializedMapFunc = (Function) deserializeFunction(mapOpFunctions.get(0));
+
+    Assert.assertEquals(expectedMapFunc.apply("ABC"), deserializedMapFunc.apply("ABC"));
+    Assert.assertNotEquals(expectedMapFunc.apply("ABC"), deserializedMapFunc.apply("abc"));
+    Assert.assertEquals(mapKeyIndex, null);
+  }
+
+  /**
+   * This method tests a serialization of ReduceByKeyOperator.
+   */
+  @Test
+  public void reduceByKeySerializationTest() {
+    final ReduceByKeyOperatorStream reduceByKeyOperatorStream =
+        new ReduceByKeyOperatorStream<>(0, String.class, expectedReduceFunc, mockDag);
+    final Vertex serializedVertex = reduceByKeyOperatorStream.getSerializedVertex();
+
+    // Test whether the vertex is created properly or not.
+    Assert.assertEquals(serializedVertex.getVertexType(), VertexTypeEnum.INSTANT_OPERATOR);
+    final InstantOperatorInfo reduceOpInfo = (InstantOperatorInfo) serializedVertex.getAttributes();
+    final List<ByteBuffer> reduceOpFunctions = reduceOpInfo.getFunctions();
+    final Integer reduceKeyIndex = reduceOpInfo.getKeyIndex();
+    final BiFunction deserializedReduceFunc = (BiFunction) deserializeFunction(reduceOpFunctions.get(0));
+
+    Assert.assertEquals(expectedReduceFunc.apply(1, 2), deserializedReduceFunc.apply(1, 2));
+    Assert.assertNotEquals(expectedReduceFunc.apply(5, 4), deserializedReduceFunc.apply(1, 2));
+    Assert.assertEquals((Integer) 0, reduceKeyIndex);
+  }
+
+  /**
+   * This method tests a serialization of ReduceByKeyWindowOperator.
+   */
+  @Test
+  public void reduceByKeyWindowSerializationTest() {
+    final ReduceByKeyWindowOperatorStream reduceByKeyWindowOperatorStream =
+        new ReduceByKeyWindowOperatorStream(0, String.class, expectedReduceFunc, mockDag);
+    final Vertex serializedVertex = reduceByKeyWindowOperatorStream.getSerializedVertex();
+
+    // Test whether the vertex is created properly or not.
+    Assert.assertEquals(serializedVertex.getVertexType(), VertexTypeEnum.INSTANT_OPERATOR);
+    final InstantOperatorInfo reduceWindowOpInfo = (InstantOperatorInfo) serializedVertex.getAttributes();
+    final List<ByteBuffer> reduceWindowOpFunctions = reduceWindowOpInfo.getFunctions();
+    final Integer reduceKeyIndex = reduceWindowOpInfo.getKeyIndex();
+    final BiFunction deserializedReduceFunc = (BiFunction) deserializeFunction(reduceWindowOpFunctions.get(0));
+
+    Assert.assertEquals(expectedReduceFunc.apply(1, 2), deserializedReduceFunc.apply(1, 2));
+    Assert.assertNotEquals(expectedReduceFunc.apply(5, 4), deserializedReduceFunc.apply(1, 2));
+    Assert.assertEquals((Integer) 0, reduceKeyIndex);
+  }
+
+  /**
+   * This method tests a serialization of FlatMapOperator.
+   */
+  @Test
+  public void flatMapSerializationTest() {
+    final MISTFunction<String, List<String>> expectedFlatMapFunc = s -> Arrays.asList(s.split(" "));
+    final FlatMapOperatorStream flatMapOperatorStream = new FlatMapOperatorStream(expectedFlatMapFunc, mockDag);
+    final Vertex serializedVertex = flatMapOperatorStream.getSerializedVertex();
+
+    // Test whether the vertex is created properly or not.
+    Assert.assertEquals(serializedVertex.getVertexType(), VertexTypeEnum.INSTANT_OPERATOR);
+    final InstantOperatorInfo flatMapOpInfo = (InstantOperatorInfo) serializedVertex.getAttributes();
+    final List<ByteBuffer> flatMapOpFunctions = flatMapOpInfo.getFunctions();
+    final Integer flatMapKeyIndex = flatMapOpInfo.getKeyIndex();
+    final Function deserializedFlatMapFunc = (Function) deserializeFunction(flatMapOpFunctions.get(0));
+
+    Assert.assertEquals(expectedFlatMapFunc.apply("A B C"), deserializedFlatMapFunc.apply("A B C"));
+    Assert.assertNotEquals(expectedFlatMapFunc.apply("A B C"), deserializedFlatMapFunc.apply("a b c"));
+    Assert.assertEquals(flatMapKeyIndex, null);
+  }
+
+  /**
+   * This method tests a serialization of FilterOperator.
+   */
+  @Test
+  public void filterSerialization() {
+    final MISTPredicate<String> expectedFilterPredicate = s -> s.startsWith("A");
+    final FilterOperatorStream filterOperatorStream = new FilterOperatorStream(expectedFilterPredicate, mockDag);
+    final Vertex serializedVertex = filterOperatorStream.getSerializedVertex();
+
+    // Test whether the vertex is created properly or not.
+    Assert.assertEquals(serializedVertex.getVertexType(), VertexTypeEnum.INSTANT_OPERATOR);
+    final InstantOperatorInfo filterOpInfo = (InstantOperatorInfo) serializedVertex.getAttributes();
+    final List<ByteBuffer> filterOpFunctions = filterOpInfo.getFunctions();
+    final Integer filterKeyIndex = filterOpInfo.getKeyIndex();
+    final Predicate deserializedFilterPrecdicate = (Predicate) deserializeFunction(filterOpFunctions.get(0));
+
+    Assert.assertEquals(expectedFilterPredicate.test("ABC"), deserializedFilterPrecdicate.test("ABC"));
+    Assert.assertEquals(expectedFilterPredicate.test("abc"), deserializedFilterPrecdicate.test("abc"));
+    Assert.assertNotEquals(expectedFilterPredicate.test("ABC"), deserializedFilterPrecdicate.test("abc"));
+    Assert.assertEquals(filterKeyIndex, null);
+  }
+
+  /**
+   * This method deserializes a serialized function in a form of ByteBuffer.
+   * @param bufferedFunction the serialized function
+   * @return deserialized Object such as Function, BiFunction, or Supplier
+   */
+  private Object deserializeFunction(final ByteBuffer bufferedFunction) {
+    final byte[] serializedFunc = new byte[bufferedFunction.remaining()];
+    bufferedFunction.get(serializedFunc);
+    return SerializationUtils.deserialize(serializedFunc);
   }
 }
