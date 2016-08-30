@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-# This code starts WordCount app in example.
+# This code starts HelloMist
 # You should set the $MIST_HOME variable.
 
 SELF_JAR=`echo $MIST_HOME/target/mist-*-shaded.jar`
@@ -24,7 +24,20 @@ CLASSPATH=$YARN_HOME/share/hadoop/common/*:$YARN_HOME/share/hadoop/common/lib/*:
 
 YARN_CONF_DIR=$YARN_HOME/etc/hadoop
 
-CMD="java -cp $YARN_CONF_DIR:$SELF_JAR:$CLASSPATH $LOCAL_RUNTIME_TMP $LOGGING_CONFIG edu.snu.mist.examples.QueryDeletion $*"
+CMD="java -cp $YARN_CONF_DIR:$SELF_JAR:$CLASSPATH $LOCAL_RUNTIME_TMP $LOGGING_CONFIG edu.snu.mist.examples.$*"
 
+case $1 in
+  HelloMist) ;; 
+  QueryDeletion) ;;
+  StopAndResume) ;;
+  UnionMist) ;;
+  WordCount) ;;
+  *)
+    echo "Invalid input. Here is an example for using this script."
+    echo "If you want to run HelloMIST with sink source option, please type like below."
+    echo "$MIST_HOME/bin/run_example.sh HelloMist -s yourHost:yourPort"
+    exit 1;;
+esac
+   
 echo $CMD
 $CMD
