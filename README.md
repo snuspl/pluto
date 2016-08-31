@@ -46,7 +46,7 @@ MIST is a micro stream processing system built on top of [Apache REEF](http://re
     # 2. Launch source server (You can simply use netcat)
      nc -lk 20331
     # 3. Run a script for HelloMist
-    ./bin/run_hellomist.sh
+    ./bin/run_example.sh HelloMist
     [-? Print help]
     [-d Address of running MIST driver in the form of hostname:port]
     [-s Address of running source server in the form of hostname:port]
