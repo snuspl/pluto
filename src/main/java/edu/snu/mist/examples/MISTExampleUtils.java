@@ -19,6 +19,7 @@ package edu.snu.mist.examples;
 import edu.snu.mist.api.APIQueryControlResult;
 import edu.snu.mist.api.MISTExecutionEnvironment;
 import edu.snu.mist.api.MISTQuery;
+import edu.snu.mist.api.MISTQueryControl;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
 import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
 import edu.snu.mist.examples.parameters.DriverAddress;
@@ -30,6 +31,7 @@ import org.apache.reef.tang.formats.CommandLine;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Scanner;
 
 /**
  * Common behavior and basic defaults for MIST examples.
@@ -88,6 +90,38 @@ public final class MISTExampleUtils {
   public static CommandLine getDefaultCommandLine(final JavaConfigurationBuilder jcb) {
     return new CommandLine(jcb)
         .registerShortNameOfClass(DriverAddress.class);
+  }
+  /**
+   * Parse command line and control the query.
+   * @param result
+   * @throws IOException
+   */
+  public static void cmdLineParser(final APIQueryControlResult result) throws IOException {
+    final Scanner scanner = new Scanner(System.in);
+    final String cmdLine = scanner.nextLine();
+    final String[] arg = cmdLine.split(" ");
+    final APIQueryControlResult controlResult;
+
+    if (arg.length != 2) {
+      System.out.println("The format must be: 'control' 'queryId'");
+    } else {
+      switch(arg[0]) {
+        case "resume":
+          controlResult = MISTQueryControl.resume(arg[1], result.getTaskAddress());
+          System.out.println(controlResult.getMsg());
+          break;
+        case "stop":
+          controlResult = MISTQueryControl.stop(arg[1], result.getTaskAddress());
+          System.out.println(controlResult.getMsg());
+          break;
+        case "delete":
+          controlResult = MISTQueryControl.delete(arg[1], result.getTaskAddress());
+          System.out.println(controlResult.getMsg());
+          break;
+        default:
+          System.out.println("Control must be: resume, stop and delete");
+      }
+    }
   }
 
   /**
