@@ -16,7 +16,7 @@
 
 package edu.snu.mist.examples;
 
-import edu.snu.mist.api.APIQuerySubmissionResult;
+import edu.snu.mist.api.APIQueryControlResult;
 import edu.snu.mist.api.MISTExecutionEnvironment;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
@@ -74,7 +74,7 @@ public final class MISTExampleUtils {
   /**
    * Submit query to MIST driver.
    */
-  public static APIQuerySubmissionResult submit(final MISTQuery query, final Configuration configuration)
+  public static APIQueryControlResult submit(final MISTQuery query, final Configuration configuration)
       throws IOException, URISyntaxException, InjectionException {
     final String[] driverSocket =
         Tang.Factory.getTang().newInjector(configuration).getNamedInstance(DriverAddress.class).split(":");

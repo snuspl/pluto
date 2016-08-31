@@ -36,8 +36,8 @@ import java.util.concurrent.ConcurrentMap;
  *
  * It uses avro RPC for communication with the Driver and the Task.
  * It gets a task list from Driver, change the query to a LogicalPlan,
- * send the LogicalPlan to one of the tasks and get QuerySubmissionResult,
- * transform QuerySubmissionResult to APIQuerySubmissionResult and return it.
+ * send the LogicalPlan to one of the tasks and get QueryControlResult,
+ * transform QueryControlResult to APIQueryControlResult and return it.
  */
 public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionEnvironment {
   private final MistTaskProvider proxyToDriver;
@@ -63,7 +63,7 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
    * @return the result of the submitted query.
    */
   @Override
-  public APIQuerySubmissionResult submit(final MISTQuery queryToSubmit) throws IOException, URISyntaxException {
+  public APIQueryControlResult submit(final MISTQuery queryToSubmit) throws IOException, URISyntaxException {
     final byte[] jarBytes = JarFileUtils.serializeJarFile(runningJarPath);
 
     // Build logical plan using serialized vertices and edges.
@@ -76,7 +76,7 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
         .setEdges(serializedDag.getValue())
         .build();
 
-    //Send the LogicalPlan to one of the tasks and get QuerySubmissionResult
+    //Send the LogicalPlan to one of the tasks and get QueryControlResult
     final IPAddress task = tasks.get(0);
 
     ClientToTaskMessage proxyToTask = taskProxyMap.get(task);
@@ -88,11 +88,12 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
       proxyToTask = taskProxyMap.get(task);
     }
 
-    final QuerySubmissionResult querySubmissionResult = proxyToTask.sendQueries(logicalPlan);
+    final QueryControlResult queryControlResult = proxyToTask.sendQueries(logicalPlan);
 
-    // Step 4: Transform QuerySubmissionResult to APIQuerySubmissionResult
-    final APIQuerySubmissionResult apiQuerySubmissionResult =
-        new APIQuerySubmissionResultImpl(querySubmissionResult.getQueryId(), task);
-    return apiQuerySubmissionResult;
+    // Step 4: Transform QueryControlResult to APIQueryControlResult
+    final APIQueryControlResult apiQueryControlResult =
+        new APIQueryControlResultImpl(queryControlResult.getQueryId(), task,
+                  queryControlResult.getMsg(), queryControlResult.getIsSuccess());
+    return apiQueryControlResult;
   }
 }

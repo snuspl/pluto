@@ -281,11 +281,19 @@
     },
     {
       "type": "record",
-      "name": "QuerySubmissionResult",
+      "name": "QueryControlResult",
       "fields":
       [
         {
           "name": "QueryId",
+          "type": "string"
+        },
+        {
+          "name": "IsSuccess",
+          "type": "boolean"
+        },
+        {
+          "name": "Msg",
           "type": "string"
         }
       ]
@@ -302,7 +310,7 @@
           "type": "LogicalPlan"
         }
       ],
-      "response": "QuerySubmissionResult"
+      "response": "QueryControlResult"
     },
     "deleteQueries":
     {
@@ -313,7 +321,7 @@
           "type": "string"
         }
       ],
-      "response": "boolean"
+      "response": "QueryControlResult"
     },
     "stopQueries":
     {
@@ -324,7 +332,7 @@
           "type": "string"
         }
       ],
-      "response": "boolean"
+      "response": "QueryControlResult"
     },
     "resumeQueries":
     {
@@ -335,7 +343,7 @@
           "type": "string"
         }
       ],
-      "response": "boolean"
+      "response": "QueryControlResult"
     }
   }
 }
