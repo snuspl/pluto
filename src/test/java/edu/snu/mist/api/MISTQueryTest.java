@@ -250,9 +250,9 @@ public final class MISTQueryTest {
         final Vertex windowVertex = avroVertexChain.getVertexChain().get(3);
         final WindowOperatorInfo windowOperatorInfo = (WindowOperatorInfo) windowVertex.getAttributes();
         Assert.assertEquals(expectedSizePolicyEnum, windowOperatorInfo.getSizePolicyType());
-        Assert.assertEquals((long) expectedTimeSize, windowOperatorInfo.getSizePolicyInfo());
+        Assert.assertEquals(expectedTimeSize, windowOperatorInfo.getSizePolicyInfo());
         Assert.assertEquals(expectedEmitPolicyEnum, windowOperatorInfo.getEmitPolicyType());
-        Assert.assertEquals((long) expectedTimeEmitInterval, windowOperatorInfo.getEmitPolicyInfo());
+        Assert.assertEquals(expectedTimeEmitInterval, windowOperatorInfo.getEmitPolicyInfo());
 
         // Test for reduceByKeyWindow
         final Vertex reduceByKeyVertex = avroVertexChain.getVertexChain().get(4);

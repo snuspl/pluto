@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.task.common;
 
+import edu.snu.mist.api.exceptions.NegativeTimestampException;
+
 /**
  * This class contains data and timestamp.
  * MistDataEvent is designed to be *reused* when operators emit the outputs.
@@ -39,6 +41,9 @@ public final class MistDataEvent implements MistEvent {
 
   public MistDataEvent(final Object value,
                        final long timestamp) {
+    if (timestamp < 0L) {
+      throw new NegativeTimestampException("Negative timestamp in data is not allowed.");
+    }
     this.value = value;
     this.timestamp = timestamp;
   }

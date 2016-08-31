@@ -20,16 +20,16 @@ import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTSupplier;
 import edu.snu.mist.api.operators.AggregateWindowOperatorStream;
 import edu.snu.mist.api.operators.ReduceByKeyWindowOperatorStream;
+import edu.snu.mist.api.window.WindowData;
 import edu.snu.mist.api.window.WindowEmitPolicy;
 import edu.snu.mist.api.window.WindowSizePolicy;
 
-import java.util.Collection;
-
 /**
- * Windowed stream interface created by window methods. It emits a collection of data at one time.
+ * Windowed stream interface created by window methods.
+ * It emits a WindowData that contains a collection of data, the window's start and end information.
  * It should be distinguished from ContinuousStream.
  */
-public interface WindowedStream<T> extends MISTStream<Collection<T>> {
+public interface WindowedStream<T> extends MISTStream<WindowData<T>> {
   /**
    * @return The policy which determines the size of window inside
    */

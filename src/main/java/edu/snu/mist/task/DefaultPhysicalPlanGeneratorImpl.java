@@ -85,7 +85,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
    * This private method makes a NettyTextDataGenerator from a source configuration.
    */
   private DataGenerator<String> getNettyTextDataGenerator(final Map<String, Object> sourceConfString)
-      throws IllegalArgumentException {
+      throws RuntimeException {
     final String socketHostAddress = sourceConfString.get(TextSocketSourceParameters.SOCKET_HOST_ADDRESS).toString();
     final String socketHostPort = sourceConfString.get(TextSocketSourceParameters.SOCKET_HOST_PORT).toString();
     try {
@@ -103,7 +103,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
                                                    final Map<String, Object> sourceConfString,
                                                    final Map<String, Object> watermarkConfString,
                                                    final ClassLoader classLoader)
-          throws IllegalArgumentException{
+      throws RuntimeException {
     try {
       final Function<String, Tuple<String, Long>> timestampExtractionFunc;
       final ByteBuffer serializedExtractionFunc =
@@ -113,20 +113,24 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       } else {
         timestampExtractionFunc = null;
       }
-      if (watermarkType == WatermarkTypeEnum.PERIODIC) {
-        final long period = Long.parseLong(watermarkConfString.get(PeriodicWatermarkParameters.PERIOD).toString());
-        final long expectedDelay =
-            Long.parseLong(watermarkConfString.get(PeriodicWatermarkParameters.EXPECTED_DELAY).toString());
-        return new PeriodicEventGenerator<>(
-            timestampExtractionFunc, period, expectedDelay, TimeUnit.MILLISECONDS, scheduler);
-      } else {
-        final Predicate<String> isWatermark =
-            (Predicate)deserializeLambda((ByteBuffer) watermarkConfString.get(
-                PunctuatedWatermarkParameters.WATERMARK_PREDICATE), classLoader);
-        final Function<String, Long> parseTimestamp =
-            (Function) deserializeLambda((ByteBuffer) watermarkConfString.get(
-                PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK), classLoader);
-        return new PunctuatedEventGenerator<>(timestampExtractionFunc, isWatermark, parseTimestamp);
+
+      switch (watermarkType) {
+        case PERIODIC:
+          final long period = Long.parseLong(watermarkConfString.get(PeriodicWatermarkParameters.PERIOD).toString());
+          final long expectedDelay =
+              Long.parseLong(watermarkConfString.get(PeriodicWatermarkParameters.EXPECTED_DELAY).toString());
+          return new PeriodicEventGenerator<>(
+              timestampExtractionFunc, period, expectedDelay, TimeUnit.MILLISECONDS, scheduler);
+        case PUNCTUATED:
+          final Predicate<String> isWatermark =
+              (Predicate)deserializeLambda((ByteBuffer) watermarkConfString.get(
+                  PunctuatedWatermarkParameters.WATERMARK_PREDICATE), classLoader);
+          final Function<String, Long> parseTimestamp =
+              (Function) deserializeLambda((ByteBuffer) watermarkConfString.get(
+                  PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK), classLoader);
+          return new PunctuatedEventGenerator<>(timestampExtractionFunc, isWatermark, parseTimestamp);
+        default:
+          throw new IllegalArgumentException("MISTTask: Invalid WatermarkTypeEnum is detected!");
       }
     } catch (final Exception e) {
       e.printStackTrace();
@@ -138,7 +142,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
    * This private method makes a NettyTextSocketSink from a sink configuration.
    */
   private Sink getNettyTextSocketSink(final String queryId, final Map<String, Object> sinkConfString)
-      throws IllegalArgumentException {
+      throws RuntimeException {
     final String socketHostAddress = sinkConfString.get(TextSocketSinkParameters.SOCKET_HOST_ADDRESS).toString();
     final String socketHostPort = sinkConfString.get(TextSocketSinkParameters.SOCKET_HOST_PORT).toString();
     try {
@@ -230,6 +234,32 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     }
   }
 
+  /*
+   * This private method gets window operator from the serialized window operator info.
+   */
+  private Operator getWindowOperator(final String queryId, final WindowOperatorInfo wOpInfo)
+      throws IllegalArgumentException {
+    final String operatorId = operatorIdGenerator.generate();
+    final Operator operator;
+    switch (wOpInfo.getSizePolicyType()) {
+      case TIME:
+        switch (wOpInfo.getEmitPolicyType()) {
+          case TIME:
+            operator = new TimeWindowOperator<>(queryId, operatorId, (int)wOpInfo.getSizePolicyInfo(),
+                (int)wOpInfo.getEmitPolicyInfo());
+            break;
+          default:
+            throw new IllegalArgumentException("MISTTask: Invalid window operator emit policy type " +
+                wOpInfo.getSizePolicyType().toString());
+        }
+        break;
+      default:
+        throw new IllegalArgumentException("MISTTask: Invalid window operator size policy type " +
+              wOpInfo.getSizePolicyType().toString());
+    }
+    return operator;
+  }
+
   @Override
   public DAG<PhysicalVertex, StreamType.Direction> generate(
       final Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
@@ -295,7 +325,10 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
                 break;
               }
               case WINDOW_OPERATOR: {
-                throw new IllegalArgumentException("MISTTask: WindowOperator is currently not supported!");
+                final WindowOperatorInfo wOpInfo = (WindowOperatorInfo) vertex.getAttributes();
+                final Operator operator = getWindowOperator(queryId, wOpInfo);
+                partitionedQuery.insertToTail(operator);
+                break;
               }
               default: {
                 throw new IllegalArgumentException("MISTTask: Invalid operator type" + vertex.getVertexType());

@@ -58,7 +58,7 @@ final class OperatorOutputEmitter implements OutputEmitter {
         break;
       }
       default:
-        throw new RuntimeException("Unkown type: " + nextVertex.getType());
+        throw new RuntimeException("Unknown type: " + nextVertex.getType());
     }
   }
 
@@ -81,7 +81,7 @@ final class OperatorOutputEmitter implements OutputEmitter {
         break;
       }
       default:
-        throw new RuntimeException("Unkown type: " + nextVertex.getType());
+        throw new RuntimeException("Unknown type: " + nextVertex.getType());
     }
   }
 

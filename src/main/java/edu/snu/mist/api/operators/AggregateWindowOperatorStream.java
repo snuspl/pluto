@@ -20,6 +20,7 @@ import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTSupplier;
+import edu.snu.mist.api.window.WindowData;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.InstantOperatorInfo;
 import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
@@ -27,18 +28,16 @@ import org.apache.commons.lang.SerializationUtils;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 /**
  * This class implements the necessary methods for getting information
  * about user-defined aggregation operators on windowed stream.
- * This is different to ApplyStatefulOperatorStream in that
- * it it receives a Collection of input data, and
+ * This is different to ApplyStatefulOperatorStream in that it receives a WindowData, and
  * it maintains no internal state inside but just apply the stateful functions to the collected data from the window.
  */
 public final class AggregateWindowOperatorStream<IN, OUT, S>
-    extends InstantOperatorStream<Collection<IN>, OUT> {
+    extends InstantOperatorStream<WindowData<IN>, OUT> {
 
   /**
    * BiFunction used for updating the temporal state.

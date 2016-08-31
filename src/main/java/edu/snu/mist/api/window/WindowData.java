@@ -13,32 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.common;
+package edu.snu.mist.api.window;
 
-import edu.snu.mist.api.exceptions.NegativeTimestampException;
+import java.util.Collection;
 
 /**
- * This class represents watermark event.
+ * This interface represents the result data of windowing operation.
+ * It contains the result data collection, start and end information.
+ * The start and end may represents time or count.
+ * @param <T> the type of data in this window
  */
-public final class MistWatermarkEvent implements MistEvent {
+public interface WindowData<T> {
+
   /**
-   * Timestamp for the WATERMARK.
+   * @return the result data collection of window
    */
-  private long timestamp;
+  Collection<T> getDataCollection();
 
-  public MistWatermarkEvent(final long timestamp) {
-    if (timestamp < 0L) {
-      throw new NegativeTimestampException("Negative timestamp in watermark is not allowed.");
-    }
-    this.timestamp = timestamp;
-  }
+  /**
+   * @return the start time or count
+   */
+  long getStart();
 
-  public long getTimestamp() {
-    return timestamp;
-  }
-
-  @Override
-  public boolean isData() {
-    return false;
-  }
+  /**
+   * @return the end time or count
+   */
+  long getEnd();
 }
