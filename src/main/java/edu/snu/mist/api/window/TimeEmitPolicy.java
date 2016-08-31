@@ -23,7 +23,7 @@ public final class TimeEmitPolicy implements WindowEmitPolicy {
   /**
    * The interval of window emission in millisecond.
    */
-  private final long timeInterval;
+  private final int timeInterval;
 
   public TimeEmitPolicy(final int timeInterval) {
     if (timeInterval <= 0) {
@@ -41,7 +41,7 @@ public final class TimeEmitPolicy implements WindowEmitPolicy {
   /**
    * @return The emitting time interval of the window in millisecond unit.
    */
-  public long getTimeInterval() {
+  public int getTimeInterval() {
     return timeInterval;
   }
 
@@ -56,6 +56,6 @@ public final class TimeEmitPolicy implements WindowEmitPolicy {
 
   @Override
   public int hashCode() {
-    return ((Long) timeInterval).hashCode();
+    return (new Integer(timeInterval)).hashCode();
   }
 }

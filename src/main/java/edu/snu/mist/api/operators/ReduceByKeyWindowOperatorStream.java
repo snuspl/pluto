@@ -18,19 +18,17 @@ package edu.snu.mist.api.operators;
 import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.functions.MISTBiFunction;
+import edu.snu.mist.api.window.WindowData;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
 
-import java.util.Collection;
-
 /**
  * This class implements the necessary methods for getting information about reduceByKey operator on windowed stream.
- * This is different to ReduceByKeyOperatorStream in that
- * it receives a Collection of input data, and
+ * This is different to ReduceByKeyOperatorStream in that it receives a WindowData, and
  * it maintains no internal state inside but just reduces the collected data from the window.
  */
 public final class ReduceByKeyWindowOperatorStream<IN, K, V>
-    extends BaseReduceByKeyOperatorStream<Collection<IN>, K, V> {
+    extends BaseReduceByKeyOperatorStream<WindowData<IN>, K, V> {
 
   public ReduceByKeyWindowOperatorStream(final int keyFieldIndex,
                                          final Class<K> keyType,

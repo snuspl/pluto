@@ -23,7 +23,7 @@ public final class TimeSizePolicy implements WindowSizePolicy {
   /**
    * The time-based size of the internal window.
    */
-  private final long timeDuration;
+  private final int timeDuration;
 
   public TimeSizePolicy(final int timeDuration) {
     if (timeDuration <= 0) {
@@ -41,7 +41,7 @@ public final class TimeSizePolicy implements WindowSizePolicy {
   /**
    * @return The time duration of the window size in millisecond unit.
    */
-  public long getTimeDuration() {
+  public int getTimeDuration() {
     return timeDuration;
   }
 
@@ -56,7 +56,6 @@ public final class TimeSizePolicy implements WindowSizePolicy {
 
   @Override
   public int hashCode() {
-    return ((Long) timeDuration).hashCode();
+    return new Integer(timeDuration).hashCode();
   }
-
 }

@@ -35,7 +35,6 @@ import java.util.concurrent.atomic.AtomicReference;
 @SuppressWarnings("unchecked")
 final class DefaultPartitionedQuery implements PartitionedQuery {
 
-
   private enum Status {
     RUNNING, // When the query processes an event
     READY, // When the query does not process an event
@@ -209,7 +208,6 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
   public String toString() {
     return operators.toString();
   }
-
 
   /**
    * An output emitter forwarding events to the next operator.

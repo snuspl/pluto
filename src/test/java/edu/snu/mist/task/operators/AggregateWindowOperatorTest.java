@@ -19,10 +19,10 @@ import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
 import edu.snu.mist.task.common.OutputEmitter;
+import edu.snu.mist.task.windows.WindowImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -38,13 +38,13 @@ public final class AggregateWindowOperatorTest {
   @Test
   public void testAggregateWindowOperator() {
     // input stream events
-    final ArrayList<Integer> list = new ArrayList<>();
-    list.add(10);
-    list.add(20);
-    list.add(15);
-    list.add(30);
-    final MistDataEvent collectionEvent = new MistDataEvent(list, 0L);
-    final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(1L);
+    final WindowImpl<Integer> window = new WindowImpl<>(0L, 100L);
+    window.putData(new MistDataEvent(10, 10));
+    window.putData(new MistDataEvent(20, 20));
+    window.putData(new MistDataEvent(15, 30));
+    window.putData(new MistDataEvent(30, 90));
+    final MistDataEvent dataEvent = new MistDataEvent(window, 90L);
+    final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(101L);
 
     // functions that dealing with state
     final BiFunction<Integer, Integer, Integer> updateStateFunc =
@@ -65,11 +65,11 @@ public final class AggregateWindowOperatorTest {
     final List<MistEvent> result = new LinkedList<>();
     aggregateWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));
 
-    aggregateWindowOperator.processLeftData(collectionEvent);
+    aggregateWindowOperator.processLeftData(dataEvent);
     Assert.assertEquals(1, result.size());
-    Assert.assertTrue(result.get(0) instanceof MistDataEvent);
+    Assert.assertTrue(result.get(0).isData());
     Assert.assertEquals("30", ((MistDataEvent)result.get(0)).getValue());
-    Assert.assertEquals(0L, result.get(0).getTimestamp());
+    Assert.assertEquals(90L, result.get(0).getTimestamp());
 
     aggregateWindowOperator.processLeftWatermark(watermarkEvent);
     Assert.assertEquals(2, result.size());

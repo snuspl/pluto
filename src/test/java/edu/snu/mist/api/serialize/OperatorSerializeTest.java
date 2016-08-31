@@ -17,14 +17,15 @@ package edu.snu.mist.api.serialize;
 
 import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.StreamType;
+import edu.snu.mist.api.WindowedStreamImpl;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTSupplier;
 import edu.snu.mist.api.operators.ApplyStatefulOperatorStream;
+import edu.snu.mist.api.window.TimeSizePolicy;
+import edu.snu.mist.api.window.TimeEmitPolicy;
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.formats.avro.InstantOperatorInfo;
-import edu.snu.mist.formats.avro.Vertex;
-import edu.snu.mist.formats.avro.VertexTypeEnum;
+import edu.snu.mist.formats.avro.*;
 import org.apache.commons.lang.SerializationUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -41,23 +42,24 @@ import static org.mockito.Mockito.mock;
  * This is the test class for serializing operators into avro vertex.
  */
 public class OperatorSerializeTest {
-  private final MISTBiFunction<String, Integer, Integer> expectedUpdateStateFunc =
-      (input, state) -> {
-        if (Integer.parseInt(input) > state) {
-          return Integer.parseInt(input);
-        } else {
-          return state;
-        }
-      };
-  private final MISTFunction<Integer, String> expectedProduceResultFunc = state -> state.toString();
-  private final MISTSupplier<Integer> expectedInitializeStateSup = () -> Integer.MIN_VALUE;
+  private final DAG<AvroVertexSerializable, StreamType.Direction> mockDag = mock(DAG.class);
 
   /**
    * This method tests a serialization of ApplyStatefulOperator.
    */
   @Test
-  public void applyStatefulSerializationTest() {
-    final DAG<AvroVertexSerializable, StreamType.Direction> mockDag = mock(DAG.class);
+  public void applyStatefulStreamSerializationTest() {
+    final MISTBiFunction<String, Integer, Integer> expectedUpdateStateFunc =
+            (input, state) -> {
+              if (Integer.parseInt(input) > state) {
+                return Integer.parseInt(input);
+              } else {
+                return state;
+              }
+            };
+    final MISTFunction<Integer, String> expectedProduceResultFunc = state -> state.toString();
+    final MISTSupplier<Integer> expectedInitializeStateSup = () -> Integer.MIN_VALUE;
+
     final ApplyStatefulOperatorStream statefulOpStream = new ApplyStatefulOperatorStream<>(
         expectedUpdateStateFunc, expectedProduceResultFunc, expectedInitializeStateSup, mockDag);
     final Vertex serializedVertex = statefulOpStream.getSerializedVertex();
@@ -85,5 +87,24 @@ public class OperatorSerializeTest {
     Assert.assertEquals(expectedUpdateStateFunc.apply("10", 15), deserializedUpdateStateFunc.apply("10", 15));
     Assert.assertEquals(expectedProduceResultFunc.apply(15), deserializedProduceResultFunc.apply(15));
     Assert.assertNotEquals(expectedProduceResultFunc.apply(15), deserializedProduceResultFunc.apply(10));
+  }
+
+  /**
+   * this method tests a serialization of TimeWindowOperator.
+   */
+  @Test
+  public void windowStreamSerializationTest() {
+    final TimeSizePolicy timeSizePolicy = new TimeSizePolicy(5000);
+    final TimeEmitPolicy timeEmitPolicy = new TimeEmitPolicy(1000);
+    final WindowedStreamImpl windowedStream = new WindowedStreamImpl(timeSizePolicy, timeEmitPolicy, mockDag);
+    final Vertex serializedVertex = windowedStream.getSerializedVertex();
+
+    // Test whether the vertex is created properly or not.
+    Assert.assertEquals(serializedVertex.getVertexType(), VertexTypeEnum.WINDOW_OPERATOR);
+    final WindowOperatorInfo windowOperatorInfo = (WindowOperatorInfo) serializedVertex.getAttributes();
+    Assert.assertEquals(SizePolicyTypeEnum.TIME, windowOperatorInfo.getSizePolicyType());
+    Assert.assertEquals(EmitPolicyTypeEnum.TIME, windowOperatorInfo.getEmitPolicyType());
+    Assert.assertEquals(5000, windowOperatorInfo.getSizePolicyInfo());
+    Assert.assertEquals(1000, windowOperatorInfo.getEmitPolicyInfo());
   }
 }

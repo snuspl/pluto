@@ -13,32 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task.common;
 
-import edu.snu.mist.api.exceptions.NegativeTimestampException;
+package edu.snu.mist.api.exceptions;
 
 /**
- * This class represents watermark event.
+ * Signals that the value of timestamp is negative.
  */
-public final class MistWatermarkEvent implements MistEvent {
-  /**
-   * Timestamp for the WATERMARK.
-   */
-  private long timestamp;
+public final class NegativeTimestampException extends RuntimeException {
 
-  public MistWatermarkEvent(final long timestamp) {
-    if (timestamp < 0L) {
-      throw new NegativeTimestampException("Negative timestamp in watermark is not allowed.");
+    public NegativeTimestampException() {
+        super();
     }
-    this.timestamp = timestamp;
-  }
 
-  public long getTimestamp() {
-    return timestamp;
-  }
-
-  @Override
-  public boolean isData() {
-    return false;
-  }
+    public NegativeTimestampException(final String message) {
+        super(message);
+    }
 }

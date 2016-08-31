@@ -24,12 +24,10 @@ import edu.snu.mist.api.window.*;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.*;
 
-import java.util.Collection;
-
 /**
  * The implementation class for describing WindowedStream.
  */
-public final class WindowedStreamImpl<T> extends MISTStreamImpl<Collection<T>> implements WindowedStream<T>  {
+public final class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>> implements WindowedStream<T>  {
 
   /**
    * The policy for deciding the size of window inside.

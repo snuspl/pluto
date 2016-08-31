@@ -86,16 +86,16 @@ public abstract class EventGeneratorImpl<I, V> implements EventGenerator<I> {
     }
   }
 
+  @Override
+  public void setOutputEmitter(final OutputEmitter emitter) {
+    this.outputEmitter = emitter;
+  }
+
   /**
-   * Conducts getting current time in synchronized block.
+   * Gets current time in synchronized block.
    * @return the current time
    */
   protected synchronized long getCurrentTimestamp() {
     return System.currentTimeMillis();
-  }
-
-  @Override
-  public void setOutputEmitter(final OutputEmitter emitter) {
-    this.outputEmitter = emitter;
   }
 }

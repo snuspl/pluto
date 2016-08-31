@@ -17,6 +17,7 @@ package edu.snu.mist.task.operators;
 
 import com.sun.corba.se.impl.io.TypeMismatchException;
 import edu.snu.mist.api.StreamType;
+import edu.snu.mist.api.window.WindowData;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
 
@@ -81,9 +82,8 @@ public final class AggregateWindowOperator<IN, OUT, S>
      * The temporal state which is used for a single input collection.
      */
     S state = initializeStateSup.get();
-    // TODO: [MIST-304] Implement windowing operation. We need to add a new type of event like MistCollectionEvent.
-    if (input.getValue() instanceof Collection) {
-      final Collection<IN> value = (Collection<IN>) input.getValue();
+    if (input.getValue() instanceof WindowData) {
+      final Collection<IN> value = ((WindowData<IN>) input.getValue()).getDataCollection();
       final Iterator<IN> iterator = value.iterator();
 
       while (iterator.hasNext()) {
@@ -94,7 +94,7 @@ public final class AggregateWindowOperator<IN, OUT, S>
       outputEmitter.emitData(input);
     } else {
       throw new TypeMismatchException(
-          "The input value for aggregate window operator is not an instance of collection.");
+          "The input value for aggregate window operator is not an instance of WindowData.");
     }
   }
 
