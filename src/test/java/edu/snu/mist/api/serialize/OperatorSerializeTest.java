@@ -21,11 +21,15 @@ import edu.snu.mist.api.WindowedStreamImpl;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTSupplier;
+import edu.snu.mist.api.operators.AggregateWindowOperatorStream;
 import edu.snu.mist.api.operators.ApplyStatefulOperatorStream;
 import edu.snu.mist.api.window.TimeSizePolicy;
 import edu.snu.mist.api.window.TimeEmitPolicy;
+import edu.snu.mist.api.window.WindowData;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.task.common.MistDataEvent;
+import edu.snu.mist.task.windows.WindowImpl;
 import org.apache.commons.lang.SerializationUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -50,13 +54,13 @@ public class OperatorSerializeTest {
   @Test
   public void applyStatefulStreamSerializationTest() {
     final MISTBiFunction<String, Integer, Integer> expectedUpdateStateFunc =
-            (input, state) -> {
-              if (Integer.parseInt(input) > state) {
-                return Integer.parseInt(input);
-              } else {
-                return state;
-              }
-            };
+        (input, state) -> {
+          if (Integer.parseInt(input) > state) {
+            return Integer.parseInt(input);
+          } else {
+            return state;
+          }
+        };
     final MISTFunction<Integer, String> expectedProduceResultFunc = state -> state.toString();
     final MISTSupplier<Integer> expectedInitializeStateSup = () -> Integer.MIN_VALUE;
 
@@ -90,7 +94,7 @@ public class OperatorSerializeTest {
   }
 
   /**
-   * this method tests a serialization of TimeWindowOperator.
+   * This method tests a serialization of TimeWindowOperator.
    */
   @Test
   public void windowStreamSerializationTest() {
@@ -106,5 +110,34 @@ public class OperatorSerializeTest {
     Assert.assertEquals(EmitPolicyTypeEnum.TIME, windowOperatorInfo.getEmitPolicyType());
     Assert.assertEquals(5000, windowOperatorInfo.getSizePolicyInfo());
     Assert.assertEquals(1000, windowOperatorInfo.getEmitPolicyInfo());
+  }
+
+  /**
+   * This method tests the serialization of AggregateWindowOperator.
+   */
+  @Test
+  public void aggregateWindowStreamSerializationTest() {
+    final MISTFunction<WindowData<Integer>, String> expectedAggregateFunc =
+        (windowData) -> {
+          return windowData.getDataCollection().toString() + windowData.getStart() + windowData.getEnd();
+        };
+    final AggregateWindowOperatorStream<Integer, String> aggregateStream = new AggregateWindowOperatorStream<>(
+        expectedAggregateFunc, mockDag);
+    final Vertex serializedVertex = aggregateStream.getSerializedVertex();
+
+    // Test whether the vertex is created properly or not.
+    Assert.assertEquals(serializedVertex.getVertexType(), VertexTypeEnum.INSTANT_OPERATOR);
+    final InstantOperatorInfo statefulOpInfo = (InstantOperatorInfo) serializedVertex.getAttributes();
+    final List<ByteBuffer> statefulOpFunctions = statefulOpInfo.getFunctions();
+
+    final byte[] serializedAggregateFunc = new byte[statefulOpFunctions.get(0).remaining()];
+    statefulOpFunctions.get(0).get(serializedAggregateFunc);
+    final Function deserializedAggregateFunc =
+        (Function) SerializationUtils.deserialize(serializedAggregateFunc);
+
+    final WindowImpl<Integer> windowData = new WindowImpl<>(100, 200);
+    windowData.putData(new MistDataEvent(10));
+    windowData.putData(new MistDataEvent(20));
+    Assert.assertEquals(expectedAggregateFunc.apply(windowData), deserializedAggregateFunc.apply(windowData));
   }
 }

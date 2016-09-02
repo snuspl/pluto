@@ -17,9 +17,7 @@ package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
-import edu.snu.mist.api.functions.MISTSupplier;
 import edu.snu.mist.api.window.WindowData;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.InstantOperatorInfo;
@@ -32,55 +30,29 @@ import java.util.List;
 
 /**
  * This class implements the necessary methods for getting information
- * about user-defined aggregation operators on windowed stream.
- * This is different to ApplyStatefulOperatorStream in that it receives a WindowData, and
- * it maintains no internal state inside but just apply the stateful functions to the collected data from the window.
+ * about AggregateWindowOperator which applies user-defined operation on windowed stream.
+ * This is different to ApplyStatefulWindowOperatorStream in that it can treat the whole collection, and
+ * also it can use the start and end information of WindowData.
  */
-public final class AggregateWindowOperatorStream<IN, OUT, S>
+public final class AggregateWindowOperatorStream<IN, OUT>
     extends InstantOperatorStream<WindowData<IN>, OUT> {
 
   /**
-   * BiFunction used for updating the temporal state.
+   * Function represents the user-defined operation for WindowData.
    */
-  private final MISTBiFunction<IN, S, S> updateStateFunc;
-  /**
-   * Function used for producing the result stream from temporal state.
-   */
-  private final MISTFunction<S, OUT> produceResultFunc;
-  /**
-   * Supplier used for initializing state.
-   */
-  private final MISTSupplier<S> initializeStateSup;
+  private final MISTFunction<WindowData<IN>, OUT> aggregateFunc;
 
-  public AggregateWindowOperatorStream(final MISTBiFunction<IN, S, S> updateStateFunc,
-                                       final MISTFunction<S, OUT> produceResultFunc,
-                                       final MISTSupplier<S> initializeStateSup,
+  public AggregateWindowOperatorStream(final MISTFunction<WindowData<IN>, OUT> aggregateFunc,
                                        final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
     super(StreamType.OperatorType.AGGREGATE_WINDOW, dag);
-    this.updateStateFunc = updateStateFunc;
-    this.produceResultFunc = produceResultFunc;
-    this.initializeStateSup = initializeStateSup;
+    this.aggregateFunc = aggregateFunc;
   }
 
   /**
-   * @return the Function with two arguments used for updating its internal state
+   * @return the user-defined Function used for processing input WindowData.
    */
-  public MISTBiFunction<IN, S, S> getUpdateStateFunc() {
-    return updateStateFunc;
-  }
-
-  /**
-   * @return the Function with one argument used for producing results
-   */
-  public MISTFunction<S, OUT> getProduceResultFunc() {
-    return produceResultFunc;
-  }
-
-  /**
-   * @return the supplier generating the state of operation.
-   */
-  public MISTSupplier<S> getInitializeStateSup() {
-    return initializeStateSup;
+  public MISTFunction<WindowData<IN>, OUT> getAggregateFunc() {
+    return aggregateFunc;
   }
 
   @Override
@@ -88,9 +60,7 @@ public final class AggregateWindowOperatorStream<IN, OUT, S>
     final InstantOperatorInfo.Builder iOpInfoBuilder = InstantOperatorInfo.newBuilder();
     iOpInfoBuilder.setInstantOperatorType(InstantOperatorTypeEnum.AGGREGATE_WINDOW);
     final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
-    serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(updateStateFunc)));
-    serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(produceResultFunc)));
-    serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(initializeStateSup)));
+    serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(aggregateFunc)));
     iOpInfoBuilder.setFunctions(serializedFunctionList);
     iOpInfoBuilder.setKeyIndex(null);
     return iOpInfoBuilder.build();
