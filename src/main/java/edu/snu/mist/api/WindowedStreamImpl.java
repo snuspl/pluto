@@ -19,6 +19,7 @@ import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTSupplier;
 import edu.snu.mist.api.operators.AggregateWindowOperatorStream;
+import edu.snu.mist.api.operators.ApplyStatefulWindowOperatorStream;
 import edu.snu.mist.api.operators.ReduceByKeyWindowOperatorStream;
 import edu.snu.mist.api.window.*;
 import edu.snu.mist.common.DAG;
@@ -69,11 +70,21 @@ public final class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>> i
   }
 
   @Override
-  public <R, S> AggregateWindowOperatorStream<T, R, S> aggregateWindow(final MISTBiFunction<T, S, S> updateStateFunc,
-                                                                       final MISTFunction<S, R> produceResultFunc,
-                                                                       final MISTSupplier<S> initializeStateSup) {
-    final AggregateWindowOperatorStream<T, R, S> downStream =
-        new AggregateWindowOperatorStream<>(updateStateFunc, produceResultFunc, initializeStateSup, dag);
+  public <R> AggregateWindowOperatorStream<T, R> aggregateWindow(final MISTFunction<WindowData<T>, R> aggregateFunc) {
+    final AggregateWindowOperatorStream<T, R> downStream =
+        new AggregateWindowOperatorStream<>(aggregateFunc, dag);
+    dag.addVertex(downStream);
+    dag.addEdge(this, downStream, StreamType.Direction.LEFT);
+    return downStream;
+  }
+
+  @Override
+  public <R, S> ApplyStatefulWindowOperatorStream<T, R, S> applyStatefulWindow(
+      final MISTBiFunction<T, S, S> updateStateFunc,
+      final MISTFunction<S, R> produceResultFunc,
+      final MISTSupplier<S> initializeStateSup) {
+    final ApplyStatefulWindowOperatorStream<T, R, S> downStream =
+        new ApplyStatefulWindowOperatorStream<>(updateStateFunc, produceResultFunc, initializeStateSup, dag);
     dag.addVertex(downStream);
     dag.addEdge(this, downStream, StreamType.Direction.LEFT);
     return downStream;

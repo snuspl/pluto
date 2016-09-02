@@ -21,54 +21,34 @@ import edu.snu.mist.api.window.WindowData;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 /**
- * This operator aggregates the collection received from window operator.
+ * This operator apply user-defined operation to the WindowData received from window operator.
+ * It can use the start and end information of WindowData also.
  * @param <IN> the type of input data
  * @param <OUT> the type of output data
- * @param <S> the type of temporal state
  */
-public final class AggregateWindowOperator<IN, OUT, S>
+public final class AggregateWindowOperator<IN, OUT>
     extends OneStreamOperator {
   private static final Logger LOG = Logger.getLogger(AggregateWindowOperator.class.getName());
 
   /**
-   * The function that updates the temporal state.
+   * The function that processes the input WindowData.
    */
-  private final BiFunction<IN, S, S> updateStateFunc;
-
-  /**
-   * The function that produces an output from the temporal state.
-   */
-  private final Function<S, OUT> produceResultFunc;
-
-  /**
-   * The supplier that initializes the state of operation.
-   */
-  private final Supplier<S> initializeStateSup;
+  private final Function<WindowData<IN>, OUT> aggregateFunc;
 
   /**
    * @param queryId identifier of the query which contains this operator
    * @param operatorId identifier of operator
-   * @param updateStateFunc the function that updates the temporal state.
-   * @param produceResultFunc the function that produces an output from the temporal state.
-   * @param initializeStateSup the supplier that generates the initial state.
+   * @param aggregateFunc the function that processes the input WindowData
    */
   public AggregateWindowOperator(final String queryId,
                                  final String operatorId,
-                                 final BiFunction<IN, S, S> updateStateFunc,
-                                 final Function<S, OUT> produceResultFunc,
-                                 final Supplier<S> initializeStateSup) {
+                                 final Function<WindowData<IN>, OUT> aggregateFunc) {
     super(queryId, operatorId);
-    this.updateStateFunc = updateStateFunc;
-    this.produceResultFunc = produceResultFunc;
-    this.initializeStateSup = initializeStateSup;
+    this.aggregateFunc = aggregateFunc;
   }
 
   @Override
@@ -78,19 +58,8 @@ public final class AggregateWindowOperator<IN, OUT, S>
 
   @Override
   public void processLeftData(final MistDataEvent input) {
-    /**
-     * The temporal state which is used for a single input collection.
-     */
-    S state = initializeStateSup.get();
     if (input.getValue() instanceof WindowData) {
-      final Collection<IN> value = ((WindowData<IN>) input.getValue()).getDataCollection();
-      final Iterator<IN> iterator = value.iterator();
-
-      while (iterator.hasNext()) {
-        final IN data = iterator.next();
-        state = updateStateFunc.apply(data, state);
-      }
-      input.setValue(produceResultFunc.apply(state));
+      input.setValue(aggregateFunc.apply((WindowData<IN>) input.getValue()));
       outputEmitter.emitData(input);
     } else {
       throw new TypeMismatchException(

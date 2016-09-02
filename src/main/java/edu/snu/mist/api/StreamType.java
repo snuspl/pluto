@@ -53,7 +53,7 @@ public final class StreamType {
    * The type of operator stream.
    */
   public static enum OperatorType {FILTER, FLAT_MAP, MAP, REDUCE_BY_KEY, REDUCE_BY_KEY_WINDOW,
-    APPLY_STATEFUL, UNION, AGGREGATE_WINDOW, WINDOW}
+    APPLY_STATEFUL, APPLY_STATEFUL_WINDOW, UNION, AGGREGATE_WINDOW, WINDOW}
 
   /**
    * The type of stream direction. Union operator should get two streams: LEFT/RIGHT.

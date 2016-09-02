@@ -183,7 +183,7 @@ public final class MISTQueryTest {
         .window(expectedWindowSizePolicy, expectedWindowEmitPolicy)
         .reduceByKeyWindow(0, String.class, expectedReduceFunc)
         .window(expectedWindowSizePolicy, expectedWindowEmitPolicy)
-        .aggregateWindow(expectedUpdateStateFunc, expectedProduceResultFunc, expectedInitializeStateSup)
+        .applyStatefulWindow(expectedUpdateStateFunc, expectedProduceResultFunc, expectedInitializeStateSup)
         .textSocketOutput(textSocketSinkConf);
     final MISTQuery complexQuery = queryBuilder.build();
     final Tuple<List<AvroVertexChain>, List<Edge>> serializedDAG = complexQuery.getSerializedDAG();

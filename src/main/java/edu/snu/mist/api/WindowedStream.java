@@ -19,6 +19,7 @@ import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTSupplier;
 import edu.snu.mist.api.operators.AggregateWindowOperatorStream;
+import edu.snu.mist.api.operators.ApplyStatefulWindowOperatorStream;
 import edu.snu.mist.api.operators.ReduceByKeyWindowOperatorStream;
 import edu.snu.mist.api.window.WindowData;
 import edu.snu.mist.api.window.WindowEmitPolicy;
@@ -41,7 +42,7 @@ public interface WindowedStream<T> extends MISTStream<WindowData<T>> {
   WindowEmitPolicy getWindowEmitPolicy();
 
   /**
-   * It reduces the windowed stream by a user-designated key.
+   * It reduces the windowed stream by an user-designated key.
    * @param <K> the type of key in resulting stream
    * @param <V> the type of value in resulting stream
    * @return new reduced continuous stream after applying the operation
@@ -50,7 +51,16 @@ public interface WindowedStream<T> extends MISTStream<WindowData<T>> {
       int keyFieldNum, Class<K> keyType, MISTBiFunction<V, V, V> reduceFunc);
 
   /**
-   * It aggregates the windowed stream by a user-defined aggregation function.
+   * It aggregates the windowed stream by an user-defined aggregation function.
+   * @param aggregateFunc the function that aggregates input WindowData
+   * @param <R> the type of result
+   * @return new aggregated continuous stream after applying the aggregation function
+   */
+  <R> AggregateWindowOperatorStream<T, R> aggregateWindow(
+      MISTFunction<WindowData<T>, R> aggregateFunc);
+
+  /**
+   * It applies an user-defined stateful operation to the collection of data received from upstream window operator.
    * @param updateStateFunc the function that updates temporal state in operator
    * @param produceResultFunc the function that produces result from temporal state
    * @param initializeStateSup the supplier that generates state of operation
@@ -58,7 +68,7 @@ public interface WindowedStream<T> extends MISTStream<WindowData<T>> {
    * @param <S> the type of state
    * @return new aggregated continuous stream after applying the aggregation function
    */
-  <R, S> AggregateWindowOperatorStream<T, R, S> aggregateWindow(
+  <R, S> ApplyStatefulWindowOperatorStream<T, R, S> applyStatefulWindow(
       MISTBiFunction<T, S, S> updateStateFunc, MISTFunction<S, R> produceResultFunc,
       MISTSupplier<S> initializeStateSup);
 }

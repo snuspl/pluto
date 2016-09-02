@@ -20,11 +20,14 @@ import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.api.window.TimeEmitPolicy;
 import edu.snu.mist.api.window.TimeSizePolicy;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.task.common.MistDataEvent;
+import edu.snu.mist.task.windows.WindowImpl;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -91,30 +94,64 @@ public class WindowedStreamTest {
   }
 
   /**
-   * Test for aggregateWindow operation.
+   * Test for applyStatefulWindow operation.
    */
   @Test
-  public void testAggregateWindowStream() {
-    final AggregateWindowOperatorStream<Tuple2<String, Integer>, Integer, Integer> aggregatedWindowStream
-        = windowedStream.aggregateWindow(
+  public void testApplyStatefulWindowStream() {
+    final ApplyStatefulWindowOperatorStream<Tuple2<String, Integer>, Integer, Integer> applyStatefulWindowStream
+        = windowedStream.applyStatefulWindow(
             (input, state) -> {
               return ((Integer) input.get(1)) + state;
             }, state -> state, () -> 0);
-    Assert.assertEquals(aggregatedWindowStream.getBasicType(), StreamType.BasicType.CONTINUOUS);
-    Assert.assertEquals(aggregatedWindowStream.getContinuousType(), StreamType.ContinuousType.OPERATOR);
-    Assert.assertEquals(aggregatedWindowStream.getOperatorType(), StreamType.OperatorType.AGGREGATE_WINDOW);
-    Assert.assertEquals(aggregatedWindowStream.getUpdateStateFunc().apply(new Tuple2<>("Hello", 1), 2), (Integer)3);
-    Assert.assertNotEquals(aggregatedWindowStream.getUpdateStateFunc().apply(new Tuple2<>("Hello", 1), 3), (Integer)3);
-    Assert.assertEquals(aggregatedWindowStream.getProduceResultFunc().apply(10), (Integer)10);
-    Assert.assertNotEquals(aggregatedWindowStream.getProduceResultFunc().apply(10), (Integer)11);
-    Assert.assertEquals(aggregatedWindowStream.getInitializeStateSup().get(), (Integer)0);
-    Assert.assertNotEquals(aggregatedWindowStream.getInitializeStateSup().get(), (Integer)1);
+    Assert.assertEquals(applyStatefulWindowStream.getBasicType(), StreamType.BasicType.CONTINUOUS);
+    Assert.assertEquals(applyStatefulWindowStream.getContinuousType(), StreamType.ContinuousType.OPERATOR);
+    Assert.assertEquals(applyStatefulWindowStream.getOperatorType(), StreamType.OperatorType.APPLY_STATEFUL_WINDOW);
+    Assert.assertEquals(applyStatefulWindowStream.getUpdateStateFunc().apply(new Tuple2<>("Hello", 1), 2), (Integer)3);
+    Assert.assertNotEquals(
+        applyStatefulWindowStream.getUpdateStateFunc().apply(new Tuple2<>("Hello", 1), 3), (Integer)3);
+    Assert.assertEquals(applyStatefulWindowStream.getProduceResultFunc().apply(10), (Integer)10);
+    Assert.assertNotEquals(applyStatefulWindowStream.getProduceResultFunc().apply(10), (Integer)11);
+    Assert.assertEquals(applyStatefulWindowStream.getInitializeStateSup().get(), (Integer)0);
+    Assert.assertNotEquals(applyStatefulWindowStream.getInitializeStateSup().get(), (Integer)1);
 
     // Check windowed -> aggregated
     final MISTQuery query = queryBuilder.build();
     final DAG<AvroVertexSerializable, StreamType.Direction> dag = query.getDAG();
     final Map<AvroVertexSerializable, StreamType.Direction> neighbors = dag.getEdges(windowedStream);
     Assert.assertEquals(1, neighbors.size());
-    Assert.assertEquals(StreamType.Direction.LEFT, neighbors.get(aggregatedWindowStream));
+    Assert.assertEquals(StreamType.Direction.LEFT, neighbors.get(applyStatefulWindowStream));
+  }
+
+  /**
+   * Test for aggregateWindow operation.
+   */
+  @Test
+  public void testAggregateWindowStream() {
+    final AggregateWindowOperatorStream<Tuple2<String, Integer>, String> aggregateWindowStream
+        = windowedStream.aggregateWindow(
+            (windowData) -> {
+              String result = "";
+              final Iterator<Tuple2<String, Integer>> itr = windowData.getDataCollection().iterator();
+              while(itr.hasNext()) {
+                final Tuple2<String, Integer> tuple = itr.next();
+                result = result.concat("{" + tuple.get(0) + ", " + tuple.get(1).toString() + "}, ");
+              }
+              return result + windowData.getStart() + ", " + windowData.getEnd();
+            });
+    final WindowImpl<Tuple2<String, Integer>> windowData = new WindowImpl<>(100, 200);
+    windowData.putData(new MistDataEvent(new Tuple2<>("Hello", 2)));
+    windowData.putData(new MistDataEvent(new Tuple2<>("MIST", 3)));
+    Assert.assertEquals(aggregateWindowStream.getBasicType(), StreamType.BasicType.CONTINUOUS);
+    Assert.assertEquals(aggregateWindowStream.getContinuousType(), StreamType.ContinuousType.OPERATOR);
+    Assert.assertEquals(aggregateWindowStream.getOperatorType(), StreamType.OperatorType.AGGREGATE_WINDOW);
+    Assert.assertEquals(
+        aggregateWindowStream.getAggregateFunc().apply(windowData), "{Hello, 2}, {MIST, 3}, 100, 300");
+
+    // Check windowed -> aggregated
+    final MISTQuery query = queryBuilder.build();
+    final DAG<AvroVertexSerializable, StreamType.Direction> dag = query.getDAG();
+    final Map<AvroVertexSerializable, StreamType.Direction> neighbors = dag.getEdges(windowedStream);
+    Assert.assertEquals(1, neighbors.size());
+    Assert.assertEquals(StreamType.Direction.LEFT, neighbors.get(aggregateWindowStream));
   }
 }

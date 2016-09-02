@@ -218,12 +218,16 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       case REDUCE_BY_KEY_WINDOW: {
         throw new IllegalArgumentException("MISTTask: ReduceByKeyWindowOperator is currently not supported!");
       }
-      case AGGREGATE_WINDOW: {
+      case APPLY_STATEFUL_WINDOW: {
         final BiFunction updateStateFunc = (BiFunction) deserializeLambda(functionList.get(0), classLoader);
         final Function produceResultFunc = (Function) deserializeLambda(functionList.get(1), classLoader);
         final Supplier initializeStateSup = (Supplier) deserializeLambda(functionList.get(2), classLoader);
-        return new AggregateWindowOperator<>(
+        return new ApplyStatefulWindowOperator<>(
             queryId, operatorId, updateStateFunc, produceResultFunc, initializeStateSup);
+      }
+      case AGGREGATE_WINDOW: {
+        final Function aggregateFunc = (Function) deserializeLambda(functionList.get(0), classLoader);
+        return new AggregateWindowOperator<>(queryId, operatorId, aggregateFunc);
       }
       case UNION: {
         return new UnionOperator(queryId, operatorId);

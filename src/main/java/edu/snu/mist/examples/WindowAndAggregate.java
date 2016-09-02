@@ -19,15 +19,10 @@ package edu.snu.mist.examples;
 import edu.snu.mist.api.APIQueryControlResult;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
-import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
-import edu.snu.mist.api.functions.MISTSupplier;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
 import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
-import edu.snu.mist.api.window.TimeSizePolicy;
-import edu.snu.mist.api.window.TimeEmitPolicy;
-import edu.snu.mist.api.window.WindowSizePolicy;
-import edu.snu.mist.api.window.WindowEmitPolicy;
+import edu.snu.mist.api.window.*;
 import edu.snu.mist.examples.parameters.SourceAddress;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -45,7 +40,8 @@ public final class WindowAndAggregate {
   /**
    * Submit a windowing and aggregating query.
    * The query reads strings from a source server, puts them into window,
-   * and concatenates all inputs in the window into a single string with "/" separator.
+   * concatenates all inputs in the window into a single string using toString function, and
+   * print out the start and end time of the window.
    * @return result of the submission
    * @throws IOException
    * @throws InjectionException
@@ -60,15 +56,16 @@ public final class WindowAndAggregate {
     // configurations for windowing and aggregation
     final WindowSizePolicy sizePolicy = new TimeSizePolicy(5000);
     final WindowEmitPolicy emitPolicy = new TimeEmitPolicy(2500);
-    final MISTBiFunction<String, String, String> updateStateFunc =
-        (input, state) -> state = state.concat("/").concat(input);
-    final MISTFunction<String, String> produceResultFunc = (state) -> state;
-    final MISTSupplier<String> initializeStateSup = () -> "";
+    final MISTFunction<WindowData<String>, String> aggregateFunc =
+        (windowData) -> {
+          return windowData.getDataCollection().toString() + ", window is started at " +
+              windowData.getStart() + ", window is ended at " + windowData.getEnd() + ".";
+        };
 
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     queryBuilder.socketTextStream(localTextSocketSourceConf)
         .window(sizePolicy, emitPolicy)
-        .aggregateWindow(updateStateFunc, produceResultFunc, initializeStateSup)
+        .aggregateWindow(aggregateFunc)
         .textSocketOutput(localTextSocketSinkConf);
     final MISTQuery query = queryBuilder.build();
 
