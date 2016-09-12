@@ -42,7 +42,7 @@ public final class WindowImpl<T> implements Window<T> {
     latestWatermark = null;
     dataCollection = new LinkedList<>();
     this.start = start;
-    this.end = start + size;
+    this.end = start + size - 1;
   }
 
   @Override

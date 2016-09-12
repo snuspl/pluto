@@ -17,8 +17,6 @@ package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.*;
 import edu.snu.mist.api.types.Tuple2;
-import edu.snu.mist.api.window.TimeEmitPolicy;
-import edu.snu.mist.api.window.TimeSizePolicy;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.windows.WindowImpl;
@@ -37,16 +35,24 @@ public class WindowedStreamTest {
 
   private MISTQueryBuilder queryBuilder;
   private MapOperatorStream<String, Tuple2<String, Integer>> mappedStream;
-  private WindowedStream<Tuple2<String, Integer>> windowedStream;
+  private TimeWindowOperatorStream<Tuple2<String, Integer>> timeWindowedStream;
+  private CountWindowOperatorStream<Tuple2<String, Integer>> countWindowedStream;
+  private int windowSize;
+  private int windowEmissionInterval;
 
   @Before
   public void setUp() {
     queryBuilder = new MISTQueryBuilder();
+    windowSize = 5000;
+    windowEmissionInterval = 1000;
     mappedStream = queryBuilder.socketTextStream(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
         .map(s -> new Tuple2<>(s, 1));
-    windowedStream = mappedStream
+    timeWindowedStream = mappedStream
         /* Creates a test windowed stream with 5 sec size and emits windowed stream every 1 sec */
-        .window(new TimeSizePolicy(5000), new TimeEmitPolicy(1000));
+        .timeWindow(windowSize, windowEmissionInterval);
+    countWindowedStream = mappedStream
+        /* Creates a test windowed stream containing 5000 inputs and emits windowed stream every 1000 inputs */
+        .countWindow(windowSize, windowEmissionInterval);
   }
 
   @After
@@ -55,20 +61,37 @@ public class WindowedStreamTest {
   }
 
   /**
-   * Test for creating WindowedStream from ContinuousStream.
+   * Test for creating time-based WindowedStream from ContinuousStream.
    */
   @Test
-  public void testWindowedStream() {
-    Assert.assertEquals(windowedStream.getBasicType(), StreamType.BasicType.WINDOWED);
-    Assert.assertEquals(windowedStream.getWindowSizePolicy(), new TimeSizePolicy(5000));
-    Assert.assertEquals(windowedStream.getWindowEmitPolicy(), new TimeEmitPolicy(1000));
+  public void testTimeWindowedStream() {
+    Assert.assertEquals(timeWindowedStream.getBasicType(), StreamType.BasicType.WINDOWED);
+    Assert.assertEquals(timeWindowedStream.getWindowSize(), windowSize);
+    Assert.assertEquals(timeWindowedStream.getWindowEmissionInterval(), windowEmissionInterval);
 
-    // Check map -> window
+    // Check map -> timeWindow
     final MISTQuery query = queryBuilder.build();
     final DAG<AvroVertexSerializable, StreamType.Direction> dag = query.getDAG();
     final Map<AvroVertexSerializable, StreamType.Direction> neighbors = dag.getEdges(mappedStream);
-    Assert.assertEquals(1, neighbors.size());
-    Assert.assertEquals(StreamType.Direction.LEFT, neighbors.get(windowedStream));
+    Assert.assertEquals(2, neighbors.size());
+    Assert.assertEquals(StreamType.Direction.LEFT, neighbors.get(timeWindowedStream));
+  }
+
+  /**
+   * Test for creating count-based WindowedStream from ContinuousStream.
+   */
+  @Test
+  public void testCountWindowedStream() {
+    Assert.assertEquals(countWindowedStream.getBasicType(), StreamType.BasicType.WINDOWED);
+    Assert.assertEquals(countWindowedStream.getWindowSize(), windowSize);
+    Assert.assertEquals(countWindowedStream.getWindowEmissionInterval(), windowEmissionInterval);
+
+    // Check map -> timeWindow
+    final MISTQuery query = queryBuilder.build();
+    final DAG<AvroVertexSerializable, StreamType.Direction> dag = query.getDAG();
+    final Map<AvroVertexSerializable, StreamType.Direction> neighbors = dag.getEdges(mappedStream);
+    Assert.assertEquals(2, neighbors.size());
+    Assert.assertEquals(StreamType.Direction.LEFT, neighbors.get(timeWindowedStream));
   }
 
   /**
@@ -77,7 +100,7 @@ public class WindowedStreamTest {
   @Test
   public void testReduceByKeyWindowStream() {
     final ReduceByKeyWindowOperatorStream<Tuple2<String, Integer>, String, Integer> reducedWindowStream
-        = windowedStream.reduceByKeyWindow(0, String.class, (x, y) -> x + y);
+        = timeWindowedStream.reduceByKeyWindow(0, String.class, (x, y) -> x + y);
     Assert.assertEquals(reducedWindowStream.getBasicType(), StreamType.BasicType.CONTINUOUS);
     Assert.assertEquals(reducedWindowStream.getContinuousType(), StreamType.ContinuousType.OPERATOR);
     Assert.assertEquals(reducedWindowStream.getOperatorType(), StreamType.OperatorType.REDUCE_BY_KEY_WINDOW);
@@ -88,7 +111,7 @@ public class WindowedStreamTest {
     // Check windowed -> reduce by key
     final MISTQuery query = queryBuilder.build();
     final DAG<AvroVertexSerializable, StreamType.Direction> dag = query.getDAG();
-    final Map<AvroVertexSerializable, StreamType.Direction> neighbors = dag.getEdges(windowedStream);
+    final Map<AvroVertexSerializable, StreamType.Direction> neighbors = dag.getEdges(timeWindowedStream);
     Assert.assertEquals(1, neighbors.size());
     Assert.assertEquals(StreamType.Direction.LEFT, neighbors.get(reducedWindowStream));
   }
@@ -99,7 +122,7 @@ public class WindowedStreamTest {
   @Test
   public void testApplyStatefulWindowStream() {
     final ApplyStatefulWindowOperatorStream<Tuple2<String, Integer>, Integer, Integer> applyStatefulWindowStream
-        = windowedStream.applyStatefulWindow(
+        = timeWindowedStream.applyStatefulWindow(
             (input, state) -> {
               return ((Integer) input.get(1)) + state;
             }, state -> state, () -> 0);
@@ -117,7 +140,7 @@ public class WindowedStreamTest {
     // Check windowed -> aggregated
     final MISTQuery query = queryBuilder.build();
     final DAG<AvroVertexSerializable, StreamType.Direction> dag = query.getDAG();
-    final Map<AvroVertexSerializable, StreamType.Direction> neighbors = dag.getEdges(windowedStream);
+    final Map<AvroVertexSerializable, StreamType.Direction> neighbors = dag.getEdges(timeWindowedStream);
     Assert.assertEquals(1, neighbors.size());
     Assert.assertEquals(StreamType.Direction.LEFT, neighbors.get(applyStatefulWindowStream));
   }
@@ -128,7 +151,7 @@ public class WindowedStreamTest {
   @Test
   public void testAggregateWindowStream() {
     final AggregateWindowOperatorStream<Tuple2<String, Integer>, String> aggregateWindowStream
-        = windowedStream.aggregateWindow(
+        = timeWindowedStream.aggregateWindow(
             (windowData) -> {
               String result = "";
               final Iterator<Tuple2<String, Integer>> itr = windowData.getDataCollection().iterator();
@@ -145,12 +168,12 @@ public class WindowedStreamTest {
     Assert.assertEquals(aggregateWindowStream.getContinuousType(), StreamType.ContinuousType.OPERATOR);
     Assert.assertEquals(aggregateWindowStream.getOperatorType(), StreamType.OperatorType.AGGREGATE_WINDOW);
     Assert.assertEquals(
-        aggregateWindowStream.getAggregateFunc().apply(windowData), "{Hello, 2}, {MIST, 3}, 100, 300");
+        aggregateWindowStream.getAggregateFunc().apply(windowData), "{Hello, 2}, {MIST, 3}, 100, 299");
 
     // Check windowed -> aggregated
     final MISTQuery query = queryBuilder.build();
     final DAG<AvroVertexSerializable, StreamType.Direction> dag = query.getDAG();
-    final Map<AvroVertexSerializable, StreamType.Direction> neighbors = dag.getEdges(windowedStream);
+    final Map<AvroVertexSerializable, StreamType.Direction> neighbors = dag.getEdges(timeWindowedStream);
     Assert.assertEquals(1, neighbors.size());
     Assert.assertEquals(StreamType.Direction.LEFT, neighbors.get(aggregateWindowStream));
   }

@@ -21,9 +21,6 @@ import edu.snu.mist.api.functions.MISTSupplier;
 import edu.snu.mist.api.operators.AggregateWindowOperatorStream;
 import edu.snu.mist.api.operators.ApplyStatefulWindowOperatorStream;
 import edu.snu.mist.api.operators.ReduceByKeyWindowOperatorStream;
-import edu.snu.mist.api.window.WindowData;
-import edu.snu.mist.api.window.WindowEmitPolicy;
-import edu.snu.mist.api.window.WindowSizePolicy;
 
 /**
  * Windowed stream interface created by window methods.
@@ -31,15 +28,6 @@ import edu.snu.mist.api.window.WindowSizePolicy;
  * It should be distinguished from ContinuousStream.
  */
 public interface WindowedStream<T> extends MISTStream<WindowData<T>> {
-  /**
-   * @return The policy which determines the size of window inside
-   */
-  WindowSizePolicy getWindowSizePolicy();
-
-  /**
-   * @return The policy which determines when to emit window stream
-   */
-  WindowEmitPolicy getWindowEmitPolicy();
 
   /**
    * It reduces the windowed stream by an user-designated key.

@@ -26,14 +26,14 @@ import edu.snu.mist.formats.avro.VertexTypeEnum;
 /**
  * A ContinuousStream created by operation on any kind of MISTStream.
  */
-public abstract class InstantOperatorStream<IN, OUT> extends ContinuousStreamImpl<OUT> {
+abstract class InstantOperatorStream<IN, OUT> extends ContinuousStreamImpl<OUT> {
   /**
    * The type of this operator (e.g. filterOperator, mapOperator, ...)
    */
   private final StreamType.OperatorType operatorType;
 
-  public InstantOperatorStream(final StreamType.OperatorType operatorType,
-                               final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
+  protected InstantOperatorStream(final StreamType.OperatorType operatorType,
+                                  final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
     super(StreamType.ContinuousType.OPERATOR, dag);
     this.operatorType = operatorType;
   }

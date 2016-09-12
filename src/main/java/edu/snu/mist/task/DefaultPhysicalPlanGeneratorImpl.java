@@ -245,21 +245,18 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       throws IllegalArgumentException {
     final String operatorId = operatorIdGenerator.generate();
     final Operator operator;
-    switch (wOpInfo.getSizePolicyType()) {
+    switch (wOpInfo.getWindowOperatorType()) {
       case TIME:
-        switch (wOpInfo.getEmitPolicyType()) {
-          case TIME:
-            operator = new TimeWindowOperator<>(queryId, operatorId, (int)wOpInfo.getSizePolicyInfo(),
-                (int)wOpInfo.getEmitPolicyInfo());
-            break;
-          default:
-            throw new IllegalArgumentException("MISTTask: Invalid window operator emit policy type " +
-                wOpInfo.getSizePolicyType().toString());
-        }
+        operator = new TimeWindowOperator<>(
+            queryId, operatorId, wOpInfo.getWindowSize(), wOpInfo.getWindowEmissionInterval());
+        break;
+      case COUNT:
+        operator = new CountWindowOperator<>(
+                queryId, operatorId, wOpInfo.getWindowSize(), wOpInfo.getWindowEmissionInterval());
         break;
       default:
-        throw new IllegalArgumentException("MISTTask: Invalid window operator size policy type " +
-              wOpInfo.getSizePolicyType().toString());
+        throw new IllegalArgumentException("MISTTask: Invalid window operator type " +
+              wOpInfo.getWindowOperatorType().toString());
     }
     return operator;
   }

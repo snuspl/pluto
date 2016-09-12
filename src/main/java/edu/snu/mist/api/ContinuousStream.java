@@ -23,8 +23,6 @@ import edu.snu.mist.api.functions.MISTSupplier;
 import edu.snu.mist.api.operators.*;
 import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
-import edu.snu.mist.api.window.WindowEmitPolicy;
-import edu.snu.mist.api.window.WindowSizePolicy;
 
 import java.util.List;
 
@@ -96,15 +94,23 @@ public interface ContinuousStream<T> extends MISTStream<T> {
   UnionOperatorStream<T> union(final ContinuousStream<T> inputStream) throws StreamTypeMismatchException;
 
   /**
-   * It creates a new WindowsStream according to the policy defined in windowSizePolicy and windowEmitPolicy.
-   * @param windowSizePolicy The option which decides the size of the window
-   * @param windowEmitPolicy The option which decides when to emit windowed stream
-   * @return new windowed stream after applying the window operation
+   * Creates a new time-based WindowsStream according to the size and emission interval of window.
+   * @param windowSize The option decides the size of the window expressed in milliseconds
+   * @param windowEmissionInterval The option decides when to emit windowed stream expressed in milliseconds
+   * @return new windowed stream after applying the time-based windowing operation
    */
-  WindowedStream<T> window(WindowSizePolicy windowSizePolicy, WindowEmitPolicy windowEmitPolicy);
+  TimeWindowOperatorStream<T> timeWindow(int windowSize, int windowEmissionInterval);
 
   /**
-   * It defines a text socket output Sink for the current stream according to the TextSocketSinkConfiguration.
+   * Creates a new count-based WindowsStream according to the size and emission interval of window.
+   * @param windowSize The option decides the size of the window expressed in the number of inputs
+   * @param windowEmissionInterval The option decides when to emit windowed stream expressed in the number of inputs
+   * @return new windowed stream after applying the count-based windowing operation
+   */
+  CountWindowOperatorStream<T> countWindow(int windowSize, int windowEmissionInterval);
+
+  /**
+   * Defines a text socket output Sink for the current stream according to the TextSocketSinkConfiguration.
    * @param sinkConfiguration The configuration for sink
    * @return new sink for the current stream
    */

@@ -166,42 +166,24 @@
                         "fields":
                         [
                           {
-                            "name": "SizePolicyType",
+                            "name": "WindowOperatorType",
                             "type":
                             {
-                              "name": "SizePolicyTypeEnum",
+                              "name": "WindowOperatorTypeEnum",
                               "type": "enum",
-                              "symbols": ["TIME"]
+                                "symbols":
+                                [
+                                  "TIME", "COUNT", "SESSION"
+                                ]
                             }
                           },
                           {
-                            "name": "SizePolicyInfo",
-                            "type":
-                            [
-                              {
-                                "name": "TimeDuration",
-                                "type": "int"
-                              }
-                            ]
+                            "name": "WindowSize",
+                            "type": "int"
                           },
                           {
-                            "name": "EmitPolicyType",
-                            "type":
-                            {
-                              "name": "EmitPolicyTypeEnum",
-                              "type": "enum",
-                              "symbols": ["TIME"]
-                            }
-                          },
-                          {
-                            "name": "EmitPolicyInfo",
-                            "type":
-                            [
-                              {
-                                "name": "TimeInterval",
-                                "type": "int"
-                              }
-                            ]
+                            "name": "WindowEmissionInterval",
+                            "type": "int"
                           }
                         ]
                       },

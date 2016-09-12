@@ -26,10 +26,6 @@ import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
 import edu.snu.mist.api.sources.parameters.PunctuatedWatermarkParameters;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import edu.snu.mist.api.types.Tuple2;
-import edu.snu.mist.api.window.TimeEmitPolicy;
-import edu.snu.mist.api.window.TimeSizePolicy;
-import edu.snu.mist.api.window.WindowEmitPolicy;
-import edu.snu.mist.api.window.WindowSizePolicy;
 import edu.snu.mist.formats.avro.*;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.reef.io.Tuple;
@@ -46,6 +42,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import static edu.snu.mist.formats.avro.WindowOperatorTypeEnum.TIME;
+
 /**
  * This is the test class for serializing MISTQuery into avro LogicalPlan.
  */
@@ -58,12 +56,8 @@ public final class MISTQueryTest {
   private final MISTFunction<String, List<String>> expectedFlatMapFunc = s -> Arrays.asList(s.split(" "));
   private final MISTPredicate<String> expectedFilterPredicate = s -> s.startsWith("A");
   private final MISTFunction<String, Tuple2<String, Integer>> expectedMapFunc = s -> new Tuple2<>(s, 1);
-  private final int expectedTimeSize = 5000;
-  private final int expectedTimeEmitInterval = 1000;
-  private final SizePolicyTypeEnum expectedSizePolicyEnum = SizePolicyTypeEnum.TIME;
-  private final EmitPolicyTypeEnum expectedEmitPolicyEnum = EmitPolicyTypeEnum.TIME;
-  private final WindowSizePolicy expectedWindowSizePolicy = new TimeSizePolicy(expectedTimeSize);
-  private final WindowEmitPolicy expectedWindowEmitPolicy = new TimeEmitPolicy(expectedTimeEmitInterval);
+  private final Integer expectedWindowSize = 5000;
+  private final Integer expectedWindowEmissionInterval = 1000;
   private final MISTBiFunction<Map<String, Integer>, Integer, Integer> expectedUpdateStateFunc =
       (map, i) -> {
         for (Map.Entry<String, Integer> entry : map.entrySet()) {
@@ -180,9 +174,9 @@ public final class MISTQueryTest {
         .flatMap(expectedFlatMapFunc)
         .filter(expectedFilterPredicate)
         .map(expectedMapFunc)
-        .window(expectedWindowSizePolicy, expectedWindowEmitPolicy)
+        .timeWindow(expectedWindowSize, expectedWindowEmissionInterval)
         .reduceByKeyWindow(0, String.class, expectedReduceFunc)
-        .window(expectedWindowSizePolicy, expectedWindowEmitPolicy)
+        .timeWindow(expectedWindowSize, expectedWindowEmissionInterval)
         .applyStatefulWindow(expectedUpdateStateFunc, expectedProduceResultFunc, expectedInitializeStateSup)
         .textSocketOutput(textSocketSinkConf);
     final MISTQuery complexQuery = queryBuilder.build();
@@ -190,7 +184,7 @@ public final class MISTQueryTest {
     final List<AvroVertexChain> vertices = serializedDAG.getKey();
     Assert.assertEquals(3, vertices.size());
 
-    // Stores indexes for flatMap, filter, map, window, reduceByKeyWindow, reefNetworkOutput in order
+    // Stores indexes for flatMap, filter, map, timeWindow, reduceByKeyWindow, reefNetworkOutput in order
     for (final AvroVertexChain avroVertexChain : vertices) {
       if (avroVertexChain.getAvroVertexChainType() == AvroVertexTypeEnum.SINK) {
         // Test for sink vertex
@@ -246,13 +240,12 @@ public final class MISTQueryTest {
         Assert.assertEquals(expectedMapFunc.apply("ABC"), mapFunc.apply("ABC"));
         Assert.assertEquals(mapKeyIndex, null);
 
-        // Test for window
+        // Test for timeWindow
         final Vertex windowVertex = avroVertexChain.getVertexChain().get(3);
         final WindowOperatorInfo windowOperatorInfo = (WindowOperatorInfo) windowVertex.getAttributes();
-        Assert.assertEquals(expectedSizePolicyEnum, windowOperatorInfo.getSizePolicyType());
-        Assert.assertEquals(expectedTimeSize, windowOperatorInfo.getSizePolicyInfo());
-        Assert.assertEquals(expectedEmitPolicyEnum, windowOperatorInfo.getEmitPolicyType());
-        Assert.assertEquals(expectedTimeEmitInterval, windowOperatorInfo.getEmitPolicyInfo());
+        Assert.assertEquals(TIME, windowOperatorInfo.getWindowOperatorType());
+        Assert.assertEquals(expectedWindowSize, windowOperatorInfo.getWindowSize());
+        Assert.assertEquals(expectedWindowEmissionInterval, windowOperatorInfo.getWindowEmissionInterval());
 
         // Test for reduceByKeyWindow
         final Vertex reduceByKeyVertex = avroVertexChain.getVertexChain().get(4);
