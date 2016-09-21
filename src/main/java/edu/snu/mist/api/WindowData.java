@@ -13,15 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.window;
+package edu.snu.mist.api;
+
+import java.util.Collection;
 
 /**
- * Window policy interface which decides when to emit results.
+ * This interface represents the result data of windowing operation.
+ * It contains the result data collection, start and end information.
+ * The start and end may represent time or count.
+ * @param <T> the type of data in this window
  */
-public interface WindowEmitPolicy {
+public interface WindowData<T> {
 
   /**
-   * @return The type of window emitting policy type.
+   * @return the result data collection of window
    */
-  WindowType.EmitPolicy getEmitPolicyType();
+  Collection<T> getDataCollection();
+
+  /**
+   * @return the start time or count
+   */
+  long getStart();
+
+  /**
+   * @return the end time or count
+   */
+  long getEnd();
 }

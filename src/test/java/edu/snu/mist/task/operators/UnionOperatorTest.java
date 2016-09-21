@@ -18,7 +18,6 @@ package edu.snu.mist.task.operators;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
-import edu.snu.mist.task.common.OutputEmitter;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -95,25 +94,5 @@ public final class UnionOperatorTest {
     unionOperator.processRightWatermark(rw2);
     Assert.assertEquals(9, result.size());
     Assert.assertEquals(lw2, result.get(8));
-  }
-
-  /**
-   * Simple output emitter which adds events to the list.
-   */
-  private class SimpleOutputEmitter implements OutputEmitter {
-    private final List<MistEvent> list;
-
-    public SimpleOutputEmitter(final List<MistEvent> list) {
-      this.list = list;
-    }
-
-    @Override
-    public void emitData(final MistDataEvent data) {
-      list.add(data);
-    }
-    @Override
-    public void emitWatermark(final MistWatermarkEvent watermark) {
-      list.add(watermark);
-    }
   }
 }

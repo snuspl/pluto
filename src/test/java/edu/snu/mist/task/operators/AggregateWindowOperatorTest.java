@@ -15,11 +15,10 @@
  */
 package edu.snu.mist.task.operators;
 
-import edu.snu.mist.api.window.WindowData;
+import edu.snu.mist.api.WindowData;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
-import edu.snu.mist.task.common.OutputEmitter;
 import edu.snu.mist.task.windows.WindowImpl;
 import org.junit.Assert;
 import org.junit.Test;
@@ -60,31 +59,11 @@ public final class AggregateWindowOperatorTest {
     aggregateWindowOperator.processLeftData(dataEvent);
     Assert.assertEquals(1, result.size());
     Assert.assertTrue(result.get(0).isData());
-    Assert.assertEquals("[10, 20, 15, 30], 0, 100", ((MistDataEvent)result.get(0)).getValue());
+    Assert.assertEquals("[10, 20, 15, 30], 0, 99", ((MistDataEvent)result.get(0)).getValue());
     Assert.assertEquals(90L, result.get(0).getTimestamp());
 
     aggregateWindowOperator.processLeftWatermark(watermarkEvent);
     Assert.assertEquals(2, result.size());
     Assert.assertEquals(watermarkEvent, result.get(1));
-  }
-
-  /**
-   * Simple output emitter which adds events to the list.
-   */
-  private class SimpleOutputEmitter implements OutputEmitter {
-    private final List<MistEvent> list;
-
-    public SimpleOutputEmitter(final List<MistEvent> list) {
-      this.list = list;
-    }
-
-    @Override
-    public void emitData(final MistDataEvent data) {
-      list.add(data);
-    }
-    @Override
-    public void emitWatermark(final MistWatermarkEvent watermark) {
-      list.add(watermark);
-    }
   }
 }

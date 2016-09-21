@@ -17,15 +17,11 @@ package edu.snu.mist.api.serialize;
 
 import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.api.WindowedStreamImpl;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTSupplier;
-import edu.snu.mist.api.operators.AggregateWindowOperatorStream;
-import edu.snu.mist.api.operators.ApplyStatefulOperatorStream;
-import edu.snu.mist.api.window.TimeSizePolicy;
-import edu.snu.mist.api.window.TimeEmitPolicy;
-import edu.snu.mist.api.window.WindowData;
+import edu.snu.mist.api.operators.*;
+import edu.snu.mist.api.WindowData;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.*;
 import edu.snu.mist.task.common.MistDataEvent;
@@ -40,6 +36,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static edu.snu.mist.formats.avro.WindowOperatorTypeEnum.COUNT;
+import static edu.snu.mist.formats.avro.WindowOperatorTypeEnum.TIME;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -94,22 +92,43 @@ public class OperatorSerializeTest {
   }
 
   /**
-   * This method tests a serialization of TimeWindowOperator.
+   * This method tests a serialization of time-based GeneralWindowOperator.
    */
   @Test
-  public void windowStreamSerializationTest() {
-    final TimeSizePolicy timeSizePolicy = new TimeSizePolicy(5000);
-    final TimeEmitPolicy timeEmitPolicy = new TimeEmitPolicy(1000);
-    final WindowedStreamImpl windowedStream = new WindowedStreamImpl(timeSizePolicy, timeEmitPolicy, mockDag);
-    final Vertex serializedVertex = windowedStream.getSerializedVertex();
+  public void timeWindowStreamSerializationTest() {
+    final Integer windowSize = 5000;
+    final Integer windowEmissionInterval = 1000;
+    final TimeWindowOperatorStream timeWindowedStream =
+        new TimeWindowOperatorStream(
+            windowSize, windowEmissionInterval, mockDag);
+    final Vertex serializedVertex = timeWindowedStream.getSerializedVertex();
 
     // Test whether the vertex is created properly or not.
     Assert.assertEquals(serializedVertex.getVertexType(), VertexTypeEnum.WINDOW_OPERATOR);
     final WindowOperatorInfo windowOperatorInfo = (WindowOperatorInfo) serializedVertex.getAttributes();
-    Assert.assertEquals(SizePolicyTypeEnum.TIME, windowOperatorInfo.getSizePolicyType());
-    Assert.assertEquals(EmitPolicyTypeEnum.TIME, windowOperatorInfo.getEmitPolicyType());
-    Assert.assertEquals(5000, windowOperatorInfo.getSizePolicyInfo());
-    Assert.assertEquals(1000, windowOperatorInfo.getEmitPolicyInfo());
+    Assert.assertEquals(TIME, windowOperatorInfo.getWindowOperatorType());
+    Assert.assertEquals(windowSize, windowOperatorInfo.getWindowSize());
+    Assert.assertEquals(windowEmissionInterval, windowOperatorInfo.getWindowEmissionInterval());
+  }
+
+  /**
+   * This method tests a serialization of count-based GeneralWindowOperator.
+   */
+  @Test
+  public void countWindowStreamSerializationTest() {
+    final Integer windowSize = 5000;
+    final Integer windowEmissionInterval = 1000;
+    final CountWindowOperatorStream countWindowedStream =
+        new CountWindowOperatorStream(
+            windowSize, windowEmissionInterval, mockDag);
+    final Vertex serializedVertex = countWindowedStream.getSerializedVertex();
+
+    // Test whether the vertex is created properly or not.
+    Assert.assertEquals(serializedVertex.getVertexType(), VertexTypeEnum.WINDOW_OPERATOR);
+    final WindowOperatorInfo windowOperatorInfo = (WindowOperatorInfo) serializedVertex.getAttributes();
+    Assert.assertEquals(COUNT, windowOperatorInfo.getWindowOperatorType());
+    Assert.assertEquals(windowSize, windowOperatorInfo.getWindowSize());
+    Assert.assertEquals(windowEmissionInterval, windowOperatorInfo.getWindowEmissionInterval());
   }
 
   /**

@@ -18,7 +18,6 @@ package edu.snu.mist.task.operators;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
-import edu.snu.mist.task.common.OutputEmitter;
 import edu.snu.mist.task.windows.WindowImpl;
 import org.junit.Assert;
 import org.junit.Test;
@@ -74,25 +73,5 @@ public final class ApplyStatefulWindowOperatorTest {
     applyStatefulWindowOperator.processLeftWatermark(watermarkEvent);
     Assert.assertEquals(2, result.size());
     Assert.assertEquals(watermarkEvent, result.get(1));
-  }
-
-  /**
-   * Simple output emitter which adds events to the list.
-   */
-  private class SimpleOutputEmitter implements OutputEmitter {
-    private final List<MistEvent> list;
-
-    public SimpleOutputEmitter(final List<MistEvent> list) {
-      this.list = list;
-    }
-
-    @Override
-    public void emitData(final MistDataEvent data) {
-      list.add(data);
-    }
-    @Override
-    public void emitWatermark(final MistWatermarkEvent watermark) {
-      list.add(watermark);
-    }
   }
 }

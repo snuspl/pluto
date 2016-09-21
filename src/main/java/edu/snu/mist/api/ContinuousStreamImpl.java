@@ -16,6 +16,7 @@
 
 package edu.snu.mist.api;
 
+import edu.snu.mist.api.exceptions.IllegalWindowParameterException;
 import edu.snu.mist.api.exceptions.StreamTypeMismatchException;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
@@ -25,8 +26,6 @@ import edu.snu.mist.api.operators.*;
 import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sink.TextSocketSink;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
-import edu.snu.mist.api.window.WindowEmitPolicy;
-import edu.snu.mist.api.window.WindowSizePolicy;
 import edu.snu.mist.common.DAG;
 
 import java.util.List;
@@ -111,13 +110,31 @@ public abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implemen
   }
 
   @Override
-  public WindowedStream<T> window(final WindowSizePolicy windowSizePolicy,
-                                  final WindowEmitPolicy windowEmitPolicy) {
-    final WindowedStreamImpl<T> downStream =
-        new WindowedStreamImpl<>(windowSizePolicy, windowEmitPolicy, dag);
-    dag.addVertex(downStream);
-    dag.addEdge(this, downStream, StreamType.Direction.LEFT);
-    return downStream;
+  public TimeWindowOperatorStream<T> timeWindow(final int windowSize, final int windowEmissionInterval) {
+    if (windowSize > 0 && windowEmissionInterval > 0) {
+      final TimeWindowOperatorStream<T> downStream =
+        new TimeWindowOperatorStream<>(
+            windowSize, windowEmissionInterval, dag);
+      dag.addVertex(downStream);
+      dag.addEdge(this, downStream, StreamType.Direction.LEFT);
+      return downStream;
+    } else {
+      throw new IllegalWindowParameterException("Negative window parameters are not allowed.");
+    }
+  }
+
+  @Override
+  public CountWindowOperatorStream<T> countWindow(final int windowSize, final int windowEmissionInterval) {
+    if (windowSize > 0 && windowEmissionInterval > 0) {
+      final CountWindowOperatorStream<T> downStream =
+          new CountWindowOperatorStream<>(
+              windowSize, windowEmissionInterval, dag);
+      dag.addVertex(downStream);
+      dag.addEdge(this, downStream, StreamType.Direction.LEFT);
+      return downStream;
+    } else {
+      throw new IllegalWindowParameterException("Negative window parameters are not allowed.");
+    }
   }
 
   @Override

@@ -21,40 +21,25 @@ import edu.snu.mist.api.functions.MISTSupplier;
 import edu.snu.mist.api.operators.AggregateWindowOperatorStream;
 import edu.snu.mist.api.operators.ApplyStatefulWindowOperatorStream;
 import edu.snu.mist.api.operators.ReduceByKeyWindowOperatorStream;
-import edu.snu.mist.api.window.*;
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.formats.avro.Vertex;
+import edu.snu.mist.formats.avro.VertexTypeEnum;
+import edu.snu.mist.formats.avro.WindowOperatorInfo;
 
 /**
- * The implementation class for describing WindowedStream.
+ * The abstract class for describing WindowedStream.
  */
-public final class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>> implements WindowedStream<T>  {
+public abstract class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>> implements WindowedStream<T>  {
 
   /**
-   * The policy for deciding the size of window inside.
+   * The type of this operator (e.g. timeWindowOperator, countWindowOperator, ...)
    */
-  private WindowSizePolicy windowSizePolicy;
-  /**
-   * The policy for deciding when to emit collected window data inside.
-   */
-  private WindowEmitPolicy windowEmitPolicy;
+  private final StreamType.OperatorType operatorType;
 
-  public WindowedStreamImpl(final WindowSizePolicy windowSizePolicy,
-                            final WindowEmitPolicy windowEmitPolicy,
-                            final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
+  protected WindowedStreamImpl(final StreamType.OperatorType operatorType,
+                               final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
     super(StreamType.BasicType.WINDOWED, dag);
-    this.windowSizePolicy = windowSizePolicy;
-    this.windowEmitPolicy = windowEmitPolicy;
-  }
-
-  @Override
-  public WindowSizePolicy getWindowSizePolicy() {
-    return windowSizePolicy;
-  }
-
-  @Override
-  public WindowEmitPolicy getWindowEmitPolicy() {
-    return windowEmitPolicy;
+    this.operatorType = operatorType;
   }
 
   @Override
@@ -90,26 +75,23 @@ public final class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>> i
     return downStream;
   }
 
+  /**
+   * @return The type of the current operator (ex: time, count, session, ...)
+   */
+  public StreamType.OperatorType getOperatorType() {
+    return operatorType;
+  }
+
+  /**
+   * Get an instant operator info.
+   */
+  protected abstract WindowOperatorInfo getWindowOpInfo();
+
   @Override
   public Vertex getSerializedVertex() {
     final Vertex.Builder vertexBuilder = Vertex.newBuilder();
     vertexBuilder.setVertexType(VertexTypeEnum.WINDOW_OPERATOR);
-    final WindowOperatorInfo.Builder wOpInfoBuilder = WindowOperatorInfo.newBuilder();
-    final WindowSizePolicy sizePolicy = windowSizePolicy;
-    if (sizePolicy.getSizePolicyType() == WindowType.SizePolicy.TIME) {
-      wOpInfoBuilder.setSizePolicyType(SizePolicyTypeEnum.TIME);
-      wOpInfoBuilder.setSizePolicyInfo(((TimeSizePolicy) sizePolicy).getTimeDuration());
-    } else {
-      throw new IllegalStateException("WindowSizePolicy is illegal!");
-    }
-    final WindowEmitPolicy emitPolicy = windowEmitPolicy;
-    if (emitPolicy.getEmitPolicyType() == WindowType.EmitPolicy.TIME) {
-      wOpInfoBuilder.setEmitPolicyType(EmitPolicyTypeEnum.TIME);
-      wOpInfoBuilder.setEmitPolicyInfo(((TimeEmitPolicy) emitPolicy).getTimeInterval());
-    } else {
-      throw new IllegalStateException("WindowEmitPolicy is illegal!");
-    }
-    vertexBuilder.setAttributes(wOpInfoBuilder.build());
+    vertexBuilder.setAttributes(getWindowOpInfo());
     return vertexBuilder.build();
   }
 }

@@ -22,35 +22,40 @@ import edu.snu.mist.task.common.MistWatermarkEvent;
 import java.util.logging.Logger;
 
 /**
- * This operator makes time-based windows and emits a collection of data.
+ * This operator makes count-based windows and emits a collection of data.
  * @param <T> the type of data
  */
-public final class TimeWindowOperator<T> extends FixedSizeWindowOperator<T> {
-  private static final Logger LOG = Logger.getLogger(TimeWindowOperator.class.getName());
+public final class CountWindowOperator<T> extends FixedSizeWindowOperator<T> {
+  private static final Logger LOG = Logger.getLogger(CountWindowOperator.class.getName());
 
-  public TimeWindowOperator(final String queryId,
-                            final String operatorId,
-                            final int windowSize,
-                            final int windowEmissionInterval) {
+  /**
+   * The count represents the number of inputs already arrived.
+   */
+  private long count;
+
+  public CountWindowOperator(final String queryId,
+                             final String operatorId,
+                             final int windowSize,
+                             final int windowEmissionInterval) {
     super(queryId, operatorId, windowSize, windowEmissionInterval);
+    this.count = 1L;
   }
 
   @Override
   public StreamType.OperatorType getOperatorType() {
-    return StreamType.OperatorType.TIME_WINDOW;
+    return StreamType.OperatorType.COUNT_WINDOW;
   }
 
   @Override
   public void processLeftData(final MistDataEvent input) {
-    emitElapsedWindow(input.getTimestamp());
-    createWindow(input.getTimestamp());
+    createWindow(count);
     putData(input);
+    count++;
+    emitElapsedWindow(count);
   }
 
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
-    emitElapsedWindow(input.getTimestamp());
-    createWindow(input.getTimestamp());
     putWatermark(input);
   }
 }

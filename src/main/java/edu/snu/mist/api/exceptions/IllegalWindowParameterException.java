@@ -13,18 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.window;
+
+package edu.snu.mist.api.exceptions;
 
 /**
- * Contains necessary parameters for defining streaming windows.
+ * Signals that the value of windowing operation parameter is illegal.
  */
-public final class WindowType {
+public final class IllegalWindowParameterException extends RuntimeException {
 
-  private WindowType() {
-    // Not called.
-  }
+    public IllegalWindowParameterException() {
+        super();
+    }
 
-  public static enum SizePolicy {TIME}
-
-  public static enum EmitPolicy {TIME}
+    public IllegalWindowParameterException(final String message) {
+        super(message);
+    }
 }
