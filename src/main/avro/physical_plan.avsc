@@ -173,8 +173,16 @@
                               "type": "enum",
                                 "symbols":
                                 [
-                                  "TIME", "COUNT", "SESSION"
+                                  "TIME", "COUNT", "SESSION", "JOIN"
                                 ]
+                            }
+                          },
+                          {
+                            "name": "Functions",
+                            "type":
+                            {
+                              "type": "array",
+                              "items": "bytes"
                             }
                           },
                           {

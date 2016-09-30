@@ -13,26 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.operators;
+package edu.snu.mist.api.windows;
 
-import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.WindowOperatorTypeEnum;
 
 /**
- * This class describes the count-based part of FixedSizeWindowOperatorStream.
+ * This class represents count-based FixedSizeWindowInformation.
  */
-public final class CountWindowOperatorStream<T> extends FixedSizeWindowOperatorStream<T> {
+public final class CountWindowInformation extends FixedSizeWindowInformation {
 
-  public CountWindowOperatorStream(final int windowSize,
-                                   final int windowEmissionInterval,
-                                   final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
-    super(windowSize, windowEmissionInterval, StreamType.OperatorType.COUNT_WINDOW, dag);
+  public CountWindowInformation(final int windowSize,
+                                final int windowEmissionInterval) {
+    super(windowSize, windowEmissionInterval);
   }
 
   @Override
   protected WindowOperatorTypeEnum getWindowOpTypeEnum() {
     return WindowOperatorTypeEnum.COUNT;
+  }
+
+  @Override
+  public StreamType.OperatorType getWindowOpType() {
+    return StreamType.OperatorType.COUNT_WINDOW;
   }
 }

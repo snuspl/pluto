@@ -17,7 +17,7 @@ package edu.snu.mist.task.operators;
 
 import com.sun.corba.se.impl.io.TypeMismatchException;
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.api.WindowData;
+import edu.snu.mist.api.windows.WindowData;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
 

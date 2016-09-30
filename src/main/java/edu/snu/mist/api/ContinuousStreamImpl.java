@@ -16,16 +16,15 @@
 
 package edu.snu.mist.api;
 
-import edu.snu.mist.api.exceptions.IllegalWindowParameterException;
 import edu.snu.mist.api.exceptions.StreamTypeMismatchException;
-import edu.snu.mist.api.functions.MISTBiFunction;
-import edu.snu.mist.api.functions.MISTFunction;
-import edu.snu.mist.api.functions.MISTPredicate;
-import edu.snu.mist.api.functions.MISTSupplier;
+import edu.snu.mist.api.functions.*;
 import edu.snu.mist.api.operators.*;
 import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sink.TextSocketSink;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
+import edu.snu.mist.api.types.Tuple2;
+import edu.snu.mist.api.windows.WindowInformation;
+import edu.snu.mist.api.windows.WindowedStream;
 import edu.snu.mist.common.DAG;
 
 import java.util.List;
@@ -110,31 +109,34 @@ public abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implemen
   }
 
   @Override
-  public TimeWindowOperatorStream<T> timeWindow(final int windowSize, final int windowEmissionInterval) {
-    if (windowSize > 0 && windowEmissionInterval > 0) {
-      final TimeWindowOperatorStream<T> downStream =
-        new TimeWindowOperatorStream<>(
-            windowSize, windowEmissionInterval, dag);
-      dag.addVertex(downStream);
-      dag.addEdge(this, downStream, StreamType.Direction.LEFT);
-      return downStream;
-    } else {
-      throw new IllegalWindowParameterException("Negative window parameters are not allowed.");
-    }
+  public WindowOperatorStream<T> window(final WindowInformation windowInfo) {
+    final WindowOperatorStream<T> downStream = new WindowOperatorStream<>(windowInfo, dag);
+
+    dag.addVertex(downStream);
+    dag.addEdge(this, downStream, StreamType.Direction.LEFT);
+    return downStream;
   }
 
+  /**
+   * Before joining, maps two streams into a Tuple2 form, unifies them, and
+   * applies windowing operation with user-defined WindowInformation.
+   * After that, joins a pair of inputs in two streams that satisfies the user-defined predicate.
+   */
   @Override
-  public CountWindowOperatorStream<T> countWindow(final int windowSize, final int windowEmissionInterval) {
-    if (windowSize > 0 && windowEmissionInterval > 0) {
-      final CountWindowOperatorStream<T> downStream =
-          new CountWindowOperatorStream<>(
-              windowSize, windowEmissionInterval, dag);
-      dag.addVertex(downStream);
-      dag.addEdge(this, downStream, StreamType.Direction.LEFT);
-      return downStream;
-    } else {
-      throw new IllegalWindowParameterException("Negative window parameters are not allowed.");
-    }
+  public <U> JoinOperatorStream<T, U> join(final ContinuousStream<U> inputStream,
+                                           final MISTBiPredicate<T, U> joinBiPredicate,
+                                           final WindowInformation windowInfo) {
+    final MISTFunction<T, Tuple2<T, U>> firstMapFunc = input -> new Tuple2<>(input, null);
+    final MISTFunction<U, Tuple2<T, U>> secondMapFunc = input -> new Tuple2<>(null, input);
+    final WindowedStream<Tuple2<T, U>> windowedStream = this
+        .map(firstMapFunc)
+        .union(inputStream.map(secondMapFunc))
+        .window(windowInfo);
+
+    final JoinOperatorStream<T, U> downStream = new JoinOperatorStream<>(joinBiPredicate, dag);
+    dag.addVertex(downStream);
+    dag.addEdge(windowedStream, downStream, StreamType.Direction.LEFT);
+    return downStream;
   }
 
   @Override
