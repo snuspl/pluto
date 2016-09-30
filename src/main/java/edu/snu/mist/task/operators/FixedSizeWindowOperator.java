@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.task.operators;
 
-import edu.snu.mist.api.WindowData;
+import edu.snu.mist.api.windows.WindowData;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
 import edu.snu.mist.task.windows.Window;

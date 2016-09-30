@@ -26,6 +26,7 @@ import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
 import edu.snu.mist.api.sources.parameters.PunctuatedWatermarkParameters;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import edu.snu.mist.api.types.Tuple2;
+import edu.snu.mist.api.windows.TimeWindowInformation;
 import edu.snu.mist.formats.avro.*;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.reef.io.Tuple;
@@ -174,9 +175,9 @@ public final class MISTQueryTest {
         .flatMap(expectedFlatMapFunc)
         .filter(expectedFilterPredicate)
         .map(expectedMapFunc)
-        .timeWindow(expectedWindowSize, expectedWindowEmissionInterval)
+        .window(new TimeWindowInformation(expectedWindowSize, expectedWindowEmissionInterval))
         .reduceByKeyWindow(0, String.class, expectedReduceFunc)
-        .timeWindow(expectedWindowSize, expectedWindowEmissionInterval)
+        .window(new TimeWindowInformation(expectedWindowSize, expectedWindowEmissionInterval))
         .applyStatefulWindow(expectedUpdateStateFunc, expectedProduceResultFunc, expectedInitializeStateSup)
         .textSocketOutput(textSocketSinkConf);
     final MISTQuery complexQuery = queryBuilder.build();

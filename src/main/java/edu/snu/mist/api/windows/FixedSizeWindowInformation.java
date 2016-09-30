@@ -13,64 +13,68 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.operators;
+package edu.snu.mist.api.windows;
 
-import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.StreamType;
-import edu.snu.mist.api.WindowedStreamImpl;
-import edu.snu.mist.common.DAG;
+import edu.snu.mist.api.exceptions.IllegalWindowParameterException;
 import edu.snu.mist.formats.avro.WindowOperatorInfo;
 import edu.snu.mist.formats.avro.WindowOperatorTypeEnum;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * This abstract class describes time-based and count-based WindowedStream.
+ * This abstract class contains some information used during fixed-size windowing operation (such as TIME or COUNT).
  * With various setting of window size and emission interval, it can makes
  * sliding window, tumbling window, and hopping window.
  */
-abstract class FixedSizeWindowOperatorStream<T> extends WindowedStreamImpl<T> {
+public abstract class FixedSizeWindowInformation implements WindowInformation {
 
   /**
-   * The value for deciding the size of window inside.
+   * The value used for deciding the size of windows inside.
    */
   private int windowSize;
 
   /**
-   * The value for deciding when to emit collected window data inside.
+   * The value used for deciding when to emit collected windows data inside.
    */
   private int windowEmissionInterval;
 
-  protected FixedSizeWindowOperatorStream(final int windowSize,
-                                          final int windowEmissionInterval,
-                                          final StreamType.OperatorType operatorType,
-                                          final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
-    super(operatorType, dag);
-    this.windowSize = windowSize;
-    this.windowEmissionInterval = windowEmissionInterval;
+  protected FixedSizeWindowInformation(final int windowSize,
+                                       final int windowEmissionInterval) {
+    if (windowSize > 0 && windowEmissionInterval > 0) {
+      this.windowSize = windowSize;
+      this.windowEmissionInterval = windowEmissionInterval;
+    } else {
+      throw new IllegalWindowParameterException("Negative window parameters are not allowed.");
+    }
   }
 
   /**
-   * @return The value which determines the size of window inside
+   * @return the size of fixed-size window.
    */
   public int getWindowSize() {
     return windowSize;
   }
 
   /**
-   * @return The value which determines when to emit window stream
+   * @return the emission interval of fixed-size window.
    */
   public int getWindowEmissionInterval() {
     return windowEmissionInterval;
   }
 
   /**
-   * @return The type of window operator
-   * */
+   * @return the type of windowing operation in a form of avro enum.
+   */
   protected abstract WindowOperatorTypeEnum getWindowOpTypeEnum();
 
   @Override
-  protected WindowOperatorInfo getWindowOpInfo() {
+  public WindowOperatorInfo getSerializedWindowOpInfo(){
     final WindowOperatorInfo.Builder wOpInfoBuilder = WindowOperatorInfo.newBuilder();
     wOpInfoBuilder.setWindowOperatorType(getWindowOpTypeEnum());
+    final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
+    wOpInfoBuilder.setFunctions(serializedFunctionList);
     wOpInfoBuilder.setWindowSize(windowSize);
     wOpInfoBuilder.setWindowEmissionInterval(windowEmissionInterval);
     return wOpInfoBuilder.build();

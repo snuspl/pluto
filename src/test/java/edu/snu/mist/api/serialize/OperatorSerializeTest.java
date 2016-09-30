@@ -18,12 +18,16 @@ package edu.snu.mist.api.serialize;
 import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.functions.MISTBiFunction;
+import edu.snu.mist.api.functions.MISTBiPredicate;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTPredicate;
 import edu.snu.mist.api.functions.MISTSupplier;
 import edu.snu.mist.api.operators.*;
-import edu.snu.mist.api.WindowData;
+import edu.snu.mist.api.windows.CountWindowInformation;
+import edu.snu.mist.api.windows.TimeWindowInformation;
+import edu.snu.mist.api.windows.WindowData;
 import edu.snu.mist.api.types.Tuple2;
+import edu.snu.mist.api.types.Tuple3;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.*;
 import edu.snu.mist.task.common.MistDataEvent;
@@ -36,11 +40,13 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static edu.snu.mist.formats.avro.WindowOperatorTypeEnum.COUNT;
+import static edu.snu.mist.formats.avro.WindowOperatorTypeEnum.JOIN;
 import static edu.snu.mist.formats.avro.WindowOperatorTypeEnum.TIME;
 import static org.mockito.Mockito.mock;
 
@@ -92,9 +98,8 @@ public class OperatorSerializeTest {
    */
   @Test
   public void timeWindowStreamSerializationTest() {
-    final TimeWindowOperatorStream timeWindowedStream =
-        new TimeWindowOperatorStream(
-            windowSize, windowEmissionInterval, mockDag);
+    final WindowOperatorStream timeWindowedStream =
+        new WindowOperatorStream(new TimeWindowInformation(windowSize, windowEmissionInterval), mockDag);
     final Vertex serializedVertex = timeWindowedStream.getSerializedVertex();
 
     // Test whether the vertex is created properly or not.
@@ -110,9 +115,8 @@ public class OperatorSerializeTest {
    */
   @Test
   public void countWindowStreamSerializationTest() {
-    final CountWindowOperatorStream countWindowedStream =
-        new CountWindowOperatorStream(
-            windowSize, windowEmissionInterval, mockDag);
+    final WindowOperatorStream countWindowedStream =
+        new WindowOperatorStream(new CountWindowInformation(windowSize, windowEmissionInterval), mockDag);
     final Vertex serializedVertex = countWindowedStream.getSerializedVertex();
 
     // Test whether the vertex is created properly or not.
@@ -210,6 +214,31 @@ public class OperatorSerializeTest {
   }
 
   /**
+   * This method tests the serialization of JoinOperator.
+   */
+  @Test
+  public void joinStreamSerializationTest() {
+    final MISTBiPredicate<Tuple3<String, Integer, Long>, Tuple2<Integer, Long>> expectedJoinBiPred =
+        (tuple3, tuple2) -> tuple3.get(1).equals(tuple3.get(0));
+    final JoinOperatorStream<Tuple3<String, Integer, Long>, Tuple2<Integer, Long>> joinedStream =
+        new JoinOperatorStream<>(expectedJoinBiPred, mockDag);
+    final Vertex serializedVertex = joinedStream.getSerializedVertex();
+
+    // Test whether the vertex is created properly or not.
+    Assert.assertEquals(serializedVertex.getVertexType(), VertexTypeEnum.WINDOW_OPERATOR);
+    final WindowOperatorInfo windowOperatorInfo = (WindowOperatorInfo) serializedVertex.getAttributes();
+    Assert.assertEquals(JOIN, windowOperatorInfo.getWindowOperatorType());
+    final BiPredicate deserializedJoinFunc =
+        (BiPredicate) deserializeFunction(windowOperatorInfo.getFunctions().get(0));
+
+    final Tuple3<String, Integer, Long> tuple3 = new Tuple3<>("Hello", 1, 10L);
+    final Tuple2<Integer, Long> firstTuple2 = new Tuple2<>(1, 150L);
+    final Tuple2<Integer, Long> secondTuple2 = new Tuple2<>(2, 250L);
+    Assert.assertEquals(expectedJoinBiPred.test(tuple3, firstTuple2), deserializedJoinFunc.test(tuple3, firstTuple2));
+    Assert.assertEquals(expectedJoinBiPred.test(tuple3, secondTuple2), deserializedJoinFunc.test(tuple3, secondTuple2));
+  }
+
+  /**
    * This method tests a serialization of FlatMapOperator.
    */
   @Test
@@ -234,7 +263,7 @@ public class OperatorSerializeTest {
    * This method tests a serialization of FilterOperator.
    */
   @Test
-  public void filterSerialization() {
+  public void filterSerializationTest() {
     final MISTPredicate<String> expectedFilterPredicate = s -> s.startsWith("A");
     final FilterOperatorStream filterOperatorStream = new FilterOperatorStream(expectedFilterPredicate, mockDag);
     final Vertex serializedVertex = filterOperatorStream.getSerializedVertex();

@@ -19,7 +19,8 @@ package edu.snu.mist.examples;
 import edu.snu.mist.api.APIQueryControlResult;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
-import edu.snu.mist.api.WindowData;
+import edu.snu.mist.api.windows.TimeWindowInformation;
+import edu.snu.mist.api.windows.WindowData;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
 import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
@@ -64,7 +65,7 @@ public final class WindowAndAggregate {
 
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     queryBuilder.socketTextStream(localTextSocketSourceConf)
-        .timeWindow(windowSize, windowEmissionInterval)
+        .window(new TimeWindowInformation(windowSize, windowEmissionInterval))
         .aggregateWindow(aggregateFunc)
         .textSocketOutput(localTextSocketSinkConf);
     final MISTQuery query = queryBuilder.build();

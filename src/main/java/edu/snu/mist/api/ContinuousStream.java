@@ -16,13 +16,11 @@
 package edu.snu.mist.api;
 
 import edu.snu.mist.api.exceptions.StreamTypeMismatchException;
-import edu.snu.mist.api.functions.MISTBiFunction;
-import edu.snu.mist.api.functions.MISTFunction;
-import edu.snu.mist.api.functions.MISTPredicate;
-import edu.snu.mist.api.functions.MISTSupplier;
+import edu.snu.mist.api.functions.*;
 import edu.snu.mist.api.operators.*;
 import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
+import edu.snu.mist.api.windows.WindowInformation;
 
 import java.util.List;
 
@@ -91,23 +89,27 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    * @param inputStream the stream to be unified with this stream
    * @return new unified stream after applying type-checking
    */
-  UnionOperatorStream<T> union(final ContinuousStream<T> inputStream) throws StreamTypeMismatchException;
+  UnionOperatorStream<T> union(ContinuousStream<T> inputStream) throws StreamTypeMismatchException;
 
   /**
-   * Creates a new time-based WindowsStream according to the size and emission interval of window.
-   * @param windowSize The option decides the size of the window expressed in milliseconds
-   * @param windowEmissionInterval The option decides when to emit windowed stream expressed in milliseconds
-   * @return new windowed stream after applying the time-based windowing operation
+   * Creates a new WindowsStream according to the WindowInformation.
+   * @param windowInfo the WindowInformation contains some information used during windowing operation
+   * @return new windowed stream after applying the windowing operation
    */
-  TimeWindowOperatorStream<T> timeWindow(int windowSize, int windowEmissionInterval);
+  WindowOperatorStream<T> window(WindowInformation windowInfo);
 
   /**
-   * Creates a new count-based WindowsStream according to the size and emission interval of window.
-   * @param windowSize The option decides the size of the window expressed in the number of inputs
-   * @param windowEmissionInterval The option decides when to emit windowed stream expressed in the number of inputs
-   * @return new windowed stream after applying the count-based windowing operation
+   * Joins current stream with the input stream.
+   * Two streams are windowed according to the WindowInfo and joined within the window.
+   * @param inputStream the stream to be joined with this stream
+   * @param joinBiPredicate the function that decides to join a pair of inputs in two streams
+   * @param windowInfo the windowing information for joining two streams
+   * @param <U> the data type of the input stream to be joined with this stream
+   * @return new windowed and joined stream
    */
-  CountWindowOperatorStream<T> countWindow(int windowSize, int windowEmissionInterval);
+  <U> JoinOperatorStream<T, U> join(ContinuousStream<U> inputStream,
+                                    MISTBiPredicate<T, U> joinBiPredicate,
+                                    WindowInformation windowInfo);
 
   /**
    * Defines a text socket output Sink for the current stream according to the TextSocketSinkConfiguration.

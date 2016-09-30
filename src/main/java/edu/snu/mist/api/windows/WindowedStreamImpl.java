@@ -13,8 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api;
+package edu.snu.mist.api.windows;
 
+import edu.snu.mist.api.AvroVertexSerializable;
+import edu.snu.mist.api.MISTStreamImpl;
+import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTSupplier;
@@ -83,7 +86,7 @@ public abstract class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>
   }
 
   /**
-   * Get an instant operator info.
+   * @return the window operator info.
    */
   protected abstract WindowOperatorInfo getWindowOpInfo();
 
