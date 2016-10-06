@@ -49,10 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.function.*;
 import java.util.logging.Logger;
 
 /**
@@ -241,8 +238,9 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   /*
    * This private method gets window operator from the serialized window operator info.
    */
-  private Operator getWindowOperator(final String queryId, final WindowOperatorInfo wOpInfo)
-      throws IllegalArgumentException {
+  private Operator getWindowOperator(final String queryId, final WindowOperatorInfo wOpInfo,
+                                     final ClassLoader classLoader)
+      throws IllegalArgumentException, IOException, ClassNotFoundException {
     final String operatorId = operatorIdGenerator.generate();
     final Operator operator;
     switch (wOpInfo.getWindowOperatorType()) {
@@ -253,6 +251,11 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       case COUNT:
         operator = new CountWindowOperator<>(
                 queryId, operatorId, wOpInfo.getWindowSize(), wOpInfo.getWindowEmissionInterval());
+        break;
+      case JOIN:
+        final List<ByteBuffer> functionList = wOpInfo.getFunctions();
+        final BiPredicate joinPred = (BiPredicate) deserializeLambda(functionList.get(0), classLoader);
+        operator = new JoinOperator<>(queryId, operatorId, joinPred);
         break;
       default:
         throw new IllegalArgumentException("MISTTask: Invalid window operator type " +
@@ -327,7 +330,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
               }
               case WINDOW_OPERATOR: {
                 final WindowOperatorInfo wOpInfo = (WindowOperatorInfo) vertex.getAttributes();
-                final Operator operator = getWindowOperator(queryId, wOpInfo);
+                final Operator operator = getWindowOperator(queryId, wOpInfo, userQueryClassLoader);
                 partitionedQuery.insertToTail(operator);
                 break;
               }

@@ -31,19 +31,19 @@ public interface Window<T> extends WindowData<T> {
    * Puts an data event into this window.
    * @param event the data event to store
    */
-  void putData(final MistDataEvent event);
+  void putData(MistDataEvent event);
 
   /**
    * Puts an watermark event into this window.
    * @param event the watermark event to store
    */
-  void putWatermark(final MistWatermarkEvent event);
+  void putWatermark(MistWatermarkEvent event);
 
   /**
    * Sets the end.
    * @param end the end to set
    */
-  void setEnd(final long end);
+  void setEnd(long end);
 
   /**
    * Returns the latest timestamp during the data in this window.

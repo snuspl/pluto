@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.task.operators;
 
-import com.sun.corba.se.impl.io.TypeMismatchException;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.windows.WindowData;
 import edu.snu.mist.task.common.MistDataEvent;
@@ -29,7 +28,7 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 /**
- * This operator apply user-defined stateful operation to the collection received from window operator.
+ * This operator applies user-defined stateful operation to the collection received from window operator.
  * @param <IN> the type of input data
  * @param <OUT> the type of output data
  * @param <S> the type of temporal state
@@ -82,7 +81,7 @@ public final class ApplyStatefulWindowOperator<IN, OUT, S>
      * The temporal state which is used for a single input collection.
      */
     S state = initializeStateSup.get();
-    if (input.getValue() instanceof WindowData) {
+    try {
       final Collection<IN> value = ((WindowData<IN>) input.getValue()).getDataCollection();
       final Iterator<IN> iterator = value.iterator();
 
@@ -92,9 +91,8 @@ public final class ApplyStatefulWindowOperator<IN, OUT, S>
       }
       input.setValue(produceResultFunc.apply(state));
       outputEmitter.emitData(input);
-    } else {
-      throw new TypeMismatchException(
-          "The input value for aggregate window operator is not an instance of WindowData.");
+    } catch (final ClassCastException e) {
+      throw e;
     }
   }
 

@@ -29,18 +29,22 @@ public final class WindowImpl<T> implements Window<T> {
 
   private long latestTimestamp;
   private MistWatermarkEvent latestWatermark;
-  private final Collection<T> dataCollection;
+  private Collection<T> dataCollection;
   private final long start;
   private long end;
 
   public WindowImpl(final long start) {
-    this(start, Long.MAX_VALUE);
+    this(start, Long.MAX_VALUE, new LinkedList<>());
   }
 
   public WindowImpl(final long start, final long size) {
+    this(start, size, new LinkedList<>());
+  }
+
+  public WindowImpl(final long start, final long size, final Collection<T> dataCollection) {
     latestTimestamp = 0L;
     latestWatermark = null;
-    dataCollection = new LinkedList<>();
+    this.dataCollection = dataCollection;
     this.start = start;
     this.end = start + size - 1;
   }
