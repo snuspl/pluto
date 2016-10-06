@@ -16,13 +16,19 @@
 
 package edu.snu.mist.examples;
 
-import edu.snu.mist.api.*;
+import edu.snu.mist.api.APIQueryControlResult;
+import edu.snu.mist.api.ContinuousStream;
+import edu.snu.mist.api.MISTQuery;
+import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.api.exceptions.StreamTypeMismatchException;
 import edu.snu.mist.api.functions.MISTBiFunction;
-import edu.snu.mist.api.sink.Sink;
+import edu.snu.mist.api.functions.MISTBiPredicate;
+import edu.snu.mist.api.functions.MISTFunction;
+import edu.snu.mist.api.functions.MISTSupplier;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
-import edu.snu.mist.api.sources.builder.*;
+import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
 import edu.snu.mist.api.types.Tuple2;
+import edu.snu.mist.api.windows.TimeWindowInformation;
 import edu.snu.mist.examples.parameters.UnionLeftSourceAddress;
 import edu.snu.mist.examples.parameters.UnionRightSourceAddress;
 import org.apache.reef.tang.Configuration;
@@ -34,19 +40,24 @@ import org.apache.reef.tang.formats.CommandLine;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Collection;
+import java.util.LinkedList;
 
 /**
- * Example client which submits a query unifying two sources using union operator.
+ * Example client which submits a query joining two sources using join operator and applying stateful operation on them.
  */
-public final class UnionMist {
+public final class JoinAndApplyStateful {
   /**
-   * Submit a query unifying two sources.
-   * The query reads strings from two source servers, unifies them, and send them to a sink server.
+   * Submit a query joining two sources and apply stateful operation on them.
+   * The query reads strings from two source servers, windows them, and
+   * prints out the result of apply stateful operation on the window
+   * that contains the data which satisfies a predicate.
    * @return result of the submission
    * @throws IOException
    * @throws InjectionException
    * @throws StreamTypeMismatchException
    */
+
   public static APIQueryControlResult submitQuery(final Configuration configuration)
       throws IOException, InjectionException, URISyntaxException, StreamTypeMismatchException {
     final Injector injector = Tang.Factory.getTang().newInjector(configuration);
@@ -58,19 +69,22 @@ public final class UnionMist {
         MISTExampleUtils.getLocalTextSocketSourceConf(source2Socket);
     final TextSocketSinkConfiguration localTextSocketSinkConf = MISTExampleUtils.getLocalTextSocketSinkConf();
 
-    // Simple reduce function.
-    final MISTBiFunction<Integer, Integer, Integer> reduceFunction = (v1, v2) -> { return v1 + v2; };
+    final MISTBiPredicate<String, String> joinPred = (s1, s2) -> s1.equals(s2);
+    final MISTBiFunction<Tuple2<String, String>, Collection<String>, Collection<String>> updateStateFunc =
+        (tuple, state) -> {
+          state.add(tuple.get(0) + "|" + tuple.get(1));
+          return state;
+        };
+    final MISTFunction<Collection<String>, String> produceResultFunc = (collection) -> collection.toString();
+    final MISTSupplier<Collection<String>> initialStateSup = () -> new LinkedList<>();
 
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
-    final ContinuousStream sourceStream1 = queryBuilder.socketTextStream(localTextSocketSource1Conf)
-        .map(s -> new Tuple2(s, 1));
-    final ContinuousStream sourceStream2 = queryBuilder.socketTextStream(localTextSocketSource2Conf)
-        .map(s -> new Tuple2(s, 1));
+    final ContinuousStream sourceStream1 = queryBuilder.socketTextStream(localTextSocketSource1Conf);
+    final ContinuousStream sourceStream2 = queryBuilder.socketTextStream(localTextSocketSource2Conf);
 
-    final Sink sink = sourceStream1
-        .union(sourceStream2)
-        .reduceByKey(0, String.class, reduceFunction)
-        .map(s -> s.toString())
+    sourceStream1
+        .join(sourceStream2, joinPred, new TimeWindowInformation(5000, 5000))
+        .applyStatefulWindow(updateStateFunc, produceResultFunc, initialStateSup)
         .textSocketOutput(localTextSocketSinkConf);
 
     final MISTQuery query = queryBuilder.build();
@@ -102,6 +116,6 @@ public final class UnionMist {
     System.out.println("Query submission result: " + result.getQueryId());
   }
 
-  private UnionMist(){
+  private JoinAndApplyStateful(){
   }
 }

@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.task.operators;
 
-import com.sun.corba.se.impl.io.TypeMismatchException;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.windows.WindowData;
 import edu.snu.mist.task.common.MistDataEvent;
@@ -58,12 +57,11 @@ public final class AggregateWindowOperator<IN, OUT>
 
   @Override
   public void processLeftData(final MistDataEvent input) {
-    if (input.getValue() instanceof WindowData) {
+    try {
       input.setValue(aggregateFunc.apply((WindowData<IN>) input.getValue()));
       outputEmitter.emitData(input);
-    } else {
-      throw new TypeMismatchException(
-          "The input value for aggregate window operator is not an instance of WindowData.");
+    } catch (final ClassCastException e) {
+      throw e;
     }
   }
 
