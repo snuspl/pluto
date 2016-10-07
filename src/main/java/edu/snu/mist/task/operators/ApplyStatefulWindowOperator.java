@@ -15,14 +15,16 @@
  */
 package edu.snu.mist.task.operators;
 
+import edu.snu.mist.api.OperatorState;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.windows.WindowData;
+import edu.snu.mist.task.OperatorStateImpl;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
 
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.function.BiFunction;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -38,9 +40,9 @@ public final class ApplyStatefulWindowOperator<IN, OUT, S>
   private static final Logger LOG = Logger.getLogger(ApplyStatefulWindowOperator.class.getName());
 
   /**
-   * The function that updates the temporal state.
+   * The consumer that updates temporal state with the data input data.
    */
-  private final BiFunction<IN, S, S> updateStateFunc;
+  private final BiConsumer<IN, OperatorState<S>> updateStateCons;
 
   /**
    * The function that produces an output from the temporal state.
@@ -55,17 +57,17 @@ public final class ApplyStatefulWindowOperator<IN, OUT, S>
   /**
    * @param queryId identifier of the query which contains this operator
    * @param operatorId identifier of operator
-   * @param updateStateFunc the function that updates the temporal state.
+   * @param updateStateCons the consumer that consumes the input to updates the temporal state.
    * @param produceResultFunc the function that produces an output from the temporal state.
    * @param initializeStateSup the supplier that generates the initial state.
    */
   public ApplyStatefulWindowOperator(final String queryId,
                                      final String operatorId,
-                                     final BiFunction<IN, S, S> updateStateFunc,
+                                     final BiConsumer<IN, OperatorState<S>> updateStateCons,
                                      final Function<S, OUT> produceResultFunc,
                                      final Supplier<S> initializeStateSup) {
     super(queryId, operatorId);
-    this.updateStateFunc = updateStateFunc;
+    this.updateStateCons = updateStateCons;
     this.produceResultFunc = produceResultFunc;
     this.initializeStateSup = initializeStateSup;
   }
@@ -78,18 +80,18 @@ public final class ApplyStatefulWindowOperator<IN, OUT, S>
   @Override
   public void processLeftData(final MistDataEvent input) {
     /**
-     * The temporal state which is used for a single input collection.
+     * The temporal operatorState which is used for a single input collection.
      */
-    S state = initializeStateSup.get();
+    final OperatorState<S> operatorState = new OperatorStateImpl<>(initializeStateSup.get());
     try {
       final Collection<IN> value = ((WindowData<IN>) input.getValue()).getDataCollection();
       final Iterator<IN> iterator = value.iterator();
 
       while (iterator.hasNext()) {
         final IN data = iterator.next();
-        state = updateStateFunc.apply(data, state);
+        updateStateCons.accept(data, operatorState);
       }
-      input.setValue(produceResultFunc.apply(state));
+      input.setValue(produceResultFunc.apply(operatorState.get()));
       outputEmitter.emitData(input);
     } catch (final ClassCastException e) {
       throw e;

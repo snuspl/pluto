@@ -189,11 +189,11 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     final List<ByteBuffer> functionList = iOpInfo.getFunctions();
     switch (iOpInfo.getInstantOperatorType()) {
       case APPLY_STATEFUL: {
-        final BiFunction updateStateFunc = (BiFunction) deserializeLambda(functionList.get(0), classLoader);
+        final BiConsumer updateStateCons = (BiConsumer) deserializeLambda(functionList.get(0), classLoader);
         final Function produceResultFunc = (Function) deserializeLambda(functionList.get(1), classLoader);
         final Supplier initializeStateSup = (Supplier) deserializeLambda(functionList.get(2), classLoader);
         return new ApplyStatefulOperator<>(
-            queryId, operatorId, updateStateFunc, produceResultFunc, initializeStateSup);
+            queryId, operatorId, updateStateCons, produceResultFunc, initializeStateSup);
       }
       case FILTER: {
         final Predicate predicate = (Predicate) deserializeLambda(functionList.get(0), classLoader);
@@ -216,11 +216,11 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
         throw new IllegalArgumentException("MISTTask: ReduceByKeyWindowOperator is currently not supported!");
       }
       case APPLY_STATEFUL_WINDOW: {
-        final BiFunction updateStateFunc = (BiFunction) deserializeLambda(functionList.get(0), classLoader);
+        final BiConsumer updateStateCons = (BiConsumer) deserializeLambda(functionList.get(0), classLoader);
         final Function produceResultFunc = (Function) deserializeLambda(functionList.get(1), classLoader);
         final Supplier initializeStateSup = (Supplier) deserializeLambda(functionList.get(2), classLoader);
         return new ApplyStatefulWindowOperator<>(
-            queryId, operatorId, updateStateFunc, produceResultFunc, initializeStateSup);
+            queryId, operatorId, updateStateCons, produceResultFunc, initializeStateSup);
       }
       case AGGREGATE_WINDOW: {
         final Function aggregateFunc = (Function) deserializeLambda(functionList.get(0), classLoader);

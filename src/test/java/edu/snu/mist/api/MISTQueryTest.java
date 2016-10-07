@@ -15,10 +15,7 @@
  */
 package edu.snu.mist.api;
 
-import edu.snu.mist.api.functions.MISTBiFunction;
-import edu.snu.mist.api.functions.MISTFunction;
-import edu.snu.mist.api.functions.MISTPredicate;
-import edu.snu.mist.api.functions.MISTSupplier;
+import edu.snu.mist.api.functions.*;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 import edu.snu.mist.api.sources.builder.PunctuatedWatermarkConfiguration;
@@ -28,6 +25,7 @@ import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.api.windows.TimeWindowInformation;
 import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.task.OperatorStateImpl;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -38,10 +36,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.function.*;
 
 import static edu.snu.mist.formats.avro.WindowOperatorTypeEnum.TIME;
 
@@ -59,14 +54,13 @@ public final class MISTQueryTest {
   private final MISTFunction<String, Tuple2<String, Integer>> expectedMapFunc = s -> new Tuple2<>(s, 1);
   private final Integer expectedWindowSize = 5000;
   private final Integer expectedWindowEmissionInterval = 1000;
-  private final MISTBiFunction<Map<String, Integer>, Integer, Integer> expectedUpdateStateFunc =
-      (map, i) -> {
+  private final MISTBiConsumer<Map<String, Integer>, OperatorState<Integer>> expectedUpdateStateCons =
+      (map, state) -> {
         for (Map.Entry<String, Integer> entry : map.entrySet()) {
-          if (entry.getValue() > i) {
-            i = entry.getValue();
+          if (entry.getValue() > state.get()) {
+            state.set(entry.getValue());
           }
         }
-        return i;
       };
   private final MISTFunction<Integer, String> expectedProduceResultFunc = state -> state.toString();
   private final MISTSupplier<Integer> expectedInitializeStateSup = () -> Integer.MIN_VALUE;
@@ -134,24 +128,24 @@ public final class MISTQueryTest {
   }
 
   /**
-   * This method checks that whether aggregateWindow operator is serialized well or not.
-   * @param vertex the aggregateWindow vertex
+   * This method checks that whether ApplyStatefulWindow operator is serialized well or not.
+   * @param vertex the applyStatefulWindow vertex
    */
-  private void checkAggregateWindow(final Vertex vertex) {
-    // Test for aggregateWindow
-    final InstantOperatorInfo aggregateWindowInfo = (InstantOperatorInfo) vertex.getAttributes();
-    final List<ByteBuffer> aggregateWindowFunctions = aggregateWindowInfo.getFunctions();
+  private void checkApplyStatefulWindowOperator(final Vertex vertex) {
+    // Test for applyStatefulWindow
+    final InstantOperatorInfo applyStatefulWindowInfo = (InstantOperatorInfo) vertex.getAttributes();
+    final List<ByteBuffer> applyStatefulWindowFunctions = applyStatefulWindowInfo.getFunctions();
 
-    final byte[] serializedUpdateStateFunc = new byte[aggregateWindowFunctions.get(0).remaining()];
-    aggregateWindowFunctions.get(0).get(serializedUpdateStateFunc);
-    final BiFunction deserializedUpdateStateFunc =
-        (BiFunction) SerializationUtils.deserialize(serializedUpdateStateFunc);
-    final byte[] serializedProduceResultFunc = new byte[aggregateWindowFunctions.get(1).remaining()];
-    aggregateWindowFunctions.get(1).get(serializedProduceResultFunc);
+    final byte[] serializedUpdateStateCons = new byte[applyStatefulWindowFunctions.get(0).remaining()];
+    applyStatefulWindowFunctions.get(0).get(serializedUpdateStateCons);
+    final BiConsumer deserializedUpdateStateCons =
+        (BiConsumer) SerializationUtils.deserialize(serializedUpdateStateCons);
+    final byte[] serializedProduceResultFunc = new byte[applyStatefulWindowFunctions.get(1).remaining()];
+    applyStatefulWindowFunctions.get(1).get(serializedProduceResultFunc);
     final Function deserializedProduceResultFunc =
         (Function) SerializationUtils.deserialize(serializedProduceResultFunc);
-    final byte[] serializedInitializeStateSup = new byte[aggregateWindowFunctions.get(2).remaining()];
-    aggregateWindowFunctions.get(2).get(serializedInitializeStateSup);
+    final byte[] serializedInitializeStateSup = new byte[applyStatefulWindowFunctions.get(2).remaining()];
+    applyStatefulWindowFunctions.get(2).get(serializedInitializeStateSup);
     final Supplier deserializedInitializeStateSup =
         (Supplier) SerializationUtils.deserialize(serializedInitializeStateSup);
 
@@ -159,7 +153,11 @@ public final class MISTQueryTest {
     tmpMap.put("Hello", 10);
     tmpMap.put("MIST", 5);
     tmpMap.put("Test", 12);
-    Assert.assertEquals(expectedUpdateStateFunc.apply(tmpMap, 11), deserializedUpdateStateFunc.apply(tmpMap, 11));
+    final OperatorState<Integer> operatorState1 = new OperatorStateImpl<>(0);
+    final OperatorState<Integer> operatorState2 = new OperatorStateImpl<>(0);
+    deserializedUpdateStateCons.accept(tmpMap, operatorState1);
+    expectedUpdateStateCons.accept(tmpMap, operatorState2);
+    Assert.assertEquals(operatorState1.get(), operatorState2.get());
     Assert.assertEquals(expectedProduceResultFunc.apply(12), deserializedProduceResultFunc.apply(12));
     Assert.assertEquals(expectedInitializeStateSup.get(), deserializedInitializeStateSup.get());
   }
@@ -178,7 +176,7 @@ public final class MISTQueryTest {
         .window(new TimeWindowInformation(expectedWindowSize, expectedWindowEmissionInterval))
         .reduceByKeyWindow(0, String.class, expectedReduceFunc)
         .window(new TimeWindowInformation(expectedWindowSize, expectedWindowEmissionInterval))
-        .applyStatefulWindow(expectedUpdateStateFunc, expectedProduceResultFunc, expectedInitializeStateSup)
+        .applyStatefulWindow(expectedUpdateStateCons, expectedProduceResultFunc, expectedInitializeStateSup)
         .textSocketOutput(textSocketSinkConf);
     final MISTQuery complexQuery = queryBuilder.build();
     final Tuple<List<AvroVertexChain>, List<Edge>> serializedDAG = complexQuery.getSerializedDAG();
@@ -262,7 +260,7 @@ public final class MISTQueryTest {
         Assert.assertEquals(expectedReduceFunc.apply(5, 4), reduceFunc.apply(5, 4));
         Assert.assertEquals(expectedReduceKeyIndex, reduceByKeyIndex);
 
-        checkAggregateWindow(avroVertexChain.getVertexChain().get(6));
+        checkApplyStatefulWindowOperator(avroVertexChain.getVertexChain().get(6));
       } else if (avroVertexChain.getAvroVertexChainType() == AvroVertexTypeEnum.SOURCE) {
         checkSource(avroVertexChain.getVertexChain().get(0));
       } else {

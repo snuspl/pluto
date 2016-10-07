@@ -20,13 +20,14 @@ import edu.snu.mist.api.exceptions.StreamTypeMismatchException;
 import edu.snu.mist.api.sources.BaseSourceStream;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.task.OperatorStateImpl;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Map;
-import java.util.function.BiFunction;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -106,9 +107,7 @@ public final class InstantOperatorStreamTest {
     final ApplyStatefulOperatorStream<Tuple2<String, Integer>, Integer, Integer> statefulOperatorStream
         = filteredMappedStream.applyStateful((e, s) -> {
       if (((String) e.get(0)).startsWith("A")) {
-        return s + 1;
-      } else {
-        return s;
+        s.set(s.get() + 1);
       }
     }, s -> s, () -> 0);
 
@@ -116,27 +115,24 @@ public final class InstantOperatorStreamTest {
     Assert.assertEquals(statefulOperatorStream.getContinuousType(), StreamType.ContinuousType.OPERATOR);
     Assert.assertEquals(statefulOperatorStream.getOperatorType(), StreamType.OperatorType.APPLY_STATEFUL);
 
-    final BiFunction<Tuple2<String, Integer>, Integer, Integer> stateUpdateFunc =
-        statefulOperatorStream.getUpdateStateFunc();
+    final BiConsumer<Tuple2<String, Integer>, OperatorState<Integer>> stateUpdateCons =
+        statefulOperatorStream.getUpdateStateCons();
     final Function<Integer, Integer> produceResultFunc =
         statefulOperatorStream.getProduceResultFunc();
     final Supplier<Integer> initializeStateSup =
         statefulOperatorStream.getInitializeStateSup();
 
     /* Simulate two data inputs on UDF stream */
-    final int initialState = initializeStateSup.get();
+    final OperatorState<Integer> operatorState = new OperatorStateImpl<>(initializeStateSup.get());
     final Tuple2 firstInput = new Tuple2<>("ABC", 1);
     final Tuple2 secondInput = new Tuple2<>("BAC", 1);
-    final int firstState = stateUpdateFunc.apply(firstInput, initialState);
-    final int firstResult = produceResultFunc.apply(firstState);
-    final int secondState = stateUpdateFunc.apply(secondInput, firstState);
-    final int secondResult = produceResultFunc.apply(secondState);
-
-    Assert.assertEquals(0, initialState);
-    Assert.assertEquals(1, firstState);
-    Assert.assertEquals(1, firstResult);
-    Assert.assertEquals(1, secondState);
-    Assert.assertEquals(1, secondResult);
+    Assert.assertEquals(0, (long) operatorState.get());
+    stateUpdateCons.accept(firstInput, operatorState);
+    Assert.assertEquals(1, (long) operatorState.get());
+    Assert.assertEquals(1, (long) produceResultFunc.apply(operatorState.get()));
+    stateUpdateCons.accept(secondInput, operatorState);
+    Assert.assertEquals(1, (long) operatorState.get());
+    Assert.assertEquals(1, (long) produceResultFunc.apply(operatorState.get()));
 
     // Check filter -> map -> applyStateful
     final MISTQuery query = queryBuilder.build();

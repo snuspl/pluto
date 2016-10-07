@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task.operators;
 
+import edu.snu.mist.api.OperatorState;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
@@ -24,7 +25,7 @@ import org.junit.Test;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.BiFunction;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -46,12 +47,10 @@ public final class ApplyStatefulWindowOperatorTest {
     final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(101L);
 
     // functions that dealing with state
-    final BiFunction<Integer, Integer, Integer> updateStateFunc =
+    final BiConsumer<Integer, OperatorState<Integer>> updateStateCons =
         (input, state) -> {
-          if (input > state) {
-            return input;
-          } else {
-            return state;
+          if (input > state.get()) {
+            state.set(input);
           }
         };
     final Function<Integer, String> produceResultFunc = state -> state.toString();
@@ -59,7 +58,7 @@ public final class ApplyStatefulWindowOperatorTest {
 
     final ApplyStatefulWindowOperator<Integer, String, Integer> applyStatefulWindowOperator =
         new ApplyStatefulWindowOperator<>(
-            "testQuery", "testAggOp", updateStateFunc, produceResultFunc, initializeStateSup);
+            "testQuery", "testAggOp", updateStateCons, produceResultFunc, initializeStateSup);
 
     final List<MistEvent> result = new LinkedList<>();
     applyStatefulWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));

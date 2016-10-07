@@ -16,6 +16,8 @@
 package edu.snu.mist.api.windows;
 
 import edu.snu.mist.api.MISTStream;
+import edu.snu.mist.api.OperatorState;
+import edu.snu.mist.api.functions.MISTBiConsumer;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTSupplier;
@@ -50,7 +52,7 @@ public interface WindowedStream<T> extends MISTStream<WindowData<T>> {
 
   /**
    * It applies an user-defined stateful operation to the collection of data received from upstream window operator.
-   * @param updateStateFunc the function that updates temporal state in operator
+   * @param updateStateCons the consumer that updates temporal state S with the data T
    * @param produceResultFunc the function that produces result from temporal state
    * @param initializeStateSup the supplier that generates state of operation
    * @param <R> the type of result
@@ -58,6 +60,6 @@ public interface WindowedStream<T> extends MISTStream<WindowData<T>> {
    * @return new aggregated continuous stream after applying the aggregation function
    */
   <R, S> ApplyStatefulWindowOperatorStream<T, R, S> applyStatefulWindow(
-      MISTBiFunction<T, S, S> updateStateFunc, MISTFunction<S, R> produceResultFunc,
+      MISTBiConsumer<T, OperatorState<S>> updateStateCons, MISTFunction<S, R> produceResultFunc,
       MISTSupplier<S> initializeStateSup);
 }
