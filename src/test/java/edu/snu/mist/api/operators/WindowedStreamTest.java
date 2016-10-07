@@ -22,6 +22,7 @@ import edu.snu.mist.api.windows.CountWindowInformation;
 import edu.snu.mist.api.windows.FixedSizeWindowInformation;
 import edu.snu.mist.api.windows.TimeWindowInformation;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.task.OperatorStateImpl;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.windows.WindowImpl;
 import org.junit.After;
@@ -126,15 +127,16 @@ public class WindowedStreamTest {
   public void testApplyStatefulWindowStream() {
     final ApplyStatefulWindowOperatorStream<Tuple2<String, Integer>, Integer, Integer> applyStatefulWindowStream
         = timeWindowedStream.applyStatefulWindow(
-            (input, state) -> {
-              return ((Integer) input.get(1)) + state;
-            }, state -> state, () -> 0);
+            (input, state) -> state.set((Integer)input.get(1) + state.get()), state -> state, () -> 0);
     Assert.assertEquals(applyStatefulWindowStream.getBasicType(), StreamType.BasicType.CONTINUOUS);
     Assert.assertEquals(applyStatefulWindowStream.getContinuousType(), StreamType.ContinuousType.OPERATOR);
     Assert.assertEquals(applyStatefulWindowStream.getOperatorType(), StreamType.OperatorType.APPLY_STATEFUL_WINDOW);
-    Assert.assertEquals(applyStatefulWindowStream.getUpdateStateFunc().apply(new Tuple2<>("Hello", 1), 2), (Integer)3);
-    Assert.assertNotEquals(
-        applyStatefulWindowStream.getUpdateStateFunc().apply(new Tuple2<>("Hello", 1), 3), (Integer)3);
+    final OperatorState<Integer> operatorState1 = new OperatorStateImpl<>(2);
+    applyStatefulWindowStream.getUpdateStateCons().accept(new Tuple2<>("Hello", 1), operatorState1);
+    Assert.assertEquals((long) operatorState1.get(), 3);
+    final OperatorState<Integer> operatorState2 = new OperatorStateImpl<>(3);
+    applyStatefulWindowStream.getUpdateStateCons().accept(new Tuple2<>("Hello", 1), operatorState2);
+    Assert.assertNotEquals((long) operatorState2.get(), 3);
     Assert.assertEquals(applyStatefulWindowStream.getProduceResultFunc().apply(10), (Integer)10);
     Assert.assertNotEquals(applyStatefulWindowStream.getProduceResultFunc().apply(10), (Integer)11);
     Assert.assertEquals(applyStatefulWindowStream.getInitializeStateSup().get(), (Integer)0);

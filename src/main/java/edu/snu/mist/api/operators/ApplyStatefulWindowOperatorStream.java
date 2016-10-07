@@ -16,8 +16,9 @@
 package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.AvroVertexSerializable;
+import edu.snu.mist.api.OperatorState;
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.api.functions.MISTBiFunction;
+import edu.snu.mist.api.functions.MISTBiConsumer;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTSupplier;
 import edu.snu.mist.api.windows.WindowData;
@@ -42,8 +43,9 @@ public final class ApplyStatefulWindowOperatorStream<IN, OUT, S>
 
   /**
    * BiFunction used for updating the temporal state.
+   * To handle primitive type states, this consumer should consume a OperatorState instance as the state.
    */
-  private final MISTBiFunction<IN, S, S> updateStateFunc;
+  private final MISTBiConsumer<IN, OperatorState<S>> updateStateCons;
   /**
    * Function used for producing the result stream from temporal state.
    */
@@ -53,21 +55,21 @@ public final class ApplyStatefulWindowOperatorStream<IN, OUT, S>
    */
   private final MISTSupplier<S> initializeStateSup;
 
-  public ApplyStatefulWindowOperatorStream(final MISTBiFunction<IN, S, S> updateStateFunc,
+  public ApplyStatefulWindowOperatorStream(final MISTBiConsumer<IN, OperatorState<S>> updateStateCons,
                                            final MISTFunction<S, OUT> produceResultFunc,
                                            final MISTSupplier<S> initializeStateSup,
                                            final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
     super(StreamType.OperatorType.APPLY_STATEFUL_WINDOW, dag);
-    this.updateStateFunc = updateStateFunc;
+    this.updateStateCons = updateStateCons;
     this.produceResultFunc = produceResultFunc;
     this.initializeStateSup = initializeStateSup;
   }
 
   /**
-   * @return the Function with two arguments used for updating its internal state
+   * @return the Consumer that updates the temporal state with the input data
    */
-  public MISTBiFunction<IN, S, S> getUpdateStateFunc() {
-    return updateStateFunc;
+  public MISTBiConsumer<IN, OperatorState<S>> getUpdateStateCons() {
+    return updateStateCons;
   }
 
   /**
@@ -89,7 +91,7 @@ public final class ApplyStatefulWindowOperatorStream<IN, OUT, S>
     final InstantOperatorInfo.Builder iOpInfoBuilder = InstantOperatorInfo.newBuilder();
     iOpInfoBuilder.setInstantOperatorType(InstantOperatorTypeEnum.APPLY_STATEFUL_WINDOW);
     final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
-    serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(updateStateFunc)));
+    serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(updateStateCons)));
     serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(produceResultFunc)));
     serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(initializeStateSup)));
     iOpInfoBuilder.setFunctions(serializedFunctionList);

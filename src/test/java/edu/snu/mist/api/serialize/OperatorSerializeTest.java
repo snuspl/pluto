@@ -16,12 +16,10 @@
 package edu.snu.mist.api.serialize;
 
 import edu.snu.mist.api.AvroVertexSerializable;
+import edu.snu.mist.api.OperatorState;
+import edu.snu.mist.task.OperatorStateImpl;
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.api.functions.MISTBiFunction;
-import edu.snu.mist.api.functions.MISTBiPredicate;
-import edu.snu.mist.api.functions.MISTFunction;
-import edu.snu.mist.api.functions.MISTPredicate;
-import edu.snu.mist.api.functions.MISTSupplier;
+import edu.snu.mist.api.functions.*;
 import edu.snu.mist.api.operators.*;
 import edu.snu.mist.api.windows.CountWindowInformation;
 import edu.snu.mist.api.windows.TimeWindowInformation;
@@ -39,11 +37,7 @@ import org.junit.Test;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.function.*;
 
 import static edu.snu.mist.formats.avro.WindowOperatorTypeEnum.COUNT;
 import static edu.snu.mist.formats.avro.WindowOperatorTypeEnum.JOIN;
@@ -64,31 +58,33 @@ public class OperatorSerializeTest {
    */
   @Test
   public void applyStatefulStreamSerializationTest() {
-    final MISTBiFunction<String, Integer, Integer> expectedUpdateStateFunc =
+    final MISTBiConsumer<String, OperatorState<Integer>> expectedUpdateStateCons =
         (input, state) -> {
-          if (Integer.parseInt(input) > state) {
-            return Integer.parseInt(input);
-          } else {
-            return state;
+          if (Integer.parseInt(input) > state.get()) {
+            state.set(Integer.parseInt(input));
           }
         };
     final MISTFunction<Integer, String> expectedProduceResultFunc = state -> state.toString();
     final MISTSupplier<Integer> expectedInitializeStateSup = () -> Integer.MIN_VALUE;
     final ApplyStatefulOperatorStream statefulOpStream = new ApplyStatefulOperatorStream<>(
-        expectedUpdateStateFunc, expectedProduceResultFunc, expectedInitializeStateSup, mockDag);
+        expectedUpdateStateCons, expectedProduceResultFunc, expectedInitializeStateSup, mockDag);
     final Vertex serializedVertex = statefulOpStream.getSerializedVertex();
 
     // Test whether the vertex is created properly or not.
     Assert.assertEquals(serializedVertex.getVertexType(), VertexTypeEnum.INSTANT_OPERATOR);
     final InstantOperatorInfo statefulOpInfo = (InstantOperatorInfo) serializedVertex.getAttributes();
     final List<ByteBuffer> statefulOpFunctions = statefulOpInfo.getFunctions();
-    final BiFunction deserializedUpdateStateFunc = (BiFunction) deserializeFunction(statefulOpFunctions.get(0));
+    final BiConsumer deserializedUpdateStateCons = (BiConsumer) deserializeFunction(statefulOpFunctions.get(0));
     final Function deserializedProduceResultFunc = (Function) deserializeFunction(statefulOpFunctions.get(1));
     final Supplier deserializedInitializeStateSup = (Supplier) deserializeFunction(statefulOpFunctions.get(2));
 
     Assert.assertEquals(expectedInitializeStateSup.get(), deserializedInitializeStateSup.get());
-    Assert.assertEquals(expectedUpdateStateFunc.apply("10", 5), deserializedUpdateStateFunc.apply("10", 5));
-    Assert.assertEquals(expectedUpdateStateFunc.apply("10", 15), deserializedUpdateStateFunc.apply("10", 15));
+    final OperatorState<Integer> operatorState1 = new OperatorStateImpl<>(5);
+    deserializedUpdateStateCons.accept("10", operatorState1);
+    final OperatorState<Integer> operatorState2 = new OperatorStateImpl<>(15);
+    deserializedUpdateStateCons.accept("10", operatorState2);
+    Assert.assertEquals(10, (long) operatorState1.get());
+    Assert.assertEquals(15, (long) operatorState2.get());
     Assert.assertEquals(expectedProduceResultFunc.apply(15), deserializedProduceResultFunc.apply(15));
     Assert.assertNotEquals(expectedProduceResultFunc.apply(15), deserializedProduceResultFunc.apply(10));
   }

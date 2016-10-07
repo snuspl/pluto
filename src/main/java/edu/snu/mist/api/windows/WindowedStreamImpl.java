@@ -17,7 +17,9 @@ package edu.snu.mist.api.windows;
 
 import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.MISTStreamImpl;
+import edu.snu.mist.api.OperatorState;
 import edu.snu.mist.api.StreamType;
+import edu.snu.mist.api.functions.MISTBiConsumer;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTSupplier;
@@ -68,11 +70,11 @@ public abstract class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>
 
   @Override
   public <R, S> ApplyStatefulWindowOperatorStream<T, R, S> applyStatefulWindow(
-      final MISTBiFunction<T, S, S> updateStateFunc,
+      final MISTBiConsumer<T, OperatorState<S>> updateStateCons,
       final MISTFunction<S, R> produceResultFunc,
       final MISTSupplier<S> initializeStateSup) {
     final ApplyStatefulWindowOperatorStream<T, R, S> downStream =
-        new ApplyStatefulWindowOperatorStream<>(updateStateFunc, produceResultFunc, initializeStateSup, dag);
+        new ApplyStatefulWindowOperatorStream<>(updateStateCons, produceResultFunc, initializeStateSup, dag);
     dag.addVertex(downStream);
     dag.addEdge(this, downStream, StreamType.Direction.LEFT);
     return downStream;

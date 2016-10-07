@@ -16,15 +16,9 @@
 
 package edu.snu.mist.examples;
 
-import edu.snu.mist.api.APIQueryControlResult;
-import edu.snu.mist.api.ContinuousStream;
-import edu.snu.mist.api.MISTQuery;
-import edu.snu.mist.api.MISTQueryBuilder;
+import edu.snu.mist.api.*;
 import edu.snu.mist.api.exceptions.StreamTypeMismatchException;
-import edu.snu.mist.api.functions.MISTBiFunction;
-import edu.snu.mist.api.functions.MISTBiPredicate;
-import edu.snu.mist.api.functions.MISTFunction;
-import edu.snu.mist.api.functions.MISTSupplier;
+import edu.snu.mist.api.functions.*;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
 import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
 import edu.snu.mist.api.types.Tuple2;
@@ -70,11 +64,8 @@ public final class JoinAndApplyStateful {
     final TextSocketSinkConfiguration localTextSocketSinkConf = MISTExampleUtils.getLocalTextSocketSinkConf();
 
     final MISTBiPredicate<String, String> joinPred = (s1, s2) -> s1.equals(s2);
-    final MISTBiFunction<Tuple2<String, String>, Collection<String>, Collection<String>> updateStateFunc =
-        (tuple, state) -> {
-          state.add(tuple.get(0) + "|" + tuple.get(1));
-          return state;
-        };
+    final MISTBiConsumer<Tuple2<String, String>, OperatorState<Collection<String>>> updateStateCons =
+        (tuple, state) -> state.get().add(tuple.get(0) + "|" + tuple.get(1));
     final MISTFunction<Collection<String>, String> produceResultFunc = (collection) -> collection.toString();
     final MISTSupplier<Collection<String>> initialStateSup = () -> new LinkedList<>();
 
@@ -84,7 +75,7 @@ public final class JoinAndApplyStateful {
 
     sourceStream1
         .join(sourceStream2, joinPred, new TimeWindowInformation(5000, 5000))
-        .applyStatefulWindow(updateStateFunc, produceResultFunc, initialStateSup)
+        .applyStatefulWindow(updateStateCons, produceResultFunc, initialStateSup)
         .textSocketOutput(localTextSocketSinkConf);
 
     final MISTQuery query = queryBuilder.build();
