@@ -190,7 +190,7 @@
                             "type": "int"
                           },
                           {
-                            "name": "WindowEmissionInterval",
+                            "name": "WindowInterval",
                             "type": "int"
                           }
                         ]

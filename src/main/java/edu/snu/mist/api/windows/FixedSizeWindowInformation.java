@@ -46,7 +46,7 @@ public abstract class FixedSizeWindowInformation implements WindowInformation {
       this.windowSize = windowSize;
       this.windowEmissionInterval = windowEmissionInterval;
     } else {
-      throw new IllegalWindowParameterException("Negative window parameters are not allowed.");
+      throw new IllegalWindowParameterException("Negative or zero window parameters are not allowed.");
     }
   }
 
@@ -76,7 +76,7 @@ public abstract class FixedSizeWindowInformation implements WindowInformation {
     final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
     wOpInfoBuilder.setFunctions(serializedFunctionList);
     wOpInfoBuilder.setWindowSize(windowSize);
-    wOpInfoBuilder.setWindowEmissionInterval(windowEmissionInterval);
+    wOpInfoBuilder.setWindowInterval(windowEmissionInterval);
     return wOpInfoBuilder.build();
   }
 }

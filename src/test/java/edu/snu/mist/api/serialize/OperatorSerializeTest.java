@@ -103,7 +103,7 @@ public class OperatorSerializeTest {
     final WindowOperatorInfo windowOperatorInfo = (WindowOperatorInfo) serializedVertex.getAttributes();
     Assert.assertEquals(TIME, windowOperatorInfo.getWindowOperatorType());
     Assert.assertEquals(windowSize, windowOperatorInfo.getWindowSize());
-    Assert.assertEquals(windowEmissionInterval, windowOperatorInfo.getWindowEmissionInterval());
+    Assert.assertEquals(windowEmissionInterval, windowOperatorInfo.getWindowInterval());
   }
 
   /**
@@ -120,7 +120,7 @@ public class OperatorSerializeTest {
     final WindowOperatorInfo windowOperatorInfo = (WindowOperatorInfo) serializedVertex.getAttributes();
     Assert.assertEquals(COUNT, windowOperatorInfo.getWindowOperatorType());
     Assert.assertEquals(windowSize, windowOperatorInfo.getWindowSize());
-    Assert.assertEquals(windowEmissionInterval, windowOperatorInfo.getWindowEmissionInterval());
+    Assert.assertEquals(windowEmissionInterval, windowOperatorInfo.getWindowInterval());
   }
 
   /**

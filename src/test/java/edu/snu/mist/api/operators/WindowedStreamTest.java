@@ -20,6 +20,7 @@ import edu.snu.mist.api.functions.MISTBiPredicate;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.api.windows.CountWindowInformation;
 import edu.snu.mist.api.windows.FixedSizeWindowInformation;
+import edu.snu.mist.api.windows.SessionWindowInformation;
 import edu.snu.mist.api.windows.TimeWindowInformation;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.task.OperatorStateImpl;
@@ -100,6 +101,25 @@ public class WindowedStreamTest {
 
     // Check map -> countWindow
     checkEdges(queryBuilder.build().getDAG(), 2, mappedStream, countWindowedStream, StreamType.Direction.LEFT);
+  }
+
+  /**
+   * Test for creating session-based WindowedStream from ContinuousStream.
+   */
+  @Test
+  public void testSessionWindowedStream() {
+    final int sessionInterval = 1000;
+    /* Creates a test windowed stream with 1 sec session interval */
+    final WindowOperatorStream<Tuple2<String, Integer>> sessionWindowedStream =
+        mappedStream
+            .window(new SessionWindowInformation(sessionInterval));
+    Assert.assertEquals(sessionWindowedStream.getBasicType(), StreamType.BasicType.WINDOWED);
+    Assert.assertEquals(sessionWindowedStream.getOperatorType(), StreamType.OperatorType.SESSION_WINDOW);
+    final SessionWindowInformation windowInfo = (SessionWindowInformation) sessionWindowedStream.getWindowInfo();
+    Assert.assertEquals(windowInfo.getWindowInterval(), sessionInterval);
+
+    // Check map -> countWindow
+    checkEdges(queryBuilder.build().getDAG(), 2, mappedStream, sessionWindowedStream, StreamType.Direction.LEFT);
   }
 
   /**
