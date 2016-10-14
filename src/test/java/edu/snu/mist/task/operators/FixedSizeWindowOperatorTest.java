@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.task.operators;
 
-import edu.snu.mist.api.windows.WindowData;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
@@ -25,6 +24,8 @@ import org.junit.Test;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+
+import static edu.snu.mist.task.utils.OperatorTestUtils.checkWindowData;
 
 public final class FixedSizeWindowOperatorTest {
 
@@ -273,22 +274,5 @@ public final class FixedSizeWindowOperatorTest {
     expectedResult2.add(8);
     checkWindowData(result.get(2), expectedResult2, emissionInterval + 1L, windowSize, d8.getTimestamp());
     Assert.assertEquals(w3, result.get(3));
-  }
-
-  /**
-   * Checks that given result is equal to expected result.
-   */
-  private void checkWindowData(final MistEvent result,
-                               final Collection<Integer> expectedResult,
-                               final long expectedWindowStartMoment,
-                               final long expectedWindowSize,
-                               final long expectedWindowTimestamp) {
-    Assert.assertTrue(result.isData());
-    Assert.assertTrue(((MistDataEvent)result).getValue() instanceof WindowData);
-    final WindowData windowData = (WindowData)((MistDataEvent)result).getValue();
-    Assert.assertEquals(expectedResult, windowData.getDataCollection());
-    Assert.assertEquals(expectedWindowStartMoment, windowData.getStart());
-    Assert.assertEquals(expectedWindowSize, windowData.getEnd() - windowData.getStart() + 1);
-    Assert.assertEquals(expectedWindowTimestamp, result.getTimestamp());
   }
 }

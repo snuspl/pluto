@@ -63,7 +63,7 @@ public final class JoinOperatorStream<T, U> extends WindowedStreamImpl<Tuple2<T,
     serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(joinBiPredicate)));
     wOpInfoBuilder.setFunctions(serializedFunctionList);
     wOpInfoBuilder.setWindowSize(0);
-    wOpInfoBuilder.setWindowEmissionInterval(0);
+    wOpInfoBuilder.setWindowInterval(0);
     return wOpInfoBuilder.build();
   }
 }

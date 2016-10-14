@@ -246,11 +246,15 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     switch (wOpInfo.getWindowOperatorType()) {
       case TIME:
         operator = new TimeWindowOperator<>(
-            queryId, operatorId, wOpInfo.getWindowSize(), wOpInfo.getWindowEmissionInterval());
+            queryId, operatorId, wOpInfo.getWindowSize(), wOpInfo.getWindowInterval());
         break;
       case COUNT:
         operator = new CountWindowOperator<>(
-                queryId, operatorId, wOpInfo.getWindowSize(), wOpInfo.getWindowEmissionInterval());
+            queryId, operatorId, wOpInfo.getWindowSize(), wOpInfo.getWindowInterval());
+        break;
+      case SESSION:
+        operator = new SessionWindowOperator<>(
+            queryId, operatorId, wOpInfo.getWindowInterval());
         break;
       case JOIN:
         final List<ByteBuffer> functionList = wOpInfo.getFunctions();
@@ -259,7 +263,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
         break;
       default:
         throw new IllegalArgumentException("MISTTask: Invalid window operator type " +
-              wOpInfo.getWindowOperatorType().toString());
+            wOpInfo.getWindowOperatorType().toString());
     }
     return operator;
   }
