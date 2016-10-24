@@ -82,7 +82,7 @@ public final class ApplyStatefulOperator<IN, OUT, S>
     final OUT output = produceResultFunc.apply(operatorState.get());
 
     LOG.log(Level.FINE, "{0} updates the operatorState {1} with input {2} to {3}, and generates {4}",
-            new Object[]{getOperatorIdentifier(), operatorState, input.getValue(), operatorState.get(), output});
+        new Object[]{getOperatorIdentifier(), operatorState, input.getValue(), operatorState.get(), output});
     input.setValue(output);
     outputEmitter.emitData(input);
   }
