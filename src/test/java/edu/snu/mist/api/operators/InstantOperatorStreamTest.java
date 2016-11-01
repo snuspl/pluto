@@ -17,19 +17,16 @@ package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.*;
 import edu.snu.mist.api.exceptions.StreamTypeMismatchException;
+import edu.snu.mist.api.operators.utils.CountStringFunction;
 import edu.snu.mist.api.sources.BaseSourceStream;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.task.OperatorStateImpl;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Map;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * The test class for operator APIs.
@@ -104,35 +101,23 @@ public final class InstantOperatorStreamTest {
    */
   @Test
   public void testApplyStatefulOperatorStream() {
-    final ApplyStatefulOperatorStream<Tuple2<String, Integer>, Integer, Integer> statefulOperatorStream
-        = filteredMappedStream.applyStateful((e, s) -> {
-      if (((String) e.get(0)).startsWith("A")) {
-        s.set(s.get() + 1);
-      }
-    }, s -> s, () -> 0);
+    final ApplyStatefulOperatorStream<Tuple2<String, Integer>, Integer> statefulOperatorStream
+        = filteredMappedStream.applyStateful(new CountStringFunction());
 
     Assert.assertEquals(statefulOperatorStream.getBasicType(), StreamType.BasicType.CONTINUOUS);
     Assert.assertEquals(statefulOperatorStream.getContinuousType(), StreamType.ContinuousType.OPERATOR);
     Assert.assertEquals(statefulOperatorStream.getOperatorType(), StreamType.OperatorType.APPLY_STATEFUL);
 
-    final BiConsumer<Tuple2<String, Integer>, OperatorState<Integer>> stateUpdateCons =
-        statefulOperatorStream.getUpdateStateCons();
-    final Function<Integer, Integer> produceResultFunc =
-        statefulOperatorStream.getProduceResultFunc();
-    final Supplier<Integer> initializeStateSup =
-        statefulOperatorStream.getInitializeStateSup();
-
     /* Simulate two data inputs on UDF stream */
-    final OperatorState<Integer> operatorState = new OperatorStateImpl<>(initializeStateSup.get());
+    final ApplyStatefulFunction<Tuple2<String, Integer>, Integer> applyStatefulFunction
+        = statefulOperatorStream.getApplyStatefulFunction();
     final Tuple2 firstInput = new Tuple2<>("ABC", 1);
     final Tuple2 secondInput = new Tuple2<>("BAC", 1);
-    Assert.assertEquals(0, (long) operatorState.get());
-    stateUpdateCons.accept(firstInput, operatorState);
-    Assert.assertEquals(1, (long) operatorState.get());
-    Assert.assertEquals(1, (long) produceResultFunc.apply(operatorState.get()));
-    stateUpdateCons.accept(secondInput, operatorState);
-    Assert.assertEquals(1, (long) operatorState.get());
-    Assert.assertEquals(1, (long) produceResultFunc.apply(operatorState.get()));
+    Assert.assertEquals(0, (long) applyStatefulFunction.produceResult());
+    applyStatefulFunction.update(firstInput);
+    Assert.assertEquals(1, (long) applyStatefulFunction.produceResult());
+    applyStatefulFunction.update(secondInput);
+    Assert.assertEquals(1, (long) applyStatefulFunction.produceResult());
 
     // Check filter -> map -> applyStateful
     final MISTQuery query = queryBuilder.build();

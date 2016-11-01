@@ -17,12 +17,10 @@ package edu.snu.mist.api.windows;
 
 import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.MISTStreamImpl;
-import edu.snu.mist.api.OperatorState;
+import edu.snu.mist.api.operators.ApplyStatefulFunction;
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.api.functions.MISTBiConsumer;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
-import edu.snu.mist.api.functions.MISTSupplier;
 import edu.snu.mist.api.operators.AggregateWindowOperatorStream;
 import edu.snu.mist.api.operators.ApplyStatefulWindowOperatorStream;
 import edu.snu.mist.api.operators.ReduceByKeyWindowOperatorStream;
@@ -69,12 +67,10 @@ public abstract class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>
   }
 
   @Override
-  public <R, S> ApplyStatefulWindowOperatorStream<T, R, S> applyStatefulWindow(
-      final MISTBiConsumer<T, OperatorState<S>> updateStateCons,
-      final MISTFunction<S, R> produceResultFunc,
-      final MISTSupplier<S> initializeStateSup) {
-    final ApplyStatefulWindowOperatorStream<T, R, S> downStream =
-        new ApplyStatefulWindowOperatorStream<>(updateStateCons, produceResultFunc, initializeStateSup, dag);
+  public <R> ApplyStatefulWindowOperatorStream<T, R> applyStatefulWindow(
+      final ApplyStatefulFunction<T, R> applyStatefulFunction) {
+    final ApplyStatefulWindowOperatorStream<T, R> downStream =
+        new ApplyStatefulWindowOperatorStream<>(applyStatefulFunction, dag);
     dag.addVertex(downStream);
     dag.addEdge(this, downStream, StreamType.Direction.LEFT);
     return downStream;

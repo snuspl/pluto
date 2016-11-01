@@ -15,15 +15,11 @@
  */
 package edu.snu.mist.task.operators;
 
-import edu.snu.mist.api.OperatorState;
-import edu.snu.mist.task.OperatorStateImpl;
+import edu.snu.mist.api.operators.ApplyStatefulFunction;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
 
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,43 +27,27 @@ import java.util.logging.Logger;
  * This operator applies the user-defined operation to the data received and update the internal state.
  * @param <IN> the type of input data
  * @param <OUT> the type of output data
- * @param <S> the type of internal state
  */
-public final class ApplyStatefulOperator<IN, OUT, S>
-    extends OneStreamOperator {
+public final class ApplyStatefulOperator<IN, OUT> extends OneStreamOperator {
+
   private static final Logger LOG = Logger.getLogger(ApplyStatefulOperator.class.getName());
 
   /**
-   * The consumer that updates internal state with the data input data.
+   * The user-defined ApplyStatefulFunction.
    */
-  private final BiConsumer<IN, OperatorState<S>> updateStateCons;
-
-  /**
-   * The function that produces an output from the internal state.
-   */
-  private final Function<S, OUT> produceResultFunc;
-
-  /**
-   * The internal operatorState.
-   */
-  private final OperatorState<S> operatorState;
+  private final ApplyStatefulFunction<IN, OUT> applyStatefulFunction;
 
   /**
    * @param queryId identifier of the query which contains this operator
    * @param operatorId identifier of operator
-   * @param updateStateCons the consumer that consumes the input to updates the internal state.
-   * @param produceResultFunc the function that produces an output from the internal state.
-   * @param initializeStateSup the supplier that generates the initial state.
+   * @param applyStatefulFunction the user-defined ApplyStatefulFunction.
    */
   public ApplyStatefulOperator(final String queryId,
                                final String operatorId,
-                               final BiConsumer<IN, OperatorState<S>> updateStateCons,
-                               final Function<S, OUT> produceResultFunc,
-                               final Supplier<S> initializeStateSup) {
+                               final ApplyStatefulFunction<IN, OUT> applyStatefulFunction) {
     super(queryId, operatorId);
-    this.updateStateCons = updateStateCons;
-    this.produceResultFunc = produceResultFunc;
-    operatorState = new OperatorStateImpl<>(initializeStateSup.get());
+    this.applyStatefulFunction = applyStatefulFunction;
+    this.applyStatefulFunction.initialize();
   }
 
   @Override
@@ -77,12 +57,11 @@ public final class ApplyStatefulOperator<IN, OUT, S>
 
   @Override
   public void processLeftData(final MistDataEvent input) {
-    final IN value = (IN)input.getValue();
-    updateStateCons.accept(value, operatorState);
-    final OUT output = produceResultFunc.apply(operatorState.get());
+    applyStatefulFunction.update((IN)input.getValue());
+    final OUT output = applyStatefulFunction.produceResult();
 
-    LOG.log(Level.FINE, "{0} updates the operatorState {1} with input {2} to {3}, and generates {4}",
-        new Object[]{getOperatorIdentifier(), operatorState, input.getValue(), operatorState.get(), output});
+    LOG.log(Level.FINE, "{0} updates the operator state with input {1} using {2}, and generates {3}",
+        new Object[]{getOperatorIdentifier(), input, applyStatefulFunction, output});
     input.setValue(output);
     outputEmitter.emitData(input);
   }

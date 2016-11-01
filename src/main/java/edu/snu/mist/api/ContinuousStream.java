@@ -72,16 +72,11 @@ public interface ContinuousStream<T> extends MISTStream<T> {
   /**
    * Applies user-defined stateful operator to the current stream.
    * This stream will produce outputs on every stream input.
-   * @param updateStateCons the consumer that updates current state S with the data T
-   * @param produceResultFunc the function which produces result with the updated state and the input
-   * @param initializeStateSup the supplier which generates the initial state
-   * @param <S> the type of the operator state
+   * @param applyStatefulFunction the user-defined ApplyStatefulFunction
    * @param <OUT> the type of stream output
    * @return new transformed stream after applying the user-defined stateful operation
    */
-  <S, OUT> ApplyStatefulOperatorStream<T, OUT, S> applyStateful(MISTBiConsumer<T, OperatorState<S>> updateStateCons,
-                                                                MISTFunction<S, OUT> produceResultFunc,
-                                                                MISTSupplier<S> initializeStateSup);
+  <OUT> ApplyStatefulOperatorStream<T, OUT> applyStateful(ApplyStatefulFunction<T, OUT> applyStatefulFunction);
 
   /**
    * Applies union operation to the current stream and input continuous stream passed as a parameter.

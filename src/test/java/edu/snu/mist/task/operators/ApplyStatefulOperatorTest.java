@@ -15,18 +15,16 @@
  */
 package edu.snu.mist.task.operators;
 
-import edu.snu.mist.api.OperatorState;
+import edu.snu.mist.api.operators.ApplyStatefulFunction;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
+import edu.snu.mist.task.utils.FindMaxIntFunction;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 public final class ApplyStatefulOperatorTest {
 
@@ -44,20 +42,11 @@ public final class ApplyStatefulOperatorTest {
     final MistDataEvent data30 = new MistDataEvent(30, 3L);
     final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(4L);
 
-    // functions that dealing with state
-    final BiConsumer<Integer, OperatorState<Integer>> updateStateCons =
-        (input, state) -> {
-          if (input > state.get()) {
-            state.set(input);
-          }
-        };
-    final Function<Integer, Integer> produceResultFunc = state -> state;
-    final Supplier<Integer> initializeStateSup = () -> Integer.MIN_VALUE;
+    // the state managing function finding maximum integer value among received inputs
+    final ApplyStatefulFunction applyStatefulFunction = new FindMaxIntFunction();
 
-    final ApplyStatefulOperator<Integer, Integer, Integer> applyStatefulOperator =
-        new ApplyStatefulOperator<>(
-            "testQuery", "testAggOp", updateStateCons, produceResultFunc, initializeStateSup);
-
+    final ApplyStatefulOperator<Integer, Integer> applyStatefulOperator =
+        new ApplyStatefulOperator<>("testQuery", "testAggOp", applyStatefulFunction);
     final List<MistEvent> result = new LinkedList<>();
     applyStatefulOperator.setOutputEmitter(new SimpleOutputEmitter(result));
 

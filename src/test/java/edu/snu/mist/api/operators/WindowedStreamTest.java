@@ -17,13 +17,13 @@ package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.*;
 import edu.snu.mist.api.functions.MISTBiPredicate;
+import edu.snu.mist.api.operators.utils.CountStringFunction;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.api.windows.CountWindowInformation;
 import edu.snu.mist.api.windows.FixedSizeWindowInformation;
 import edu.snu.mist.api.windows.SessionWindowInformation;
 import edu.snu.mist.api.windows.TimeWindowInformation;
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.task.OperatorStateImpl;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.windows.WindowImpl;
 import org.junit.After;
@@ -145,22 +145,21 @@ public class WindowedStreamTest {
    */
   @Test
   public void testApplyStatefulWindowStream() {
-    final ApplyStatefulWindowOperatorStream<Tuple2<String, Integer>, Integer, Integer> applyStatefulWindowStream
-        = timeWindowedStream.applyStatefulWindow(
-            (input, state) -> state.set((Integer)input.get(1) + state.get()), state -> state, () -> 0);
+    final ApplyStatefulWindowOperatorStream<Tuple2<String, Integer>, Integer> applyStatefulWindowStream
+        = timeWindowedStream.applyStatefulWindow(new CountStringFunction());
     Assert.assertEquals(applyStatefulWindowStream.getBasicType(), StreamType.BasicType.CONTINUOUS);
     Assert.assertEquals(applyStatefulWindowStream.getContinuousType(), StreamType.ContinuousType.OPERATOR);
     Assert.assertEquals(applyStatefulWindowStream.getOperatorType(), StreamType.OperatorType.APPLY_STATEFUL_WINDOW);
-    final OperatorState<Integer> operatorState1 = new OperatorStateImpl<>(2);
-    applyStatefulWindowStream.getUpdateStateCons().accept(new Tuple2<>("Hello", 1), operatorState1);
-    Assert.assertEquals((long) operatorState1.get(), 3);
-    final OperatorState<Integer> operatorState2 = new OperatorStateImpl<>(3);
-    applyStatefulWindowStream.getUpdateStateCons().accept(new Tuple2<>("Hello", 1), operatorState2);
-    Assert.assertNotEquals((long) operatorState2.get(), 3);
-    Assert.assertEquals(applyStatefulWindowStream.getProduceResultFunc().apply(10), (Integer)10);
-    Assert.assertNotEquals(applyStatefulWindowStream.getProduceResultFunc().apply(10), (Integer)11);
-    Assert.assertEquals(applyStatefulWindowStream.getInitializeStateSup().get(), (Integer)0);
-    Assert.assertNotEquals(applyStatefulWindowStream.getInitializeStateSup().get(), (Integer)1);
+
+    final ApplyStatefulFunction<Tuple2<String, Integer>, Integer> applyStatefulFunction
+        = applyStatefulWindowStream.getApplyStatefulFunction();
+    final Tuple2 firstInput = new Tuple2<>("ABC", 1);
+    final Tuple2 secondInput = new Tuple2<>("BAC", 1);
+    Assert.assertEquals(0, (long) applyStatefulFunction.produceResult());
+    applyStatefulFunction.update(firstInput);
+    Assert.assertEquals(1, (long) applyStatefulFunction.produceResult());
+    applyStatefulFunction.update(secondInput);
+    Assert.assertEquals(1, (long) applyStatefulFunction.produceResult());
 
     // Check windowed -> stateful operation applied
     checkEdges(
