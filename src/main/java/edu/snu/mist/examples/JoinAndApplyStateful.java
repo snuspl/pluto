@@ -19,6 +19,7 @@ package edu.snu.mist.examples;
 import edu.snu.mist.api.*;
 import edu.snu.mist.api.exceptions.StreamTypeMismatchException;
 import edu.snu.mist.api.functions.*;
+import edu.snu.mist.api.operators.ApplyStatefulFunction;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
 import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
 import edu.snu.mist.api.types.Tuple2;
@@ -64,18 +65,14 @@ public final class JoinAndApplyStateful {
     final TextSocketSinkConfiguration localTextSocketSinkConf = MISTExampleUtils.getLocalTextSocketSinkConf();
 
     final MISTBiPredicate<String, String> joinPred = (s1, s2) -> s1.equals(s2);
-    final MISTBiConsumer<Tuple2<String, String>, OperatorState<Collection<String>>> updateStateCons =
-        (tuple, state) -> state.get().add(tuple.get(0) + "|" + tuple.get(1));
-    final MISTFunction<Collection<String>, String> produceResultFunc = (collection) -> collection.toString();
-    final MISTSupplier<Collection<String>> initialStateSup = () -> new LinkedList<>();
-
+    final ApplyStatefulFunction<Tuple2<String, String>, String> applyStatefulFunction = new FoldStringTupleFunction();
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     final ContinuousStream sourceStream1 = queryBuilder.socketTextStream(localTextSocketSource1Conf);
     final ContinuousStream sourceStream2 = queryBuilder.socketTextStream(localTextSocketSource2Conf);
 
     sourceStream1
         .join(sourceStream2, joinPred, new TimeWindowInformation(5000, 5000))
-        .applyStatefulWindow(updateStateCons, produceResultFunc, initialStateSup)
+        .applyStatefulWindow(applyStatefulFunction)
         .textSocketOutput(localTextSocketSinkConf);
 
     final MISTQuery query = queryBuilder.build();
@@ -108,5 +105,30 @@ public final class JoinAndApplyStateful {
   }
 
   private JoinAndApplyStateful(){
+  }
+
+  /**
+   * A simple ApplyStatefulFunction that folds all received string tuple inputs to internal collection.
+   */
+  private static final class FoldStringTupleFunction implements ApplyStatefulFunction<Tuple2<String, String>, String> {
+    private Collection<String> state;
+
+    private FoldStringTupleFunction() {
+    }
+
+    @Override
+    public void initialize() {
+      this.state = new LinkedList<>();
+    }
+
+    @Override
+    public void update(final Tuple2<String, String> input) {
+      this.state.add(input.get(0) + "|" + input.get(1));
+    }
+
+    @Override
+    public String produceResult() {
+      return this.state.toString();
+    }
   }
 }

@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.task;
 
+import edu.snu.mist.api.operators.ApplyStatefulFunction;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 import edu.snu.mist.api.sources.parameters.PunctuatedWatermarkParameters;
@@ -120,7 +121,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
               timestampExtractionFunc, period, expectedDelay, TimeUnit.MILLISECONDS, scheduler);
         case PUNCTUATED:
           final Predicate<String> isWatermark =
-              (Predicate)deserializeLambda((ByteBuffer) watermarkConfString.get(
+              (Predicate) deserializeLambda((ByteBuffer) watermarkConfString.get(
                   PunctuatedWatermarkParameters.WATERMARK_PREDICATE), classLoader);
           final Function<String, Long> parseTimestamp =
               (Function) deserializeLambda((ByteBuffer) watermarkConfString.get(
@@ -189,11 +190,9 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     final List<ByteBuffer> functionList = iOpInfo.getFunctions();
     switch (iOpInfo.getInstantOperatorType()) {
       case APPLY_STATEFUL: {
-        final BiConsumer updateStateCons = (BiConsumer) deserializeLambda(functionList.get(0), classLoader);
-        final Function produceResultFunc = (Function) deserializeLambda(functionList.get(1), classLoader);
-        final Supplier initializeStateSup = (Supplier) deserializeLambda(functionList.get(2), classLoader);
-        return new ApplyStatefulOperator<>(
-            queryId, operatorId, updateStateCons, produceResultFunc, initializeStateSup);
+        final ApplyStatefulFunction applyStatefulFunction =
+            (ApplyStatefulFunction) deserializeLambda(functionList.get(0), classLoader);
+        return new ApplyStatefulOperator<>(queryId, operatorId, applyStatefulFunction);
       }
       case FILTER: {
         final Predicate predicate = (Predicate) deserializeLambda(functionList.get(0), classLoader);
@@ -216,11 +215,9 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
         throw new IllegalArgumentException("MISTTask: ReduceByKeyWindowOperator is currently not supported!");
       }
       case APPLY_STATEFUL_WINDOW: {
-        final BiConsumer updateStateCons = (BiConsumer) deserializeLambda(functionList.get(0), classLoader);
-        final Function produceResultFunc = (Function) deserializeLambda(functionList.get(1), classLoader);
-        final Supplier initializeStateSup = (Supplier) deserializeLambda(functionList.get(2), classLoader);
-        return new ApplyStatefulWindowOperator<>(
-            queryId, operatorId, updateStateCons, produceResultFunc, initializeStateSup);
+        final ApplyStatefulFunction applyStatefulFunction =
+            (ApplyStatefulFunction) deserializeLambda(functionList.get(0), classLoader);
+        return new ApplyStatefulWindowOperator<>(queryId, operatorId, applyStatefulFunction);
       }
       case AGGREGATE_WINDOW: {
         final Function aggregateFunc = (Function) deserializeLambda(functionList.get(0), classLoader);

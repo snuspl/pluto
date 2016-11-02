@@ -15,19 +15,17 @@
  */
 package edu.snu.mist.task.operators;
 
-import edu.snu.mist.api.OperatorState;
+import edu.snu.mist.api.operators.ApplyStatefulFunction;
 import edu.snu.mist.task.common.MistDataEvent;
 import edu.snu.mist.task.common.MistEvent;
 import edu.snu.mist.task.common.MistWatermarkEvent;
+import edu.snu.mist.task.utils.FindMaxIntFunction;
 import edu.snu.mist.task.windows.WindowImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 public final class ApplyStatefulWindowOperatorTest {
 
@@ -41,24 +39,16 @@ public final class ApplyStatefulWindowOperatorTest {
     final WindowImpl<Integer> window = new WindowImpl<>(0L, 100L);
     window.putData(new MistDataEvent(10, 10));
     window.putData(new MistDataEvent(20, 20));
-    window.putData(new MistDataEvent(15, 30));
-    window.putData(new MistDataEvent(30, 90));
+    window.putData(new MistDataEvent(30, 30));
+    window.putData(new MistDataEvent(15, 90));
     final MistDataEvent dataEvent = new MistDataEvent(window, 90L);
     final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(101L);
+    // the state finding maximum integer value among received inputs
+    final ApplyStatefulFunction<Integer, Integer> applyStatefulFunction = new FindMaxIntFunction();
 
-    // functions that dealing with state
-    final BiConsumer<Integer, OperatorState<Integer>> updateStateCons =
-        (input, state) -> {
-          if (input > state.get()) {
-            state.set(input);
-          }
-        };
-    final Function<Integer, String> produceResultFunc = state -> state.toString();
-    final Supplier<Integer> initializeStateSup = () -> Integer.MIN_VALUE;
-
-    final ApplyStatefulWindowOperator<Integer, String, Integer> applyStatefulWindowOperator =
+    final ApplyStatefulWindowOperator<Integer, Integer> applyStatefulWindowOperator =
         new ApplyStatefulWindowOperator<>(
-            "testQuery", "testAggOp", updateStateCons, produceResultFunc, initializeStateSup);
+            "testQuery", "testAggOp", applyStatefulFunction);
 
     final List<MistEvent> result = new LinkedList<>();
     applyStatefulWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));
@@ -66,7 +56,7 @@ public final class ApplyStatefulWindowOperatorTest {
     applyStatefulWindowOperator.processLeftData(dataEvent);
     Assert.assertEquals(1, result.size());
     Assert.assertTrue(result.get(0).isData());
-    Assert.assertEquals("30", ((MistDataEvent)result.get(0)).getValue());
+    Assert.assertEquals(30, ((MistDataEvent)result.get(0)).getValue());
     Assert.assertEquals(90L, result.get(0).getTimestamp());
 
     applyStatefulWindowOperator.processLeftWatermark(watermarkEvent);

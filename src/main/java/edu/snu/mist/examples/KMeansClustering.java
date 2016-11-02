@@ -19,10 +19,8 @@ package edu.snu.mist.examples;
 import edu.snu.mist.api.APIQueryControlResult;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
-import edu.snu.mist.api.OperatorState;
-import edu.snu.mist.api.functions.MISTBiConsumer;
+import edu.snu.mist.api.operators.ApplyStatefulFunction;
 import edu.snu.mist.api.functions.MISTFunction;
-import edu.snu.mist.api.functions.MISTSupplier;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
 import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
 import edu.snu.mist.examples.parameters.SourceAddress;
@@ -57,17 +55,11 @@ public final class KMeansClustering {
         MISTExampleUtils.getLocalTextSocketSourceConf(sourceSocket);
     final TextSocketSinkConfiguration localTextSocketSinkConf = MISTExampleUtils.getLocalTextSocketSinkConf();
 
-    final MISTBiConsumer<Point, OperatorState<KMeansState>> updateClusterCons =
-        // put point into KMeansState
-        (newPoint, opState) -> {
-          final KMeansState state = opState.get();
-          state.clustering(newPoint);
-        };
-    final MISTFunction<KMeansState, List<String>> produceResultFunc =
+    final MISTFunction<List<Cluster>, List<String>> flatMapFunc =
         // parse clustering result into String list
-        (state) -> {
+        (clusterList) -> {
           final List<String> results = new LinkedList<>();
-          for (final Cluster cluster : state.getClusters()) {
+          for (final Cluster cluster : clusterList) {
             String clusterResult = "Cluster id: " + cluster.getId() +
                 ", cluster center: " + cluster.getCenter().toString() + "\n";
             for (final Point point : cluster.getClusteredPoints()) {
@@ -77,7 +69,7 @@ public final class KMeansClustering {
           }
           return results;
         };
-    final MISTSupplier<KMeansState> initializeStateSup = () -> new KMeansState();
+    final ApplyStatefulFunction<Point, List<Cluster>> applyStatefulFunction = new KMeansFunction();
 
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     queryBuilder.socketTextStream(localTextSocketSourceConf)
@@ -91,9 +83,9 @@ public final class KMeansClustering {
           return new Point(Double.parseDouble(array[0]), Double.parseDouble(array[1]));
         })
         // apply online k-means clustering to the input point
-        .applyStateful(updateClusterCons, produceResultFunc, initializeStateSup)
-        // flat the string list into multiple string output
-        .flatMap(stringList -> stringList)
+        .applyStateful(applyStatefulFunction)
+        // flat the cluster list into multiple string output
+        .flatMap(flatMapFunc)
         // display the result
         .textSocketOutput(localTextSocketSinkConf);
     final MISTQuery query = queryBuilder.build();
@@ -128,12 +120,12 @@ public final class KMeansClustering {
   }
 
   /**
-   * The state of K-means clustering used during the aggregating operation on window.
+   * The state managing function of K-means clustering used during the aggregating operation on window.
    * The clustering algorithm used in this class is based on next references:
    * E. Liberty, R. Sriharsha, and M. Sviridenko. An algorithm for online k-means clustering. arXiv:1412.5721v2, 2014.
    * D. Sculley. Web-scale k-means clustering. in Proc. 19th Int. Conf. World Wide Web, Raleigh, NC, USA, 2010.
    */
-  private static final class KMeansState {
+  private static final class KMeansFunction implements ApplyStatefulFunction<Point, List<Cluster>> {
     // The number of received inputs
     private int n;
     // The new cluster count for a single facility cost
@@ -141,9 +133,13 @@ public final class KMeansClustering {
     // The facility cost that used to determine to create a new cluster or not
     private double fr;
     // The collection of clusters that contain the center and input points of it
-    private final Collection<Cluster> clusters;
+    private Collection<Cluster> clusters;
 
-    public KMeansState() {
+    private KMeansFunction() {
+    }
+
+    @Override
+    public void initialize() {
       n = 0;
       qr = 0;
       fr = 0;
@@ -156,7 +152,8 @@ public final class KMeansClustering {
      * according to the distance from the new point to nearest cluster.
      * @param newPoint the incoming point
      */
-    public void clustering(final Point newPoint) {
+    @Override
+    public void update(final Point newPoint) {
       n++;
       switch (n) {
         case 2: {
@@ -198,8 +195,9 @@ public final class KMeansClustering {
     /**
      * @return the cluster information
      */
-    public Collection<Cluster> getClusters() {
-      return clusters;
+    @Override
+    public List<Cluster> produceResult() {
+      return new LinkedList<>(clusters);
     }
   }
 

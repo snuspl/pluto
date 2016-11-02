@@ -15,12 +15,12 @@
  */
 package edu.snu.mist.api.serialize;
 
+import edu.snu.mist.api.operators.ApplyStatefulFunction;
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.OperatorState;
-import edu.snu.mist.task.OperatorStateImpl;
 import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.functions.*;
 import edu.snu.mist.api.operators.*;
+import edu.snu.mist.api.operators.utils.CountStringFunction;
 import edu.snu.mist.api.windows.CountWindowInformation;
 import edu.snu.mist.api.windows.TimeWindowInformation;
 import edu.snu.mist.api.windows.WindowData;
@@ -36,6 +36,8 @@ import org.junit.Test;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.function.*;
 
@@ -52,41 +54,37 @@ public class OperatorSerializeTest {
   private final Integer windowSize = 5000;
   private final Integer windowEmissionInterval = 1000;
   private final MISTBiFunction<Integer, Integer, Integer> expectedReduceFunc = (x, y) -> x + y;
+  private final ApplyStatefulFunction<Tuple2<String, Integer>, Integer> expectedApplyStatefulFunction
+      = new CountStringFunction();
 
   /**
    * This method tests a serialization of ApplyStatefulOperator.
    */
   @Test
   public void applyStatefulStreamSerializationTest() {
-    final MISTBiConsumer<String, OperatorState<Integer>> expectedUpdateStateCons =
-        (input, state) -> {
-          if (Integer.parseInt(input) > state.get()) {
-            state.set(Integer.parseInt(input));
-          }
-        };
-    final MISTFunction<Integer, String> expectedProduceResultFunc = state -> state.toString();
-    final MISTSupplier<Integer> expectedInitializeStateSup = () -> Integer.MIN_VALUE;
     final ApplyStatefulOperatorStream statefulOpStream = new ApplyStatefulOperatorStream<>(
-        expectedUpdateStateCons, expectedProduceResultFunc, expectedInitializeStateSup, mockDag);
+        expectedApplyStatefulFunction, mockDag);
     final Vertex serializedVertex = statefulOpStream.getSerializedVertex();
 
     // Test whether the vertex is created properly or not.
     Assert.assertEquals(serializedVertex.getVertexType(), VertexTypeEnum.INSTANT_OPERATOR);
     final InstantOperatorInfo statefulOpInfo = (InstantOperatorInfo) serializedVertex.getAttributes();
     final List<ByteBuffer> statefulOpFunctions = statefulOpInfo.getFunctions();
-    final BiConsumer deserializedUpdateStateCons = (BiConsumer) deserializeFunction(statefulOpFunctions.get(0));
-    final Function deserializedProduceResultFunc = (Function) deserializeFunction(statefulOpFunctions.get(1));
-    final Supplier deserializedInitializeStateSup = (Supplier) deserializeFunction(statefulOpFunctions.get(2));
+    final ApplyStatefulFunction deserializedOpState =
+        (ApplyStatefulFunction) deserializeFunction(statefulOpFunctions.get(0));
 
-    Assert.assertEquals(expectedInitializeStateSup.get(), deserializedInitializeStateSup.get());
-    final OperatorState<Integer> operatorState1 = new OperatorStateImpl<>(5);
-    deserializedUpdateStateCons.accept("10", operatorState1);
-    final OperatorState<Integer> operatorState2 = new OperatorStateImpl<>(15);
-    deserializedUpdateStateCons.accept("10", operatorState2);
-    Assert.assertEquals(10, (long) operatorState1.get());
-    Assert.assertEquals(15, (long) operatorState2.get());
-    Assert.assertEquals(expectedProduceResultFunc.apply(15), deserializedProduceResultFunc.apply(15));
-    Assert.assertNotEquals(expectedProduceResultFunc.apply(15), deserializedProduceResultFunc.apply(10));
+    final Tuple2 firstInput = new Tuple2<>("ABC", 1);
+    final Tuple2 secondInput = new Tuple2<>("BAC", 1);
+    final ApplyStatefulFunction<Tuple2<String, Integer>, Integer> applyStatefulFunction1 =
+        expectedApplyStatefulFunction;
+    final ApplyStatefulFunction<Tuple2<String, Integer>, Integer> applyStatefulFunction2 = deserializedOpState;
+    Assert.assertEquals(applyStatefulFunction1.produceResult(), applyStatefulFunction2.produceResult());
+    applyStatefulFunction1.update(firstInput);
+    applyStatefulFunction2.update(firstInput);
+    Assert.assertEquals(applyStatefulFunction1.produceResult(), applyStatefulFunction2.produceResult());
+    applyStatefulFunction1.update(secondInput);
+    applyStatefulFunction2.update(secondInput);
+    Assert.assertEquals(applyStatefulFunction1.produceResult(), applyStatefulFunction2.produceResult());
   }
 
   /**
@@ -121,6 +119,37 @@ public class OperatorSerializeTest {
     Assert.assertEquals(COUNT, windowOperatorInfo.getWindowOperatorType());
     Assert.assertEquals(windowSize, windowOperatorInfo.getWindowSize());
     Assert.assertEquals(windowEmissionInterval, windowOperatorInfo.getWindowInterval());
+  }
+
+  /**
+   * This method tests the serialization of ApplyStatefulWindowOperator.
+   */
+  @Test
+  public void applyStatefulWindowStreamSerializationTest() {
+    final ApplyStatefulWindowOperatorStream statefulWinOpStream = new ApplyStatefulWindowOperatorStream<>(
+        expectedApplyStatefulFunction, mockDag);
+    final Vertex serializedVertex = statefulWinOpStream.getSerializedVertex();
+
+    // Test whether the vertex is created properly or not.
+    Assert.assertEquals(serializedVertex.getVertexType(), VertexTypeEnum.INSTANT_OPERATOR);
+    final InstantOperatorInfo statefulOpInfo = (InstantOperatorInfo) serializedVertex.getAttributes();
+    final List<ByteBuffer> statefulOpFunctions = statefulOpInfo.getFunctions();
+    final ApplyStatefulFunction deserializedOpState =
+        (ApplyStatefulFunction) deserializeFunction(statefulOpFunctions.get(0));
+
+    final Collection<Tuple2<String, Integer>> inputList = new LinkedList<>();
+    inputList.add(new Tuple2<>("ABC", 1));
+    inputList.add(new Tuple2<>("BAC", 1));
+    inputList.add(new Tuple2<>("ACC", 1));
+    final ApplyStatefulFunction<Tuple2<String, Integer>, Integer> applyStatefulFunction1 =
+        expectedApplyStatefulFunction;
+    final ApplyStatefulFunction<Tuple2<String, Integer>, Integer> applyStatefulFunction2 = deserializedOpState;
+    Assert.assertEquals(applyStatefulFunction1.produceResult(), applyStatefulFunction2.produceResult());
+    for (final Tuple2<String, Integer> tuple : inputList) {
+      applyStatefulFunction1.update(tuple);
+      applyStatefulFunction2.update(tuple);
+    }
+    Assert.assertEquals(applyStatefulFunction1.produceResult(), applyStatefulFunction2.produceResult());
   }
 
   /**
@@ -280,7 +309,7 @@ public class OperatorSerializeTest {
   /**
    * This method deserializes a serialized function in a form of ByteBuffer.
    * @param bufferedFunction the serialized function
-   * @return deserialized Object such as Function, BiFunction, or Supplier
+   * @return deserialized function
    */
   private Object deserializeFunction(final ByteBuffer bufferedFunction) {
     final byte[] serializedFunc = new byte[bufferedFunction.remaining()];

@@ -16,11 +16,7 @@
 package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.OperatorState;
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.api.functions.MISTBiConsumer;
-import edu.snu.mist.api.functions.MISTFunction;
-import edu.snu.mist.api.functions.MISTSupplier;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.InstantOperatorInfo;
 import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
@@ -34,51 +30,24 @@ import java.util.List;
  * This class implements the necessary methods for getting information
  * about user-defined stateful operators on continuous stream.
  */
-public final class ApplyStatefulOperatorStream<IN, OUT, S> extends InstantOperatorStream<IN, OUT> {
+public final class ApplyStatefulOperatorStream<IN, OUT> extends InstantOperatorStream<IN, OUT> {
 
   /**
-   * BiConsumer used for updating the internal state.
-   * To handle primitive type states, this consumer should consume a OperatorState instance as the state.
+   * The user-defined ApplyStatefulFunction.
    */
-  private final MISTBiConsumer<IN, OperatorState<S>> updateStateCons;
-  /**
-   * Function used for producing the result stream.
-   */
-  private final MISTFunction<S, OUT> produceResultFunc;
-  /**
-   * Supplier used for initializing state.
-   */
-  private final MISTSupplier<S> initializeStateSup;
+  private final ApplyStatefulFunction<IN, OUT> applyStatefulFunction;
 
-  public ApplyStatefulOperatorStream(final MISTBiConsumer<IN, OperatorState<S>> updateStateCons,
-                                     final MISTFunction<S, OUT> produceResultFunc,
-                                     final MISTSupplier<S> initializeStateSup,
+  public ApplyStatefulOperatorStream(final ApplyStatefulFunction<IN, OUT> applyStatefulFunction,
                                      final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
     super(StreamType.OperatorType.APPLY_STATEFUL, dag);
-    this.updateStateCons = updateStateCons;
-    this.produceResultFunc = produceResultFunc;
-    this.initializeStateSup = initializeStateSup;
+    this.applyStatefulFunction = applyStatefulFunction;
   }
 
   /**
-   * @return the Consumer that updates the current state with the input data
+   * @return the state managing function of operation.
    */
-  public MISTBiConsumer<IN, OperatorState<S>> getUpdateStateCons() {
-    return updateStateCons;
-  }
-
-  /**
-   * @return the Function with one argument used for producing results
-   */
-  public MISTFunction<S, OUT> getProduceResultFunc() {
-    return produceResultFunc;
-  }
-
-  /**
-   * @return the supplier that generates the state of operation.
-   */
-  public MISTSupplier<S> getInitializeStateSup() {
-    return initializeStateSup;
+  public ApplyStatefulFunction<IN, OUT> getApplyStatefulFunction() {
+    return applyStatefulFunction;
   }
 
   @Override
@@ -86,9 +55,7 @@ public final class ApplyStatefulOperatorStream<IN, OUT, S> extends InstantOperat
     final InstantOperatorInfo.Builder iOpInfoBuilder = InstantOperatorInfo.newBuilder();
     iOpInfoBuilder.setInstantOperatorType(InstantOperatorTypeEnum.APPLY_STATEFUL);
     final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
-    serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(updateStateCons)));
-    serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(produceResultFunc)));
-    serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(initializeStateSup)));
+    serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(applyStatefulFunction)));
     iOpInfoBuilder.setFunctions(serializedFunctionList);
     iOpInfoBuilder.setKeyIndex(null);
     return iOpInfoBuilder.build();

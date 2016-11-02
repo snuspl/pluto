@@ -87,12 +87,10 @@ public abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implemen
   }
 
   @Override
-  public <S, OUT> ApplyStatefulOperatorStream<T, OUT, S> applyStateful(
-      final MISTBiConsumer<T, OperatorState<S>> updateStateCons,
-      final MISTFunction<S, OUT> produceResultFunc,
-      final MISTSupplier<S> initializeStateSup) {
-    final ApplyStatefulOperatorStream<T, OUT, S> downStream =
-        new ApplyStatefulOperatorStream<>(updateStateCons, produceResultFunc, initializeStateSup, dag);
+  public <OUT> ApplyStatefulOperatorStream<T, OUT> applyStateful(
+      final ApplyStatefulFunction<T, OUT> applyStatefulFunction) {
+    final ApplyStatefulOperatorStream<T, OUT> downStream =
+        new ApplyStatefulOperatorStream<>(applyStatefulFunction, dag);
     dag.addVertex(downStream);
     dag.addEdge(this, downStream, StreamType.Direction.LEFT);
     return downStream;

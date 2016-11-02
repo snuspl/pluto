@@ -13,21 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api;
+package edu.snu.mist.task.utils;
+
+import edu.snu.mist.api.operators.ApplyStatefulFunction;
 
 /**
- * This interface defines basic OperatorState used during stateful-operation.
- * @param <S> the type of state that OperatorState class contains
+ * A simple ApplyStatefulFunction that finds maximum integer among the received inputs.
  */
-public interface OperatorState<S> {
+public final class FindMaxIntFunction implements ApplyStatefulFunction<Integer, Integer> {
+  // the internal state
+  private int state;
 
-  /**
-   * @return the state
-   */
-  S get();
+  public FindMaxIntFunction() {
+  }
 
-  /**
-   * sets the state.
-   */
-  void set(S newState);
+  @Override
+  public void initialize() {
+    this.state = Integer.MIN_VALUE;
+  }
+
+  @Override
+  public void update(final Integer input) {
+    if (input > state) {
+      state = input;
+    }
+  }
+
+  @Override
+  public Integer produceResult() {
+    return state;
+  }
 }

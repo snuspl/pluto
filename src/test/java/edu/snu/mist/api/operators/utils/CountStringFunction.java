@@ -13,29 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.task;
+package edu.snu.mist.api.operators.utils;
 
-import edu.snu.mist.api.OperatorState;
+import edu.snu.mist.api.operators.ApplyStatefulFunction;
+import edu.snu.mist.api.types.Tuple2;
 
 /**
- * This class implements the OperatorState used during stateful-operation.
- * @param <S> the type of state that OperatorState contains
+ * A simple ApplyStatefulFunction that counts String which starts with capital A.
  */
-public final class OperatorStateImpl<S> implements OperatorState<S> {
+public final class CountStringFunction implements ApplyStatefulFunction<Tuple2<String, Integer>, Integer> {
+  // the internal state
+  private int state;
 
-  private S state;
-
-  public OperatorStateImpl(final S state) {
-    this.state = state;
+  public CountStringFunction() {
   }
 
   @Override
-  public S get() {
+  public void initialize() {
+    this.state = 0;
+  }
+
+  @Override
+  public void update(final Tuple2<String, Integer> input) {
+    if (((String)input.get(0)).startsWith("A")) {
+      state++;
+    }
+  }
+
+  @Override
+  public Integer produceResult() {
     return state;
-  }
-
-  @Override
-  public void set(final S newState) {
-    this.state = newState;
   }
 }

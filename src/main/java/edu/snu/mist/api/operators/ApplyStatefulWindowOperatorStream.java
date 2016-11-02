@@ -16,11 +16,7 @@
 package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.OperatorState;
 import edu.snu.mist.api.StreamType;
-import edu.snu.mist.api.functions.MISTBiConsumer;
-import edu.snu.mist.api.functions.MISTFunction;
-import edu.snu.mist.api.functions.MISTSupplier;
 import edu.snu.mist.api.windows.WindowData;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.InstantOperatorInfo;
@@ -36,54 +32,27 @@ import java.util.List;
  * about ApplyStatefulWindowOperator which applies user-defined stateful operation
  * on the collection of data received by windowed stream.
  * This is different to ApplyStatefulOperatorStream in that it receives a WindowData, and
- * it maintains no internal state inside but just apply the stateful functions to the collected data from the window.
+ * it maintains no internal state inside but just applies the apply-stateful function to the windowed data.
  */
-public final class ApplyStatefulWindowOperatorStream<IN, OUT, S>
+public final class ApplyStatefulWindowOperatorStream<IN, OUT>
     extends InstantOperatorStream<WindowData<IN>, OUT> {
 
   /**
-   * BiFunction used for updating the temporal state.
-   * To handle primitive type states, this consumer should consume a OperatorState instance as the state.
+   * The user-defined ApplyStatefulFunction.
    */
-  private final MISTBiConsumer<IN, OperatorState<S>> updateStateCons;
-  /**
-   * Function used for producing the result stream from temporal state.
-   */
-  private final MISTFunction<S, OUT> produceResultFunc;
-  /**
-   * Supplier used for initializing state.
-   */
-  private final MISTSupplier<S> initializeStateSup;
+  private final ApplyStatefulFunction<IN, OUT> applyStatefulFunction;
 
-  public ApplyStatefulWindowOperatorStream(final MISTBiConsumer<IN, OperatorState<S>> updateStateCons,
-                                           final MISTFunction<S, OUT> produceResultFunc,
-                                           final MISTSupplier<S> initializeStateSup,
+  public ApplyStatefulWindowOperatorStream(final ApplyStatefulFunction<IN, OUT> applyStatefulFunction,
                                            final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
     super(StreamType.OperatorType.APPLY_STATEFUL_WINDOW, dag);
-    this.updateStateCons = updateStateCons;
-    this.produceResultFunc = produceResultFunc;
-    this.initializeStateSup = initializeStateSup;
+    this.applyStatefulFunction = applyStatefulFunction;
   }
 
   /**
-   * @return the Consumer that updates the temporal state with the input data
+   * @return the state managing function of operation.
    */
-  public MISTBiConsumer<IN, OperatorState<S>> getUpdateStateCons() {
-    return updateStateCons;
-  }
-
-  /**
-   * @return the Function with one argument used for producing results
-   */
-  public MISTFunction<S, OUT> getProduceResultFunc() {
-    return produceResultFunc;
-  }
-
-  /**
-   * @return the supplier generating the state of operation.
-   */
-  public MISTSupplier<S> getInitializeStateSup() {
-    return initializeStateSup;
+  public ApplyStatefulFunction<IN, OUT> getApplyStatefulFunction() {
+    return applyStatefulFunction;
   }
 
   @Override
@@ -91,9 +60,7 @@ public final class ApplyStatefulWindowOperatorStream<IN, OUT, S>
     final InstantOperatorInfo.Builder iOpInfoBuilder = InstantOperatorInfo.newBuilder();
     iOpInfoBuilder.setInstantOperatorType(InstantOperatorTypeEnum.APPLY_STATEFUL_WINDOW);
     final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
-    serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(updateStateCons)));
-    serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(produceResultFunc)));
-    serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(initializeStateSup)));
+    serializedFunctionList.add(ByteBuffer.wrap(SerializationUtils.serialize(applyStatefulFunction)));
     iOpInfoBuilder.setFunctions(serializedFunctionList);
     iOpInfoBuilder.setKeyIndex(null);
     return iOpInfoBuilder.build();
