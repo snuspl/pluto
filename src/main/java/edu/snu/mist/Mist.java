@@ -17,12 +17,12 @@
 package edu.snu.mist;
 
 import edu.snu.mist.common.rpc.RPCServerPort;
-import edu.snu.mist.driver.parameters.NumTaskCores;
-import edu.snu.mist.driver.parameters.NumTasks;
-import edu.snu.mist.driver.parameters.TaskMemorySize;
-import edu.snu.mist.launcher.DriverRuntimeType;
-import edu.snu.mist.launcher.MistLauncher;
-import edu.snu.mist.task.parameters.NumThreads;
+import edu.snu.mist.core.parameters.NumTaskCores;
+import edu.snu.mist.core.parameters.NumTasks;
+import edu.snu.mist.core.parameters.TaskMemorySize;
+import edu.snu.mist.core.parameters.DriverRuntimeType;
+import edu.snu.mist.core.MistLauncher;
+import edu.snu.mist.core.parameters.NumThreads;
 import org.apache.reef.client.LauncherStatus;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
