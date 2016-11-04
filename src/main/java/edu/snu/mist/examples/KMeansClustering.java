@@ -192,6 +192,11 @@ public final class KMeansClustering {
       }
     }
 
+    @Override
+    public Collection<Cluster> getCurrentState() {
+      return clusters;
+    }
+
     /**
      * @return the cluster information
      */

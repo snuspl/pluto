@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.function.BiPredicate;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -88,8 +89,11 @@ public final class JoinOperator<T, U> extends OneStreamOperator {
 
       // Emits windowed data
       final long windowStart = windowData.getStart();
-      final long windowSize = windowData.getEnd() - windowStart + 1;
-      final WindowImpl<Tuple2<T, U>> window = new WindowImpl<>(windowStart, windowSize, outputList);
+      final long windowEnd = windowData.getEnd();
+      final WindowImpl<Tuple2<T, U>> window = new WindowImpl<>(windowStart, windowEnd - windowStart + 1, outputList);
+      LOG.log(Level.FINE, "{0} examines input window {1} which started at {2} and ended at {3}, and " +
+          "emits window {4} with matched data list {5}",
+          new Object[]{getOperatorIdentifier(), input, windowStart, windowEnd, window, outputList});
       input.setValue(window);
       outputEmitter.emitData(input);
     } catch (final ClassCastException e) {

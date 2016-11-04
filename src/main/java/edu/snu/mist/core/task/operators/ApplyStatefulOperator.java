@@ -60,8 +60,8 @@ public final class ApplyStatefulOperator<IN, OUT> extends OneStreamOperator {
     applyStatefulFunction.update((IN)input.getValue());
     final OUT output = applyStatefulFunction.produceResult();
 
-    LOG.log(Level.FINE, "{0} updates the operator state with input {1} using {2}, and generates {3}",
-        new Object[]{getOperatorIdentifier(), input, applyStatefulFunction, output});
+    LOG.log(Level.FINE, "{0} updates the state to {1} with input {2}, and generates {3}",
+        new Object[]{getOperatorIdentifier(), applyStatefulFunction.getCurrentState(), input, output});
     input.setValue(output);
     outputEmitter.emitData(input);
   }
