@@ -127,6 +127,11 @@ public final class JoinAndApplyStateful {
     }
 
     @Override
+    public Collection<String> getCurrentState() {
+      return state;
+    }
+
+    @Override
     public String produceResult() {
       return this.state.toString();
     }

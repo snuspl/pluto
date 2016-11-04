@@ -21,6 +21,7 @@ import edu.snu.mist.core.task.common.MistWatermarkEvent;
 
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -90,6 +91,8 @@ public final class UnionOperator extends TwoStreamOperator {
     final long leftWatermarkTimestamp = recentLeftWatermark.getTimestamp();
     final long rightWatermarkTimestamp = recentRightWatermark.getTimestamp();
     final long timestamp = getMinimumWatermark(leftWatermarkTimestamp, rightWatermarkTimestamp);
+    LOG.log(Level.FINE, "{0} drains inputs until timestamp {1}",
+        new Object[]{getOperatorIdentifier(), timestamp});
 
     // The events in the queue is ordered by timestamp, so just peeks one by one
     while (!leftUpstreamQueue.isEmpty() && !rightUpstreamQueue.isEmpty()) {
@@ -166,6 +169,7 @@ public final class UnionOperator extends TwoStreamOperator {
       throw new RuntimeException("The watermark should guarantee that " +
           "all events having less timestamp than it are arrived already.");
     }
+    LOG.log(Level.FINE, "{0} gets left data {1}", new Object[]{getOperatorIdentifier(), event});
     recentLeftTimestamp = timestamp;
     leftUpstreamQueue.add(event);
 
@@ -182,6 +186,7 @@ public final class UnionOperator extends TwoStreamOperator {
       throw new RuntimeException("The watermark should guarantee that " +
           "all events having less timestamp than it are arrived already.");
     }
+    LOG.log(Level.FINE, "{0} gets right data {1}", new Object[]{getOperatorIdentifier(), event});
     recentRightTimestamp = timestamp;
     rightUpstreamQueue.add(event);
 
@@ -195,6 +200,7 @@ public final class UnionOperator extends TwoStreamOperator {
       throw new RuntimeException("The timestamp of watermark should be greater or equal " +
           "than the previous event timestamp.");
     }
+    LOG.log(Level.FINE, "{0} gets left watermark {1}", new Object[]{getOperatorIdentifier(), event});
     recentLeftWatermark = event;
 
     // Drain events until the minimum watermark.
@@ -207,6 +213,7 @@ public final class UnionOperator extends TwoStreamOperator {
       throw new RuntimeException("The timestamp of watermark should be greater or equal " +
           "than the previous event timestamp.");
     }
+    LOG.log(Level.FINE, "{0} gets right watermark {1}", new Object[]{getOperatorIdentifier(), event});
     recentRightWatermark = event;
 
     // Drain events until the minimum watermark.

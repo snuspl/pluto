@@ -21,6 +21,7 @@ import edu.snu.mist.core.task.common.MistWatermarkEvent;
 import edu.snu.mist.core.task.windows.Window;
 import edu.snu.mist.core.task.windows.WindowImpl;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -80,6 +81,8 @@ public final class SessionWindowOperator<T> extends OneStreamOperator {
 
   @Override
   public void processLeftData(final MistDataEvent input) {
+    LOG.log(Level.FINE, "{0} puts input data {1} into current window {2}",
+        new Object[]{getOperatorIdentifier(), input, currentWindow});
     emitAndCreateWindow(input.getTimestamp());
     currentWindow.putData(input);
   }

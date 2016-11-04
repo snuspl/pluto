@@ -22,6 +22,7 @@ import edu.snu.mist.core.task.common.MistDataEvent;
 import edu.snu.mist.core.task.common.MistWatermarkEvent;
 
 import java.util.Collection;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -62,11 +63,17 @@ public final class ApplyStatefulWindowOperator<IN, OUT>
      */
     applyStatefulFunction.initialize();
     try {
-      final Collection<IN> value = ((WindowData<IN>) input.getValue()).getDataCollection();
+      final WindowData<IN> windowData = (WindowData<IN>) input.getValue();
+      final Collection<IN> value = windowData.getDataCollection();
       for (final IN data : value) {
         applyStatefulFunction.update(data);
       }
-      input.setValue(applyStatefulFunction.produceResult());
+      final OUT operationResult = applyStatefulFunction.produceResult();
+      LOG.log(Level.FINE, "{0} initializes and updates the operator state to {1} with input window {2} " +
+          "which started at {3} and ended at {4}, and generates {5}",
+          new Object[]{getOperatorIdentifier(), applyStatefulFunction.getCurrentState(), input,
+              windowData.getStart(), windowData.getEnd(), operationResult});
+      input.setValue(operationResult);
       outputEmitter.emitData(input);
     } catch (final ClassCastException e) {
       throw e;

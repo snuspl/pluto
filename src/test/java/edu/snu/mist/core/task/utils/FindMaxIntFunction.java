@@ -40,6 +40,11 @@ public final class FindMaxIntFunction implements ApplyStatefulFunction<Integer, 
   }
 
   @Override
+  public Integer getCurrentState() {
+    return state;
+  }
+
+  @Override
   public Integer produceResult() {
     return state;
   }

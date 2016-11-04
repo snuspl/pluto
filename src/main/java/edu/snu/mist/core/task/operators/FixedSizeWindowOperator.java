@@ -23,6 +23,7 @@ import edu.snu.mist.core.task.windows.WindowImpl;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -118,6 +119,8 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamOperator {
     final Iterator<Window<T>> itr = windowQueue.iterator();
     while (itr.hasNext()) {
       final Window<T> window = itr.next();
+      LOG.log(Level.FINE, "{0} puts input data {1} into window {2}",
+          new Object[]{getOperatorIdentifier(), input, window});
       window.putData(input);
     }
   }

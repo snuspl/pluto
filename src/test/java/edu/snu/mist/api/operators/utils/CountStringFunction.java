@@ -41,6 +41,11 @@ public final class CountStringFunction implements ApplyStatefulFunction<Tuple2<S
   }
 
   @Override
+  public Integer getCurrentState() {
+    return state;
+  }
+
+  @Override
   public Integer produceResult() {
     return state;
   }

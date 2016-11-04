@@ -21,6 +21,7 @@ import edu.snu.mist.core.task.common.MistDataEvent;
 import edu.snu.mist.core.task.common.MistWatermarkEvent;
 
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -58,7 +59,12 @@ public final class AggregateWindowOperator<IN, OUT>
   @Override
   public void processLeftData(final MistDataEvent input) {
     try {
-      input.setValue(aggregateFunc.apply((WindowData<IN>) input.getValue()));
+      final WindowData<IN> windowData = (WindowData<IN>) input.getValue();
+      final OUT operationResult = aggregateFunc.apply(windowData);
+      LOG.log(Level.FINE, "{0} aggregates the input window {1} which started at {2} and ended at {3}, " +
+          "and generates {4}",
+          new Object[]{getOperatorIdentifier(), input, windowData.getStart(), windowData.getEnd(), operationResult});
+      input.setValue(operationResult);
       outputEmitter.emitData(input);
     } catch (final ClassCastException e) {
       throw e;
