@@ -117,22 +117,21 @@ final class DefaultQueryManagerImpl implements QueryManager {
       // converts the logical plan to the physical plan
       planStore.save(tuple);
       physicalPlan = physicalPlanGenerator.generate(tuple);
+      start(physicalPlan);
+      physicalPlanMap.putIfAbsent(tuple.getKey(), physicalPlan);
+      // 2) Inserts the PartitionedQueries to PartitionedQueryManager,
+      // 3) Sets output emitters and 4) starts to receive input data stream from the source
+      queryControlResult.setIsSuccess(true);
+      queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
+      return queryControlResult;
     } catch (final Exception e) {
-      e.printStackTrace();
-      LOG.log(Level.SEVERE,  "Injection Exception occurred during de-serializing LogicalPlans");
+      // [MIST-345] We need to release all of the information that is required for the query when it fails.
+      LOG.log(Level.SEVERE, "An exception occurred while starting {0} query: {1}",
+          new Object[] {tuple.getKey(), e.getMessage()});
       queryControlResult.setIsSuccess(false);
-      queryControlResult.setMsg(ResultMessage.injectionFailure());
+      queryControlResult.setMsg(e.getMessage());
       return queryControlResult;
     }
-    physicalPlanMap.putIfAbsent(tuple.getKey(), physicalPlan);
-    // 2) Inserts the PartitionedQueries to PartitionedQueryManager,
-    // 3) Sets output emitters and 4) starts to receive input data stream from the source
-    start(physicalPlan);
-
-    queryControlResult.setIsSuccess(true);
-    queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
-
-    return queryControlResult;
   }
 
   @Override
@@ -302,14 +301,11 @@ final class DefaultQueryManagerImpl implements QueryManager {
       start(physicalPlan);
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.resumeSuccess(queryId));
-    } catch (final IOException e) {
-      queryControlResult.setIsSuccess(false);
-      queryControlResult.setMsg(ResultMessage.noLogicalPlan(queryId));
     } catch (final Exception e) {
-      e.printStackTrace();
-      LOG.log(Level.SEVERE,  "Injection Exception occurred during de-serializing LogicalPlans");
+      LOG.log(Level.SEVERE, "An exception occurred while resuming {0} query: {1}",
+          new Object[] {queryId, e.getMessage()});
       queryControlResult.setIsSuccess(false);
-      queryControlResult.setMsg(ResultMessage.injectionFailure());
+      queryControlResult.setMsg(e.getMessage());
     }
     return queryControlResult;
   }

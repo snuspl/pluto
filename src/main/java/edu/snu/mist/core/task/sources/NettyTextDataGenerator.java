@@ -78,6 +78,13 @@ public final class NettyTextDataGenerator implements DataGenerator<String> {
         // register the data stream handler
         final ChannelFuture channelFuture;
         channelFuture = clientBootstrap.connect(serverSocketAddress);
+        channelFuture.awaitUninterruptibly();
+        assert channelFuture.isDone();
+        if (!channelFuture.isSuccess()) {
+          final StringBuilder sb = new StringBuilder("A connection failed at Source - ");
+          sb.append(channelFuture.cause());
+          throw new RuntimeException(sb.toString());
+        }
         channel = channelFuture.channel();
         channelMap.putIfAbsent(channel, (input) ->
             eventGenerator.emitData(input));
