@@ -21,6 +21,7 @@ import edu.snu.mist.core.task.common.NettyMessageForwarder;
 import edu.snu.mist.core.task.sources.parameters.NumNettyThreads;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -92,7 +93,15 @@ public final class NettyTextSinkFactory implements TextSinkFactory {
                               final String sinkId,
                               final String serverAddress,
                               final int port) throws Exception {
-    final Channel channel = clientBootstrap.connect(serverAddress, port).channel();
+    final ChannelFuture channelFuture = clientBootstrap.connect(serverAddress, port);
+    channelFuture.awaitUninterruptibly();
+    assert channelFuture.isDone();
+    if (!channelFuture.isSuccess()) {
+      final StringBuilder sb = new StringBuilder("A connection failed at Sink - ");
+      sb.append(channelFuture.cause());
+      throw new RuntimeException(sb.toString());
+    }
+    final Channel channel = channelFuture.channel();
     return new NettyTextSink(queryId, sinkId, channel, identifierFactory);
   }
 
