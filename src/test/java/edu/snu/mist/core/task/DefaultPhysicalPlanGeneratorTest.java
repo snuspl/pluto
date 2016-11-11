@@ -23,16 +23,16 @@ import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.formats.avro.AvroVertexChain;
-import edu.snu.mist.formats.avro.Edge;
-import edu.snu.mist.formats.avro.LogicalPlan;
 import edu.snu.mist.core.task.common.PhysicalVertex;
 import edu.snu.mist.core.task.operators.*;
 import edu.snu.mist.core.task.sinks.NettyTextSink;
 import edu.snu.mist.core.task.sinks.Sink;
-import edu.snu.mist.core.task.sources.SourceImpl;
 import edu.snu.mist.core.task.sources.NettyTextDataGenerator;
 import edu.snu.mist.core.task.sources.Source;
+import edu.snu.mist.core.task.sources.SourceImpl;
+import edu.snu.mist.formats.avro.AvroVertexChain;
+import edu.snu.mist.formats.avro.Edge;
+import edu.snu.mist.formats.avro.LogicalPlan;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -44,11 +44,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Test class for DefaultPhysicalPlanGenerator.
@@ -99,8 +95,7 @@ public final class DefaultPhysicalPlanGeneratorTest {
     final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getSerializedDAG();
     final LogicalPlan.Builder logicalPlanBuilder = LogicalPlan.newBuilder();
     final LogicalPlan logicalPlan = logicalPlanBuilder
-        .setIsJarSerialized(false)
-        .setJar(ByteBuffer.wrap(new byte[1]))
+        .setJarFilePaths(new LinkedList<>())
         .setAvroVertices(serializedDag.getKey())
             .setEdges(serializedDag.getValue())
             .build();

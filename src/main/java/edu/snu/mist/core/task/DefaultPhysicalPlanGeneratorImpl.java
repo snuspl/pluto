@@ -15,42 +15,39 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.api.operators.ApplyStatefulFunction;
 import edu.snu.mist.api.StreamType;
+import edu.snu.mist.api.operators.ApplyStatefulFunction;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
+import edu.snu.mist.api.sources.parameters.PeriodicWatermarkParameters;
 import edu.snu.mist.api.sources.parameters.PunctuatedWatermarkParameters;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
-import edu.snu.mist.api.sources.parameters.PeriodicWatermarkParameters;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.ExternalJarObjectInputStream;
 import edu.snu.mist.core.parameters.TempFolderPath;
-import edu.snu.mist.formats.avro.*;
 import edu.snu.mist.core.task.common.PhysicalVertex;
 import edu.snu.mist.core.task.operators.*;
 import edu.snu.mist.core.task.sinks.NettyTextSinkFactory;
 import edu.snu.mist.core.task.sinks.Sink;
 import edu.snu.mist.core.task.sources.*;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.SerializationUtils;
+import edu.snu.mist.formats.avro.*;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.*;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 
 /**
@@ -65,17 +62,20 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   private final NettyTextSinkFactory sinkFactory;
   private final String tmpFolderPath;
   private final ScheduledExecutorService scheduler;
+  private final ClassLoaderProvider classLoaderProvider;
 
   @Inject
   private DefaultPhysicalPlanGeneratorImpl(final OperatorIdGenerator operatorIdGenerator,
                                            @Parameter(TempFolderPath.class) final String tmpFolderPath,
                                            final NettyTextDataGeneratorFactory dataGeneratorFactory,
                                            final NettyTextSinkFactory sinkFactory,
+                                           final ClassLoaderProvider classLoaderProvider,
                                            final ScheduledExecutorServiceWrapper schedulerWrapper) {
     this.operatorIdGenerator = operatorIdGenerator;
     this.dataGeneratorFactory = dataGeneratorFactory;
     this.sinkFactory = sinkFactory;
     this.tmpFolderPath = tmpFolderPath;
+    this.classLoaderProvider = classLoaderProvider;
     this.scheduler= schedulerWrapper.getScheduler();
   }
 
@@ -170,13 +170,9 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       throws IOException, ClassNotFoundException {
     byte[] serializedByteArray = new byte[serializedLambda.remaining()];
     serializedLambda.get(serializedByteArray);
-    if (classLoader == null) {
-      return SerializationUtils.deserialize(serializedByteArray);
-    } else {
-      ExternalJarObjectInputStream stream = new ExternalJarObjectInputStream(
+    final ExternalJarObjectInputStream stream = new ExternalJarObjectInputStream(
           classLoader, serializedByteArray);
       return stream.readObject();
-    }
   }
 
   /*
@@ -272,20 +268,10 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     final String queryId = queryIdAndLogicalPlan.getKey();
     final LogicalPlan logicalPlan = queryIdAndLogicalPlan.getValue();
     final List<PhysicalVertex> deserializedVertices = new ArrayList<>();
-    final Path jarFilePath = Paths.get(tmpFolderPath, String.format("%s.jar", queryId));
     final DAG<PhysicalVertex, StreamType.Direction> dag = new AdjacentListDAG<>();
 
-    // Deserialize Jar
-    final ClassLoader userQueryClassLoader;
-    if (!queryIdAndLogicalPlan.getValue().getIsJarSerialized()) {
-      userQueryClassLoader = null;
-    } else {
-      final ByteBuffer byteBufferJar = queryIdAndLogicalPlan.getValue().getJar();
-      final byte[] byteArrayJar = new byte[byteBufferJar.remaining()];
-      byteBufferJar.get(byteArrayJar);
-      FileUtils.writeByteArrayToFile(jarFilePath.toFile(), byteArrayJar);
-      userQueryClassLoader = new URLClassLoader(new URL[]{jarFilePath.toUri().toURL()});
-    }
+    // Get a class loader
+    final ClassLoader classLoader = classLoaderProvider.newInstance(logicalPlan.getJarFilePaths());
 
     // Deserialize vertices
     for (final AvroVertexChain avroVertexChain : logicalPlan.getAvroVertices()) {
@@ -304,7 +290,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
                   getNettyTextDataGenerator(sourceStringConf);
               final EventGenerator<String> eventGenerator =
                   getEventGenerator(sourceInfo.getWatermarkType(), sourceStringConf,
-                      watermarkStringConf, userQueryClassLoader);
+                      watermarkStringConf, classLoader);
               final Source<String> textSocketSource = new SourceImpl<>(identifierFactory.getNewInstance(queryId),
                   identifierFactory.getNewInstance(operatorIdGenerator.generate()),
                   textDataGenerator, eventGenerator);
@@ -325,13 +311,13 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
             switch (vertex.getVertexType()) {
               case INSTANT_OPERATOR: {
                 final InstantOperatorInfo iOpInfo = (InstantOperatorInfo) vertex.getAttributes();
-                final Operator operator = getInstantOperator(queryId, iOpInfo, userQueryClassLoader);
+                final Operator operator = getInstantOperator(queryId, iOpInfo, classLoader);
                 partitionedQuery.insertToTail(operator);
                 break;
               }
               case WINDOW_OPERATOR: {
                 final WindowOperatorInfo wOpInfo = (WindowOperatorInfo) vertex.getAttributes();
-                final Operator operator = getWindowOperator(queryId, wOpInfo, userQueryClassLoader);
+                final Operator operator = getWindowOperator(queryId, wOpInfo, classLoader);
                 partitionedQuery.insertToTail(operator);
                 break;
               }

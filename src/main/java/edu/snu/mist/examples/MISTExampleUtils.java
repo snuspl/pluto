@@ -17,6 +17,7 @@
 package edu.snu.mist.examples;
 
 import edu.snu.mist.api.APIQueryControlResult;
+import edu.snu.mist.api.MISTDefaultExecutionEnvironmentImpl;
 import edu.snu.mist.api.MISTExecutionEnvironment;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
@@ -81,7 +82,7 @@ public final class MISTExampleUtils {
     final String driverHostname = driverSocket[0];
     final int driverPort = Integer.parseInt(driverSocket[1]);
     final MISTExecutionEnvironment executionEnvironment =
-        new MISTTestExecutionEnvironmentImpl(driverHostname, driverPort);
+        new MISTDefaultExecutionEnvironmentImpl(driverHostname, driverPort);
     return executionEnvironment.submit(query);
   }
 

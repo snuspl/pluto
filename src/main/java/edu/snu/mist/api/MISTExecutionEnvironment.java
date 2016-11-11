@@ -15,15 +15,20 @@
  */
 package edu.snu.mist.api;
 
-import org.apache.reef.tang.exceptions.InjectionException;
-
 import java.io.IOException;
-import java.net.URISyntaxException;
 
 /**
  * Execution Environment for MIST.
  * MIST Client can submit queries via this class.
  */
 public interface MISTExecutionEnvironment {
-  APIQueryControlResult submit(MISTQuery queryToSubmit) throws IOException, InjectionException, URISyntaxException;
+  /**
+   * Submit the query and its corresponding jar files to MIST.
+   * @param queryToSubmit a query to be submitted.
+   * @param jarFilePaths paths of jar files that are required for the query.
+   * @return the result of the query submission.
+   * @throws IOException an exception occurs when connecting with MIST and serializing the jar files.
+   */
+  APIQueryControlResult submit(MISTQuery queryToSubmit,
+                               String ... jarFilePaths) throws IOException;
 }

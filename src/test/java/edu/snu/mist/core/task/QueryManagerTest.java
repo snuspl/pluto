@@ -26,7 +26,7 @@ import edu.snu.mist.core.parameters.NumThreads;
 import edu.snu.mist.core.parameters.PlanStorePath;
 import edu.snu.mist.core.task.sinks.Sink;
 import edu.snu.mist.core.task.sources.*;
-import edu.snu.mist.core.task.stores.PlanStore;
+import edu.snu.mist.core.task.stores.QueryInfoStore;
 import junit.framework.Assert;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
@@ -348,13 +348,13 @@ public final class QueryManagerTest {
                                          final PhysicalPlanGenerator physicalPlanGenerator,
                                          final Injector injector) throws Exception {
     // Create mock PlanStore. It returns true and the above logical plan
-    final PlanStore planStore = mock(PlanStore.class);
-    when(planStore.save(tuple)).thenReturn(true);
+    final QueryInfoStore planStore = mock(QueryInfoStore.class);
+    when(planStore.savePlan(tuple)).thenReturn(true);
     when(planStore.load(tuple.getKey())).thenReturn(tuple.getValue());
 
     // Create QueryManager
     injector.bindVolatileInstance(PhysicalPlanGenerator.class, physicalPlanGenerator);
-    injector.bindVolatileInstance(PlanStore.class, planStore);
+    injector.bindVolatileInstance(QueryInfoStore.class, planStore);
 
     // Submit the fake logical plan
     // The operators in the physical plan are executed
