@@ -21,25 +21,33 @@ import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.List;
 
 /**
- * This interface receives a tuple of queryId and logical plan,
- * saves the logical plan into PlanStore.
- * And this interface receives a queryId, gets the correspond
- * logical plan from store.
+ * This interface saves the information related to a query (the logical plan of a query and jar files).
+ * Also, this supports loading a logical plan and removing the plan and its corresponding jar files.
  */
-@DefaultImplementation(DiskPlanStore.class)
-public interface PlanStore {
+@DefaultImplementation(DiskQueryInfoStore.class)
+public interface QueryInfoStore {
   /**
-   * Saves the logical plan to PlanStore.
+   * Saves the logical plan.
    * @param tuple
    * @return true if saving the logical plan is success. Otherwise return false.
    * @throws IOException
    */
-  boolean save(Tuple<String, LogicalPlan> tuple) throws IOException;
+  boolean savePlan(Tuple<String, LogicalPlan> tuple) throws IOException;
 
   /**
-   * Loads the logical plan corresponding to queryId from PlanStore.
+   * Saves the jar files and returns paths of the stored jar files.
+   * @param jarFiles jar files
+   * @return paths of the jar files
+   * @throws IOException throws an exception when the jar file is not able to be saved.
+   */
+  List<CharSequence> saveJar(List<ByteBuffer> jarFiles) throws IOException;
+
+  /**
+   * Loads the logical plan corresponding to the queryId.
    * @param queryId
    * @return logical plan
    * @throws IOException
@@ -47,7 +55,7 @@ public interface PlanStore {
   LogicalPlan load(String queryId) throws IOException;
 
   /**
-   * Deletes the logical plan from PlanStore.
+   * Deletes the logical plan and its corresponding jar files.
    * @param queryId
    * @throws IOException
    */

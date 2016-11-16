@@ -21,16 +21,17 @@ import org.apache.avro.AvroRemoteException;
 import org.apache.avro.ipc.NettyServer;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
-import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * The test class for MISTDefaultExecutionEnvironmentImpl.
@@ -51,6 +52,11 @@ public class MISTDefaultExecutionEnvironmentImplTest {
 
   private class MockTaskServer implements ClientToTaskMessage {
     @Override
+    public JarUploadResult uploadJarFiles(final List<ByteBuffer> jarFiles) throws AvroRemoteException {
+      return new JarUploadResult(true, "success", new LinkedList<>());
+    }
+
+    @Override
     public QueryControlResult sendQueries(final LogicalPlan logicalPlan) throws AvroRemoteException {
       return new QueryControlResult(testQueryResult, true, testQueryResult);
     }
@@ -70,10 +76,10 @@ public class MISTDefaultExecutionEnvironmentImplTest {
 
   /**
    * This unit test creates mock jar file, mocking driver, and mocking task and tests
-   * whether a test query can be serialized and sent via MISTTestExecutionEnvironmentImpl.
+   * whether a test query can be serialized and sent via MISTDefaultExecutionEnvironmentImpl.
    */
   @Test
-  public void testMISTDefaultExecutionEnvironment() throws IOException, InjectionException, URISyntaxException {
+  public void testMISTDefaultExecutionEnvironment() throws IOException {
     // Step 1: Launch mock RPC Server
     final Server driverServer = new NettyServer(new SpecificResponder(MistTaskProvider.class, new MockDriverServer()),
         new InetSocketAddress(driverPortNum));
@@ -98,8 +104,8 @@ public class MISTDefaultExecutionEnvironmentImplTest {
     Path tempJarFile = Files.createTempFile(mockJarOutPrefix, mockJarOutSuffix);
     // Step 3: Send a query and check whether the query comes to the task correctly
     final MISTExecutionEnvironment executionEnvironment = new MISTDefaultExecutionEnvironmentImpl(
-        driverHost, driverPortNum, tempJarFile.toString());
-    final APIQueryControlResult result = executionEnvironment.submit(query);
+        driverHost, driverPortNum);
+    final APIQueryControlResult result = executionEnvironment.submit(query, tempJarFile.toString());
     Assert.assertEquals(result.getQueryId(), testQueryResult);
     driverServer.close();
     taskServer.close();

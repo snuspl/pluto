@@ -27,12 +27,12 @@
       "fields":
       [
         {
-          "name": "IsJarSerialized",
-          "type": "boolean"
-        },
-        {
-          "name": "Jar",
-          "type": "bytes"
+          "name": "JarFilePaths",
+          "type":
+          {
+            "type": "array",
+            "items": "string"
+          }
         },
         {
           "name": "AvroVertices",
@@ -271,6 +271,28 @@
     },
     {
       "type": "record",
+      "name": "JarUploadResult",
+      "fields":
+      [
+        {
+          "name": "IsSuccess",
+          "type": "boolean"
+        },
+        {
+          "name": "Msg",
+          "type": "string"
+        },
+        {
+          "name": "Paths",
+          "type": {
+            "type": "array",
+            "items": "string"
+          }
+        }
+      ]
+    },
+    {
+      "type": "record",
       "name": "QueryControlResult",
       "fields":
       [
@@ -291,6 +313,21 @@
   ],
   "messages":
   {
+    "uploadJarFiles":
+    {
+      "request":
+      [
+        {
+          "name": "jarFiles",
+          "type":
+          {
+            "type": "array",
+            "items": "bytes"
+          }
+        }
+      ],
+      "response": "JarUploadResult"
+    },
     "sendQueries":
     {
       "request":

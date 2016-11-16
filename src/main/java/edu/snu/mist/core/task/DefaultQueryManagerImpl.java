@@ -23,7 +23,7 @@ import edu.snu.mist.formats.avro.QueryControlResult;
 import edu.snu.mist.core.task.common.PhysicalVertex;
 import edu.snu.mist.core.task.sinks.Sink;
 import edu.snu.mist.core.task.sources.Source;
-import edu.snu.mist.core.task.stores.PlanStore;
+import edu.snu.mist.core.task.stores.QueryInfoStore;
 import org.apache.reef.io.Tuple;
 
 import javax.inject.Inject;
@@ -82,7 +82,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
   /**
    * A plan store.
    */
-  private final PlanStore planStore;
+  private final QueryInfoStore planStore;
 
   /**
    * A physical plan generator.
@@ -99,7 +99,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
                                   final ThreadManager threadManager,
                                   final PartitionedQueryManager partitionedQueryManager,
                                   final ScheduledExecutorServiceWrapper schedulerWrapper,
-                                  final PlanStore planStore) {
+                                  final QueryInfoStore planStore) {
     this.physicalPlanMap = new ConcurrentHashMap<>();
     this.partitionedQueryManager = partitionedQueryManager;
     this.physicalPlanGenerator = physicalPlanGenerator;
@@ -115,7 +115,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
     try {
       // 1) Saves the logical plan to the PlanStore and
       // converts the logical plan to the physical plan
-      planStore.save(tuple);
+      planStore.savePlan(tuple);
       physicalPlan = physicalPlanGenerator.generate(tuple);
       start(physicalPlan);
       physicalPlanMap.putIfAbsent(tuple.getKey(), physicalPlan);

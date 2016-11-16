@@ -20,11 +20,8 @@ import edu.snu.mist.api.APITestParameters;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.api.types.Tuple2;
-import edu.snu.mist.formats.avro.AvroVertexChain;
-import edu.snu.mist.formats.avro.Edge;
-import edu.snu.mist.formats.avro.LogicalPlan;
+import edu.snu.mist.core.parameters.TempFolderPath;
 import edu.snu.mist.formats.avro.*;
-import edu.snu.mist.core.parameters.PlanStorePath;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -33,18 +30,20 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.*;
 
-public class PlanStoreTest {
+public class QueryInfoStoreTest {
   /**
    * Tests whether the PlanStore correctly saves, deletes and loads logical plan.
    * @throws InjectionException
    * @throws IOException
    */
   @Test
-  public void testDiskPlanStore() throws InjectionException, IOException {
+  public void diskStoreTest() throws InjectionException, IOException {
     // Generate a query
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     queryBuilder.socketTextStream(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
@@ -54,35 +53,54 @@ public class PlanStoreTest {
         .reduceByKey(0, String.class, (Integer x, Integer y) -> x + y)
         .textSocketOutput(APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF);
     final MISTQuery query = queryBuilder.build();
+
+    // Jar files
+    final List<ByteBuffer> jarFiles = new LinkedList<>();
+    final ByteBuffer byteBuffer1 = ByteBuffer.wrap(new byte[]{0, 1, 0, 1, 1, 1});
+    final ByteBuffer byteBuffer2 = ByteBuffer.wrap(new byte[]{1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0});
+    jarFiles.add(byteBuffer1);
+    jarFiles.add(byteBuffer2);
+
+    final Injector injector = Tang.Factory.getTang().newInjector();
+    final QueryInfoStore store = injector.getInstance(QueryInfoStore.class);
+    final String queryId = "testQuery";
+    final String tmpFolderPath = injector.getNamedInstance(TempFolderPath.class);
+    final File folder = new File(tmpFolderPath);
+
+    // Store jar files
+    final List<CharSequence> paths = store.saveJar(jarFiles);
+    for (int i = 0; i < jarFiles.size(); i++) {
+      final ByteBuffer buf = ByteBuffer.allocateDirect(jarFiles.get(i).capacity());
+      final String path = paths.get(i).toString();
+      final FileInputStream fis = new FileInputStream(path);
+      final FileChannel channel = fis.getChannel();
+      channel.read(buf);
+      Assert.assertEquals(jarFiles.get(i), buf);
+    }
+
     // Generate logical plan
     final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getSerializedDAG();
     final LogicalPlan.Builder logicalPlanBuilder = LogicalPlan.newBuilder();
     final LogicalPlan logicalPlan = logicalPlanBuilder
-        .setIsJarSerialized(false)
-        .setJar(ByteBuffer.wrap(new byte[1]))
+        .setJarFilePaths(paths)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .build();
 
-    final Injector injector = Tang.Factory.getTang().newInjector();
-    final PlanStore planStore = injector.getInstance(PlanStore.class);
-    final String queryId = "planStoreTestQuery";
-    final String planStorePath = injector.getNamedInstance(PlanStorePath.class);
-    final File planFolder = new File(planStorePath);
+    // Store the logical plan
+    store.savePlan(new Tuple<>(queryId, logicalPlan));
+    Assert.assertTrue(new File(tmpFolderPath, queryId + ".plan").exists());
 
-    planStore.save(new Tuple<>(queryId, logicalPlan));
-    Assert.assertTrue(new File(planStorePath, queryId + ".plan").exists());
-
-    final LogicalPlan loadedPlan = planStore.load(queryId);
-    Assert.assertEquals(logicalPlan.getIsJarSerialized(), loadedPlan.getIsJarSerialized());
+    final LogicalPlan loadedPlan = store.load(queryId);
     Assert.assertEquals(logicalPlan.getEdges(), loadedPlan.getEdges());
-    Assert.assertEquals(logicalPlan.getJar(), loadedPlan.getJar());
     Assert.assertEquals(logicalPlan.getSchema(), loadedPlan.getSchema());
     testVerticesEqual(logicalPlan.getAvroVertices(), loadedPlan.getAvroVertices());
-    planStore.delete(queryId);
-    Assert.assertFalse(new File(planStorePath, queryId + ".plan").exists());
-
-    planFolder.delete();
+    store.delete(queryId);
+    Assert.assertFalse(new File(tmpFolderPath, queryId + ".plan").exists());
+    for (final CharSequence path : paths) {
+      Assert.assertFalse(new File(path.toString()).exists());
+    }
+    folder.delete();
   }
 
   /**

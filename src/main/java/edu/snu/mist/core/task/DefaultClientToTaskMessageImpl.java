@@ -15,13 +15,20 @@
  */
 package edu.snu.mist.core.task;
 
+import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
+import edu.snu.mist.formats.avro.JarUploadResult;
 import edu.snu.mist.formats.avro.LogicalPlan;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.avro.AvroRemoteException;
 import org.apache.reef.io.Tuple;
 
 import javax.inject.Inject;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * This class implements the RPC protocol of ClientToTaskMessage.
@@ -30,6 +37,7 @@ import javax.inject.Inject;
  * or submits the queryId to delete, stop and resume the corresponding query.
  */
 public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage {
+  private static final Logger LOG = Logger.getLogger(DefaultClientToTaskMessageImpl.class.getName());
   /**
    * A query manager which manages the submitted query.
    */
@@ -40,11 +48,39 @@ public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage
    */
   private final QueryIdGenerator queryIdGenerator;
 
+  /**
+   * A query info store that saves jar files and logical plans.
+   */
+  private final QueryInfoStore queryInfoStore;
+
   @Inject
   private DefaultClientToTaskMessageImpl(final QueryIdGenerator queryIdGenerator,
-                                         final QueryManager queryManager) {
+                                         final QueryManager queryManager,
+                                         final QueryInfoStore queryInfoStore) {
     this.queryIdGenerator = queryIdGenerator;
     this.queryManager = queryManager;
+    this.queryInfoStore = queryInfoStore;
+  }
+
+  @Override
+  public JarUploadResult uploadJarFiles(final List<ByteBuffer> jarFiles) throws AvroRemoteException {
+    try {
+      final List<CharSequence> paths = queryInfoStore.saveJar(jarFiles);
+      final JarUploadResult result = JarUploadResult.newBuilder()
+          .setIsSuccess(true)
+          .setMsg("Success")
+          .setPaths(paths)
+          .build();
+      return result;
+    } catch (final IOException e) {
+      LOG.log(Level.SEVERE, "An exception occurred while storing jar files {0}", e.getMessage());
+      final JarUploadResult result = JarUploadResult.newBuilder()
+          .setIsSuccess(false)
+          .setMsg(e.getMessage())
+          .setPaths(null)
+          .build();
+      return result;
+    }
   }
 
   @Override
