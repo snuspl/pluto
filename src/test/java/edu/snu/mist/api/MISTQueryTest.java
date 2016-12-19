@@ -72,9 +72,9 @@ public final class MISTQueryTest {
   private void checkSource(final Vertex vertex) {
     // Test for source vertex
     final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
-    final Map<CharSequence, Object> sourceConfiguration = sourceInfo.getSourceConfiguration();
+    final Map<String, Object> sourceConfiguration = sourceInfo.getSourceConfiguration();
 
-    final Map<CharSequence, Object> watermarkConfiguration = sourceInfo.getWatermarkConfiguration();
+    final Map<String, Object> watermarkConfiguration = sourceInfo.getWatermarkConfiguration();
     final ByteBuffer extractionFunc = (ByteBuffer) sourceConfiguration.get(
         TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION);
     final byte[] serializedExtractionFunc = new byte[extractionFunc.remaining()];
@@ -141,7 +141,7 @@ public final class MISTQueryTest {
         // Test for sink vertex
         final Vertex vertex = avroVertexChain.getVertexChain().get(0);
         final SinkInfo sinkInfo = (SinkInfo) vertex.getAttributes();
-        final Map<CharSequence, Object> sinkConfiguration = sinkInfo.getSinkConfiguration();
+        final Map<String, Object> sinkConfiguration = sinkInfo.getSinkConfiguration();
         if (sinkInfo.getSinkType() == SinkTypeEnum.TEXT_SOCKET_SINK) {
           Assert.assertEquals(textSocketSinkConf.getConfigurationValue(TextSocketSinkParameters.SOCKET_HOST_ADDRESS),
               sinkConfiguration.get(TextSocketSinkParameters.SOCKET_HOST_ADDRESS));

@@ -39,7 +39,6 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
@@ -150,17 +149,6 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       e.printStackTrace();
       throw new RuntimeException(e);
     }
-  }
-
-  /*
-   * This private method get CharSequence configuration and return string configuration
-   */
-  private Map<String, Object> getStringConfiguration(final Map<CharSequence, Object> configuration) {
-    final Map<String, Object> stringConf = new HashMap<>();
-    for (final Map.Entry<CharSequence, Object> entry : configuration.entrySet()) {
-      stringConf.put(entry.getKey().toString(), entry.getValue());
-    }
-    return stringConf;
   }
 
   /*
@@ -282,15 +270,13 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
           switch (sourceInfo.getSourceType()) {
             case TEXT_SOCKET_SOURCE: {
               final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
-              final Map<String, Object> sourceStringConf =
-                  getStringConfiguration(sourceInfo.getSourceConfiguration());
-              final Map<String, Object> watermarkStringConf =
-                  getStringConfiguration(sourceInfo.getWatermarkConfiguration());
+              final Map<String, Object> sourceConf = sourceInfo.getSourceConfiguration();
+              final Map<String, Object> watermarkConf = sourceInfo.getWatermarkConfiguration();
               final DataGenerator<String> textDataGenerator =
-                  getNettyTextDataGenerator(sourceStringConf);
+                  getNettyTextDataGenerator(sourceConf);
               final EventGenerator<String> eventGenerator =
-                  getEventGenerator(sourceInfo.getWatermarkType(), sourceStringConf,
-                      watermarkStringConf, classLoader);
+                  getEventGenerator(sourceInfo.getWatermarkType(), sourceConf,
+                      watermarkConf, classLoader);
               final Source<String> textSocketSource = new SourceImpl<>(identifierFactory.getNewInstance(queryId),
                   identifierFactory.getNewInstance(operatorIdGenerator.generate()),
                   textDataGenerator, eventGenerator);
@@ -334,8 +320,8 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
           final SinkInfo sinkInfo = (SinkInfo) vertex.getAttributes();
           switch (sinkInfo.getSinkType()) {
             case TEXT_SOCKET_SINK: {
-              final Map<String, Object> sinkStringConf = getStringConfiguration(sinkInfo.getSinkConfiguration());
-              final Sink textSocketSink = getNettyTextSocketSink(queryId, sinkStringConf);
+              final Map<String, Object> sinkConf = sinkInfo.getSinkConfiguration();
+              final Sink textSocketSink = getNettyTextSocketSink(queryId, sinkConf);
               deserializedVertices.add(textSocketSink);
               dag.addVertex(textSocketSink);
               break;

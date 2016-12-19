@@ -40,5 +40,5 @@ interface ClassLoaderProvider {
    * @param paths paths of jar files
    * @return class loader
    */
-  ClassLoader newInstance(List<CharSequence> paths) throws MalformedURLException;
+  ClassLoader newInstance(List<String> paths) throws MalformedURLException;
 }

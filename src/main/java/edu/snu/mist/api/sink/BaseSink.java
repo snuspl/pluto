@@ -82,7 +82,7 @@ public abstract class BaseSink<T> implements Sink {
     sinkInfoBuilder.setSinkType(getSinkTypeEnum());
 
     // Serialize SinkInfo
-    final Map<CharSequence, Object> serializedSinkConf = new HashMap<>();
+    final Map<String, Object> serializedSinkConf = new HashMap<>();
     for (final String confKey : sinkConfiguration.getConfigurationKeys()) {
       final Object value = sinkConfiguration.getConfigurationValue(confKey);
       if (SinkSerializeInfo.getAvroSerializedTypeInfo(confKey) != SerializedType.AvroType.BYTES) {

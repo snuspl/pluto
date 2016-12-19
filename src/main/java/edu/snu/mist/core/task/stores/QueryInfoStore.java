@@ -44,7 +44,7 @@ public interface QueryInfoStore {
    * @return paths of the jar files
    * @throws IOException throws an exception when the jar file is not able to be saved.
    */
-  List<CharSequence> saveJar(List<ByteBuffer> jarFiles) throws IOException;
+  List<String> saveJar(List<ByteBuffer> jarFiles) throws IOException;
 
   /**
    * Loads the logical plan corresponding to the queryId.

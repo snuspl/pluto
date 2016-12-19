@@ -82,7 +82,7 @@ public abstract class BaseSourceStream<T> extends ContinuousStreamImpl<T> {
     sourceInfoBuilder.setSourceType(getSourceTypeEnum());
     sourceInfoBuilder.setWatermarkType(getWatermarkTypeEnum());
     // Serialize SourceConfiguration in SourceInfo
-    final Map<CharSequence, Object> serializedSourceConf = new HashMap<>();
+    final Map<String, Object> serializedSourceConf = new HashMap<>();
     for (final String confKey: sourceConfiguration.getConfigurationKeys()) {
       final Object value = sourceConfiguration.getConfigurationValue(confKey);
       if (SourceSerializeInfo.getAvroSerializedTypeInfo(confKey) != SerializedType.AvroType.BYTES) {
@@ -92,7 +92,7 @@ public abstract class BaseSourceStream<T> extends ContinuousStreamImpl<T> {
       }
     }
     // Serialize WatermarkConfiguration in SourceInfo
-    final Map<CharSequence, Object> serializedWatermarkConf = new HashMap<>();
+    final Map<String, Object> serializedWatermarkConf = new HashMap<>();
     for (final String confKey: watermarkConfiguration.getConfigurationKeys()) {
       final Object value = watermarkConfiguration.getConfigurationValue(confKey);
       if (SourceSerializeInfo.getAvroSerializedTypeInfo(confKey) != SerializedType.AvroType.BYTES) {
