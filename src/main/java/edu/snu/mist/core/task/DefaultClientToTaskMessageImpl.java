@@ -65,7 +65,7 @@ public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage
   @Override
   public JarUploadResult uploadJarFiles(final List<ByteBuffer> jarFiles) throws AvroRemoteException {
     try {
-      final List<CharSequence> paths = queryInfoStore.saveJar(jarFiles);
+      final List<String> paths = queryInfoStore.saveJar(jarFiles);
       final JarUploadResult result = JarUploadResult.newBuilder()
           .setIsSuccess(true)
           .setMsg("Success")
@@ -90,17 +90,17 @@ public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage
   }
 
   @Override
-  public QueryControlResult deleteQueries(final CharSequence queryId) throws AvroRemoteException {
-    return queryManager.delete(queryId.toString());
+  public QueryControlResult deleteQueries(final String queryId) throws AvroRemoteException {
+    return queryManager.delete(queryId);
   }
 
   @Override
-  public QueryControlResult stopQueries(final CharSequence queryId) throws AvroRemoteException {
-    return queryManager.stop(queryId.toString());
+  public QueryControlResult stopQueries(final String queryId) throws AvroRemoteException {
+    return queryManager.stop(queryId);
   }
 
   @Override
-  public QueryControlResult resumeQueries(final CharSequence queryId) throws AvroRemoteException {
-    return queryManager.resume(queryId.toString());
+  public QueryControlResult resumeQueries(final String queryId) throws AvroRemoteException {
+    return queryManager.resume(queryId);
   }
 }

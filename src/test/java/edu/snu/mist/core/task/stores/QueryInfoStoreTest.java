@@ -68,10 +68,10 @@ public class QueryInfoStoreTest {
     final File folder = new File(tmpFolderPath);
 
     // Store jar files
-    final List<CharSequence> paths = store.saveJar(jarFiles);
+    final List<String> paths = store.saveJar(jarFiles);
     for (int i = 0; i < jarFiles.size(); i++) {
       final ByteBuffer buf = ByteBuffer.allocateDirect(jarFiles.get(i).capacity());
-      final String path = paths.get(i).toString();
+      final String path = paths.get(i);
       final FileInputStream fis = new FileInputStream(path);
       final FileChannel channel = fis.getChannel();
       channel.read(buf);
@@ -97,8 +97,8 @@ public class QueryInfoStoreTest {
     testVerticesEqual(logicalPlan.getAvroVertices(), loadedPlan.getAvroVertices());
     store.delete(queryId);
     Assert.assertFalse(new File(tmpFolderPath, queryId + ".plan").exists());
-    for (final CharSequence path : paths) {
-      Assert.assertFalse(new File(path.toString()).exists());
+    for (final String path : paths) {
+      Assert.assertFalse(new File(path).exists());
     }
     folder.delete();
   }
@@ -122,8 +122,8 @@ public class QueryInfoStoreTest {
           final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
           final SourceInfo loadedSourceInfo = (SourceInfo) loadedVertex.getAttributes();
           final Map<String, Object> stringConf = new HashMap<>();
-          for (final Map.Entry<CharSequence, Object> entry : loadedSourceInfo.getWatermarkConfiguration().entrySet()) {
-            stringConf.put(entry.getKey().toString(), entry.getValue());
+          for (final Map.Entry<String, Object> entry : loadedSourceInfo.getWatermarkConfiguration().entrySet()) {
+            stringConf.put(entry.getKey(), entry.getValue());
           }
           Assert.assertEquals(sourceInfo.getSchema(),
               loadedSourceInfo.getSchema());

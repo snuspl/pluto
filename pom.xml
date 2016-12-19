@@ -223,6 +223,7 @@ limitations under the License.
                             <goal>idl-protocol</goal>
                         </goals>
                         <configuration>
+                            <stringType>String</stringType>
                             <sourceDirectory>${project.basedir}/src/main/avro/</sourceDirectory>
                             <outputDirectory>${project.basedir}/target/generated-sources/avro/</outputDirectory>
                         </configuration>

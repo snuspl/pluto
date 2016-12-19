@@ -37,13 +37,6 @@ public class APIQueryControlResultImpl implements APIQueryControlResult {
     this.msg = msg;
   }
 
-  public APIQueryControlResultImpl(final CharSequence queryId,
-                                   final IPAddress taskAddress,
-                                   final CharSequence msg,
-                                   final boolean isSuccess) {
-    this(queryId.toString(), taskAddress, msg.toString(), isSuccess);
-  }
-
   @Override
   public String getQueryId() {
     return this.queryId;

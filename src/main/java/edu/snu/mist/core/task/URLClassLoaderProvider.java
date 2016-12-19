@@ -36,11 +36,11 @@ final class URLClassLoaderProvider implements ClassLoaderProvider {
   }
 
   @Override
-  public ClassLoader newInstance(final List<CharSequence> paths) throws MalformedURLException {
+  public ClassLoader newInstance(final List<String> paths) throws MalformedURLException {
     // Get jar files' urls
     final URL[] urls = new URL[paths.size()];
     for (int i = 0; i < paths.size(); i++) {
-      final String jarFilePath = paths.get(i).toString();
+      final String jarFilePath = paths.get(i);
       final URL url = new URL(jarFilePath);
       urls[i] = url;
     }

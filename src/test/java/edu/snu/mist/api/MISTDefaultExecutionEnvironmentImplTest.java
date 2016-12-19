@@ -61,15 +61,15 @@ public class MISTDefaultExecutionEnvironmentImplTest {
       return new QueryControlResult(testQueryResult, true, testQueryResult);
     }
     @Override
-    public QueryControlResult deleteQueries(final CharSequence queryId) throws AvroRemoteException {
+    public QueryControlResult deleteQueries(final String queryId) throws AvroRemoteException {
       return new QueryControlResult(testQueryResult, true, testQueryResult);
     }
     @Override
-    public QueryControlResult stopQueries(final CharSequence queryId) throws AvroRemoteException {
+    public QueryControlResult stopQueries(final String queryId) throws AvroRemoteException {
       return new QueryControlResult(testQueryResult, true, testQueryResult);
     }
     @Override
-    public QueryControlResult resumeQueries(final CharSequence queryId) throws AvroRemoteException {
+    public QueryControlResult resumeQueries(final String queryId) throws AvroRemoteException {
       return new QueryControlResult(testQueryResult, true, testQueryResult);
     }
   }

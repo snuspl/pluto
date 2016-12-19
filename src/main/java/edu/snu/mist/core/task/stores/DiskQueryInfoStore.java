@@ -121,8 +121,8 @@ final class DiskQueryInfoStore implements QueryInfoStore {
    * @throws IOException throws an exception when the jar file is not able to be saved.
    */
   @Override
-  public List<CharSequence> saveJar(final List<ByteBuffer> jarFiles) throws IOException {
-    final List<CharSequence> paths = new LinkedList<>();
+  public List<String> saveJar(final List<ByteBuffer> jarFiles) throws IOException {
+    final List<String> paths = new LinkedList<>();
     for (final ByteBuffer jarFileBytes : jarFiles) {
       final String path = String.format("submitted-%s.jar", fileNameGenerator.generate());
       final Path jarFilePath = Paths.get(tmpFolderPath, path);
@@ -169,14 +169,13 @@ final class DiskQueryInfoStore implements QueryInfoStore {
   public void delete(final String queryId) throws IOException {
     final File storedPlanFile = getLogicalPlanFile(queryId);
     final LogicalPlan logicalPlan = loadFromFile(storedPlanFile);
-    final List<CharSequence> paths = logicalPlan.getJarFilePaths();
+    final List<String> paths = logicalPlan.getJarFilePaths();
 
     // Delete jar files for the query
-    for (final CharSequence path : paths) {
-      final String spath = path.toString();
-      if (spath.startsWith(tmpFolderPath)) {
+    for (final String path : paths) {
+      if (path.startsWith(tmpFolderPath)) {
         // Delete the jar file if it is in the temp folder
-        final File jarFile = new File(spath);
+        final File jarFile = new File(path);
         if (jarFile.exists()) {
           jarFile.delete();
         }
