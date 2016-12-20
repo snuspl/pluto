@@ -15,11 +15,11 @@
  */
 package edu.snu.mist.api.sources.builder;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.configurations.MISTConfigurationBuilderImpl;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.functions.MISTPredicate;
 import edu.snu.mist.api.sources.parameters.PunctuatedWatermarkParameters;
+import edu.snu.mist.formats.avro.WatermarkTypeEnum;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -35,9 +35,9 @@ public final class PunctuatedWatermarkConfiguration<T> extends WatermarkConfigur
   }
 
   @Override
-  public StreamType.WatermarkType getWatermarkType() {
-    return StreamType.WatermarkType.PUNCTUATED;
-  };
+  public WatermarkTypeEnum getWatermarkType() {
+    return WatermarkTypeEnum.PUNCTUATED;
+  }
 
   /**
    * Gets the builder for Configuration construction.

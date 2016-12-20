@@ -20,6 +20,7 @@ import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.GraphUtils;
+import edu.snu.mist.formats.avro.Direction;
 
 import java.util.*;
 
@@ -57,8 +58,8 @@ public final class QueryPartitioner {
   /**
    * DAG of the logical query.
    */
-  private final DAG<AvroVertexSerializable, StreamType.Direction> dag;
-  public QueryPartitioner(final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
+  private final DAG<AvroVertexSerializable, Direction> dag;
+  public QueryPartitioner(final DAG<AvroVertexSerializable, Direction> dag) {
     this.dag = dag;
   }
 
@@ -67,8 +68,8 @@ public final class QueryPartitioner {
    * @return DAG of the List<AvroVertexSerializable>
    * The partition is represented as a list and AvroVertexSerializable can be serialized by avro
    */
-  public DAG<List<AvroVertexSerializable>, StreamType.Direction> generatePartitionedPlan() {
-    final DAG<QueryPartition, StreamType.Direction> partitionedQueryDAG =
+  public DAG<List<AvroVertexSerializable>, Direction> generatePartitionedPlan() {
+    final DAG<QueryPartition, Direction> partitionedQueryDAG =
         new AdjacentListDAG<>();
     final Map<AvroVertexSerializable, QueryPartition> vertexChainMap = new HashMap<>();
     // Check visited vertices
@@ -77,7 +78,7 @@ public final class QueryPartitioner {
     // It traverses the DAG of operators in DFS order
     // from the root operators which are following sources.
     for (final AvroVertexSerializable source : dag.getRootVertices()) {
-      final Map<AvroVertexSerializable, StreamType.Direction> rootEdges = dag.getEdges(source);
+      final Map<AvroVertexSerializable, Direction> rootEdges = dag.getEdges(source);
       // This chaining group is a wrapper for List, for equality check
       final QueryPartition srcChain = new QueryPartition();
       // Partition Source
@@ -85,9 +86,9 @@ public final class QueryPartitioner {
       partitionedQueryDAG.addVertex(srcChain);
       visited.add(source);
       vertexChainMap.put(source, srcChain);
-      for (final Map.Entry<AvroVertexSerializable, StreamType.Direction> entry : rootEdges.entrySet()) {
+      for (final Map.Entry<AvroVertexSerializable, Direction> entry : rootEdges.entrySet()) {
         final AvroVertexSerializable nextVertex = entry.getKey();
-        final StreamType.Direction edgeDirection = entry.getValue();
+        final Direction edgeDirection = entry.getValue();
         final QueryPartition nextChain = vertexChainMap.getOrDefault(nextVertex, new QueryPartition());
         if (!vertexChainMap.containsKey(nextVertex)) {
           vertexChainMap.put(nextVertex, nextChain);
@@ -99,7 +100,7 @@ public final class QueryPartitioner {
     }
 
     // Convert to List<AvroVertexSerializable>
-    final DAG<List<AvroVertexSerializable>, StreamType.Direction> result =
+    final DAG<List<AvroVertexSerializable>, Direction> result =
         new AdjacentListDAG<>();
     final Queue<QueryPartition> queue = new LinkedList<>();
     final Iterator<QueryPartition> iterator = GraphUtils.topologicalSort(partitionedQueryDAG);
@@ -109,8 +110,8 @@ public final class QueryPartitioner {
       result.addVertex(queryPartition.chain);
     }
     for (final QueryPartition queryPartition : queue) {
-      final Map<QueryPartition, StreamType.Direction> edges = partitionedQueryDAG.getEdges(queryPartition);
-      for (final Map.Entry<QueryPartition, StreamType.Direction> edge : edges.entrySet()) {
+      final Map<QueryPartition, Direction> edges = partitionedQueryDAG.getEdges(queryPartition);
+      for (final Map.Entry<QueryPartition, Direction> edge : edges.entrySet()) {
         result.addEdge(queryPartition.chain, edge.getKey().chain, edge.getValue());
       }
     }
@@ -128,15 +129,15 @@ public final class QueryPartitioner {
   private void chaining(final QueryPartition operatorChain,
                         final AvroVertexSerializable currVertex,
                         final Set<AvroVertexSerializable> visited,
-                        final DAG<QueryPartition, StreamType.Direction> partitionedQueryDAG,
+                        final DAG<QueryPartition, Direction> partitionedQueryDAG,
                         final Map<AvroVertexSerializable, QueryPartition> vertexChainMap) {
     if (!visited.contains(currVertex)) {
       operatorChain.chain.add(currVertex);
       visited.add(currVertex);
-      final Map<AvroVertexSerializable, StreamType.Direction> edges = dag.getEdges(currVertex);
-      for (final Map.Entry<AvroVertexSerializable, StreamType.Direction> entry : edges.entrySet()) {
+      final Map<AvroVertexSerializable, Direction> edges = dag.getEdges(currVertex);
+      for (final Map.Entry<AvroVertexSerializable, Direction> entry : edges.entrySet()) {
         final AvroVertexSerializable nextVertex = entry.getKey();
-        final StreamType.Direction edgeDirection = entry.getValue();
+        final Direction edgeDirection = entry.getValue();
         if (nextVertex instanceof UnionOperatorStream ||
             edges.size() > 1) {
           // The current vertex is 2) branching (have multiple next ops)

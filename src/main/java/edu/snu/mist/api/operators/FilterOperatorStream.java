@@ -16,9 +16,9 @@
 package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.functions.MISTPredicate;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.InstantOperatorInfo;
 import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
 import org.apache.commons.lang.SerializationUtils;
@@ -39,8 +39,8 @@ public final class FilterOperatorStream<T> extends InstantOperatorStream<T, T> {
   private final MISTPredicate<T> filterFunc;
 
   public FilterOperatorStream(final MISTPredicate<T> filterFunc,
-                              final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
-    super(StreamType.OperatorType.FILTER, dag);
+                              final DAG<AvroVertexSerializable, Direction> dag) {
+    super(dag);
     this.filterFunc = filterFunc;
   }
 

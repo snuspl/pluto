@@ -21,6 +21,7 @@ import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
 import edu.snu.mist.api.sources.builder.WatermarkConfiguration;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.Direction;
 
 /**
  * This class builds MIST query.
@@ -30,7 +31,7 @@ public final class MISTQueryBuilder {
   /**
    * DAG of the query.
    */
-  private final DAG<AvroVertexSerializable, StreamType.Direction> dag;
+  private final DAG<AvroVertexSerializable, Direction> dag;
 
   /**
    * The default watermark configuration.

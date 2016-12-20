@@ -16,7 +16,6 @@
 package edu.snu.mist.core.task.operators;
 
 import edu.snu.mist.api.operators.ApplyStatefulFunction;
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.core.task.common.MistDataEvent;
 import edu.snu.mist.core.task.common.MistWatermarkEvent;
 
@@ -48,11 +47,6 @@ public final class ApplyStatefulOperator<IN, OUT> extends OneStreamOperator {
     super(queryId, operatorId);
     this.applyStatefulFunction = applyStatefulFunction;
     this.applyStatefulFunction.initialize();
-  }
-
-  @Override
-  public StreamType.OperatorType getOperatorType() {
-    return StreamType.OperatorType.APPLY_STATEFUL;
   }
 
   @Override

@@ -15,9 +15,9 @@
  */
 package edu.snu.mist.api.sources.builder;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.configurations.MISTConfigurationBuilderImpl;
 import edu.snu.mist.api.sources.parameters.PeriodicWatermarkParameters;
+import edu.snu.mist.formats.avro.WatermarkTypeEnum;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -33,9 +33,9 @@ public final class PeriodicWatermarkConfiguration<T> extends WatermarkConfigurat
   }
 
   @Override
-  public StreamType.WatermarkType getWatermarkType() {
-    return StreamType.WatermarkType.PERIODIC;
-  };
+  public WatermarkTypeEnum getWatermarkType() {
+    return WatermarkTypeEnum.PERIODIC;
+  }
 
   /**
    * Gets the builder for Configuration construction.

@@ -260,8 +260,12 @@
                   "type": "int"
                 },
                 {
-                  "name": "IsLeft",
-                  "type": "boolean"
+                  "name": "Direction",
+                  "type": {
+                    "name": "Direction",
+                    "type": "enum",
+                    "symbols": ["LEFT", "RIGHT"]
+                  }
                 }
               ]
             }

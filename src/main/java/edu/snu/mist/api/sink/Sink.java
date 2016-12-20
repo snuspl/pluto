@@ -16,18 +16,12 @@
 package edu.snu.mist.api.sink;
 
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.sink.builder.SinkConfiguration;
 
 /**
  * This interface defines necessary methods used for Sink in MIST API.
  */
 public interface Sink extends AvroVertexSerializable {
-
-  /**
-   * @return The type of this Sink output
-   */
-  StreamType.SinkType getSinkType();
 
   /**
    * @return The configuration for this sink.

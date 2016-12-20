@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task.operators;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.core.task.common.MistDataEvent;
 import edu.snu.mist.core.task.common.MistWatermarkEvent;
 
@@ -59,8 +58,4 @@ public final class MapOperator<I, O> extends OneStreamOperator {
     outputEmitter.emitWatermark(watermark);
   }
 
-  @Override
-  public StreamType.OperatorType getOperatorType() {
-    return StreamType.OperatorType.MAP;
-  }
 }

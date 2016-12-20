@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task.operators;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.core.task.common.MistDataEvent;
 import edu.snu.mist.core.task.common.MistWatermarkEvent;
 
@@ -55,11 +54,6 @@ public final class UnionOperator extends TwoStreamOperator {
     this.recentRightTimestamp = 0L;
   }
 
-
-  @Override
-  public StreamType.OperatorType getOperatorType() {
-    return StreamType.OperatorType.UNION;
-  }
 
   /**
    * Peek the timestamp of the first event.

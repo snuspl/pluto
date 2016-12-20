@@ -16,7 +16,6 @@
 
 package edu.snu.mist.api.sink;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
 import edu.snu.mist.formats.avro.SinkTypeEnum;
 
@@ -25,9 +24,8 @@ import edu.snu.mist.formats.avro.SinkTypeEnum;
  */
 public final class TextSocketSink extends BaseSink<String> {
 
-  public TextSocketSink(final StreamType.SinkType sinkType,
-                        final TextSocketSinkConfiguration textSocketSinkConfiguration) {
-    super(sinkType, textSocketSinkConfiguration);
+  public TextSocketSink(final TextSocketSinkConfiguration textSocketSinkConfiguration) {
+    super(textSocketSinkConfiguration);
   }
 
   @Override

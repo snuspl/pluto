@@ -16,10 +16,10 @@
 package edu.snu.mist.api.sources;
 
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
 import edu.snu.mist.api.sources.builder.WatermarkConfiguration;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.SourceTypeEnum;
 
 /**
@@ -28,9 +28,9 @@ import edu.snu.mist.formats.avro.SourceTypeEnum;
 public final class TextSocketSourceStream extends BaseSourceStream<String> {
 
   public TextSocketSourceStream(final TextSocketSourceConfiguration textSocketSourceConfiguration,
-                                final DAG<AvroVertexSerializable, StreamType.Direction> dag,
+                                final DAG<AvroVertexSerializable, Direction> dag,
                                 final WatermarkConfiguration<String> watermarkConfiguration) {
-    super(StreamType.SourceType.TEXT_SOCKET_SOURCE, textSocketSourceConfiguration, dag, watermarkConfiguration);
+    super(textSocketSourceConfiguration, dag, watermarkConfiguration);
   }
 
   @Override

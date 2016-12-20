@@ -15,11 +15,11 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.core.task.common.MistDataEvent;
 import edu.snu.mist.core.task.common.MistWatermarkEvent;
 import edu.snu.mist.core.task.operators.OneStreamOperator;
 import edu.snu.mist.core.task.utils.TestOutputEmitter;
+import edu.snu.mist.formats.avro.Direction;
 import junit.framework.Assert;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
@@ -64,8 +64,8 @@ public final class EventProcessorTest {
     for (int i = 0; i < numTasks; i++) {
       final int data = i;
       // Add events to the partitioned queries
-      query1.addNextEvent(createEvent(data), StreamType.Direction.LEFT);
-      query2.addNextEvent(createEvent(data), StreamType.Direction.LEFT);
+      query1.addNextEvent(createEvent(data), Direction.LEFT);
+      query2.addNextEvent(createEvent(data), Direction.LEFT);
       result.add(data);
     }
 
@@ -110,7 +110,7 @@ public final class EventProcessorTest {
     for (int i = 0; i < numTasks; i++) {
       final int data = i;
       // Add tasks to queues
-      query.addNextEvent(createEvent(data), StreamType.Direction.LEFT);
+      query.addNextEvent(createEvent(data), Direction.LEFT);
       result.add(data);
     }
 
@@ -154,11 +154,6 @@ public final class EventProcessorTest {
     @Override
     public void processLeftWatermark(final MistWatermarkEvent watermark) {
       // do nothing
-    }
-
-    @Override
-    public StreamType.OperatorType getOperatorType() {
-      return null;
     }
   }
 }

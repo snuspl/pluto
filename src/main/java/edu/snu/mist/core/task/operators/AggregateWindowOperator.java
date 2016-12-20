@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task.operators;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.windows.WindowData;
 import edu.snu.mist.core.task.common.MistDataEvent;
 import edu.snu.mist.core.task.common.MistWatermarkEvent;
@@ -49,11 +48,6 @@ public final class AggregateWindowOperator<IN, OUT>
                                  final Function<WindowData<IN>, OUT> aggregateFunc) {
     super(queryId, operatorId);
     this.aggregateFunc = aggregateFunc;
-  }
-
-  @Override
-  public StreamType.OperatorType getOperatorType() {
-    return StreamType.OperatorType.AGGREGATE_WINDOW;
   }
 
   @Override

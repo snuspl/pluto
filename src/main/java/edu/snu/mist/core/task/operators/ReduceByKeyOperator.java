@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task.operators;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.core.task.common.MistDataEvent;
 import edu.snu.mist.core.task.common.MistWatermarkEvent;
@@ -102,11 +101,6 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
    */
   private HashMap<K, V> generateOutput(final HashMap<K, V> finalState) {
     return finalState;
-  }
-
-  @Override
-  public StreamType.OperatorType getOperatorType() {
-    return StreamType.OperatorType.REDUCE_BY_KEY;
   }
 
   @Override

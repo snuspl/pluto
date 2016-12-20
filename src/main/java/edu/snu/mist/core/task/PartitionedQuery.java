@@ -15,11 +15,11 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.core.task.common.MistEvent;
 import edu.snu.mist.core.task.common.OutputEmittable;
 import edu.snu.mist.core.task.common.PhysicalVertex;
 import edu.snu.mist.core.task.operators.Operator;
+import edu.snu.mist.formats.avro.Direction;
 
 /**
  * This interface chains operators as a list and executes them in order
@@ -68,7 +68,7 @@ public interface PartitionedQuery extends OutputEmittable, PhysicalVertex {
    * @param direction upstream direction of the event
    * @return true if the event is enqueued, otherwise false.
    */
-  boolean addNextEvent(MistEvent event, StreamType.Direction direction);
+  boolean addNextEvent(MistEvent event, Direction direction);
 
   /**
    * Get the size of the partitioned query.

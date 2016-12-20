@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.operators.ApplyStatefulFunction;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 import edu.snu.mist.api.sources.parameters.PeriodicWatermarkParameters;
@@ -250,13 +249,13 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   }
 
   @Override
-  public DAG<PhysicalVertex, StreamType.Direction> generate(
+  public DAG<PhysicalVertex, Direction> generate(
       final Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
       throws IllegalArgumentException, IOException, ClassNotFoundException {
     final String queryId = queryIdAndLogicalPlan.getKey();
     final LogicalPlan logicalPlan = queryIdAndLogicalPlan.getValue();
     final List<PhysicalVertex> deserializedVertices = new ArrayList<>();
-    final DAG<PhysicalVertex, StreamType.Direction> dag = new AdjacentListDAG<>();
+    final DAG<PhysicalVertex, Direction> dag = new AdjacentListDAG<>();
 
     // Get a class loader
     final ClassLoader classLoader = classLoaderProvider.newInstance(logicalPlan.getJarFilePaths());
@@ -344,13 +343,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       final PhysicalVertex deserializedSrcVertex = deserializedVertices.get(srcIndex);
       final int dstIndex = edge.getTo();
       final PhysicalVertex deserializedDstVertex = deserializedVertices.get(dstIndex);
-      StreamType.Direction direction;
-      if (edge.getIsLeft()) {
-        direction = StreamType.Direction.LEFT;
-      } else {
-        direction = StreamType.Direction.RIGHT;
-      }
-      dag.addEdge(deserializedSrcVertex, deserializedDstVertex, direction);
+      dag.addEdge(deserializedSrcVertex, deserializedDstVertex, edge.getDirection());
     }
     return dag;
   }

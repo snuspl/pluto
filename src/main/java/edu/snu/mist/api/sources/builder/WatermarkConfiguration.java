@@ -15,8 +15,8 @@
  */
 package edu.snu.mist.api.sources.builder;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.configurations.MISTConfigurationImpl;
+import edu.snu.mist.formats.avro.WatermarkTypeEnum;
 
 import java.util.Map;
 
@@ -33,5 +33,5 @@ public abstract class WatermarkConfiguration<T> extends MISTConfigurationImpl {
   /**
    * Gets the type of watermark.
    */
-  public abstract StreamType.WatermarkType getWatermarkType();
+  public abstract WatermarkTypeEnum getWatermarkType();
 }

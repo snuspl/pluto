@@ -18,7 +18,6 @@ package edu.snu.mist.api.sources;
 import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.ContinuousStreamImpl;
 import edu.snu.mist.api.SerializedType;
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.sources.builder.SourceConfiguration;
 import edu.snu.mist.api.sources.builder.WatermarkConfiguration;
 import edu.snu.mist.api.sources.parameters.SourceSerializeInfo;
@@ -41,38 +40,19 @@ public abstract class BaseSourceStream<T> extends ContinuousStreamImpl<T> {
   private final SourceConfiguration<T> sourceConfiguration;
 
   /**
-   * The type of this source.
-   */
-  private final StreamType.SourceType sourceType;
-
-  /**
    * The value for watermark configuration.
    */
   private final WatermarkConfiguration watermarkConfiguration;
 
-  BaseSourceStream(final StreamType.SourceType sourceType,
-                   final SourceConfiguration<T> sourceConfiguration,
-                   final DAG<AvroVertexSerializable, StreamType.Direction> dag,
+  BaseSourceStream(final SourceConfiguration<T> sourceConfiguration,
+                   final DAG<AvroVertexSerializable, Direction> dag,
                    final WatermarkConfiguration<T> watermarkConfiguration) {
-    super(StreamType.ContinuousType.SOURCE, dag);
-    this.sourceType = sourceType;
+    super(dag);
     this.sourceConfiguration = sourceConfiguration;
     this.watermarkConfiguration = watermarkConfiguration;
   }
 
   protected abstract SourceTypeEnum getSourceTypeEnum();
-
-  /**
-   * Gets the type enum of watermark.
-   * @return the type enum of watermark
-   */
-  private WatermarkTypeEnum getWatermarkTypeEnum() {
-    if (watermarkConfiguration.getWatermarkType() == StreamType.WatermarkType.PERIODIC) {
-      return WatermarkTypeEnum.PERIODIC;
-    } else {
-      return WatermarkTypeEnum.PUNCTUATED;
-    }
-  }
 
   @Override
   public Vertex getSerializedVertex() {
@@ -80,7 +60,7 @@ public abstract class BaseSourceStream<T> extends ContinuousStreamImpl<T> {
     vertexBuilder.setVertexType(VertexTypeEnum.SOURCE);
     final SourceInfo.Builder sourceInfoBuilder = SourceInfo.newBuilder();
     sourceInfoBuilder.setSourceType(getSourceTypeEnum());
-    sourceInfoBuilder.setWatermarkType(getWatermarkTypeEnum());
+    sourceInfoBuilder.setWatermarkType(watermarkConfiguration.getWatermarkType());
     // Serialize SourceConfiguration in SourceInfo
     final Map<String, Object> serializedSourceConf = new HashMap<>();
     for (final String confKey: sourceConfiguration.getConfigurationKeys()) {

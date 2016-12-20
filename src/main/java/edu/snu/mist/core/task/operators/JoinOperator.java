@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task.operators;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.api.windows.WindowData;
 import edu.snu.mist.core.task.common.MistDataEvent;
@@ -48,11 +47,6 @@ public final class JoinOperator<T, U> extends OneStreamOperator {
                       final BiPredicate<T, U> joinBiPredicate) {
     super(queryId, operatorId);
     this.joinBiPredicate = joinBiPredicate;
-  }
-
-  @Override
-  public StreamType.OperatorType getOperatorType() {
-    return StreamType.OperatorType.JOIN;
   }
 
   @Override

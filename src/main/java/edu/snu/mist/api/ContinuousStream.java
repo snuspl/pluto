@@ -15,8 +15,10 @@
  */
 package edu.snu.mist.api;
 
-import edu.snu.mist.api.exceptions.StreamTypeMismatchException;
-import edu.snu.mist.api.functions.*;
+import edu.snu.mist.api.functions.MISTBiFunction;
+import edu.snu.mist.api.functions.MISTBiPredicate;
+import edu.snu.mist.api.functions.MISTFunction;
+import edu.snu.mist.api.functions.MISTPredicate;
 import edu.snu.mist.api.operators.*;
 import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
@@ -29,10 +31,6 @@ import java.util.List;
  * It should be distinguished from WindowedStream.
  */
 public interface ContinuousStream<T> extends MISTStream<T> {
-  /**
-   * @return The type of this continuous stream (e.g. SourceStream, OperatorStream, ...)
-   */
-  StreamType.ContinuousType getContinuousType();
 
   /**
    * Applies map operation to the current stream and creates a new stream.
@@ -84,7 +82,7 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    * @param inputStream the stream to be unified with this stream
    * @return new unified stream after applying type-checking
    */
-  UnionOperatorStream<T> union(ContinuousStream<T> inputStream) throws StreamTypeMismatchException;
+  UnionOperatorStream<T> union(ContinuousStream<T> inputStream);
 
   /**
    * Creates a new WindowsStream according to the WindowInformation.

@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.api.windows;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.formats.avro.WindowOperatorInfo;
 
 /**
@@ -23,11 +22,6 @@ import edu.snu.mist.formats.avro.WindowOperatorInfo;
  * During windowed stream creation, this information class will be passed as a parameter.
  */
 public interface WindowInformation {
-
-  /**
-   * @return the type of windowing operation in a form of StreamType.OperatorType.
-   */
-  StreamType.OperatorType getWindowOpType();
 
   /**
    * @return the serialized window operator information.

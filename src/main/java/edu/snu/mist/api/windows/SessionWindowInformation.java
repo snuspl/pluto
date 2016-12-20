@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.api.windows;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.exceptions.IllegalWindowParameterException;
 import edu.snu.mist.formats.avro.WindowOperatorInfo;
 import edu.snu.mist.formats.avro.WindowOperatorTypeEnum;
@@ -50,11 +49,6 @@ public final class SessionWindowInformation implements WindowInformation {
    */
   public int getWindowInterval() {
     return sessionInterval;
-  }
-
-  @Override
-  public StreamType.OperatorType getWindowOpType() {
-    return StreamType.OperatorType.SESSION_WINDOW;
   }
 
   @Override

@@ -15,21 +15,22 @@
  */
 package edu.snu.mist.api.serialize;
 
-import edu.snu.mist.api.operators.ApplyStatefulFunction;
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.StreamType;
-import edu.snu.mist.api.functions.*;
+import edu.snu.mist.api.functions.MISTBiFunction;
+import edu.snu.mist.api.functions.MISTBiPredicate;
+import edu.snu.mist.api.functions.MISTFunction;
+import edu.snu.mist.api.functions.MISTPredicate;
 import edu.snu.mist.api.operators.*;
 import edu.snu.mist.api.operators.utils.CountStringFunction;
+import edu.snu.mist.api.types.Tuple2;
+import edu.snu.mist.api.types.Tuple3;
 import edu.snu.mist.api.windows.CountWindowInformation;
 import edu.snu.mist.api.windows.TimeWindowInformation;
 import edu.snu.mist.api.windows.WindowData;
-import edu.snu.mist.api.types.Tuple2;
-import edu.snu.mist.api.types.Tuple3;
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.formats.avro.*;
 import edu.snu.mist.core.task.common.MistDataEvent;
 import edu.snu.mist.core.task.windows.WindowImpl;
+import edu.snu.mist.formats.avro.*;
 import org.apache.commons.lang.SerializationUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -39,18 +40,19 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.*;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
-import static edu.snu.mist.formats.avro.WindowOperatorTypeEnum.COUNT;
-import static edu.snu.mist.formats.avro.WindowOperatorTypeEnum.JOIN;
-import static edu.snu.mist.formats.avro.WindowOperatorTypeEnum.TIME;
+import static edu.snu.mist.formats.avro.WindowOperatorTypeEnum.*;
 import static org.mockito.Mockito.mock;
 
 /**
  * This is the test class for serializing operators into avro vertex.
  */
 public class OperatorSerializeTest {
-  private final DAG<AvroVertexSerializable, StreamType.Direction> mockDag = mock(DAG.class);
+  private final DAG<AvroVertexSerializable, Direction> mockDag = mock(DAG.class);
   private final Integer windowSize = 5000;
   private final Integer windowEmissionInterval = 1000;
   private final MISTBiFunction<Integer, Integer, Integer> expectedReduceFunc = (x, y) -> x + y;

@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.api.sink.builder;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.configurations.MISTConfigurationBuilderImpl;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 
@@ -53,14 +52,6 @@ public final class TextSocketSinkConfiguration extends SinkConfiguration<String>
 
     private TextSocketSinkConfigurationBuilder() {
       requiredParameters.addAll(Arrays.asList(textSocketStreamSinkParameters));
-    }
-
-    /**
-     * Gets the type of sink.
-     * @return the type of sink
-     */
-    public StreamType.SinkType getSinkType() {
-      return StreamType.SinkType.TEXT_SOCKET_SINK;
     }
 
     /**

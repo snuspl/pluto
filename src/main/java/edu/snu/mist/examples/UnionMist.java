@@ -16,12 +16,14 @@
 
 package edu.snu.mist.examples;
 
-import edu.snu.mist.api.*;
-import edu.snu.mist.api.exceptions.StreamTypeMismatchException;
+import edu.snu.mist.api.APIQueryControlResult;
+import edu.snu.mist.api.ContinuousStream;
+import edu.snu.mist.api.MISTQuery;
+import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
-import edu.snu.mist.api.sources.builder.*;
+import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.examples.parameters.UnionLeftSourceAddress;
 import edu.snu.mist.examples.parameters.UnionRightSourceAddress;
@@ -45,10 +47,9 @@ public final class UnionMist {
    * @return result of the submission
    * @throws IOException
    * @throws InjectionException
-   * @throws StreamTypeMismatchException
    */
   public static APIQueryControlResult submitQuery(final Configuration configuration)
-      throws IOException, InjectionException, URISyntaxException, StreamTypeMismatchException {
+      throws IOException, InjectionException, URISyntaxException {
     final Injector injector = Tang.Factory.getTang().newInjector(configuration);
     final String source1Socket = injector.getNamedInstance(UnionLeftSourceAddress.class);
     final String source2Socket = injector.getNamedInstance(UnionRightSourceAddress.class);

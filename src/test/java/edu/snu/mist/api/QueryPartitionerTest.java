@@ -18,6 +18,7 @@ package edu.snu.mist.api;
 import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sources.TextSocketSourceStream;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.Direction;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -61,9 +62,9 @@ public final class QueryPartitionerTest {
     final Sink sink2 = op23.textSocketOutput(APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF);
 
     final MISTQuery query = queryBuilder.build();
-    final DAG<AvroVertexSerializable, StreamType.Direction> dag = query.getDAG();
+    final DAG<AvroVertexSerializable, Direction> dag = query.getDAG();
     final QueryPartitioner queryPartitioner = new QueryPartitioner(dag);
-    final DAG<List<AvroVertexSerializable>, StreamType.Direction>
+    final DAG<List<AvroVertexSerializable>, Direction>
         chainedPlan = queryPartitioner.generatePartitionedPlan();
 
     final List<AvroVertexSerializable> src1List = Arrays.asList(src1);
@@ -77,41 +78,41 @@ public final class QueryPartitionerTest {
     final List<AvroVertexSerializable> sink2List = Arrays.asList(sink2);
 
     // Check src1 -> [op11->op12] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e1 = chainedPlan.getEdges(src1List);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result1 = new HashMap<>();
-    result1.put(op11op12, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e1 = chainedPlan.getEdges(src1List);
+    final Map<List<AvroVertexSerializable>, Direction> result1 = new HashMap<>();
+    result1.put(op11op12, Direction.LEFT);
     Assert.assertEquals(e1, result1);
     // Check src2 -> [op21->op22] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e2 = chainedPlan.getEdges(src2List);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result2 = new HashMap<>();
-    result2.put(op21op22, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e2 = chainedPlan.getEdges(src2List);
+    final Map<List<AvroVertexSerializable>, Direction> result2 = new HashMap<>();
+    result2.put(op21op22, Direction.LEFT);
     Assert.assertEquals(e2, result2);
     // Check [op11->op12] -> [union] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e3 = chainedPlan.getEdges(op11op12);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result3 = new HashMap<>();
-    result3.put(unionList, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e3 = chainedPlan.getEdges(op11op12);
+    final Map<List<AvroVertexSerializable>, Direction> result3 = new HashMap<>();
+    result3.put(unionList, Direction.LEFT);
     Assert.assertEquals(e3, result3);
     // Check [op21->op22] -> [union] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e4 = chainedPlan.getEdges(op21op22);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result4 = new HashMap<>();
-    result4.put(unionList, StreamType.Direction.RIGHT);
+    final Map<List<AvroVertexSerializable>, Direction> e4 = chainedPlan.getEdges(op21op22);
+    final Map<List<AvroVertexSerializable>, Direction> result4 = new HashMap<>();
+    result4.put(unionList, Direction.RIGHT);
     Assert.assertEquals(e4, result4);
     // Check [union] -> [op14->op15] edge
     // Check [union] -> [op23] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e5 = chainedPlan.getEdges(unionList);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result5 = new HashMap<>();
-    result5.put(op14op15, StreamType.Direction.LEFT);
-    result5.put(op23List, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e5 = chainedPlan.getEdges(unionList);
+    final Map<List<AvroVertexSerializable>, Direction> result5 = new HashMap<>();
+    result5.put(op14op15, Direction.LEFT);
+    result5.put(op23List, Direction.LEFT);
     Assert.assertEquals(e5, result5);
     // Check [op14->op15] -> sink1 edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e6 = chainedPlan.getEdges(op14op15);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result6 = new HashMap<>();
-    result6.put(sink1List, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e6 = chainedPlan.getEdges(op14op15);
+    final Map<List<AvroVertexSerializable>, Direction> result6 = new HashMap<>();
+    result6.put(sink1List, Direction.LEFT);
     Assert.assertEquals(e6, result6);
     // Check [op23] -> sink2 edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e7 = chainedPlan.getEdges(op23List);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result7 = new HashMap<>();
-    result7.put(sink2List, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e7 = chainedPlan.getEdges(op23List);
+    final Map<List<AvroVertexSerializable>, Direction> result7 = new HashMap<>();
+    result7.put(sink2List, Direction.LEFT);
     Assert.assertEquals(e7, result7);
   }
 
@@ -135,9 +136,9 @@ public final class QueryPartitionerTest {
     final Sink sink1 = op13.textSocketOutput(APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF);
 
     final MISTQuery query = queryBuilder.build();
-    final DAG<AvroVertexSerializable, StreamType.Direction> dag = query.getDAG();
+    final DAG<AvroVertexSerializable, Direction> dag = query.getDAG();
     final QueryPartitioner queryPartitioner = new QueryPartitioner(dag);
-    final DAG<List<AvroVertexSerializable>, StreamType.Direction>
+    final DAG<List<AvroVertexSerializable>, Direction>
         chainedPlan = queryPartitioner.generatePartitionedPlan();
 
     final List<AvroVertexSerializable> src1List = Arrays.asList(src1);
@@ -145,14 +146,14 @@ public final class QueryPartitionerTest {
     final List<AvroVertexSerializable> sinkList = Arrays.asList(sink1);
 
     // Check src1 -> [op11->op12->op13] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e1 = chainedPlan.getEdges(src1List);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result1 = new HashMap<>();
-    result1.put(opList, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e1 = chainedPlan.getEdges(src1List);
+    final Map<List<AvroVertexSerializable>, Direction> result1 = new HashMap<>();
+    result1.put(opList, Direction.LEFT);
     Assert.assertEquals(e1, result1);
     // Check [op11->op12->op13] -> [sink1] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e2 = chainedPlan.getEdges(opList);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result2 = new HashMap<>();
-    result2.put(sinkList, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e2 = chainedPlan.getEdges(opList);
+    final Map<List<AvroVertexSerializable>, Direction> result2 = new HashMap<>();
+    result2.put(sinkList, Direction.LEFT);
     Assert.assertEquals(e2, result2);
   }
 
@@ -182,9 +183,9 @@ public final class QueryPartitionerTest {
     final Sink sink3 = op15.textSocketOutput(APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF);
 
     final MISTQuery query = queryBuilder.build();
-    final DAG<AvroVertexSerializable, StreamType.Direction> dag = query.getDAG();
+    final DAG<AvroVertexSerializable, Direction> dag = query.getDAG();
     final QueryPartitioner queryPartitioner = new QueryPartitioner(dag);
-    final DAG<List<AvroVertexSerializable>, StreamType.Direction>
+    final DAG<List<AvroVertexSerializable>, Direction>
         chainedPlan = queryPartitioner.generatePartitionedPlan();
 
     // Expected outputs
@@ -198,33 +199,33 @@ public final class QueryPartitionerTest {
     final List<AvroVertexSerializable> sink3List = Arrays.asList(sink3);
 
     // Check src1 -> [op11->op12] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e1 = chainedPlan.getEdges(src1List);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result1 = new HashMap<>();
-    result1.put(op11op12, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e1 = chainedPlan.getEdges(src1List);
+    final Map<List<AvroVertexSerializable>, Direction> result1 = new HashMap<>();
+    result1.put(op11op12, Direction.LEFT);
     Assert.assertEquals(e1, result1);
     // Check [op11->op12] -> [op13] edges
     //                    -> [op14]
     //                    -> [op15]
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e2 = chainedPlan.getEdges(op11op12);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result2 = new HashMap<>();
-    result2.put(op13List, StreamType.Direction.LEFT);
-    result2.put(op14List, StreamType.Direction.LEFT);
-    result2.put(op15List, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e2 = chainedPlan.getEdges(op11op12);
+    final Map<List<AvroVertexSerializable>, Direction> result2 = new HashMap<>();
+    result2.put(op13List, Direction.LEFT);
+    result2.put(op14List, Direction.LEFT);
+    result2.put(op15List, Direction.LEFT);
     Assert.assertEquals(e2, result2);
     // Check [op14] -> [sink2] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e3 = chainedPlan.getEdges(op14List);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result3 = new HashMap<>();
-    result3.put(sink2List, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e3 = chainedPlan.getEdges(op14List);
+    final Map<List<AvroVertexSerializable>, Direction> result3 = new HashMap<>();
+    result3.put(sink2List, Direction.LEFT);
     Assert.assertEquals(e3, result3);
     // Check [op13] -> [sink1] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e4 = chainedPlan.getEdges(op13List);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result4 = new HashMap<>();
-    result4.put(sink1List, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e4 = chainedPlan.getEdges(op13List);
+    final Map<List<AvroVertexSerializable>, Direction> result4 = new HashMap<>();
+    result4.put(sink1List, Direction.LEFT);
     Assert.assertEquals(e4, result4);
     // Check [op15] -> [sink3] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e5 = chainedPlan.getEdges(op15List);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result5 = new HashMap<>();
-    result5.put(sink3List, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e5 = chainedPlan.getEdges(op15List);
+    final Map<List<AvroVertexSerializable>, Direction> result5 = new HashMap<>();
+    result5.put(sink3List, Direction.LEFT);
     Assert.assertEquals(e5, result5);
   }
 
@@ -259,9 +260,9 @@ public final class QueryPartitionerTest {
     final Sink sink1 = op14.textSocketOutput(APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF);
 
     final MISTQuery query = queryBuilder.build();
-    final DAG<AvroVertexSerializable, StreamType.Direction> dag = query.getDAG();
+    final DAG<AvroVertexSerializable, Direction> dag = query.getDAG();
     final QueryPartitioner queryPartitioner = new QueryPartitioner(dag);
-    final DAG<List<AvroVertexSerializable>, StreamType.Direction>
+    final DAG<List<AvroVertexSerializable>, Direction>
         chainedPlan = queryPartitioner.generatePartitionedPlan();
 
     // Expected outputs
@@ -276,44 +277,44 @@ public final class QueryPartitionerTest {
     final List<AvroVertexSerializable> sink1List = Arrays.asList(sink1);
 
     // Check src1 -> [op11->op12] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e1 = chainedPlan.getEdges(src1List);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result1 = new HashMap<>();
-    result1.put(op11op12, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e1 = chainedPlan.getEdges(src1List);
+    final Map<List<AvroVertexSerializable>, Direction> result1 = new HashMap<>();
+    result1.put(op11op12, Direction.LEFT);
     Assert.assertEquals(e1, result1);
     // Check src2 -> [op21] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e2 = chainedPlan.getEdges(src2List);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result2 = new HashMap<>();
-    result2.put(op21List, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e2 = chainedPlan.getEdges(src2List);
+    final Map<List<AvroVertexSerializable>, Direction> result2 = new HashMap<>();
+    result2.put(op21List, Direction.LEFT);
     Assert.assertEquals(e2, result2);
     // Check src3 -> [op31] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e3 = chainedPlan.getEdges(src3List);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result3 = new HashMap<>();
-    result3.put(op31List, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e3 = chainedPlan.getEdges(src3List);
+    final Map<List<AvroVertexSerializable>, Direction> result3 = new HashMap<>();
+    result3.put(op31List, Direction.LEFT);
     Assert.assertEquals(e3, result3);
     // Check [op11->op12] -> [op13] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e4 = chainedPlan.getEdges(op11op12);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result4 = new HashMap<>();
-    result4.put(op13List, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e4 = chainedPlan.getEdges(op11op12);
+    final Map<List<AvroVertexSerializable>, Direction> result4 = new HashMap<>();
+    result4.put(op13List, Direction.LEFT);
     Assert.assertEquals(e4, result4);
     // Check [op21] -> [op13] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e5 = chainedPlan.getEdges(op21List);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result5 = new HashMap<>();
-    result5.put(op13List, StreamType.Direction.RIGHT);
+    final Map<List<AvroVertexSerializable>, Direction> e5 = chainedPlan.getEdges(op21List);
+    final Map<List<AvroVertexSerializable>, Direction> result5 = new HashMap<>();
+    result5.put(op13List, Direction.RIGHT);
     Assert.assertEquals(e5, result5);
     // Check [op13] -> [op14] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e6 = chainedPlan.getEdges(op13List);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result6 = new HashMap<>();
-    result6.put(op14List, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e6 = chainedPlan.getEdges(op13List);
+    final Map<List<AvroVertexSerializable>, Direction> result6 = new HashMap<>();
+    result6.put(op14List, Direction.LEFT);
     Assert.assertEquals(e6, result6);
     // Check [op31] -> [op14] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e7 = chainedPlan.getEdges(op31List);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result7 = new HashMap<>();
-    result7.put(op14List, StreamType.Direction.RIGHT);
+    final Map<List<AvroVertexSerializable>, Direction> e7 = chainedPlan.getEdges(op31List);
+    final Map<List<AvroVertexSerializable>, Direction> result7 = new HashMap<>();
+    result7.put(op14List, Direction.RIGHT);
     Assert.assertEquals(e7, result7);
     // Check [op14] -> [sink1] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e8 = chainedPlan.getEdges(op14List);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result8 = new HashMap<>();
-    result8.put(sink1List, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e8 = chainedPlan.getEdges(op14List);
+    final Map<List<AvroVertexSerializable>, Direction> result8 = new HashMap<>();
+    result8.put(sink1List, Direction.LEFT);
     Assert.assertEquals(e8, result8);
   }
 
@@ -343,9 +344,9 @@ public final class QueryPartitionerTest {
     final Sink sink1 = opD.textSocketOutput(APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF);
 
     final MISTQuery query = queryBuilder.build();
-    final DAG<AvroVertexSerializable, StreamType.Direction> dag = query.getDAG();
+    final DAG<AvroVertexSerializable, Direction> dag = query.getDAG();
     final QueryPartitioner queryPartitioner = new QueryPartitioner(dag);
-    final DAG<List<AvroVertexSerializable>, StreamType.Direction>
+    final DAG<List<AvroVertexSerializable>, Direction>
         chainedPlan = queryPartitioner.generatePartitionedPlan();
 
     // Expected outputs
@@ -359,43 +360,43 @@ public final class QueryPartitionerTest {
     final List<AvroVertexSerializable> sink1List = Arrays.asList(sink1);
 
     // Check src1 -> [opA] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e1 = chainedPlan.getEdges(src1List);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result1 = new HashMap<>();
-    result1.put(opAList, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e1 = chainedPlan.getEdges(src1List);
+    final Map<List<AvroVertexSerializable>, Direction> result1 = new HashMap<>();
+    result1.put(opAList, Direction.LEFT);
     Assert.assertEquals(e1, result1);
     // Check opA -> opB1 edges
     //           -> opB2
     //           -> opB3
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e2 = chainedPlan.getEdges(opAList);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result2 = new HashMap<>();
-    result2.put(opB1List, StreamType.Direction.LEFT);
-    result2.put(opB2List, StreamType.Direction.LEFT);
-    result2.put(opB3List, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e2 = chainedPlan.getEdges(opAList);
+    final Map<List<AvroVertexSerializable>, Direction> result2 = new HashMap<>();
+    result2.put(opB1List, Direction.LEFT);
+    result2.put(opB2List, Direction.LEFT);
+    result2.put(opB3List, Direction.LEFT);
     Assert.assertEquals(e2, result2);
     // Check opB1 -> [opC] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e3 = chainedPlan.getEdges(opB1List);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result3 = new HashMap<>();
-    result3.put(opCList, StreamType.Direction.RIGHT);
+    final Map<List<AvroVertexSerializable>, Direction> e3 = chainedPlan.getEdges(opB1List);
+    final Map<List<AvroVertexSerializable>, Direction> result3 = new HashMap<>();
+    result3.put(opCList, Direction.RIGHT);
     Assert.assertEquals(e3, result3);
     // Check opB2 -> [opC] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e4 = chainedPlan.getEdges(opB2List);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result4 = new HashMap<>();
-    result4.put(opCList, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e4 = chainedPlan.getEdges(opB2List);
+    final Map<List<AvroVertexSerializable>, Direction> result4 = new HashMap<>();
+    result4.put(opCList, Direction.LEFT);
     Assert.assertEquals(e4, result4);
     // Check opC -> [opD] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e5 = chainedPlan.getEdges(opCList);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result5 = new HashMap<>();
-    result5.put(opDList, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e5 = chainedPlan.getEdges(opCList);
+    final Map<List<AvroVertexSerializable>, Direction> result5 = new HashMap<>();
+    result5.put(opDList, Direction.LEFT);
     Assert.assertEquals(e5, result5);
     // Check opB3 -> [opD] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e6 = chainedPlan.getEdges(opB3List);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result6 = new HashMap<>();
-    result6.put(opDList, StreamType.Direction.RIGHT);
+    final Map<List<AvroVertexSerializable>, Direction> e6 = chainedPlan.getEdges(opB3List);
+    final Map<List<AvroVertexSerializable>, Direction> result6 = new HashMap<>();
+    result6.put(opDList, Direction.RIGHT);
     Assert.assertEquals(e6, result6);
     // Check opD -> [sink1] edge
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> e7 = chainedPlan.getEdges(opDList);
-    final Map<List<AvroVertexSerializable>, StreamType.Direction> result7 = new HashMap<>();
-    result7.put(sink1List, StreamType.Direction.LEFT);
+    final Map<List<AvroVertexSerializable>, Direction> e7 = chainedPlan.getEdges(opDList);
+    final Map<List<AvroVertexSerializable>, Direction> result7 = new HashMap<>();
+    result7.put(sink1List, Direction.LEFT);
     Assert.assertEquals(e7, result7);
   }
 }

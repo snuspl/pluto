@@ -16,9 +16,9 @@
 package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
 
 /**
@@ -30,8 +30,8 @@ public final class ReduceByKeyOperatorStream<IN, K, V> extends BaseReduceByKeyOp
   public ReduceByKeyOperatorStream(final int keyFieldIndex,
                                    final Class<K> keyType,
                                    final MISTBiFunction<V, V, V> reduceFunc,
-                                   final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
-    super(StreamType.OperatorType.REDUCE_BY_KEY, keyFieldIndex, keyType, reduceFunc, dag);
+                                   final DAG<AvroVertexSerializable, Direction> dag) {
+    super(keyFieldIndex, keyType, reduceFunc, dag);
   }
 
   @Override
