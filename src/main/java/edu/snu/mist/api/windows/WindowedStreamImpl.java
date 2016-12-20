@@ -17,14 +17,14 @@ package edu.snu.mist.api.windows;
 
 import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.MISTStreamImpl;
-import edu.snu.mist.api.operators.ApplyStatefulFunction;
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.operators.AggregateWindowOperatorStream;
+import edu.snu.mist.api.operators.ApplyStatefulFunction;
 import edu.snu.mist.api.operators.ApplyStatefulWindowOperatorStream;
 import edu.snu.mist.api.operators.ReduceByKeyWindowOperatorStream;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.Vertex;
 import edu.snu.mist.formats.avro.VertexTypeEnum;
 import edu.snu.mist.formats.avro.WindowOperatorInfo;
@@ -34,15 +34,9 @@ import edu.snu.mist.formats.avro.WindowOperatorInfo;
  */
 public abstract class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>> implements WindowedStream<T>  {
 
-  /**
-   * The type of this operator (e.g. timeWindowOperator, countWindowOperator, ...)
-   */
-  private final StreamType.OperatorType operatorType;
 
-  protected WindowedStreamImpl(final StreamType.OperatorType operatorType,
-                               final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
-    super(StreamType.BasicType.WINDOWED, dag);
-    this.operatorType = operatorType;
+  protected WindowedStreamImpl(final DAG<AvroVertexSerializable, Direction> dag) {
+    super(dag);
   }
 
   @Override
@@ -53,7 +47,7 @@ public abstract class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>
     final ReduceByKeyWindowOperatorStream<T, K, V> downStream =
         new ReduceByKeyWindowOperatorStream<>(keyFieldNum, keyType, reduceFunc, dag);
     dag.addVertex(downStream);
-    dag.addEdge(this, downStream, StreamType.Direction.LEFT);
+    dag.addEdge(this, downStream, Direction.LEFT);
     return downStream;
   }
 
@@ -62,7 +56,7 @@ public abstract class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>
     final AggregateWindowOperatorStream<T, R> downStream =
         new AggregateWindowOperatorStream<>(aggregateFunc, dag);
     dag.addVertex(downStream);
-    dag.addEdge(this, downStream, StreamType.Direction.LEFT);
+    dag.addEdge(this, downStream, Direction.LEFT);
     return downStream;
   }
 
@@ -72,15 +66,8 @@ public abstract class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>
     final ApplyStatefulWindowOperatorStream<T, R> downStream =
         new ApplyStatefulWindowOperatorStream<>(applyStatefulFunction, dag);
     dag.addVertex(downStream);
-    dag.addEdge(this, downStream, StreamType.Direction.LEFT);
+    dag.addEdge(this, downStream, Direction.LEFT);
     return downStream;
-  }
-
-  /**
-   * @return The type of the current operator (ex: time, count, session, ...)
-   */
-  public StreamType.OperatorType getOperatorType() {
-    return operatorType;
   }
 
   /**

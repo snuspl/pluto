@@ -16,10 +16,10 @@
 package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.windows.WindowInformation;
 import edu.snu.mist.api.windows.WindowedStreamImpl;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.WindowOperatorInfo;
 
 /**
@@ -33,8 +33,8 @@ public final class WindowOperatorStream<T> extends WindowedStreamImpl<T> {
   private WindowInformation windowInfo;
 
   public WindowOperatorStream(final WindowInformation windowInfo,
-                              final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
-    super(windowInfo.getWindowOpType(), dag);
+                              final DAG<AvroVertexSerializable, Direction> dag) {
+    super(dag);
     this.windowInfo = windowInfo;
   }
 

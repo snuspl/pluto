@@ -16,6 +16,7 @@
 package edu.snu.mist.api;
 
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.Direction;
 
 /**
  * The basic implementation class for MISTStream.
@@ -23,23 +24,11 @@ import edu.snu.mist.common.DAG;
 public abstract class MISTStreamImpl<OUT> implements MISTStream<OUT> {
 
   /**
-   * The type of this stream (continuous or windowed).
-   */
-  private final StreamType.BasicType streamType;
-
-  /**
    * DAG of the query.
    */
-  protected final DAG<AvroVertexSerializable, StreamType.Direction> dag;
+  protected final DAG<AvroVertexSerializable, Direction> dag;
 
-  public MISTStreamImpl(final StreamType.BasicType streamType,
-                        final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
-    this.streamType = streamType;
+  public MISTStreamImpl(final DAG<AvroVertexSerializable, Direction> dag) {
     this.dag = dag;
-  }
-
-  @Override
-  public StreamType.BasicType getBasicType() {
-    return streamType;
   }
 }

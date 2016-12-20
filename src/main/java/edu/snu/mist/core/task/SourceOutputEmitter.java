@@ -15,11 +15,11 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.core.task.common.MistDataEvent;
 import edu.snu.mist.core.task.common.MistWatermarkEvent;
 import edu.snu.mist.core.task.common.OutputEmitter;
 import edu.snu.mist.core.task.common.PhysicalVertex;
+import edu.snu.mist.formats.avro.Direction;
 
 import java.util.Map;
 
@@ -33,24 +33,24 @@ final class SourceOutputEmitter<I> implements OutputEmitter {
   /**
    * Next PartitionedQueries.
    */
-  private final Map<PhysicalVertex, StreamType.Direction> nextPartitionedQueries;
+  private final Map<PhysicalVertex, Direction> nextPartitionedQueries;
 
-  public SourceOutputEmitter(final Map<PhysicalVertex, StreamType.Direction> nextPartitionedQueries) {
+  public SourceOutputEmitter(final Map<PhysicalVertex, Direction> nextPartitionedQueries) {
     this.nextPartitionedQueries = nextPartitionedQueries;
   }
 
   @Override
   public void emitData(final MistDataEvent data) {
     if (nextPartitionedQueries.size() == 1) {
-      for (final Map.Entry<PhysicalVertex, StreamType.Direction> nextQuery :
+      for (final Map.Entry<PhysicalVertex, Direction> nextQuery :
           nextPartitionedQueries.entrySet()) {
-        final StreamType.Direction direction = nextQuery.getValue();
+        final Direction direction = nextQuery.getValue();
         ((PartitionedQuery)nextQuery.getKey()).addNextEvent(data, direction);
       }
     } else {
-      for (final Map.Entry<PhysicalVertex, StreamType.Direction> nextQuery :
+      for (final Map.Entry<PhysicalVertex, Direction> nextQuery :
           nextPartitionedQueries.entrySet()) {
-        final StreamType.Direction direction = nextQuery.getValue();
+        final Direction direction = nextQuery.getValue();
         final MistDataEvent event = new MistDataEvent(data.getValue(), data.getTimestamp());
         ((PartitionedQuery)nextQuery.getKey()).addNextEvent(event, direction);
       }
@@ -59,9 +59,9 @@ final class SourceOutputEmitter<I> implements OutputEmitter {
 
   @Override
   public void emitWatermark(final MistWatermarkEvent watermark) {
-    for (final Map.Entry<PhysicalVertex, StreamType.Direction> nextQuery :
+    for (final Map.Entry<PhysicalVertex, Direction> nextQuery :
         nextPartitionedQueries.entrySet()) {
-      final StreamType.Direction direction = nextQuery.getValue();
+      final Direction direction = nextQuery.getValue();
       ((PartitionedQuery)nextQuery.getKey()).addNextEvent(watermark, direction);
     }
   }

@@ -221,8 +221,8 @@ public final class MISTQueryTest {
 
     final List<Edge> edges = serializedDAG.getValue();
     final List<Edge> expectedEdges = Arrays.asList(
-        Edge.newBuilder().setFrom(0).setTo(1).setIsLeft(true).build(),
-        Edge.newBuilder().setFrom(1).setTo(2).setIsLeft(true).build());
+        Edge.newBuilder().setFrom(0).setTo(1).setDirection(Direction.LEFT).build(),
+        Edge.newBuilder().setFrom(1).setTo(2).setDirection(Direction.LEFT).build());
     Assert.assertEquals(new HashSet<>(expectedEdges), new HashSet<>(edges));
   }
 }

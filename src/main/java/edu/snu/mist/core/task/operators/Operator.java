@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task.operators;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.core.task.common.MistDataEvent;
 import edu.snu.mist.core.task.common.MistWatermarkEvent;
 import edu.snu.mist.core.task.common.OutputEmittable;
@@ -37,12 +36,6 @@ public interface Operator extends OutputEmittable {
    * @return an identifier
    */
   String getQueryIdentifier();
-
-  /**
-   * Gets the type of operator.
-   * @return operator type
-   */
-  StreamType.OperatorType getOperatorType();
 
   /**
    * Process data of left upstream.

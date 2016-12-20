@@ -16,10 +16,10 @@
 package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.windows.WindowData;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.InstantOperatorInfo;
 import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
 import org.apache.commons.lang.SerializationUtils;
@@ -43,8 +43,8 @@ public final class AggregateWindowOperatorStream<IN, OUT>
   private final MISTFunction<WindowData<IN>, OUT> aggregateFunc;
 
   public AggregateWindowOperatorStream(final MISTFunction<WindowData<IN>, OUT> aggregateFunc,
-                                       final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
-    super(StreamType.OperatorType.AGGREGATE_WINDOW, dag);
+                                       final DAG<AvroVertexSerializable, Direction> dag) {
+    super(dag);
     this.aggregateFunc = aggregateFunc;
   }
 

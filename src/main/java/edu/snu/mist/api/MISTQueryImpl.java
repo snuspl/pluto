@@ -19,10 +19,7 @@ import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sources.BaseSourceStream;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.GraphUtils;
-import edu.snu.mist.formats.avro.AvroVertexChain;
-import edu.snu.mist.formats.avro.AvroVertexTypeEnum;
-import edu.snu.mist.formats.avro.Edge;
-import edu.snu.mist.formats.avro.Vertex;
+import edu.snu.mist.formats.avro.*;
 import org.apache.reef.io.Tuple;
 
 import java.util.*;
@@ -35,17 +32,17 @@ public final class MISTQueryImpl implements MISTQuery {
   /**
    * DAG of the query.
    */
-  private final DAG<AvroVertexSerializable, StreamType.Direction> dag;
+  private final DAG<AvroVertexSerializable, Direction> dag;
   private final QueryPartitioner queryPartitioner;
 
-  public MISTQueryImpl(final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
+  public MISTQueryImpl(final DAG<AvroVertexSerializable, Direction> dag) {
     this.queryPartitioner = new QueryPartitioner(dag);
     this.dag = dag;
   }
 
   @Override
   public Tuple<List<AvroVertexChain>, List<Edge>> getSerializedDAG() {
-    final DAG<List<AvroVertexSerializable>, StreamType.Direction> chainedDAG =
+    final DAG<List<AvroVertexSerializable>, Direction> chainedDAG =
         queryPartitioner.generatePartitionedPlan();
     final Queue<List<AvroVertexSerializable>> queue = new LinkedList<>();
     final List<List<AvroVertexSerializable>> vertices = new ArrayList<>();
@@ -63,13 +60,13 @@ public final class MISTQueryImpl implements MISTQuery {
     while (!queue.isEmpty()) {
       final List<AvroVertexSerializable> vertex = queue.remove();
       final int fromIndex = vertices.indexOf(vertex);
-      final Map<List<AvroVertexSerializable>, StreamType.Direction> neighbors = chainedDAG.getEdges(vertex);
-      for (final Map.Entry<List<AvroVertexSerializable>, StreamType.Direction> neighbor : neighbors.entrySet()) {
+      final Map<List<AvroVertexSerializable>, Direction> neighbors = chainedDAG.getEdges(vertex);
+      for (final Map.Entry<List<AvroVertexSerializable>, Direction> neighbor : neighbors.entrySet()) {
         final int toIndex = vertices.indexOf(neighbor.getKey());
         final Edge.Builder edgeBuilder = Edge.newBuilder()
             .setFrom(fromIndex)
             .setTo(toIndex)
-            .setIsLeft(neighbor.getValue() == StreamType.Direction.LEFT);
+            .setDirection(neighbor.getValue());
         edges.add(edgeBuilder.build());
       }
     }
@@ -102,7 +99,7 @@ public final class MISTQueryImpl implements MISTQuery {
   }
 
   @Override
-  public DAG<AvroVertexSerializable, StreamType.Direction> getDAG() {
+  public DAG<AvroVertexSerializable, Direction> getDAG() {
     return dag;
   }
 }

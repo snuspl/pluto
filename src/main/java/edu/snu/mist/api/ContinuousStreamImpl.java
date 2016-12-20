@@ -16,8 +16,10 @@
 
 package edu.snu.mist.api;
 
-import edu.snu.mist.api.exceptions.StreamTypeMismatchException;
-import edu.snu.mist.api.functions.*;
+import edu.snu.mist.api.functions.MISTBiFunction;
+import edu.snu.mist.api.functions.MISTBiPredicate;
+import edu.snu.mist.api.functions.MISTFunction;
+import edu.snu.mist.api.functions.MISTPredicate;
 import edu.snu.mist.api.operators.*;
 import edu.snu.mist.api.sink.Sink;
 import edu.snu.mist.api.sink.TextSocketSink;
@@ -26,6 +28,7 @@ import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.api.windows.WindowInformation;
 import edu.snu.mist.api.windows.WindowedStream;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.Direction;
 
 import java.util.List;
 
@@ -35,27 +38,16 @@ import java.util.List;
  */
 public abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements ContinuousStream<T> {
 
-  /**
-   * The type of continuous stream (e.g. source, operator, ...)
-   */
-  private final StreamType.ContinuousType continuousStreamType;
 
-  public ContinuousStreamImpl(final StreamType.ContinuousType continuousStreamType,
-                              final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
-    super(StreamType.BasicType.CONTINUOUS, dag);
-    this.continuousStreamType = continuousStreamType;
-  }
-
-  @Override
-  public StreamType.ContinuousType getContinuousType() {
-    return continuousStreamType;
+  public ContinuousStreamImpl(final DAG<AvroVertexSerializable, Direction> dag) {
+    super(dag);
   }
 
   @Override
   public <OUT> MapOperatorStream<T, OUT> map(final MISTFunction<T, OUT> mapFunc) {
     final MapOperatorStream<T, OUT> downStream = new MapOperatorStream<>(mapFunc, dag);
     dag.addVertex(downStream);
-    dag.addEdge(this, downStream, StreamType.Direction.LEFT);
+    dag.addEdge(this, downStream, Direction.LEFT);
     return downStream;
   }
 
@@ -63,7 +55,7 @@ public abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implemen
   public <OUT> FlatMapOperatorStream<T, OUT> flatMap(final MISTFunction<T, List<OUT>> flatMapFunc) {
     final FlatMapOperatorStream<T, OUT> downStream = new FlatMapOperatorStream<>(flatMapFunc, dag);
     dag.addVertex(downStream);
-    dag.addEdge(this, downStream, StreamType.Direction.LEFT);
+    dag.addEdge(this, downStream, Direction.LEFT);
     return downStream;
   }
 
@@ -71,7 +63,7 @@ public abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implemen
   public FilterOperatorStream<T> filter(final MISTPredicate<T> filterFunc) {
     final FilterOperatorStream<T> downStream = new FilterOperatorStream<>(filterFunc, dag);
     dag.addVertex(downStream);
-    dag.addEdge(this, downStream, StreamType.Direction.LEFT);
+    dag.addEdge(this, downStream, Direction.LEFT);
     return downStream;
   }
 
@@ -82,7 +74,7 @@ public abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implemen
     final ReduceByKeyOperatorStream<T, K, V> downStream =
         new ReduceByKeyOperatorStream<>(keyFieldNum, keyType, reduceFunc, dag);
     dag.addVertex(downStream);
-    dag.addEdge(this, downStream, StreamType.Direction.LEFT);
+    dag.addEdge(this, downStream, Direction.LEFT);
     return downStream;
   }
 
@@ -92,17 +84,17 @@ public abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implemen
     final ApplyStatefulOperatorStream<T, OUT> downStream =
         new ApplyStatefulOperatorStream<>(applyStatefulFunction, dag);
     dag.addVertex(downStream);
-    dag.addEdge(this, downStream, StreamType.Direction.LEFT);
+    dag.addEdge(this, downStream, Direction.LEFT);
     return downStream;
   }
 
   @Override
-  public UnionOperatorStream<T> union(final ContinuousStream<T> inputStream) throws StreamTypeMismatchException {
+  public UnionOperatorStream<T> union(final ContinuousStream<T> inputStream) {
     // TODO[MIST-245]: Improve type checking.
     final UnionOperatorStream<T> downStream = new UnionOperatorStream<>(dag);
     dag.addVertex(downStream);
-    dag.addEdge(this, downStream, StreamType.Direction.LEFT);
-    dag.addEdge(inputStream, downStream, StreamType.Direction.RIGHT);
+    dag.addEdge(this, downStream, Direction.LEFT);
+    dag.addEdge(inputStream, downStream, Direction.RIGHT);
     return downStream;
   }
 
@@ -111,7 +103,7 @@ public abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implemen
     final WindowOperatorStream<T> downStream = new WindowOperatorStream<>(windowInfo, dag);
 
     dag.addVertex(downStream);
-    dag.addEdge(this, downStream, StreamType.Direction.LEFT);
+    dag.addEdge(this, downStream, Direction.LEFT);
     return downStream;
   }
 
@@ -133,15 +125,15 @@ public abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implemen
 
     final JoinOperatorStream<T, U> downStream = new JoinOperatorStream<>(joinBiPredicate, dag);
     dag.addVertex(downStream);
-    dag.addEdge(windowedStream, downStream, StreamType.Direction.LEFT);
+    dag.addEdge(windowedStream, downStream, Direction.LEFT);
     return downStream;
   }
 
   @Override
   public Sink textSocketOutput(final TextSocketSinkConfiguration textSocketSinkConfiguration) {
-    final Sink sink = new TextSocketSink(StreamType.SinkType.TEXT_SOCKET_SINK, textSocketSinkConfiguration);
+    final Sink sink = new TextSocketSink(textSocketSinkConfiguration);
     dag.addVertex(sink);
-    dag.addEdge(this, sink, StreamType.Direction.LEFT);
+    dag.addEdge(this, sink, Direction.LEFT);
     return sink;
   }
 }

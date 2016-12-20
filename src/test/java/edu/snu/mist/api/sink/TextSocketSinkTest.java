@@ -15,9 +15,13 @@
  */
 package edu.snu.mist.api.sink;
 
-import edu.snu.mist.api.*;
+import edu.snu.mist.api.APITestParameters;
+import edu.snu.mist.api.AvroVertexSerializable;
+import edu.snu.mist.api.MISTQuery;
+import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.api.sources.BaseSourceStream;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.Direction;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -38,13 +42,12 @@ public class TextSocketSinkTest {
     final MISTQuery query = queryBuilder.build();
 
     final Sink sink = sourceStream.textSocketOutput(APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF);
-    Assert.assertEquals(sink.getSinkType(), StreamType.SinkType.TEXT_SOCKET_SINK);
     Assert.assertSame(sink.getSinkConfiguration(), APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF);
 
     // Check src -> sink
-    final DAG<AvroVertexSerializable, StreamType.Direction> dag = query.getDAG();
-    final Map<AvroVertexSerializable, StreamType.Direction> neighbors = dag.getEdges(sourceStream);
+    final DAG<AvroVertexSerializable, Direction> dag = query.getDAG();
+    final Map<AvroVertexSerializable, Direction> neighbors = dag.getEdges(sourceStream);
     Assert.assertEquals(1, neighbors.size());
-    Assert.assertEquals(StreamType.Direction.LEFT, neighbors.get(sink));
+    Assert.assertEquals(Direction.LEFT, neighbors.get(sink));
   }
 }

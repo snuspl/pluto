@@ -17,9 +17,9 @@ package edu.snu.mist.api.operators;
 
 
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.functions.MISTBiFunction;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.InstantOperatorInfo;
 import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
 import org.apache.commons.lang.SerializationUtils;
@@ -44,13 +44,12 @@ abstract class BaseReduceByKeyOperatorStream<IN, K, V> extends InstantOperatorSt
    */
   protected final int keyFieldIndex;
 
-  protected BaseReduceByKeyOperatorStream(final StreamType.OperatorType operatorName,
-                                          final int keyFieldIndex,
+  protected BaseReduceByKeyOperatorStream(final int keyFieldIndex,
                                           final Class<K> keyType,
                                           final MISTBiFunction<V, V, V> reduceFunc,
-                                          final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
+                                          final DAG<AvroVertexSerializable, Direction> dag) {
     // TODO[MIST-63]: Add dynamic type checking routine here.
-    super(operatorName, dag);
+    super(dag);
     this.reduceFunc = reduceFunc;
     this.keyFieldIndex = keyFieldIndex;
   }

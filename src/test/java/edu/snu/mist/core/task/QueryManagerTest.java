@@ -15,18 +15,18 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.formats.avro.LogicalPlan;
-import edu.snu.mist.core.task.common.PhysicalVertex;
-import edu.snu.mist.core.task.operators.*;
 import edu.snu.mist.core.parameters.NumThreads;
 import edu.snu.mist.core.parameters.PlanStorePath;
+import edu.snu.mist.core.task.common.PhysicalVertex;
+import edu.snu.mist.core.task.operators.*;
 import edu.snu.mist.core.task.sinks.Sink;
 import edu.snu.mist.core.task.sources.*;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
+import edu.snu.mist.formats.avro.Direction;
+import edu.snu.mist.formats.avro.LogicalPlan;
 import junit.framework.Assert;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
@@ -107,7 +107,7 @@ public final class QueryManagerTest {
     final CountDownLatch countDownAllOutputs = new CountDownLatch(intermediateResult.size() * 2);
 
     // Create the DAG of the query
-    final DAG<PhysicalVertex, StreamType.Direction> dag = new AdjacentListDAG<>();
+    final DAG<PhysicalVertex, Direction> dag = new AdjacentListDAG<>();
 
     // Create source
     final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
@@ -198,8 +198,8 @@ public final class QueryManagerTest {
     final CountDownLatch countDownAfterResumeOutputs = new CountDownLatch(afterResumeResult.size() * 2);
 
     // Create the two DAGs of the queries
-    final DAG<PhysicalVertex, StreamType.Direction> beforeStopDAG = new AdjacentListDAG<>();
-    final DAG<PhysicalVertex, StreamType.Direction> afterResumeDAG = new AdjacentListDAG<>();
+    final DAG<PhysicalVertex, Direction> beforeStopDAG = new AdjacentListDAG<>();
+    final DAG<PhysicalVertex, Direction> afterResumeDAG = new AdjacentListDAG<>();
 
     // Create two sources
     final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
@@ -294,7 +294,7 @@ public final class QueryManagerTest {
    * Creates operators an partitioned queries and adds source, dag vertices, edges and sinks to dag.
    */
   private void constructPhysicalPlan(final Tuple<String, LogicalPlan> tuple,
-                                    final DAG<PhysicalVertex, StreamType.Direction> dag,
+                                    final DAG<PhysicalVertex, Direction> dag,
                                     final Source src,
                                     final Sink sink1,
                                     final Sink sink2) {
@@ -327,17 +327,17 @@ public final class QueryManagerTest {
 
     // Add dag vertices and edges
     dag.addVertex(pq1);
-    dag.addEdge(src, pq1, StreamType.Direction.LEFT);
+    dag.addEdge(src, pq1, Direction.LEFT);
     dag.addVertex(pq2);
-    dag.addEdge(pq1, pq2, StreamType.Direction.LEFT);
+    dag.addEdge(pq1, pq2, Direction.LEFT);
     dag.addVertex(pq3);
-    dag.addEdge(pq1, pq3, StreamType.Direction.LEFT);
+    dag.addEdge(pq1, pq3, Direction.LEFT);
 
     // Add Sink
     dag.addVertex(sink1);
-    dag.addEdge(pq2, sink1, StreamType.Direction.LEFT);
+    dag.addEdge(pq2, sink1, Direction.LEFT);
     dag.addVertex(sink2);
-    dag.addEdge(pq3, sink2, StreamType.Direction.LEFT);
+    dag.addEdge(pq3, sink2, Direction.LEFT);
   }
 
   /**

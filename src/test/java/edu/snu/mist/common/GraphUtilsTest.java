@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.common;
 
-import edu.snu.mist.api.StreamType;
+import edu.snu.mist.formats.avro.Direction;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,7 +26,7 @@ import java.util.Set;
 
 public final class GraphUtilsTest {
 
-  private DAG<Integer, StreamType.Direction> srcDAG = new AdjacentListDAG<>();
+  private DAG<Integer, Direction> srcDAG = new AdjacentListDAG<>();
 
   @Before
   public void setUp() {
@@ -40,12 +40,12 @@ public final class GraphUtilsTest {
     srcDAG.addVertex(4); srcDAG.addVertex(5);
     srcDAG.addVertex(6); srcDAG.addVertex(7);
 
-    srcDAG.addEdge(1, 2, StreamType.Direction.LEFT);
-    srcDAG.addEdge(2, 3, StreamType.Direction.LEFT);
-    srcDAG.addEdge(2, 4, StreamType.Direction.LEFT);
-    srcDAG.addEdge(4, 5, StreamType.Direction.LEFT);
-    srcDAG.addEdge(3, 6, StreamType.Direction.LEFT);
-    srcDAG.addEdge(6, 7, StreamType.Direction.LEFT);
+    srcDAG.addEdge(1, 2, Direction.LEFT);
+    srcDAG.addEdge(2, 3, Direction.LEFT);
+    srcDAG.addEdge(2, 4, Direction.LEFT);
+    srcDAG.addEdge(4, 5, Direction.LEFT);
+    srcDAG.addEdge(3, 6, Direction.LEFT);
+    srcDAG.addEdge(6, 7, Direction.LEFT);
   }
 
   /**
@@ -53,7 +53,7 @@ public final class GraphUtilsTest {
    */
   @Test
   public void copyGraphTest() {
-    final DAG<Integer, StreamType.Direction> destDAG = new AdjacentListDAG<>();
+    final DAG<Integer, Direction> destDAG = new AdjacentListDAG<>();
     GraphUtils.copy(srcDAG, destDAG);
 
     final Set<Integer> expectedRoot = new HashSet<>();

@@ -16,8 +16,8 @@
 package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.InstantOperatorInfo;
 import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
 import org.apache.commons.lang.SerializationUtils;
@@ -38,8 +38,8 @@ public final class ApplyStatefulOperatorStream<IN, OUT> extends InstantOperatorS
   private final ApplyStatefulFunction<IN, OUT> applyStatefulFunction;
 
   public ApplyStatefulOperatorStream(final ApplyStatefulFunction<IN, OUT> applyStatefulFunction,
-                                     final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
-    super(StreamType.OperatorType.APPLY_STATEFUL, dag);
+                                     final DAG<AvroVertexSerializable, Direction> dag) {
+    super(dag);
     this.applyStatefulFunction = applyStatefulFunction;
   }
 

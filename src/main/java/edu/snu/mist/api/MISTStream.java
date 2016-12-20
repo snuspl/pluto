@@ -20,9 +20,5 @@ package edu.snu.mist.api;
  * both for ContinuousMistStream or WindowedMistStream.
  */
 public interface MISTStream<T> extends AvroVertexSerializable {
-  /**
-   * Get the type of MISTStream - continuous? or windowed?
-   * @return the type of this MISTStream
-   */
-  StreamType.BasicType getBasicType();
+
 }

@@ -16,8 +16,8 @@
 package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.InstantOperatorInfo;
 import edu.snu.mist.formats.avro.InstantOperatorTypeEnum;
 
@@ -31,8 +31,8 @@ import java.util.List;
  */
 public final class UnionOperatorStream<T> extends InstantOperatorStream<T, T> {
 
-  public UnionOperatorStream(final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
-    super(StreamType.OperatorType.UNION, dag);
+  public UnionOperatorStream(final DAG<AvroVertexSerializable, Direction> dag) {
+    super(dag);
   }
 
   @Override

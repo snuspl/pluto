@@ -16,11 +16,11 @@
 package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.StreamType;
-import edu.snu.mist.api.windows.WindowedStreamImpl;
 import edu.snu.mist.api.functions.MISTBiPredicate;
 import edu.snu.mist.api.types.Tuple2;
+import edu.snu.mist.api.windows.WindowedStreamImpl;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.WindowOperatorInfo;
 import edu.snu.mist.formats.avro.WindowOperatorTypeEnum;
 import org.apache.commons.lang.SerializationUtils;
@@ -43,8 +43,8 @@ public final class JoinOperatorStream<T, U> extends WindowedStreamImpl<Tuple2<T,
   private final MISTBiPredicate<T, U> joinBiPredicate;
 
   public JoinOperatorStream(final MISTBiPredicate<T, U> joinBiPredicate,
-                            final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
-    super(StreamType.OperatorType.JOIN, dag);
+                            final DAG<AvroVertexSerializable, Direction> dag) {
+    super(dag);
     this.joinBiPredicate = joinBiPredicate;
   }
 

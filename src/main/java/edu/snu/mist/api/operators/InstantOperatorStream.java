@@ -17,8 +17,8 @@ package edu.snu.mist.api.operators;
 
 import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.ContinuousStreamImpl;
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.InstantOperatorInfo;
 import edu.snu.mist.formats.avro.Vertex;
 import edu.snu.mist.formats.avro.VertexTypeEnum;
@@ -27,22 +27,9 @@ import edu.snu.mist.formats.avro.VertexTypeEnum;
  * A ContinuousStream created by operation on any kind of MISTStream.
  */
 abstract class InstantOperatorStream<IN, OUT> extends ContinuousStreamImpl<OUT> {
-  /**
-   * The type of this operator (e.g. filterOperator, mapOperator, ...)
-   */
-  private final StreamType.OperatorType operatorType;
 
-  protected InstantOperatorStream(final StreamType.OperatorType operatorType,
-                                  final DAG<AvroVertexSerializable, StreamType.Direction> dag) {
-    super(StreamType.ContinuousType.OPERATOR, dag);
-    this.operatorType = operatorType;
-  }
-
-  /**
-   * @return The type of the current operator (ex: filter, map, flatMap, ...)
-   */
-  public StreamType.OperatorType getOperatorType() {
-    return operatorType;
+  protected InstantOperatorStream(final DAG<AvroVertexSerializable, Direction> dag) {
+    super(dag);
   }
 
   /**

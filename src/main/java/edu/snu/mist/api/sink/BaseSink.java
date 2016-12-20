@@ -17,7 +17,6 @@
 package edu.snu.mist.api.sink;
 
 import edu.snu.mist.api.SerializedType;
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.sink.builder.SinkConfiguration;
 import edu.snu.mist.api.sink.parameters.SinkSerializeInfo;
 import edu.snu.mist.formats.avro.SinkInfo;
@@ -37,28 +36,14 @@ import java.util.Map;
  */
 public abstract class BaseSink<T> implements Sink {
 
-  /**
-   * The type of this sink.
-   */
-  protected final StreamType.SinkType sinkType;
 
   /**
    * The value for sink configuration.
    */
   protected final SinkConfiguration<T> sinkConfiguration;
 
-  public BaseSink(final StreamType.SinkType sinkType,
-                  final SinkConfiguration<T> sinkConfiguration) {
-    this.sinkType = sinkType;
+  public BaseSink(final SinkConfiguration<T> sinkConfiguration) {
     this.sinkConfiguration = sinkConfiguration;
-  }
-
-  /**
-   * @return The type of the sink stream
-   */
-  @Override
-  public StreamType.SinkType getSinkType() {
-    return this.sinkType;
   }
 
   /**

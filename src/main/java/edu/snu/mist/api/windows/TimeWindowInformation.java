@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.api.windows;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.formats.avro.WindowOperatorTypeEnum;
 
 /**
@@ -31,10 +30,5 @@ public final class TimeWindowInformation extends FixedSizeWindowInformation {
   @Override
   protected WindowOperatorTypeEnum getWindowOpTypeEnum() {
     return WindowOperatorTypeEnum.TIME;
-  }
-
-  @Override
-  public StreamType.OperatorType getWindowOpType() {
-    return StreamType.OperatorType.TIME_WINDOW;
   }
 }

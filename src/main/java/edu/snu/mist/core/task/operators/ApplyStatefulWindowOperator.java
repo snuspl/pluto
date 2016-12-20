@@ -16,7 +16,6 @@
 package edu.snu.mist.core.task.operators;
 
 import edu.snu.mist.api.operators.ApplyStatefulFunction;
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.windows.WindowData;
 import edu.snu.mist.core.task.common.MistDataEvent;
 import edu.snu.mist.core.task.common.MistWatermarkEvent;
@@ -49,11 +48,6 @@ public final class ApplyStatefulWindowOperator<IN, OUT>
                                      final ApplyStatefulFunction<IN, OUT> applyStatefulFunction) {
     super(queryId, operatorId);
     this.applyStatefulFunction = applyStatefulFunction;
-  }
-
-  @Override
-  public StreamType.OperatorType getOperatorType() {
-    return StreamType.OperatorType.APPLY_STATEFUL_WINDOW;
   }
 
   @Override

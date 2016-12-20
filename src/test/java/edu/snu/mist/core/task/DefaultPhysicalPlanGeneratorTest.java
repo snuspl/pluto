@@ -18,7 +18,6 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.api.APITestParameters;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import edu.snu.mist.api.types.Tuple2;
@@ -31,6 +30,7 @@ import edu.snu.mist.core.task.sources.NettyTextDataGenerator;
 import edu.snu.mist.core.task.sources.Source;
 import edu.snu.mist.core.task.sources.SourceImpl;
 import edu.snu.mist.formats.avro.AvroVertexChain;
+import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.Edge;
 import edu.snu.mist.formats.avro.LogicalPlan;
 import org.apache.reef.io.Tuple;
@@ -102,14 +102,14 @@ public final class DefaultPhysicalPlanGeneratorTest {
 
     final PhysicalPlanGenerator ppg = Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
     final Tuple<String, LogicalPlan> tuple = new Tuple<>("query-test", logicalPlan);
-    final DAG<PhysicalVertex, StreamType.Direction> physicalPlan = ppg.generate(tuple);
+    final DAG<PhysicalVertex, Direction> physicalPlan = ppg.generate(tuple);
 
     final Set<PhysicalVertex> sources = physicalPlan.getRootVertices();
     Assert.assertEquals(1, sources.size());
     final Source source = (Source)sources.iterator().next();
     Assert.assertTrue(source instanceof SourceImpl);
     Assert.assertTrue(source.getDataGenerator() instanceof NettyTextDataGenerator);
-    final Map<PhysicalVertex, StreamType.Direction> nextOps = physicalPlan.getEdges(source);
+    final Map<PhysicalVertex, Direction> nextOps = physicalPlan.getEdges(source);
     Assert.assertEquals(1, nextOps.size());
 
     final PartitionedQuery pq1 = (PartitionedQuery)nextOps.entrySet().iterator().next().getKey();
@@ -126,7 +126,7 @@ public final class DefaultPhysicalPlanGeneratorTest {
     pq1.insertToTail(filterOperator);
     pq1.insertToTail(mapOperator2);
     pq1.insertToTail(reduceByKeyOperator);
-    final Map<PhysicalVertex, StreamType.Direction> sinks = physicalPlan.getEdges(pq1);
+    final Map<PhysicalVertex, Direction> sinks = physicalPlan.getEdges(pq1);
     final Sink sink = (Sink)sinks.entrySet().iterator().next().getKey();
     Assert.assertTrue(sink instanceof NettyTextSink);
   }

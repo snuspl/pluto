@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task.operators;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.core.task.common.MistDataEvent;
 import edu.snu.mist.core.task.common.MistWatermarkEvent;
 
@@ -33,11 +32,6 @@ public final class TimeWindowOperator<T> extends FixedSizeWindowOperator<T> {
                             final int windowSize,
                             final int windowEmissionInterval) {
     super(queryId, operatorId, windowSize, windowEmissionInterval);
-  }
-
-  @Override
-  public StreamType.OperatorType getOperatorType() {
-    return StreamType.OperatorType.TIME_WINDOW;
   }
 
   @Override

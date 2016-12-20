@@ -15,15 +15,15 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.GraphUtils;
-import edu.snu.mist.formats.avro.LogicalPlan;
-import edu.snu.mist.formats.avro.QueryControlResult;
 import edu.snu.mist.core.task.common.PhysicalVertex;
 import edu.snu.mist.core.task.sinks.Sink;
 import edu.snu.mist.core.task.sources.Source;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
+import edu.snu.mist.formats.avro.Direction;
+import edu.snu.mist.formats.avro.LogicalPlan;
+import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
 
 import javax.inject.Inject;
@@ -62,7 +62,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
   /**
    * Map of query id and physical plan.
    */
-  private final ConcurrentMap<String, DAG<PhysicalVertex, StreamType.Direction>> physicalPlanMap;
+  private final ConcurrentMap<String, DAG<PhysicalVertex, Direction>> physicalPlanMap;
 
   /**
    * A partitioned query manager.
@@ -109,7 +109,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
   }
 
   public QueryControlResult create(final Tuple<String, LogicalPlan> tuple) {
-    final DAG<PhysicalVertex, StreamType.Direction> physicalPlan;
+    final DAG<PhysicalVertex, Direction> physicalPlan;
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(tuple.getKey());
     try {
@@ -145,7 +145,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
    * and starts to receive input data stream from the sources.
    * @param physicalPlan physical plan of PartitionedQuery
    */
-  private void start(final DAG<PhysicalVertex, StreamType.Direction> physicalPlan) {
+  private void start(final DAG<PhysicalVertex, Direction> physicalPlan) {
     final List<Source> sources = new LinkedList<>();
     final Iterator<PhysicalVertex> iterator = GraphUtils.topologicalSort(physicalPlan);
     while (iterator.hasNext()) {
@@ -153,7 +153,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
       switch (physicalVertex.getType()) {
         case SOURCE: {
           final Source source = (Source)physicalVertex;
-          final Map<PhysicalVertex, StreamType.Direction> nextOps = physicalPlan.getEdges(source);
+          final Map<PhysicalVertex, Direction> nextOps = physicalPlan.getEdges(source);
           // 3) Sets output emitters
           source.getEventGenerator().setOutputEmitter(new SourceOutputEmitter<>(nextOps));
           sources.add(source);
@@ -163,7 +163,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
           // 2) Inserts the PartitionedQuery to PartitionedQueryManager.
           final PartitionedQuery partitionedQuery = (PartitionedQuery)physicalVertex;
           partitionedQueryManager.insert(partitionedQuery);
-          final Map<PhysicalVertex, StreamType.Direction> edges =
+          final Map<PhysicalVertex, Direction> edges =
               physicalPlan.getEdges(partitionedQuery);
           // 3) Sets output emitters
           partitionedQuery.setOutputEmitter(new OperatorOutputEmitter(edges));
@@ -191,7 +191,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
    * Otherwise it returns false.
    */
   private boolean deleteQueryFromManager(final String queryId) {
-    final DAG<PhysicalVertex, StreamType.Direction> physicalPlan = physicalPlanMap.remove(queryId);
+    final DAG<PhysicalVertex, Direction> physicalPlan = physicalPlanMap.remove(queryId);
     if (physicalPlan != null) {
       final Iterator<PhysicalVertex> iterator = GraphUtils.topologicalSort(physicalPlan);
       while (iterator.hasNext()) {
@@ -290,7 +290,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
    */
   @Override
   public QueryControlResult resume(final String queryId) {
-    final DAG<PhysicalVertex, StreamType.Direction> physicalPlan;
+    final DAG<PhysicalVertex, Direction> physicalPlan;
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(queryId);
     try {

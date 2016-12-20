@@ -15,9 +15,12 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.api.StreamType;
-import edu.snu.mist.core.task.common.*;
+import edu.snu.mist.core.task.common.MistDataEvent;
+import edu.snu.mist.core.task.common.MistEvent;
+import edu.snu.mist.core.task.common.MistWatermarkEvent;
+import edu.snu.mist.core.task.common.OutputEmitter;
 import edu.snu.mist.core.task.operators.Operator;
+import edu.snu.mist.formats.avro.Direction;
 import org.apache.reef.io.Tuple;
 
 import javax.inject.Inject;
@@ -53,7 +56,7 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
   /**
    * A queue for the partitioned query's events.
    */
-  private final Queue<Tuple<MistEvent, StreamType.Direction>> queue;
+  private final Queue<Tuple<MistEvent, Direction>> queue;
 
   /**
    * Status of the partitioned query.
@@ -118,7 +121,7 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
         status.set(Status.READY);
         return false;
       }
-      final Tuple<MistEvent, StreamType.Direction> event = queue.poll();
+      final Tuple<MistEvent, Direction> event = queue.poll();
       process(event);
       status.set(Status.READY);
       return true;
@@ -128,7 +131,7 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
   }
 
   @Override
-  public boolean addNextEvent(final MistEvent event, final StreamType.Direction direction) {
+  public boolean addNextEvent(final MistEvent event, final Direction direction) {
     return queue.add(new Tuple<>(event, direction));
   }
 
@@ -142,7 +145,7 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
     return Type.OPERATOR_CHIAN;
   }
 
-  private void process(final Tuple<MistEvent, StreamType.Direction> input) {
+  private void process(final Tuple<MistEvent, Direction> input) {
     if (outputEmitter == null) {
       throw new RuntimeException("OutputEmitter should be set in PartitionedQuery");
     }
@@ -151,16 +154,16 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
     }
     final Operator firstOperator = operators.get(0);
     if (firstOperator != null) {
-      final StreamType.Direction direction = input.getValue();
+      final Direction direction = input.getValue();
       final MistEvent event = input.getKey();
       if (event.isData()) {
-        if (direction == StreamType.Direction.LEFT) {
+        if (direction == Direction.LEFT) {
           firstOperator.processLeftData((MistDataEvent)event);
         } else {
           firstOperator.processRightData((MistDataEvent) event);
         }
       } else {
-        if (direction == StreamType.Direction.LEFT) {
+        if (direction == Direction.LEFT) {
           firstOperator.processLeftWatermark((MistWatermarkEvent) event);
         } else {
           firstOperator.processRightWatermark((MistWatermarkEvent) event);

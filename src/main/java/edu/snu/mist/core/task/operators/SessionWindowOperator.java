@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task.operators;
 
-import edu.snu.mist.api.StreamType;
 import edu.snu.mist.core.task.common.MistDataEvent;
 import edu.snu.mist.core.task.common.MistWatermarkEvent;
 import edu.snu.mist.core.task.windows.Window;
@@ -72,11 +71,6 @@ public final class SessionWindowOperator<T> extends OneStreamOperator {
       // Create a new session window
       currentWindow = new WindowImpl<>(currentEventTimestamp);
     }
-  }
-
-  @Override
-  public StreamType.OperatorType getOperatorType() {
-    return StreamType.OperatorType.SESSION_WINDOW;
   }
 
   @Override

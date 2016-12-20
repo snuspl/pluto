@@ -15,12 +15,15 @@
  */
 package edu.snu.mist.api.operators;
 
-import edu.snu.mist.api.*;
-import edu.snu.mist.api.exceptions.StreamTypeMismatchException;
+import edu.snu.mist.api.APITestParameters;
+import edu.snu.mist.api.AvroVertexSerializable;
+import edu.snu.mist.api.MISTQuery;
+import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.api.operators.utils.CountStringFunction;
 import edu.snu.mist.api.sources.BaseSourceStream;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.Direction;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -57,21 +60,19 @@ public final class InstantOperatorStreamTest {
    */
   @Test
   public void testBasicOperatorStream() {
-    Assert.assertEquals(filteredMappedStream.getContinuousType(), StreamType.ContinuousType.OPERATOR);
-    Assert.assertEquals(filteredMappedStream.getOperatorType(), StreamType.OperatorType.MAP);
     Assert.assertEquals(filteredMappedStream.getMapFunction().apply("A"), new Tuple2<>("A", 1));
 
     final MISTQuery query = queryBuilder.build();
-    final DAG<AvroVertexSerializable, StreamType.Direction> dag = query.getDAG();
+    final DAG<AvroVertexSerializable, Direction> dag = query.getDAG();
     // Check src -> filiter
-    final Map<AvroVertexSerializable, StreamType.Direction> neighbors = dag.getEdges(sourceStream);
+    final Map<AvroVertexSerializable, Direction> neighbors = dag.getEdges(sourceStream);
     Assert.assertEquals(1, neighbors.size());
-    Assert.assertEquals(StreamType.Direction.LEFT, neighbors.get(filteredStream));
+    Assert.assertEquals(Direction.LEFT, neighbors.get(filteredStream));
 
     // Check filter -> map
-    final Map<AvroVertexSerializable, StreamType.Direction> neighbors2 = dag.getEdges(filteredStream);
+    final Map<AvroVertexSerializable, Direction> neighbors2 = dag.getEdges(filteredStream);
     Assert.assertEquals(1, neighbors2.size());
-    Assert.assertEquals(StreamType.Direction.LEFT, neighbors2.get(filteredMappedStream));
+    Assert.assertEquals(Direction.LEFT, neighbors2.get(filteredMappedStream));
   }
 
   /**
@@ -81,19 +82,16 @@ public final class InstantOperatorStreamTest {
   public void testReduceByKeyOperatorStream() {
     final ReduceByKeyOperatorStream<Tuple2<String, Integer>, String, Integer> reducedStream
         = filteredMappedStream.reduceByKey(0, String.class, (x, y) -> x + y);
-    Assert.assertEquals(reducedStream.getBasicType(), StreamType.BasicType.CONTINUOUS);
-    Assert.assertEquals(reducedStream.getContinuousType(), StreamType.ContinuousType.OPERATOR);
-    Assert.assertEquals(reducedStream.getOperatorType(), StreamType.OperatorType.REDUCE_BY_KEY);
     Assert.assertEquals(reducedStream.getKeyFieldIndex(), 0);
     Assert.assertEquals(reducedStream.getReduceFunction().apply(1, 2), (Integer)3);
     Assert.assertNotEquals(reducedStream.getReduceFunction().apply(1, 3), (Integer) 3);
 
     // Check filter -> map -> reduceBy
     final MISTQuery query = queryBuilder.build();
-    final DAG<AvroVertexSerializable, StreamType.Direction> dag = query.getDAG();
-    final Map<AvroVertexSerializable, StreamType.Direction> neighbors = dag.getEdges(filteredMappedStream);
+    final DAG<AvroVertexSerializable, Direction> dag = query.getDAG();
+    final Map<AvroVertexSerializable, Direction> neighbors = dag.getEdges(filteredMappedStream);
     Assert.assertEquals(1, neighbors.size());
-    Assert.assertEquals(StreamType.Direction.LEFT, neighbors.get(reducedStream));
+    Assert.assertEquals(Direction.LEFT, neighbors.get(reducedStream));
   }
 
   /**
@@ -103,10 +101,6 @@ public final class InstantOperatorStreamTest {
   public void testApplyStatefulOperatorStream() {
     final ApplyStatefulOperatorStream<Tuple2<String, Integer>, Integer> statefulOperatorStream
         = filteredMappedStream.applyStateful(new CountStringFunction());
-
-    Assert.assertEquals(statefulOperatorStream.getBasicType(), StreamType.BasicType.CONTINUOUS);
-    Assert.assertEquals(statefulOperatorStream.getContinuousType(), StreamType.ContinuousType.OPERATOR);
-    Assert.assertEquals(statefulOperatorStream.getOperatorType(), StreamType.OperatorType.APPLY_STATEFUL);
 
     /* Simulate two data inputs on UDF stream */
     final ApplyStatefulFunction<Tuple2<String, Integer>, Integer> applyStatefulFunction
@@ -121,17 +115,17 @@ public final class InstantOperatorStreamTest {
 
     // Check filter -> map -> applyStateful
     final MISTQuery query = queryBuilder.build();
-    final DAG<AvroVertexSerializable, StreamType.Direction> dag = query.getDAG();
-    final Map<AvroVertexSerializable, StreamType.Direction> neighbors = dag.getEdges(filteredMappedStream);
+    final DAG<AvroVertexSerializable, Direction> dag = query.getDAG();
+    final Map<AvroVertexSerializable, Direction> neighbors = dag.getEdges(filteredMappedStream);
     Assert.assertEquals(1, neighbors.size());
-    Assert.assertEquals(StreamType.Direction.LEFT, neighbors.get(statefulOperatorStream));
+    Assert.assertEquals(Direction.LEFT, neighbors.get(statefulOperatorStream));
   }
 
   /**
    * Test for union operator.
    */
   @Test
-  public void testUnionOperatorStream() throws StreamTypeMismatchException {
+  public void testUnionOperatorStream() {
     final MapOperatorStream<String, Tuple2<String, Integer>> filteredMappedStream2 = queryBuilder
         .socketTextStream(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
             .filter(s -> s.contains("A"))
@@ -140,20 +134,16 @@ public final class InstantOperatorStreamTest {
     final UnionOperatorStream<Tuple2<String, Integer>> unifiedStream
         = filteredMappedStream.union(filteredMappedStream2);
 
-    Assert.assertEquals(unifiedStream.getBasicType(), StreamType.BasicType.CONTINUOUS);
-    Assert.assertEquals(unifiedStream.getContinuousType(), StreamType.ContinuousType.OPERATOR);
-    Assert.assertEquals(unifiedStream.getOperatorType(), StreamType.OperatorType.UNION);
-
     // Check filteredMappedStream (LEFT)  ---> union
     //       filteredMappedStream2 (RIGHT) --/
     final MISTQuery query = queryBuilder.build();
-    final DAG<AvroVertexSerializable, StreamType.Direction> dag = query.getDAG();
-    final Map<AvroVertexSerializable, StreamType.Direction> n1 = dag.getEdges(filteredMappedStream);
-    final Map<AvroVertexSerializable, StreamType.Direction> n2 = dag.getEdges(filteredMappedStream2);
+    final DAG<AvroVertexSerializable, Direction> dag = query.getDAG();
+    final Map<AvroVertexSerializable, Direction> n1 = dag.getEdges(filteredMappedStream);
+    final Map<AvroVertexSerializable, Direction> n2 = dag.getEdges(filteredMappedStream2);
 
     Assert.assertEquals(1, n1.size());
     Assert.assertEquals(1, n2.size());
-    Assert.assertEquals(StreamType.Direction.LEFT, n1.get(unifiedStream));
-    Assert.assertEquals(StreamType.Direction.RIGHT, n2.get(unifiedStream));
+    Assert.assertEquals(Direction.LEFT, n1.get(unifiedStream));
+    Assert.assertEquals(Direction.RIGHT, n2.get(unifiedStream));
   }
 }
