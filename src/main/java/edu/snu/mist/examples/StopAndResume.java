@@ -35,8 +35,7 @@ import static org.apache.commons.lang3.StringUtils.isAlpha;
 
 /**
  * Example client which submits a word-counting query using reduce-by-key operator
- * and stops the submitted query after 10 seconds and resumes the stopped query
- * after 10 seconds.
+ * and stops the submitted query and resumes it by using command line.
  */
 public final class StopAndResume {
 
@@ -93,13 +92,10 @@ public final class StopAndResume {
     final APIQueryControlResult result = submitQuery(jcb.build());
     System.out.println(result.getMsg());
 
-    Thread.sleep(10000);
-    System.out.println(MISTQueryControl.stop(result.getQueryId(),
-                                    result.getTaskAddress()).getMsg());
-
-    Thread.sleep(10000);
-    System.out.println(MISTQueryControl.resume(result.getQueryId(),
-                                    result.getTaskAddress()).getMsg());
+    // Wait the command line which controls the query.
+    while(true) {
+      MISTExampleUtils.cmdLineParser(result);
+    }
 
   }
 
