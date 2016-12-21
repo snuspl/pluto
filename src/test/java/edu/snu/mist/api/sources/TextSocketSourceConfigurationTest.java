@@ -17,6 +17,7 @@ package edu.snu.mist.api.sources;
 
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
+import edu.snu.mist.api.sources.parameters.SourceParameters;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import org.apache.reef.io.Tuple;
 import org.junit.Assert;
@@ -33,7 +34,7 @@ public class TextSocketSourceConfigurationTest {
   private final Integer socketPort = 8088;
 
   /**
-   * Test for TestSocketSource configuration builder.
+   * Test for TextSocketSource configuration builder.
    */
   @Test
   public void testTextSocketSourceConfBuilder() {
@@ -52,7 +53,6 @@ public class TextSocketSourceConfigurationTest {
     Assert.assertEquals(socketPort,
         textSocketTextSocketSourceConfiguration.getConfigurationValue(TextSocketSourceParameters.SOCKET_HOST_PORT));
     Assert.assertEquals(timestampExtractionFunction,
-        textSocketTextSocketSourceConfiguration.getConfigurationValue(
-            TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION));
+        textSocketTextSocketSourceConfiguration.getConfigurationValue(SourceParameters.TIMESTAMP_EXTRACTION_FUNCTION));
   }
 }

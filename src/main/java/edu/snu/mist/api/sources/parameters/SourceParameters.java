@@ -16,22 +16,17 @@
 package edu.snu.mist.api.sources.parameters;
 
 /**
- * This class contains the list of necessary or optional parameters for TextSocketSourceConfiguration.
+ * This class contains the common parameters for SourceConfiguration.
  */
-public final class TextSocketSourceParameters {
+public final class SourceParameters {
 
-  private TextSocketSourceParameters() {
+  private SourceParameters() {
     // Not called.
   }
 
   /**
-   * The host address of the source socket stream.
+   * The timestamp extraction function of the source stream.
+   * This parameter is optional. If it is not set, system would consider this stream as a processing-time stream.
    */
-  public static final String SOCKET_HOST_ADDRESS = "SocketHostAddress";
-
-
-  /**
-   * The host port of the source socket stream.
-   */
-  public static final String SOCKET_HOST_PORT = "SocketHostPort";
+  public static final String TIMESTAMP_EXTRACTION_FUNCTION = "Timestamp extraction function";
 }

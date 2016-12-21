@@ -16,22 +16,21 @@
 package edu.snu.mist.api.sources.parameters;
 
 /**
- * This class contains the list of necessary or optional parameters for TextSocketSourceConfiguration.
+ * This class contains the list of necessary or optional parameters for KafkaSourceConfiguration.
  */
-public final class TextSocketSourceParameters {
+public final class KafkaSourceParameters {
 
-  private TextSocketSourceParameters() {
+  private KafkaSourceParameters() {
     // Not called.
   }
 
   /**
-   * The host address of the source socket stream.
+   * The kafka topic to monitor.
    */
-  public static final String SOCKET_HOST_ADDRESS = "SocketHostAddress";
-
+  public static final String KAFKA_TOPIC = "Kafka topic to monitor";
 
   /**
-   * The host port of the source socket stream.
+   * The configuration for the kafka consumer to use.
    */
-  public static final String SOCKET_HOST_PORT = "SocketHostPort";
+  public static final String KAFKA_CONSUMER_CONFIG = "Kafka consumer config";
 }

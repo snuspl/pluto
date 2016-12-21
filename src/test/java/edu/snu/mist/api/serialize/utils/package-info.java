@@ -13,25 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.sources.parameters;
-
 /**
- * This class contains the list of necessary or optional parameters for TextSocketSourceConfiguration.
+ * Utility classes for serialization test.
  */
-public final class TextSocketSourceParameters {
-
-  private TextSocketSourceParameters() {
-    // Not called.
-  }
-
-  /**
-   * The host address of the source socket stream.
-   */
-  public static final String SOCKET_HOST_ADDRESS = "SocketHostAddress";
-
-
-  /**
-   * The host port of the source socket stream.
-   */
-  public static final String SOCKET_HOST_PORT = "SocketHostPort";
-}
+package edu.snu.mist.api.serialize.utils;

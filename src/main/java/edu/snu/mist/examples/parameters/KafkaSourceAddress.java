@@ -13,19 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.sources;
+
+package edu.snu.mist.examples.parameters;
+
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * This interface creates new instance of data generator.
+ * Parameter for kafka source socket configuration.
  */
-public interface TextDataGeneratorFactory extends AutoCloseable {
-
-  /**
-   * Create new instance of source.
-   * @param serverAddress server address
-   * @param port server port
-   * @return a new source
-   */
-  DataGenerator<String> newDataGenerator(String serverAddress,
-                                         int port) throws Exception;
+@NamedParameter(doc = "TCP socket of kafka source", short_name = "ks", default_value = "localhost:9092")
+public final class KafkaSourceAddress implements Name<String> {
 }

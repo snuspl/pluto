@@ -21,6 +21,7 @@ import edu.snu.mist.api.MISTDefaultExecutionEnvironmentImpl;
 import edu.snu.mist.api.MISTExecutionEnvironment;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
+import edu.snu.mist.api.sources.builder.KafkaSourceConfiguration;
 import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
 import edu.snu.mist.examples.parameters.DriverAddress;
 import org.apache.reef.tang.Configuration;
@@ -31,6 +32,7 @@ import org.apache.reef.tang.formats.CommandLine;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 
 /**
  * Common behavior and basic defaults for MIST examples.
@@ -41,6 +43,12 @@ public final class MISTExampleUtils {
    */
   public static final String SINK_HOSTNAME = "localhost";
   public static final int SINK_PORT = 20330;
+
+  /**
+   * Default kafka configuration values.
+   */
+  public static final String DEFAULT_KEY_DESERIALIZER = "org.apache.kafka.common.serialization.IntegerDeserializer";
+  public static final String DEFAULT_VALUE_DESERIALIZER = "org.apache.kafka.common.serialization.StringDeserializer";
 
   /**
    * Get a new sink server.
@@ -69,6 +77,31 @@ public final class MISTExampleUtils {
     return TextSocketSinkConfiguration.newBuilder()
         .setHostAddress(SINK_HOSTNAME)
         .setHostPort(SINK_PORT)
+        .build();
+  }
+
+  public static <K, V> KafkaSourceConfiguration<K, V> getLocalKafkaSourceConf(final String topic,
+                                                                              final String socket) {
+    return getLocalKafkaSourceConf(topic, socket, DEFAULT_KEY_DESERIALIZER, DEFAULT_VALUE_DESERIALIZER);
+  }
+
+  /**
+   * Get socket configuration for local kafka source.
+   * @param <K> the type of kafka record's key
+   * @param <V> the type of kafka record's value
+   */
+  public static <K, V> KafkaSourceConfiguration<K, V> getLocalKafkaSourceConf(final String topic,
+                                                                              final String socket,
+                                                                              final String keyDeserializer,
+                                                                              final String valueDeserializer) {
+    final HashMap<String, Object> kafkaConsumerConfig = new HashMap<>();
+    kafkaConsumerConfig.put("bootstrap.servers", socket);
+    kafkaConsumerConfig.put("group.id", "MistExample");
+    kafkaConsumerConfig.put("key.deserializer", keyDeserializer);
+    kafkaConsumerConfig.put("value.deserializer", valueDeserializer);
+    return KafkaSourceConfiguration.<K, V>newBuilder()
+        .setTopic(topic)
+        .setConsumerConfig(kafkaConsumerConfig)
         .build();
   }
 

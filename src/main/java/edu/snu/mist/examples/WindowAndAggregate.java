@@ -24,7 +24,7 @@ import edu.snu.mist.api.windows.WindowData;
 import edu.snu.mist.api.functions.MISTFunction;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
 import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
-import edu.snu.mist.examples.parameters.SourceAddress;
+import edu.snu.mist.examples.parameters.NettySourceAddress;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -50,7 +50,8 @@ public final class WindowAndAggregate {
   public static APIQueryControlResult submitQuery(final Configuration configuration)
       throws IOException, InjectionException, URISyntaxException {
     // configurations for source and sink
-    final String sourceSocket = Tang.Factory.getTang().newInjector(configuration).getNamedInstance(SourceAddress.class);
+    final String sourceSocket =
+        Tang.Factory.getTang().newInjector(configuration).getNamedInstance(NettySourceAddress.class);
     final TextSocketSourceConfiguration localTextSocketSourceConf =
         MISTExampleUtils.getLocalTextSocketSourceConf(sourceSocket);
     final TextSocketSinkConfiguration localTextSocketSinkConf = MISTExampleUtils.getLocalTextSocketSinkConf();
@@ -82,7 +83,7 @@ public final class WindowAndAggregate {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
 
     final CommandLine commandLine = MISTExampleUtils.getDefaultCommandLine(jcb)
-        .registerShortNameOfClass(SourceAddress.class) // Additional parameter
+        .registerShortNameOfClass(NettySourceAddress.class) // Additional parameter
         .processCommandLine(args);
 
     if (commandLine == null) {  // Option '?' was entered and processCommandLine printed the help.

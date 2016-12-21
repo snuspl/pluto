@@ -16,20 +16,23 @@
 package edu.snu.mist.api.sources;
 
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
+import edu.snu.mist.api.sources.builder.KafkaSourceConfiguration;
 import edu.snu.mist.api.sources.builder.WatermarkConfiguration;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.SourceTypeEnum;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 /**
- * This class represents a SourceStream from the text socket source.
+ * This class represents a SourceStream getting the data from Kafka topic.
+ * @param <K> the type of kafka record's key that kafka consumer would consume
+ * @param <V> the type of kafka record's value that kafka consumer would consume
  */
-public final class TextSocketSourceStream extends BaseSourceStream<String> {
+public final class KafkaSourceStream<K, V> extends BaseSourceStream<ConsumerRecord<K, V>> {
 
-  public TextSocketSourceStream(final TextSocketSourceConfiguration textSocketSourceConfiguration,
-                                final DAG<AvroVertexSerializable, Direction> dag,
-                                final WatermarkConfiguration<String> watermarkConfiguration) {
-    super(SourceTypeEnum.TEXT_SOCKET_SOURCE, textSocketSourceConfiguration, dag, watermarkConfiguration);
+  public KafkaSourceStream(final KafkaSourceConfiguration<K, V> kafkaSourceConfiguration,
+                           final DAG<AvroVertexSerializable, Direction> dag,
+                           final WatermarkConfiguration<ConsumerRecord<K, V>> watermarkConfiguration) {
+    super(SourceTypeEnum.KAFKA_SOURCE, kafkaSourceConfiguration, dag, watermarkConfiguration);
   }
 }

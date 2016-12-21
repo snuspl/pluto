@@ -39,9 +39,9 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public final class TextSourceTest {
+public final class NettySourceTest {
 
-  private static final Logger LOG = Logger.getLogger(TextDataGeneratorFactory.class.getName());
+  private static final Logger LOG = Logger.getLogger(NettyTextDataGeneratorFactory.class.getName());
   private static final String QUERY_ID = "testQuery";
   private static final String SERVER_ADDR = "localhost";
   private static final int SERVER_PORT = 12112;
@@ -80,7 +80,7 @@ public final class TextSourceTest {
       final Injector injector = Tang.Factory.getTang().newInjector();
 
       // create netty sources
-      try (final TextDataGeneratorFactory textDataGeneratorFactory =
+      try (final NettyTextDataGeneratorFactory textDataGeneratorFactory =
                injector.getInstance(NettyTextDataGeneratorFactory.class)) {
         // source list
         final List<Source<String>> sources = new LinkedList<>();
@@ -166,7 +166,7 @@ public final class TextSourceTest {
       final Injector injector = Tang.Factory.getTang().newInjector();
 
       // create netty sources
-      try (final TextDataGeneratorFactory textDataGeneratorFactory =
+      try (final NettyTextDataGeneratorFactory textDataGeneratorFactory =
                injector.getInstance(NettyTextDataGeneratorFactory.class)) {
         // Create source having periodic watermark
         final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
