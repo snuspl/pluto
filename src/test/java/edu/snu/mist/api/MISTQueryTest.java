@@ -21,6 +21,7 @@ import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
 import edu.snu.mist.api.sources.builder.PunctuatedWatermarkConfiguration;
 import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
 import edu.snu.mist.api.sources.parameters.PunctuatedWatermarkParameters;
+import edu.snu.mist.api.sources.parameters.SourceParameters;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.api.windows.TimeWindowInformation;
@@ -76,7 +77,7 @@ public final class MISTQueryTest {
 
     final Map<String, Object> watermarkConfiguration = sourceInfo.getWatermarkConfiguration();
     final ByteBuffer extractionFunc = (ByteBuffer) sourceConfiguration.get(
-        TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION);
+        SourceParameters.TIMESTAMP_EXTRACTION_FUNCTION);
     final byte[] serializedExtractionFunc = new byte[extractionFunc.remaining()];
     extractionFunc.get(serializedExtractionFunc);
     final Function deserializedExtractionFunc =
@@ -88,7 +89,7 @@ public final class MISTQueryTest {
         sourceConfiguration.get(TextSocketSourceParameters.SOCKET_HOST_PORT));
     Assert.assertEquals(
         ((Function)textSocketSourceConf.getConfigurationValue(
-            TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION)).apply("HelloMIST:1234"),
+            SourceParameters.TIMESTAMP_EXTRACTION_FUNCTION)).apply("HelloMIST:1234"),
         deserializedExtractionFunc.apply("HelloMIST:1234"));
     final ByteBuffer parsingFunc = (ByteBuffer) watermarkConfiguration.get(
         PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK);

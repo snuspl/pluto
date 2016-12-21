@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package edu.snu.mist.examples.parameters;
+package edu.snu.mist.core.task.sources.parameters;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-/**
- * Parameter for source socket configuration.
- */
-@NamedParameter(doc = "TCP socket of source", short_name = "s", default_value = "localhost:20331")
-public final class SourceAddress implements Name<String> {
+@NamedParameter(doc = "The number of kafka client threads", default_value = "10")
+public final class NumKafkaThreads implements Name<Integer> {
+  // empty
 }

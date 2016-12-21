@@ -17,6 +17,7 @@ package edu.snu.mist.api.sources.builder;
 
 import edu.snu.mist.api.configurations.MISTConfigurationBuilderImpl;
 import edu.snu.mist.api.functions.MISTFunction;
+import edu.snu.mist.api.sources.parameters.SourceParameters;
 import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
 import org.apache.reef.io.Tuple;
 
@@ -56,7 +57,7 @@ public final class TextSocketSourceConfiguration extends SourceConfiguration<Str
      * Optional parameters for TextSocketSourceStream.
      */
     private final String[] textSocketSourceOptionalParameters = {
-        TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION
+        SourceParameters.TIMESTAMP_EXTRACTION_FUNCTION
     };
 
     private TextSocketSourceConfigurationBuilder() {
@@ -101,7 +102,7 @@ public final class TextSocketSourceConfiguration extends SourceConfiguration<Str
      */
     public TextSocketSourceConfigurationBuilder setTimestampExtractionFunction(
         final MISTFunction<String, Tuple<String, Long>> function) {
-      set(TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION, function);
+      set(SourceParameters.TIMESTAMP_EXTRACTION_FUNCTION, function);
       return this;
     }
   }

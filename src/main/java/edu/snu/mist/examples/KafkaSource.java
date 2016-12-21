@@ -16,12 +16,14 @@
 
 package edu.snu.mist.examples;
 
-import edu.snu.mist.api.*;
-import edu.snu.mist.api.functions.MISTBiFunction;
+import edu.snu.mist.api.APIQueryControlResult;
+import edu.snu.mist.api.MISTQuery;
+import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
-import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
-import edu.snu.mist.api.types.Tuple2;
+import edu.snu.mist.api.sources.builder.KafkaSourceConfiguration;
+import edu.snu.mist.examples.parameters.KafkaSourceAddress;
 import edu.snu.mist.examples.parameters.NettySourceAddress;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -31,18 +33,13 @@ import org.apache.reef.tang.formats.CommandLine;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import static org.apache.commons.lang3.StringUtils.isAlpha;
-
 /**
- * Example client which submits a word-counting query using reduce-by-key operator
- * and deletes the submitted query after 10 seconds.
+ * Example client which submits a query fetching data from a kafka source.
  */
-public final class QueryDeletion {
-
+public final class KafkaSource {
   /**
-   * Submit a query containing reduce-by-key operator.
-   * The query reads strings from a source server, filters alphabetical words,
-   * counts words using reduce-by-key operator, and sends them to a sink server.
+   * Submit a query fetching data from a kafka source.
+   * The query reads strings from a kafka topic and send them to a sink server.
    * @return result of the submission
    * @throws IOException
    * @throws InjectionException
@@ -50,19 +47,14 @@ public final class QueryDeletion {
   public static APIQueryControlResult submitQuery(final Configuration configuration)
       throws IOException, InjectionException, URISyntaxException {
     final String sourceSocket =
-        Tang.Factory.getTang().newInjector(configuration).getNamedInstance(NettySourceAddress.class);
-    final TextSocketSourceConfiguration localTextSocketSourceConf =
-        MISTExampleUtils.getLocalTextSocketSourceConf(sourceSocket);
+        Tang.Factory.getTang().newInjector(configuration).getNamedInstance(KafkaSourceAddress.class);
+    final KafkaSourceConfiguration<Integer, String> localKafkaSourceConf =
+        MISTExampleUtils.getLocalKafkaSourceConf("KafkaSource", sourceSocket);
     final TextSocketSinkConfiguration localTextSocketSinkConf = MISTExampleUtils.getLocalTextSocketSinkConf();
 
-    // Simple reduce function.
-    final MISTBiFunction<Integer, Integer, Integer> reduceFunction = (v1, v2) -> { return v1 + v2; };
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
-    queryBuilder.socketTextStream(localTextSocketSourceConf)
-        .filter(s -> isAlpha(s))
-        .map(s -> new Tuple2(s, 1))
-        .reduceByKey(0, String.class, reduceFunction)
-        .map(s -> s.toString())
+    queryBuilder.kafkaStream(localKafkaSourceConf)
+        .map(consumerRecord -> ((ConsumerRecord)consumerRecord).value())
         .textSocketOutput(localTextSocketSinkConf);
     final MISTQuery query = queryBuilder.build();
 
@@ -89,14 +81,13 @@ public final class QueryDeletion {
     sinkServer.start();
 
     final APIQueryControlResult result = submitQuery(jcb.build());
-    result.getMsg();
 
-    Thread.sleep(10000);
-
-    System.out.println(MISTQueryControl.delete(result.getQueryId(), result.getTaskAddress()).getMsg());
-
+    System.out.println("Query submission result: " + result.getQueryId());
   }
 
-  private QueryDeletion(){
+  /**
+   * Must not be instantiated.
+   */
+  private KafkaSource(){
   }
 }

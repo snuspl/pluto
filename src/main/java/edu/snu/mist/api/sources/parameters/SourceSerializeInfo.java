@@ -34,9 +34,11 @@ public final class SourceSerializeInfo {
    */
   private static Map<String, SerializedType.AvroType> avroSerializedTypes =
       ImmutableMap.<String, SerializedType.AvroType>builder()
+          .put(SourceParameters.TIMESTAMP_EXTRACTION_FUNCTION, SerializedType.AvroType.BYTES)
           .put(TextSocketSourceParameters.SOCKET_HOST_ADDRESS, SerializedType.AvroType.STRING)
           .put(TextSocketSourceParameters.SOCKET_HOST_PORT, SerializedType.AvroType.INT)
-          .put(TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION, SerializedType.AvroType.BYTES)
+          .put(KafkaSourceParameters.KAFKA_TOPIC, SerializedType.AvroType.STRING)
+          .put(KafkaSourceParameters.KAFKA_CONSUMER_CONFIG, SerializedType.AvroType.BYTES)
           .put(PunctuatedWatermarkParameters.WATERMARK_PREDICATE, SerializedType.AvroType.BYTES)
           .put(PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK, SerializedType.AvroType.BYTES)
           .put(PeriodicWatermarkParameters.PERIOD, SerializedType.AvroType.INT)

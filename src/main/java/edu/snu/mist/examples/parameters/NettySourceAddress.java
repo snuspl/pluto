@@ -13,25 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.sources.parameters;
+
+package edu.snu.mist.examples.parameters;
+
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * This class contains the list of necessary or optional parameters for TextSocketSourceConfiguration.
+ * Parameter for netty source socket configuration.
  */
-public final class TextSocketSourceParameters {
-
-  private TextSocketSourceParameters() {
-    // Not called.
-  }
-
-  /**
-   * The host address of the source socket stream.
-   */
-  public static final String SOCKET_HOST_ADDRESS = "SocketHostAddress";
-
-
-  /**
-   * The host port of the source socket stream.
-   */
-  public static final String SOCKET_HOST_PORT = "SocketHostPort";
+@NamedParameter(doc = "TCP socket of netty source", short_name = "ns", default_value = "localhost:20331")
+public final class NettySourceAddress implements Name<String> {
 }

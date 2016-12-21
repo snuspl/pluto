@@ -94,7 +94,7 @@
                                     "type": "enum",
                                     "symbols":
                                     [
-                                      "TEXT_SOCKET_SOURCE"
+                                      "TEXT_SOCKET_SOURCE", "KAFKA_SOURCE"
                                     ]
                                   }
                                 },

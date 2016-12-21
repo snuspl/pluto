@@ -17,9 +17,7 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.api.operators.ApplyStatefulFunction;
 import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
-import edu.snu.mist.api.sources.parameters.PeriodicWatermarkParameters;
-import edu.snu.mist.api.sources.parameters.PunctuatedWatermarkParameters;
-import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
+import edu.snu.mist.api.sources.parameters.*;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.ExternalJarObjectInputStream;
@@ -38,6 +36,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
@@ -56,8 +55,9 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   private static final Logger LOG = Logger.getLogger(DefaultPhysicalPlanGeneratorImpl.class.getName());
 
   private final OperatorIdGenerator operatorIdGenerator;
-  private final NettyTextDataGeneratorFactory dataGeneratorFactory;
-  private final NettyTextSinkFactory sinkFactory;
+  private final NettyTextDataGeneratorFactory nettyDataGeneratorFactory;
+  private final KafkaDataGeneratorFactory kafkaDataGeneratorFactory;
+  private final NettyTextSinkFactory nettySinkFactory;
   private final String tmpFolderPath;
   private final ScheduledExecutorService scheduler;
   private final ClassLoaderProvider classLoaderProvider;
@@ -65,13 +65,15 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   @Inject
   private DefaultPhysicalPlanGeneratorImpl(final OperatorIdGenerator operatorIdGenerator,
                                            @Parameter(TempFolderPath.class) final String tmpFolderPath,
-                                           final NettyTextDataGeneratorFactory dataGeneratorFactory,
-                                           final NettyTextSinkFactory sinkFactory,
+                                           final NettyTextDataGeneratorFactory nettyDataGeneratorFactory,
+                                           final NettyTextSinkFactory nettySinkFactory,
+                                           final KafkaDataGeneratorFactory kafkaDataGeneratorFactory,
                                            final ClassLoaderProvider classLoaderProvider,
                                            final ScheduledExecutorServiceWrapper schedulerWrapper) {
     this.operatorIdGenerator = operatorIdGenerator;
-    this.dataGeneratorFactory = dataGeneratorFactory;
-    this.sinkFactory = sinkFactory;
+    this.nettyDataGeneratorFactory = nettyDataGeneratorFactory;
+    this.nettySinkFactory = nettySinkFactory;
+    this.kafkaDataGeneratorFactory = kafkaDataGeneratorFactory;
     this.tmpFolderPath = tmpFolderPath;
     this.classLoaderProvider = classLoaderProvider;
     this.scheduler= schedulerWrapper.getScheduler();
@@ -85,7 +87,24 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     final String socketHostAddress = sourceConfString.get(TextSocketSourceParameters.SOCKET_HOST_ADDRESS).toString();
     final String socketHostPort = sourceConfString.get(TextSocketSourceParameters.SOCKET_HOST_PORT).toString();
     try {
-      return dataGeneratorFactory.newDataGenerator(socketHostAddress, Integer.valueOf(socketHostPort));
+      return nettyDataGeneratorFactory.newDataGenerator(socketHostAddress, Integer.valueOf(socketHostPort));
+    } catch (final Exception e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
+    }
+  }
+
+  /*
+   * This private method makes a KafkaDataGenerator from a source configuration.
+   */
+  private DataGenerator getKafkaDataGenerator(final Map<String, Object> sourceConfString,
+                                              final ClassLoader classLoader)
+      throws RuntimeException {
+    try {
+      final String kafkaTopic = sourceConfString.get(KafkaSourceParameters.KAFKA_TOPIC).toString();
+      final HashMap<String, Object> kafkaConsumerConfig = deserializeLambda(
+          (ByteBuffer) sourceConfString.get(KafkaSourceParameters.KAFKA_CONSUMER_CONFIG), classLoader);
+      return kafkaDataGeneratorFactory.newDataGenerator(kafkaTopic, kafkaConsumerConfig);
     } catch (final Exception e) {
       e.printStackTrace();
       throw new RuntimeException(e);
@@ -95,17 +114,17 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   /*
    * This private method makes an EventGenerator from a watermark type and configuration.
    */
-  private EventGenerator<String> getEventGenerator(final WatermarkTypeEnum watermarkType,
-                                                   final Map<String, Object> sourceConfString,
-                                                   final Map<String, Object> watermarkConfString,
-                                                   final ClassLoader classLoader)
+  private <I, V> EventGenerator<I> getEventGenerator(final WatermarkTypeEnum watermarkType,
+                                                     final Map<String, Object> sourceConfString,
+                                                     final Map<String, Object> watermarkConfString,
+                                                     final ClassLoader classLoader)
       throws RuntimeException {
     try {
-      final Function<String, Tuple<String, Long>> timestampExtractionFunc;
+      final Function<I, Tuple<V, Long>> timestampExtractionFunc;
       final ByteBuffer serializedExtractionFunc =
-          (ByteBuffer) sourceConfString.get(TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION);
+          (ByteBuffer) sourceConfString.get(SourceParameters.TIMESTAMP_EXTRACTION_FUNCTION);
       if (serializedExtractionFunc != null) {
-        timestampExtractionFunc = (Function) deserializeLambda(serializedExtractionFunc, classLoader);
+        timestampExtractionFunc = deserializeLambda(serializedExtractionFunc, classLoader);
       } else {
         timestampExtractionFunc = null;
       }
@@ -118,11 +137,11 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
           return new PeriodicEventGenerator<>(
               timestampExtractionFunc, period, expectedDelay, TimeUnit.MILLISECONDS, scheduler);
         case PUNCTUATED:
-          final Predicate<String> isWatermark =
-              (Predicate) deserializeLambda((ByteBuffer) watermarkConfString.get(
+          final Predicate<I> isWatermark =
+              deserializeLambda((ByteBuffer) watermarkConfString.get(
                   PunctuatedWatermarkParameters.WATERMARK_PREDICATE), classLoader);
-          final Function<String, Long> parseTimestamp =
-              (Function) deserializeLambda((ByteBuffer) watermarkConfString.get(
+          final Function<I, Long> parseTimestamp =
+              deserializeLambda((ByteBuffer) watermarkConfString.get(
                   PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK), classLoader);
           return new PunctuatedEventGenerator<>(timestampExtractionFunc, isWatermark, parseTimestamp);
         default:
@@ -142,7 +161,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     final String socketHostAddress = sinkConfString.get(TextSocketSinkParameters.SOCKET_HOST_ADDRESS).toString();
     final String socketHostPort = sinkConfString.get(TextSocketSinkParameters.SOCKET_HOST_PORT).toString();
     try {
-      return sinkFactory.newSink(queryId, operatorIdGenerator.generate(),
+      return nettySinkFactory.newSink(queryId, operatorIdGenerator.generate(),
           socketHostAddress, Integer.valueOf(socketHostPort));
     } catch (Exception e) {
       e.printStackTrace();
@@ -151,15 +170,15 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   }
 
   /*
-   * This private method de-serializes byte-serialized lambdas
+   * This private method de-serializes byte-serialized lambdas.
    */
-  private Object deserializeLambda(final ByteBuffer serializedLambda, final ClassLoader classLoader)
-      throws IOException, ClassNotFoundException {
+  private <T> T deserializeLambda(final ByteBuffer serializedLambda, final ClassLoader classLoader)
+      throws IOException, ClassNotFoundException, ClassCastException {
     byte[] serializedByteArray = new byte[serializedLambda.remaining()];
     serializedLambda.get(serializedByteArray);
     final ExternalJarObjectInputStream stream = new ExternalJarObjectInputStream(
-          classLoader, serializedByteArray);
-      return stream.readObject();
+        classLoader, serializedByteArray);
+    return (T) stream.readObject();
   }
 
   /*
@@ -174,24 +193,24 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     switch (iOpInfo.getInstantOperatorType()) {
       case APPLY_STATEFUL: {
         final ApplyStatefulFunction applyStatefulFunction =
-            (ApplyStatefulFunction) deserializeLambda(functionList.get(0), classLoader);
+            deserializeLambda(functionList.get(0), classLoader);
         return new ApplyStatefulOperator<>(queryId, operatorId, applyStatefulFunction);
       }
       case FILTER: {
-        final Predicate predicate = (Predicate) deserializeLambda(functionList.get(0), classLoader);
+        final Predicate predicate = deserializeLambda(functionList.get(0), classLoader);
         return new FilterOperator<>(queryId, operatorId, predicate);
       }
       case FLAT_MAP: {
-        final Function flatMapFunc = (Function) deserializeLambda(functionList.get(0), classLoader);
+        final Function flatMapFunc = deserializeLambda(functionList.get(0), classLoader);
         return new FlatMapOperator<>(queryId, operatorId, flatMapFunc);
       }
       case MAP: {
-        final Function mapFunc = (Function) deserializeLambda(functionList.get(0), classLoader);
+        final Function mapFunc = deserializeLambda(functionList.get(0), classLoader);
         return new MapOperator<>(queryId, operatorId, mapFunc);
       }
       case REDUCE_BY_KEY: {
         final int keyIndex = iOpInfo.getKeyIndex();
-        final BiFunction reduceFunc = (BiFunction) deserializeLambda(functionList.get(0), classLoader);
+        final BiFunction reduceFunc = deserializeLambda(functionList.get(0), classLoader);
         return new ReduceByKeyOperator<>(queryId, operatorId, keyIndex, reduceFunc);
       }
       case REDUCE_BY_KEY_WINDOW: {
@@ -199,11 +218,11 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       }
       case APPLY_STATEFUL_WINDOW: {
         final ApplyStatefulFunction applyStatefulFunction =
-            (ApplyStatefulFunction) deserializeLambda(functionList.get(0), classLoader);
+            deserializeLambda(functionList.get(0), classLoader);
         return new ApplyStatefulWindowOperator<>(queryId, operatorId, applyStatefulFunction);
       }
       case AGGREGATE_WINDOW: {
-        final Function aggregateFunc = (Function) deserializeLambda(functionList.get(0), classLoader);
+        final Function aggregateFunc = deserializeLambda(functionList.get(0), classLoader);
         return new AggregateWindowOperator<>(queryId, operatorId, aggregateFunc);
       }
       case UNION: {
@@ -238,7 +257,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
         break;
       case JOIN:
         final List<ByteBuffer> functionList = wOpInfo.getFunctions();
-        final BiPredicate joinPred = (BiPredicate) deserializeLambda(functionList.get(0), classLoader);
+        final BiPredicate joinPred = deserializeLambda(functionList.get(0), classLoader);
         operator = new JoinOperator<>(queryId, operatorId, joinPred);
         break;
       default:
@@ -266,27 +285,37 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
         case SOURCE: {
           final Vertex vertex = avroVertexChain.getVertexChain().get(0);
           final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
+          final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
+          final Map<String, Object> sourceStringConf = sourceInfo.getSourceConfiguration();
+          final Map<String, Object> watermarkStringConf = sourceInfo.getWatermarkConfiguration();
+          final EventGenerator eventGenerator =
+              getEventGenerator(sourceInfo.getWatermarkType(), sourceStringConf, watermarkStringConf, classLoader);
+          final Source source;
+
           switch (sourceInfo.getSourceType()) {
             case TEXT_SOCKET_SOURCE: {
-              final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
-              final Map<String, Object> sourceConf = sourceInfo.getSourceConfiguration();
-              final Map<String, Object> watermarkConf = sourceInfo.getWatermarkConfiguration();
               final DataGenerator<String> textDataGenerator =
-                  getNettyTextDataGenerator(sourceConf);
-              final EventGenerator<String> eventGenerator =
-                  getEventGenerator(sourceInfo.getWatermarkType(), sourceConf,
-                      watermarkConf, classLoader);
-              final Source<String> textSocketSource = new SourceImpl<>(identifierFactory.getNewInstance(queryId),
+                  getNettyTextDataGenerator(sourceStringConf);
+              source = new SourceImpl<>(identifierFactory.getNewInstance(queryId),
                   identifierFactory.getNewInstance(operatorIdGenerator.generate()),
                   textDataGenerator, eventGenerator);
-              deserializedVertices.add(textSocketSource);
-              dag.addVertex(textSocketSource);
+              break;
+            }
+            case KAFKA_SOURCE: {
+              final DataGenerator kafkaDataGenerator =
+                  getKafkaDataGenerator(sourceStringConf, classLoader);
+              source = new SourceImpl<>(identifierFactory.getNewInstance(queryId),
+                  identifierFactory.getNewInstance(operatorIdGenerator.generate()),
+                  kafkaDataGenerator, eventGenerator);
               break;
             }
             default: {
               throw new IllegalArgumentException("MISTTask: Invalid source generator detected in LogicalPlan!");
             }
           }
+
+          deserializedVertices.add(source);
+          dag.addVertex(source);
           break;
         }
         case OPERATOR_CHAIN: {

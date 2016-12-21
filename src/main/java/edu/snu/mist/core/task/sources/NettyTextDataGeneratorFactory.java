@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentMap;
  * This class creates new instance of data generators which generate text stream.
  * It is designed to share a netty instance among sources to reduce the number of I/O threads.
  */
-public final class NettyTextDataGeneratorFactory implements TextDataGeneratorFactory {
+public final class NettyTextDataGeneratorFactory implements AutoCloseable {
   private static final String CLASS_NAME = NettyTextDataGeneratorFactory.class.getName();
 
   /**
@@ -85,9 +85,14 @@ public final class NettyTextDataGeneratorFactory implements TextDataGeneratorFac
     this.identifierFactory = identifierFactory;
   }
 
-  @Override
-  public DataGenerator<String> newDataGenerator(final String serverAddress,
-                                                final int port) throws Exception {
+  /**
+   * Create a new instance of data generator.
+   * @param serverAddress server address
+   * @param port server port
+   * @return a new data generator
+   */
+  public NettyTextDataGenerator newDataGenerator(final String serverAddress,
+                                                 final int port) throws Exception {
     return new NettyTextDataGenerator(serverAddress, port, clientBootstrap, channelMap);
   }
 

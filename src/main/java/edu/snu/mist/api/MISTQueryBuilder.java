@@ -15,13 +15,16 @@
  */
 package edu.snu.mist.api;
 
+import edu.snu.mist.api.sources.KafkaSourceStream;
 import edu.snu.mist.api.sources.TextSocketSourceStream;
+import edu.snu.mist.api.sources.builder.KafkaSourceConfiguration;
 import edu.snu.mist.api.sources.builder.PeriodicWatermarkConfiguration;
 import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
 import edu.snu.mist.api.sources.builder.WatermarkConfiguration;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.Direction;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 /**
  * This class builds MIST query.
@@ -34,13 +37,24 @@ public final class MISTQueryBuilder {
   private final DAG<AvroVertexSerializable, Direction> dag;
 
   /**
+   * Period of default watermark represented in milliseconds.
+   */
+  private static final int DEFAULT_WATERMARK_PERIOD = 100;
+
+  /**
+   * Expected delay of default watermark represented in milliseconds.
+   */
+  private static final int DEFAULT_EXPECTED_DELAY = 0;
+
+  /**
    * The default watermark configuration.
    */
-  private final PeriodicWatermarkConfiguration<String> defaultWatermarkConf =
-      PeriodicWatermarkConfiguration.<String>newBuilder()
-          .setWatermarkPeriod(100)
-          .setExpectedDelay(0)
-          .build();
+  private <T> PeriodicWatermarkConfiguration<T> getDefaultWatermarkConf() {
+    return PeriodicWatermarkConfiguration.<T>newBuilder()
+        .setWatermarkPeriod(DEFAULT_WATERMARK_PERIOD)
+        .setExpectedDelay(DEFAULT_EXPECTED_DELAY)
+        .build();
+  }
 
   public MISTQueryBuilder() {
     this.dag = new AdjacentListDAG<>();
@@ -52,7 +66,7 @@ public final class MISTQueryBuilder {
    * @return source stream
    */
   public TextSocketSourceStream socketTextStream(final TextSocketSourceConfiguration sourceConf) {
-    return socketTextStream(sourceConf, defaultWatermarkConf);
+    return socketTextStream(sourceConf, getDefaultWatermarkConf());
   }
 
   /**
@@ -66,6 +80,32 @@ public final class MISTQueryBuilder {
     final TextSocketSourceStream sourceStream = new TextSocketSourceStream(sourceConf, dag, watermarkConf);
     dag.addVertex(sourceStream);
     return sourceStream;
+  }
+
+  /**
+   * Get a kafka source stream.
+   * @param kafkaConf kafka source configuration
+   * @param <K> the type of kafka record's key
+   * @param <V> the type of kafka record's value
+   * @return source stream
+   */
+  public <K, V> KafkaSourceStream<K, V> kafkaStream(final KafkaSourceConfiguration<K, V> kafkaConf) {
+    return kafkaStream(kafkaConf, getDefaultWatermarkConf());
+  }
+
+  /**
+   * Get a kafka source stream.
+   * @param kafkaConf kafka source configuration
+   * @param watermarkConf watermark configuration
+   * @param <K> the type of kafka record's key
+   * @param <V> the type of kafka record's value
+   * @return source stream
+   */
+  public <K, V> KafkaSourceStream<K, V> kafkaStream(final KafkaSourceConfiguration<K, V> kafkaConf,
+                                                    final WatermarkConfiguration<ConsumerRecord<K, V>> watermarkConf) {
+    final KafkaSourceStream<K, V> kafkaStream = new KafkaSourceStream<>(kafkaConf, dag, watermarkConf);
+    dag.addVertex(kafkaStream);
+    return kafkaStream;
   }
 
   /**

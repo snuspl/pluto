@@ -40,26 +40,31 @@ public abstract class BaseSourceStream<T> extends ContinuousStreamImpl<T> {
   private final SourceConfiguration<T> sourceConfiguration;
 
   /**
+   * The type of this source.
+   */
+  private final SourceTypeEnum sourceType;
+
+  /**
    * The value for watermark configuration.
    */
   private final WatermarkConfiguration watermarkConfiguration;
 
-  BaseSourceStream(final SourceConfiguration<T> sourceConfiguration,
+  BaseSourceStream(final SourceTypeEnum sourceType,
+                   final SourceConfiguration<T> sourceConfiguration,
                    final DAG<AvroVertexSerializable, Direction> dag,
                    final WatermarkConfiguration<T> watermarkConfiguration) {
     super(dag);
+    this.sourceType = sourceType;
     this.sourceConfiguration = sourceConfiguration;
     this.watermarkConfiguration = watermarkConfiguration;
   }
-
-  protected abstract SourceTypeEnum getSourceTypeEnum();
 
   @Override
   public Vertex getSerializedVertex() {
     final Vertex.Builder vertexBuilder = Vertex.newBuilder();
     vertexBuilder.setVertexType(VertexTypeEnum.SOURCE);
     final SourceInfo.Builder sourceInfoBuilder = SourceInfo.newBuilder();
-    sourceInfoBuilder.setSourceType(getSourceTypeEnum());
+    sourceInfoBuilder.setSourceType(sourceType);
     sourceInfoBuilder.setWatermarkType(watermarkConfiguration.getWatermarkType());
     // Serialize SourceConfiguration in SourceInfo
     final Map<String, Object> serializedSourceConf = new HashMap<>();
