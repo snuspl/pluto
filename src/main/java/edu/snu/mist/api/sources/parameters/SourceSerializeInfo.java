@@ -34,11 +34,6 @@ public final class SourceSerializeInfo {
    */
   private static Map<String, SerializedType.AvroType> avroSerializedTypes =
       ImmutableMap.<String, SerializedType.AvroType>builder()
-          .put(REEFNetworkSourceParameters.CODEC, SerializedType.AvroType.BYTES)
-          .put(REEFNetworkSourceParameters.CONNECTION_ID, SerializedType.AvroType.STRING)
-          .put(REEFNetworkSourceParameters.NAME_SERVER_HOSTNAME, SerializedType.AvroType.STRING)
-          .put(REEFNetworkSourceParameters.NAME_SERVICE_PORT, SerializedType.AvroType.INT)
-          .put(REEFNetworkSourceParameters.SENDER_ID, SerializedType.AvroType.STRING)
           .put(TextSocketSourceParameters.SOCKET_HOST_ADDRESS, SerializedType.AvroType.STRING)
           .put(TextSocketSourceParameters.SOCKET_HOST_PORT, SerializedType.AvroType.INT)
           .put(TextSocketSourceParameters.TIMESTAMP_EXTRACTION_FUNCTION, SerializedType.AvroType.BYTES)
