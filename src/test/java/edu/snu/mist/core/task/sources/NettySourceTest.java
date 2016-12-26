@@ -42,7 +42,6 @@ import java.util.logging.Logger;
 public final class NettySourceTest {
 
   private static final Logger LOG = Logger.getLogger(NettyTextDataGeneratorFactory.class.getName());
-  private static final String QUERY_ID = "testQuery";
   private static final String SERVER_ADDR = "localhost";
   private static final int SERVER_PORT = 12112;
 
@@ -98,7 +97,7 @@ public final class NettySourceTest {
                   new Tuple<>(input.toString().split(":")[0], Long.parseLong(input.toString().split(":")[1])),
                   (input) -> input.toString().split(":")[0].equals("Watermark"),
                   (input) -> Long.parseLong(input.toString().split(":")[1]));
-          final Source<String> source = new SourceImpl<>(identifierFactory.getNewInstance(QUERY_ID),
+          final Source<String> source = new SourceImpl<>(
               identifierFactory.getNewInstance(Integer.toString(i)), dataGenerator, eventGenerator);
 
           sources.add(source);
@@ -174,7 +173,7 @@ public final class NettySourceTest {
         final DataGenerator<String> dataGenerator = textDataGeneratorFactory.newDataGenerator(SERVER_ADDR, SERVER_PORT);
         final EventGenerator<String> eventGenerator =
             new PeriodicEventGenerator<>(null, period, period, TimeUnit.MILLISECONDS, scheduler);
-        final Source<String> periodicSource = new SourceImpl<>(identifierFactory.getNewInstance(QUERY_ID),
+        final Source<String> periodicSource = new SourceImpl<>(
             identifierFactory.getNewInstance(Integer.toString(1)), dataGenerator, eventGenerator);
 
         final List<String> periodicReceivedData = new LinkedList<>();

@@ -56,7 +56,7 @@ public final class FixedSizeWindowOperatorTest {
     final int emissionInterval = 250;
 
     final TimeWindowOperator<Integer> timeWindowOperator =
-        new TimeWindowOperator<>("testQuery", "testAggOp", windowSize, emissionInterval);
+        new TimeWindowOperator<>("testAggOp", windowSize, emissionInterval);
 
     final List<MistEvent> result = new LinkedList<>();
     timeWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));
@@ -117,7 +117,7 @@ public final class FixedSizeWindowOperatorTest {
     final int emissionInterval = 750;
 
     final TimeWindowOperator<Integer> timeWindowOperator =
-            new TimeWindowOperator<>("testQuery", "testAggOp", windowSize, emissionInterval);
+            new TimeWindowOperator<>("testAggOp", windowSize, emissionInterval);
 
     final List<MistEvent> result = new LinkedList<>();
     timeWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));
@@ -164,7 +164,7 @@ public final class FixedSizeWindowOperatorTest {
     final int emissionInterval = 3;
 
     final CountWindowOperator<Integer> countWindowOperator =
-            new CountWindowOperator<>("testQuery", "testAggOp", windowSize, emissionInterval);
+            new CountWindowOperator<>("testAggOp", windowSize, emissionInterval);
 
     final List<MistEvent> result = new LinkedList<>();
     countWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));
@@ -233,7 +233,7 @@ public final class FixedSizeWindowOperatorTest {
     final int emissionInterval = 5;
 
     final CountWindowOperator<Integer> countWindowOperator =
-        new CountWindowOperator<>("testQuery", "testAggOp", windowSize, emissionInterval);
+        new CountWindowOperator<>("testAggOp", windowSize, emissionInterval);
 
     final List<MistEvent> result = new LinkedList<>();
     countWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));

@@ -47,8 +47,7 @@ public final class ApplyStatefulWindowOperatorTest {
     final ApplyStatefulFunction<Integer, Integer> applyStatefulFunction = new FindMaxIntFunction();
 
     final ApplyStatefulWindowOperator<Integer, Integer> applyStatefulWindowOperator =
-        new ApplyStatefulWindowOperator<>(
-            "testQuery", "testAggOp", applyStatefulFunction);
+        new ApplyStatefulWindowOperator<>("testAggOp", applyStatefulFunction);
 
     final List<MistEvent> result = new LinkedList<>();
     applyStatefulWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));

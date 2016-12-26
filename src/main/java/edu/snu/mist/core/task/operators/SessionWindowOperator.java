@@ -43,10 +43,9 @@ public final class SessionWindowOperator<T> extends OneStreamOperator {
    */
   private Window<T> currentWindow;
 
-  public SessionWindowOperator(final String queryId,
-                               final String operatorId,
+  public SessionWindowOperator(final String operatorId,
                                final int sessionInterval) {
-    super(queryId, operatorId);
+    super(operatorId);
     this.sessionInterval = sessionInterval;
     currentWindow = null;
   }

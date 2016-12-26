@@ -56,11 +56,10 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamOperator {
    */
   private final Queue<Window<T>> windowQueue;
 
-  protected FixedSizeWindowOperator(final String queryId,
-                                    final String operatorId,
+  protected FixedSizeWindowOperator(final String operatorId,
                                     final int windowSize,
                                     final int windowEmissionInterval) {
-    super(queryId, operatorId);
+    super(operatorId);
     this.windowSize = windowSize;
     this.windowEmissionInterval = windowEmissionInterval;
     this.windowQueue = new LinkedList<>();

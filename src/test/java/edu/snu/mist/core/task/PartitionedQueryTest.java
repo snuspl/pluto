@@ -54,14 +54,13 @@ public final class PartitionedQueryTest {
 
     final Injector injector = Tang.Factory.getTang().newInjector();
     final StringIdentifierFactory idFactory = injector.getInstance(StringIdentifierFactory.class);
-    final String queryId = "testQuery";
     final String squareOpId = "squareOp";
     final String incOpId = "incOp";
     final String doubleOpId = "doubleOp";
 
-    final Operator squareOp = new SquareOperator(queryId, squareOpId);
-    final Operator incOp = new IncrementOperator(queryId, incOpId);
-    final Operator doubleOp = new DoubleOperator(queryId, doubleOpId);
+    final Operator squareOp = new SquareOperator(squareOpId);
+    final Operator incOp = new IncrementOperator(incOpId);
+    final Operator doubleOp = new DoubleOperator(doubleOpId);
 
     // 2 * (input * input + 1)
     final Integer expected1 = 2 * (input * input + 1);
@@ -105,9 +104,8 @@ public final class PartitionedQueryTest {
    * This emits squared inputs.
    */
   class SquareOperator extends OneStreamOperator {
-    SquareOperator(final String queryId,
-                   final String operatorId) {
-      super(queryId, operatorId);
+    SquareOperator(final String operatorId) {
+      super(operatorId);
     }
 
     @Override
@@ -128,9 +126,8 @@ public final class PartitionedQueryTest {
    * This increments the input.
    */
   class IncrementOperator extends OneStreamOperator {
-    IncrementOperator(final String queryId,
-                      final String operatorId) {
-      super(queryId, operatorId);
+    IncrementOperator(final String operatorId) {
+      super(operatorId);
     }
 
     @Override
@@ -150,9 +147,8 @@ public final class PartitionedQueryTest {
    * This doubles the input.
    */
   class DoubleOperator extends OneStreamOperator {
-    DoubleOperator(final String queryId,
-                   final String operatorId) {
-      super(queryId, operatorId);
+    DoubleOperator(final String operatorId) {
+      super(operatorId);
     }
 
     @Override

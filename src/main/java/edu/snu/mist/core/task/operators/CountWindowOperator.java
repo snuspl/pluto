@@ -32,11 +32,10 @@ public final class CountWindowOperator<T> extends FixedSizeWindowOperator<T> {
    */
   private long count;
 
-  public CountWindowOperator(final String queryId,
-                             final String operatorId,
+  public CountWindowOperator(final String operatorId,
                              final int windowSize,
                              final int windowEmissionInterval) {
-    super(queryId, operatorId, windowSize, windowEmissionInterval);
+    super(operatorId, windowSize, windowEmissionInterval);
     this.count = 1L;
   }
 

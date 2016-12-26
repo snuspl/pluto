@@ -89,8 +89,7 @@ public final class NettyTextSinkFactory implements TextSinkFactory {
 
 
   @Override
-  public Sink<String> newSink(final String queryId,
-                              final String sinkId,
+  public Sink<String> newSink(final String sinkId,
                               final String serverAddress,
                               final int port) throws Exception {
     final ChannelFuture channelFuture = clientBootstrap.connect(serverAddress, port);
@@ -102,7 +101,7 @@ public final class NettyTextSinkFactory implements TextSinkFactory {
       throw new RuntimeException(sb.toString());
     }
     final Channel channel = channelFuture.channel();
-    return new NettyTextSink(queryId, sinkId, channel, identifierFactory);
+    return new NettyTextSink(sinkId, channel, identifierFactory);
   }
 
   @Override

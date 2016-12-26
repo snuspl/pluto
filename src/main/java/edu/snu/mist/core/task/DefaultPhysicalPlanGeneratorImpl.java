@@ -156,12 +156,12 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   /*
    * This private method makes a NettyTextSocketSink from a sink configuration.
    */
-  private Sink getNettyTextSocketSink(final String queryId, final Map<String, Object> sinkConfString)
+  private Sink getNettyTextSocketSink(final Map<String, Object> sinkConfString)
       throws RuntimeException {
     final String socketHostAddress = sinkConfString.get(TextSocketSinkParameters.SOCKET_HOST_ADDRESS).toString();
     final String socketHostPort = sinkConfString.get(TextSocketSinkParameters.SOCKET_HOST_PORT).toString();
     try {
-      return nettySinkFactory.newSink(queryId, operatorIdGenerator.generate(),
+      return nettySinkFactory.newSink(operatorIdGenerator.generate(),
           socketHostAddress, Integer.valueOf(socketHostPort));
     } catch (Exception e) {
       e.printStackTrace();
@@ -185,7 +185,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
    * This private method gets instant operator from the serialized instant operator info.
    */
   @SuppressWarnings(value="unchecked")
-  private Operator getInstantOperator(final String queryId, final InstantOperatorInfo iOpInfo,
+  private Operator getInstantOperator(final InstantOperatorInfo iOpInfo,
                                       final ClassLoader classLoader)
       throws IllegalArgumentException, IOException, ClassNotFoundException {
     final String operatorId = operatorIdGenerator.generate();
@@ -194,24 +194,24 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       case APPLY_STATEFUL: {
         final ApplyStatefulFunction applyStatefulFunction =
             deserializeLambda(functionList.get(0), classLoader);
-        return new ApplyStatefulOperator<>(queryId, operatorId, applyStatefulFunction);
+        return new ApplyStatefulOperator<>(operatorId, applyStatefulFunction);
       }
       case FILTER: {
         final Predicate predicate = deserializeLambda(functionList.get(0), classLoader);
-        return new FilterOperator<>(queryId, operatorId, predicate);
+        return new FilterOperator<>(operatorId, predicate);
       }
       case FLAT_MAP: {
         final Function flatMapFunc = deserializeLambda(functionList.get(0), classLoader);
-        return new FlatMapOperator<>(queryId, operatorId, flatMapFunc);
+        return new FlatMapOperator<>(operatorId, flatMapFunc);
       }
       case MAP: {
         final Function mapFunc = deserializeLambda(functionList.get(0), classLoader);
-        return new MapOperator<>(queryId, operatorId, mapFunc);
+        return new MapOperator<>(operatorId, mapFunc);
       }
       case REDUCE_BY_KEY: {
         final int keyIndex = iOpInfo.getKeyIndex();
         final BiFunction reduceFunc = deserializeLambda(functionList.get(0), classLoader);
-        return new ReduceByKeyOperator<>(queryId, operatorId, keyIndex, reduceFunc);
+        return new ReduceByKeyOperator<>(operatorId, keyIndex, reduceFunc);
       }
       case REDUCE_BY_KEY_WINDOW: {
         throw new IllegalArgumentException("MISTTask: ReduceByKeyWindowOperator is currently not supported!");
@@ -219,14 +219,14 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       case APPLY_STATEFUL_WINDOW: {
         final ApplyStatefulFunction applyStatefulFunction =
             deserializeLambda(functionList.get(0), classLoader);
-        return new ApplyStatefulWindowOperator<>(queryId, operatorId, applyStatefulFunction);
+        return new ApplyStatefulWindowOperator<>(operatorId, applyStatefulFunction);
       }
       case AGGREGATE_WINDOW: {
         final Function aggregateFunc = deserializeLambda(functionList.get(0), classLoader);
-        return new AggregateWindowOperator<>(queryId, operatorId, aggregateFunc);
+        return new AggregateWindowOperator<>(operatorId, aggregateFunc);
       }
       case UNION: {
-        return new UnionOperator(queryId, operatorId);
+        return new UnionOperator(operatorId);
       }
       default: {
         throw new IllegalArgumentException("MISTTask: Invalid InstantOperatorType detected!");
@@ -237,7 +237,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   /*
    * This private method gets window operator from the serialized window operator info.
    */
-  private Operator getWindowOperator(final String queryId, final WindowOperatorInfo wOpInfo,
+  private Operator getWindowOperator(final WindowOperatorInfo wOpInfo,
                                      final ClassLoader classLoader)
       throws IllegalArgumentException, IOException, ClassNotFoundException {
     final String operatorId = operatorIdGenerator.generate();
@@ -245,20 +245,20 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     switch (wOpInfo.getWindowOperatorType()) {
       case TIME:
         operator = new TimeWindowOperator<>(
-            queryId, operatorId, wOpInfo.getWindowSize(), wOpInfo.getWindowInterval());
+            operatorId, wOpInfo.getWindowSize(), wOpInfo.getWindowInterval());
         break;
       case COUNT:
         operator = new CountWindowOperator<>(
-            queryId, operatorId, wOpInfo.getWindowSize(), wOpInfo.getWindowInterval());
+            operatorId, wOpInfo.getWindowSize(), wOpInfo.getWindowInterval());
         break;
       case SESSION:
         operator = new SessionWindowOperator<>(
-            queryId, operatorId, wOpInfo.getWindowInterval());
+            operatorId, wOpInfo.getWindowInterval());
         break;
       case JOIN:
         final List<ByteBuffer> functionList = wOpInfo.getFunctions();
         final BiPredicate joinPred = deserializeLambda(functionList.get(0), classLoader);
-        operator = new JoinOperator<>(queryId, operatorId, joinPred);
+        operator = new JoinOperator<>(operatorId, joinPred);
         break;
       default:
         throw new IllegalArgumentException("MISTTask: Invalid window operator type " +
@@ -296,16 +296,14 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
             case TEXT_SOCKET_SOURCE: {
               final DataGenerator<String> textDataGenerator =
                   getNettyTextDataGenerator(sourceStringConf);
-              source = new SourceImpl<>(identifierFactory.getNewInstance(queryId),
-                  identifierFactory.getNewInstance(operatorIdGenerator.generate()),
+              source = new SourceImpl<>(identifierFactory.getNewInstance(operatorIdGenerator.generate()),
                   textDataGenerator, eventGenerator);
               break;
             }
             case KAFKA_SOURCE: {
               final DataGenerator kafkaDataGenerator =
                   getKafkaDataGenerator(sourceStringConf, classLoader);
-              source = new SourceImpl<>(identifierFactory.getNewInstance(queryId),
-                  identifierFactory.getNewInstance(operatorIdGenerator.generate()),
+              source = new SourceImpl<>(identifierFactory.getNewInstance(operatorIdGenerator.generate()),
                   kafkaDataGenerator, eventGenerator);
               break;
             }
@@ -325,13 +323,13 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
             switch (vertex.getVertexType()) {
               case INSTANT_OPERATOR: {
                 final InstantOperatorInfo iOpInfo = (InstantOperatorInfo) vertex.getAttributes();
-                final Operator operator = getInstantOperator(queryId, iOpInfo, classLoader);
+                final Operator operator = getInstantOperator(iOpInfo, classLoader);
                 partitionedQuery.insertToTail(operator);
                 break;
               }
               case WINDOW_OPERATOR: {
                 final WindowOperatorInfo wOpInfo = (WindowOperatorInfo) vertex.getAttributes();
-                final Operator operator = getWindowOperator(queryId, wOpInfo, classLoader);
+                final Operator operator = getWindowOperator(wOpInfo, classLoader);
                 partitionedQuery.insertToTail(operator);
                 break;
               }
@@ -349,7 +347,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
           switch (sinkInfo.getSinkType()) {
             case TEXT_SOCKET_SINK: {
               final Map<String, Object> sinkConf = sinkInfo.getSinkConfiguration();
-              final Sink textSocketSink = getNettyTextSocketSink(queryId, sinkConf);
+              final Sink textSocketSink = getNettyTextSocketSink(sinkConf);
               deserializedVertices.add(textSocketSink);
               dag.addVertex(textSocketSink);
               break;

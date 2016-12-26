@@ -35,10 +35,9 @@ public final class MapOperator<I, O> extends OneStreamOperator {
    */
   private final Function<I, O> mapFunc;
 
-  public MapOperator(final String queryId,
-                     final String operatorId,
+  public MapOperator(final String operatorId,
                      final Function<I, O> mapFunc) {
-    super(queryId, operatorId);
+    super(operatorId);
     this.mapFunc = mapFunc;
   }
 

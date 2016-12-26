@@ -42,10 +42,9 @@ public final class JoinOperator<T, U> extends OneStreamOperator {
    */
   private final BiPredicate<T, U> joinBiPredicate;
 
-  public JoinOperator(final String queryId,
-                      final String operatorId,
+  public JoinOperator(final String operatorId,
                       final BiPredicate<T, U> joinBiPredicate) {
-    super(queryId, operatorId);
+    super(operatorId);
     this.joinBiPredicate = joinBiPredicate;
   }
 

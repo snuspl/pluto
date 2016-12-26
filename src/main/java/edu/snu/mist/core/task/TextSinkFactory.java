@@ -24,14 +24,12 @@ public interface TextSinkFactory extends AutoCloseable {
 
   /**
    * Create new instance of sink.
-   * @param queryId query id
    * @param sinkId sink id
    * @param serverAddress server address
    * @param port server port
    * @return a new sink
    */
-  Sink<String> newSink(String queryId,
-                       String sinkId,
+  Sink<String> newSink(String sinkId,
                        String serverAddress,
                        int port) throws Exception;
 }

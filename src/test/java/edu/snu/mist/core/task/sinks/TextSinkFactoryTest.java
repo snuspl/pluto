@@ -68,7 +68,7 @@ public final class TextSinkFactoryTest {
         // result list
         // Create sinks
         for (int i = 0; i < numSinks; i++) {
-          final Sink<String> sink = textSinkFactory.newSink(QUERY_ID, Integer.toString(i), SERVER_ADDR, SERVER_PORT);
+          final Sink<String> sink = textSinkFactory.newSink(Integer.toString(i), SERVER_ADDR, SERVER_PORT);
           sinks.add(sink);
         }
 

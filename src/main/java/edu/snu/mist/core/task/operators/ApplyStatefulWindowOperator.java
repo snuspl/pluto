@@ -39,14 +39,12 @@ public final class ApplyStatefulWindowOperator<IN, OUT>
   private final ApplyStatefulFunction<IN, OUT> applyStatefulFunction;
 
   /**
-   * @param queryId identifier of the query which contains this operator
    * @param operatorId identifier of operator
    * @param applyStatefulFunction the user-defined ApplyStatefulFunction
    */
-  public ApplyStatefulWindowOperator(final String queryId,
-                                     final String operatorId,
+  public ApplyStatefulWindowOperator(final String operatorId,
                                      final ApplyStatefulFunction<IN, OUT> applyStatefulFunction) {
-    super(queryId, operatorId);
+    super(operatorId);
     this.applyStatefulFunction = applyStatefulFunction;
   }
 

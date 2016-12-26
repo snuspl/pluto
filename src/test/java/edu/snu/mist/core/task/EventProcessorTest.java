@@ -55,10 +55,10 @@ public final class EventProcessorTest {
     final List<Integer> result = new LinkedList<>();
 
     final PartitionedQuery query1 = new DefaultPartitionedQuery();
-    query1.insertToHead(new TestOperator("o1", "q1"));
+    query1.insertToHead(new TestOperator("o1"));
     query1.setOutputEmitter(new TestOutputEmitter<>(list1));
     final PartitionedQuery query2 = new DefaultPartitionedQuery();
-    query2.insertToHead(new TestOperator("o2", "q2"));
+    query2.insertToHead(new TestOperator("o2"));
     query2.setOutputEmitter(new TestOutputEmitter<>(list2));
 
     for (int i = 0; i < numTasks; i++) {
@@ -104,7 +104,7 @@ public final class EventProcessorTest {
     final List<Integer> result = new LinkedList<>();
 
     final PartitionedQuery query = new DefaultPartitionedQuery();
-    query.insertToHead(new TestOperator("o1", "q1"));
+    query.insertToHead(new TestOperator("o1"));
     query.setOutputEmitter(new TestOutputEmitter<>(list1));
 
     for (int i = 0; i < numTasks; i++) {
@@ -141,9 +141,8 @@ public final class EventProcessorTest {
    * It just forwards inputs to outputEmitter.
    */
   class TestOperator extends OneStreamOperator {
-    public TestOperator(final String opId,
-                        final String queryId) {
-      super(opId, queryId);
+    public TestOperator(final String opId) {
+      super(opId);
     }
 
     @Override

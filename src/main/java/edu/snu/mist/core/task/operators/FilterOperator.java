@@ -34,10 +34,9 @@ public final class FilterOperator<I> extends OneStreamOperator {
    */
   private final Predicate<I> filterFunc;
 
-  public FilterOperator(final String queryId,
-                        final String operatorId,
+  public FilterOperator(final String operatorId,
                         final Predicate<I> filterFunc) {
-    super(queryId, operatorId);
+    super(operatorId);
     this.filterFunc = filterFunc;
   }
 
