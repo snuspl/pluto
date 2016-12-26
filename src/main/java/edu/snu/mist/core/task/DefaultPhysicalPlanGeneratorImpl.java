@@ -15,9 +15,8 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.api.operators.ApplyStatefulFunction;
-import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
-import edu.snu.mist.api.sources.parameters.*;
+import edu.snu.mist.api.functions.ApplyStatefulFunction;
+import edu.snu.mist.api.parameters.*;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.ExternalJarObjectInputStream;

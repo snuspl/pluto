@@ -15,12 +15,12 @@
  */
 package edu.snu.mist.api;
 
-import edu.snu.mist.api.sources.KafkaSourceStream;
-import edu.snu.mist.api.sources.TextSocketSourceStream;
-import edu.snu.mist.api.sources.builder.KafkaSourceConfiguration;
-import edu.snu.mist.api.sources.builder.PeriodicWatermarkConfiguration;
-import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
-import edu.snu.mist.api.sources.builder.WatermarkConfiguration;
+import edu.snu.mist.api.datastreams.KafkaSourceStream;
+import edu.snu.mist.api.datastreams.TextSocketSourceStream;
+import edu.snu.mist.api.datastreams.configurations.KafkaSourceConfiguration;
+import edu.snu.mist.api.datastreams.configurations.PeriodicWatermarkConfiguration;
+import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
+import edu.snu.mist.api.datastreams.configurations.WatermarkConfiguration;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.Direction;

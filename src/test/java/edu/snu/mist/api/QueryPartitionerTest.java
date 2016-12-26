@@ -15,8 +15,9 @@
  */
 package edu.snu.mist.api;
 
-import edu.snu.mist.api.sink.Sink;
-import edu.snu.mist.api.sources.TextSocketSourceStream;
+import edu.snu.mist.api.datastreams.ContinuousStream;
+import edu.snu.mist.api.datastreams.Sink;
+import edu.snu.mist.api.datastreams.TextSocketSourceStream;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.Direction;
 import org.apache.reef.tang.exceptions.InjectionException;

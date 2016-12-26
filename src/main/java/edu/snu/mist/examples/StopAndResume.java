@@ -18,8 +18,8 @@ package edu.snu.mist.examples;
 
 import edu.snu.mist.api.*;
 import edu.snu.mist.api.functions.MISTBiFunction;
-import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
-import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
+import edu.snu.mist.api.datastreams.configurations.TextSocketSinkConfiguration;
+import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.examples.parameters.NettySourceAddress;
 import org.apache.reef.tang.Configuration;

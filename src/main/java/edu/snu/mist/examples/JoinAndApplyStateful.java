@@ -17,13 +17,13 @@
 package edu.snu.mist.examples;
 
 import edu.snu.mist.api.APIQueryControlResult;
-import edu.snu.mist.api.ContinuousStream;
+import edu.snu.mist.api.datastreams.ContinuousStream;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.api.functions.MISTBiPredicate;
-import edu.snu.mist.api.operators.ApplyStatefulFunction;
-import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
-import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
+import edu.snu.mist.api.functions.ApplyStatefulFunction;
+import edu.snu.mist.api.datastreams.configurations.TextSocketSinkConfiguration;
+import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.api.windows.TimeWindowInformation;
 import edu.snu.mist.examples.parameters.UnionLeftSourceAddress;

@@ -16,6 +16,8 @@
 
 package edu.snu.mist.api;
 
+import edu.snu.mist.api.datastreams.MISTStream;
+
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 

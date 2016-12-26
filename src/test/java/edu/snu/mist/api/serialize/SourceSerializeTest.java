@@ -16,10 +16,10 @@
 package edu.snu.mist.api.serialize;
 
 import edu.snu.mist.api.MISTQueryBuilder;
-import edu.snu.mist.api.sources.KafkaSourceStream;
-import edu.snu.mist.api.sources.builder.KafkaSourceConfiguration;
-import edu.snu.mist.api.sources.parameters.KafkaSourceParameters;
-import edu.snu.mist.api.sources.parameters.PeriodicWatermarkParameters;
+import edu.snu.mist.api.datastreams.KafkaSourceStream;
+import edu.snu.mist.api.datastreams.configurations.KafkaSourceConfiguration;
+import edu.snu.mist.api.parameters.KafkaSourceParameters;
+import edu.snu.mist.api.parameters.PeriodicWatermarkParameters;
 import edu.snu.mist.formats.avro.*;
 import org.junit.Assert;
 import org.junit.Test;

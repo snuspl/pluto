@@ -15,8 +15,9 @@
  */
 package edu.snu.mist.api;
 
-import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
-import edu.snu.mist.api.sources.builder.*;
+import edu.snu.mist.api.datastreams.configurations.PunctuatedWatermarkConfiguration;
+import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
+import edu.snu.mist.api.datastreams.configurations.TextSocketSinkConfiguration;
 import org.apache.reef.io.Tuple;
 
 /**

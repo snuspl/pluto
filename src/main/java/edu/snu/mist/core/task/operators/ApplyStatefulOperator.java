@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.operators;
 
-import edu.snu.mist.api.operators.ApplyStatefulFunction;
+import edu.snu.mist.api.functions.ApplyStatefulFunction;
 import edu.snu.mist.core.task.common.MistDataEvent;
 import edu.snu.mist.core.task.common.MistWatermarkEvent;
 

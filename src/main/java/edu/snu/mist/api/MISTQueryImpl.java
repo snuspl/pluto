@@ -15,8 +15,8 @@
  */
 package edu.snu.mist.api;
 
-import edu.snu.mist.api.sink.Sink;
-import edu.snu.mist.api.sources.BaseSourceStream;
+import edu.snu.mist.api.datastreams.Sink;
+import edu.snu.mist.api.datastreams.BaseSourceStream;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.GraphUtils;
 import edu.snu.mist.formats.avro.*;
