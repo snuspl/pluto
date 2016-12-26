@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.utils;
 
-import edu.snu.mist.api.operators.ApplyStatefulFunction;
+import edu.snu.mist.api.functions.ApplyStatefulFunction;
 
 /**
  * A simple ApplyStatefulFunction that finds maximum integer among the received inputs.

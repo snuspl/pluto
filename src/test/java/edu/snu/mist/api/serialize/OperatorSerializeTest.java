@@ -16,12 +16,9 @@
 package edu.snu.mist.api.serialize;
 
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.functions.MISTBiFunction;
-import edu.snu.mist.api.functions.MISTBiPredicate;
-import edu.snu.mist.api.functions.MISTFunction;
-import edu.snu.mist.api.functions.MISTPredicate;
-import edu.snu.mist.api.operators.*;
-import edu.snu.mist.api.operators.utils.CountStringFunction;
+import edu.snu.mist.api.functions.*;
+import edu.snu.mist.api.datastreams.*;
+import edu.snu.mist.api.datastreams.utils.CountStringFunction;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.api.types.Tuple3;
 import edu.snu.mist.api.windows.CountWindowInformation;

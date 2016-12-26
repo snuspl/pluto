@@ -15,14 +15,16 @@
  */
 package edu.snu.mist.api;
 
-import edu.snu.mist.api.functions.*;
-import edu.snu.mist.api.sink.builder.TextSocketSinkConfiguration;
-import edu.snu.mist.api.sink.parameters.TextSocketSinkParameters;
-import edu.snu.mist.api.sources.builder.PunctuatedWatermarkConfiguration;
-import edu.snu.mist.api.sources.builder.TextSocketSourceConfiguration;
-import edu.snu.mist.api.sources.parameters.PunctuatedWatermarkParameters;
-import edu.snu.mist.api.sources.parameters.SourceParameters;
-import edu.snu.mist.api.sources.parameters.TextSocketSourceParameters;
+import edu.snu.mist.api.datastreams.configurations.PunctuatedWatermarkConfiguration;
+import edu.snu.mist.api.datastreams.configurations.TextSocketSinkConfiguration;
+import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
+import edu.snu.mist.api.functions.MISTBiFunction;
+import edu.snu.mist.api.functions.MISTFunction;
+import edu.snu.mist.api.functions.MISTPredicate;
+import edu.snu.mist.api.parameters.PunctuatedWatermarkParameters;
+import edu.snu.mist.api.parameters.SourceParameters;
+import edu.snu.mist.api.parameters.TextSocketSinkParameters;
+import edu.snu.mist.api.parameters.TextSocketSourceParameters;
 import edu.snu.mist.api.types.Tuple2;
 import edu.snu.mist.api.windows.TimeWindowInformation;
 import edu.snu.mist.formats.avro.*;
@@ -35,8 +37,13 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
-import java.util.*;
-import java.util.function.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static edu.snu.mist.formats.avro.WindowOperatorTypeEnum.TIME;
 
