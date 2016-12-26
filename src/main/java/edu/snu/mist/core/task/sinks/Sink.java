@@ -28,10 +28,4 @@ public interface Sink<I> extends InputHandler<I>, AutoCloseable, PhysicalVertex 
    * Identifier of sink.
    */
   Identifier getIdentifier();
-
-  /**
-   * Gets the query identifier containing this sink.
-   * @return an identifier
-   */
-  Identifier getQueryIdentifier();
 }

@@ -32,12 +32,6 @@ public interface Operator extends OutputEmittable {
   String getOperatorIdentifier();
 
   /**
-   * Gets the query identifier containing this operator.
-   * @return an identifier
-   */
-  String getQueryIdentifier();
-
-  /**
    * Process data of left upstream.
    * @param data data
    */

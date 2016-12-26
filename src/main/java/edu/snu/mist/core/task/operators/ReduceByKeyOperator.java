@@ -54,15 +54,13 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
 
   /**
    * @param reduceFunc reduce function
-   * @param queryId identifier of the query which contains this operator
    * @param operatorId identifier of operator
    * @param keyIndex index of key
    */
-  public ReduceByKeyOperator(final String queryId,
-                             final String operatorId,
+  public ReduceByKeyOperator(final String operatorId,
                              final int keyIndex,
                              final BiFunction<V, V, V> reduceFunc) {
-    super(queryId, operatorId);
+    super(operatorId);
     this.reduceFunc = reduceFunc;
     this.keyIndex = keyIndex;
     this.state = createInitialState();

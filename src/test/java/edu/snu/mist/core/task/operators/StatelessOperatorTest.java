@@ -62,7 +62,7 @@ public final class StatelessOperatorTest {
 
     // map function: convert string to tuple
     final Function<String, Tuple> mapFunc = (mapInput) -> new Tuple<>(mapInput, 1);
-    final MapOperator<String, Tuple> mapOperator = new MapOperator<>("testQuery", "testMapOp", mapFunc);
+    final MapOperator<String, Tuple> mapOperator = new MapOperator<>("testMapOp", mapFunc);
     testStatelessOperator(inputStream, expected, mapOperator);
   }
 
@@ -83,7 +83,7 @@ public final class StatelessOperatorTest {
 
     // create a filter function
     final Predicate<String> filterFunc = (input) -> input.startsWith("a");
-    final FilterOperator<String> filterOperator = new FilterOperator<>("testQuery", "testOp", filterFunc);
+    final FilterOperator<String> filterOperator = new FilterOperator<>("testOp", filterFunc);
     testStatelessOperator(inputStream, expected, filterOperator);
   }
 
@@ -102,7 +102,7 @@ public final class StatelessOperatorTest {
 
     // map function: splits the string by space.
     final Function<String, List<String>> flatMapFunc = (mapInput) -> Arrays.asList(mapInput.split(" "));
-    final FlatMapOperator<String, String> flatMapOperator = new FlatMapOperator<>("testQuery", "testOp", flatMapFunc);
+    final FlatMapOperator<String, String> flatMapOperator = new FlatMapOperator<>("testOp", flatMapFunc);
     testStatelessOperator(inputStream, expected, flatMapOperator);
   }
 }

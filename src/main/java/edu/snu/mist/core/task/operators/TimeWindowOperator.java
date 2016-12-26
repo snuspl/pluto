@@ -27,11 +27,10 @@ import java.util.logging.Logger;
 public final class TimeWindowOperator<T> extends FixedSizeWindowOperator<T> {
   private static final Logger LOG = Logger.getLogger(TimeWindowOperator.class.getName());
 
-  public TimeWindowOperator(final String queryId,
-                            final String operatorId,
+  public TimeWindowOperator(final String operatorId,
                             final int windowSize,
                             final int windowEmissionInterval) {
-    super(queryId, operatorId, windowSize, windowEmissionInterval);
+    super(operatorId, windowSize, windowEmissionInterval);
   }
 
   @Override

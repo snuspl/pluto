@@ -51,7 +51,7 @@ public final class SessionWindowOperatorTest {
   public void testSessionWindowOperator() throws InterruptedException {
     final int sessionInterval = 500;
     final SessionWindowOperator<Integer> sessionWindowOperator =
-        new SessionWindowOperator<>("testQuery", "testAggOp", sessionInterval);
+        new SessionWindowOperator<>("testAggOp", sessionInterval);
     final List<MistEvent> result = new LinkedList<>();
     sessionWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));
 

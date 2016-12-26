@@ -23,8 +23,7 @@ import java.util.logging.Logger;
 public abstract class TwoStreamOperator extends BaseOperator {
   private static final Logger LOG = Logger.getLogger(TwoStreamOperator.class.getName());
 
-  public TwoStreamOperator(final String queryId,
-                           final String operatorId) {
-    super(queryId, operatorId);
+  public TwoStreamOperator(final String operatorId) {
+    super(operatorId);
   }
 }

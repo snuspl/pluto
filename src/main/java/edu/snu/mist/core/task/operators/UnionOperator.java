@@ -42,9 +42,8 @@ public final class UnionOperator extends TwoStreamOperator {
   private long recentLeftTimestamp;
   private long recentRightTimestamp;
 
-  public UnionOperator(final String queryId,
-                       final String operatorId) {
-    super(queryId, operatorId);
+  public UnionOperator(final String operatorId) {
+    super(operatorId);
     this.leftUpstreamQueue = new LinkedBlockingQueue<>();
     this.rightUpstreamQueue = new LinkedBlockingQueue<>();
     defaultWatermark = new MistWatermarkEvent(0L);

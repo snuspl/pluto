@@ -27,9 +27,8 @@ import java.util.logging.Logger;
 public abstract class OneStreamOperator extends BaseOperator {
   private static final Logger LOG = Logger.getLogger(OneStreamOperator.class.getName());
 
-  public OneStreamOperator(final String queryId,
-                           final String operatorId) {
-    super(queryId, operatorId);
+  public OneStreamOperator(final String operatorId) {
+    super(operatorId);
   }
 
   @Override

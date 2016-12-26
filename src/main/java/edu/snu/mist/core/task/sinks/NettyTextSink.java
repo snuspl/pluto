@@ -28,11 +28,6 @@ import java.io.IOException;
 public final class NettyTextSink implements Sink<String> {
 
   /**
-   * Query id.
-   */
-  private final Identifier queryId;
-
-  /**
    * Sink id.
    */
   private final Identifier sinkId;
@@ -52,11 +47,9 @@ public final class NettyTextSink implements Sink<String> {
    */
   private final String newline = System.getProperty("line.separator");
 
-  public NettyTextSink(final String queryId,
-                       final String sinkId,
+  public NettyTextSink(final String sinkId,
                        final Channel channel,
                        final StringIdentifierFactory identifierFactory) throws IOException {
-    this.queryId = identifierFactory.getNewInstance(queryId);
     this.sinkId = identifierFactory.getNewInstance(sinkId);
     this.channel = channel;
   }
@@ -64,11 +57,6 @@ public final class NettyTextSink implements Sink<String> {
   @Override
   public Identifier getIdentifier() {
     return sinkId;
-  }
-
-  @Override
-  public Identifier getQueryIdentifier() {
-    return queryId;
   }
 
   @Override

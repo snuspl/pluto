@@ -34,10 +34,9 @@ public final class FlatMapOperator<I, O> extends OneStreamOperator {
    */
   private final Function<I, List<O>> flatMapFunc;
 
-  public FlatMapOperator(final String queryId,
-                         final String operatorId,
+  public FlatMapOperator(final String operatorId,
                          final Function<I, List<O>> flatMapFunc) {
-    super(queryId, operatorId);
+    super(operatorId);
     this.flatMapFunc = flatMapFunc;
   }
 

@@ -39,14 +39,12 @@ public final class AggregateWindowOperator<IN, OUT>
   private final Function<WindowData<IN>, OUT> aggregateFunc;
 
   /**
-   * @param queryId identifier of the query which contains this operator
    * @param operatorId identifier of operator
    * @param aggregateFunc the function that processes the input WindowData
    */
-  public AggregateWindowOperator(final String queryId,
-                                 final String operatorId,
+  public AggregateWindowOperator(final String operatorId,
                                  final Function<WindowData<IN>, OUT> aggregateFunc) {
-    super(queryId, operatorId);
+    super(operatorId);
     this.aggregateFunc = aggregateFunc;
   }
 

@@ -41,12 +41,6 @@ public interface Source<T> extends AutoCloseable, PhysicalVertex {
   Identifier getIdentifier();
 
   /**
-   * Gets the query identifier containing this source.
-   * @return identifier of query
-   */
-  Identifier getQueryIdentifier();
-
-  /**
    * Gets the data generator.
    * @return the data generator
    */

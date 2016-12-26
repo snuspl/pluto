@@ -51,7 +51,7 @@ public final class AggregateWindowOperatorTest {
         };
 
     final AggregateWindowOperator<Integer, String> aggregateWindowOperator =
-        new AggregateWindowOperator<>("testQuery", "testAggOp", aggregateFunc);
+        new AggregateWindowOperator<>("testAggOp", aggregateFunc);
 
     final List<MistEvent> result = new LinkedList<>();
     aggregateWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));

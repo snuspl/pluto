@@ -114,8 +114,8 @@ public final class QueryManagerTest {
     final TestDataGenerator dataGenerator = new TestDataGenerator(inputs);
     final EventGenerator eventGenerator =
         new PunctuatedEventGenerator(null, input -> false, null);
-    final Source src = new SourceImpl(identifierFactory.getNewInstance(queryId),
-        identifierFactory.getNewInstance("testSource"), dataGenerator, eventGenerator);
+    final Source src = new SourceImpl(identifierFactory.getNewInstance("testSource"),
+        dataGenerator, eventGenerator);
 
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(NumThreads.class, Integer.toString(4));
@@ -206,11 +206,11 @@ public final class QueryManagerTest {
     final TestDataGenerator beforeStopDataGenerator = new TestDataGenerator(beforeStopInputs);
     final EventGenerator eventGenerator =
         new PunctuatedEventGenerator(null, input -> false, null);
-    final Source beforeStopSrc = new SourceImpl(identifierFactory.getNewInstance(queryId),
+    final Source beforeStopSrc = new SourceImpl(
         identifierFactory.getNewInstance("testSource"), beforeStopDataGenerator, eventGenerator);
 
     final TestDataGenerator afterResumeDataGenerator = new TestDataGenerator(afterResumeInputs);
-    final Source afterResumeSrc = new SourceImpl(identifierFactory.getNewInstance(queryId),
+    final Source afterResumeSrc = new SourceImpl(
         identifierFactory.getNewInstance("testSource2"), afterResumeDataGenerator, eventGenerator);
 
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
@@ -298,19 +298,18 @@ public final class QueryManagerTest {
                                     final Source src,
                                     final Sink sink1,
                                     final Sink sink2) {
-    final String queryId = tuple.getKey();
 
     // Create operators and partitioned queries
     //                     (pq1)                                     (pq2)
     // src -> [flatMap -> filter -> toTupleMap -> reduceByKey] -> [toStringMap]   -> sink1
     //                                                         -> [totalCountMap] -> sink2
     //                                                               (pq3)
-    final Operator flatMap = new FlatMapOperator<>(queryId, "flatMap", flatMapFunc);
-    final Operator filter = new FilterOperator<>(queryId, "filter", filterFunc);
-    final Operator toTupleMap = new MapOperator<>(queryId, "toTupleMap", toTupleMapFunc);
-    final Operator reduceByKey = new ReduceByKeyOperator<>(queryId, "reduceByKey", 0, reduceByKeyFunc);
-    final Operator toStringMap = new MapOperator<>(queryId, "toStringMap", toStringMapFunc);
-    final Operator totalCountMap = new MapOperator<>(queryId, "totalCountMap", totalCountMapFunc);
+    final Operator flatMap = new FlatMapOperator<>("flatMap", flatMapFunc);
+    final Operator filter = new FilterOperator<>("filter", filterFunc);
+    final Operator toTupleMap = new MapOperator<>("toTupleMap", toTupleMapFunc);
+    final Operator reduceByKey = new ReduceByKeyOperator<>("reduceByKey", 0, reduceByKeyFunc);
+    final Operator toStringMap = new MapOperator<>("toStringMap", toStringMapFunc);
+    final Operator totalCountMap = new MapOperator<>("totalCountMap", totalCountMapFunc);
 
     final PartitionedQuery pq1 = new DefaultPartitionedQuery();
     pq1.insertToTail(flatMap);
@@ -515,11 +514,6 @@ public final class QueryManagerTest {
 
     @Override
     public Identifier getIdentifier() {
-      return null;
-    }
-
-    @Override
-    public Identifier getQueryIdentifier() {
       return null;
     }
 

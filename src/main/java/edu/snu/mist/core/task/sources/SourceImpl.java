@@ -24,11 +24,6 @@ import org.apache.reef.wake.Identifier;
 public final class SourceImpl<T> implements Source<T>{
 
   /**
-   * Query id.
-   */
-  private final Identifier queryId;
-
-  /**
    * Source id.
    */
   private final Identifier sourceId;
@@ -43,9 +38,8 @@ public final class SourceImpl<T> implements Source<T>{
    */
   private final EventGenerator<T> eventGenerator;
 
-  public SourceImpl(final Identifier queryId, final Identifier sourceId,
+  public SourceImpl(final Identifier sourceId,
                     final DataGenerator<T> dataGenerator, final EventGenerator<T> eventGenerator) {
-    this.queryId = queryId;
     this.sourceId = sourceId;
     this.dataGenerator = dataGenerator;
     this.eventGenerator = eventGenerator;
@@ -72,11 +66,6 @@ public final class SourceImpl<T> implements Source<T>{
   @Override
   public Identifier getIdentifier() {
     return sourceId;
-  }
-
-  @Override
-  public Identifier getQueryIdentifier() {
-    return queryId;
   }
 
   @Override

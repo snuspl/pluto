@@ -37,14 +37,12 @@ public final class ApplyStatefulOperator<IN, OUT> extends OneStreamOperator {
   private final ApplyStatefulFunction<IN, OUT> applyStatefulFunction;
 
   /**
-   * @param queryId identifier of the query which contains this operator
    * @param operatorId identifier of operator
    * @param applyStatefulFunction the user-defined ApplyStatefulFunction.
    */
-  public ApplyStatefulOperator(final String queryId,
-                               final String operatorId,
+  public ApplyStatefulOperator(final String operatorId,
                                final ApplyStatefulFunction<IN, OUT> applyStatefulFunction) {
-    super(queryId, operatorId);
+    super(operatorId);
     this.applyStatefulFunction = applyStatefulFunction;
     this.applyStatefulFunction.initialize();
   }

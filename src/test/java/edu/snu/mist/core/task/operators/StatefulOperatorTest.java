@@ -86,14 +86,13 @@ public final class StatefulOperatorTest {
     expected.add(o5);
     expected.add(o6);
 
-    final String queryId = "testQuery";
     final String operatorId = "testReduceByKeyOperator";
     // Set the key index of tuple
     final int keyIndex = 0;
     // Reduce function for word count
     final BiFunction<Integer, Integer, Integer> wordCountFunc = (oldVal, val) -> oldVal + val;
     final ReduceByKeyOperator<String, Integer> wcOperator =
-        new ReduceByKeyOperator<>(queryId, operatorId, keyIndex, wordCountFunc);
+        new ReduceByKeyOperator<>(operatorId, keyIndex, wordCountFunc);
 
     // output test
     final List<Map<String, Integer>> result = new LinkedList<>();

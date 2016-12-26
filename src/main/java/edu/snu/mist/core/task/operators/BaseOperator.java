@@ -26,11 +26,6 @@ public abstract class BaseOperator implements Operator {
   private static final Logger LOG = Logger.getLogger(BaseOperator.class.getName());
 
   /**
-   * An identifier of queryId.
-   */
-  protected final String queryId;
-
-  /**
    * An identifier of operatorId.
    */
   protected final String operatorId;
@@ -40,20 +35,13 @@ public abstract class BaseOperator implements Operator {
    */
   protected OutputEmitter outputEmitter;
 
-  public BaseOperator(final String queryId,
-                      final String operatorId) {
-    this.queryId = queryId;
+  public BaseOperator(final String operatorId) {
     this.operatorId = operatorId;
   }
 
   @Override
   public void setOutputEmitter(final OutputEmitter emitter) {
     this.outputEmitter = emitter;
-  }
-
-  @Override
-  public String getQueryIdentifier() {
-    return queryId;
   }
 
   @Override

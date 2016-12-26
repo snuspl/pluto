@@ -46,7 +46,7 @@ public final class ApplyStatefulOperatorTest {
     final ApplyStatefulFunction applyStatefulFunction = new FindMaxIntFunction();
 
     final ApplyStatefulOperator<Integer, Integer> applyStatefulOperator =
-        new ApplyStatefulOperator<>("testQuery", "testAggOp", applyStatefulFunction);
+        new ApplyStatefulOperator<>("testAggOp", applyStatefulFunction);
     final List<MistEvent> result = new LinkedList<>();
     applyStatefulOperator.setOutputEmitter(new SimpleOutputEmitter(result));
 
