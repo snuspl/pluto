@@ -19,7 +19,7 @@ package edu.snu.mist.core.task.stores;
 import edu.snu.mist.api.APITestParameters;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
-import edu.snu.mist.api.types.Tuple2;
+import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.core.parameters.TempFolderPath;
 import edu.snu.mist.formats.avro.*;
 import org.apache.reef.io.Tuple;

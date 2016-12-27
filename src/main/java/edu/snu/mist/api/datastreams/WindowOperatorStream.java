@@ -16,7 +16,7 @@
 package edu.snu.mist.api.datastreams;
 
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.windows.WindowInformation;
+import edu.snu.mist.common.windows.WindowInformation;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.WindowOperatorInfo;

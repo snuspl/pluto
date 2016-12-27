@@ -15,10 +15,10 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.core.task.common.MistDataEvent;
-import edu.snu.mist.core.task.common.MistWatermarkEvent;
-import edu.snu.mist.core.task.operators.OneStreamOperator;
-import edu.snu.mist.core.task.utils.TestOutputEmitter;
+import edu.snu.mist.common.MistDataEvent;
+import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.common.operators.OneStreamOperator;
+import edu.snu.mist.utils.TestOutputEmitter;
 import edu.snu.mist.formats.avro.Direction;
 import junit.framework.Assert;
 import org.apache.reef.io.network.util.StringIdentifierFactory;

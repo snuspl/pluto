@@ -16,17 +16,17 @@
 package edu.snu.mist.api.serialize;
 
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.functions.*;
+import edu.snu.mist.common.functions.*;
 import edu.snu.mist.api.datastreams.*;
 import edu.snu.mist.api.datastreams.utils.CountStringFunction;
-import edu.snu.mist.api.types.Tuple2;
-import edu.snu.mist.api.types.Tuple3;
-import edu.snu.mist.api.windows.CountWindowInformation;
-import edu.snu.mist.api.windows.TimeWindowInformation;
-import edu.snu.mist.api.windows.WindowData;
+import edu.snu.mist.common.types.Tuple2;
+import edu.snu.mist.common.types.Tuple3;
+import edu.snu.mist.common.windows.CountWindowInformation;
+import edu.snu.mist.common.windows.TimeWindowInformation;
+import edu.snu.mist.common.windows.WindowData;
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.core.task.common.MistDataEvent;
-import edu.snu.mist.core.task.windows.WindowImpl;
+import edu.snu.mist.common.MistDataEvent;
+import edu.snu.mist.common.windows.WindowImpl;
 import edu.snu.mist.formats.avro.*;
 import org.junit.Assert;
 import org.junit.Test;

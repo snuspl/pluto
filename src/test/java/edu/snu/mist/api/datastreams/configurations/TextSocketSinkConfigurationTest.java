@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.api.datastreams.configurations;
 
-import edu.snu.mist.api.parameters.TextSocketSinkParameters;
+import edu.snu.mist.common.parameters.TextSocketSinkParameters;
 import org.junit.Assert;
 import org.junit.Test;
 

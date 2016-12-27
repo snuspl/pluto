@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.api;
 
-import edu.snu.mist.api.types.Tuple2;
+import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.formats.avro.*;
 import org.apache.avro.AvroRemoteException;
 import org.apache.avro.ipc.NettyServer;

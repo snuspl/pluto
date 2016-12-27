@@ -19,7 +19,7 @@ import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.api.SerializedType;
 import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.api.datastreams.configurations.WatermarkConfiguration;
-import edu.snu.mist.api.parameters.SourceSerializeInfo;
+import edu.snu.mist.api.SourceSerializeInfo;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.*;
 import org.apache.commons.lang.SerializationUtils;

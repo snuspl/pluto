@@ -15,10 +15,10 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.core.task.common.MistDataEvent;
-import edu.snu.mist.core.task.common.MistWatermarkEvent;
-import edu.snu.mist.core.task.common.OutputEmitter;
-import edu.snu.mist.core.task.common.PhysicalVertex;
+import edu.snu.mist.common.MistDataEvent;
+import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.common.OutputEmitter;
+import edu.snu.mist.common.PhysicalVertex;
 import edu.snu.mist.formats.avro.Direction;
 
 import java.util.Map;

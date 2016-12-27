@@ -15,10 +15,10 @@
  */
 package edu.snu.mist.api.datastreams.configurations;
 
-import edu.snu.mist.api.functions.MISTFunction;
-import edu.snu.mist.api.functions.MISTPredicate;
-import edu.snu.mist.api.parameters.PeriodicWatermarkParameters;
-import edu.snu.mist.api.parameters.PunctuatedWatermarkParameters;
+import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.common.functions.MISTPredicate;
+import edu.snu.mist.common.parameters.PeriodicWatermarkParameters;
+import edu.snu.mist.common.parameters.PunctuatedWatermarkParameters;
 import org.junit.Assert;
 import org.junit.Test;
 

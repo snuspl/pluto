@@ -15,9 +15,9 @@
  */
 package edu.snu.mist.api.datastreams;
 
-import edu.snu.mist.api.functions.*;
+import edu.snu.mist.common.functions.*;
 import edu.snu.mist.api.datastreams.configurations.TextSocketSinkConfiguration;
-import edu.snu.mist.api.windows.WindowInformation;
+import edu.snu.mist.common.windows.WindowInformation;
 
 import java.util.List;
 

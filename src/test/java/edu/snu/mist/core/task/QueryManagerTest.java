@@ -15,15 +15,15 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.api.types.Tuple2;
+import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.core.parameters.NumThreads;
 import edu.snu.mist.core.parameters.PlanStorePath;
-import edu.snu.mist.core.task.common.PhysicalVertex;
-import edu.snu.mist.core.task.operators.*;
-import edu.snu.mist.core.task.sinks.Sink;
-import edu.snu.mist.core.task.sources.*;
+import edu.snu.mist.common.PhysicalVertex;
+import edu.snu.mist.common.operators.*;
+import edu.snu.mist.common.sinks.Sink;
+import edu.snu.mist.common.sources.*;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.LogicalPlan;

@@ -17,10 +17,10 @@
 package edu.snu.mist.api.datastreams;
 
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.functions.*;
+import edu.snu.mist.common.functions.*;
 import edu.snu.mist.api.datastreams.configurations.TextSocketSinkConfiguration;
-import edu.snu.mist.api.types.Tuple2;
-import edu.snu.mist.api.windows.WindowInformation;
+import edu.snu.mist.common.types.Tuple2;
+import edu.snu.mist.common.windows.WindowInformation;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.Direction;
 

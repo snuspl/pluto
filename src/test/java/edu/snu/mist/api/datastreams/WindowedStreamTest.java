@@ -16,17 +16,17 @@
 package edu.snu.mist.api.datastreams;
 
 import edu.snu.mist.api.*;
-import edu.snu.mist.api.functions.ApplyStatefulFunction;
-import edu.snu.mist.api.functions.MISTBiPredicate;
+import edu.snu.mist.common.functions.ApplyStatefulFunction;
+import edu.snu.mist.common.functions.MISTBiPredicate;
 import edu.snu.mist.api.datastreams.utils.CountStringFunction;
-import edu.snu.mist.api.types.Tuple2;
-import edu.snu.mist.api.windows.CountWindowInformation;
-import edu.snu.mist.api.windows.FixedSizeWindowInformation;
-import edu.snu.mist.api.windows.SessionWindowInformation;
-import edu.snu.mist.api.windows.TimeWindowInformation;
+import edu.snu.mist.common.types.Tuple2;
+import edu.snu.mist.common.windows.CountWindowInformation;
+import edu.snu.mist.common.windows.FixedSizeWindowInformation;
+import edu.snu.mist.common.windows.SessionWindowInformation;
+import edu.snu.mist.common.windows.TimeWindowInformation;
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.core.task.common.MistDataEvent;
-import edu.snu.mist.core.task.windows.WindowImpl;
+import edu.snu.mist.common.MistDataEvent;
+import edu.snu.mist.common.windows.WindowImpl;
 import edu.snu.mist.formats.avro.Direction;
 import org.junit.After;
 import org.junit.Assert;
