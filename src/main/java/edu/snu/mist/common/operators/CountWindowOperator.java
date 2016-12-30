@@ -17,7 +17,12 @@ package edu.snu.mist.common.operators;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.common.parameters.OperatorId;
+import edu.snu.mist.common.parameters.WindowInterval;
+import edu.snu.mist.common.parameters.WindowSize;
+import org.apache.reef.tang.annotations.Parameter;
 
+import javax.inject.Inject;
 import java.util.logging.Logger;
 
 /**
@@ -32,9 +37,10 @@ public final class CountWindowOperator<T> extends FixedSizeWindowOperator<T> {
    */
   private long count;
 
-  public CountWindowOperator(final String operatorId,
-                             final int windowSize,
-                             final int windowEmissionInterval) {
+  @Inject
+  public CountWindowOperator(@Parameter(OperatorId.class) final String operatorId,
+                             @Parameter(WindowSize.class) final int windowSize,
+                             @Parameter(WindowInterval.class) final int windowEmissionInterval) {
     super(operatorId, windowSize, windowEmissionInterval);
     this.count = 1L;
   }

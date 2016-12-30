@@ -18,6 +18,7 @@ package edu.snu.mist.common.sources;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.OutputEmitter;
+import edu.snu.mist.common.functions.WatermarkTimestampFunction;
 import edu.snu.mist.common.shared.NettySharedResource;
 import edu.snu.mist.common.stream.NettyChannelHandler;
 import edu.snu.mist.common.stream.textmessage.NettyTextMessageStreamGenerator;
@@ -115,7 +116,7 @@ public final class NettySourceTest {
         final Function<String, Tuple<String, Long>> extractFunc = (input) ->
             new Tuple<>(input.toString().split(":")[0], Long.parseLong(input.toString().split(":")[1]));
         final Predicate<String> isWatermark = (input) -> input.toString().split(":")[0].equals("Watermark");
-        final Function<String, Long> parseTsFunc =
+        final WatermarkTimestampFunction<String> parseTsFunc =
             (input) -> Long.parseLong(input.toString().split(":")[1]);
         final EventGenerator<String> eventGenerator =
             new PunctuatedEventGenerator<>(extractFunc, isWatermark, parseTsFunc);

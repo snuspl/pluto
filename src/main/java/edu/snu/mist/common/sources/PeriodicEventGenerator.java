@@ -16,8 +16,12 @@
 package edu.snu.mist.common.sources;
 
 import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.common.parameters.PeriodicWatermarkDelay;
+import edu.snu.mist.common.parameters.PeriodicWatermarkPeriod;
 import org.apache.reef.io.Tuple;
+import org.apache.reef.tang.annotations.Parameter;
 
+import javax.inject.Inject;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -53,8 +57,19 @@ public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V>
    */
   private ScheduledFuture result;
 
+  @Inject
+  public PeriodicEventGenerator(@Parameter(PeriodicWatermarkPeriod.class) final long period,
+                                @Parameter(PeriodicWatermarkDelay.class) final long expectedDelay,
+                                final TimeUnit timeUnit,
+                                final ScheduledExecutorService scheduler) {
+    this(null, period, expectedDelay, timeUnit, scheduler);
+  }
+
+  @Inject
   public PeriodicEventGenerator(final Function<I, Tuple<V, Long>> extractTimestampFunc,
-                                final long period, final long expectedDelay, final TimeUnit timeUnit,
+                                @Parameter(PeriodicWatermarkPeriod.class) final long period,
+                                @Parameter(PeriodicWatermarkDelay.class) final long expectedDelay,
+                                final TimeUnit timeUnit,
                                 final ScheduledExecutorService scheduler) {
     super(extractTimestampFunc);
     if (period <= 0L || expectedDelay < 0L) {
