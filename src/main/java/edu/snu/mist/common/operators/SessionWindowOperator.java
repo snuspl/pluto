@@ -17,9 +17,13 @@ package edu.snu.mist.common.operators;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.common.parameters.OperatorId;
+import edu.snu.mist.common.parameters.WindowInterval;
 import edu.snu.mist.common.windows.Window;
 import edu.snu.mist.common.windows.WindowImpl;
+import org.apache.reef.tang.annotations.Parameter;
 
+import javax.inject.Inject;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,8 +47,9 @@ public final class SessionWindowOperator<T> extends OneStreamOperator {
    */
   private Window<T> currentWindow;
 
-  public SessionWindowOperator(final String operatorId,
-                               final int sessionInterval) {
+  @Inject
+  public SessionWindowOperator(@Parameter(OperatorId.class) final String operatorId,
+                               @Parameter(WindowInterval.class) final int sessionInterval) {
     super(operatorId);
     this.sessionInterval = sessionInterval;
     currentWindow = null;

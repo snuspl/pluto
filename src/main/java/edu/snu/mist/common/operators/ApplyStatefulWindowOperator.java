@@ -16,10 +16,13 @@
 package edu.snu.mist.common.operators;
 
 import edu.snu.mist.common.functions.ApplyStatefulFunction;
+import edu.snu.mist.common.parameters.OperatorId;
 import edu.snu.mist.common.windows.WindowData;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
+import org.apache.reef.tang.annotations.Parameter;
 
+import javax.inject.Inject;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,7 +45,8 @@ public final class ApplyStatefulWindowOperator<IN, OUT>
    * @param operatorId identifier of operator
    * @param applyStatefulFunction the user-defined ApplyStatefulFunction
    */
-  public ApplyStatefulWindowOperator(final String operatorId,
+  @Inject
+  public ApplyStatefulWindowOperator(@Parameter(OperatorId.class) final String operatorId,
                                      final ApplyStatefulFunction<IN, OUT> applyStatefulFunction) {
     super(operatorId);
     this.applyStatefulFunction = applyStatefulFunction;

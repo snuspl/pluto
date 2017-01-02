@@ -17,7 +17,10 @@ package edu.snu.mist.common.operators;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.common.parameters.OperatorId;
+import org.apache.reef.tang.annotations.Parameter;
 
+import javax.inject.Inject;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
@@ -42,7 +45,8 @@ public final class UnionOperator extends TwoStreamOperator {
   private long recentLeftTimestamp;
   private long recentRightTimestamp;
 
-  public UnionOperator(final String operatorId) {
+  @Inject
+  public UnionOperator(@Parameter(OperatorId.class) final String operatorId) {
     super(operatorId);
     this.leftUpstreamQueue = new LinkedBlockingQueue<>();
     this.rightUpstreamQueue = new LinkedBlockingQueue<>();

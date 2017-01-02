@@ -15,12 +15,15 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.parameters.OperatorId;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.WindowData;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.windows.WindowImpl;
+import org.apache.reef.tang.annotations.Parameter;
 
+import javax.inject.Inject;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -42,7 +45,8 @@ public final class JoinOperator<T, U> extends OneStreamOperator {
    */
   private final BiPredicate<T, U> joinBiPredicate;
 
-  public JoinOperator(final String operatorId,
+  @Inject
+  public JoinOperator(@Parameter(OperatorId.class) final String operatorId,
                       final BiPredicate<T, U> joinBiPredicate) {
     super(operatorId);
     this.joinBiPredicate = joinBiPredicate;

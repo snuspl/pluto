@@ -16,13 +16,18 @@
 package edu.snu.mist.common.sinks;
 
 import edu.snu.mist.common.OutputEmitter;
+import edu.snu.mist.common.parameters.OperatorId;
+import edu.snu.mist.common.parameters.SocketServerIp;
+import edu.snu.mist.common.parameters.SocketServerPort;
 import edu.snu.mist.common.shared.NettySharedResource;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
+import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.wake.Identifier;
 
+import javax.inject.Inject;
 import java.io.IOException;
 
 /**
@@ -50,10 +55,11 @@ public final class NettyTextSink implements Sink<String> {
    */
   private final String newline = System.getProperty("line.separator");
 
+  @Inject
   public NettyTextSink(
-      final String sinkId,
-      final String serverAddress,
-      final int port,
+      @Parameter(OperatorId.class) final String sinkId,
+      @Parameter(SocketServerIp.class) final String serverAddress,
+      @Parameter(SocketServerPort.class) final int port,
       final NettySharedResource sharedResource,
       final StringIdentifierFactory identifierFactory) throws IOException {
     this.sinkId = identifierFactory.getNewInstance(sinkId);

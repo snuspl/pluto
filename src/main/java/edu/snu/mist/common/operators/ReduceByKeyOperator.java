@@ -15,10 +15,14 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.parameters.KeyIndex;
+import edu.snu.mist.common.parameters.OperatorId;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
+import org.apache.reef.tang.annotations.Parameter;
 
+import javax.inject.Inject;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.function.BiFunction;
@@ -57,8 +61,9 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
    * @param operatorId identifier of operator
    * @param keyIndex index of key
    */
-  public ReduceByKeyOperator(final String operatorId,
-                             final int keyIndex,
+  @Inject
+  public ReduceByKeyOperator(@Parameter(OperatorId.class) final String operatorId,
+                             @Parameter(KeyIndex.class) final int keyIndex,
                              final BiFunction<V, V, V> reduceFunc) {
     super(operatorId);
     this.reduceFunc = reduceFunc;

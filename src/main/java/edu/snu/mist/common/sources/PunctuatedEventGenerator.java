@@ -16,8 +16,10 @@
 package edu.snu.mist.common.sources;
 
 import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.common.functions.WatermarkTimestampFunction;
 import org.apache.reef.io.Tuple;
 
+import javax.inject.Inject;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -38,8 +40,18 @@ public final class PunctuatedEventGenerator<I, V> extends EventGeneratorImpl<I, 
    */
   private final Function<I, Long> parseTimestamp;
 
-  public PunctuatedEventGenerator(final Function<I, Tuple<V, Long>> extractTimestampFunc,
-                                  final Predicate<I> isWatermark, final Function<I, Long> parseTimestamp) {
+  @Inject
+  public PunctuatedEventGenerator(
+      final Predicate<I> isWatermark,
+      final WatermarkTimestampFunction<I> parseTimestamp) {
+    this(null, isWatermark, parseTimestamp);
+  }
+
+  @Inject
+  public PunctuatedEventGenerator(
+      final Function<I, Tuple<V, Long>> extractTimestampFunc,
+      final Predicate<I> isWatermark,
+      final WatermarkTimestampFunction<I> parseTimestamp) {
     super(extractTimestampFunc);
     this.isWatermark = isWatermark;
     this.parseTimestamp = parseTimestamp;

@@ -15,10 +15,13 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.parameters.OperatorId;
 import edu.snu.mist.common.windows.WindowData;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
+import org.apache.reef.tang.annotations.Parameter;
 
+import javax.inject.Inject;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,7 +45,8 @@ public final class AggregateWindowOperator<IN, OUT>
    * @param operatorId identifier of operator
    * @param aggregateFunc the function that processes the input WindowData
    */
-  public AggregateWindowOperator(final String operatorId,
+  @Inject
+  public AggregateWindowOperator(@Parameter(OperatorId.class) final String operatorId,
                                  final Function<WindowData<IN>, OUT> aggregateFunc) {
     super(operatorId);
     this.aggregateFunc = aggregateFunc;

@@ -17,7 +17,12 @@ package edu.snu.mist.common.operators;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.common.parameters.OperatorId;
+import edu.snu.mist.common.parameters.WindowInterval;
+import edu.snu.mist.common.parameters.WindowSize;
+import org.apache.reef.tang.annotations.Parameter;
 
+import javax.inject.Inject;
 import java.util.logging.Logger;
 
 /**
@@ -27,9 +32,10 @@ import java.util.logging.Logger;
 public final class TimeWindowOperator<T> extends FixedSizeWindowOperator<T> {
   private static final Logger LOG = Logger.getLogger(TimeWindowOperator.class.getName());
 
-  public TimeWindowOperator(final String operatorId,
-                            final int windowSize,
-                            final int windowEmissionInterval) {
+  @Inject
+  public TimeWindowOperator(@Parameter(OperatorId.class) final String operatorId,
+                            @Parameter(WindowSize.class) final int windowSize,
+                            @Parameter(WindowInterval.class) final int windowEmissionInterval) {
     super(operatorId, windowSize, windowEmissionInterval);
   }
 

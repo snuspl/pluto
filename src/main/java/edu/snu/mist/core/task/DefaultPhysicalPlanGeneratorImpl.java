@@ -20,6 +20,7 @@ import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.ExternalJarObjectInputStream;
 import edu.snu.mist.common.PhysicalVertex;
 import edu.snu.mist.common.functions.ApplyStatefulFunction;
+import edu.snu.mist.common.functions.WatermarkTimestampFunction;
 import edu.snu.mist.common.operators.*;
 import edu.snu.mist.common.parameters.*;
 import edu.snu.mist.common.shared.KafkaSharedResource;
@@ -141,7 +142,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
           final Predicate<I> isWatermark =
               deserializeLambda((ByteBuffer) watermarkConfString.get(
                   PunctuatedWatermarkParameters.WATERMARK_PREDICATE), classLoader);
-          final Function<I, Long> parseTimestamp =
+          final WatermarkTimestampFunction<I> parseTimestamp =
               deserializeLambda((ByteBuffer) watermarkConfString.get(
                   PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK), classLoader);
           return new PunctuatedEventGenerator<>(timestampExtractionFunc, isWatermark, parseTimestamp);

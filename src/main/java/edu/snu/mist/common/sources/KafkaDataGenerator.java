@@ -15,11 +15,14 @@
  */
 package edu.snu.mist.common.sources;
 
+import edu.snu.mist.common.parameters.KafkaTopic;
 import edu.snu.mist.common.shared.KafkaSharedResource;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.reef.tang.annotations.Parameter;
 
+import javax.inject.Inject;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
@@ -73,8 +76,9 @@ public final class KafkaDataGenerator<K, V> implements DataGenerator<ConsumerRec
    */
   private EventGenerator<ConsumerRecord<K, V>> eventGenerator;
 
+  @Inject
   public KafkaDataGenerator(
-      final String topic,
+      @Parameter(KafkaTopic.class) final String topic,
       final Map<String, Object> kafkaConsumerConf,
       final KafkaSharedResource kafkaSharedResource) {
     this.started = new AtomicBoolean(false);

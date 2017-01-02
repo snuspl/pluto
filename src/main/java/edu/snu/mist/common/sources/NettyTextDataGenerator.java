@@ -15,12 +15,16 @@
  */
 package edu.snu.mist.common.sources;
 
+import edu.snu.mist.common.parameters.SocketServerIp;
+import edu.snu.mist.common.parameters.SocketServerPort;
 import edu.snu.mist.common.shared.NettySharedResource;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.wake.EventHandler;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -62,9 +66,10 @@ public final class NettyTextDataGenerator implements DataGenerator<String> {
    */
   private EventGenerator eventGenerator;
 
+  @Inject
   public NettyTextDataGenerator(
-      final String serverAddr,
-      final int port,
+      @Parameter(SocketServerIp.class) final String serverAddr,
+      @Parameter(SocketServerPort.class) final int port,
       final NettySharedResource resource) throws IOException {
     this.clientBootstrap = resource.getClientBootstrap();
     this.channelMap = resource.getChannelMap();

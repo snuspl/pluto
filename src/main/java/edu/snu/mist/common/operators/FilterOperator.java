@@ -17,7 +17,10 @@ package edu.snu.mist.common.operators;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.common.parameters.OperatorId;
+import org.apache.reef.tang.annotations.Parameter;
 
+import javax.inject.Inject;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,7 +37,8 @@ public final class FilterOperator<I> extends OneStreamOperator {
    */
   private final Predicate<I> filterFunc;
 
-  public FilterOperator(final String operatorId,
+  @Inject
+  public FilterOperator(@Parameter(OperatorId.class) final String operatorId,
                         final Predicate<I> filterFunc) {
     super(operatorId);
     this.filterFunc = filterFunc;
