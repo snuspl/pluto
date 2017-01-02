@@ -15,70 +15,75 @@
  */
 package edu.snu.mist.api.datastreams.configurations;
 
+import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTFunction;
-import edu.snu.mist.common.parameters.KafkaSourceParameters;
-import edu.snu.mist.common.parameters.SourceParameters;
+import edu.snu.mist.common.parameters.KafkaTopic;
+import edu.snu.mist.common.parameters.SerializedKafkaConfig;
+import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
+import edu.snu.mist.common.sources.DataGenerator;
+import edu.snu.mist.common.sources.KafkaDataGenerator;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.reef.io.Tuple;
+import org.apache.reef.tang.formats.ConfigurationModule;
+import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
+import org.apache.reef.tang.formats.OptionalParameter;
+import org.apache.reef.tang.formats.RequiredParameter;
 
-import java.util.Arrays;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * This class represents the kafka source configuration.
- * @param <K> the type of kafka record's key
- * @param <V> the type of kafka record's value
  */
-public final class KafkaSourceConfiguration<K, V> extends SourceConfiguration<ConsumerRecord<K, V>> {
-  private KafkaSourceConfiguration(final Map<String, Object> configMap) {
-    super(configMap);
-  }
+public final class KafkaSourceConfiguration extends ConfigurationModuleBuilder {
+
+  public static final RequiredParameter<String> KAFKA_TOPIC = new RequiredParameter<>();
+  public static final RequiredParameter<String> KAFKA_CONSUMER_CONFIG = new RequiredParameter<>();
+  public static final OptionalParameter<String> TIMESTAMP_EXTRACT_OBJECT = new OptionalParameter<>();
+
+  public static final ConfigurationModule CONF = new KafkaSourceConfiguration()
+      .bindNamedParameter(KafkaTopic.class, KAFKA_TOPIC)
+      .bindNamedParameter(SerializedKafkaConfig.class, KAFKA_CONSUMER_CONFIG)
+      .bindNamedParameter(SerializedTimestampExtractUdf.class, TIMESTAMP_EXTRACT_OBJECT)
+      .bindImplementation(DataGenerator.class, KafkaDataGenerator.class)
+      .build();
 
   /**
    * Gets the builder for Configuration construction.
-   * @param <K> the type of kafka record's key that the target configuration will have
-   * @param <V> the type of kafka record's value that the target configuration will have
    * @return the builder
    */
-  public static <K, V> KafkaSourceConfigurationBuilder<K, V> newBuilder() {
-    return new KafkaSourceConfigurationBuilder<>();
+  public static KafkaSourceConfigurationBuilder newBuilder() {
+    return new KafkaSourceConfigurationBuilder();
   }
 
   /**
    * This class builds a KafkaSourceConfiguration for KafkaSourceStream.
    */
-  public static final class KafkaSourceConfigurationBuilder<K, V> extends MISTConfigurationBuilderImpl {
+  public static final class KafkaSourceConfigurationBuilder {
 
-    /**
-     * Required parameters for KafkaSourceStream.
-     */
-    private final String[] kafkaSourceParameters = {
-        KafkaSourceParameters.KAFKA_TOPIC,
-        KafkaSourceParameters.KAFKA_CONSUMER_CONFIG
-    };
 
-    /**
-     * Optional parameters for KafkaSourceStream.
-     */
-    private final String[] kafkaSourceOptionalParameters = {
-        SourceParameters.TIMESTAMP_EXTRACTION_FUNCTION
-    };
-
-    private KafkaSourceConfigurationBuilder() {
-      requiredParameters.addAll(Arrays.asList(kafkaSourceParameters));
-      optionalParameters.addAll(Arrays.asList(kafkaSourceOptionalParameters));
-    }
+    private String kafkaTopic;
+    private HashMap<String, Object> kafkaConfig;
+    private MISTFunction<ConsumerRecord, Tuple<ConsumerRecord, Long>> extractFunc;
 
     /**
      * Tests that required parameters are set and builds the KafkaSourceConfiguration.
      * @return the configuration
      */
-    public KafkaSourceConfiguration<K, V> build() {
-      readyToBuild();
-      return new KafkaSourceConfiguration<>(configMap);
+    public SourceConfiguration build() {
+      try {
+        return new SourceConfiguration(CONF
+            .set(KAFKA_TOPIC, kafkaTopic)
+            .set(KAFKA_CONSUMER_CONFIG, SerializeUtils.serializeToString(kafkaConfig))
+            .set(TIMESTAMP_EXTRACT_OBJECT, SerializeUtils.serializeToString(extractFunc))
+            .build(), SourceConfiguration.SourceType.KAFKA);
+      } catch (final IOException e) {
+        e.printStackTrace();
+        throw new RuntimeException(e);
+      }
     }
 
     /**
@@ -86,8 +91,8 @@ public final class KafkaSourceConfiguration<K, V> extends SourceConfiguration<Co
      * @param topic the kafka topic given by user to monitor
      * @return the configured SourceBuilder
      */
-    public KafkaSourceConfigurationBuilder<K, V> setTopic(final String topic) {
-      set(KafkaSourceParameters.KAFKA_TOPIC, topic);
+    public KafkaSourceConfigurationBuilder setTopic(final String topic) {
+      kafkaTopic = topic;
       return this;
     }
 
@@ -98,7 +103,7 @@ public final class KafkaSourceConfiguration<K, V> extends SourceConfiguration<Co
      * @param consumerConfig the kafka consumer configuration HashMap given by users
      * @return the configured SourceBuilder
      */
-    public KafkaSourceConfigurationBuilder<K, V> setConsumerConfig(final HashMap<String, Object> consumerConfig) {
+    public KafkaSourceConfigurationBuilder setConsumerConfig(final HashMap<String, Object> consumerConfig) {
       // configurability check
       final Set<String> configurable = ConsumerConfig.configNames();
       for (final Map.Entry<String, Object> entry : consumerConfig.entrySet()) {
@@ -107,8 +112,7 @@ public final class KafkaSourceConfiguration<K, V> extends SourceConfiguration<Co
               "Attempts to add an undefined kafka consumer configuration " + entry.getKey());
         }
       }
-
-      set(KafkaSourceParameters.KAFKA_CONSUMER_CONFIG, consumerConfig);
+      kafkaConfig = consumerConfig;
       return this;
     }
 
@@ -116,12 +120,11 @@ public final class KafkaSourceConfiguration<K, V> extends SourceConfiguration<Co
      * Sets the configuration for the extracting timestamp in event-time input data function to the given function.
      * This is an optional setting for event-time processing.
      * @param function the function given by users which they want to set
-     * @param <Vb> the type of kafka record value before timestamp extraction
      * @return the configured SourceBuilder
      */
-    public <Vb> KafkaSourceConfigurationBuilder<K, V> setTimestampExtractionFunction(
-        final MISTFunction<ConsumerRecord<K, Vb>, Tuple<ConsumerRecord<K, V>, Long>> function) {
-      set(SourceParameters.TIMESTAMP_EXTRACTION_FUNCTION, function);
+    public KafkaSourceConfigurationBuilder setTimestampExtractionFunction(
+        final MISTFunction<ConsumerRecord, Tuple<ConsumerRecord, Long>> function) {
+      extractFunc = function;
       return this;
     }
   }

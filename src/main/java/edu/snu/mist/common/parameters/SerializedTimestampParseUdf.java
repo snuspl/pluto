@@ -13,7 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * Test package for MIST serialization.
- */
-package edu.snu.mist.api.serialize;
+package edu.snu.mist.common.parameters;
+
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
+
+@NamedParameter(doc = "A byte array for a serialized object")
+public final class SerializedTimestampParseUdf implements Name<String> {
+}

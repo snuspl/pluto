@@ -13,19 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api;
+package edu.snu.mist.common.parameters;
 
-import edu.snu.mist.formats.avro.Vertex;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-/**
- * This interface represents vertices of the DAG representing a query.
- * Classes implementing this interface can be serialized to avro Vertex.
- */
-public interface AvroVertexSerializable {
-
-  /**
-   * Get a serialized avro vertex.
-   * @return vertex a serialized avro vertex
-   */
-  Vertex getSerializedVertex();
+@NamedParameter(doc = "A string for the serialized timestamp extract function" +
+    "used in sources (Function)")
+public final class SerializedTimestampExtractUdf implements Name<String> {
 }

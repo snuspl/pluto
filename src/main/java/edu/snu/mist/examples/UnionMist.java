@@ -17,13 +17,11 @@
 package edu.snu.mist.examples;
 
 import edu.snu.mist.api.APIQueryControlResult;
-import edu.snu.mist.api.datastreams.ContinuousStream;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
+import edu.snu.mist.api.datastreams.ContinuousStream;
+import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.common.functions.MISTBiFunction;
-import edu.snu.mist.api.datastreams.Sink;
-import edu.snu.mist.api.datastreams.configurations.TextSocketSinkConfiguration;
-import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.examples.parameters.UnionLeftSourceAddress;
 import edu.snu.mist.examples.parameters.UnionRightSourceAddress;
@@ -53,11 +51,10 @@ public final class UnionMist {
     final Injector injector = Tang.Factory.getTang().newInjector(configuration);
     final String source1Socket = injector.getNamedInstance(UnionLeftSourceAddress.class);
     final String source2Socket = injector.getNamedInstance(UnionRightSourceAddress.class);
-    final TextSocketSourceConfiguration localTextSocketSource1Conf =
+    final SourceConfiguration localTextSocketSource1Conf =
         MISTExampleUtils.getLocalTextSocketSourceConf(source1Socket);
-    final TextSocketSourceConfiguration localTextSocketSource2Conf =
+    final SourceConfiguration localTextSocketSource2Conf =
         MISTExampleUtils.getLocalTextSocketSourceConf(source2Socket);
-    final TextSocketSinkConfiguration localTextSocketSinkConf = MISTExampleUtils.getLocalTextSocketSinkConf();
 
     // Simple reduce function.
     final MISTBiFunction<Integer, Integer, Integer> reduceFunction = (v1, v2) -> { return v1 + v2; };
@@ -68,11 +65,11 @@ public final class UnionMist {
     final ContinuousStream sourceStream2 = queryBuilder.socketTextStream(localTextSocketSource2Conf)
         .map(s -> new Tuple2(s, 1));
 
-    final Sink sink = sourceStream1
+    sourceStream1
         .union(sourceStream2)
         .reduceByKey(0, String.class, reduceFunction)
         .map(s -> s.toString())
-        .textSocketOutput(localTextSocketSinkConf);
+        .textSocketOutput(MISTExampleUtils.SINK_HOSTNAME, MISTExampleUtils.SINK_PORT);
 
     final MISTQuery query = queryBuilder.build();
 

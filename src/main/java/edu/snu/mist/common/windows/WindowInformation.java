@@ -15,16 +15,20 @@
  */
 package edu.snu.mist.common.windows;
 
-import edu.snu.mist.formats.avro.WindowOperatorInfo;
-
 /**
- * This interface represents an information container that has some information used during windowing operation.
- * During windowed stream creation, this information class will be passed as a parameter.
+ * This interface represents information for window.
  */
 public interface WindowInformation {
 
   /**
-   * @return the serialized window operator information.
+   * Get the window size.
+   * @return window size
    */
-  WindowOperatorInfo getSerializedWindowOpInfo();
+  int getWindowSize();
+
+  /**
+   * Get the window interval.
+   * @return window interval
+   */
+  int getWindowInterval();
 }

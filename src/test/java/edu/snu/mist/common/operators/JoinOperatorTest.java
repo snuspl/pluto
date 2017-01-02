@@ -15,11 +15,11 @@
  */
 package edu.snu.mist.common.operators;
 
-import edu.snu.mist.common.types.Tuple2;
-import edu.snu.mist.common.windows.WindowData;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.common.types.Tuple2;
+import edu.snu.mist.common.windows.WindowData;
 import edu.snu.mist.common.windows.WindowImpl;
 import org.junit.Assert;
 import org.junit.Test;

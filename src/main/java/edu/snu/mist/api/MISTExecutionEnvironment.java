@@ -30,5 +30,5 @@ public interface MISTExecutionEnvironment {
    * @throws IOException an exception occurs when connecting with MIST and serializing the jar files.
    */
   APIQueryControlResult submit(MISTQuery queryToSubmit,
-                               String ... jarFilePaths) throws IOException;
+                               String... jarFilePaths) throws IOException;
 }

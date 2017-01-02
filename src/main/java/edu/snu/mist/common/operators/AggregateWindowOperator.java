@@ -15,13 +15,16 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.parameters.OperatorId;
+import edu.snu.mist.common.parameters.SerializedUdf;
 import edu.snu.mist.common.windows.WindowData;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,6 +43,14 @@ public final class AggregateWindowOperator<IN, OUT>
    * The function that processes the input WindowData.
    */
   private final Function<WindowData<IN>, OUT> aggregateFunc;
+
+  @Inject
+  private AggregateWindowOperator(
+      @Parameter(OperatorId.class) final String operatorId,
+      @Parameter(SerializedUdf.class) final String serializedObject,
+      final ClassLoader classLoader) throws IOException, ClassNotFoundException {
+    this(operatorId, SerializeUtils.deserializeFromString(serializedObject, classLoader));
+  }
 
   /**
    * @param operatorId identifier of operator

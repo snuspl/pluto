@@ -15,22 +15,24 @@
  */
 package edu.snu.mist.api.datastreams.configurations;
 
-import edu.snu.mist.formats.avro.WatermarkTypeEnum;
-
-import java.util.Map;
+import org.apache.reef.tang.Configuration;
 
 /**
  * The class represents watermark configuration.
- * @param <T> the type of source data
+ * This is just a wrapper class that holds the configuration of Tang.
  */
-public abstract class WatermarkConfiguration<T> extends MISTConfigurationImpl {
+public final class WatermarkConfiguration {
 
-  protected WatermarkConfiguration(final Map<String, Object> configMap) {
-    super(configMap);
+  private final Configuration conf;
+  WatermarkConfiguration(final Configuration conf) {
+    this.conf = conf;
   }
 
   /**
-   * Gets the type of watermark.
+   * Get the configuration.
+   * @return configuration
    */
-  public abstract WatermarkTypeEnum getWatermarkType();
+  public Configuration getConfiguration() {
+    return conf;
+  }
 }

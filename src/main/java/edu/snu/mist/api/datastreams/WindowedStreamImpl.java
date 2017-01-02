@@ -15,68 +15,90 @@
  */
 package edu.snu.mist.api.datastreams;
 
-import edu.snu.mist.api.AvroVertexSerializable;
+import edu.snu.mist.api.datastreams.configurations.ReduceByKeyOperatorUDFConfiguration;
+import edu.snu.mist.api.datastreams.configurations.SingleInputOperatorUDFConfiguration;
+import edu.snu.mist.common.DAG;
+import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.ApplyStatefulFunction;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.common.operators.AggregateWindowOperator;
+import edu.snu.mist.common.operators.ApplyStatefulWindowOperator;
 import edu.snu.mist.common.windows.WindowData;
-import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.Direction;
-import edu.snu.mist.formats.avro.Vertex;
-import edu.snu.mist.formats.avro.VertexTypeEnum;
-import edu.snu.mist.formats.avro.WindowOperatorInfo;
+import org.apache.reef.tang.Configuration;
+
+import java.io.IOException;
+import java.util.Map;
 
 /**
- * The abstract class for describing WindowedStream.
+ * The class for WindowedStream.
  */
-public abstract class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>> implements WindowedStream<T>  {
+final class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>> implements WindowedStream<T> {
 
-
-  protected WindowedStreamImpl(final DAG<AvroVertexSerializable, Direction> dag) {
-    super(dag);
-  }
-
-  @Override
-  public <K, V> ReduceByKeyWindowOperatorStream<T, K, V> reduceByKeyWindow(
-      final int keyFieldNum,
-      final Class<K> keyType,
-      final MISTBiFunction<V, V, V> reduceFunc) {
-    final ReduceByKeyWindowOperatorStream<T, K, V> downStream =
-        new ReduceByKeyWindowOperatorStream<>(keyFieldNum, keyType, reduceFunc, dag);
-    dag.addVertex(downStream);
-    dag.addEdge(this, downStream, Direction.LEFT);
-    return downStream;
-  }
-
-  @Override
-  public <R> AggregateWindowOperatorStream<T, R> aggregateWindow(final MISTFunction<WindowData<T>, R> aggregateFunc) {
-    final AggregateWindowOperatorStream<T, R> downStream =
-        new AggregateWindowOperatorStream<>(aggregateFunc, dag);
-    dag.addVertex(downStream);
-    dag.addEdge(this, downStream, Direction.LEFT);
-    return downStream;
-  }
-
-  @Override
-  public <R> ApplyStatefulWindowOperatorStream<T, R> applyStatefulWindow(
-      final ApplyStatefulFunction<T, R> applyStatefulFunction) {
-    final ApplyStatefulWindowOperatorStream<T, R> downStream =
-        new ApplyStatefulWindowOperatorStream<>(applyStatefulFunction, dag);
-    dag.addVertex(downStream);
-    dag.addEdge(this, downStream, Direction.LEFT);
-    return downStream;
+  WindowedStreamImpl(final DAG<MISTStream, Direction> dag,
+                     final Configuration conf) {
+    super(dag, conf);
   }
 
   /**
-   * @return the window operator info.
+   * Transform current stream to the continuous stream with the configuration.
+   * @param conf configuration for transform
+   * @param <U> result type of the transform
+   * @return a transformed continuous stream
    */
-  protected abstract WindowOperatorInfo getWindowOpInfo();
+  private <U> ContinuousStream<U> transformToContinuousStream(final Configuration conf) {
+    final ContinuousStream<U> downStream = new ContinuousStreamImpl<>(dag, conf);
+    dag.addVertex(downStream);
+    dag.addEdge(this, downStream, Direction.LEFT);
+    return downStream;
+  }
 
   @Override
-  public Vertex getSerializedVertex() {
-    final Vertex.Builder vertexBuilder = Vertex.newBuilder();
-    vertexBuilder.setVertexType(VertexTypeEnum.WINDOW_OPERATOR);
-    vertexBuilder.setAttributes(getWindowOpInfo());
-    return vertexBuilder.build();
+  public <K, V> ContinuousStream<Map<K, V>> reduceByKeyWindow(
+      final int keyFieldNum,
+      final Class<K> keyType,
+      final MISTBiFunction<V, V, V> reduceFunc) {
+    try {
+      final Configuration conf = ReduceByKeyOperatorUDFConfiguration.CONF
+          .set(ReduceByKeyOperatorUDFConfiguration.KEY_INDEX, keyFieldNum)
+          .set(ReduceByKeyOperatorUDFConfiguration.UDF_STRING,
+              SerializeUtils.serializeToString(reduceFunc))
+          .build();
+      return transformToContinuousStream(conf);
+    } catch (final IOException e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public <R> ContinuousStream<R> aggregateWindow(final MISTFunction<WindowData<T>, R> aggregateFunc) {
+    try {
+      final Configuration conf = SingleInputOperatorUDFConfiguration.CONF
+          .set(SingleInputOperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(aggregateFunc))
+          .set(SingleInputOperatorUDFConfiguration.OPERATOR, AggregateWindowOperator.class)
+          .build();
+      return transformToContinuousStream(conf);
+    } catch (final IOException e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public <R> ContinuousStream<R> applyStatefulWindow(
+      final ApplyStatefulFunction<T, R> applyStatefulFunction) {
+    try {
+      final Configuration conf = SingleInputOperatorUDFConfiguration.CONF
+          .set(SingleInputOperatorUDFConfiguration.UDF_STRING,
+              SerializeUtils.serializeToString(applyStatefulFunction))
+          .set(SingleInputOperatorUDFConfiguration.OPERATOR, ApplyStatefulWindowOperator.class)
+          .build();
+      return transformToContinuousStream(conf);
+    } catch (final IOException e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
+    }
   }
 }

@@ -16,12 +16,15 @@
 package edu.snu.mist.common.sources;
 
 import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.parameters.PeriodicWatermarkDelay;
 import edu.snu.mist.common.parameters.PeriodicWatermarkPeriod;
+import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -56,6 +59,18 @@ public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V>
    * The result of service execution.
    */
   private ScheduledFuture result;
+
+  @Inject
+  private PeriodicEventGenerator(
+      @Parameter(SerializedTimestampExtractUdf.class) final String extractFuncObj,
+      @Parameter(PeriodicWatermarkPeriod.class) final long period,
+      @Parameter(PeriodicWatermarkDelay.class) final long delay,
+      final ClassLoader classLoader,
+      final TimeUnit timeUnit,
+      final ScheduledExecutorService scheduler) throws IOException, ClassNotFoundException {
+    this(SerializeUtils.deserializeFromString(extractFuncObj, classLoader),
+        period, delay, timeUnit, scheduler);
+  }
 
   @Inject
   public PeriodicEventGenerator(@Parameter(PeriodicWatermarkPeriod.class) final long period,

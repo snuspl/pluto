@@ -13,7 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * Test package for MIST avro serialization.
- */
-package edu.snu.mist.api.serialize.avro;
+package edu.snu.mist.common.parameters;
+
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
+
+@NamedParameter(doc = "A string for the serialized predicate function " +
+    "that is used to decide if an event is watermark or not")
+public final class SerializedWatermarkPredicateUdf implements Name<String> {
+}

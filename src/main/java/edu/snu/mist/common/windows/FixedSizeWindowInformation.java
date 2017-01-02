@@ -16,12 +16,6 @@
 package edu.snu.mist.common.windows;
 
 import edu.snu.mist.common.exceptions.IllegalWindowParameterException;
-import edu.snu.mist.formats.avro.WindowOperatorInfo;
-import edu.snu.mist.formats.avro.WindowOperatorTypeEnum;
-
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * This abstract class contains some information used during fixed-size windowing operation (such as TIME or COUNT).
@@ -53,6 +47,7 @@ public abstract class FixedSizeWindowInformation implements WindowInformation {
   /**
    * @return the size of fixed-size window.
    */
+  @Override
   public int getWindowSize() {
     return windowSize;
   }
@@ -60,23 +55,8 @@ public abstract class FixedSizeWindowInformation implements WindowInformation {
   /**
    * @return the emission interval of fixed-size window.
    */
-  public int getWindowEmissionInterval() {
-    return windowEmissionInterval;
-  }
-
-  /**
-   * @return the type of windowing operation in a form of avro enum.
-   */
-  protected abstract WindowOperatorTypeEnum getWindowOpTypeEnum();
-
   @Override
-  public WindowOperatorInfo getSerializedWindowOpInfo(){
-    final WindowOperatorInfo.Builder wOpInfoBuilder = WindowOperatorInfo.newBuilder();
-    wOpInfoBuilder.setWindowOperatorType(getWindowOpTypeEnum());
-    final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
-    wOpInfoBuilder.setFunctions(serializedFunctionList);
-    wOpInfoBuilder.setWindowSize(windowSize);
-    wOpInfoBuilder.setWindowInterval(windowEmissionInterval);
-    return wOpInfoBuilder.build();
+  public int getWindowInterval() {
+    return windowEmissionInterval;
   }
 }

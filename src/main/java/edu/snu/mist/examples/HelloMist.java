@@ -19,8 +19,7 @@ package edu.snu.mist.examples;
 import edu.snu.mist.api.APIQueryControlResult;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
-import edu.snu.mist.api.datastreams.configurations.TextSocketSinkConfiguration;
-import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
+import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.examples.parameters.NettySourceAddress;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -47,15 +46,14 @@ public final class HelloMist {
       throws IOException, InjectionException, URISyntaxException {
     final String sourceSocket =
         Tang.Factory.getTang().newInjector(configuration).getNamedInstance(NettySourceAddress.class);
-    final TextSocketSourceConfiguration localTextSocketSourceConf =
+    final SourceConfiguration localTextSocketSourceConf =
         MISTExampleUtils.getLocalTextSocketSourceConf(sourceSocket);
-    final TextSocketSinkConfiguration localTextSocketSinkConf = MISTExampleUtils.getLocalTextSocketSinkConf();
 
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     queryBuilder.socketTextStream(localTextSocketSourceConf)
         .filter(s -> s.startsWith("HelloMIST:"))
         .map(s -> s.substring("HelloMIST:".length()).trim())
-        .textSocketOutput(localTextSocketSinkConf);
+        .textSocketOutput(MISTExampleUtils.SINK_HOSTNAME, MISTExampleUtils.SINK_PORT);
     final MISTQuery query = queryBuilder.build();
 
     return MISTExampleUtils.submit(query, configuration);

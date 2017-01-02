@@ -17,13 +17,12 @@
 package edu.snu.mist.examples;
 
 import edu.snu.mist.api.APIQueryControlResult;
-import edu.snu.mist.api.datastreams.ContinuousStream;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
-import edu.snu.mist.common.functions.MISTBiPredicate;
+import edu.snu.mist.api.datastreams.ContinuousStream;
+import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.common.functions.ApplyStatefulFunction;
-import edu.snu.mist.api.datastreams.configurations.TextSocketSinkConfiguration;
-import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
+import edu.snu.mist.common.functions.MISTBiPredicate;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.TimeWindowInformation;
 import edu.snu.mist.examples.parameters.UnionLeftSourceAddress;
@@ -59,11 +58,10 @@ public final class JoinAndApplyStateful {
     final Injector injector = Tang.Factory.getTang().newInjector(configuration);
     final String source1Socket = injector.getNamedInstance(UnionLeftSourceAddress.class);
     final String source2Socket = injector.getNamedInstance(UnionRightSourceAddress.class);
-    final TextSocketSourceConfiguration localTextSocketSource1Conf =
+    final SourceConfiguration localTextSocketSource1Conf =
         MISTExampleUtils.getLocalTextSocketSourceConf(source1Socket);
-    final TextSocketSourceConfiguration localTextSocketSource2Conf =
+    final SourceConfiguration localTextSocketSource2Conf =
         MISTExampleUtils.getLocalTextSocketSourceConf(source2Socket);
-    final TextSocketSinkConfiguration localTextSocketSinkConf = MISTExampleUtils.getLocalTextSocketSinkConf();
 
     final MISTBiPredicate<String, String> joinPred = (s1, s2) -> s1.equals(s2);
     final ApplyStatefulFunction<Tuple2<String, String>, String> applyStatefulFunction = new FoldStringTupleFunction();
@@ -74,7 +72,7 @@ public final class JoinAndApplyStateful {
     sourceStream1
         .join(sourceStream2, joinPred, new TimeWindowInformation(5000, 5000))
         .applyStatefulWindow(applyStatefulFunction)
-        .textSocketOutput(localTextSocketSinkConf);
+        .textSocketOutput(MISTExampleUtils.SINK_HOSTNAME, MISTExampleUtils.SINK_PORT);
 
     final MISTQuery query = queryBuilder.build();
 

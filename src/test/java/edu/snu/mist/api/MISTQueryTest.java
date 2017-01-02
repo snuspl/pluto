@@ -15,37 +15,31 @@
  */
 package edu.snu.mist.api;
 
-import edu.snu.mist.api.datastreams.configurations.PunctuatedWatermarkConfiguration;
-import edu.snu.mist.api.datastreams.configurations.TextSocketSinkConfiguration;
-import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
+import edu.snu.mist.api.datastreams.ContinuousStream;
+import edu.snu.mist.api.datastreams.MISTStream;
+import edu.snu.mist.api.datastreams.WindowedStream;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
-import edu.snu.mist.common.parameters.PunctuatedWatermarkParameters;
-import edu.snu.mist.common.parameters.SourceParameters;
-import edu.snu.mist.common.parameters.TextSocketSinkParameters;
-import edu.snu.mist.common.parameters.TextSocketSourceParameters;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.TimeWindowInformation;
-import edu.snu.mist.formats.avro.*;
-import org.apache.commons.lang.SerializationUtils;
+import edu.snu.mist.formats.avro.AvroVertexChain;
+import edu.snu.mist.formats.avro.Direction;
+import edu.snu.mist.formats.avro.Edge;
+import edu.snu.mist.formats.avro.Vertex;
+import edu.snu.mist.utils.TestParameters;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.exceptions.InjectionException;
+import org.apache.reef.tang.formats.AvroConfigurationSerializer;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Predicate;
-
-import static edu.snu.mist.formats.avro.WindowOperatorTypeEnum.TIME;
 
 /**
  * This is the test class for serializing MISTQuery into avro LogicalPlan.
@@ -62,168 +56,72 @@ public final class MISTQueryTest {
   private final Integer expectedWindowSize = 5000;
   private final Integer expectedWindowEmissionInterval = 1000;
   private final MISTBiFunction<Integer, Integer, Integer> expectedReduceFunc = (x, y) -> x + y;
-  private final Integer expectedReduceKeyIndex = 0;
 
-  /**
-   * Common configuration for each type of source / sink.
-   */
-  private final TextSocketSourceConfiguration textSocketSourceConf =
-      APITestParameters.LOCAL_TEXT_SOCKET_EVENTTIME_SOURCE_CONF;
-  private final PunctuatedWatermarkConfiguration punctuatedWatermarkConf =
-      APITestParameters.PUNCTUATED_WATERMARK_CONF;
-  private final TextSocketSinkConfiguration textSocketSinkConf = APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF;
-
-  /**
-   * This method checks that whether source is serialized well or not.
-   * @param vertex the source vertex
-   */
-  private void checkSource(final Vertex vertex) {
-    // Test for source vertex
-    final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
-    final Map<String, Object> sourceConfiguration = sourceInfo.getSourceConfiguration();
-
-    final Map<String, Object> watermarkConfiguration = sourceInfo.getWatermarkConfiguration();
-    final ByteBuffer extractionFunc = (ByteBuffer) sourceConfiguration.get(
-        SourceParameters.TIMESTAMP_EXTRACTION_FUNCTION);
-    final byte[] serializedExtractionFunc = new byte[extractionFunc.remaining()];
-    extractionFunc.get(serializedExtractionFunc);
-    final Function deserializedExtractionFunc =
-        (Function) SerializationUtils.deserialize(serializedExtractionFunc);
-    Assert.assertEquals(textSocketSourceConf.getConfigurationValue(
-            TextSocketSourceParameters.SOCKET_HOST_ADDRESS),
-        sourceConfiguration.get(TextSocketSourceParameters.SOCKET_HOST_ADDRESS));
-    Assert.assertEquals(textSocketSourceConf.getConfigurationValue(TextSocketSourceParameters.SOCKET_HOST_PORT),
-        sourceConfiguration.get(TextSocketSourceParameters.SOCKET_HOST_PORT));
-    Assert.assertEquals(
-        ((Function)textSocketSourceConf.getConfigurationValue(
-            SourceParameters.TIMESTAMP_EXTRACTION_FUNCTION)).apply("HelloMIST:1234"),
-        deserializedExtractionFunc.apply("HelloMIST:1234"));
-    final ByteBuffer parsingFunc = (ByteBuffer) watermarkConfiguration.get(
-        PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK);
-    final byte[] serializedParsingFunc = new byte[parsingFunc.remaining()];
-    parsingFunc.get(serializedParsingFunc);
-    final Function deserializedParsingFunc =
-        (Function) SerializationUtils.deserialize(serializedParsingFunc);
-    final ByteBuffer watermarkPred = (ByteBuffer) watermarkConfiguration.get(
-        PunctuatedWatermarkParameters.WATERMARK_PREDICATE);
-    final byte[] serializedWatermarkPred = new byte[watermarkPred.remaining()];
-    watermarkPred.get(serializedWatermarkPred);
-    final Predicate deserializedWatermarkPred =
-        (Predicate) SerializationUtils.deserialize(serializedWatermarkPred);
-    Assert.assertEquals(
-        ((Function)punctuatedWatermarkConf.getConfigurationValue(
-            PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK)).apply("Watermark:1234"),
-        deserializedParsingFunc.apply("Watermark:1234"));
-    Assert.assertEquals(
-        ((Predicate)punctuatedWatermarkConf.getConfigurationValue(
-            PunctuatedWatermarkParameters.WATERMARK_PREDICATE)).test("Watermark:1234"),
-        deserializedWatermarkPred.test("Watermark:1234"));
-    Assert.assertEquals(
-        ((Predicate)punctuatedWatermarkConf.getConfigurationValue(
-            PunctuatedWatermarkParameters.WATERMARK_PREDICATE)).test("Data:1234"),
-        deserializedWatermarkPred.test("Data:1234"));
-  }
-
+  private final AvroConfigurationSerializer avroSerializer = new AvroConfigurationSerializer();
   /**
    * This method tests a serialization of a complex query, containing 9 vertices.
-   * @throws InjectionException
+   * @throws org.apache.reef.tang.exceptions.InjectionException
    */
   @Test
   public void mistComplexQuerySerializeTest() throws InjectionException, IOException, URISyntaxException {
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
-    queryBuilder.socketTextStream(textSocketSourceConf, punctuatedWatermarkConf)
-        .flatMap(expectedFlatMapFunc)
-        .filter(expectedFilterPredicate)
-        .map(expectedMapFunc)
-        .window(new TimeWindowInformation(expectedWindowSize, expectedWindowEmissionInterval))
-        .reduceByKeyWindow(0, String.class, expectedReduceFunc)
-        .textSocketOutput(textSocketSinkConf);
+    final ContinuousStream<String> sourceStream =
+        queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF,
+            TestParameters.PUNCTUATED_WATERMARK_CONF);
+    final ContinuousStream<String> flatMapStream = sourceStream.flatMap(expectedFlatMapFunc);
+    final ContinuousStream<String> filterStream = flatMapStream.filter(expectedFilterPredicate);
+    final ContinuousStream<Tuple2<String, Integer>> mapStream = filterStream.map(expectedMapFunc);
+    final WindowedStream<Tuple2<String, Integer>> windowedStream = mapStream
+        .window(new TimeWindowInformation(expectedWindowSize, expectedWindowEmissionInterval));
+    final ContinuousStream<Map<String, Integer>> reduceByKeyStream = windowedStream
+        .reduceByKeyWindow(0, String.class, expectedReduceFunc);
+    final MISTStream<String> sinkStream =
+        reduceByKeyStream.textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
+
+    // Build a query
     final MISTQuery complexQuery = queryBuilder.build();
     final Tuple<List<AvroVertexChain>, List<Edge>> serializedDAG = complexQuery.getSerializedDAG();
     final List<AvroVertexChain> vertices = serializedDAG.getKey();
     Assert.assertEquals(3, vertices.size());
 
-    // Stores indexes for flatMap, filter, map, timeWindow, reduceByKeyWindow, reefNetworkOutput in order
-    for (final AvroVertexChain avroVertexChain : vertices) {
-      if (avroVertexChain.getAvroVertexChainType() == AvroVertexTypeEnum.SINK) {
-        // Test for sink vertex
-        final Vertex vertex = avroVertexChain.getVertexChain().get(0);
-        final SinkInfo sinkInfo = (SinkInfo) vertex.getAttributes();
-        final Map<String, Object> sinkConfiguration = sinkInfo.getSinkConfiguration();
-        if (sinkInfo.getSinkType() == SinkTypeEnum.TEXT_SOCKET_SINK) {
-          Assert.assertEquals(textSocketSinkConf.getConfigurationValue(TextSocketSinkParameters.SOCKET_HOST_ADDRESS),
-              sinkConfiguration.get(TextSocketSinkParameters.SOCKET_HOST_ADDRESS));
-          Assert.assertEquals(textSocketSinkConf.getConfigurationValue(TextSocketSinkParameters.SOCKET_HOST_PORT),
-              sinkConfiguration.get(TextSocketSinkParameters.SOCKET_HOST_PORT));
-        } else {
-          Assert.fail("Unexpected Sink type detected during the test! Should be TEXT_SOCKET_SINK");
-        }
-      } else if (avroVertexChain.getAvroVertexChainType() == AvroVertexTypeEnum.OPERATOR_CHAIN) {
-        // Test for flatMap vertex
-        final Vertex flatMapVertex = avroVertexChain.getVertexChain().get(0);
-        final InstantOperatorInfo flatMapInfo = (InstantOperatorInfo) flatMapVertex.getAttributes();
-        final List<ByteBuffer> flatMapInfoFunctions = flatMapInfo.getFunctions();
-        final Integer flatMapInfoKeyIndex = flatMapInfo.getKeyIndex();
-
-        final byte[] serializedFlatMapFunc = new byte[flatMapInfoFunctions.get(0).remaining()];
-        flatMapInfoFunctions.get(0).get(serializedFlatMapFunc);
-        final Function flatMapFunc =
-            (Function) SerializationUtils.deserialize(serializedFlatMapFunc);
-        Assert.assertEquals(expectedFlatMapFunc.apply("A B C"), flatMapFunc.apply("A B C"));
-        Assert.assertEquals(flatMapInfoKeyIndex, null);
-
-        // Test for filter vertex
-        final Vertex filterVertex = avroVertexChain.getVertexChain().get(1);
-        final InstantOperatorInfo filterInfo = (InstantOperatorInfo) filterVertex.getAttributes();
-        final List<ByteBuffer> filterInfoFunctions = filterInfo.getFunctions();
-        final Integer filterKeyIndex = filterInfo.getKeyIndex();
-
-        final byte[] serializedFilterPredicate = new byte[filterInfoFunctions.get(0).remaining()];
-        filterInfoFunctions.get(0).get(serializedFilterPredicate);
-        final Predicate filterPredicate =
-            (Predicate) SerializationUtils.deserialize(serializedFilterPredicate);
-        Assert.assertEquals(expectedFilterPredicate.test("ABC"), filterPredicate.test("ABC"));
-        Assert.assertEquals(expectedFilterPredicate.test("abc"), filterPredicate.test("abc"));
-        Assert.assertEquals(filterKeyIndex, null);
-
-        // Test for map
-        final Vertex mapVertex = avroVertexChain.getVertexChain().get(2);
-        final InstantOperatorInfo mapInfo = (InstantOperatorInfo) mapVertex.getAttributes();
-        final List<ByteBuffer> mapInfoFunctions = mapInfo.getFunctions();
-        final Integer mapKeyIndex = mapInfo.getKeyIndex();
-
-        final byte[] serializedMapFunc = new byte[mapInfoFunctions.get(0).remaining()];
-        mapInfoFunctions.get(0).get(serializedMapFunc);
-        final Function mapFunc =
-            (Function) SerializationUtils.deserialize(serializedMapFunc);
-        Assert.assertEquals(expectedMapFunc.apply("ABC"), mapFunc.apply("ABC"));
-        Assert.assertEquals(mapKeyIndex, null);
-
-        // Test for timeWindow
-        final Vertex windowVertex = avroVertexChain.getVertexChain().get(3);
-        final WindowOperatorInfo windowOperatorInfo = (WindowOperatorInfo) windowVertex.getAttributes();
-        Assert.assertEquals(TIME, windowOperatorInfo.getWindowOperatorType());
-        Assert.assertEquals(expectedWindowSize, windowOperatorInfo.getWindowSize());
-        Assert.assertEquals(expectedWindowEmissionInterval, windowOperatorInfo.getWindowInterval());
-
-        // Test for reduceByKeyWindow
-        final Vertex reduceByKeyVertex = avroVertexChain.getVertexChain().get(4);
-        final InstantOperatorInfo reduceByKeyInfo = (InstantOperatorInfo) reduceByKeyVertex.getAttributes();
-        final List<ByteBuffer> reduceByKeyFunctions = reduceByKeyInfo.getFunctions();
-        final Integer reduceByKeyIndex = reduceByKeyInfo.getKeyIndex();
-
-        final byte[] serializedReduceFunc = new byte[reduceByKeyFunctions.get(0).remaining()];
-        reduceByKeyFunctions.get(0).get(serializedReduceFunc);
-        final BiFunction reduceFunc =
-            (BiFunction) SerializationUtils.deserialize(serializedReduceFunc);
-        Assert.assertEquals(expectedReduceFunc.apply(1, 2), reduceFunc.apply(1, 2));
-        Assert.assertEquals(expectedReduceFunc.apply(5, 4), reduceFunc.apply(5, 4));
-        Assert.assertEquals(expectedReduceKeyIndex, reduceByKeyIndex);
-      } else if (avroVertexChain.getAvroVertexChainType() == AvroVertexTypeEnum.SOURCE) {
-        checkSource(avroVertexChain.getVertexChain().get(0));
-      } else {
-        Assert.fail("Unexpected vertex type detected!" +
-            "Should be one of [SOURCE, OPERATOR_CHAIN, SINK]");
+    for (final AvroVertexChain vertexChain : vertices) {
+      switch (vertexChain.getAvroVertexChainType()) {
+        case SOURCE:
+          final Vertex sourceVertex = vertexChain.getVertexChain().get(0);
+          Assert.assertEquals(avroSerializer.toString(sourceStream.getConfiguration()),
+              sourceVertex.getConfiguration());
+          break;
+        case OPERATOR_CHAIN:
+          Assert.assertEquals(5, vertexChain.getVertexChain().size());
+          // Check flat-map conf
+          final Vertex flatMapVertex = vertexChain.getVertexChain().get(0);
+          Assert.assertEquals(avroSerializer.toString(flatMapStream.getConfiguration()),
+              flatMapVertex.getConfiguration());
+          // Check filter conf
+          final Vertex filterVertex = vertexChain.getVertexChain().get(1);
+          Assert.assertEquals(avroSerializer.toString(filterStream.getConfiguration()),
+              filterVertex.getConfiguration());
+          // Check map conf
+          final Vertex mapVertex = vertexChain.getVertexChain().get(2);
+          Assert.assertEquals(avroSerializer.toString(mapStream.getConfiguration()),
+              mapVertex.getConfiguration());
+          // Check window conf
+          final Vertex windowVertex = vertexChain.getVertexChain().get(3);
+          Assert.assertEquals(avroSerializer.toString(windowedStream.getConfiguration()),
+              windowVertex.getConfiguration());
+          // Check ReduceBy conf
+          final Vertex reduceByVertex = vertexChain.getVertexChain().get(4);
+          Assert.assertEquals(avroSerializer.toString(reduceByKeyStream.getConfiguration()),
+              reduceByVertex.getConfiguration());
+          break;
+        case SINK:
+          // Check sink conf
+          final Vertex sinkVertex = vertexChain.getVertexChain().get(0);
+          Assert.assertEquals(avroSerializer.toString(sinkStream.getConfiguration()),
+              sinkVertex.getConfiguration());
+          break;
+        default:
+          throw new RuntimeException("Not supported type");
       }
     }
 

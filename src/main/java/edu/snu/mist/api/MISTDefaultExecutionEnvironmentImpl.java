@@ -56,7 +56,6 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
    * A list of the Task is retrieved from the MIST Driver.
    * @param serverAddr MIST Driver server address.
    * @param serverPort MIST Driver server port.
-   * @throws InjectionException
    * @throws IOException
    */
   public MISTDefaultExecutionEnvironmentImpl(final String serverAddr,

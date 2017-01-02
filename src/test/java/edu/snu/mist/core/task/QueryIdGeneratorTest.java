@@ -15,8 +15,8 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.formats.avro.LogicalPlan;
 import edu.snu.mist.core.parameters.QueryIdPrefix;
+import edu.snu.mist.formats.avro.LogicalPlan;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -28,7 +28,7 @@ public final class QueryIdGeneratorTest {
   /**
    * Test whether QueryIdGenerator generates query ids correctly.
    * It creates 10,000 query ids and checks the ids.
-   * @throws InjectionException
+   * @throws org.apache.reef.tang.exceptions.InjectionException
    */
   @Test
   public void testQueryIdGenerate() throws InjectionException {

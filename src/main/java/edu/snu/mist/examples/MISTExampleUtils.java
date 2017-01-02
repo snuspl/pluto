@@ -20,8 +20,8 @@ import edu.snu.mist.api.APIQueryControlResult;
 import edu.snu.mist.api.MISTDefaultExecutionEnvironmentImpl;
 import edu.snu.mist.api.MISTExecutionEnvironment;
 import edu.snu.mist.api.MISTQuery;
-import edu.snu.mist.api.datastreams.configurations.TextSocketSinkConfiguration;
 import edu.snu.mist.api.datastreams.configurations.KafkaSourceConfiguration;
+import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
 import edu.snu.mist.examples.parameters.DriverAddress;
 import org.apache.reef.tang.Configuration;
@@ -60,7 +60,7 @@ public final class MISTExampleUtils {
   /**
    * Get socket configuration for local text source.
    */
-  public static TextSocketSourceConfiguration getLocalTextSocketSourceConf(final String socket) {
+  public static SourceConfiguration getLocalTextSocketSourceConf(final String socket) {
     final String[] sourceSocket = socket.split(":");
     final String sourceHostname = sourceSocket[0];
     final int sourcePort = Integer.parseInt(sourceSocket[1]);
@@ -70,36 +70,24 @@ public final class MISTExampleUtils {
         .build();
   }
 
-  /**
-   * Get socket configuration for local text sink.
-   */
-  public static TextSocketSinkConfiguration getLocalTextSocketSinkConf() {
-    return TextSocketSinkConfiguration.newBuilder()
-        .setHostAddress(SINK_HOSTNAME)
-        .setHostPort(SINK_PORT)
-        .build();
-  }
-
-  public static <K, V> KafkaSourceConfiguration<K, V> getLocalKafkaSourceConf(final String topic,
-                                                                              final String socket) {
+  public static SourceConfiguration getLocalKafkaSourceConf(final String topic,
+                                                            final String socket) {
     return getLocalKafkaSourceConf(topic, socket, DEFAULT_KEY_DESERIALIZER, DEFAULT_VALUE_DESERIALIZER);
   }
 
   /**
    * Get socket configuration for local kafka source.
-   * @param <K> the type of kafka record's key
-   * @param <V> the type of kafka record's value
    */
-  public static <K, V> KafkaSourceConfiguration<K, V> getLocalKafkaSourceConf(final String topic,
-                                                                              final String socket,
-                                                                              final String keyDeserializer,
-                                                                              final String valueDeserializer) {
+  public static SourceConfiguration getLocalKafkaSourceConf(final String topic,
+                                                            final String socket,
+                                                            final String keyDeserializer,
+                                                            final String valueDeserializer) {
     final HashMap<String, Object> kafkaConsumerConfig = new HashMap<>();
     kafkaConsumerConfig.put("bootstrap.servers", socket);
     kafkaConsumerConfig.put("group.id", "MistExample");
     kafkaConsumerConfig.put("key.deserializer", keyDeserializer);
     kafkaConsumerConfig.put("value.deserializer", valueDeserializer);
-    return KafkaSourceConfiguration.<K, V>newBuilder()
+    return KafkaSourceConfiguration.newBuilder()
         .setTopic(topic)
         .setConsumerConfig(kafkaConsumerConfig)
         .build();

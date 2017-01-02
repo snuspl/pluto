@@ -15,14 +15,17 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.parameters.KeyIndex;
 import edu.snu.mist.common.parameters.OperatorId;
+import edu.snu.mist.common.parameters.SerializedUdf;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.function.BiFunction;
@@ -55,6 +58,15 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
    * KeyValue state.
    */
   private HashMap<K, V> state;
+
+  @Inject
+  private ReduceByKeyOperator(
+      @Parameter(OperatorId.class) final String operatorId,
+      @Parameter(KeyIndex.class) final int keyIndex,
+      @Parameter(SerializedUdf.class) final String serializedObject,
+      final ClassLoader classLoader) throws IOException, ClassNotFoundException {
+    this(operatorId, keyIndex, SerializeUtils.deserializeFromString(serializedObject, classLoader));
+  }
 
   /**
    * @param reduceFunc reduce function

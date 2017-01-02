@@ -16,12 +16,15 @@
 
 package edu.snu.mist.core.task.stores;
 
-import edu.snu.mist.api.APITestParameters;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.core.parameters.TempFolderPath;
-import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.formats.avro.AvroVertexChain;
+import edu.snu.mist.formats.avro.Edge;
+import edu.snu.mist.formats.avro.LogicalPlan;
+import edu.snu.mist.formats.avro.Vertex;
+import edu.snu.mist.utils.TestParameters;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -34,7 +37,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.*;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 public class QueryInfoStoreTest {
   /**
@@ -46,12 +51,12 @@ public class QueryInfoStoreTest {
   public void diskStoreTest() throws InjectionException, IOException {
     // Generate a query
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
-    queryBuilder.socketTextStream(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
+    queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
         .flatMap(s -> Arrays.asList(s.split(" ")))
         .filter(s -> s.startsWith("A"))
         .map(s -> new Tuple2<>(s, 1))
         .reduceByKey(0, String.class, (Integer x, Integer y) -> x + y)
-        .textSocketOutput(APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF);
+        .textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
     final MISTQuery query = queryBuilder.build();
 
     // Jar files
@@ -115,28 +120,8 @@ public class QueryInfoStoreTest {
       for (int j = 0; j < avroVertexChain.getVertexChain().size(); j++) {
         final Vertex vertex = avroVertexChain.getVertexChain().get(j);
         final Vertex loadedVertex = loadedVertexChain.getVertexChain().get(j);
+        Assert.assertEquals(vertex.getConfiguration(), loadedVertex.getConfiguration());
         Assert.assertEquals(vertex.getSchema(), loadedVertex.getSchema());
-        Assert.assertEquals(vertex.getVertexType(), loadedVertex.getVertexType());
-
-        if (vertex.getAttributes() instanceof SourceInfo) {
-          final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
-          final SourceInfo loadedSourceInfo = (SourceInfo) loadedVertex.getAttributes();
-          final Map<String, Object> stringConf = new HashMap<>();
-          for (final Map.Entry<String, Object> entry : loadedSourceInfo.getWatermarkConfiguration().entrySet()) {
-            stringConf.put(entry.getKey(), entry.getValue());
-          }
-          Assert.assertEquals(sourceInfo.getSchema(),
-              loadedSourceInfo.getSchema());
-          Assert.assertEquals(sourceInfo.getSourceType(),
-              loadedSourceInfo.getSourceType());
-          Assert.assertEquals(sourceInfo.getSourceConfiguration().toString(),
-              loadedSourceInfo.getSourceConfiguration().toString());
-          Assert.assertEquals(sourceInfo.getWatermarkType(),
-              loadedSourceInfo.getWatermarkType());
-          Assert.assertEquals(sourceInfo.getWatermarkConfiguration(), stringConf);
-        } else {
-          Assert.assertEquals(vertex.getAttributes().toString(), loadedVertex.getAttributes().toString());
-        }
       }
     }
   }

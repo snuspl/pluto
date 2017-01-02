@@ -15,22 +15,9 @@
  */
 package edu.snu.mist.common.parameters;
 
-/**
- * This class contains the list of necessary or optional parameters for KafkaSourceConfiguration.
- */
-public final class KafkaSourceParameters {
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-  private KafkaSourceParameters() {
-    // Not called.
-  }
-
-  /**
-   * The kafka topic to monitor.
-   */
-  public static final String KAFKA_TOPIC = "Kafka topic to monitor";
-
-  /**
-   * The configuration for the kafka consumer to use.
-   */
-  public static final String KAFKA_CONSUMER_CONFIG = "Kafka consumer config";
+@NamedParameter(doc = "A string for a serialized user-defined function in operators")
+public final class SerializedUdf implements Name<String> {
 }

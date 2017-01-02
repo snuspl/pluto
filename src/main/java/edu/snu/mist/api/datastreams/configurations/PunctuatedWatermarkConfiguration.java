@@ -15,28 +15,32 @@
  */
 package edu.snu.mist.api.datastreams.configurations;
 
-import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTPredicate;
-import edu.snu.mist.common.parameters.PunctuatedWatermarkParameters;
-import edu.snu.mist.formats.avro.WatermarkTypeEnum;
+import edu.snu.mist.common.functions.WatermarkTimestampFunction;
+import edu.snu.mist.common.parameters.SerializedTimestampParseUdf;
+import edu.snu.mist.common.parameters.SerializedWatermarkPredicateUdf;
+import edu.snu.mist.common.sources.EventGenerator;
+import edu.snu.mist.common.sources.PunctuatedEventGenerator;
+import org.apache.reef.tang.formats.ConfigurationModule;
+import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
+import org.apache.reef.tang.formats.RequiredParameter;
 
-import java.util.Arrays;
-import java.util.Map;
+import java.io.IOException;
 
 /**
  * The class represents punctuated watermark configuration.
- * @param <T> the type of source data
  */
-public final class PunctuatedWatermarkConfiguration<T> extends WatermarkConfiguration<T> {
+public final class PunctuatedWatermarkConfiguration extends ConfigurationModuleBuilder {
 
-  private PunctuatedWatermarkConfiguration(final Map<String, Object> configMap) {
-    super(configMap);
-  }
+  public static final RequiredParameter<String> TIMESTAMP_PARSE_OBJECT = new RequiredParameter<>();
+  public static final RequiredParameter<String> WATERMARK_PREDICATE = new RequiredParameter<>();
 
-  @Override
-  public WatermarkTypeEnum getWatermarkType() {
-    return WatermarkTypeEnum.PUNCTUATED;
-  }
+  public static final ConfigurationModule CONF = new PunctuatedWatermarkConfiguration()
+      .bindNamedParameter(SerializedTimestampParseUdf.class, TIMESTAMP_PARSE_OBJECT)
+      .bindNamedParameter(SerializedWatermarkPredicateUdf.class, WATERMARK_PREDICATE)
+      .bindImplementation(EventGenerator.class, PunctuatedEventGenerator.class)
+      .build();
 
   /**
    * Gets the builder for Configuration construction.
@@ -51,27 +55,25 @@ public final class PunctuatedWatermarkConfiguration<T> extends WatermarkConfigur
    * This class builds punctuated WatermarkConfiguration.
    * @param <V> the type of source data that the target configuration will have
    */
-  public static final class PunctuatedWatermarkConfigurationBuilder<V> extends MISTConfigurationBuilderImpl {
+  public static final class PunctuatedWatermarkConfigurationBuilder<V> {
+
+    private MISTPredicate<V> watermarkPredicate;
+    private WatermarkTimestampFunction<V> timestampParseObject;
 
     /**
-     * Required parameters for punctuated WatermarkConfiguration.
-     */
-    private final String[] punctuatedWatermarkParameters = {
-        PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK,
-        PunctuatedWatermarkParameters.WATERMARK_PREDICATE
-    };
-
-    private PunctuatedWatermarkConfigurationBuilder() {
-      requiredParameters.addAll(Arrays.asList(punctuatedWatermarkParameters));
-    }
-
-    /**
-     * Tests that required parameters are set and builds the PunctuatedWatermarkConfiguration.
+     * Builds the PunctuatedWatermarkConfiguration.
      * @return the configuration
      */
-    public PunctuatedWatermarkConfiguration<V> build() {
-      readyToBuild();
-      return new PunctuatedWatermarkConfiguration<>(configMap);
+    public WatermarkConfiguration build() {
+      try {
+        return new WatermarkConfiguration(CONF
+            .set(TIMESTAMP_PARSE_OBJECT, SerializeUtils.serializeToString(timestampParseObject))
+            .set(WATERMARK_PREDICATE, SerializeUtils.serializeToString(watermarkPredicate))
+                .build());
+      } catch (final IOException e) {
+        e.printStackTrace();
+        throw new RuntimeException(e);
+      }
     }
 
     /**
@@ -80,8 +82,8 @@ public final class PunctuatedWatermarkConfiguration<T> extends WatermarkConfigur
      * @return the configured WatermarkBuilder
      */
     public PunctuatedWatermarkConfigurationBuilder<V> setParsingWatermarkFunction(
-        final MISTFunction<V, Long> function) {
-      set(PunctuatedWatermarkParameters.PARSING_TIMESTAMP_FROM_WATERMARK, function);
+        final WatermarkTimestampFunction<V> function) {
+      timestampParseObject = function;
       return this;
     }
 
@@ -90,8 +92,9 @@ public final class PunctuatedWatermarkConfiguration<T> extends WatermarkConfigur
      * @param predicate the predicate given by users which they want to set
      * @return the configured WatermarkBuilder
      */
-    public PunctuatedWatermarkConfigurationBuilder<V> setWatermarkPredicate(final MISTPredicate<V> predicate) {
-      set(PunctuatedWatermarkParameters.WATERMARK_PREDICATE, predicate);
+    public PunctuatedWatermarkConfigurationBuilder<V> setWatermarkPredicate(
+        final MISTPredicate<V> predicate) {
+      watermarkPredicate = predicate;
       return this;
     }
   }

@@ -15,14 +15,40 @@
  */
 package edu.snu.mist.api.datastreams.configurations;
 
-import java.util.Map;
+import org.apache.reef.tang.Configuration;
 
 /**
  * The class represents source configuration.
- * @param <T> the type of source data
+ * This is just a wrapper class that holds the configuration of Tang.
  */
-public abstract class SourceConfiguration<T> extends MISTConfigurationImpl {
-  protected SourceConfiguration(final Map<String, Object> configMap) {
-    super(configMap);
+public final class SourceConfiguration {
+
+  public enum SourceType {
+    KAFKA, SOCKET;
+  }
+
+  private final Configuration conf;
+  private final SourceType type;
+
+  SourceConfiguration(final Configuration conf,
+                      final SourceType type) {
+    this.conf = conf;
+    this.type = type;
+  }
+
+  /**
+   * Get the configuration.
+   * @return configuration
+   */
+  public Configuration getConfiguration() {
+    return conf;
+  }
+
+  /**
+   * Get the type of the source.
+   * @return type
+   */
+  public SourceType getType() {
+    return type;
   }
 }

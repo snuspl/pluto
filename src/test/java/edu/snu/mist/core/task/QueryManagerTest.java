@@ -15,15 +15,15 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.core.parameters.NumThreads;
-import edu.snu.mist.core.parameters.PlanStorePath;
 import edu.snu.mist.common.PhysicalVertex;
 import edu.snu.mist.common.operators.*;
 import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.sources.*;
+import edu.snu.mist.common.types.Tuple2;
+import edu.snu.mist.core.parameters.NumThreads;
+import edu.snu.mist.core.parameters.PlanStorePath;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.LogicalPlan;
@@ -294,10 +294,10 @@ public final class QueryManagerTest {
    * Creates operators an partitioned queries and adds source, dag vertices, edges and sinks to dag.
    */
   private void constructPhysicalPlan(final Tuple<String, LogicalPlan> tuple,
-                                    final DAG<PhysicalVertex, Direction> dag,
-                                    final Source src,
-                                    final Sink sink1,
-                                    final Sink sink2) {
+                                     final DAG<PhysicalVertex, Direction> dag,
+                                     final Source src,
+                                     final Sink sink1,
+                                     final Sink sink2) {
 
     // Create operators and partitioned queries
     //                     (pq1)                                     (pq2)

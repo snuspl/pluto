@@ -16,12 +16,6 @@
 package edu.snu.mist.common.windows;
 
 import edu.snu.mist.common.exceptions.IllegalWindowParameterException;
-import edu.snu.mist.formats.avro.WindowOperatorInfo;
-import edu.snu.mist.formats.avro.WindowOperatorTypeEnum;
-
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * This class contains the information for the session window.
@@ -44,21 +38,16 @@ public final class SessionWindowInformation implements WindowInformation {
     }
   }
 
+  @Override
+  public int getWindowSize() {
+    return 0;
+  }
+
   /**
    * @return the window interval
    */
+  @Override
   public int getWindowInterval() {
     return sessionInterval;
-  }
-
-  @Override
-  public WindowOperatorInfo getSerializedWindowOpInfo(){
-    final WindowOperatorInfo.Builder wOpInfoBuilder = WindowOperatorInfo.newBuilder();
-    wOpInfoBuilder.setWindowOperatorType(WindowOperatorTypeEnum.SESSION);
-    final List<ByteBuffer> serializedFunctionList = new ArrayList<>();
-    wOpInfoBuilder.setFunctions(serializedFunctionList);
-    wOpInfoBuilder.setWindowSize(0);
-    wOpInfoBuilder.setWindowInterval(sessionInterval);
-    return wOpInfoBuilder.build();
   }
 }

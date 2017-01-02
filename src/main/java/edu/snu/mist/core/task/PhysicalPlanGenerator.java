@@ -21,6 +21,7 @@ import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.LogicalPlan;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
+import org.apache.reef.tang.exceptions.InjectionException;
 
 import java.io.IOException;
 
@@ -36,5 +37,5 @@ public interface PhysicalPlanGenerator {
    * @return physical plan
    */
   DAG<PhysicalVertex, Direction> generate(Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
-      throws IOException, ClassNotFoundException;
+      throws IOException, ClassNotFoundException, InjectionException;
 }

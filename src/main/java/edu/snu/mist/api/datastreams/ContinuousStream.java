@@ -16,10 +16,11 @@
 package edu.snu.mist.api.datastreams;
 
 import edu.snu.mist.common.functions.*;
-import edu.snu.mist.api.datastreams.configurations.TextSocketSinkConfiguration;
+import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.WindowInformation;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Continuous Stream is a normal Stream used inside MIST. It emits one stream data (typed T) for one time.
@@ -33,7 +34,7 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    * @param <OUT> the type of newly created stream output
    * @return new transformed stream after applying the operation
    */
-  <OUT> MapOperatorStream<T, OUT> map(MISTFunction<T, OUT> mapFunc);
+  <OUT> ContinuousStream<OUT> map(MISTFunction<T, OUT> mapFunc);
 
   /**
    * Applies flatMap operation to the current stream and creates a new stream.
@@ -41,14 +42,14 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    * @param <OUT> the type of newly created stream output
    * @return new transformed stream after applying the operation
    */
-  <OUT> FlatMapOperatorStream<T, OUT> flatMap(MISTFunction<T, List<OUT>> flatMapFunc);
+  <OUT> ContinuousStream<OUT> flatMap(MISTFunction<T, List<OUT>> flatMapFunc);
 
   /**
    * Applies filter operation to the current stream and creates a new stream.
    * @param filterFunc the function used for the transformation provided by a user.
    * @return new transformed stream after applying the operation
    */
-  FilterOperatorStream<T> filter(MISTPredicate<T> filterFunc);
+  ContinuousStream<T> filter(MISTPredicate<T> filterFunc);
 
   /**
    * Applies reduceByKey operation to the current stream.
@@ -59,7 +60,7 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    * @param <V> the type of value in resulting stream
    * @return new transformed stream after applying the operation
    */
-  <K, V> ReduceByKeyOperatorStream<T, K, V> reduceByKey(
+  <K, V> ContinuousStream<Map<K, V>> reduceByKey(
       int keyFieldIndex, Class<K> keyType, MISTBiFunction<V, V, V> reduceFunc);
 
   /**
@@ -69,7 +70,7 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    * @param <OUT> the type of stream output
    * @return new transformed stream after applying the user-defined stateful operation
    */
-  <OUT> ApplyStatefulOperatorStream<T, OUT> applyStateful(ApplyStatefulFunction<T, OUT> applyStatefulFunction);
+  <OUT> ContinuousStream<OUT> applyStateful(ApplyStatefulFunction<T, OUT> applyStatefulFunction);
 
   /**
    * Applies union operation to the current stream and input continuous stream passed as a parameter.
@@ -77,14 +78,14 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    * @param inputStream the stream to be unified with this stream
    * @return new unified stream after applying type-checking
    */
-  UnionOperatorStream<T> union(ContinuousStream<T> inputStream);
+  ContinuousStream<T> union(ContinuousStream<T> inputStream);
 
   /**
    * Creates a new WindowsStream according to the WindowInformation.
    * @param windowInfo the WindowInformation contains some information used during windowing operation
    * @return new windowed stream after applying the windowing operation
    */
-  WindowOperatorStream<T> window(WindowInformation windowInfo);
+  WindowedStream<T> window(WindowInformation windowInfo);
 
   /**
    * Joins current stream with the input stream.
@@ -95,14 +96,15 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    * @param <U> the data type of the input stream to be joined with this stream
    * @return new windowed and joined stream
    */
-  <U> JoinOperatorStream<T, U> join(ContinuousStream<U> inputStream,
-                                    MISTBiPredicate<T, U> joinBiPredicate,
-                                    WindowInformation windowInfo);
+  <U> WindowedStream<Tuple2<T, U>> join(ContinuousStream<U> inputStream,
+                                        MISTBiPredicate<T, U> joinBiPredicate,
+                                        WindowInformation windowInfo);
 
   /**
-   * Defines a text socket output Sink for the current stream according to the TextSocketSinkConfiguration.
-   * @param sinkConfiguration The configuration for sink
-   * @return new sink for the current stream
+   * Push the text stream to th socket server.
+   * @param serverAddr socket server address
+   * @param serverPort socket server port
+   * @return sink stream
    */
-  Sink textSocketOutput(TextSocketSinkConfiguration sinkConfiguration);
+  MISTStream<String> textSocketOutput(String serverAddr, int serverPort);
 }

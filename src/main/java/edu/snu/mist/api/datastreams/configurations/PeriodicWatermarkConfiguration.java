@@ -15,68 +15,54 @@
  */
 package edu.snu.mist.api.datastreams.configurations;
 
-import edu.snu.mist.common.parameters.PeriodicWatermarkParameters;
-import edu.snu.mist.formats.avro.WatermarkTypeEnum;
-
-import java.util.Arrays;
-import java.util.Map;
+import edu.snu.mist.common.parameters.PeriodicWatermarkDelay;
+import edu.snu.mist.common.parameters.PeriodicWatermarkPeriod;
+import edu.snu.mist.common.sources.EventGenerator;
+import edu.snu.mist.common.sources.PeriodicEventGenerator;
+import org.apache.reef.tang.formats.ConfigurationModule;
+import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
+import org.apache.reef.tang.formats.OptionalParameter;
+import org.apache.reef.tang.formats.RequiredParameter;
 
 /**
  * The class represents periodic watermark configuration.
- * @param <T> the type of source data
  */
-public final class PeriodicWatermarkConfiguration<T> extends WatermarkConfiguration<T> {
+public final class PeriodicWatermarkConfiguration extends ConfigurationModuleBuilder {
 
-  private PeriodicWatermarkConfiguration(final Map<String, Object> configMap) {
-    super(configMap);
-  }
+  public static final RequiredParameter<Long> PERIOD = new RequiredParameter<>();
+  public static final OptionalParameter<Long> EXPECTED_DELAY = new OptionalParameter<>();
 
-  @Override
-  public WatermarkTypeEnum getWatermarkType() {
-    return WatermarkTypeEnum.PERIODIC;
-  }
+  public static final ConfigurationModule CONF = new PeriodicWatermarkConfiguration()
+      .bindNamedParameter(PeriodicWatermarkPeriod.class, PERIOD)
+      .bindNamedParameter(PeriodicWatermarkDelay.class, EXPECTED_DELAY)
+      .bindImplementation(EventGenerator.class, PeriodicEventGenerator.class)
+      .build();
 
   /**
    * Gets the builder for Configuration construction.
-   * @param <K> the type of source data that the target configuration will have
    * @return the builder
    */
-  public static <K> PeriodicWatermarkConfigurationBuilder<K> newBuilder() {
-    return new PeriodicWatermarkConfigurationBuilder<>();
+  public static PeriodicWatermarkConfigurationBuilder newBuilder() {
+    return new PeriodicWatermarkConfigurationBuilder();
   }
 
   /**
    * This class builds periodic WatermarkConfiguration.
-   * @param <V> the type of source data that the target configuration will have
    */
-  public static final class PeriodicWatermarkConfigurationBuilder<V> extends MISTConfigurationBuilderImpl {
+  public static final class PeriodicWatermarkConfigurationBuilder {
+
+    private int watermarkPeriod;
+    private int watermarkDelay;
 
     /**
-     * Required parameters for periodic WatermarkConfiguration.
-     */
-    private final String[] periodicWatermarkRequiredParameters = {
-        PeriodicWatermarkParameters.PERIOD
-    };
-
-    /**
-     * Optional parameters for periodic WatermarkConfiguration.
-     */
-    private final String[] periodicWatermarkOptionalParameters = {
-        PeriodicWatermarkParameters.EXPECTED_DELAY
-    };
-
-    private PeriodicWatermarkConfigurationBuilder() {
-      requiredParameters.addAll(Arrays.asList(periodicWatermarkRequiredParameters));
-      optionalParameters.addAll(Arrays.asList(periodicWatermarkOptionalParameters));
-    }
-
-    /**
-     * Tests that required parameters are set and builds the PeriodicWatermarkConfiguration.
+     * Builds the PeriodicWatermarkConfiguration.
      * @return the configuration
      */
-    public PeriodicWatermarkConfiguration<V> build() {
-      readyToBuild();
-      return new PeriodicWatermarkConfiguration<>(configMap);
+    public WatermarkConfiguration build() {
+      return new WatermarkConfiguration(CONF
+          .set(PERIOD, watermarkPeriod)
+          .set(EXPECTED_DELAY, watermarkDelay)
+          .build());
     }
 
     /**
@@ -84,8 +70,8 @@ public final class PeriodicWatermarkConfiguration<T> extends WatermarkConfigurat
      * @param period the period given by users which they want to set
      * @return the configured WatermarkBuilder
      */
-    public PeriodicWatermarkConfigurationBuilder<V> setWatermarkPeriod(final int period) {
-      set(PeriodicWatermarkParameters.PERIOD, period);
+    public PeriodicWatermarkConfigurationBuilder setWatermarkPeriod(final int period) {
+      watermarkPeriod = period;
       return this;
     }
 
@@ -96,8 +82,8 @@ public final class PeriodicWatermarkConfiguration<T> extends WatermarkConfigurat
      * @param expectedDelay the expected delay given by users which they want to set
      * @return the configured WatermarkBuilder
      */
-    public PeriodicWatermarkConfigurationBuilder<V> setExpectedDelay(final int expectedDelay) {
-      set(PeriodicWatermarkParameters.EXPECTED_DELAY, expectedDelay);
+    public PeriodicWatermarkConfigurationBuilder setExpectedDelay(final int expectedDelay) {
+      watermarkDelay = expectedDelay;
       return this;
     }
   }
