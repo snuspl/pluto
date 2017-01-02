@@ -15,17 +15,21 @@
  */
 package edu.snu.mist.common.sources;
 
-import edu.snu.mist.common.stream.NettyChannelHandler;
-import edu.snu.mist.common.stream.textmessage.NettyTextMessageStreamGenerator;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.OutputEmitter;
+import edu.snu.mist.common.shared.NettySharedResource;
+import edu.snu.mist.common.stream.NettyChannelHandler;
+import edu.snu.mist.common.stream.textmessage.NettyTextMessageStreamGenerator;
 import io.netty.channel.ChannelHandlerContext;
 import junit.framework.Assert;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
+import org.apache.reef.tang.exceptions.InjectionException;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -36,14 +40,33 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public final class NettySourceTest {
 
-  private static final Logger LOG = Logger.getLogger(NettyTextDataGeneratorFactory.class.getName());
+  private static final Logger LOG = Logger.getLogger(NettySharedResource.class.getName());
   private static final String SERVER_ADDR = "localhost";
   private static final int SERVER_PORT = 12112;
+
+  private NettySharedResource nettySharedResource;
+  private StringIdentifierFactory identifierFactory;
+  private ScheduledExecutorService scheduler;
+
+  @Before
+  public void setUp() throws InjectionException {
+    final Injector injector = Tang.Factory.getTang().newInjector();
+    nettySharedResource = injector.getInstance(NettySharedResource.class);
+    identifierFactory = injector.getInstance(StringIdentifierFactory.class);
+    scheduler = Executors.newScheduledThreadPool(1);
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    nettySharedResource.close();
+    scheduler.shutdown();
+  }
 
   /**
    * Test whether the created source using DataGenerator by NettyTextDataGeneratorFactory receive event-time data
@@ -78,61 +101,60 @@ public final class NettySourceTest {
                  new TestChannelHandler(channelCountDown))) {
       final Injector injector = Tang.Factory.getTang().newInjector();
 
-      // create netty sources
-      try (final NettyTextDataGeneratorFactory textDataGeneratorFactory =
-               injector.getInstance(NettyTextDataGeneratorFactory.class)) {
-        // source list
-        final List<Source<String>> sources = new LinkedList<>();
-        // result data list
-        final List<List<String>> punctuatedDataResults = new LinkedList<>();
-        // result watermark list
-        final List<List<Long>> punctuatedWatermarkResults = new LinkedList<>();
-        // Create sources having punctuated watermark
-        for (int i = 0; i < numSources; i++) {
-          final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
-          final DataGenerator<String> dataGenerator =
-              textDataGeneratorFactory.newDataGenerator(SERVER_ADDR, SERVER_PORT);
-          final EventGenerator<String> eventGenerator =
-              new PunctuatedEventGenerator<>((Function) (input) ->
-                  new Tuple<>(input.toString().split(":")[0], Long.parseLong(input.toString().split(":")[1])),
-                  (input) -> input.toString().split(":")[0].equals("Watermark"),
-                  (input) -> Long.parseLong(input.toString().split(":")[1]));
-          final Source<String> source = new SourceImpl<>(
-              identifierFactory.getNewInstance(Integer.toString(i)), dataGenerator, eventGenerator);
+      // source list
+      final List<Source<String>> sources = new LinkedList<>();
+      // result data list
+      final List<List<String>> punctuatedDataResults = new LinkedList<>();
+      // result watermark list
+      final List<List<Long>> punctuatedWatermarkResults = new LinkedList<>();
+      // Create sources having punctuated watermark
+      for (int i = 0; i < numSources; i++) {
+        final DataGenerator<String> dataGenerator =
+            new NettyTextDataGenerator(SERVER_ADDR, SERVER_PORT, nettySharedResource);
 
-          sources.add(source);
+        final Function<String, Tuple<String, Long>> extractFunc = (input) ->
+            new Tuple<>(input.toString().split(":")[0], Long.parseLong(input.toString().split(":")[1]));
+        final Predicate<String> isWatermark = (input) -> input.toString().split(":")[0].equals("Watermark");
+        final Function<String, Long> parseTsFunc =
+            (input) -> Long.parseLong(input.toString().split(":")[1]);
+        final EventGenerator<String> eventGenerator =
+            new PunctuatedEventGenerator<>(extractFunc, isWatermark, parseTsFunc);
+        final Source<String> source = new SourceImpl<>(
+            identifierFactory.getNewInstance(Integer.toString(i)), dataGenerator, eventGenerator);
 
-          final List<String> receivedData = new LinkedList<>();
-          final List<Long> receivedWatermark = new LinkedList<>();
-          punctuatedDataResults.add(receivedData);
-          punctuatedWatermarkResults.add(receivedWatermark);
-          source.getEventGenerator().setOutputEmitter(new SourceTestOutputEmitter<>(receivedData, receivedWatermark,
-              dataCountDownLatch, watermarkCountDownLatch));
-        }
+        sources.add(source);
 
-        // Start to receive data stream from stream generator
-        for (final Source<String> source : sources) {
-          source.start();
-        }
-
-        // Wait until all sources connect to stream generator
-        channelCountDown.await();
-        inputStreamWithTimestamp.forEach(textMessageStreamGenerator::write);
-        // Wait until all data are sent to source
-        dataCountDownLatch.await();
-        watermarkCountDownLatch.await();
-        for (final List<String> received : punctuatedDataResults) {
-          Assert.assertEquals(expectedDataWithoutTimestamp, received);
-        }
-        for (final List<Long> received : punctuatedWatermarkResults) {
-          Assert.assertEquals(expectedPunctuatedWatermark, received);
-        }
-
-        // Closes
-        for (final Source<String> source : sources) {
-          source.close();
-        }
+        final List<String> receivedData = new LinkedList<>();
+        final List<Long> receivedWatermark = new LinkedList<>();
+        punctuatedDataResults.add(receivedData);
+        punctuatedWatermarkResults.add(receivedWatermark);
+        source.getEventGenerator().setOutputEmitter(new SourceTestOutputEmitter<>(receivedData, receivedWatermark,
+            dataCountDownLatch, watermarkCountDownLatch));
       }
+
+      // Start to receive data stream from stream generator
+      for (final Source<String> source : sources) {
+        source.start();
+      }
+
+      // Wait until all sources connect to stream generator
+      channelCountDown.await();
+      inputStreamWithTimestamp.forEach(textMessageStreamGenerator::write);
+      // Wait until all data are sent to source
+      dataCountDownLatch.await();
+      watermarkCountDownLatch.await();
+      for (final List<String> received : punctuatedDataResults) {
+        Assert.assertEquals(expectedDataWithoutTimestamp, received);
+      }
+      for (final List<Long> received : punctuatedWatermarkResults) {
+        Assert.assertEquals(expectedPunctuatedWatermark, received);
+      }
+
+      // Closes
+      for (final Source<String> source : sources) {
+        source.close();
+      }
+
     }
   }
 
@@ -162,48 +184,40 @@ public final class NettySourceTest {
     try (final NettyTextMessageStreamGenerator textMessageStreamGenerator =
              new NettyTextMessageStreamGenerator(SERVER_ADDR, SERVER_PORT,
                  new TestChannelHandler(channelCountDown))) {
-      final Injector injector = Tang.Factory.getTang().newInjector();
+      // Create source having periodic watermark
+      final DataGenerator<String> dataGenerator =
+          new NettyTextDataGenerator(SERVER_ADDR, SERVER_PORT, nettySharedResource);
+      final EventGenerator<String> eventGenerator =
+          new PeriodicEventGenerator<>(null, period, period, TimeUnit.MILLISECONDS, scheduler);
+      final Source<String> periodicSource = new SourceImpl<>(
+          identifierFactory.getNewInstance(Integer.toString(1)), dataGenerator, eventGenerator);
 
-      // create netty sources
-      try (final NettyTextDataGeneratorFactory textDataGeneratorFactory =
-               injector.getInstance(NettyTextDataGeneratorFactory.class)) {
-        // Create source having periodic watermark
-        final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
-        final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        final DataGenerator<String> dataGenerator = textDataGeneratorFactory.newDataGenerator(SERVER_ADDR, SERVER_PORT);
-        final EventGenerator<String> eventGenerator =
-            new PeriodicEventGenerator<>(null, period, period, TimeUnit.MILLISECONDS, scheduler);
-        final Source<String> periodicSource = new SourceImpl<>(
-            identifierFactory.getNewInstance(Integer.toString(1)), dataGenerator, eventGenerator);
+      final List<String> periodicReceivedData = new LinkedList<>();
+      final List<Long> periodicReceivedWatermark = new LinkedList<>();
+      periodicSource.getEventGenerator().setOutputEmitter(new SourceTestOutputEmitter<>(periodicReceivedData,
+          periodicReceivedWatermark, dataCountDownLatch, watermarkCountDownLatch));
 
-        final List<String> periodicReceivedData = new LinkedList<>();
-        final List<Long> periodicReceivedWatermark = new LinkedList<>();
-        periodicSource.getEventGenerator().setOutputEmitter(new SourceTestOutputEmitter<>(periodicReceivedData,
-            periodicReceivedWatermark, dataCountDownLatch, watermarkCountDownLatch));
+      // Start to receive data stream from stream generator
+      periodicSource.start();
 
-        // Start to receive data stream from stream generator
-        periodicSource.start();
+      // Wait until all sources connect to stream generator
+      channelCountDown.await();
+      inputStream.forEach(textMessageStreamGenerator::write);
+      // Wait until all data are sent to source
+      dataCountDownLatch.await();
+      watermarkCountDownLatch.await();
 
-        // Wait until all sources connect to stream generator
-        channelCountDown.await();
-        inputStream.forEach(textMessageStreamGenerator::write);
-        // Wait until all data are sent to source
-        dataCountDownLatch.await();
-        watermarkCountDownLatch.await();
-
-        Assert.assertEquals(inputStream, periodicReceivedData);
-        Long lastTimestamp = 0L;
-        for (final Long timestamp : periodicReceivedWatermark) {
-          if (lastTimestamp != 0L) {
-            Assert.assertTrue(Math.abs(period - (timestamp - lastTimestamp)) < epsilon);
-          }
-          lastTimestamp = timestamp;
+      Assert.assertEquals(inputStream, periodicReceivedData);
+      Long lastTimestamp = 0L;
+      for (final Long timestamp : periodicReceivedWatermark) {
+        if (lastTimestamp != 0L) {
+          Assert.assertTrue(Math.abs(period - (timestamp - lastTimestamp)) < epsilon);
         }
-
-        // Closes
-        periodicSource.close();
-        scheduler.shutdown();
+        lastTimestamp = timestamp;
       }
+
+      // Closes
+      periodicSource.close();
     }
   }
 

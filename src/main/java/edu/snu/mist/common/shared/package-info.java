@@ -13,21 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.sinks;
-
 /**
- * This interface creates new instance of Sink.
+ * This package contains the class that are shared among other objects.
  */
-public interface TextSinkFactory extends AutoCloseable {
-
-  /**
-   * Create new instance of sink.
-   * @param sinkId sink id
-   * @param serverAddress server address
-   * @param port server port
-   * @return a new sink
-   */
-  Sink<String> newSink(String sinkId,
-                       String serverAddress,
-                       int port) throws Exception;
-}
+package edu.snu.mist.common.shared;

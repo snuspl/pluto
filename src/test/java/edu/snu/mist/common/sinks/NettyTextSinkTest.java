@@ -15,13 +15,18 @@
  */
 package edu.snu.mist.common.sinks;
 
+import edu.snu.mist.common.shared.NettySharedResource;
 import edu.snu.mist.common.stream.NettyChannelHandler;
 import edu.snu.mist.common.stream.textmessage.NettyTextMessageOutputReceiver;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import junit.framework.Assert;
+import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
+import org.apache.reef.tang.exceptions.InjectionException;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -31,11 +36,26 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
-public final class TextSinkFactoryTest {
+public final class NettyTextSinkTest {
 
   private static final String QUERY_ID = "testQuery";
   private static final String SERVER_ADDR = "localhost";
   private static final int SERVER_PORT = 12112;
+
+  private NettySharedResource nettySharedResource;
+  private StringIdentifierFactory stringIdentifierFactory;
+
+  @Before
+  public void setUp() throws InjectionException {
+    final Injector injector = Tang.Factory.getTang().newInjector();
+    nettySharedResource = injector.getInstance(NettySharedResource.class);
+    stringIdentifierFactory = injector.getInstance(StringIdentifierFactory.class);
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    nettySharedResource.close();
+  }
 
   /**
    * Test whether the created sinks by NettyTextSinkFactory send data stream correctly to output receiver.
@@ -43,7 +63,7 @@ public final class TextSinkFactoryTest {
    * @throws Exception
    */
   @Test(timeout = 4000L)
-  public void testNettyTextSinkFactory() throws Exception {
+  public void testNettyTextSink() throws Exception {
     final int numSinks = 4;
     final List<String> outputStream = Arrays.asList(
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -58,37 +78,33 @@ public final class TextSinkFactoryTest {
     // Create output receiver
     try (final NettyTextMessageOutputReceiver outputReceiver =
              new NettyTextMessageOutputReceiver(SERVER_ADDR, SERVER_PORT, channelHandler)) {
-      final Injector injector = Tang.Factory.getTang().newInjector();
-
       // create netty sinks
-      try (final TextSinkFactory textSinkFactory = injector.getInstance(NettyTextSinkFactory.class)) {
-        // source list
-        final List<Sink<String>> sinks = new LinkedList<>();
-        // result list
-        // Create sinks
-        for (int i = 0; i < numSinks; i++) {
-          final Sink<String> sink = textSinkFactory.newSink(Integer.toString(i), SERVER_ADDR, SERVER_PORT);
-          sinks.add(sink);
-        }
+      final List<Sink<String>> sinks = new LinkedList<>();
+      // result list
+      // Create sinks
+      for (int i = 0; i < numSinks; i++) {
+        final Sink<String> sink = new NettyTextSink("sink", SERVER_ADDR, SERVER_PORT,
+            nettySharedResource, stringIdentifierFactory);
+        sinks.add(sink);
+      }
 
-        // Wait until all sinks connect to output receiver
-        channelCountDown.await();
-        outputStream.forEach((output) -> {
-          for (final Sink<String> sink : sinks) {
-            sink.handle(output);
-          }
-        });
-
-        // Wait until all data are sent to source
-        countDownLatch.await();
-        for (List<String> received : channelListMap.values()) {
-          Assert.assertEquals(outputStream, received);
-        }
-
-        // Closes
+      // Wait until all sinks connect to output receiver
+      channelCountDown.await();
+      outputStream.forEach((output) -> {
         for (final Sink<String> sink : sinks) {
-          sink.close();
+          sink.handle(output);
         }
+      });
+
+      // Wait until all data are sent to source
+      countDownLatch.await();
+      for (List<String> received : channelListMap.values()) {
+        Assert.assertEquals(outputStream, received);
+      }
+
+      // Closes
+      for (final Sink<String> sink : sinks) {
+        sink.close();
       }
     }
   }

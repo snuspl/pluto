@@ -15,17 +15,19 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.functions.ApplyStatefulFunction;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.ExternalJarObjectInputStream;
-import edu.snu.mist.common.parameters.*;
-import edu.snu.mist.core.parameters.TempFolderPath;
 import edu.snu.mist.common.PhysicalVertex;
+import edu.snu.mist.common.functions.ApplyStatefulFunction;
 import edu.snu.mist.common.operators.*;
-import edu.snu.mist.common.sinks.NettyTextSinkFactory;
+import edu.snu.mist.common.parameters.*;
+import edu.snu.mist.common.shared.KafkaSharedResource;
+import edu.snu.mist.common.shared.NettySharedResource;
+import edu.snu.mist.common.sinks.NettyTextSink;
 import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.sources.*;
+import edu.snu.mist.core.parameters.TempFolderPath;
 import edu.snu.mist.formats.avro.*;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
@@ -54,9 +56,9 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   private static final Logger LOG = Logger.getLogger(DefaultPhysicalPlanGeneratorImpl.class.getName());
 
   private final OperatorIdGenerator operatorIdGenerator;
-  private final NettyTextDataGeneratorFactory nettyDataGeneratorFactory;
-  private final KafkaDataGeneratorFactory kafkaDataGeneratorFactory;
-  private final NettyTextSinkFactory nettySinkFactory;
+  private final NettySharedResource nettySharedResource;
+  private final KafkaSharedResource kafkaSharedResource;
+  private final StringIdentifierFactory identifierFactory;
   private final String tmpFolderPath;
   private final ScheduledExecutorService scheduler;
   private final ClassLoaderProvider classLoaderProvider;
@@ -64,15 +66,15 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   @Inject
   private DefaultPhysicalPlanGeneratorImpl(final OperatorIdGenerator operatorIdGenerator,
                                            @Parameter(TempFolderPath.class) final String tmpFolderPath,
-                                           final NettyTextDataGeneratorFactory nettyDataGeneratorFactory,
-                                           final NettyTextSinkFactory nettySinkFactory,
-                                           final KafkaDataGeneratorFactory kafkaDataGeneratorFactory,
+                                           final NettySharedResource nettySharedResource,
+                                           final KafkaSharedResource kafkaSharedResource,
+                                           final StringIdentifierFactory identifierFactory,
                                            final ClassLoaderProvider classLoaderProvider,
                                            final ScheduledExecutorServiceWrapper schedulerWrapper) {
     this.operatorIdGenerator = operatorIdGenerator;
-    this.nettyDataGeneratorFactory = nettyDataGeneratorFactory;
-    this.nettySinkFactory = nettySinkFactory;
-    this.kafkaDataGeneratorFactory = kafkaDataGeneratorFactory;
+    this.nettySharedResource = nettySharedResource;
+    this.kafkaSharedResource = kafkaSharedResource;
+    this.identifierFactory = identifierFactory;
     this.tmpFolderPath = tmpFolderPath;
     this.classLoaderProvider = classLoaderProvider;
     this.scheduler= schedulerWrapper.getScheduler();
@@ -86,7 +88,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     final String socketHostAddress = sourceConfString.get(TextSocketSourceParameters.SOCKET_HOST_ADDRESS).toString();
     final String socketHostPort = sourceConfString.get(TextSocketSourceParameters.SOCKET_HOST_PORT).toString();
     try {
-      return nettyDataGeneratorFactory.newDataGenerator(socketHostAddress, Integer.valueOf(socketHostPort));
+      return new NettyTextDataGenerator(socketHostAddress, Integer.valueOf(socketHostPort), nettySharedResource);
     } catch (final Exception e) {
       e.printStackTrace();
       throw new RuntimeException(e);
@@ -103,7 +105,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       final String kafkaTopic = sourceConfString.get(KafkaSourceParameters.KAFKA_TOPIC).toString();
       final HashMap<String, Object> kafkaConsumerConfig = deserializeLambda(
           (ByteBuffer) sourceConfString.get(KafkaSourceParameters.KAFKA_CONSUMER_CONFIG), classLoader);
-      return kafkaDataGeneratorFactory.newDataGenerator(kafkaTopic, kafkaConsumerConfig);
+      return new KafkaDataGenerator<>(kafkaTopic, kafkaConsumerConfig, kafkaSharedResource);
     } catch (final Exception e) {
       e.printStackTrace();
       throw new RuntimeException(e);
@@ -160,8 +162,8 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     final String socketHostAddress = sinkConfString.get(TextSocketSinkParameters.SOCKET_HOST_ADDRESS).toString();
     final String socketHostPort = sinkConfString.get(TextSocketSinkParameters.SOCKET_HOST_PORT).toString();
     try {
-      return nettySinkFactory.newSink(operatorIdGenerator.generate(),
-          socketHostAddress, Integer.valueOf(socketHostPort));
+      return new NettyTextSink(operatorIdGenerator.generate(),
+          socketHostAddress, Integer.valueOf(socketHostPort), nettySharedResource, identifierFactory);
     } catch (Exception e) {
       e.printStackTrace();
       throw new RuntimeException(e);
@@ -284,7 +286,6 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
         case SOURCE: {
           final Vertex vertex = avroVertexChain.getVertexChain().get(0);
           final SourceInfo sourceInfo = (SourceInfo) vertex.getAttributes();
-          final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
           final Map<String, Object> sourceStringConf = sourceInfo.getSourceConfiguration();
           final Map<String, Object> watermarkStringConf = sourceInfo.getWatermarkConfiguration();
           final EventGenerator eventGenerator =

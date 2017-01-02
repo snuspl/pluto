@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.sources;
 
+import edu.snu.mist.common.shared.NettySharedResource;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -61,12 +62,12 @@ public final class NettyTextDataGenerator implements DataGenerator<String> {
    */
   private EventGenerator eventGenerator;
 
-  public NettyTextDataGenerator(final String serverAddr,
-                                final int port,
-                                final Bootstrap clientBootstrap,
-                                final ConcurrentMap<Channel, EventHandler<String>> channelMap) throws IOException {
-    this.clientBootstrap = clientBootstrap;
-    this.channelMap = channelMap;
+  public NettyTextDataGenerator(
+      final String serverAddr,
+      final int port,
+      final NettySharedResource resource) throws IOException {
+    this.clientBootstrap = resource.getClientBootstrap();
+    this.channelMap = resource.getChannelMap();
     this.started = new AtomicBoolean(false);
     this.serverSocketAddress = new InetSocketAddress(serverAddr, port);
   }
