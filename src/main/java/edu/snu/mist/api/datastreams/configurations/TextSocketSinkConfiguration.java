@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.api.datastreams.configurations;
 
-import edu.snu.mist.api.parameters.TextSocketSinkParameters;
+import edu.snu.mist.common.parameters.TextSocketSinkParameters;
 
 import java.util.Arrays;
 import java.util.Map;

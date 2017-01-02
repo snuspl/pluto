@@ -16,10 +16,10 @@
 package edu.snu.mist.api.datastreams;
 
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.functions.ApplyStatefulFunction;
-import edu.snu.mist.api.functions.MISTBiFunction;
-import edu.snu.mist.api.functions.MISTFunction;
-import edu.snu.mist.api.windows.WindowData;
+import edu.snu.mist.common.functions.ApplyStatefulFunction;
+import edu.snu.mist.common.functions.MISTBiFunction;
+import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.common.windows.WindowData;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.Vertex;

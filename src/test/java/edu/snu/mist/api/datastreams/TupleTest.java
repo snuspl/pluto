@@ -15,8 +15,8 @@
  */
 package edu.snu.mist.api.datastreams;
 
-import edu.snu.mist.api.types.Tuple;
-import edu.snu.mist.api.types.Tuple2;
+import edu.snu.mist.common.types.Tuple;
+import edu.snu.mist.common.types.Tuple2;
 import org.junit.Assert;
 import org.junit.Test;
 

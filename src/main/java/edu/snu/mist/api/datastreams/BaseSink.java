@@ -18,7 +18,7 @@ package edu.snu.mist.api.datastreams;
 
 import edu.snu.mist.api.SerializedType;
 import edu.snu.mist.api.datastreams.configurations.SinkConfiguration;
-import edu.snu.mist.api.parameters.SinkSerializeInfo;
+import edu.snu.mist.api.SinkSerializeInfo;
 import edu.snu.mist.formats.avro.SinkInfo;
 import edu.snu.mist.formats.avro.SinkTypeEnum;
 import edu.snu.mist.formats.avro.Vertex;

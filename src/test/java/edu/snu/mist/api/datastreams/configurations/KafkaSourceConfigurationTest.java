@@ -15,9 +15,9 @@
  */
 package edu.snu.mist.api.datastreams.configurations;
 
-import edu.snu.mist.api.functions.MISTFunction;
-import edu.snu.mist.api.parameters.KafkaSourceParameters;
-import edu.snu.mist.api.parameters.SourceParameters;
+import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.common.parameters.KafkaSourceParameters;
+import edu.snu.mist.common.parameters.SourceParameters;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.reef.io.Tuple;
 import org.junit.Assert;

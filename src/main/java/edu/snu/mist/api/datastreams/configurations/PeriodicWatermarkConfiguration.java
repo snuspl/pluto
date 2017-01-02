@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.api.datastreams.configurations;
 
-import edu.snu.mist.api.parameters.PeriodicWatermarkParameters;
+import edu.snu.mist.common.parameters.PeriodicWatermarkParameters;
 import edu.snu.mist.formats.avro.WatermarkTypeEnum;
 
 import java.util.Arrays;

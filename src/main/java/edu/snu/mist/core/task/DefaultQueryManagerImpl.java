@@ -17,9 +17,9 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.GraphUtils;
-import edu.snu.mist.core.task.common.PhysicalVertex;
-import edu.snu.mist.core.task.sinks.Sink;
-import edu.snu.mist.core.task.sources.Source;
+import edu.snu.mist.common.PhysicalVertex;
+import edu.snu.mist.common.sinks.Sink;
+import edu.snu.mist.common.sources.Source;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.LogicalPlan;

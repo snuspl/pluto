@@ -15,17 +15,17 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.api.functions.ApplyStatefulFunction;
-import edu.snu.mist.api.parameters.*;
+import edu.snu.mist.common.functions.ApplyStatefulFunction;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.ExternalJarObjectInputStream;
+import edu.snu.mist.common.parameters.*;
 import edu.snu.mist.core.parameters.TempFolderPath;
-import edu.snu.mist.core.task.common.PhysicalVertex;
-import edu.snu.mist.core.task.operators.*;
-import edu.snu.mist.core.task.sinks.NettyTextSinkFactory;
-import edu.snu.mist.core.task.sinks.Sink;
-import edu.snu.mist.core.task.sources.*;
+import edu.snu.mist.common.PhysicalVertex;
+import edu.snu.mist.common.operators.*;
+import edu.snu.mist.common.sinks.NettyTextSinkFactory;
+import edu.snu.mist.common.sinks.Sink;
+import edu.snu.mist.common.sources.*;
 import edu.snu.mist.formats.avro.*;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;

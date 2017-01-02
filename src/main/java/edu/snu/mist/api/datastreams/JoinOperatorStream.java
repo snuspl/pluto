@@ -16,8 +16,8 @@
 package edu.snu.mist.api.datastreams;
 
 import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.functions.MISTBiPredicate;
-import edu.snu.mist.api.types.Tuple2;
+import edu.snu.mist.common.functions.MISTBiPredicate;
+import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.WindowOperatorInfo;

@@ -15,8 +15,8 @@
  */
 package edu.snu.mist.api.datastreams.utils;
 
-import edu.snu.mist.api.functions.ApplyStatefulFunction;
-import edu.snu.mist.api.types.Tuple2;
+import edu.snu.mist.common.functions.ApplyStatefulFunction;
+import edu.snu.mist.common.types.Tuple2;
 
 /**
  * A simple ApplyStatefulFunction that counts String which starts with capital A.
