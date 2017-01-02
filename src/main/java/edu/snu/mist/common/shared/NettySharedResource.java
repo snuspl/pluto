@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.sinks;
+package edu.snu.mist.common.shared;
 
-import edu.snu.mist.common.stream.textmessage.NettyTextMessageChannelInitializer;
 import edu.snu.mist.common.NettyMessageForwarder;
 import edu.snu.mist.common.sources.parameters.NumNettyThreads;
+import edu.snu.mist.common.stream.textmessage.NettyTextMessageChannelInitializer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -35,11 +34,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * This class creates new instance of sinks.
- * It is designed to share a netty instance among sinks to reduce the number of I/O threads.
+ * This class is shared by multiple netty data generators and netty sinks.
+ * It is designed to share a client bootstrap to reduce the number of I/O threads.
  */
-public final class NettyTextSinkFactory implements TextSinkFactory {
-  private static final String CLASS_NAME = NettyTextSinkFactory.class.getName();
+public final class NettySharedResource implements AutoCloseable {
+  private static final String CLASS_NAME = NettySharedResource.class.getName();
 
   /**
    * Number of threads.
@@ -71,8 +70,9 @@ public final class NettyTextSinkFactory implements TextSinkFactory {
    * @param threads the number of I/O threads
    */
   @Inject
-  private NettyTextSinkFactory(final StringIdentifierFactory identifierFactory,
-                               @Parameter(NumNettyThreads.class) final int threads) {
+  private NettySharedResource(
+      final StringIdentifierFactory identifierFactory,
+      @Parameter(NumNettyThreads.class) final int threads) {
     this.threads = threads;
     this.channelMap = new ConcurrentHashMap<>();
     this.clientWorkerGroup = new NioEventLoopGroup(threads,
@@ -86,25 +86,16 @@ public final class NettyTextSinkFactory implements TextSinkFactory {
     this.identifierFactory = identifierFactory;
   }
 
+  public Bootstrap getClientBootstrap() {
+    return clientBootstrap;
+  }
 
-  @Override
-  public Sink<String> newSink(final String sinkId,
-                              final String serverAddress,
-                              final int port) throws Exception {
-    final ChannelFuture channelFuture = clientBootstrap.connect(serverAddress, port);
-    channelFuture.awaitUninterruptibly();
-    assert channelFuture.isDone();
-    if (!channelFuture.isSuccess()) {
-      final StringBuilder sb = new StringBuilder("A connection failed at Sink - ");
-      sb.append(channelFuture.cause());
-      throw new RuntimeException(sb.toString());
-    }
-    final Channel channel = channelFuture.channel();
-    return new NettyTextSink(sinkId, channel, identifierFactory);
+  public ConcurrentMap<Channel, EventHandler<String>> getChannelMap() {
+    return channelMap;
   }
 
   @Override
   public void close() throws Exception {
-    this.clientWorkerGroup.shutdownGracefully();
+    clientWorkerGroup.shutdownGracefully();
   }
 }

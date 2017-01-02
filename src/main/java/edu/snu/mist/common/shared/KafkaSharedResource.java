@@ -13,21 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.sources;
+package edu.snu.mist.common.shared;
 
 import edu.snu.mist.common.sources.parameters.NumKafkaThreads;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * This class creates new instances of KafkaDataGenerator.
- * It is designed to share a thread pool among kafka sources to reduce the number of I/O threads.
+ * This class is shared by multiple kafka data generators
+ * in order to share a thread pool among kafka sources to reduce the number of I/O threads.
  */
-public final class KafkaDataGeneratorFactory implements AutoCloseable {
+public final class KafkaSharedResource implements AutoCloseable {
 
   /**
    * The default timeout for consumer polling represented in milliseconds.
@@ -43,22 +42,16 @@ public final class KafkaDataGeneratorFactory implements AutoCloseable {
    * @param threads the number of I/O threads
    */
   @Inject
-  private KafkaDataGeneratorFactory(@Parameter(NumKafkaThreads.class) final int threads) {
+  private KafkaSharedResource(@Parameter(NumKafkaThreads.class) final int threads) {
     this.executorService = Executors.newFixedThreadPool(threads);
   }
 
-  /**
-   * Create a new instance of kafka data generator.
-   * @param topic the kafka topic to monitor
-   * @param kafkaConsumerConf the KafkaConsumer configuration
-   * @param <K> the type of kafka record's key
-   * @param <V> the type of kafka record's value
-   * @return a new data generator
-   */
-  public <K, V> KafkaDataGenerator<K, V> newDataGenerator(final String topic,
-                                                          final Map<String, Object> kafkaConsumerConf)
-      throws Exception {
-    return new KafkaDataGenerator<>(topic, kafkaConsumerConf, executorService, DEFAULT_POLL_TIMEOUT);
+  public ExecutorService getExecutorService() {
+    return executorService;
+  }
+
+  public int getPollTimeout() {
+    return DEFAULT_POLL_TIMEOUT;
   }
 
   @Override

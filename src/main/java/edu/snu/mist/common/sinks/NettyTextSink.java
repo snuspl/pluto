@@ -16,7 +16,10 @@
 package edu.snu.mist.common.sinks;
 
 import edu.snu.mist.common.OutputEmitter;
+import edu.snu.mist.common.shared.NettySharedResource;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.wake.Identifier;
 
@@ -47,11 +50,23 @@ public final class NettyTextSink implements Sink<String> {
    */
   private final String newline = System.getProperty("line.separator");
 
-  public NettyTextSink(final String sinkId,
-                       final Channel channel,
-                       final StringIdentifierFactory identifierFactory) throws IOException {
+  public NettyTextSink(
+      final String sinkId,
+      final String serverAddress,
+      final int port,
+      final NettySharedResource sharedResource,
+      final StringIdentifierFactory identifierFactory) throws IOException {
     this.sinkId = identifierFactory.getNewInstance(sinkId);
-    this.channel = channel;
+    final Bootstrap clientBootstrap = sharedResource.getClientBootstrap();
+    final ChannelFuture channelFuture = clientBootstrap.connect(serverAddress, port);
+    channelFuture.awaitUninterruptibly();
+    assert channelFuture.isDone();
+    if (!channelFuture.isSuccess()) {
+      final StringBuilder sb = new StringBuilder("A connection failed at Sink - ");
+      sb.append(channelFuture.cause());
+      throw new RuntimeException(sb.toString());
+    }
+    this.channel = channelFuture.channel();
   }
 
   @Override

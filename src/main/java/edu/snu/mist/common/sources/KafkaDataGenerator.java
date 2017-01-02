@@ -15,11 +15,14 @@
  */
 package edu.snu.mist.common.sources;
 
+import edu.snu.mist.common.shared.KafkaSharedResource;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -70,16 +73,16 @@ public final class KafkaDataGenerator<K, V> implements DataGenerator<ConsumerRec
    */
   private EventGenerator<ConsumerRecord<K, V>> eventGenerator;
 
-  public KafkaDataGenerator(final String topic,
-                            final Map<String, Object> kafkaConsumerConf,
-                            final ExecutorService executorService,
-                            final int pollTimeout) {
+  public KafkaDataGenerator(
+      final String topic,
+      final Map<String, Object> kafkaConsumerConf,
+      final KafkaSharedResource kafkaSharedResource) {
     this.started = new AtomicBoolean(false);
     this.closed = new AtomicBoolean(false);
     this.topic = topic;
     this.kafkaConsumerConf = kafkaConsumerConf;
-    this.executorService = executorService;
-    this.pollTimeout = pollTimeout;
+    this.executorService = kafkaSharedResource.getExecutorService();
+    this.pollTimeout = kafkaSharedResource.getPollTimeout();
   }
 
   @Override

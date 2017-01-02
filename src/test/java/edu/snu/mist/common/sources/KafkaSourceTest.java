@@ -16,7 +16,7 @@
 package edu.snu.mist.common.sources;
 
 import edu.snu.mist.common.OutputEmitter;
-import edu.snu.mist.common.sources.parameters.NumKafkaThreads;
+import edu.snu.mist.common.shared.KafkaSharedResource;
 import junit.framework.Assert;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServerStartable;
@@ -24,15 +24,21 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
-import org.apache.zookeeper.server.*;
+import org.apache.reef.tang.exceptions.InjectionException;
+import org.apache.zookeeper.server.NIOServerCnxnFactory;
+import org.apache.zookeeper.server.ServerCnxnFactory;
+import org.apache.zookeeper.server.ZooKeeperServer;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
 import java.net.InetSocketAddress;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
 
 import static java.lang.Thread.sleep;
 
@@ -62,12 +68,25 @@ public final class KafkaSourceTest {
    */
   private static final String ZK_ADDRESS = "localhost";
 
+  private KafkaSharedResource kafkaSharedResource;
+
+  @Before
+  public void setUp() throws InjectionException {
+    final Injector injector = Tang.Factory.getTang().newInjector();
+    kafkaSharedResource = injector.getInstance(KafkaSharedResource.class);
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    kafkaSharedResource.close();
+  }
+
   /**
    * Test whether TextKafkaDataGenerator fetches input stream
    * from the Kafka server and generates data correctly.
    * @throws Exception
    */
-  @Test(timeout = 10000L)
+  @Test(timeout = 15000L)
   public void testKafkaDataGenerator() throws Exception {
     final Map<String, String> inputStream = new HashMap<>();
     inputStream.put("0", "Lorem ipsum dolor sit amet, consectetur adipiscing elit.");
@@ -95,11 +114,8 @@ public final class KafkaSourceTest {
     kafkaProducerConf.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 
     // create kafka source
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(NumKafkaThreads.class, "1");
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final KafkaDataGenerator<Integer, String> kafkaDataGenerator =
-        injector.getInstance(KafkaDataGeneratorFactory.class).newDataGenerator(KAFKA_TOPIC, kafkaConsumerConf);
+        new KafkaDataGenerator<>(KAFKA_TOPIC, kafkaConsumerConf, kafkaSharedResource);
     final SourceTestEventGenerator<String, String> eventGenerator =
         new SourceTestEventGenerator<>(result, dataCountDownLatch);
     kafkaDataGenerator.setEventGenerator(eventGenerator);
