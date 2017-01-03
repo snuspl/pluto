@@ -13,7 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * Utility classes for test.
- */
-package edu.snu.mist.api.datastreams.utils;
+package edu.snu.mist.common.parameters;
+
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
+
+@NamedParameter(doc = "A serialized configuration for the user-defined function in operators")
+public final class SerializedUdfConf implements Name<String> {
+}

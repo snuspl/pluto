@@ -15,23 +15,21 @@
  */
 package edu.snu.mist.api.datastreams.configurations;
 
+import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.operators.Operator;
-import edu.snu.mist.common.parameters.SerializedUdf;
 import org.apache.reef.tang.formats.ConfigurationModule;
 import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
 import org.apache.reef.tang.formats.RequiredImpl;
-import org.apache.reef.tang.formats.RequiredParameter;
 
 /**
- * A configuration for operators that use a single user-defined function.
- * Ex) map, flatMap, filter, applyStateful.
+ * A configuration for the operators that use MISTFunction as a udf.
  */
-public final class SingleInputOperatorUDFConfiguration extends ConfigurationModuleBuilder {
+public final class MISTFuncOperatorConfiguration extends ConfigurationModuleBuilder {
 
   /**
-   * Required Parameter for binding the serialized objects of the user-defined function.
+   * Required Implementation of MISTFunction.
    */
-  public static final RequiredParameter<String> UDF_STRING = new RequiredParameter<>();
+  public static final RequiredImpl<MISTFunction> UDF = new RequiredImpl<>();
 
   /**
    * Required operator class.
@@ -39,10 +37,10 @@ public final class SingleInputOperatorUDFConfiguration extends ConfigurationModu
   public static final RequiredImpl<Operator> OPERATOR = new RequiredImpl<>();
 
   /**
-   * A configuration for binding the serialized objects of the user-defined function.
+   * A configuration for binding the class of the user-defined function.
    */
-  public static final ConfigurationModule CONF = new SingleInputOperatorUDFConfiguration()
-      .bindNamedParameter(SerializedUdf.class, UDF_STRING)
+  public static final ConfigurationModule CONF = new MISTFuncOperatorConfiguration()
+      .bindImplementation(MISTFunction.class, UDF)
       .bindImplementation(Operator.class, OPERATOR)
       .build();
 }

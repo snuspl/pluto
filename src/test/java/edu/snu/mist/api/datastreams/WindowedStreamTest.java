@@ -16,7 +16,6 @@
 package edu.snu.mist.api.datastreams;
 
 import edu.snu.mist.api.MISTQueryBuilder;
-import edu.snu.mist.api.datastreams.utils.CountStringFunction;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.ApplyStatefulFunction;
@@ -28,6 +27,7 @@ import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.TimeWindowInformation;
 import edu.snu.mist.common.windows.WindowData;
 import edu.snu.mist.formats.avro.Direction;
+import edu.snu.mist.utils.OperatorTestUtils;
 import edu.snu.mist.utils.TestParameters;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
@@ -38,6 +38,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
@@ -68,7 +69,7 @@ public class WindowedStreamTest {
    * Test for reduceByKeyWindow operation.
    */
   @Test
-  public void testReduceByKeyWindowStream() throws InjectionException, IOException, ClassNotFoundException {
+  public void testReduceByKeyWindowStream() throws InjectionException, IOException {
     final MISTBiFunction<Integer, Integer, Integer> reduceFunc = (x, y) -> x + y;
     final ContinuousStream<Map<String, Integer>> reducedWindowStream =
         timeWindowedStream.reduceByKeyWindow(0, String.class, reduceFunc);
@@ -85,13 +86,34 @@ public class WindowedStreamTest {
   }
 
   /**
-   * Test for applyStatefulWindow operation.
+   * Test for binding the udf class of reduceByKeyWindow operation.
    */
   @Test
-  public void testApplyStatefulWindowStream() throws InjectionException, IOException, ClassNotFoundException {
-    final ApplyStatefulFunction<Tuple2<String, Integer>, Integer> func = new CountStringFunction();
+  public void testReduceByKeyWindowClassBinding() throws InjectionException {
+    final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
+    final ContinuousStream<Map<String, Integer>> reducedWindowStream =
+        timeWindowedStream.reduceByKeyWindow(0, String.class, OperatorTestUtils.TestBiFunction.class, funcConf);
+
+    // Get info
+    final Injector injector = Tang.Factory.getTang().newInjector(reducedWindowStream.getConfiguration());
+    final int desKeyIndex = injector.getNamedInstance(KeyIndex.class);
+    final MISTBiFunction biFunction = injector.getInstance(MISTBiFunction.class);
+    Assert.assertEquals(0, desKeyIndex);
+    Assert.assertTrue(biFunction instanceof OperatorTestUtils.TestBiFunction);
+
+    // Check windowed -> reduce by key
+    checkEdges(queryBuilder.build().getDAG(), 1, timeWindowedStream, reducedWindowStream, Direction.LEFT);
+  }
+
+  /**
+   * Test for binding the udf class of applyStatefulWindow operation.
+   */
+  @Test
+  public void testApplyStatefulWindowStream() throws InjectionException, IOException {
+    final ApplyStatefulFunction<Tuple2<String, Integer>, Integer> func =
+        new OperatorTestUtils.TestApplyStatefulFunction();
     final ContinuousStream<Integer> applyStatefulWindowStream =
-        timeWindowedStream.applyStatefulWindow(new CountStringFunction());
+        timeWindowedStream.applyStatefulWindow(new OperatorTestUtils.TestApplyStatefulFunction());
 
     /* Simulate two data inputs on UDF stream */
     final Configuration conf = applyStatefulWindowStream.getConfiguration();
@@ -105,19 +127,31 @@ public class WindowedStreamTest {
   }
 
   /**
+   * Test for applyStatefulWindow operation.
+   */
+  @Test
+  public void testApplyStatefulWindowClassBinding() throws InjectionException {
+    final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
+    final ContinuousStream<Integer> applyStatefulWindowStream =
+        timeWindowedStream.applyStatefulWindow(OperatorTestUtils.TestApplyStatefulFunction.class, funcConf);
+
+    /* Simulate two data inputs on UDF stream */
+    final Configuration conf = applyStatefulWindowStream.getConfiguration();
+    final Injector injector = Tang.Factory.getTang().newInjector(conf);
+    final ApplyStatefulFunction func = injector.getInstance(ApplyStatefulFunction.class);
+    Assert.assertTrue(func instanceof OperatorTestUtils.TestApplyStatefulFunction);
+
+    // Check windowed -> stateful operation applied
+    checkEdges(
+        queryBuilder.build().getDAG(), 1, timeWindowedStream, applyStatefulWindowStream, Direction.LEFT);
+  }
+
+  /**
    * Test for aggregateWindow operation.
    */
   @Test
   public void testAggregateWindowStream() throws InjectionException, IOException, ClassNotFoundException {
-    final MISTFunction<WindowData<Tuple2<String, Integer>>, String> func = (windowData) -> {
-      String result = "";
-      final Iterator<Tuple2<String, Integer>> itr = windowData.getDataCollection().iterator();
-      while(itr.hasNext()) {
-        final Tuple2<String, Integer> tuple = itr.next();
-        result = result.concat("{" + tuple.get(0) + ", " + tuple.get(1).toString() + "}, ");
-      }
-      return result + windowData.getStart() + ", " + windowData.getEnd();
-    };
+    final MISTFunction<WindowData<Tuple2<String, Integer>>, String> func = new WindowAggregateFunction();
     final ContinuousStream<String> aggregateWindowStream
         = timeWindowedStream.aggregateWindow(func);
 
@@ -126,6 +160,40 @@ public class WindowedStreamTest {
     Assert.assertEquals(SerializeUtils.serializeToString(func), serializedFunc);
     // Check windowed -> aggregated
     checkEdges(queryBuilder.build().getDAG(), 1, timeWindowedStream, aggregateWindowStream, Direction.LEFT);
+  }
+
+  /**
+   * Test for binding the udf class of aggregateWindow operation.
+   */
+  @Test
+  public void testAggregateWindowClassBinding() throws InjectionException {
+    final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
+    final ContinuousStream<String> aggregateWindowStream
+        = timeWindowedStream.aggregateWindow(WindowAggregateFunction.class, funcConf);
+
+    final Injector injector = Tang.Factory.getTang().newInjector(aggregateWindowStream.getConfiguration());
+    final MISTFunction func = injector.getInstance(MISTFunction.class);
+    Assert.assertTrue(func instanceof WindowAggregateFunction);
+    // Check windowed -> aggregated
+    checkEdges(queryBuilder.build().getDAG(), 1, timeWindowedStream, aggregateWindowStream, Direction.LEFT);
+  }
+
+  static final class WindowAggregateFunction implements MISTFunction<WindowData<Tuple2<String, Integer>>, String> {
+    @Inject
+    public WindowAggregateFunction() {
+
+    }
+
+    @Override
+    public String apply(final WindowData<Tuple2<String, Integer>> windowData) {
+      String result = "";
+      final Iterator<Tuple2<String, Integer>> itr = windowData.getDataCollection().iterator();
+      while(itr.hasNext()) {
+        final Tuple2<String, Integer> tuple = itr.next();
+        result = result.concat("{" + tuple.get(0) + ", " + tuple.get(1).toString() + "}, ");
+      }
+      return result + windowData.getStart() + ", " + windowData.getEnd();
+    }
   }
 
   /**

@@ -15,34 +15,35 @@
  */
 package edu.snu.mist.api.datastreams.configurations;
 
+import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.operators.Operator;
-import edu.snu.mist.common.parameters.SerializedUdf;
+import edu.snu.mist.common.operators.ReduceByKeyOperator;
+import edu.snu.mist.common.parameters.KeyIndex;
 import org.apache.reef.tang.formats.ConfigurationModule;
 import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
 import org.apache.reef.tang.formats.RequiredImpl;
 import org.apache.reef.tang.formats.RequiredParameter;
 
 /**
- * A configuration for operators that use a single user-defined function.
- * Ex) map, flatMap, filter, applyStateful.
+ * A configuration for ReduceByKeyOperator.
  */
-public final class SingleInputOperatorUDFConfiguration extends ConfigurationModuleBuilder {
+public final class ReduceByKeyOperatorConfiguration extends ConfigurationModuleBuilder {
+  /**
+   * Required Parameter for the key index of the reduceByKey operator.
+   */
+  public static final RequiredParameter<Integer> KEY_INDEX = new RequiredParameter<>();
 
   /**
-   * Required Parameter for binding the serialized objects of the user-defined function.
+   * Required Implementation of MISTBiFunction.
    */
-  public static final RequiredParameter<String> UDF_STRING = new RequiredParameter<>();
+  public static final RequiredImpl<MISTBiFunction> MIST_BI_FUNC = new RequiredImpl<>();
 
   /**
-   * Required operator class.
+   * A configuration for binding udf class of reduceByKey operator.
    */
-  public static final RequiredImpl<Operator> OPERATOR = new RequiredImpl<>();
-
-  /**
-   * A configuration for binding the serialized objects of the user-defined function.
-   */
-  public static final ConfigurationModule CONF = new SingleInputOperatorUDFConfiguration()
-      .bindNamedParameter(SerializedUdf.class, UDF_STRING)
-      .bindImplementation(Operator.class, OPERATOR)
+  public static final ConfigurationModule CONF = new ReduceByKeyOperatorConfiguration()
+      .bindImplementation(Operator.class, ReduceByKeyOperator.class)
+      .bindNamedParameter(KeyIndex.class, KEY_INDEX)
+      .bindImplementation(MISTBiFunction.class, MIST_BI_FUNC)
       .build();
 }

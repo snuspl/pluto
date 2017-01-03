@@ -17,10 +17,15 @@ package edu.snu.mist.utils;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistEvent;
+import edu.snu.mist.common.functions.*;
+import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.WindowData;
 import org.junit.Assert;
 
+import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * This is a utility class for operator test.
@@ -46,5 +51,97 @@ public final class OperatorTestUtils {
     Assert.assertEquals(expectedWindowStartMoment, windowData.getStart());
     Assert.assertEquals(expectedWindowSize, windowData.getEnd() - windowData.getStart() + 1);
     Assert.assertEquals(expectedWindowTimestamp, result.getTimestamp());
+  }
+
+  /**
+   * A test function for binding class.
+   */
+  public static final class TestFunction implements MISTFunction<String, List<String>> {
+    @Inject
+    private TestFunction() {
+
+    }
+    @Override
+    public List<String> apply(final String s) {
+      return new ArrayList<>();
+    }
+  }
+
+  /**
+   * A test predicate for binding class.
+   */
+  public static final class TestPredicate implements MISTPredicate<String> {
+    @Inject
+    private TestPredicate() {
+
+    }
+    @Override
+    public boolean test(final String s) {
+      return true;
+    }
+  }
+
+  /**
+   * A test biFunction for binding class.
+   */
+  public static final class TestBiFunction implements MISTBiFunction<Integer, Integer, Integer> {
+    @Inject
+    private TestBiFunction() {
+
+    }
+    @Override
+    public Integer apply(final Integer s, final Integer s2) {
+      return s + s2;
+    }
+  }
+
+
+  /**
+   * A test biPredicate for binding class.
+   */
+  public static final class TestBiPredicate implements MISTBiPredicate<String, String> {
+    @Inject
+    private TestBiPredicate() {
+
+    }
+    @Override
+    public boolean test(final String s, final String s2) {
+      return true;
+    }
+  }
+
+  /**
+   * A simple ApplyStatefulFunction that counts String which starts with capital A.
+   */
+  public static final class TestApplyStatefulFunction
+      implements ApplyStatefulFunction<Tuple2<String, Integer>, Integer> {
+    // the internal state
+    private int state;
+
+    @Inject
+    public TestApplyStatefulFunction() {
+    }
+
+    @Override
+    public void initialize() {
+      this.state = 0;
+    }
+
+    @Override
+    public void update(final Tuple2<String, Integer> input) {
+      if (((String)input.get(0)).startsWith("A")) {
+        state++;
+      }
+    }
+
+    @Override
+    public Integer getCurrentState() {
+      return state;
+    }
+
+    @Override
+    public Integer produceResult() {
+      return state;
+    }
   }
 }

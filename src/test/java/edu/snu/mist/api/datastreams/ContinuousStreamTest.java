@@ -17,7 +17,6 @@ package edu.snu.mist.api.datastreams;
 
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
-import edu.snu.mist.api.datastreams.utils.CountStringFunction;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.*;
@@ -27,9 +26,11 @@ import edu.snu.mist.common.windows.CountWindowInformation;
 import edu.snu.mist.common.windows.SessionWindowInformation;
 import edu.snu.mist.common.windows.TimeWindowInformation;
 import edu.snu.mist.formats.avro.Direction;
+import edu.snu.mist.utils.OperatorTestUtils;
 import edu.snu.mist.utils.TestParameters;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
+import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.After;
@@ -38,6 +39,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -94,6 +96,46 @@ public final class ContinuousStreamTest {
   }
 
   /**
+   * Test for binding a udf of the map operator.
+   */
+  @Test
+  public void testMapOperatorClassBinding() throws InjectionException {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    final ContinuousStream<List<String>> mappedStream =
+        sourceStream.map(OperatorTestUtils.TestFunction.class, jcb.build());
+    final Injector injector = Tang.Factory.getTang().newInjector(mappedStream.getConfiguration());
+    final MISTFunction func = injector.getInstance(MISTFunction.class);
+    Assert.assertTrue(func instanceof OperatorTestUtils.TestFunction);
+  }
+
+
+  /**
+   * Test for binding a udf of the filter operator.
+   */
+  @Test
+  public void testFilterOperatorClassBinding() throws InjectionException {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    final ContinuousStream<String> filterStream =
+        sourceStream.filter(OperatorTestUtils.TestPredicate.class, jcb.build());
+    final Injector injector = Tang.Factory.getTang().newInjector(filterStream.getConfiguration());
+    final MISTPredicate func = injector.getInstance(MISTPredicate.class);
+    Assert.assertTrue(func instanceof OperatorTestUtils.TestPredicate);
+  }
+
+  /**
+   * Test for binding a udf of the flat map operator.
+   */
+  @Test
+  public void testFlatMapOperatorClassBinding() throws InjectionException {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    final ContinuousStream<String> flatMapStream =
+        sourceStream.flatMap(OperatorTestUtils.TestFunction.class, jcb.build());
+    final Injector injector = Tang.Factory.getTang().newInjector(flatMapStream.getConfiguration());
+    final MISTFunction func = injector.getInstance(MISTFunction.class);
+    Assert.assertTrue(func instanceof OperatorTestUtils.TestFunction);
+  }
+
+  /**
    * Test for reduceByKey operator.
    */
   @Test
@@ -114,12 +156,29 @@ public final class ContinuousStreamTest {
   }
 
   /**
+   * Test for binding UDF class of reduceByKeyOperator.
+   */
+  @Test
+  public void testReduceByKeyOperatorClassBinding() throws InjectionException, IOException, ClassNotFoundException {
+    final int keyIndex = 0;
+    final Configuration reduceConf = Tang.Factory.getTang().newConfigurationBuilder().build();
+    final ContinuousStream<Map<String, Integer>> reducedStream =
+        filteredMappedStream.reduceByKey(0, String.class, OperatorTestUtils.TestBiFunction.class, reduceConf);
+    final Configuration conf = reducedStream.getConfiguration();
+    final Injector injector = Tang.Factory.getTang().newInjector(conf);
+    final int desKeyIndex = injector.getNamedInstance(KeyIndex.class);
+    final MISTBiFunction<Integer, Integer, Integer> deFunc = injector.getInstance(MISTBiFunction.class);
+    Assert.assertEquals(keyIndex, desKeyIndex);
+    Assert.assertTrue(deFunc instanceof OperatorTestUtils.TestBiFunction);
+  }
+
+  /**
    * Test for stateful UDF operator.
    */
   @Test
   public void testApplyStatefulOperatorStream() throws InjectionException, IOException, ClassNotFoundException {
     final ApplyStatefulFunction<Tuple2<String, Integer>, Integer> applyStatefulFunction =
-        new CountStringFunction();
+        new OperatorTestUtils.TestApplyStatefulFunction();
     final ContinuousStream<Integer> statefulOperatorStream =
         filteredMappedStream.applyStateful(applyStatefulFunction);
 
@@ -132,6 +191,20 @@ public final class ContinuousStreamTest {
 
     // Check filter -> map -> applyStateful
     checkEdges(queryBuilder.build().getDAG(), 1, filteredMappedStream, statefulOperatorStream, Direction.LEFT);
+  }
+
+  /**
+   * Test for binding UDF class of applyStateful operator.
+   */
+  @Test
+  public void testApplyStatefulOperatorClassBinding() throws InjectionException, IOException, ClassNotFoundException {
+    final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
+    final ContinuousStream<Integer> statefulOperatorStream =
+        filteredMappedStream.applyStateful(OperatorTestUtils.TestApplyStatefulFunction.class, funcConf);
+    final Configuration conf = statefulOperatorStream.getConfiguration();
+    final Injector injector = Tang.Factory.getTang().newInjector(conf);
+    final ApplyStatefulFunction func = injector.getInstance(ApplyStatefulFunction.class);
+    Assert.assertTrue(func instanceof OperatorTestUtils.TestApplyStatefulFunction);
   }
 
   /**
@@ -244,6 +317,25 @@ public final class ContinuousStreamTest {
 
     // Check windowed stream -> joined
     checkEdges(dag, 1, windowedStream, joinedStream, Direction.LEFT);
+  }
+
+  /**
+   * Test for binding udf class of join operation.
+   */
+  @Test
+  public void testJoinOperatorClassBinding() throws InjectionException, IOException, ClassNotFoundException {
+    final ContinuousStream<String> firstInputStream =
+        queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
+    final ContinuousStream<String> secondInputStream =
+        queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
+
+    final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
+    final WindowedStream<Tuple2<String, String>> joinedStream = firstInputStream.join(
+        secondInputStream, OperatorTestUtils.TestBiPredicate.class, funcConf, new CountWindowInformation(5, 3));
+
+    final Injector injector = Tang.Factory.getTang().newInjector(joinedStream.getConfiguration());
+    final MISTBiPredicate func = injector.getInstance(MISTBiPredicate.class);
+    Assert.assertTrue(func instanceof OperatorTestUtils.TestBiPredicate);
   }
 
   /**
