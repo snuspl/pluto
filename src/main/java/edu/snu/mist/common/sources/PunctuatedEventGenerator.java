@@ -16,10 +16,16 @@
 package edu.snu.mist.common.sources;
 
 import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.WatermarkTimestampFunction;
+import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
+import edu.snu.mist.common.parameters.SerializedTimestampParseUdf;
+import edu.snu.mist.common.parameters.SerializedWatermarkPredicateUdf;
 import org.apache.reef.io.Tuple;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -39,6 +45,26 @@ public final class PunctuatedEventGenerator<I, V> extends EventGeneratorImpl<I, 
    * The function get input which is watermark and parse the timestamp.
    */
   private final Function<I, Long> parseTimestamp;
+
+  @Inject
+  private PunctuatedEventGenerator(
+      @Parameter(SerializedTimestampParseUdf.class) final String timestampParseObj,
+      @Parameter(SerializedWatermarkPredicateUdf.class) final String isWatermarkObj,
+      final ClassLoader classLoader) throws IOException, ClassNotFoundException {
+    this(SerializeUtils.deserializeFromString(isWatermarkObj, classLoader),
+        SerializeUtils.deserializeFromString(timestampParseObj, classLoader));
+  }
+
+  @Inject
+  private PunctuatedEventGenerator(
+      @Parameter(SerializedTimestampExtractUdf.class) final String timestampExtractObj,
+      @Parameter(SerializedTimestampParseUdf.class) final String timestampParseObj,
+      @Parameter(SerializedWatermarkPredicateUdf.class) final String isWatermarkObj,
+      final ClassLoader classLoader) throws IOException, ClassNotFoundException {
+    this((Function)SerializeUtils.deserializeFromString(timestampExtractObj, classLoader),
+        (Predicate)SerializeUtils.deserializeFromString(timestampParseObj, classLoader),
+        (WatermarkTimestampFunction)SerializeUtils.deserializeFromString(isWatermarkObj, classLoader));
+  }
 
   @Inject
   public PunctuatedEventGenerator(

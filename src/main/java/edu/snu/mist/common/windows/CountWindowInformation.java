@@ -15,8 +15,6 @@
  */
 package edu.snu.mist.common.windows;
 
-import edu.snu.mist.formats.avro.WindowOperatorTypeEnum;
-
 /**
  * This class represents count-based FixedSizeWindowInformation.
  */
@@ -25,10 +23,5 @@ public final class CountWindowInformation extends FixedSizeWindowInformation {
   public CountWindowInformation(final int windowSize,
                                 final int windowEmissionInterval) {
     super(windowSize, windowEmissionInterval);
-  }
-
-  @Override
-  protected WindowOperatorTypeEnum getWindowOpTypeEnum() {
-    return WindowOperatorTypeEnum.COUNT;
   }
 }

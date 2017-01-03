@@ -15,8 +15,6 @@
  */
 package edu.snu.mist.common.windows;
 
-import edu.snu.mist.formats.avro.WindowOperatorTypeEnum;
-
 /**
  * This class represents time-based FixedSizeWindowInformation.
  */
@@ -25,10 +23,5 @@ public final class TimeWindowInformation extends FixedSizeWindowInformation {
   public TimeWindowInformation(final int windowSize,
                                final int windowEmissionInterval) {
     super(windowSize, windowEmissionInterval);
-  }
-
-  @Override
-  protected WindowOperatorTypeEnum getWindowOpTypeEnum() {
-    return WindowOperatorTypeEnum.TIME;
   }
 }

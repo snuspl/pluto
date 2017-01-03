@@ -18,8 +18,8 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.operators.OneStreamOperator;
-import edu.snu.mist.utils.TestOutputEmitter;
 import edu.snu.mist.formats.avro.Direction;
+import edu.snu.mist.utils.TestOutputEmitter;
 import junit.framework.Assert;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
@@ -90,7 +90,7 @@ public final class EventProcessorTest {
   /**
    * When multiple EventProcessors process events from a query concurrently,
    * they should process events one by one and do not process multiple events at a time.
-   * @throws InjectionException
+   * @throws org.apache.reef.tang.exceptions.InjectionException
    */
   @Test
   public void concurrentProcessTest() throws InjectionException, InterruptedException {

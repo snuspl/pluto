@@ -19,11 +19,10 @@ package edu.snu.mist.examples;
 import edu.snu.mist.api.APIQueryControlResult;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
+import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
+import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.windows.TimeWindowInformation;
 import edu.snu.mist.common.windows.WindowData;
-import edu.snu.mist.common.functions.MISTFunction;
-import edu.snu.mist.api.datastreams.configurations.TextSocketSinkConfiguration;
-import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
 import edu.snu.mist.examples.parameters.NettySourceAddress;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -52,9 +51,8 @@ public final class WindowAndAggregate {
     // configurations for source and sink
     final String sourceSocket =
         Tang.Factory.getTang().newInjector(configuration).getNamedInstance(NettySourceAddress.class);
-    final TextSocketSourceConfiguration localTextSocketSourceConf =
+    final SourceConfiguration localTextSocketSourceConf =
         MISTExampleUtils.getLocalTextSocketSourceConf(sourceSocket);
-    final TextSocketSinkConfiguration localTextSocketSinkConf = MISTExampleUtils.getLocalTextSocketSinkConf();
     // configurations for windowing and aggregation
     final int windowSize = 5000;
     final int windowEmissionInterval = 2500;
@@ -68,7 +66,7 @@ public final class WindowAndAggregate {
     queryBuilder.socketTextStream(localTextSocketSourceConf)
         .window(new TimeWindowInformation(windowSize, windowEmissionInterval))
         .aggregateWindow(aggregateFunc)
-        .textSocketOutput(localTextSocketSinkConf);
+        .textSocketOutput(MISTExampleUtils.SINK_HOSTNAME, MISTExampleUtils.SINK_PORT);
     final MISTQuery query = queryBuilder.build();
 
     return MISTExampleUtils.submit(query, configuration);

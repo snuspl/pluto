@@ -17,6 +17,7 @@ package edu.snu.mist.api;
 
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.utils.TestParameters;
 import org.apache.avro.AvroRemoteException;
 import org.apache.avro.ipc.NettyServer;
 import org.apache.avro.ipc.Server;
@@ -88,11 +89,11 @@ public class MISTDefaultExecutionEnvironmentImplTest {
 
     // Step 2: Generate a new query
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
-    queryBuilder.socketTextStream(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
+    queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
         .flatMap(s -> Arrays.asList(s.split(" ")))
         .map(s -> new Tuple2<>(s, 1))
         .reduceByKey(0, String.class, (Integer x, Integer y) -> x + y)
-        .textSocketOutput(APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF);
+        .textSocketOutput("localhost", 13667);
     final MISTQuery query = queryBuilder.build();
 
     final int suffixStartIndex = mockJarOutName.lastIndexOf(".");

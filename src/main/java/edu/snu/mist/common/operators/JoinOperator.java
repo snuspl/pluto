@@ -15,7 +15,9 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.parameters.OperatorId;
+import edu.snu.mist.common.parameters.SerializedUdf;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.WindowData;
 import edu.snu.mist.common.MistDataEvent;
@@ -24,6 +26,7 @@ import edu.snu.mist.common.windows.WindowImpl;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -44,6 +47,14 @@ public final class JoinOperator<T, U> extends OneStreamOperator {
    * The user-defined predicate which checks whether two inputs from both stream are matched or not.
    */
   private final BiPredicate<T, U> joinBiPredicate;
+
+  @Inject
+  private JoinOperator(
+      @Parameter(OperatorId.class) final String operatorId,
+      @Parameter(SerializedUdf.class) final String serializedObject,
+      final ClassLoader classLoader) throws IOException, ClassNotFoundException {
+    this(operatorId, SerializeUtils.deserializeFromString(serializedObject, classLoader));
+  }
 
   @Inject
   public JoinOperator(@Parameter(OperatorId.class) final String operatorId,

@@ -17,10 +17,13 @@ package edu.snu.mist.common.operators;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.parameters.OperatorId;
+import edu.snu.mist.common.parameters.SerializedUdf;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.List;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -36,6 +39,14 @@ public final class FlatMapOperator<I, O> extends OneStreamOperator {
    * FlatMap function.
    */
   private final Function<I, List<O>> flatMapFunc;
+
+  @Inject
+  private FlatMapOperator(
+      @Parameter(OperatorId.class) final String operatorId,
+      @Parameter(SerializedUdf.class) final String serializedObject,
+      final ClassLoader classLoader) throws IOException, ClassNotFoundException {
+    this(operatorId, SerializeUtils.deserializeFromString(serializedObject, classLoader));
+  }
 
   @Inject
   public FlatMapOperator(@Parameter(OperatorId.class) final String operatorId,

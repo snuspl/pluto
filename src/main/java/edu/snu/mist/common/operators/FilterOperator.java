@@ -17,10 +17,13 @@ package edu.snu.mist.common.operators;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.parameters.OperatorId;
+import edu.snu.mist.common.parameters.SerializedUdf;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,6 +39,14 @@ public final class FilterOperator<I> extends OneStreamOperator {
    * Filter function.
    */
   private final Predicate<I> filterFunc;
+
+  @Inject
+  private FilterOperator(
+      @Parameter(OperatorId.class) final String operatorId,
+      @Parameter(SerializedUdf.class) final String serializedObject,
+      final ClassLoader classLoader) throws IOException, ClassNotFoundException {
+    this(operatorId, SerializeUtils.deserializeFromString(serializedObject, classLoader));
+  }
 
   @Inject
   public FilterOperator(@Parameter(OperatorId.class) final String operatorId,

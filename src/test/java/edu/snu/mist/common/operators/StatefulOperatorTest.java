@@ -16,8 +16,8 @@
 package edu.snu.mist.common.operators;
 
 import com.google.common.collect.ImmutableList;
-import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.MistDataEvent;
+import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.utils.TestOutputEmitter;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;

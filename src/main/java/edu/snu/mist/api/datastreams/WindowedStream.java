@@ -20,6 +20,8 @@ import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.windows.WindowData;
 
+import java.util.Map;
+
 /**
  * Windowed stream interface created by window methods.
  * It emits a WindowData that contains a collection of data, the window's start and end information.
@@ -33,7 +35,7 @@ public interface WindowedStream<T> extends MISTStream<WindowData<T>> {
    * @param <V> the type of value in resulting stream
    * @return new reduced continuous stream after applying the operation
    */
-  <K, V> ReduceByKeyWindowOperatorStream<T, K, V> reduceByKeyWindow(
+  <K, V> ContinuousStream<Map<K, V>> reduceByKeyWindow(
       int keyFieldNum, Class<K> keyType, MISTBiFunction<V, V, V> reduceFunc);
 
   /**
@@ -42,7 +44,7 @@ public interface WindowedStream<T> extends MISTStream<WindowData<T>> {
    * @param <R> the type of result
    * @return new aggregated continuous stream after applying the aggregation function
    */
-  <R> AggregateWindowOperatorStream<T, R> aggregateWindow(
+  <R> ContinuousStream<R> aggregateWindow(
       MISTFunction<WindowData<T>, R> aggregateFunc);
 
   /**
@@ -51,5 +53,5 @@ public interface WindowedStream<T> extends MISTStream<WindowData<T>> {
    * @param <R> the type of result
    * @return new aggregated continuous stream after applying the stateful operation
    */
-  <R> ApplyStatefulWindowOperatorStream<T, R> applyStatefulWindow(ApplyStatefulFunction<T, R> applyStatefulFunction);
+  <R> ContinuousStream<R> applyStatefulWindow(ApplyStatefulFunction<T, R> applyStatefulFunction);
 }

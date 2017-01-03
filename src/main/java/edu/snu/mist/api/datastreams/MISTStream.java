@@ -15,12 +15,16 @@
  */
 package edu.snu.mist.api.datastreams;
 
-import edu.snu.mist.api.AvroVertexSerializable;
+import org.apache.reef.tang.Configuration;
 
 /**
- * This interface is the basic representation of all types of MIST streams,
- * both for ContinuousMistStream or WindowedMistStream.
+ * This interface is the basic representation of all types of MIST streams.
+ * Each stream has its configuration how to transform its stream.
  */
-public interface MISTStream<T> extends AvroVertexSerializable {
-
+public interface MISTStream<T> {
+  /**
+   * The configuration of the stream representing how to transform the stream.
+   * @return configuration
+   */
+  Configuration getConfiguration();
 }

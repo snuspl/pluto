@@ -15,21 +15,32 @@
  */
 package edu.snu.mist.api.datastreams;
 
-import edu.snu.mist.api.AvroVertexSerializable;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.Direction;
+import org.apache.reef.tang.Configuration;
 
 /**
  * The basic implementation class for MISTStream.
  */
-public abstract class MISTStreamImpl<OUT> implements MISTStream<OUT> {
+class MISTStreamImpl<OUT> implements MISTStream<OUT> {
 
   /**
    * DAG of the query.
    */
-  protected final DAG<AvroVertexSerializable, Direction> dag;
+  protected final DAG<MISTStream, Direction> dag;
+  /**
+   * Configuration of the stream.
+   */
+  protected final Configuration conf;
 
-  public MISTStreamImpl(final DAG<AvroVertexSerializable, Direction> dag) {
+  public MISTStreamImpl(final DAG<MISTStream, Direction> dag,
+                        final Configuration conf) {
     this.dag = dag;
+    this.conf = conf;
+  }
+
+  @Override
+  public Configuration getConfiguration() {
+    return conf;
   }
 }

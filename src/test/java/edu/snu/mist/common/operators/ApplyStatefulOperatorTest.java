@@ -15,10 +15,10 @@
  */
 package edu.snu.mist.common.operators;
 
-import edu.snu.mist.common.functions.ApplyStatefulFunction;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.common.functions.ApplyStatefulFunction;
 import edu.snu.mist.common.utils.FindMaxIntFunction;
 import org.junit.Assert;
 import org.junit.Test;

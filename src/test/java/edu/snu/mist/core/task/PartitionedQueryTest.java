@@ -19,8 +19,8 @@ import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.operators.OneStreamOperator;
 import edu.snu.mist.common.operators.Operator;
-import edu.snu.mist.utils.TestOutputEmitter;
 import edu.snu.mist.formats.avro.Direction;
+import edu.snu.mist.utils.TestOutputEmitter;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -40,7 +40,7 @@ public final class PartitionedQueryTest {
 
   /**
    * Tests whether the PartitionedQuery correctly executes the chained operators.
-   * @throws InjectionException
+   * @throws org.apache.reef.tang.exceptions.InjectionException
    */
   @SuppressWarnings("unchecked")
   @Test

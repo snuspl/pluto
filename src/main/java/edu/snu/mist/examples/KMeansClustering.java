@@ -19,10 +19,9 @@ package edu.snu.mist.examples;
 import edu.snu.mist.api.APIQueryControlResult;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
+import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.common.functions.ApplyStatefulFunction;
 import edu.snu.mist.common.functions.MISTFunction;
-import edu.snu.mist.api.datastreams.configurations.TextSocketSinkConfiguration;
-import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
 import edu.snu.mist.examples.parameters.NettySourceAddress;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -32,7 +31,9 @@ import org.apache.reef.tang.formats.CommandLine;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -52,9 +53,8 @@ public final class KMeansClustering {
       throws IOException, InjectionException, URISyntaxException {
     final String sourceSocket =
         Tang.Factory.getTang().newInjector(configuration).getNamedInstance(NettySourceAddress.class);
-    final TextSocketSourceConfiguration localTextSocketSourceConf =
+    final SourceConfiguration localTextSocketSourceConf =
         MISTExampleUtils.getLocalTextSocketSourceConf(sourceSocket);
-    final TextSocketSinkConfiguration localTextSocketSinkConf = MISTExampleUtils.getLocalTextSocketSinkConf();
 
     final MISTFunction<List<Cluster>, List<String>> flatMapFunc =
         // parse clustering result into String list
@@ -76,19 +76,19 @@ public final class KMeansClustering {
     queryBuilder.socketTextStream(localTextSocketSourceConf)
         // remove all space in the input string
         .map(s -> s.replaceAll(" ", ""))
-        // filter inputs with two-dimensional double point form
+            // filter inputs with two-dimensional double point form
         .filter(s -> Pattern.matches("-?\\d+\\.\\d+,-?\\d+\\.\\d+", s))
-        // map string input into Point
+            // map string input into Point
         .map(s -> {
           final String[] array = s.split(",");
           return new Point(Double.parseDouble(array[0]), Double.parseDouble(array[1]));
         })
-        // apply online k-means clustering to the input point
+            // apply online k-means clustering to the input point
         .applyStateful(applyStatefulFunction)
-        // flat the cluster list into multiple string output
+            // flat the cluster list into multiple string output
         .flatMap(flatMapFunc)
-        // display the result
-        .textSocketOutput(localTextSocketSinkConf);
+            // display the result
+        .textSocketOutput(MISTExampleUtils.SINK_HOSTNAME, MISTExampleUtils.SINK_PORT);
     final MISTQuery query = queryBuilder.build();
 
     return MISTExampleUtils.submit(query, configuration);

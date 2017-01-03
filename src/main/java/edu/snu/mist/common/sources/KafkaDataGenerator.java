@@ -15,7 +15,9 @@
  */
 package edu.snu.mist.common.sources;
 
+import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.parameters.KafkaTopic;
+import edu.snu.mist.common.parameters.SerializedKafkaConfig;
 import edu.snu.mist.common.shared.KafkaSharedResource;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -23,6 +25,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
@@ -75,6 +78,15 @@ public final class KafkaDataGenerator<K, V> implements DataGenerator<ConsumerRec
    * Event generator which is the destination of fetched data.
    */
   private EventGenerator<ConsumerRecord<K, V>> eventGenerator;
+
+  @Inject
+  private KafkaDataGenerator(
+      @Parameter(KafkaTopic.class) final String topic,
+      @Parameter(SerializedKafkaConfig.class) final String serializedConf,
+      final ClassLoader classLoader,
+      final KafkaSharedResource kafkaSharedResource) throws IOException, ClassNotFoundException {
+    this(topic, SerializeUtils.deserializeFromString(serializedConf, classLoader), kafkaSharedResource);
+  }
 
   @Inject
   public KafkaDataGenerator(

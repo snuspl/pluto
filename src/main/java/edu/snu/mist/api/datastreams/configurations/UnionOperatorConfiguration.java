@@ -13,24 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.parameters;
+package edu.snu.mist.api.datastreams.configurations;
+
+import edu.snu.mist.common.operators.Operator;
+import edu.snu.mist.common.operators.UnionOperator;
+import org.apache.reef.tang.formats.ConfigurationModule;
+import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
 
 /**
- * This class contains the list of necessary parameters for PeriodicWatermarkConfiguration.
+ * A configuration for union operator.
  */
-public final class PeriodicWatermarkParameters {
+public final class UnionOperatorConfiguration extends ConfigurationModuleBuilder {
 
-  private PeriodicWatermarkParameters() {
-    // Not called.
-  }
-
-  /**
-   * The period to generate periodic watermark.
-   */
-  public static final String PERIOD = "Period";
-
-  /**
-   * The expected maximum delay between the time that data is generated in client-side and received in task-side.
-   */
-  public static final String EXPECTED_DELAY = "Expected_Delay";
+  public static final ConfigurationModule CONF = new UnionOperatorConfiguration()
+      .bindImplementation(Operator.class, UnionOperator.class)
+      .build();
 }

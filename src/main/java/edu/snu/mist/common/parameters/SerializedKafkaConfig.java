@@ -13,18 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.datastreams;
+package edu.snu.mist.common.parameters;
 
-import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.api.datastreams.configurations.SinkConfiguration;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-/**
- * This interface defines necessary methods used for Sink in MIST API.
- */
-public interface Sink extends AvroVertexSerializable {
-
-  /**
-   * @return The configuration for this sink.
-   */
-  SinkConfiguration getSinkConfiguration();
+@NamedParameter(doc = "A string for the serialized kafka configuration (Map)")
+public final class SerializedKafkaConfig implements Name<String> {
 }

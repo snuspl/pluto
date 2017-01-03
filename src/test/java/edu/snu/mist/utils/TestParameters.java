@@ -13,45 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api;
+package edu.snu.mist.utils;
 
 import edu.snu.mist.api.datastreams.configurations.PunctuatedWatermarkConfiguration;
+import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
-import edu.snu.mist.api.datastreams.configurations.TextSocketSinkConfiguration;
+import edu.snu.mist.api.datastreams.configurations.WatermarkConfiguration;
 import org.apache.reef.io.Tuple;
 
 /**
- * This class contains necessary parameters for API testing.
+ * This class contains necessary parameters.
  */
-public final class APITestParameters {
+public final class TestParameters {
 
-  private APITestParameters() {
+  private TestParameters() {
     // Do nothing here
   }
 
-  public static final TextSocketSourceConfiguration LOCAL_TEXT_SOCKET_SOURCE_CONF =
+  public static final String HOST = "localhost";
+  public static final int SERVER_PORT = 13666;
+  public static final int SINK_PORT = 13667;
+
+  public static final SourceConfiguration LOCAL_TEXT_SOCKET_SOURCE_CONF =
       TextSocketSourceConfiguration.newBuilder()
-      .setHostAddress("localhost")
-      .setHostPort(13666)
+      .setHostAddress(HOST)
+      .setHostPort(SERVER_PORT)
       .build();
 
-  public static final TextSocketSourceConfiguration LOCAL_TEXT_SOCKET_EVENTTIME_SOURCE_CONF =
+  public static final SourceConfiguration LOCAL_TEXT_SOCKET_EVENTTIME_SOURCE_CONF =
       TextSocketSourceConfiguration.newBuilder()
-      .setHostAddress("localhost")
-      .setHostPort(13666)
+      .setHostAddress(HOST)
+      .setHostPort(SERVER_PORT)
       .setTimestampExtractionFunction(input -> new Tuple<>(input.split(":")[0],
           Long.parseLong(input.split(":")[1])))
       .build();
 
-  public static final PunctuatedWatermarkConfiguration<String> PUNCTUATED_WATERMARK_CONF =
+  public static final WatermarkConfiguration PUNCTUATED_WATERMARK_CONF =
       PunctuatedWatermarkConfiguration.<String>newBuilder()
           .setWatermarkPredicate(input -> input.split(":")[0].equals("Watermark"))
           .setParsingWatermarkFunction(input -> Long.parseLong(input.split(":")[1]))
           .build();
-
-  public static final TextSocketSinkConfiguration LOCAL_TEXT_SOCKET_SINK_CONF =
-      TextSocketSinkConfiguration.newBuilder()
-      .setHostAddress("localhost")
-      .setHostPort(13667)
-      .build();
 }

@@ -15,25 +15,24 @@
  */
 package edu.snu.mist.api.datastreams.configurations;
 
-import edu.snu.mist.common.parameters.SocketServerIp;
-import edu.snu.mist.common.parameters.SocketServerPort;
-import edu.snu.mist.common.sinks.NettyTextSink;
-import edu.snu.mist.common.sinks.Sink;
+import edu.snu.mist.common.operators.Operator;
+import edu.snu.mist.common.parameters.SerializedUdf;
 import org.apache.reef.tang.formats.ConfigurationModule;
 import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
+import org.apache.reef.tang.formats.RequiredImpl;
 import org.apache.reef.tang.formats.RequiredParameter;
 
 /**
- * The class represents the text socket sink configuration.
+ * A configuration for operators that use a single user-defined function.
+ * Ex) map, flatMap, filter, applyStateful.
  */
-public final class TextSocketSinkConfiguration extends ConfigurationModuleBuilder {
+public final class SingleInputOperatorUDFConfiguration extends ConfigurationModuleBuilder {
 
-  public static final RequiredParameter<String> SOCKET_HOST_ADDRESS = new RequiredParameter<>();
-  public static final RequiredParameter<Integer> SOCKET_HOST_PORT = new RequiredParameter<>();
+  public static final RequiredParameter<String> UDF_STRING = new RequiredParameter<>();
+  public static final RequiredImpl<Operator> OPERATOR = new RequiredImpl<>();
 
-  public static final ConfigurationModule CONF = new TextSocketSinkConfiguration()
-      .bindNamedParameter(SocketServerIp.class, SOCKET_HOST_ADDRESS)
-      .bindNamedParameter(SocketServerPort.class, SOCKET_HOST_PORT)
-      .bindImplementation(Sink.class, NettyTextSink.class)
+  public static final ConfigurationModule CONF = new SingleInputOperatorUDFConfiguration()
+      .bindNamedParameter(SerializedUdf.class, UDF_STRING)
+      .bindImplementation(Operator.class, OPERATOR)
       .build();
 }

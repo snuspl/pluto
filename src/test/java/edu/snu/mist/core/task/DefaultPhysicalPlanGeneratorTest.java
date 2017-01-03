@@ -15,12 +15,9 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.api.APITestParameters;
+
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
-import edu.snu.mist.common.parameters.TextSocketSinkParameters;
-import edu.snu.mist.common.parameters.TextSocketSourceParameters;
-import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.PhysicalVertex;
 import edu.snu.mist.common.operators.*;
@@ -29,10 +26,12 @@ import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.sources.NettyTextDataGenerator;
 import edu.snu.mist.common.sources.Source;
 import edu.snu.mist.common.sources.SourceImpl;
+import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.formats.avro.AvroVertexChain;
 import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.Edge;
 import edu.snu.mist.formats.avro.LogicalPlan;
+import edu.snu.mist.utils.TestParameters;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -63,10 +62,8 @@ public final class DefaultPhysicalPlanGeneratorTest {
 
   @Before
   public void setUp() throws IOException {
-    sourceServerSocket = new ServerSocket(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF
-      .getConfigurationValue(TextSocketSourceParameters.SOCKET_HOST_PORT));
-    sinkServerSocket = new ServerSocket(APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF
-      .getConfigurationValue(TextSocketSinkParameters.SOCKET_HOST_PORT));
+    sourceServerSocket = new ServerSocket(TestParameters.SERVER_PORT);
+    sinkServerSocket = new ServerSocket(TestParameters.SINK_PORT);
   }
 
   @After
@@ -77,19 +74,20 @@ public final class DefaultPhysicalPlanGeneratorTest {
 
   /**
    * Round-trip test of de-serializing LogicalPlan.
-   * @throws InjectionException
+   * @throws org.apache.reef.tang.exceptions.InjectionException
    */
+
   @Test
   public void testPhysicalPlanGenerator()
       throws InjectionException, IOException, URISyntaxException, ClassNotFoundException {
     // Generate a query
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
-    queryBuilder.socketTextStream(APITestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
+    queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
         .flatMap(s -> Arrays.asList(s.split(" ")))
         .filter(s -> s.startsWith("A"))
         .map(s -> new Tuple2<>(s, 1))
         .reduceByKey(0, String.class, (Integer x, Integer y) -> x + y)
-        .textSocketOutput(APITestParameters.LOCAL_TEXT_SOCKET_SINK_CONF);
+        .textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
     final MISTQuery query = queryBuilder.build();
     // Generate logical plan
     final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getSerializedDAG();
@@ -130,4 +128,5 @@ public final class DefaultPhysicalPlanGeneratorTest {
     final Sink sink = (Sink)sinks.entrySet().iterator().next().getKey();
     Assert.assertTrue(sink instanceof NettyTextSink);
   }
+
 }

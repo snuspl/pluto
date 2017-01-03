@@ -15,7 +15,9 @@
  */
 package edu.snu.mist.api;
 
-import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.formats.avro.ClientToTaskMessage;
+import edu.snu.mist.formats.avro.IPAddress;
+import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.avro.ipc.NettyTransceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 

@@ -16,76 +16,110 @@
 
 package edu.snu.mist.api.datastreams;
 
-import edu.snu.mist.api.AvroVertexSerializable;
-import edu.snu.mist.common.functions.*;
-import edu.snu.mist.api.datastreams.configurations.TextSocketSinkConfiguration;
-import edu.snu.mist.common.types.Tuple2;
-import edu.snu.mist.common.windows.WindowInformation;
-import edu.snu.mist.common.DAG;
-import edu.snu.mist.formats.avro.Direction;
 
+import edu.snu.mist.api.datastreams.configurations.*;
+import edu.snu.mist.common.DAG;
+import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.functions.*;
+import edu.snu.mist.common.operators.*;
+import edu.snu.mist.common.types.Tuple2;
+import edu.snu.mist.common.windows.CountWindowInformation;
+import edu.snu.mist.common.windows.TimeWindowInformation;
+import edu.snu.mist.common.windows.WindowInformation;
+import edu.snu.mist.formats.avro.Direction;
+import org.apache.reef.tang.Configuration;
+import org.apache.reef.tang.formats.ConfigurationModule;
+
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This abstract class contains common methods for ContinuousStream.
  * <T> data type of the stream.
  */
-abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements ContinuousStream<T> {
+public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements ContinuousStream<T> {
 
+  public ContinuousStreamImpl(final DAG<MISTStream, Direction> dag,
+                              final Configuration conf) {
+    super(dag, conf);
+  }
 
-  public ContinuousStreamImpl(final DAG<AvroVertexSerializable, Direction> dag) {
-    super(dag);
+  /**
+   * Create a new continuous stream that is processed by the operator using a single udf
+   * (ex. map, filter, flatMap, applyStateful).
+   * @param udf a user-defined function
+   * @param clazz a class representing the operator
+   * @param dag a dag
+   * @param <OUT> the result type of the operation
+   * @return a new transformed continuous stream
+   */
+  private <OUT> ContinuousStream<OUT> transformWithSingleUdfOperator(
+      final Serializable udf,
+      final Class<? extends Operator> clazz,
+      final DAG<MISTStream, Direction> dag) {
+    try {
+      final Configuration opConf = SingleInputOperatorUDFConfiguration.CONF
+          .set(SingleInputOperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(udf))
+          .set(SingleInputOperatorUDFConfiguration.OPERATOR, clazz)
+          .build();
+      final ContinuousStream<OUT> downStream = new ContinuousStreamImpl<>(dag, opConf);
+      dag.addVertex(downStream);
+      dag.addEdge(this, downStream, Direction.LEFT);
+      return downStream;
+    } catch (final IOException e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
-  public <OUT> MapOperatorStream<T, OUT> map(final MISTFunction<T, OUT> mapFunc) {
-    final MapOperatorStream<T, OUT> downStream = new MapOperatorStream<>(mapFunc, dag);
-    dag.addVertex(downStream);
-    dag.addEdge(this, downStream, Direction.LEFT);
-    return downStream;
+  public <OUT> ContinuousStream<OUT> map(final MISTFunction<T, OUT> mapFunc) {
+    return transformWithSingleUdfOperator(mapFunc, MapOperator.class, dag);
   }
 
   @Override
-  public <OUT> FlatMapOperatorStream<T, OUT> flatMap(final MISTFunction<T, List<OUT>> flatMapFunc) {
-    final FlatMapOperatorStream<T, OUT> downStream = new FlatMapOperatorStream<>(flatMapFunc, dag);
-    dag.addVertex(downStream);
-    dag.addEdge(this, downStream, Direction.LEFT);
-    return downStream;
+  public <OUT> ContinuousStream<OUT> flatMap(final MISTFunction<T, List<OUT>> flatMapFunc) {
+    return transformWithSingleUdfOperator(flatMapFunc, FlatMapOperator.class, dag);
   }
 
   @Override
-  public FilterOperatorStream<T> filter(final MISTPredicate<T> filterFunc) {
-    final FilterOperatorStream<T> downStream = new FilterOperatorStream<>(filterFunc, dag);
-    dag.addVertex(downStream);
-    dag.addEdge(this, downStream, Direction.LEFT);
-    return downStream;
+  public ContinuousStream<T> filter(final MISTPredicate<T> filterFunc) {
+    return transformWithSingleUdfOperator(filterFunc, FilterOperator.class, dag);
   }
 
   @Override
-  public <K, V> ReduceByKeyOperatorStream<T, K, V> reduceByKey(final int keyFieldNum,
-                                                               final Class<K> keyType,
-                                                               final MISTBiFunction<V, V, V> reduceFunc) {
-    final ReduceByKeyOperatorStream<T, K, V> downStream =
-        new ReduceByKeyOperatorStream<>(keyFieldNum, keyType, reduceFunc, dag);
-    dag.addVertex(downStream);
-    dag.addEdge(this, downStream, Direction.LEFT);
-    return downStream;
-  }
-
-  @Override
-  public <OUT> ApplyStatefulOperatorStream<T, OUT> applyStateful(
+  public <OUT> ContinuousStream<OUT> applyStateful(
       final ApplyStatefulFunction<T, OUT> applyStatefulFunction) {
-    final ApplyStatefulOperatorStream<T, OUT> downStream =
-        new ApplyStatefulOperatorStream<>(applyStatefulFunction, dag);
-    dag.addVertex(downStream);
-    dag.addEdge(this, downStream, Direction.LEFT);
-    return downStream;
+    return transformWithSingleUdfOperator(applyStatefulFunction, ApplyStatefulOperator.class, dag);
   }
 
   @Override
-  public UnionOperatorStream<T> union(final ContinuousStream<T> inputStream) {
+  public <K, V> ContinuousStream<Map<K, V>> reduceByKey(final int keyFieldNum,
+                                                        final Class<K> keyType,
+                                                        final MISTBiFunction<V, V, V> reduceFunc) {
+    try {
+      final Configuration opConf = ReduceByKeyOperatorUDFConfiguration.CONF
+          .set(ReduceByKeyOperatorUDFConfiguration.KEY_INDEX, keyFieldNum)
+          .set(ReduceByKeyOperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(reduceFunc))
+          .build();
+      final ContinuousStream<Map<K, V>> downStream = new ContinuousStreamImpl<>(dag, opConf);
+      dag.addVertex(downStream);
+      dag.addEdge(this, downStream, Direction.LEFT);
+      return downStream;
+    } catch (final IOException e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
+    }
+
+  }
+
+  @Override
+  public ContinuousStream<T> union(final ContinuousStream<T> inputStream) {
     // TODO[MIST-245]: Improve type checking.
-    final UnionOperatorStream<T> downStream = new UnionOperatorStream<>(dag);
+    final Configuration opConf = UnionOperatorConfiguration.CONF.build();
+    final ContinuousStream<T> downStream = new ContinuousStreamImpl<>(dag, opConf);
     dag.addVertex(downStream);
     dag.addEdge(this, downStream, Direction.LEFT);
     dag.addEdge(inputStream, downStream, Direction.RIGHT);
@@ -93,9 +127,27 @@ abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Cont
   }
 
   @Override
-  public WindowOperatorStream<T> window(final WindowInformation windowInfo) {
-    final WindowOperatorStream<T> downStream = new WindowOperatorStream<>(windowInfo, dag);
+  public WindowedStream<T> window(final WindowInformation windowInfo) {
+    final ConfigurationModule confModule = WindowOperatorConfiguration.CONF
+        .set(WindowOperatorConfiguration.WINDOW_SIZE, windowInfo.getWindowSize())
+        .set(WindowOperatorConfiguration.WINDOW_INTERVAL, windowInfo.getWindowInterval());
 
+    final Configuration opConf;
+    if (windowInfo instanceof TimeWindowInformation) {
+      opConf = confModule
+          .set(WindowOperatorConfiguration.OPERATOR, TimeWindowOperator.class)
+          .build();
+    } else if (windowInfo instanceof CountWindowInformation) {
+      opConf = confModule
+          .set(WindowOperatorConfiguration.OPERATOR, CountWindowOperator.class)
+          .build();
+    } else {
+      opConf = confModule
+          .set(WindowOperatorConfiguration.OPERATOR, SessionWindowOperator.class)
+          .build();
+    }
+
+    final WindowedStream<T> downStream = new WindowedStreamImpl<>(dag, opConf);
     dag.addVertex(downStream);
     dag.addEdge(this, downStream, Direction.LEFT);
     return downStream;
@@ -107,25 +159,38 @@ abstract class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Cont
    * After that, joins a pair of inputs in two streams that satisfies the user-defined predicate.
    */
   @Override
-  public <U> JoinOperatorStream<T, U> join(final ContinuousStream<U> inputStream,
-                                           final MISTBiPredicate<T, U> joinBiPredicate,
-                                           final WindowInformation windowInfo) {
+  public <U> WindowedStream<Tuple2<T, U>> join(final ContinuousStream<U> inputStream,
+                                               final MISTBiPredicate<T, U> joinBiPredicate,
+                                               final WindowInformation windowInfo) {
     final MISTFunction<T, Tuple2<T, U>> firstMapFunc = input -> new Tuple2<>(input, null);
     final MISTFunction<U, Tuple2<T, U>> secondMapFunc = input -> new Tuple2<>(null, input);
     final WindowedStream<Tuple2<T, U>> windowedStream = this
         .map(firstMapFunc)
         .union(inputStream.map(secondMapFunc))
         .window(windowInfo);
-
-    final JoinOperatorStream<T, U> downStream = new JoinOperatorStream<>(joinBiPredicate, dag);
-    dag.addVertex(downStream);
-    dag.addEdge(windowedStream, downStream, Direction.LEFT);
-    return downStream;
+    try {
+      final Configuration opConf = SingleInputOperatorUDFConfiguration.CONF
+          .set(SingleInputOperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(joinBiPredicate))
+          .set(SingleInputOperatorUDFConfiguration.OPERATOR, JoinOperator.class)
+          .build();
+      final WindowedStream<Tuple2<T, U>> downStream = new WindowedStreamImpl<>(dag, opConf);
+      dag.addVertex(downStream);
+      dag.addEdge(windowedStream, downStream, Direction.LEFT);
+      return downStream;
+    } catch (final IOException e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
-  public Sink textSocketOutput(final TextSocketSinkConfiguration textSocketSinkConfiguration) {
-    final Sink sink = new TextSocketSink(textSocketSinkConfiguration);
+  public MISTStream<String> textSocketOutput(final String serverAddress,
+                               final int serverPort) {
+    final Configuration opConf = TextSocketSinkConfiguration.CONF
+        .set(TextSocketSinkConfiguration.SOCKET_HOST_ADDRESS, serverAddress)
+        .set(TextSocketSinkConfiguration.SOCKET_HOST_PORT, serverPort)
+        .build();
+    final MISTStream<String> sink = new MISTStreamImpl<>(dag, opConf);
     dag.addVertex(sink);
     dag.addEdge(this, sink, Direction.LEFT);
     return sink;

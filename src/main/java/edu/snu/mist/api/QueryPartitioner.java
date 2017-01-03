@@ -15,8 +15,7 @@
  */
 package edu.snu.mist.api;
 
-import edu.snu.mist.api.datastreams.UnionOperatorStream;
-import edu.snu.mist.api.datastreams.Sink;
+import edu.snu.mist.api.datastreams.MISTStream;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.GraphUtils;
@@ -58,8 +57,8 @@ public final class QueryPartitioner {
   /**
    * DAG of the logical query.
    */
-  private final DAG<AvroVertexSerializable, Direction> dag;
-  public QueryPartitioner(final DAG<AvroVertexSerializable, Direction> dag) {
+  private final DAG<MISTStream, Direction> dag;
+  public QueryPartitioner(final DAG<MISTStream, Direction> dag) {
     this.dag = dag;
   }
 
@@ -68,17 +67,17 @@ public final class QueryPartitioner {
    * @return DAG of the List<AvroVertexSerializable>
    * The partition is represented as a list and AvroVertexSerializable can be serialized by avro
    */
-  public DAG<List<AvroVertexSerializable>, Direction> generatePartitionedPlan() {
+  public DAG<List<MISTStream>, Direction> generatePartitionedPlan() {
     final DAG<QueryPartition, Direction> partitionedQueryDAG =
         new AdjacentListDAG<>();
-    final Map<AvroVertexSerializable, QueryPartition> vertexChainMap = new HashMap<>();
+    final Map<MISTStream, QueryPartition> vertexChainMap = new HashMap<>();
     // Check visited vertices
-    final Set<AvroVertexSerializable> visited = new HashSet<>();
+    final Set<MISTStream> visited = new HashSet<>();
 
     // It traverses the DAG of operators in DFS order
     // from the root operators which are following sources.
-    for (final AvroVertexSerializable source : dag.getRootVertices()) {
-      final Map<AvroVertexSerializable, Direction> rootEdges = dag.getEdges(source);
+    for (final MISTStream source : dag.getRootVertices()) {
+      final Map<MISTStream, Direction> rootEdges = dag.getEdges(source);
       // This chaining group is a wrapper for List, for equality check
       final QueryPartition srcChain = new QueryPartition();
       // Partition Source
@@ -86,8 +85,8 @@ public final class QueryPartitioner {
       partitionedQueryDAG.addVertex(srcChain);
       visited.add(source);
       vertexChainMap.put(source, srcChain);
-      for (final Map.Entry<AvroVertexSerializable, Direction> entry : rootEdges.entrySet()) {
-        final AvroVertexSerializable nextVertex = entry.getKey();
+      for (final Map.Entry<MISTStream, Direction> entry : rootEdges.entrySet()) {
+        final MISTStream nextVertex = entry.getKey();
         final Direction edgeDirection = entry.getValue();
         final QueryPartition nextChain = vertexChainMap.getOrDefault(nextVertex, new QueryPartition());
         if (!vertexChainMap.containsKey(nextVertex)) {
@@ -100,7 +99,7 @@ public final class QueryPartitioner {
     }
 
     // Convert to List<AvroVertexSerializable>
-    final DAG<List<AvroVertexSerializable>, Direction> result =
+    final DAG<List<MISTStream>, Direction> result =
         new AdjacentListDAG<>();
     final Queue<QueryPartition> queue = new LinkedList<>();
     final Iterator<QueryPartition> iterator = GraphUtils.topologicalSort(partitionedQueryDAG);
@@ -127,18 +126,18 @@ public final class QueryPartitioner {
    * @param vertexChainMap vertex and partition mapping
    */
   private void chaining(final QueryPartition operatorChain,
-                        final AvroVertexSerializable currVertex,
-                        final Set<AvroVertexSerializable> visited,
+                        final MISTStream currVertex,
+                        final Set<MISTStream> visited,
                         final DAG<QueryPartition, Direction> partitionedQueryDAG,
-                        final Map<AvroVertexSerializable, QueryPartition> vertexChainMap) {
+                        final Map<MISTStream, QueryPartition> vertexChainMap) {
     if (!visited.contains(currVertex)) {
       operatorChain.chain.add(currVertex);
       visited.add(currVertex);
-      final Map<AvroVertexSerializable, Direction> edges = dag.getEdges(currVertex);
-      for (final Map.Entry<AvroVertexSerializable, Direction> entry : edges.entrySet()) {
-        final AvroVertexSerializable nextVertex = entry.getKey();
+      final Map<MISTStream, Direction> edges = dag.getEdges(currVertex);
+      for (final Map.Entry<MISTStream, Direction> entry : edges.entrySet()) {
+        final MISTStream nextVertex = entry.getKey();
         final Direction edgeDirection = entry.getValue();
-        if (nextVertex instanceof UnionOperatorStream ||
+        if (dag.getInDegree(nextVertex) > 1 ||
             edges.size() > 1) {
           // The current vertex is 2) branching (have multiple next ops)
           // or the next vertex is 3) merging operator (have multiple incoming edges)
@@ -150,7 +149,7 @@ public final class QueryPartitioner {
           }
           partitionedQueryDAG.addEdge(operatorChain, nextChain, edgeDirection);
           chaining(nextChain, nextVertex, visited, partitionedQueryDAG, vertexChainMap);
-        } else if (nextVertex instanceof Sink) {
+        } else if (dag.getEdges(nextVertex).size() == 0) {
           // The next vertex is Sink. End of the chaining
           final QueryPartition nextChain = vertexChainMap.getOrDefault(nextVertex, new QueryPartition());
           if (!vertexChainMap.containsKey(nextVertex)) {
@@ -172,7 +171,7 @@ public final class QueryPartitioner {
    * This is a wrapper class for List representing the Query Partition.
    */
   private class QueryPartition {
-    private final List<AvroVertexSerializable> chain;
+    private final List<MISTStream> chain;
     QueryPartition() {
       this.chain = new LinkedList<>();
     }

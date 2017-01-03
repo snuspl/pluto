@@ -15,21 +15,36 @@
  */
 package edu.snu.mist.api.datastreams.configurations;
 
+import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTFunction;
-import edu.snu.mist.common.parameters.SourceParameters;
-import edu.snu.mist.common.parameters.TextSocketSourceParameters;
+import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
+import edu.snu.mist.common.parameters.SocketServerIp;
+import edu.snu.mist.common.parameters.SocketServerPort;
+import edu.snu.mist.common.sources.DataGenerator;
+import edu.snu.mist.common.sources.NettyTextDataGenerator;
 import org.apache.reef.io.Tuple;
+import org.apache.reef.tang.formats.ConfigurationModule;
+import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
+import org.apache.reef.tang.formats.OptionalParameter;
+import org.apache.reef.tang.formats.RequiredParameter;
 
-import java.util.Arrays;
-import java.util.Map;
+import java.io.IOException;
 
 /**
  * The class represents the text socket source configuration.
  */
-public final class TextSocketSourceConfiguration extends SourceConfiguration<String> {
-  private TextSocketSourceConfiguration(final Map<String, Object> configMap) {
-    super(configMap);
-  }
+public final class TextSocketSourceConfiguration extends ConfigurationModuleBuilder {
+
+  public static final RequiredParameter<String> SOCKET_HOST_ADDR = new RequiredParameter<>();
+  public static final RequiredParameter<Integer> SOCKET_HOST_PORT = new RequiredParameter<>();
+  public static final OptionalParameter<String> TIMESTAMP_EXTRACT_OBJECT = new OptionalParameter<>();
+
+  public static final ConfigurationModule CONF = new TextSocketSourceConfiguration()
+      .bindNamedParameter(SocketServerIp.class, SOCKET_HOST_ADDR)
+      .bindNamedParameter(SocketServerPort.class, SOCKET_HOST_PORT)
+      .bindNamedParameter(SerializedTimestampExtractUdf.class, TIMESTAMP_EXTRACT_OBJECT)
+      .bindImplementation(DataGenerator.class, NettyTextDataGenerator.class)
+      .build();
 
   /**
    * Gets the builder for Configuration construction.
@@ -42,35 +57,27 @@ public final class TextSocketSourceConfiguration extends SourceConfiguration<Str
   /**
    * This class builds TextSocketSourceConfiguration of TextSocketSourceStream.
    */
-  public static final class TextSocketSourceConfigurationBuilder extends MISTConfigurationBuilderImpl {
+  public static final class TextSocketSourceConfigurationBuilder {
 
-    /**
-     * Required parameters for TextSocketSourceStream.
-     */
-    private final String[] textSocketSourceParameters = {
-        TextSocketSourceParameters.SOCKET_HOST_ADDRESS,
-        TextSocketSourceParameters.SOCKET_HOST_PORT
-    };
+    private String socketServerAddr;
+    private int socketServerPort;
+    private MISTFunction<String, Tuple<String, Long>> extractFunc;
 
-    /**
-     * Optional parameters for TextSocketSourceStream.
-     */
-    private final String[] textSocketSourceOptionalParameters = {
-        SourceParameters.TIMESTAMP_EXTRACTION_FUNCTION
-    };
-
-    private TextSocketSourceConfigurationBuilder() {
-      requiredParameters.addAll(Arrays.asList(textSocketSourceParameters));
-      optionalParameters.addAll(Arrays.asList(textSocketSourceOptionalParameters));
-    }
 
     /**
      * Tests that required parameters are set and builds the TextSocketSourceConfiguration.
      * @return the configuration
      */
-    public TextSocketSourceConfiguration build() {
-      readyToBuild();
-      return new TextSocketSourceConfiguration(configMap);
+    public SourceConfiguration build() {
+      try {
+        return new SourceConfiguration(CONF.set(SOCKET_HOST_ADDR, socketServerAddr)
+        .set(SOCKET_HOST_PORT, socketServerPort)
+        .set(TIMESTAMP_EXTRACT_OBJECT, SerializeUtils.serializeToString(extractFunc))
+        .build(), SourceConfiguration.SourceType.SOCKET);
+      } catch (final IOException e) {
+        e.printStackTrace();
+        throw new RuntimeException(e);
+      }
     }
 
     /**
@@ -79,7 +86,7 @@ public final class TextSocketSourceConfiguration extends SourceConfiguration<Str
      * @return the configured SourceBuilder
      */
     public TextSocketSourceConfigurationBuilder setHostAddress(final String address) {
-      set(TextSocketSourceParameters.SOCKET_HOST_ADDRESS, address);
+      socketServerAddr = address;
       return this;
     }
 
@@ -89,7 +96,7 @@ public final class TextSocketSourceConfiguration extends SourceConfiguration<Str
      * @return the configured SourceBuilder
      */
     public TextSocketSourceConfigurationBuilder setHostPort(final int port) {
-      set(TextSocketSourceParameters.SOCKET_HOST_PORT, port);
+      socketServerPort = port;
       return this;
     }
 
@@ -101,7 +108,7 @@ public final class TextSocketSourceConfiguration extends SourceConfiguration<Str
      */
     public TextSocketSourceConfigurationBuilder setTimestampExtractionFunction(
         final MISTFunction<String, Tuple<String, Long>> function) {
-      set(SourceParameters.TIMESTAMP_EXTRACTION_FUNCTION, function);
+      extractFunc = function;
       return this;
     }
   }
