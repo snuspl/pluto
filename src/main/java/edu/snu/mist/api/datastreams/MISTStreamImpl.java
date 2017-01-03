@@ -48,7 +48,7 @@ class MISTStreamImpl<OUT> implements MISTStream<OUT> {
    * This function creates the instance of the udf function
    * in order to check whether the configuration is correct or not.
    * @param clazz class of the udf function
-   * @param conf configuration of the udf function
+   * @param udfConf configuration of the udf function
    * @param <C> class type
    */
   protected <C> void checkUdf(final Class<? extends C> clazz,

@@ -25,7 +25,7 @@ import org.apache.reef.tang.formats.RequiredImpl;
 import org.apache.reef.tang.formats.RequiredParameter;
 
 /**
- * A configuration for ReduceByKeyOperator.
+ * A configuration for ReduceByKeyOperator that binds the udf class.
  */
 public final class ReduceByKeyOperatorConfiguration extends ConfigurationModuleBuilder {
   /**
