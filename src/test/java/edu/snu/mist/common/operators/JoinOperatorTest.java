@@ -18,6 +18,7 @@ package edu.snu.mist.common.operators;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.common.functions.MISTBiPredicate;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.WindowData;
 import edu.snu.mist.common.windows.WindowImpl;
@@ -28,7 +29,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.BiPredicate;
 
 public final class JoinOperatorTest {
 
@@ -50,7 +50,7 @@ public final class JoinOperatorTest {
     final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(101L);
 
     // predicate that tests whether two input data have same key or not
-    final BiPredicate<Tuple2<String, Integer>, Tuple2<Integer, Long>> joinPredicate =
+    final MISTBiPredicate<Tuple2<String, Integer>, Tuple2<Integer, Long>> joinPredicate =
         (tuple1, tuple2) -> tuple1.get(1).equals(tuple2.get(0));
 
     final JoinOperator<Tuple2<String, Integer>, Tuple2<Integer, Long>> joinOperator =

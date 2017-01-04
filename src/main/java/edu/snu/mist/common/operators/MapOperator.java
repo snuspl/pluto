@@ -18,13 +18,13 @@ package edu.snu.mist.common.operators;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.parameters.OperatorId;
 import edu.snu.mist.common.parameters.SerializedUdf;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,7 +39,7 @@ public final class MapOperator<I, O> extends OneStreamOperator {
   /**
    * Map function.
    */
-  private final Function<I, O> mapFunc;
+  private final MISTFunction<I, O> mapFunc;
 
   @Inject
   private MapOperator(
@@ -51,7 +51,7 @@ public final class MapOperator<I, O> extends OneStreamOperator {
 
   @Inject
   public MapOperator(@Parameter(OperatorId.class) final String operatorId,
-                     final Function<I, O> mapFunc) {
+                     final MISTFunction<I, O> mapFunc) {
     super(operatorId);
     this.mapFunc = mapFunc;
   }

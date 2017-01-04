@@ -17,6 +17,7 @@ package edu.snu.mist.common.operators;
 
 import com.google.common.collect.ImmutableList;
 import edu.snu.mist.common.MistDataEvent;
+import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.utils.TestOutputEmitter;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -27,7 +28,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.logging.Logger;
 
 public final class StatefulOperatorTest {
@@ -90,7 +90,7 @@ public final class StatefulOperatorTest {
     // Set the key index of tuple
     final int keyIndex = 0;
     // Reduce function for word count
-    final BiFunction<Integer, Integer, Integer> wordCountFunc = (oldVal, val) -> oldVal + val;
+    final MISTBiFunction<Integer, Integer, Integer> wordCountFunc = (oldVal, val) -> oldVal + val;
     final ReduceByKeyOperator<String, Integer> wcOperator =
         new ReduceByKeyOperator<>(operatorId, keyIndex, wordCountFunc);
 

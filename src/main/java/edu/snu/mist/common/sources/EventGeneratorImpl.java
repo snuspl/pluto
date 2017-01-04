@@ -17,10 +17,10 @@ package edu.snu.mist.common.sources;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.OutputEmitter;
+import edu.snu.mist.common.functions.MISTFunction;
 import org.apache.reef.io.Tuple;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 
 /**
  * This abstract class represents the basic event generator.
@@ -38,14 +38,14 @@ public abstract class EventGeneratorImpl<I, V> implements EventGenerator<I> {
   /**
    * The function that extract timestamp from input object.
    */
-  private final Function<I, Tuple<V, Long>> extractTimestampFunc;
+  private final MISTFunction<I, Tuple<V, Long>> extractTimestampFunc;
 
   /**
    * The emitter that is the destination of watermark.
    */
   protected OutputEmitter outputEmitter;
 
-  public EventGeneratorImpl(final Function<I, Tuple<V, Long>> extractTimestampFunc) {
+  public EventGeneratorImpl(final MISTFunction<I, Tuple<V, Long>> extractTimestampFunc) {
     this.extractTimestampFunc = extractTimestampFunc;
     this.started = new AtomicBoolean(false);
   }

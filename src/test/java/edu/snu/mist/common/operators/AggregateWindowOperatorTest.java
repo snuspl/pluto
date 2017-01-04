@@ -18,6 +18,7 @@ package edu.snu.mist.common.operators;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.windows.WindowData;
 import edu.snu.mist.common.windows.WindowImpl;
 import org.junit.Assert;
@@ -25,7 +26,6 @@ import org.junit.Test;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.Function;
 
 public final class AggregateWindowOperatorTest {
 
@@ -45,7 +45,7 @@ public final class AggregateWindowOperatorTest {
     final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(101L);
 
     // functions that dealing with input WindowData
-    final Function<WindowData<Integer>, String> aggregateFunc =
+    final MISTFunction<WindowData<Integer>, String> aggregateFunc =
         (windowData) -> {
           return windowData.getDataCollection().toString() + ", " + windowData.getStart() + ", " + windowData.getEnd();
         };

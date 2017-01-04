@@ -17,6 +17,7 @@ package edu.snu.mist.common.sources;
 
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.parameters.PeriodicWatermarkDelay;
 import edu.snu.mist.common.parameters.PeriodicWatermarkPeriod;
 import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
@@ -28,7 +29,6 @@ import java.io.IOException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 /**
  * This class represents the watermark source that emits watermark periodically.
@@ -81,7 +81,7 @@ public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V>
   }
 
   @Inject
-  public PeriodicEventGenerator(final Function<I, Tuple<V, Long>> extractTimestampFunc,
+  public PeriodicEventGenerator(final MISTFunction<I, Tuple<V, Long>> extractTimestampFunc,
                                 @Parameter(PeriodicWatermarkPeriod.class) final long period,
                                 @Parameter(PeriodicWatermarkDelay.class) final long expectedDelay,
                                 final TimeUnit timeUnit,

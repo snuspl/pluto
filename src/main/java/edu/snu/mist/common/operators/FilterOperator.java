@@ -18,13 +18,13 @@ package edu.snu.mist.common.operators;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.common.parameters.OperatorId;
 import edu.snu.mist.common.parameters.SerializedUdf;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -38,7 +38,7 @@ public final class FilterOperator<I> extends OneStreamOperator {
   /**
    * Filter function.
    */
-  private final Predicate<I> filterFunc;
+  private final MISTPredicate<I> filterFunc;
 
   @Inject
   private FilterOperator(
@@ -50,7 +50,7 @@ public final class FilterOperator<I> extends OneStreamOperator {
 
   @Inject
   public FilterOperator(@Parameter(OperatorId.class) final String operatorId,
-                        final Predicate<I> filterFunc) {
+                        final MISTPredicate<I> filterFunc) {
     super(operatorId);
     this.filterFunc = filterFunc;
   }
