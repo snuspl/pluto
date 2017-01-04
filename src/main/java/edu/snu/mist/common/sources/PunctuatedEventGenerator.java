@@ -17,6 +17,8 @@ package edu.snu.mist.common.sources;
 
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.common.functions.WatermarkTimestampFunction;
 import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
 import edu.snu.mist.common.parameters.SerializedTimestampParseUdf;
@@ -26,8 +28,6 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * This class represents the watermark source that parse the input and emits punctuated watermark.
@@ -39,12 +39,12 @@ public final class PunctuatedEventGenerator<I, V> extends EventGeneratorImpl<I, 
   /**
    * The function check whether the input is watermark or not.
    */
-  private final Predicate<I> isWatermark;
+  private final MISTPredicate<I> isWatermark;
 
   /**
    * The function get input which is watermark and parse the timestamp.
    */
-  private final Function<I, Long> parseTimestamp;
+  private final WatermarkTimestampFunction<I> parseTimestamp;
 
   @Inject
   private PunctuatedEventGenerator(
@@ -61,22 +61,22 @@ public final class PunctuatedEventGenerator<I, V> extends EventGeneratorImpl<I, 
       @Parameter(SerializedTimestampParseUdf.class) final String timestampParseObj,
       @Parameter(SerializedWatermarkPredicateUdf.class) final String isWatermarkObj,
       final ClassLoader classLoader) throws IOException, ClassNotFoundException {
-    this((Function)SerializeUtils.deserializeFromString(timestampExtractObj, classLoader),
-        (Predicate)SerializeUtils.deserializeFromString(timestampParseObj, classLoader),
+    this((MISTFunction)SerializeUtils.deserializeFromString(timestampExtractObj, classLoader),
+        (MISTPredicate)SerializeUtils.deserializeFromString(timestampParseObj, classLoader),
         (WatermarkTimestampFunction)SerializeUtils.deserializeFromString(isWatermarkObj, classLoader));
   }
 
   @Inject
   public PunctuatedEventGenerator(
-      final Predicate<I> isWatermark,
+      final MISTPredicate<I> isWatermark,
       final WatermarkTimestampFunction<I> parseTimestamp) {
     this(null, isWatermark, parseTimestamp);
   }
 
   @Inject
   public PunctuatedEventGenerator(
-      final Function<I, Tuple<V, Long>> extractTimestampFunc,
-      final Predicate<I> isWatermark,
+      final MISTFunction<I, Tuple<V, Long>> extractTimestampFunc,
+      final MISTPredicate<I> isWatermark,
       final WatermarkTimestampFunction<I> parseTimestamp) {
     super(extractTimestampFunc);
     this.isWatermark = isWatermark;

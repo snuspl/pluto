@@ -18,6 +18,8 @@ package edu.snu.mist.common.sources;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.OutputEmitter;
+import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.common.functions.WatermarkTimestampFunction;
 import edu.snu.mist.common.shared.NettySharedResource;
 import edu.snu.mist.common.stream.NettyChannelHandler;
@@ -40,8 +42,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -113,9 +113,9 @@ public final class NettySourceTest {
         final DataGenerator<String> dataGenerator =
             new NettyTextDataGenerator(SERVER_ADDR, SERVER_PORT, nettySharedResource);
 
-        final Function<String, Tuple<String, Long>> extractFunc = (input) ->
+        final MISTFunction<String, Tuple<String, Long>> extractFunc = (input) ->
             new Tuple<>(input.toString().split(":")[0], Long.parseLong(input.toString().split(":")[1]));
-        final Predicate<String> isWatermark = (input) -> input.toString().split(":")[0].equals("Watermark");
+        final MISTPredicate<String> isWatermark = (input) -> input.toString().split(":")[0].equals("Watermark");
         final WatermarkTimestampFunction<String> parseTsFunc =
             (input) -> Long.parseLong(input.toString().split(":")[1]);
         final EventGenerator<String> eventGenerator =

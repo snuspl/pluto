@@ -18,6 +18,7 @@ package edu.snu.mist.common.operators;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.parameters.OperatorId;
 import edu.snu.mist.common.parameters.SerializedUdf;
 import org.apache.reef.tang.annotations.Parameter;
@@ -25,7 +26,6 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.List;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -38,7 +38,7 @@ public final class FlatMapOperator<I, O> extends OneStreamOperator {
   /**
    * FlatMap function.
    */
-  private final Function<I, List<O>> flatMapFunc;
+  private final MISTFunction<I, List<O>> flatMapFunc;
 
   @Inject
   private FlatMapOperator(
@@ -50,7 +50,7 @@ public final class FlatMapOperator<I, O> extends OneStreamOperator {
 
   @Inject
   public FlatMapOperator(@Parameter(OperatorId.class) final String operatorId,
-                         final Function<I, List<O>> flatMapFunc) {
+                         final MISTFunction<I, List<O>> flatMapFunc) {
     super(operatorId);
     this.flatMapFunc = flatMapFunc;
   }

@@ -15,13 +15,14 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.MistDataEvent;
+import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.functions.MISTBiPredicate;
 import edu.snu.mist.common.parameters.OperatorId;
 import edu.snu.mist.common.parameters.SerializedUdf;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.WindowData;
-import edu.snu.mist.common.MistDataEvent;
-import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.windows.WindowImpl;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -30,7 +31,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.function.BiPredicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,7 +46,7 @@ public final class JoinOperator<T, U> extends OneStreamOperator {
   /**
    * The user-defined predicate which checks whether two inputs from both stream are matched or not.
    */
-  private final BiPredicate<T, U> joinBiPredicate;
+  private final MISTBiPredicate<T, U> joinBiPredicate;
 
   @Inject
   private JoinOperator(
@@ -58,7 +58,7 @@ public final class JoinOperator<T, U> extends OneStreamOperator {
 
   @Inject
   public JoinOperator(@Parameter(OperatorId.class) final String operatorId,
-                      final BiPredicate<T, U> joinBiPredicate) {
+                      final MISTBiPredicate<T, U> joinBiPredicate) {
     super(operatorId);
     this.joinBiPredicate = joinBiPredicate;
   }

@@ -18,6 +18,9 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.PhysicalVertex;
+import edu.snu.mist.common.functions.MISTBiFunction;
+import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.common.operators.*;
 import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.sources.*;
@@ -43,9 +46,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -73,15 +73,15 @@ public final class QueryManagerTest {
    * and the operators are executed correctly.
    */
   // UDF functions for operators
-  private final Function<String, List<String>> flatMapFunc = (input) -> Arrays.asList(input.split(" "));
-  private final Predicate<String> filterFunc =
+  private final MISTFunction<String, List<String>> flatMapFunc = (input) -> Arrays.asList(input.split(" "));
+  private final MISTPredicate<String> filterFunc =
       (input) -> !(input.equals("a") || input.equals("or") || input.equals("the") || input.equals("of")
           || input.equals("in") || input.equals("at") || input.equals("that")
           || input.equals("out") || input.equals("were"));
-  private final Function<String, Tuple2<String, Integer>> toTupleMapFunc = (input) -> new Tuple2<>(input, 1);
-  private final BiFunction<Integer, Integer, Integer> reduceByKeyFunc = (oldVal, newVal) -> oldVal + newVal;
-  private final Function<Map<String, Integer>, String> toStringMapFunc = (input) -> input.toString();
-  private final Function<Map<String, Integer>, Integer> totalCountMapFunc =
+  private final MISTFunction<String, Tuple2<String, Integer>> toTupleMapFunc = (input) -> new Tuple2<>(input, 1);
+  private final MISTBiFunction<Integer, Integer, Integer> reduceByKeyFunc = (oldVal, newVal) -> oldVal + newVal;
+  private final MISTFunction<Map<String, Integer>, String> toStringMapFunc = (input) -> input.toString();
+  private final MISTFunction<Map<String, Integer>, Integer> totalCountMapFunc =
       (input) -> input.values().stream().reduce(0, (x, y) -> x + y);
 
   @SuppressWarnings("unchecked")

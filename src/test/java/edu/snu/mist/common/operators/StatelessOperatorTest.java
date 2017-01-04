@@ -17,6 +17,8 @@ package edu.snu.mist.common.operators;
 
 import com.google.common.collect.ImmutableList;
 import edu.snu.mist.common.MistDataEvent;
+import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.utils.TestOutputEmitter;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -26,8 +28,6 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
 public final class StatelessOperatorTest {
 
@@ -61,7 +61,7 @@ public final class StatelessOperatorTest {
     final List<Tuple> expected = Arrays.asList(outputs);
 
     // map function: convert string to tuple
-    final Function<String, Tuple> mapFunc = (mapInput) -> new Tuple<>(mapInput, 1);
+    final MISTFunction<String, Tuple> mapFunc = (mapInput) -> new Tuple<>(mapInput, 1);
     final MapOperator<String, Tuple> mapOperator = new MapOperator<>("testMapOp", mapFunc);
     testStatelessOperator(inputStream, expected, mapOperator);
   }
@@ -82,7 +82,7 @@ public final class StatelessOperatorTest {
     final List<String> expected = Arrays.asList("alpha", "area", "application", "ally");
 
     // create a filter function
-    final Predicate<String> filterFunc = (input) -> input.startsWith("a");
+    final MISTPredicate<String> filterFunc = (input) -> input.startsWith("a");
     final FilterOperator<String> filterOperator = new FilterOperator<>("testOp", filterFunc);
     testStatelessOperator(inputStream, expected, filterOperator);
   }
@@ -101,7 +101,7 @@ public final class StatelessOperatorTest {
     final List<String> expected = Arrays.asList(outputs);
 
     // map function: splits the string by space.
-    final Function<String, List<String>> flatMapFunc = (mapInput) -> Arrays.asList(mapInput.split(" "));
+    final MISTFunction<String, List<String>> flatMapFunc = (mapInput) -> Arrays.asList(mapInput.split(" "));
     final FlatMapOperator<String, String> flatMapOperator = new FlatMapOperator<>("testOp", flatMapFunc);
     testStatelessOperator(inputStream, expected, flatMapOperator);
   }

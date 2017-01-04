@@ -15,20 +15,20 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.MistDataEvent;
+import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.parameters.KeyIndex;
 import edu.snu.mist.common.parameters.OperatorId;
 import edu.snu.mist.common.parameters.SerializedUdf;
 import edu.snu.mist.common.types.Tuple2;
-import edu.snu.mist.common.MistDataEvent;
-import edu.snu.mist.common.MistWatermarkEvent;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,7 +47,7 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
   /**
    * A reduce function.
    */
-  private final BiFunction<V, V, V> reduceFunc;
+  private final MISTBiFunction<V, V, V> reduceFunc;
 
   /**
    * An index of key.
@@ -76,7 +76,7 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
   @Inject
   public ReduceByKeyOperator(@Parameter(OperatorId.class) final String operatorId,
                              @Parameter(KeyIndex.class) final int keyIndex,
-                             final BiFunction<V, V, V> reduceFunc) {
+                             final MISTBiFunction<V, V, V> reduceFunc) {
     super(operatorId);
     this.reduceFunc = reduceFunc;
     this.keyIndex = keyIndex;
