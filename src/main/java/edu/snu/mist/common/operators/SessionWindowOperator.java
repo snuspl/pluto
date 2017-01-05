@@ -47,6 +47,16 @@ public final class SessionWindowOperator<T> extends OneStreamOperator {
    */
   private Window<T> currentWindow;
 
+  /**
+   * The timestamp for the latest data input.
+   */
+  private long latestDataTimestamp;
+
+  /**
+   * Checks whether a data has been input and the window is started.
+   */
+  private boolean startedNewWindow = false;
+
   @Inject
   public SessionWindowOperator(@Parameter(OperatorId.class) final String operatorId,
                                @Parameter(WindowInterval.class) final int sessionInterval) {
@@ -64,10 +74,13 @@ public final class SessionWindowOperator<T> extends OneStreamOperator {
     if (currentWindow == null) {
       // Gets first input event
       currentWindow = new WindowImpl<>(currentEventTimestamp);
-    } else if (currentEventTimestamp - currentWindow.getLatestTimestamp() > sessionInterval) {
+    } else if (currentEventTimestamp - latestDataTimestamp > sessionInterval) {
       // The current session is closed. Emit the windowed data
-      currentWindow.setEnd(currentWindow.getLatestTimestamp());
-      outputEmitter.emitData(new MistDataEvent(currentWindow, currentWindow.getLatestTimestamp()));
+      currentWindow.setEnd(latestDataTimestamp);
+      if (startedNewWindow) {
+        outputEmitter.emitData(new MistDataEvent(currentWindow, latestDataTimestamp));
+        startedNewWindow = false;
+      }
       final MistWatermarkEvent latestWatermark = currentWindow.getLatestWatermark();
       if (latestWatermark != null) {
         outputEmitter.emitWatermark(latestWatermark);
@@ -83,6 +96,8 @@ public final class SessionWindowOperator<T> extends OneStreamOperator {
         new Object[]{getOperatorIdentifier(), input, currentWindow});
     emitAndCreateWindow(input.getTimestamp());
     currentWindow.putData(input);
+    startedNewWindow = true;
+    latestDataTimestamp = input.getTimestamp();
   }
 
   @Override
