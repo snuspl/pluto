@@ -21,9 +21,11 @@ import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.parameters.*;
+import edu.snu.mist.utils.OperatorTestUtils;
 import edu.snu.mist.utils.TestParameters;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.reef.io.Tuple;
+import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -77,6 +79,31 @@ public class MISTQueryBuilderTest {
     Assert.assertEquals(TestParameters.HOST, deHost);
     Assert.assertEquals(TestParameters.SERVER_PORT, dePort);
     Assert.assertEquals(SerializeUtils.serializeToString(timestampExtFunc), seTimeFunc);
+  }
+
+  /**
+   * Test whether the serialization of the netty text source with binding the udf class is correct.
+   */
+  @Test
+  public void testNettyTextSourceSerializationWithUdfClassBinding()
+      throws InjectionException, IOException, ClassNotFoundException {
+    final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
+    final MISTFunction<String, Tuple<String, Long>> timestampExtFunc = s -> new Tuple<>(s, 1L);
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    final ContinuousStream<String> stream =
+        queryBuilder.socketTextStream(TextSocketSourceConfiguration.newBuilder()
+            .setHostAddress(TestParameters.HOST)
+            .setHostPort(TestParameters.SERVER_PORT)
+            .setTimestampExtractionFunction(OperatorTestUtils.TestNettyTimestampExtractFunc.class, funcConf)
+            .build());
+    // check
+    final Injector injector = Tang.Factory.getTang().newInjector(stream.getConfiguration());
+    final String deHost = injector.getNamedInstance(SocketServerIp.class);
+    final int dePort = injector.getNamedInstance(SocketServerPort.class);
+    final MISTFunction func = injector.getInstance(MISTFunction.class);
+    Assert.assertEquals(TestParameters.HOST, deHost);
+    Assert.assertEquals(TestParameters.SERVER_PORT, dePort);
+    Assert.assertTrue(func instanceof OperatorTestUtils.TestNettyTimestampExtractFunc);
   }
 
   /**

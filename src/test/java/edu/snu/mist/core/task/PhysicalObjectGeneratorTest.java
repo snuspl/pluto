@@ -27,6 +27,7 @@ import edu.snu.mist.common.sources.*;
 import edu.snu.mist.utils.OperatorTestUtils;
 import junit.framework.Assert;
 import org.apache.reef.tang.Configuration;
+import org.apache.reef.tang.Configurations;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -80,11 +81,38 @@ public final class PhysicalObjectGeneratorTest {
   }
 
   @Test
+  public void testSuccessOfNettyTextDataGeneratorWithClassBinding() throws Exception {
+    final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
+    final Configuration conf = TextSocketSourceConfiguration.newBuilder()
+        .setHostAddress("localhost")
+        .setHostPort(13666)
+        .setTimestampExtractionFunction(OperatorTestUtils.TestNettyTimestampExtractFunc.class, funcConf)
+        .build().getConfiguration();
+    final DataGenerator<String> dataGenerator =
+        generator.newDataGenerator(serializer.toString(conf), classLoader, urls);
+    Assert.assertTrue(dataGenerator instanceof NettyTextDataGenerator);
+  }
+
+  @Test
   public void testSuccessOfKafkaDataGenerator() throws Exception {
     final HashMap<String, Object> kafkaConsumerConf = new HashMap<>();
     final Configuration conf = KafkaSourceConfiguration.newBuilder()
         .setTopic("localhost")
         .setConsumerConfig(kafkaConsumerConf)
+        .build().getConfiguration();
+    final DataGenerator dataGenerator =
+        generator.newDataGenerator(serializer.toString(conf), classLoader, urls);
+    Assert.assertTrue(dataGenerator instanceof KafkaDataGenerator);
+  }
+
+  @Test
+  public void testSuccessOfKafkaDataGeneratorWithClassBinding() throws Exception {
+    final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
+    final HashMap<String, Object> kafkaConsumerConf = new HashMap<>();
+    final Configuration conf = KafkaSourceConfiguration.newBuilder()
+        .setTopic("localhost")
+        .setConsumerConfig(kafkaConsumerConf)
+        .setTimestampExtractionFunction(OperatorTestUtils.TestKafkaTimestampExtractFunc.class, funcConf)
         .build().getConfiguration();
     final DataGenerator dataGenerator =
         generator.newDataGenerator(serializer.toString(conf), classLoader, urls);
@@ -113,6 +141,23 @@ public final class PhysicalObjectGeneratorTest {
         .setParsingWatermarkFunction(input -> 1L)
         .setWatermarkPredicate(input -> true)
         .build().getConfiguration();
+    final EventGenerator eg = generator.newEventGenerator(serializer.toString(conf), classLoader, urls);
+    Assert.assertTrue(eg instanceof PunctuatedEventGenerator);
+  }
+
+  @Test
+  public void testSuccessOfPunctuatedEventGeneratorWithClassBinding() throws IOException, InjectionException {
+    final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
+    final Configuration watermarkConf = PunctuatedWatermarkConfiguration.<String>newBuilder()
+        .setParsingWatermarkFunction(OperatorTestUtils.TestWatermarkTimestampExtractFunc.class, funcConf)
+        .setWatermarkPredicate(OperatorTestUtils.TestPredicate.class, funcConf)
+        .build().getConfiguration();
+    final Configuration srcConf = TextSocketSourceConfiguration.newBuilder()
+        .setHostAddress("localhost")
+        .setHostPort(13666)
+        .setTimestampExtractionFunction(OperatorTestUtils.TestNettyTimestampExtractFunc.class, funcConf)
+        .build().getConfiguration();
+    final Configuration conf = Configurations.merge(watermarkConf, srcConf);
     final EventGenerator eg = generator.newEventGenerator(serializer.toString(conf), classLoader, urls);
     Assert.assertTrue(eg instanceof PunctuatedEventGenerator);
   }
