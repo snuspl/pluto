@@ -15,8 +15,7 @@
  */
 package edu.snu.mist.api.datastreams;
 
-import edu.snu.mist.api.datastreams.configurations.ReduceByKeyOperatorUDFConfiguration;
-import edu.snu.mist.api.datastreams.configurations.SingleInputOperatorUDFConfiguration;
+import edu.snu.mist.api.datastreams.configurations.*;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.ApplyStatefulFunction;
@@ -27,6 +26,7 @@ import edu.snu.mist.common.operators.ApplyStatefulWindowOperator;
 import edu.snu.mist.common.windows.WindowData;
 import edu.snu.mist.formats.avro.Direction;
 import org.apache.reef.tang.Configuration;
+import org.apache.reef.tang.Configurations;
 
 import java.io.IOException;
 import java.util.Map;
@@ -41,19 +41,6 @@ final class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>> implemen
     super(dag, conf);
   }
 
-  /**
-   * Transform current stream to the continuous stream with the configuration.
-   * @param conf configuration for transform
-   * @param <U> result type of the transform
-   * @return a transformed continuous stream
-   */
-  private <U> ContinuousStream<U> transformToContinuousStream(final Configuration conf) {
-    final ContinuousStream<U> downStream = new ContinuousStreamImpl<>(dag, conf);
-    dag.addVertex(downStream);
-    dag.addEdge(this, downStream, Direction.LEFT);
-    return downStream;
-  }
-
   @Override
   public <K, V> ContinuousStream<Map<K, V>> reduceByKeyWindow(
       final int keyFieldNum,
@@ -65,11 +52,23 @@ final class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>> implemen
           .set(ReduceByKeyOperatorUDFConfiguration.UDF_STRING,
               SerializeUtils.serializeToString(reduceFunc))
           .build();
-      return transformToContinuousStream(conf);
+      return transformToSingleInputContinuousStream(conf, this);
     } catch (final IOException e) {
       e.printStackTrace();
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public <K, V> ContinuousStream<Map<K, V>> reduceByKeyWindow(final int keyFieldNum,
+                                                              final Class<K> keyType,
+                                                              final Class<? extends MISTBiFunction<V, V, V>> clazz,
+                                                              final Configuration funcConf) {
+    final Configuration conf = Configurations.merge(ReduceByKeyOperatorConfiguration.CONF
+        .set(ReduceByKeyOperatorConfiguration.KEY_INDEX, keyFieldNum)
+        .set(ReduceByKeyOperatorConfiguration.MIST_BI_FUNC, clazz)
+        .build(), funcConf);
+    return transformToSingleInputContinuousStream(conf, this);
   }
 
   @Override
@@ -79,11 +78,21 @@ final class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>> implemen
           .set(SingleInputOperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(aggregateFunc))
           .set(SingleInputOperatorUDFConfiguration.OPERATOR, AggregateWindowOperator.class)
           .build();
-      return transformToContinuousStream(conf);
+      return transformToSingleInputContinuousStream(conf, this);
     } catch (final IOException e) {
       e.printStackTrace();
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public <R> ContinuousStream<R> aggregateWindow(final Class<? extends MISTFunction<WindowData<T>, R>> clazz,
+                                                 final Configuration funcConf) {
+    final Configuration conf = Configurations.merge(MISTFuncOperatorConfiguration.CONF
+        .set(MISTFuncOperatorConfiguration.OPERATOR, AggregateWindowOperator.class)
+        .set(MISTFuncOperatorConfiguration.UDF, clazz)
+        .build(), funcConf);
+    return transformToSingleInputContinuousStream(conf, this);
   }
 
   @Override
@@ -95,10 +104,20 @@ final class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>> implemen
               SerializeUtils.serializeToString(applyStatefulFunction))
           .set(SingleInputOperatorUDFConfiguration.OPERATOR, ApplyStatefulWindowOperator.class)
           .build();
-      return transformToContinuousStream(conf);
+      return transformToSingleInputContinuousStream(conf, this);
     } catch (final IOException e) {
       e.printStackTrace();
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public <R> ContinuousStream<R> applyStatefulWindow(final Class<? extends ApplyStatefulFunction<T, R>> clazz,
+                                                     final Configuration funcConf) {
+    final Configuration conf = Configurations.merge(ApplyStatefulOperatorConfiguration.CONF
+        .set(ApplyStatefulOperatorConfiguration.OPERATOR, ApplyStatefulWindowOperator.class)
+        .set(ApplyStatefulOperatorConfiguration.UDF, clazz)
+        .build(), funcConf);
+    return transformToSingleInputContinuousStream(conf, this);
   }
 }

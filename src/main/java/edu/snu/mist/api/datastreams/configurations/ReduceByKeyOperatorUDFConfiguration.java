@@ -24,13 +24,23 @@ import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
 import org.apache.reef.tang.formats.RequiredParameter;
 
 /**
- * A configuration for ReduceByKeyOperator.
+ * A configuration for ReduceByKeyOperator that binds a udf class.
  */
 public final class ReduceByKeyOperatorUDFConfiguration extends ConfigurationModuleBuilder {
 
+  /**
+   * Required Parameter for binding the serialized objects of the user-defined function.
+   */
   public static final RequiredParameter<String> UDF_STRING = new RequiredParameter<>();
+
+  /**
+   * Required Parameter for the key index of the reduceByKey operator.
+   */
   public static final RequiredParameter<Integer> KEY_INDEX = new RequiredParameter<>();
 
+  /**
+   * A configuration for binding the serialized objects of the user-defined function.
+   */
   public static final ConfigurationModule CONF = new ReduceByKeyOperatorUDFConfiguration()
       .bindNamedParameter(SerializedUdf.class, UDF_STRING)
       .bindNamedParameter(KeyIndex.class, KEY_INDEX)

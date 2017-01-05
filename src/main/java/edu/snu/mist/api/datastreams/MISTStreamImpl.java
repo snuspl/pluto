@@ -16,8 +16,12 @@
 package edu.snu.mist.api.datastreams;
 
 import edu.snu.mist.common.DAG;
+import edu.snu.mist.common.exceptions.IllegalUdfConfigurationException;
 import edu.snu.mist.formats.avro.Direction;
 import org.apache.reef.tang.Configuration;
+import org.apache.reef.tang.Injector;
+import org.apache.reef.tang.Tang;
+import org.apache.reef.tang.exceptions.InjectionException;
 
 /**
  * The basic implementation class for MISTStream.
@@ -37,6 +41,44 @@ class MISTStreamImpl<OUT> implements MISTStream<OUT> {
                         final Configuration conf) {
     this.dag = dag;
     this.conf = conf;
+  }
+
+
+  /**
+   * This function creates the instance of the udf function
+   * in order to check whether the configuration is correct or not.
+   * @param clazz class of the udf function
+   * @param conf configuration of the udf function
+   * @param <C> class type
+   */
+  protected <C> void checkUdf(final Class<? extends C> clazz,
+                              final Configuration udfConf) {
+    final Injector injector = Tang.Factory.getTang().newInjector(udfConf);
+    try {
+      final C instance = injector.getInstance(clazz);
+    } catch (final InjectionException e) {
+      // It will throw an InjectionException if the configuration is wrong.
+      e.printStackTrace();
+      throw new IllegalUdfConfigurationException(e);
+    }
+  }
+
+
+  /**
+   * Transform the upstream to a new continuous stream
+   * by applying the operation corresponding to the given configuration.
+   * @param opConf configuration
+   * @param upStream upstream
+   * @param <OUT> output type
+   * @return continuous stream
+   */
+  protected <OUT> ContinuousStream<OUT> transformToSingleInputContinuousStream(
+      final Configuration opConf,
+      final MISTStream upStream) {
+    final ContinuousStream<OUT> downStream = new ContinuousStreamImpl<>(dag, opConf);
+    dag.addVertex(downStream);
+    dag.addEdge(upStream, downStream, Direction.LEFT);
+    return downStream;
   }
 
   @Override

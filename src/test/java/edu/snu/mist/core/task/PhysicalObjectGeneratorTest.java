@@ -16,7 +16,6 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.api.datastreams.configurations.*;
-import edu.snu.mist.api.datastreams.utils.CountStringFunction;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
@@ -25,6 +24,7 @@ import edu.snu.mist.common.operators.*;
 import edu.snu.mist.common.sinks.NettyTextSink;
 import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.sources.*;
+import edu.snu.mist.utils.OperatorTestUtils;
 import junit.framework.Assert;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
@@ -170,14 +170,36 @@ public final class PhysicalObjectGeneratorTest {
   }
 
   @Test
-  public void testSuccessOfApplystatefulOperator() throws Exception {
-    final Operator operator = getSingleUdfOperator(ApplyStatefulOperator.class, new CountStringFunction());
+  public void testSuccessOfApplyStatefulOperator() throws Exception {
+    final Operator operator = getSingleUdfOperator(ApplyStatefulOperator.class,
+        new OperatorTestUtils.TestApplyStatefulFunction());
+    Assert.assertTrue(operator instanceof ApplyStatefulOperator);
+  }
+
+  @Test
+  public void testSuccessOfApplyStatefulOperatorWithClassBinding() throws Exception {
+    final Configuration conf = ApplyStatefulOperatorConfiguration.CONF
+        .set(ApplyStatefulOperatorConfiguration.OPERATOR, ApplyStatefulOperator.class)
+        .set(ApplyStatefulOperatorConfiguration.UDF, OperatorTestUtils.TestApplyStatefulFunction.class)
+        .build();
+    final Operator operator = getOperator(conf);
     Assert.assertTrue(operator instanceof ApplyStatefulOperator);
   }
 
   @Test
   public void testSuccessOfApplyStatefulWindowOperator() throws Exception {
-    final Operator operator = getSingleUdfOperator(ApplyStatefulWindowOperator.class, new CountStringFunction());
+    final Operator operator = getSingleUdfOperator(ApplyStatefulWindowOperator.class,
+        new OperatorTestUtils.TestApplyStatefulFunction());
+    Assert.assertTrue(operator instanceof ApplyStatefulWindowOperator);
+  }
+
+  @Test
+  public void testSuccessOfApplyStatefulWindowOperatorWithClassBinding() throws Exception {
+    final Configuration conf = ApplyStatefulOperatorConfiguration.CONF
+        .set(ApplyStatefulOperatorConfiguration.OPERATOR, ApplyStatefulWindowOperator.class)
+        .set(ApplyStatefulOperatorConfiguration.UDF, OperatorTestUtils.TestApplyStatefulFunction.class)
+        .build();
+    final Operator operator = getOperator(conf);
     Assert.assertTrue(operator instanceof ApplyStatefulWindowOperator);
   }
 
@@ -189,9 +211,28 @@ public final class PhysicalObjectGeneratorTest {
   }
 
   @Test
+  public void testSuccessOfAggregateWindowOperatorWithClassBinding() throws Exception {
+    final Configuration conf = MISTFuncOperatorConfiguration.CONF
+        .set(MISTFuncOperatorConfiguration.OPERATOR, AggregateWindowOperator.class)
+        .set(MISTFuncOperatorConfiguration.UDF, OperatorTestUtils.TestFunction.class)
+        .build();
+    final Operator operator = getOperator(conf);
+    Assert.assertTrue(operator instanceof AggregateWindowOperator);
+  }
+
+  @Test
   public void testSuccessOfFilterOperator() throws Exception {
     final MISTPredicate<String> p = input -> true;
     final Operator operator = getSingleUdfOperator(FilterOperator.class, p);
+    Assert.assertTrue(operator instanceof FilterOperator);
+  }
+
+  @Test
+  public void testSuccessOfFilterOperatorWithClassBinding() throws Exception {
+    final Configuration conf = FilterOperatorConfiguration.CONF
+        .set(FilterOperatorConfiguration.MIST_PREDICATE, OperatorTestUtils.TestPredicate.class)
+        .build();
+    final Operator operator = getOperator(conf);
     Assert.assertTrue(operator instanceof FilterOperator);
   }
 
@@ -203,9 +244,29 @@ public final class PhysicalObjectGeneratorTest {
   }
 
   @Test
+  public void testSuccessOfFlatMapOperatorWithClassBinding() throws Exception {
+    final Configuration conf = MISTFuncOperatorConfiguration.CONF
+        .set(MISTFuncOperatorConfiguration.OPERATOR, FlatMapOperator.class)
+        .set(MISTFuncOperatorConfiguration.UDF, OperatorTestUtils.TestFunction.class)
+        .build();
+    final Operator operator = getOperator(conf);
+    Assert.assertTrue(operator instanceof FlatMapOperator);
+  }
+
+  @Test
   public void testSuccessOfMapOperator() throws Exception {
     final MISTFunction<String, String> p = input -> input;
     final Operator operator = getSingleUdfOperator(MapOperator.class, p);
+    Assert.assertTrue(operator instanceof MapOperator);
+  }
+
+  @Test
+  public void testSuccessOfMapOperatorWithClassBinding() throws Exception {
+    final Configuration conf = MISTFuncOperatorConfiguration.CONF
+        .set(MISTFuncOperatorConfiguration.OPERATOR, MapOperator.class)
+        .set(MISTFuncOperatorConfiguration.UDF, OperatorTestUtils.TestFunction.class)
+        .build();
+    final Operator operator = getOperator(conf);
     Assert.assertTrue(operator instanceof MapOperator);
   }
 
@@ -215,6 +276,16 @@ public final class PhysicalObjectGeneratorTest {
     final Configuration conf = ReduceByKeyOperatorUDFConfiguration.CONF
         .set(ReduceByKeyOperatorUDFConfiguration.KEY_INDEX, 0)
         .set(ReduceByKeyOperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(wordCountFunc))
+        .build();
+    final Operator operator = getOperator(conf);
+    Assert.assertTrue(operator instanceof ReduceByKeyOperator);
+  }
+
+  @Test
+  public void testSuccessOfReduceByKeyOperatorWithClassBinding() throws Exception {
+    final Configuration conf = ReduceByKeyOperatorConfiguration.CONF
+        .set(ReduceByKeyOperatorConfiguration.KEY_INDEX, 0)
+        .set(ReduceByKeyOperatorConfiguration.MIST_BI_FUNC, OperatorTestUtils.TestBiFunction.class)
         .build();
     final Operator operator = getOperator(conf);
     Assert.assertTrue(operator instanceof ReduceByKeyOperator);
