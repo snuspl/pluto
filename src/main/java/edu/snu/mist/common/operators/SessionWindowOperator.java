@@ -76,9 +76,8 @@ public final class SessionWindowOperator<T> extends OneStreamOperator {
       currentWindow = new WindowImpl<>(currentEventTimestamp);
     } else if (currentEventTimestamp - latestDataTimestamp > sessionInterval) {
       // The current session is closed. Emit the windowed data
-      currentWindow.setEnd(latestDataTimestamp);
       if (startedNewWindow) {
-        outputEmitter.emitData(new MistDataEvent(currentWindow, latestDataTimestamp));
+        outputEmitter.emitData(new MistDataEvent(currentWindow, currentWindow.getLatestTimestamp()));
         startedNewWindow = false;
       }
       final MistWatermarkEvent latestWatermark = currentWindow.getLatestWatermark();
@@ -87,13 +86,15 @@ public final class SessionWindowOperator<T> extends OneStreamOperator {
       }
       // Create a new session window
       currentWindow = new WindowImpl<>(currentEventTimestamp);
+    } else {
+      currentWindow.setEnd(currentEventTimestamp);
     }
   }
 
   @Override
   public void processLeftData(final MistDataEvent input) {
     LOG.log(Level.FINE, "{0} puts input data {1} into current window {2}",
-        new Object[]{getOperatorIdentifier(), input, currentWindow});
+            new Object[]{getOperatorIdentifier(), input, currentWindow});
     emitAndCreateWindow(input.getTimestamp());
     currentWindow.putData(input);
     startedNewWindow = true;
