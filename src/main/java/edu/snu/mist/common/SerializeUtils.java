@@ -62,8 +62,7 @@ public final class SerializeUtils {
     final byte[] data = Base64.getDecoder().decode(s);
     final ExternalJarObjectInputStream stream = new ExternalJarObjectInputStream(
         classLoader, data);
-    final ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data));
-    final T object  = (T)ois.readObject();
+    final T object  = (T)stream.readObject();
     stream.close();
     return object;
   }

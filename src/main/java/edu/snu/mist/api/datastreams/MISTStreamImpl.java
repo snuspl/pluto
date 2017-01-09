@@ -43,7 +43,6 @@ class MISTStreamImpl<OUT> implements MISTStream<OUT> {
     this.conf = conf;
   }
 
-
   /**
    * This function creates the instance of the udf function
    * in order to check whether the configuration is correct or not.
@@ -62,7 +61,6 @@ class MISTStreamImpl<OUT> implements MISTStream<OUT> {
       throw new IllegalUdfConfigurationException(e);
     }
   }
-
 
   /**
    * Transform the upstream to a new continuous stream
