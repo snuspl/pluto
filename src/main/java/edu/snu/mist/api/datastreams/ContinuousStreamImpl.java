@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This class contains common methods for ContinuousStream.
+ * This class implements ContinuousStream by configuring operations using Tang.
  * <T> data type of the stream.
  */
 public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements ContinuousStream<T> {
