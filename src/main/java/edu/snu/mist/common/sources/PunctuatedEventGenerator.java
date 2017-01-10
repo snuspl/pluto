@@ -96,9 +96,10 @@ public final class PunctuatedEventGenerator<I, V> extends EventGeneratorImpl<I, 
   @Override
   public void emitData(final I input) {
     if (isWatermark.test(input)) {
-      outputEmitter.emitWatermark(new MistWatermarkEvent(parseTimestamp.apply(input)));
-    } else {
-      outputEmitter.emitData(generateEvent(input));
+      latestWatermarkTimestamp = parseTimestamp.apply(input);
+      outputEmitter.emitWatermark(new MistWatermarkEvent(latestWatermarkTimestamp));
+    } else if (generateEvent(input) != null) {
+        outputEmitter.emitData(generateEvent(input));
     }
   }
 }

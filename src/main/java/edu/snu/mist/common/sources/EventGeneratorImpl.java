@@ -21,6 +21,8 @@ import edu.snu.mist.common.functions.MISTFunction;
 import org.apache.reef.io.Tuple;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This abstract class represents the basic event generator.
@@ -29,6 +31,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @param <V> the type of the value of MistDataEvent
  */
 public abstract class EventGeneratorImpl<I, V> implements EventGenerator<I> {
+
+  private static final Logger LOG = Logger.getLogger(EventGeneratorImpl.class.getName());
 
   /**
    * Started to receive data stream.
@@ -45,9 +49,16 @@ public abstract class EventGeneratorImpl<I, V> implements EventGenerator<I> {
    */
   protected OutputEmitter outputEmitter;
 
+  /**
+   * The timestamp for the latest watermark.
+   * This is used for discarding late data.
+   */
+  protected long latestWatermarkTimestamp;
+
   public EventGeneratorImpl(final MISTFunction<I, Tuple<V, Long>> extractTimestampFunc) {
     this.extractTimestampFunc = extractTimestampFunc;
     this.started = new AtomicBoolean(false);
+    this.latestWatermarkTimestamp = 0L;
   }
 
   @Override
@@ -78,11 +89,16 @@ public abstract class EventGeneratorImpl<I, V> implements EventGenerator<I> {
       return new MistDataEvent(input, getCurrentTimestamp());
     } else {
       Tuple<V, Long> extractionResult = extractTimestampFunc.apply(input);
-      if (extractionResult.getKey() == null || extractionResult.getValue() == null) {
-        throw new IllegalArgumentException("Timestamp extraction from input data is failed. Data is " +
-            extractionResult.getKey().toString() + ", timestamp is " + extractionResult.getValue().toString());
+      if (extractionResult.getValue() > latestWatermarkTimestamp) {
+        if (extractionResult.getKey() == null || extractionResult.getValue() == null) {
+          throw new IllegalArgumentException("Timestamp extraction from input data is failed. Data is " +
+                  extractionResult.getKey().toString() + ", timestamp is " + extractionResult.getValue().toString());
+        }
+        return new MistDataEvent(extractionResult.getKey(), extractionResult.getValue());
+      } else {
+        LOG.log(Level.INFO, "Late data: The data timestamp was later than the latest watermark timestamp.");
+        return null;
       }
-      return new MistDataEvent(extractionResult.getKey(), extractionResult.getValue());
     }
   }
 

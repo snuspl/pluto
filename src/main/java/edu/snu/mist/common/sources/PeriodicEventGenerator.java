@@ -101,7 +101,8 @@ public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V>
   protected void startRemain() {
     result = scheduler.scheduleAtFixedRate(new Runnable() {
       public void run() {
-        outputEmitter.emitWatermark(new MistWatermarkEvent(getCurrentTimestamp() - expectedDelay));
+        latestWatermarkTimestamp = getCurrentTimestamp() - expectedDelay;
+        outputEmitter.emitWatermark(new MistWatermarkEvent(latestWatermarkTimestamp));
       }
     }, period, period, timeUnit);
   }
@@ -113,6 +114,8 @@ public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V>
 
   @Override
   public void emitData(final I input) {
-    outputEmitter.emitData(generateEvent(input));
+    if (generateEvent(input) != null) {
+      outputEmitter.emitData(generateEvent(input));
+    }
   }
 }
