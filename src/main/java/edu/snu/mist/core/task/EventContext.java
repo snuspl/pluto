@@ -16,18 +16,13 @@
 package edu.snu.mist.core.task;
 
 /**
- * This interface represents physical vertices of the query.
+ * This interface represents the context of the routed events.
  */
-interface PhysicalVertex {
-
-  public static enum Type {
-    SOURCE,
-    OPERATOR,
-    SINK
-  }
+public interface EventContext {
 
   /**
-   * Get the type of the physical vertex.
+   * Get the physical vertex that sends the event.
+   * @return physical vertex
    */
-  Type getType();
+  PhysicalVertex getPhysicalVertex();
 }

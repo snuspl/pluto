@@ -16,18 +16,18 @@
 package edu.snu.mist.core.task;
 
 /**
- * This interface represents physical vertices of the query.
+ * Default implementation of the event context.
  */
-interface PhysicalVertex {
+final class EventContextImpl implements EventContext{
 
-  public static enum Type {
-    SOURCE,
-    OPERATOR,
-    SINK
+  private final PhysicalVertex vertex;
+
+  public EventContextImpl(final PhysicalVertex vertex) {
+    this.vertex = vertex;
   }
 
-  /**
-   * Get the type of the physical vertex.
-   */
-  Type getType();
+  @Override
+  public PhysicalVertex getPhysicalVertex() {
+    return vertex;
+  }
 }

@@ -21,12 +21,12 @@ import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * This class picks a query randomly.
- * It uses Random class for picking up a query randomly.
+ * This class picks a head operator randomly.
+ * It uses Random class for picking up an operator randomly.
  */
-public final class RandomlyPickManager implements PartitionedQueryManager {
+public final class RandomlyPickManager implements HeadOperatorManager {
 
-  private final List<PartitionedQuery> queues;
+  private final List<PhysicalOperator> queues;
   private final Random random;
 
   @Inject
@@ -38,22 +38,23 @@ public final class RandomlyPickManager implements PartitionedQueryManager {
   }
 
   @Override
-  public void insert(final PartitionedQuery query) {
-    queues.add(query);
+  public void insert(final PhysicalOperator operator) {
+    assert operator.isHeadOperator();
+    queues.add(operator);
   }
 
   @Override
-  public void delete(final PartitionedQuery query) {
-    queues.remove(query);
+  public void delete(final PhysicalOperator operator) {
+    queues.remove(operator);
   }
 
   @Override
-  public PartitionedQuery pickQuery() {
+  public PhysicalOperator pickHeadOperator() {
     while (true) {
       try {
         final int pick = random.nextInt(queues.size());
-        final PartitionedQuery query = queues.get(pick);
-        return query;
+        final PhysicalOperator operator = queues.get(pick);
+        return operator;
       } catch (final IllegalArgumentException e) {
         // This can occur when the size of queues is 0.
         // Return null.

@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 public final class QueryPartitionerTest {
+  //TODO: test whether QueryImpl sets head operator correctly. MISTQueryImpl test!!
+
   private static final Logger LOG = Logger.getLogger(QueryPartitionerTest.class.getName());
 
   /**

@@ -26,10 +26,7 @@ import org.apache.reef.io.Tuple;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -62,10 +59,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
    */
   private final ConcurrentMap<String, DAG<PhysicalVertex, Direction>> physicalPlanMap;
 
-  /**
-   * A partitioned query manager.
-   */
-  private final PartitionedQueryManager partitionedQueryManager;
+  private final InvertedVertexIndex invertedVertexIndex;
 
   /**
    * A thread manager.
@@ -87,6 +81,8 @@ final class DefaultQueryManagerImpl implements QueryManager {
    */
   private final PhysicalPlanGenerator physicalPlanGenerator;
 
+  private final HeadOperatorManager headOperatorManager;
+
   /**
    * Default query manager in MistTask.
    * @param physicalPlanGenerator the physical plan generator which generates physical plan from logical paln
@@ -95,17 +91,20 @@ final class DefaultQueryManagerImpl implements QueryManager {
   @Inject
   private DefaultQueryManagerImpl(final PhysicalPlanGenerator physicalPlanGenerator,
                                   final ThreadManager threadManager,
-                                  final PartitionedQueryManager partitionedQueryManager,
+                                  final InvertedVertexIndex invertedVertexIndex,
+                                  final HeadOperatorManager headOperatorManager,
                                   final ScheduledExecutorServiceWrapper schedulerWrapper,
                                   final QueryInfoStore planStore) {
     this.physicalPlanMap = new ConcurrentHashMap<>();
-    this.partitionedQueryManager = partitionedQueryManager;
+    this.invertedVertexIndex = invertedVertexIndex;
+    this.headOperatorManager = headOperatorManager;
     this.physicalPlanGenerator = physicalPlanGenerator;
     this.threadManager = threadManager;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
   }
 
+  @Override
   public QueryControlResult create(final Tuple<String, LogicalPlan> tuple) {
     final DAG<PhysicalVertex, Direction> physicalPlan;
     final QueryControlResult queryControlResult = new QueryControlResult();
@@ -139,45 +138,13 @@ final class DefaultQueryManagerImpl implements QueryManager {
   }
 
   /**
-   * Sets the OutputEmitters of the sources, operators and sinks
-   * and starts to receive input data stream from the sources.
-   * @param physicalPlan physical plan of PartitionedQuery
+   * Sstarts to receive input data stream from the sources.
+   * @param physicalPlan physical plan of the query
    */
   private void start(final DAG<PhysicalVertex, Direction> physicalPlan) {
-    final List<PhysicalSource> sources = new LinkedList<>();
-    final Iterator<PhysicalVertex> iterator = GraphUtils.topologicalSort(physicalPlan);
-    while (iterator.hasNext()) {
-      final PhysicalVertex physicalVertex = iterator.next();
-      switch (physicalVertex.getType()) {
-        case SOURCE: {
-          final PhysicalSource source = (PhysicalSource)physicalVertex;
-          final Map<PhysicalVertex, Direction> nextOps = physicalPlan.getEdges(source);
-          // 3) Sets output emitters
-          source.getEventGenerator().setOutputEmitter(new SourceOutputEmitter<>(nextOps));
-          sources.add(source);
-          break;
-        }
-        case OPERATOR_CHIAN: {
-          // 2) Inserts the PartitionedQuery to PartitionedQueryManager.
-          final PartitionedQuery partitionedQuery = (PartitionedQuery)physicalVertex;
-          partitionedQueryManager.insert(partitionedQuery);
-          final Map<PhysicalVertex, Direction> edges =
-              physicalPlan.getEdges(partitionedQuery);
-          // 3) Sets output emitters
-          partitionedQuery.setOutputEmitter(new OperatorOutputEmitter(edges));
-          break;
-        }
-        case SINK: {
-          break;
-        }
-        default:
-          throw new RuntimeException("Invalid vertex type: " + physicalVertex.getType());
-      }
-    }
-
-    // 4) starts to receive input data stream from the sources
-    for (final PhysicalSource source : sources) {
-      source.start();
+    final Set<PhysicalVertex> sources = physicalPlan.getRootVertices();
+    for (final PhysicalVertex source : sources) {
+      ((PhysicalSource)source).start();
     }
   }
 
@@ -194,6 +161,8 @@ final class DefaultQueryManagerImpl implements QueryManager {
       final Iterator<PhysicalVertex> iterator = GraphUtils.topologicalSort(physicalPlan);
       while (iterator.hasNext()) {
         final PhysicalVertex physicalVertex = iterator.next();
+        // Remove vertices from the invertedVertexIndex
+        invertedVertexIndex.delete(physicalVertex);
         switch (physicalVertex.getType()) {
           case SOURCE: {
             // Closes the channel of Source.
@@ -206,11 +175,12 @@ final class DefaultQueryManagerImpl implements QueryManager {
             src.getEventGenerator().setOutputEmitter(null);
             break;
           }
-          case OPERATOR_CHIAN: {
-            // Sets the OutputEmitters of the sources, operators and sinks to null
-            final PartitionedQuery partitionedQuery = (PartitionedQuery)physicalVertex;
-            partitionedQueryManager.delete(partitionedQuery);
-            partitionedQuery.setOutputEmitter(null);
+          case OPERATOR: {
+            final PhysicalOperator physicalOperator = (PhysicalOperator)physicalVertex;
+            // Delete from headOperatorManager
+            if (physicalOperator.isHeadOperator()) {
+              headOperatorManager.delete(physicalOperator);
+            }
             break;
           }
           case SINK: {

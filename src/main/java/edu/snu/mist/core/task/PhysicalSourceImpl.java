@@ -40,11 +40,21 @@ final class PhysicalSourceImpl<T> implements PhysicalSource<T> {
    */
   private final EventGenerator<T> eventGenerator;
 
+  /**
+   * An event router that routes the events to next operators.
+   */
+  private final EventRouter eventRouter;
+
   public PhysicalSourceImpl(final Identifier sourceId,
-                            final DataGenerator<T> dataGenerator, final EventGenerator<T> eventGenerator) {
+                            final DataGenerator<T> dataGenerator,
+                            final EventGenerator<T> eventGenerator,
+                            final EventRouter eventRouter) {
     this.sourceId = sourceId;
     this.dataGenerator = dataGenerator;
     this.eventGenerator = eventGenerator;
+    final EventContext context = new EventContextImpl(this);
+    this.eventGenerator.setOutputEmitter(new EmitterForEventRouter(context, eventRouter));
+    this.eventRouter = eventRouter;
   }
 
   @Override

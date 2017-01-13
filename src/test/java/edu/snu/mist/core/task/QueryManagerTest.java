@@ -108,17 +108,21 @@ public final class QueryManagerTest {
     // Create the DAG of the query
     final DAG<PhysicalVertex, Direction> dag = new AdjacentListDAG<>();
 
+    // Event router that routes events
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(NumThreads.class, Integer.toString(4));
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final EventRouter eventRouter = injector.getInstance(EventRouter.class);
+    final InvertedVertexIndex invertedVertexIndex = injector.getInstance(InvertedVertexIndex.class);
+    final HeadOperatorManager headOperatorManager = injector.getInstance(HeadOperatorManager.class);
+
     // Create source
     final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
     final TestDataGenerator dataGenerator = new TestDataGenerator(inputs);
     final EventGenerator eventGenerator =
         new PunctuatedEventGenerator(null, input -> false, null);
     final PhysicalSource src = new PhysicalSourceImpl(identifierFactory.getNewInstance("testSource"),
-        dataGenerator, eventGenerator);
-
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(NumThreads.class, Integer.toString(4));
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+        dataGenerator, eventGenerator, eventRouter);
 
     // Create sinks
     final List<String> sink1Result = new LinkedList<>();
@@ -130,7 +134,7 @@ public final class QueryManagerTest {
     final Tuple<String, LogicalPlan> tuple = new Tuple<>(queryId, new LogicalPlan());
 
     // Construct physical plan
-    constructPhysicalPlan(tuple, dag, src, sink1, sink2);
+    constructPhysicalPlan(eventRouter, invertedVertexIndex, headOperatorManager, tuple, dag, src, sink1, sink2);
 
     // Create mock PhysicalPlanGenerator. It returns the above physical plan
     final PhysicalPlanGenerator physicalPlanGenerator = mock(PhysicalPlanGenerator.class);
@@ -200,21 +204,27 @@ public final class QueryManagerTest {
     final DAG<PhysicalVertex, Direction> beforeStopDAG = new AdjacentListDAG<>();
     final DAG<PhysicalVertex, Direction> afterResumeDAG = new AdjacentListDAG<>();
 
+    // Create an event router
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(NumThreads.class, Integer.toString(4));
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final EventRouter eventRouter = injector.getInstance(EventRouter.class);
+    final InvertedVertexIndex invertedVertexIndex = injector.getInstance(InvertedVertexIndex.class);
+    final HeadOperatorManager headOperatorManager = injector.getInstance(HeadOperatorManager.class);
+
     // Create two sources
     final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
     final TestDataGenerator beforeStopDataGenerator = new TestDataGenerator(beforeStopInputs);
     final EventGenerator eventGenerator =
         new PunctuatedEventGenerator(null, input -> false, null);
     final PhysicalSource beforeStopSrc = new PhysicalSourceImpl(
-        identifierFactory.getNewInstance("testSource"), beforeStopDataGenerator, eventGenerator);
+        identifierFactory.getNewInstance("testSource"), beforeStopDataGenerator, eventGenerator, eventRouter);
 
+    final EventGenerator eventGenerator2 =
+        new PunctuatedEventGenerator(null, input -> false, null);
     final TestDataGenerator afterResumeDataGenerator = new TestDataGenerator(afterResumeInputs);
     final PhysicalSource afterResumeSrc = new PhysicalSourceImpl(
-        identifierFactory.getNewInstance("testSource2"), afterResumeDataGenerator, eventGenerator);
-
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(NumThreads.class, Integer.toString(4));
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+        identifierFactory.getNewInstance("testSource2"), afterResumeDataGenerator, eventGenerator2, eventRouter);
 
     // Create sinks
     final List<String> beforeStopSink1Result = new LinkedList<>();
@@ -231,12 +241,12 @@ public final class QueryManagerTest {
     final Tuple<String, LogicalPlan> tuple = new Tuple<>(queryId, new LogicalPlan());
 
     // Construct two physical plans
-    constructPhysicalPlan(tuple, beforeStopDAG, beforeStopSrc, beforeStopSink1, beforeStopSink2);
-    constructPhysicalPlan(tuple, afterResumeDAG, afterResumeSrc, afterResumeSink1, afterResumeSink2);
+    constructPhysicalPlan(eventRouter, invertedVertexIndex, headOperatorManager,
+        tuple, beforeStopDAG, beforeStopSrc, beforeStopSink1, beforeStopSink2);
 
     // Create mock PhysicalPlanGenerator. It returns the above physical plan
     final PhysicalPlanGenerator physicalPlanGenerator = mock(PhysicalPlanGenerator.class);
-    when(physicalPlanGenerator.generate(tuple)).thenReturn(beforeStopDAG, afterResumeDAG);
+    when(physicalPlanGenerator.generate(tuple)).thenReturn(beforeStopDAG);
 
     // Build QueryManager
     final QueryManager queryManager = queryManagerBuild(tuple, physicalPlanGenerator, injector);
@@ -253,6 +263,10 @@ public final class QueryManagerTest {
     Assert.assertEquals(beforeStopExpectedSink2Output, beforeStopSink2Result);
 
     // Resume the query
+    constructPhysicalPlan(eventRouter, invertedVertexIndex, headOperatorManager,
+        tuple, afterResumeDAG, afterResumeSrc, afterResumeSink1, afterResumeSink2);
+    when(physicalPlanGenerator.generate(tuple)).thenReturn(afterResumeDAG);
+
     queryManager.resume(queryId);
 
     // Wait until all of the outputs are generated
@@ -292,52 +306,72 @@ public final class QueryManagerTest {
    * Construct physical plan.
    * Creates operators an partitioned queries and adds source, dag vertices, edges and sinks to dag.
    */
-  private void constructPhysicalPlan(final Tuple<String, LogicalPlan> tuple,
+  private void constructPhysicalPlan(final EventRouter eventRouter,
+                                     final InvertedVertexIndex invertedVertexIndex,
+                                     final HeadOperatorManager headOperatorManager,
+                                     final Tuple<String, LogicalPlan> tuple,
                                      final DAG<PhysicalVertex, Direction> dag,
                                      final PhysicalSource src,
                                      final Sink sink1,
                                      final Sink sink2) {
 
+    invertedVertexIndex.create(src, dag);
     // Create operators and partitioned queries
-    //                     (pq1)                                     (pq2)
-    // src -> [flatMap -> filter -> toTupleMap -> reduceByKey] -> [toStringMap]   -> sink1
-    //                                                         -> [totalCountMap] -> sink2
-    //                                                               (pq3)
-    final Operator flatMap = new FlatMapOperator<>("flatMap", flatMapFunc);
-    final Operator filter = new FilterOperator<>("filter", filterFunc);
-    final Operator toTupleMap = new MapOperator<>("toTupleMap", toTupleMapFunc);
-    final Operator reduceByKey = new ReduceByKeyOperator<>("reduceByKey", 0, reduceByKeyFunc);
-    final Operator toStringMap = new MapOperator<>("toStringMap", toStringMapFunc);
-    final Operator totalCountMap = new MapOperator<>("totalCountMap", totalCountMapFunc);
+    //         <Head>                                               <Head>
+    // src -> flatMap -> filter -> toTupleMap -> reduceByKey -> [toStringMap]   -> sink1
+    //                                                       -> [totalCountMap] -> sink2
+    //                                                              <Head>
+    final PhysicalOperator flatMap = new DefaultPhysicalOperator(
+        new FlatMapOperator<>("flatMap", flatMapFunc), true, eventRouter);
+    final PhysicalOperator filter = new DefaultPhysicalOperator(
+        new FilterOperator<>("filter", filterFunc), false, eventRouter);
+    final PhysicalOperator toTupleMap = new DefaultPhysicalOperator(
+        new MapOperator<>("toTupleMap", toTupleMapFunc), false, eventRouter);
+    final PhysicalOperator reduceByKey = new DefaultPhysicalOperator(
+        new ReduceByKeyOperator<>("reduceByKey", 0, reduceByKeyFunc), false, eventRouter);
+    final PhysicalOperator toStringMap = new DefaultPhysicalOperator(
+        new MapOperator<>("toStringMap", toStringMapFunc), true, eventRouter);
+    final PhysicalOperator totalCountMap = new DefaultPhysicalOperator(
+        new MapOperator<>("totalCountMap", totalCountMapFunc), true, eventRouter);
 
-    final PartitionedQuery pq1 = new DefaultPartitionedQuery();
-    pq1.insertToTail(flatMap);
-    pq1.insertToTail(filter);
-    pq1.insertToTail(toTupleMap);
-    pq1.insertToTail(reduceByKey);
-    final PartitionedQuery pq2 = new DefaultPartitionedQuery();
-    pq2.insertToTail(toStringMap);
-    final PartitionedQuery pq3 = new DefaultPartitionedQuery();
-    pq3.insertToTail(totalCountMap);
+    // Add head operators
+    headOperatorManager.insert(flatMap);
+    headOperatorManager.insert(toStringMap);
+    headOperatorManager.insert(totalCountMap);
+
+    // Add operator to invertedVertexIndex
+    invertedVertexIndex.create(flatMap, dag);
+    invertedVertexIndex.create(filter, dag);
+    invertedVertexIndex.create(toTupleMap, dag);
+    invertedVertexIndex.create(reduceByKey, dag);
+    invertedVertexIndex.create(toStringMap, dag);
+    invertedVertexIndex.create(totalCountMap, dag);
 
     // Add Source
     dag.addVertex(src);
 
     // Add dag vertices and edges
-    dag.addVertex(pq1);
-    dag.addEdge(src, pq1, Direction.LEFT);
-    dag.addVertex(pq2);
-    dag.addEdge(pq1, pq2, Direction.LEFT);
-    dag.addVertex(pq3);
-    dag.addEdge(pq1, pq3, Direction.LEFT);
+    dag.addVertex(flatMap);
+    dag.addEdge(src, flatMap, Direction.LEFT);
+    dag.addVertex(filter);
+    dag.addEdge(flatMap, filter, Direction.LEFT);
+    dag.addVertex(toTupleMap);
+    dag.addEdge(filter, toTupleMap, Direction.LEFT);
+    dag.addVertex(reduceByKey);
+    dag.addEdge(toTupleMap, reduceByKey, Direction.LEFT);
+
+    dag.addVertex(toStringMap);
+    dag.addEdge(reduceByKey, toStringMap, Direction.LEFT);
+    dag.addVertex(totalCountMap);
+    dag.addEdge(reduceByKey, totalCountMap, Direction.LEFT);
 
     // Add Sink
     final PhysicalSink physicalSink1 = new PhysicalSinkImpl<>(sink1);
     final PhysicalSink physicalSink2 = new PhysicalSinkImpl<>(sink2);
     dag.addVertex(physicalSink1);
-    dag.addEdge(pq2, physicalSink1, Direction.LEFT);
+    dag.addEdge(toStringMap, physicalSink1, Direction.LEFT);
     dag.addVertex(physicalSink2);
-    dag.addEdge(pq3, physicalSink2, Direction.LEFT);
+    dag.addEdge(totalCountMap, physicalSink2, Direction.LEFT);
   }
 
   /**

@@ -18,27 +18,27 @@ package edu.snu.mist.core.task;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * This interface manages partitioned queries.
+ * This interface manages head operators.
  */
 @DefaultImplementation(RandomlyPickManager.class)
-public interface PartitionedQueryManager {
+public interface HeadOperatorManager {
 
   /**
-   * Insert a partitioned query.
-   * @param query partitioned query
+   * Insert a head operator.
+   * @param operator a head operator
    */
-  void insert(PartitionedQuery query);
+  void insert(PhysicalOperator operator);
 
   /**
-   * Delete a partitioned query.
-   * @param query partitioned query
+   * Delete a head operator.
+   * @param operator a head operator
    */
-  void delete(PartitionedQuery query);
+  void delete(PhysicalOperator operator);
 
   /**
-   * Pick a partitioned query.
-   * @return a partitioned query.
-   * Returns null if there is no query.
+   * Pick a head operator.
+   * @return a head operator.
+   * Returns null if there is no head operator.
    */
-  PartitionedQuery pickQuery();
+  PhysicalOperator pickHeadOperator();
 }

@@ -24,19 +24,19 @@ public final class EventProcessor implements Runnable {
   /**
    * A partitioned query manager for picking up a query for event processing.
    */
-  private final PartitionedQueryManager queryManager;
+  private final HeadOperatorManager headOperatorManager;
 
-  public EventProcessor(final PartitionedQueryManager queryManager) {
-    this.queryManager = queryManager;
+  public EventProcessor(final HeadOperatorManager headOperatorManager) {
+    this.headOperatorManager = headOperatorManager;
   }
 
   @Override
   public void run() {
     while (!Thread.currentThread().isInterrupted()) {
       try {
-        final PartitionedQuery query = queryManager.pickQuery();
-        if (query != null) {
-          query.processNextEvent();
+        final PhysicalOperator operator = headOperatorManager.pickHeadOperator();
+        if (operator != null) {
+          operator.processNextEvent();
         }
       } catch (final Exception t) {
         throw t;

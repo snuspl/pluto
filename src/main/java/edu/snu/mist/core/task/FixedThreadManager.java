@@ -34,10 +34,10 @@ public final class FixedThreadManager implements ThreadManager {
 
   @Inject
   private FixedThreadManager(@Parameter(NumThreads.class) final int numThreads,
-                             final PartitionedQueryManager queueManager) {
+                             final HeadOperatorManager headOperatorManager) {
     this.threads = new HashSet<>();
     for (int i = 0; i < numThreads; i++) {
-      final Thread thread = new Thread(new EventProcessor(queueManager));
+      final Thread thread = new Thread(new EventProcessor(headOperatorManager));
       threads.add(thread);
       thread.start();
     }
