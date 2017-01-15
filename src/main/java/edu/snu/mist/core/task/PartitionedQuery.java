@@ -17,7 +17,6 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.OutputEmittable;
-import edu.snu.mist.common.PhysicalVertex;
 import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.formats.avro.Direction;
 

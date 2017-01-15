@@ -13,18 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.sinks;
+package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.InputHandler;
-import org.apache.reef.wake.Identifier;
+import edu.snu.mist.common.sinks.Sink;
 
 /**
- * Sink consumes inputs and does final process, such as print, save input to database and so on.
+ * This is an implementation of PhysicalSink.
  */
-public interface Sink<I> extends InputHandler<I>, AutoCloseable {
+final class PhysicalSinkImpl<I> implements PhysicalSink<I> {
 
-  /**
-   * Identifier of sink.
-   */
-  Identifier getIdentifier();
+  private final Sink<I> sink;
+
+  public PhysicalSinkImpl(final Sink<I> sink) {
+    this.sink = sink;
+  }
+
+  public Sink<I> getSink() {
+    return sink;
+  }
+
+  @Override
+  public Type getType() {
+    return Type.SINK;
+  }
 }

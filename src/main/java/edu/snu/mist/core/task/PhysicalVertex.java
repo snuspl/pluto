@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common;
+package edu.snu.mist.core.task;
 
 /**
  * This interface represents physical vertices of the query.
  */
-public interface PhysicalVertex {
+interface PhysicalVertex {
 
   public static enum Type {
     SOURCE,

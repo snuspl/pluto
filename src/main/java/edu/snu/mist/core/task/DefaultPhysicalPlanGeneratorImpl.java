@@ -17,14 +17,10 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.common.PhysicalVertex;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.operators.Operator;
-import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;
-import edu.snu.mist.common.sources.Source;
-import edu.snu.mist.common.sources.SourceImpl;
 import edu.snu.mist.core.parameters.TempFolderPath;
 import edu.snu.mist.formats.avro.*;
 import org.apache.reef.io.Tuple;
@@ -96,7 +92,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
           // Create a data generator
           final DataGenerator dataGenerator = physicalObjectGenerator.newDataGenerator(conf, classLoader);
           // Create a source
-          final Source source = new SourceImpl<>(
+          final PhysicalSource source = new PhysicalSourceImpl<>(
               identifierFactory.getNewInstance(operatorIdGenerator.generate()),
               dataGenerator, eventGenerator);
           deserializedVertices.add(source);
@@ -120,8 +116,8 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
           final Vertex vertex = avroVertexChain.getVertexChain().get(0);
           final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
               new ClassHierarchyImpl(urls));
-          final Sink sink = physicalObjectGenerator.newSink(
-              operatorIdGenerator.generate(), conf, classLoader);
+          final PhysicalSink sink = new PhysicalSinkImpl<>(physicalObjectGenerator.newSink(
+              operatorIdGenerator.generate(), conf, classLoader));
           deserializedVertices.add(sink);
           dag.addVertex(sink);
           break;
