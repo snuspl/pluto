@@ -66,7 +66,7 @@ public final class PhysicalObjectGeneratorTest {
   @Test(expected=InjectionException.class)
   public void testInjectionExceptionOfDataGenerator() throws IOException, InjectionException {
     final Configuration conf = UnionOperatorConfiguration.CONF.build();
-    generator.newDataGenerator(serializer.toString(conf), classLoader, urls);
+    generator.newDataGenerator(conf, classLoader);
   }
 
   @Test
@@ -76,7 +76,7 @@ public final class PhysicalObjectGeneratorTest {
         .setHostPort(13666)
         .build().getConfiguration();
     final DataGenerator<String> dataGenerator =
-        generator.newDataGenerator(serializer.toString(conf), classLoader, urls);
+        generator.newDataGenerator(conf, classLoader);
     Assert.assertTrue(dataGenerator instanceof NettyTextDataGenerator);
   }
 
@@ -89,7 +89,7 @@ public final class PhysicalObjectGeneratorTest {
         .setTimestampExtractionFunction(OperatorTestUtils.TestNettyTimestampExtractFunc.class, funcConf)
         .build().getConfiguration();
     final DataGenerator<String> dataGenerator =
-        generator.newDataGenerator(serializer.toString(conf), classLoader, urls);
+        generator.newDataGenerator(conf, classLoader);
     Assert.assertTrue(dataGenerator instanceof NettyTextDataGenerator);
   }
 
@@ -101,7 +101,7 @@ public final class PhysicalObjectGeneratorTest {
         .setConsumerConfig(kafkaConsumerConf)
         .build().getConfiguration();
     final DataGenerator dataGenerator =
-        generator.newDataGenerator(serializer.toString(conf), classLoader, urls);
+        generator.newDataGenerator(conf, classLoader);
     Assert.assertTrue(dataGenerator instanceof KafkaDataGenerator);
   }
 
@@ -115,14 +115,14 @@ public final class PhysicalObjectGeneratorTest {
         .setTimestampExtractionFunction(OperatorTestUtils.TestKafkaTimestampExtractFunc.class, funcConf)
         .build().getConfiguration();
     final DataGenerator dataGenerator =
-        generator.newDataGenerator(serializer.toString(conf), classLoader, urls);
+        generator.newDataGenerator(conf, classLoader);
     Assert.assertTrue(dataGenerator instanceof KafkaDataGenerator);
   }
 
   @Test(expected=InjectionException.class)
   public void testInjectionExceptionOfEventGenerator() throws IOException, InjectionException {
     final Configuration conf = UnionOperatorConfiguration.CONF.build();
-    generator.newEventGenerator(serializer.toString(conf), classLoader, urls);
+    generator.newEventGenerator(conf, classLoader);
   }
 
   @Test
@@ -131,7 +131,7 @@ public final class PhysicalObjectGeneratorTest {
         .setExpectedDelay(10)
         .setWatermarkPeriod(10)
         .build().getConfiguration();
-    final EventGenerator eg = generator.newEventGenerator(serializer.toString(conf), classLoader, urls);
+    final EventGenerator eg = generator.newEventGenerator(conf, classLoader);
     Assert.assertTrue(eg instanceof PeriodicEventGenerator);
   }
 
@@ -141,7 +141,7 @@ public final class PhysicalObjectGeneratorTest {
         .setParsingWatermarkFunction(input -> 1L)
         .setWatermarkPredicate(input -> true)
         .build().getConfiguration();
-    final EventGenerator eg = generator.newEventGenerator(serializer.toString(conf), classLoader, urls);
+    final EventGenerator eg = generator.newEventGenerator(conf, classLoader);
     Assert.assertTrue(eg instanceof PunctuatedEventGenerator);
   }
 
@@ -158,7 +158,7 @@ public final class PhysicalObjectGeneratorTest {
         .setTimestampExtractionFunction(OperatorTestUtils.TestNettyTimestampExtractFunc.class, funcConf)
         .build().getConfiguration();
     final Configuration conf = Configurations.merge(watermarkConf, srcConf);
-    final EventGenerator eg = generator.newEventGenerator(serializer.toString(conf), classLoader, urls);
+    final EventGenerator eg = generator.newEventGenerator(conf, classLoader);
     Assert.assertTrue(eg instanceof PunctuatedEventGenerator);
   }
 
@@ -172,7 +172,7 @@ public final class PhysicalObjectGeneratorTest {
         .setHostAddress("localhost")
         .setHostPort(13666)
         .build().getConfiguration();
-    generator.newOperator("test", serializer.toString(conf), classLoader, urls);
+    generator.newOperator("test", conf, classLoader);
   }
 
   /**
@@ -181,7 +181,7 @@ public final class PhysicalObjectGeneratorTest {
    * @return operator
    */
   private Operator getOperator(final Configuration conf) throws IOException, InjectionException {
-    return generator.newOperator("test", serializer.toString(conf), classLoader, urls);
+    return generator.newOperator("test", conf, classLoader);
   }
 
   /**
@@ -371,7 +371,7 @@ public final class PhysicalObjectGeneratorTest {
         .setHostAddress("localhost")
         .setHostPort(13666)
         .build().getConfiguration();
-    generator.newSink("test", serializer.toString(conf), classLoader, urls);
+    generator.newSink("test", conf, classLoader);
   }
 
   @Test
@@ -382,7 +382,7 @@ public final class PhysicalObjectGeneratorTest {
         .set(TextSocketSinkConfiguration.SOCKET_HOST_ADDRESS, "localhost")
         .set(TextSocketSinkConfiguration.SOCKET_HOST_PORT, port)
         .build();
-    final Sink sink = generator.newSink("test", serializer.toString(conf), classLoader, urls);
+    final Sink sink = generator.newSink("test", conf, classLoader);
     Assert.assertTrue(sink instanceof NettyTextSink);
     socket.close();
   }
