@@ -99,7 +99,7 @@ public final class PunctuatedEventGenerator<I, V> extends EventGeneratorImpl<I, 
       latestWatermarkTimestamp = parseTimestamp.apply(input);
       outputEmitter.emitWatermark(new MistWatermarkEvent(latestWatermarkTimestamp));
     } else if (generateEvent(input) != null) {
-        outputEmitter.emitData(generateEvent(input));
+      outputEmitter.emitData(generateEvent(input));
     }
   }
 }

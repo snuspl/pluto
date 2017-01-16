@@ -32,6 +32,10 @@ import java.util.logging.Logger;
  */
 public abstract class EventGeneratorImpl<I, V> implements EventGenerator<I> {
 
+
+  /**
+   * This log is for recording the case in which there was late data, which is not an exception.
+   */
   private static final Logger LOG = Logger.getLogger(EventGeneratorImpl.class.getName());
 
   /**
@@ -53,7 +57,7 @@ public abstract class EventGeneratorImpl<I, V> implements EventGenerator<I> {
    * The timestamp for the latest watermark.
    * This is used for discarding late data.
    */
-  protected long latestWatermarkTimestamp;
+  protected volatile long latestWatermarkTimestamp;
 
   public EventGeneratorImpl(final MISTFunction<I, Tuple<V, Long>> extractTimestampFunc) {
     this.extractTimestampFunc = extractTimestampFunc;
@@ -86,7 +90,11 @@ public abstract class EventGeneratorImpl<I, V> implements EventGenerator<I> {
    */
   protected MistDataEvent generateEvent(final I input) {
     if (extractTimestampFunc == null) {
-      return new MistDataEvent(input, getCurrentTimestamp());
+      if (getCurrentTimestamp() > latestWatermarkTimestamp) {
+        return new MistDataEvent(input, getCurrentTimestamp());
+      } else {
+        return null;
+      }
     } else {
       Tuple<V, Long> extractionResult = extractTimestampFunc.apply(input);
       if (extractionResult.getValue() > latestWatermarkTimestamp) {
