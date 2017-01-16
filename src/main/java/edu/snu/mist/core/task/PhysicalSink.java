@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.sinks;
+package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.InputHandler;
-import org.apache.reef.wake.Identifier;
+import edu.snu.mist.common.sinks.Sink;
 
 /**
- * Sink consumes inputs and does final process, such as print, save input to database and so on.
+ * This is a physical sink interface that is used in MistTask.
  */
-public interface Sink<I> extends InputHandler<I>, AutoCloseable {
+interface PhysicalSink<I> extends PhysicalVertex {
 
   /**
-   * Identifier of sink.
+   * Get a sink instance.
+   * @return sink
    */
-  Identifier getIdentifier();
+  Sink<I> getSink();
 }

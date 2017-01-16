@@ -16,7 +16,6 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.common.PhysicalVertex;
 import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.LogicalPlan;
 import org.apache.reef.io.Tuple;
