@@ -36,33 +36,36 @@ public final class MISTQueryImpl implements MISTQuery {
    * DAG of the query.
    */
   private final DAG<MISTStream, Direction> dag;
+  private final QueryPartitioner queryPartitioner;
   private final AvroConfigurationSerializer serializer;
 
   public MISTQueryImpl(final DAG<MISTStream, Direction> dag) {
     this.dag = dag;
+    this.queryPartitioner = new QueryPartitioner(dag);
     this.serializer = new AvroConfigurationSerializer();
   }
 
   @Override
   public Tuple<List<AvroVertex>, List<Edge>> getSerializedDAG() {
-    final Queue<MISTStream> queue = new LinkedList<>();
-    final List<MISTStream> vertices = new ArrayList<>();
+    final Queue<Tuple<Boolean, MISTStream>> queue = new LinkedList<>();
+    final List<Tuple<Boolean, MISTStream>> vertices = new ArrayList<>();
     final List<Edge> edges = new ArrayList<>();
 
     // Put all vertices into a queue
-    final Iterator<MISTStream> iterator = GraphUtils.topologicalSort(dag);
+    final DAG<Tuple<Boolean, MISTStream>, Direction> partitionedDag = queryPartitioner.generatePartitionedPlan();
+    final Iterator<Tuple<Boolean, MISTStream>> iterator = GraphUtils.topologicalSort(partitionedDag);
     while (iterator.hasNext()) {
-      final MISTStream vertex = iterator.next();
+      final Tuple<Boolean, MISTStream> vertex = iterator.next();
       queue.add(vertex);
       vertices.add(vertex);
     }
 
     // Visit each vertex and serialize its edges
     while (!queue.isEmpty()) {
-      final MISTStream vertex = queue.remove();
+      final Tuple<Boolean, MISTStream> vertex = queue.remove();
       final int fromIndex = vertices.indexOf(vertex);
-      final Map<MISTStream, Direction> neighbors = dag.getEdges(vertex);
-      for (final Map.Entry<MISTStream, Direction> neighbor : neighbors.entrySet()) {
+      final Map<Tuple<Boolean, MISTStream>, Direction> neighbors = partitionedDag.getEdges(vertex);
+      for (final Map.Entry<Tuple<Boolean, MISTStream>, Direction> neighbor : neighbors.entrySet()) {
         final int toIndex = vertices.indexOf(neighbor.getKey());
         final Edge.Builder edgeBuilder = Edge.newBuilder()
             .setFrom(fromIndex)
@@ -72,53 +75,28 @@ public final class MISTQueryImpl implements MISTQuery {
       }
     }
 
-    final Set<MISTStream> rootVertices = dag.getRootVertices();
     // Serialize each vertex via avro.
     final List<AvroVertex> serializedVertices = new ArrayList<>();
-    for (final MISTStream vertex : vertices) {
+    for (final Tuple<Boolean, MISTStream> tup : vertices) {
+      final MISTStream vertex = tup.getValue();
       final AvroVertex.Builder builder = AvroVertex.newBuilder();
       final String confToStr = serializer.toString(vertex.getConfiguration());
       builder.setConfiguration(confToStr);
+      builder.setIsHead(tup.getKey());
       // Set vertex type
-      if (rootVertices.contains(vertex)) {
+      if (dag.getInDegree(vertex) == 0) {
         // this is a source
         builder.setAvroVertexType(AvroVertexTypeEnum.SOURCE);
-        builder.setIsHead(false);
       } else if (dag.getEdges(vertex).size() == 0) {
         // this is a sink
         builder.setAvroVertexType(AvroVertexTypeEnum.SINK);
-        builder.setIsHead(false);
       } else {
         // this is an operator
-        if (dag.getInDegree(vertex) > 1 || dag.getEdges(vertex).size() > 1 ||
-            isConnectedToSource(vertex, rootVertices)) {
-          // Set head true if it is union or join operator.
-          // Or, it has multiple down streams or connected to the source
-          builder.setIsHead(true);
-        } else {
-          builder.setIsHead(false);
-        }
         builder.setAvroVertexType(AvroVertexTypeEnum.OPERATOR);
       }
       serializedVertices.add(builder.build());
     }
     return new Tuple<>(serializedVertices, edges);
-  }
-
-  /**
-   * Check whether the vertex is connected to the source.
-   * @param vertex vertex
-   * @param rootVertices sources
-   * @return true if the vertex is connected to the source.
-   */
-  private boolean isConnectedToSource(final MISTStream vertex,
-                                      final Set<MISTStream> rootVertices) {
-    for (final MISTStream source : rootVertices) {
-      if (dag.isAdjacent(source, vertex)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   @Override

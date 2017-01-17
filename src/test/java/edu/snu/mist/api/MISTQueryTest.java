@@ -119,7 +119,6 @@ public final class MISTQueryTest {
         Edge.newBuilder().setFrom(3).setTo(4).setDirection(Direction.LEFT).build(),
         Edge.newBuilder().setFrom(4).setTo(5).setDirection(Direction.LEFT).build(),
         Edge.newBuilder().setFrom(5).setTo(6).setDirection(Direction.LEFT).build());
-
     Assert.assertEquals(new HashSet<>(expectedEdges), new HashSet<>(edges));
   }
 }
