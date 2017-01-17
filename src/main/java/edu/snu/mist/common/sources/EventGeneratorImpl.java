@@ -90,8 +90,9 @@ public abstract class EventGeneratorImpl<I, V> implements EventGenerator<I> {
    */
   protected MistDataEvent generateEvent(final I input) {
     if (extractTimestampFunc == null) {
-      if (getCurrentTimestamp() > latestWatermarkTimestamp) {
-        return new MistDataEvent(input, getCurrentTimestamp());
+      long currentTimestamp = getCurrentTimestamp();
+      if (currentTimestamp > latestWatermarkTimestamp) {
+        return new MistDataEvent(input, currentTimestamp);
       } else {
         return null;
       }

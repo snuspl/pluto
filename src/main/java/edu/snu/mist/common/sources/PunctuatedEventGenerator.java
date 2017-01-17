@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.sources;
 
+import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTFunction;
@@ -98,8 +99,11 @@ public final class PunctuatedEventGenerator<I, V> extends EventGeneratorImpl<I, 
     if (isWatermark.test(input)) {
       latestWatermarkTimestamp = parseTimestamp.apply(input);
       outputEmitter.emitWatermark(new MistWatermarkEvent(latestWatermarkTimestamp));
-    } else if (generateEvent(input) != null) {
-      outputEmitter.emitData(generateEvent(input));
+    } else {
+      MistDataEvent newInputEvent = generateEvent(input);
+      if (newInputEvent != null) {
+        outputEmitter.emitData(newInputEvent);
+      }
     }
   }
 }
