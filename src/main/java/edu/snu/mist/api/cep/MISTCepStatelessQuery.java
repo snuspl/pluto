@@ -15,15 +15,81 @@
  */
 package edu.snu.mist.api.cep;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Immutable Stateful CEP query which would be submitted by users.
+ * A class which contains information about MISTCepStateless query.
  */
-public interface MISTCepStatelessQuery extends MISTCepQuery {
+public final class MISTCepStatelessQuery {
+
+  private final CepInput cepInput;
+  private final List<CepStatelessRule> cepStatelessRules;
 
   /**
-   * @return A list of all cep stateless rules.
+   * Creates an immutable stateless query.
    */
-  List<CepStatelessRule> getCepStatelessRules();
+  public MISTCepStatelessQuery(final CepInput cepInput,
+                               final List<CepStatelessRule> cepStatelessRules) {
+    this.cepInput = cepInput;
+    this.cepStatelessRules = cepStatelessRules;
+  }
+
+  /**
+   * @return input for this query.
+   */
+  public CepInput getCepInput() {
+    return cepInput;
+  }
+
+  /**
+   * @return list of all cep stateless rules.
+   */
+  public List<CepStatelessRule> getCepStatelessRules() {
+    return this.cepStatelessRules;
+  }
+
+  public static class Builder {
+    private CepInput cepInput;
+    private final List<CepStatelessRule> cepStatelessRules;
+
+    /**
+     * Creates a new builder.
+     */
+    public Builder() {
+      this.cepInput = null;
+      this.cepStatelessRules = new ArrayList<>();
+    }
+
+    /**
+     * Sets the input for this stateless cep query.
+     * @param inputParam parameter for input
+     * @return builder
+     */
+    public Builder input(final CepInput inputParam) {
+      this.cepInput = inputParam;
+      return this;
+    }
+
+    /**
+     * Add a stateless rule.
+     * @param cepStatelessRule a target rule
+     * @return buidler
+     */
+    public Builder addStatelessRule(final CepStatelessRule cepStatelessRule) {
+      cepStatelessRules.add(cepStatelessRule);
+      return this;
+    }
+
+    /**
+     * Creates an immutable stateless cep query.
+     * @return
+     */
+    public MISTCepStatelessQuery build() {
+      if (cepInput == null || cepStatelessRules.size() == 0) {
+        throw new IllegalStateException("Cep input or cep stateless rules are not defined!");
+      }
+      return new MISTCepStatelessQuery(cepInput, cepStatelessRules);
+    }
+  }
 }

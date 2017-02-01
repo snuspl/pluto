@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.api.cep;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -23,7 +24,7 @@ import java.util.List;
  */
 public final class CepAction {
 
-  private CepActionType actionType;
+  private final CepActionType actionType;
   private final CepSink cepSink;
   private final List<Object> params;
 
@@ -34,22 +35,27 @@ public final class CepAction {
     this.params = Arrays.asList(params);
   }
 
+  /**
+   * @return A pre-define action which does nothing!
+   */
   public static CepAction doNothingAction() {
     return new CepAction(CepActionType.DO_NOTHING, null, "dummy");
   }
 
   /**
    * Creates a new immutable action based on given parameters.
-   * @param actionType
-   * @param cepSink
-   * @param params
-   * @return
+   * @param actionTypeArg the action type
+   * @param cepSinkArg the sink to commit action
+   * @param paramsArg parameters necessary for actions
+   * @return new action
    */
-  public static CepAction newAction(final CepActionType actionType, final CepSink cepSink,  final Object... params) {
-    if (cepSink == null) {
+  private CepAction newAction(final CepActionType actionTypeArg,
+                              final CepSink cepSinkArg,
+                              final Object... paramsArg) {
+    if (cepSinkArg == null) {
       throw new IllegalStateException("CepSink cannot be null!");
     }
-    return new CepAction(actionType, cepSink, params);
+    return new CepAction(actionTypeArg, cepSinkArg, paramsArg);
   }
 
   /**
@@ -99,6 +105,61 @@ public final class CepAction {
       return actionType.hashCode() * 100 + cepSink.hashCode() * 10 + params.hashCode();
     } else {
       return actionType.hashCode() * 100 + params.hashCode();
+    }
+  }
+
+  /**
+   * A builder class for CepAction.
+   */
+  public static class Builder {
+    private CepActionType actionType;
+    private CepSink cepSink;
+    private final List<Object> params;
+
+    public Builder() {
+      actionType = null;
+      cepSink = null;
+      params = new ArrayList<>();
+    }
+
+    /**
+     * @param actionTypeParam an action type
+     * @return builder
+     */
+    public Builder setActionType(final CepActionType actionTypeParam) {
+      if (this.actionType != null) {
+        throw new IllegalStateException("actionTypeParam cannot be defined twice!");
+      }
+      this.actionType = actionTypeParam;
+      return this;
+    }
+
+    /**
+     * @param cepSinkParam a cep sink
+     * @return builder
+     */
+    public Builder setCepSink(final CepSink cepSinkParam) {
+      if (this.cepSink != null) {
+        throw new IllegalStateException("cepSinkParam cannot be defined twice");
+      }
+      this.cepSink = cepSinkParam;
+      return this;
+    }
+
+    /**
+     * @param object a parameter
+     * @return builder
+     */
+    public Builder setParams(final Object object) {
+      this.params.add(object);
+      return this;
+    }
+
+    /**
+     * @return a cep action built via this builder.
+     */
+    public CepAction build() {
+      return new CepAction(actionType, cepSink, params);
     }
   }
 }

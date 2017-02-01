@@ -20,16 +20,16 @@ import java.util.List;
 /**
  * An operator which connects 2 or more conditions.
  */
-public class UnionCondition extends Condition {
+public final class UnionCondition extends AbstractCondition {
 
-  private final List<Condition> conditions;
+  private final List<AbstractCondition> conditions;
 
   /**
    * Creates an immutable union operator for given type and sub operators.
-   * @param conditionType
-   * @param conditions
+   * @param conditionType type of this condition
+   * @param conditions conditions to be united together
    */
-  public UnionCondition(final ConditionType conditionType, final List<Condition> conditions) {
+  public UnionCondition(final ConditionType conditionType, final List<AbstractCondition> conditions) {
     super(conditionType);
     this.conditions = conditions;
   }
@@ -37,7 +37,7 @@ public class UnionCondition extends Condition {
   /**
    * @return integrated operators
    */
-  public List<Condition> getConditions() {
+  public List<AbstractCondition> getConditions() {
     return this.conditions;
   }
 

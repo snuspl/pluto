@@ -15,19 +15,115 @@
  */
 package edu.snu.mist.api.cep;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Immutable Stateful CEP query which would be submitted by users.
+ * Default Implementation for MISTCepStatefulQuery.
  */
-public interface MISTCepStatefulQuery extends MISTCepQuery {
-  /**
-   * @return List of conditions used in CEP
-   */
-  List<CepStatefulRule> getCepStatefulRules();
+public final class MISTCepStatefulQuery {
+
+  private final CepInput cepInput;
+  private final String initialState;
+  private final List<CepStatefulRule> cepStatefulRules;
 
   /**
-   * @return the initial state for this CEP query
+   * Creates an immutable MISTCepStatefulQuery using given parameters.
+   * @param cepInput cep input
+   * @param initialState initial state
+   * @param cepStatefulRules a list of stateful rules
    */
-  String getInitialState();
+  public MISTCepStatefulQuery(
+      final CepInput cepInput,
+      final String initialState,
+      final List<CepStatefulRule> cepStatefulRules) {
+    this.cepInput = cepInput;
+    this.initialState = initialState;
+    this.cepStatefulRules = cepStatefulRules;
+  }
+
+  /**
+   * @return Input for this query
+   */
+  public CepInput getCepInput() {
+    return cepInput;
+  }
+
+  /**
+   * @return list of rules
+   */
+  public List<CepStatefulRule> getCepStatefulRules() {
+    return cepStatefulRules;
+  }
+
+  /**
+   * @return initiali state of this query
+   */
+  public String getInitialState() {
+    return initialState;
+  }
+
+  /**
+   * A builder class for MISTCepStatefulQuery.
+   */
+  public static class Builder {
+
+    private CepInput cepInput;
+    private String initialState;
+    private final List<CepStatefulRule> cepStatefulRules;
+
+    //Should be hidden from the outside
+    public Builder() {
+      this.cepInput = null;
+      this.initialState = null;
+      this.cepStatefulRules = new ArrayList<>();
+    }
+
+    /**
+     * Defines an input of the CEP query.
+     * @param input input for this query
+     * @return builder
+     */
+    public Builder input(final CepInput input) {
+      if (this.cepInput != null) {
+        throw new IllegalStateException("Input couldn't be declared twice!");
+      }
+      this.cepInput = input;
+      return this;
+    }
+
+    /**
+     * Defines an initial state of the CEP query.
+     * @param initialStateParam initial state defined as a String.
+     * @return builder
+     */
+    public Builder initialState(final String initialStateParam) {
+      if (this.initialState != null) {
+        throw new IllegalStateException("Initial state could not be declared twice!");
+      }
+      this.initialState = initialStateParam;
+      return this;
+    }
+
+    /**
+     * Add stateful rule.
+     * @param statefulRule rule
+     * @return builder
+     */
+    public Builder addStatefulRule(final CepStatefulRule statefulRule) {
+      cepStatefulRules.add(statefulRule);
+      return this;
+    }
+
+    /**
+     * Creates an immutable stateful CEP query with.
+     * @return builder
+     */
+    public MISTCepStatefulQuery build() {
+      if (cepInput == null || initialState == null || cepStatefulRules.size() == 0) {
+        throw new IllegalStateException("One of cep input, initial state or rules are not set!");
+      }
+      return new MISTCepStatefulQuery(cepInput, initialState, cepStatefulRules);
+    }
+  }
 }

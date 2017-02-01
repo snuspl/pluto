@@ -20,9 +20,14 @@ package edu.snu.mist.api.cep.conditions;
  */
 
 public enum ConditionType {
+  // Less than
   LT,
+  // Greater than
   GT,
+  // Equals
   EQ,
+  // And
   AND,
+  // Or
   OR
 }

@@ -15,14 +15,20 @@
  */
 package edu.snu.mist.api.cep;
 
-import edu.snu.mist.api.cep.conditions.Condition;
+import edu.snu.mist.api.cep.conditions.AbstractCondition;
 
 /**
- * An immutable CepRule which should be used in stateful rule.
+ * An immutable CepRule which should be used in stateful rule, which have condition and action.
  */
 public class CepStatelessRule {
 
-  protected final Condition condition;
+  /**
+   * The condition.
+   */
+  protected final AbstractCondition condition;
+  /**
+   * The action.
+   */
   protected final CepAction action;
 
   /**
@@ -30,7 +36,7 @@ public class CepStatelessRule {
    * @param condition
    * @param action
    */
-  public CepStatelessRule(final Condition condition, final CepAction action) {
+  protected CepStatelessRule(final AbstractCondition condition, final CepAction action) {
     this.condition = condition;
     this.action = action;
   }
@@ -38,7 +44,7 @@ public class CepStatelessRule {
   /**
    * @return rule condition
    */
-  public Condition getCondition() {
+  public AbstractCondition getCondition() {
     return this.condition;
   }
 
@@ -61,5 +67,52 @@ public class CepStatelessRule {
   @Override
   public int hashCode() {
     return condition.hashCode() * 10 + action.hashCode();
+  }
+
+  public static final class Builder {
+
+    private AbstractCondition condition;
+    private CepAction action;
+
+    /**
+     * Create a new builder.
+     */
+    public Builder() {
+      this.condition = null;
+      this.action = null;
+    }
+
+    /**
+     * Sets the condition.
+     * @param condition condition
+     * @return builder
+     */
+    public Builder setCondition(final AbstractCondition condition) {
+      if (this.condition != null) {
+        throw new IllegalStateException("Condition cannot be declared twice!");
+      }
+      this.condition = condition;
+      return this;
+    }
+
+    /**
+     * Sets the action.
+     * @param action action
+     * @return builder
+     */
+    public Builder setAction(final CepAction action) {
+      if (this.action != null) {
+        throw new IllegalStateException("Action cannot be declared twice!");
+      }
+      this.action = action;
+      return this;
+    }
+
+    public CepStatelessRule build() {
+      if (condition == null || action == null) {
+        throw new IllegalStateException("Condition or action is not set!");
+      }
+      return new CepStatelessRule(condition, action);
+    }
   }
 }

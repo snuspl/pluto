@@ -16,17 +16,20 @@
 package edu.snu.mist.api.cep.conditions;
 
 /**
- * An immutable operator. Should be extended before being used.
+ * An immutable condition operator. Should be extended before being used.
  */
-public abstract class Condition {
+public abstract class AbstractCondition {
 
+  /**
+   * The type of this condition statement.
+   */
   protected final ConditionType conditionType;
 
   /**
    * Makes an immutable operator which has its own type.
-   * @param conditionType
+   * @param conditionType the type of condition.
    */
-  public Condition(final ConditionType conditionType) {
+  public AbstractCondition(final ConditionType conditionType) {
     this.conditionType = conditionType;
   }
 

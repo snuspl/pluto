@@ -16,18 +16,24 @@
 package edu.snu.mist.api.cep.conditions;
 
 /**
- * Operators used for comparison.
+ * Comparator used in monitoring.
  */
-public final class ComparisonCondition extends Condition {
+public final class ComparisonCondition extends AbstractCondition {
 
+  /**
+   * Field name used for data extraction.
+   */
   private final String fieldName;
+  /**
+   * Value being compaired.
+   */
   private final Object comparisonValue;
 
   /**
    * Creates a immutable comparison operator by given inputs.
-   * @param conditionType
-   * @param fieldName
-   * @param comparisonValue
+   * @param conditionType the type of condition
+   * @param fieldName field name
+   * @param comparisonValue comparison value
    */
   public ComparisonCondition(final ConditionType conditionType, final String fieldName, final Object comparisonValue) {
     super(conditionType);

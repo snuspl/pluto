@@ -29,49 +29,49 @@ public final class Conditions {
 
   /**
    * Creates an immutable less-than condition by given inputs.
-   * @param fieldName
-   * @param value
-   * @return
+   * @param fieldName the data field name
+   * @param value comparison value
+   * @return lt condition
    */
-  public static Condition lt(final String fieldName, final Object value) {
+  public static AbstractCondition lt(final String fieldName, final Object value) {
     return new ComparisonCondition(ConditionType.LT, fieldName, value);
   }
 
   /**
    * Creates an immutable greater-than condition by given inputs.
-   * @param fieldName
-   * @param value
-   * @return
+   * @param fieldName the data field name
+   * @param value comparison value
+   * @return gt condition
    */
-  public static Condition gt(final String fieldName, final Object value) {
+  public static AbstractCondition gt(final String fieldName, final Object value) {
     return new ComparisonCondition(ConditionType.GT, fieldName, value);
   }
 
   /**
    * Creates an immutable equal condition by given inputs.
-   * @param fieldName
-   * @param value
-   * @return
+   * @param fieldName the data field name
+   * @param value comparison value
+   * @return eq condition
    */
-  public static Condition eq(final String fieldName, final Object value) {
+  public static AbstractCondition eq(final String fieldName, final Object value) {
     return new ComparisonCondition(ConditionType.EQ, fieldName, value);
   }
 
   /**
    * Creates an immutable and condition by given inputs.
-   * @param conditions
-   * @return
+   * @param conditions conditions to be connected via and
+   * @return and condition
    */
-  public static Condition and(final Condition... conditions) {
+  public static AbstractCondition and(final AbstractCondition... conditions) {
     return new UnionCondition(ConditionType.AND, Arrays.asList(conditions));
   }
 
   /**
    * Creates an immutable or condition by given inputs.
-   * @param conditions
-   * @return
+   * @param conditions conditions to be connected via or
+   * @return or condition
    */
-  public static Condition or(final Condition... conditions) {
+  public static AbstractCondition or(final AbstractCondition... conditions) {
     return new UnionCondition(ConditionType.OR, Arrays.asList(conditions));
   }
 }
