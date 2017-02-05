@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.api.cep.conditions;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -29,7 +30,7 @@ public final class UnionCondition extends AbstractCondition {
    * @param conditionType type of this condition
    * @param conditions conditions to be united together
    */
-  public UnionCondition(final ConditionType conditionType, final List<AbstractCondition> conditions) {
+  private UnionCondition(final ConditionType conditionType, final List<AbstractCondition> conditions) {
     super(conditionType);
     this.conditions = conditions;
   }
@@ -53,5 +54,23 @@ public final class UnionCondition extends AbstractCondition {
   @Override
   public int hashCode() {
     return this.conditionType.hashCode() * 10 + this.conditions.hashCode();
+  }
+
+  /**
+   * Creates an immutable and condition by given inputs.
+   * @param conditions conditions to be connected via and
+   * @return and condition
+   */
+  public static AbstractCondition and(final AbstractCondition... conditions) {
+    return new UnionCondition(ConditionType.AND, Arrays.asList(conditions));
+  }
+
+  /**
+   * Creates an immutable or condition by given inputs.
+   * @param conditions conditions to be connected via or
+   * @return or condition
+   */
+  public static AbstractCondition or(final AbstractCondition... conditions) {
+    return new UnionCondition(ConditionType.OR, Arrays.asList(conditions));
   }
 }

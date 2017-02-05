@@ -16,7 +16,7 @@
 package edu.snu.mist.api.cep;
 
 /**
- * Types for Possible Sinks.
+ * Types for Sinks.
  */
 public enum CepSinkType {
   TEXT_SOCKET_OUTPUT

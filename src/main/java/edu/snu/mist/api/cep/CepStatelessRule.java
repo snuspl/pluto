@@ -18,7 +18,7 @@ package edu.snu.mist.api.cep;
 import edu.snu.mist.api.cep.conditions.AbstractCondition;
 
 /**
- * An immutable CepRule which should be used in stateful rule, which have condition and action.
+ * An immutable CepRule which should be used in stateless rule, which have condition and action.
  */
 public class CepStatelessRule {
 
@@ -69,6 +69,9 @@ public class CepStatelessRule {
     return condition.hashCode() * 10 + action.hashCode();
   }
 
+  /**
+   * Builder for CepStatelessRule.
+   */
   public static final class Builder {
 
     private AbstractCondition condition;

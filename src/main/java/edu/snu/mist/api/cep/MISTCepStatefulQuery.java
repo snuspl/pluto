@@ -33,7 +33,7 @@ public final class MISTCepStatefulQuery {
    * @param initialState initial state
    * @param cepStatefulRules a list of stateful rules
    */
-  public MISTCepStatefulQuery(
+  private MISTCepStatefulQuery(
       final CepInput cepInput,
       final String initialState,
       final List<CepStatefulRule> cepStatefulRules) {
@@ -57,7 +57,7 @@ public final class MISTCepStatefulQuery {
   }
 
   /**
-   * @return initiali state of this query
+   * @return initial state of this query
    */
   public String getInitialState() {
     return initialState;
@@ -72,7 +72,9 @@ public final class MISTCepStatefulQuery {
     private String initialState;
     private final List<CepStatefulRule> cepStatefulRules;
 
-    //Should be hidden from the outside
+    /**
+     * Creates a new builder.
+     */
     public Builder() {
       this.cepInput = null;
       this.initialState = null;

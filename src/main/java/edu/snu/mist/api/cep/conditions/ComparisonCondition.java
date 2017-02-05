@@ -35,7 +35,7 @@ public final class ComparisonCondition extends AbstractCondition {
    * @param fieldName field name
    * @param comparisonValue comparison value
    */
-  public ComparisonCondition(final ConditionType conditionType, final String fieldName, final Object comparisonValue) {
+  private ComparisonCondition(final ConditionType conditionType, final String fieldName, final Object comparisonValue) {
     super(conditionType);
     this.fieldName = fieldName;
     this.comparisonValue = comparisonValue;
@@ -69,5 +69,35 @@ public final class ComparisonCondition extends AbstractCondition {
   @Override
   public int hashCode() {
     return this.conditionType.hashCode() * 100 + this.fieldName.hashCode() * 10 + this.comparisonValue.hashCode();
+  }
+
+  /**
+   * Creates an immutable less-than condition by given inputs.
+   * @param fieldName the data field name
+   * @param value comparison value
+   * @return lt condition
+   */
+  public static AbstractCondition lt(final String fieldName, final Object value) {
+    return new ComparisonCondition(ConditionType.LT, fieldName, value);
+  }
+
+  /**
+   * Creates an immutable greater-than condition by given inputs.
+   * @param fieldName the data field name
+   * @param value comparison value
+   * @return gt condition
+   */
+  public static AbstractCondition gt(final String fieldName, final Object value) {
+    return new ComparisonCondition(ConditionType.GT, fieldName, value);
+  }
+
+  /**
+   * Creates an immutable equal condition by given inputs.
+   * @param fieldName the data field name
+   * @param value comparison value
+   * @return eq condition
+   */
+  public static AbstractCondition eq(final String fieldName, final Object value) {
+    return new ComparisonCondition(ConditionType.EQ, fieldName, value);
   }
 }

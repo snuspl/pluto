@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.api.cep;
 
-import edu.snu.mist.api.cep.conditions.Conditions;
+import edu.snu.mist.api.cep.conditions.ComparisonCondition;
 import org.apache.reef.io.Tuple;
 import org.junit.Assert;
 import org.junit.Test;
@@ -83,7 +83,7 @@ public class MISTCepQuerySubmissionTest {
       put("SOCKET_SINK_ADDRESS", cepOutputAddress);
       put("SOCKET_SINK_PORT", cepOutputPort);
     }};
-    Assert.assertEquals(expectedCepOutputConf, exampleCepSink.getActionConfigs());
+    Assert.assertEquals(expectedCepOutputConf, exampleCepSink.getSinkConfigs());
   }
 
   /**
@@ -94,7 +94,7 @@ public class MISTCepQuerySubmissionTest {
     final MISTCepStatelessQuery exampleQuery = new MISTCepStatelessQuery.Builder()
         .input(exampleCepInput)
         .addStatelessRule(new CepStatelessRule.Builder()
-            .setCondition(Conditions.gt("Temperature", 25))
+            .setCondition(ComparisonCondition.gt("Temperature", 25))
             .setAction(new CepAction.Builder()
                 .setActionType(CepActionType.TEXT_WRITE)
                 .setCepSink(exampleCepSink)
@@ -103,7 +103,7 @@ public class MISTCepQuerySubmissionTest {
             .build()
         )
         .addStatelessRule(new CepStatelessRule.Builder()
-            .setCondition(Conditions.lt("Temperature", 10))
+            .setCondition(ComparisonCondition.lt("Temperature", 10))
             .setAction(new CepAction.Builder()
                 .setActionType(CepActionType.TEXT_WRITE)
                 .setCepSink(exampleCepSink)
@@ -116,14 +116,14 @@ public class MISTCepQuerySubmissionTest {
     final List<CepStatelessRule> statelessRules = exampleQuery.getCepStatelessRules();
     Assert.assertEquals(statelessRules.size(), 2);
     final CepStatelessRule rule0 = statelessRules.get(0);
-    Assert.assertEquals(rule0.getCondition(), Conditions.gt("Temperature", 25));
+    Assert.assertEquals(rule0.getCondition(), ComparisonCondition.gt("Temperature", 25));
     Assert.assertEquals(rule0.getAction(), new CepAction.Builder()
         .setActionType(CepActionType.TEXT_WRITE)
         .setCepSink(exampleCepSink)
         .setParams("Hot")
         .build());
     final CepStatelessRule rule1 = statelessRules.get(1);
-    Assert.assertEquals(rule1.getCondition(), Conditions.lt("Temperature", 10));
+    Assert.assertEquals(rule1.getCondition(), ComparisonCondition.lt("Temperature", 10));
     Assert.assertEquals(rule1.getAction(), new CepAction.Builder()
         .setActionType(CepActionType.TEXT_WRITE)
         .setCepSink(exampleCepSink)
@@ -141,13 +141,13 @@ public class MISTCepQuerySubmissionTest {
         .initialState("OUTSIDE")
         .addStatefulRule(new CepStatefulRule.Builder()
             .setCurrentState("OUTSIDE")
-            .setCondition(Conditions.eq("Location", 4.89))
+            .setCondition(ComparisonCondition.eq("Location", 4.89))
             .setAction(CepAction.doNothingAction())
             .setNextState("INSIDE")
             .build())
         .addStatefulRule(new CepStatefulRule.Builder()
             .setCurrentState("INSIDE")
-            .setCondition(Conditions.gt("Temperature", 25))
+            .setCondition(ComparisonCondition.gt("Temperature", 25))
             .setAction(new CepAction.Builder()
                 .setActionType(CepActionType.TEXT_WRITE)
                 .setCepSink(exampleCepSink)
@@ -156,7 +156,7 @@ public class MISTCepQuerySubmissionTest {
             .build())
         .addStatefulRule(new CepStatefulRule.Builder()
             .setCurrentState("INSIDE")
-            .setCondition(Conditions.lt("Temperature", 10))
+            .setCondition(ComparisonCondition.lt("Temperature", 10))
             .setAction(new CepAction.Builder()
                 .setActionType(CepActionType.TEXT_WRITE)
                 .setCepSink(exampleCepSink)
@@ -170,13 +170,13 @@ public class MISTCepQuerySubmissionTest {
 
     final CepStatefulRule rule0 = statefulRules.get(0);
     Assert.assertEquals(rule0.getCurrentState(), "OUTSIDE");
-    Assert.assertEquals(rule0.getCondition(), Conditions.eq("Location", 4.89));
+    Assert.assertEquals(rule0.getCondition(), ComparisonCondition.eq("Location", 4.89));
     Assert.assertEquals(rule0.getAction(), CepAction.doNothingAction());
     Assert.assertEquals(rule0.getNextState(), "INSIDE");
 
     final CepStatefulRule rule1 = statefulRules.get(1);
     Assert.assertEquals(rule1.getCurrentState(), "INSIDE");
-    Assert.assertEquals(rule1.getCondition(), Conditions.gt("Temperature", 25));
+    Assert.assertEquals(rule1.getCondition(), ComparisonCondition.gt("Temperature", 25));
     Assert.assertEquals(rule1.getAction(), new CepAction.Builder()
         .setActionType(CepActionType.TEXT_WRITE)
         .setCepSink(exampleCepSink)
@@ -186,7 +186,7 @@ public class MISTCepQuerySubmissionTest {
 
     final CepStatefulRule rule2 = statefulRules.get(2);
     Assert.assertEquals(rule2.getCurrentState(), "INSIDE");
-    Assert.assertEquals(rule2.getCondition(), Conditions.lt("Temperature", 10));
+    Assert.assertEquals(rule2.getCondition(), ComparisonCondition.lt("Temperature", 10));
     Assert.assertEquals(rule2.getAction(), new CepAction.Builder()
         .setActionType(CepActionType.TEXT_WRITE)
         .setCepSink(exampleCepSink)

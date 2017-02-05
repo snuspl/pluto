@@ -32,7 +32,7 @@ public final class CepInput {
    * This constructor makes immutable CepInput.
    * @param innerBuilder Cep input builder.
    */
-  public CepInput(final InnerBuilder innerBuilder) {
+  private CepInput(final InnerBuilder innerBuilder) {
     this.cepInputType = innerBuilder.cepInputType;
     this.cepInputConfiguration = innerBuilder.cepInputConfiguration;
     this.properties = innerBuilder.fields;
@@ -86,7 +86,7 @@ public final class CepInput {
     private final Set<String> propertyNames;
 
     private InnerBuilder() {
-      this.cepInputType = cepInputType;
+      this.cepInputType = null;
       this.cepInputConfiguration = new HashMap<>();
       this.fields = new ArrayList<>();
       this.propertyNames = new HashSet<>();
@@ -143,7 +143,7 @@ public final class CepInput {
   }
 
   /*
-   * A builder class for socketStreamInputBuilder.
+   * A builder class for Inputs using Text Sockets as inputs.
    */
   public static final class TextSocketBuilder {
 

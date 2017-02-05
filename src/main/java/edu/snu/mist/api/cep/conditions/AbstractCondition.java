@@ -29,7 +29,7 @@ public abstract class AbstractCondition {
    * Makes an immutable operator which has its own type.
    * @param conditionType the type of condition.
    */
-  public AbstractCondition(final ConditionType conditionType) {
+  protected AbstractCondition(final ConditionType conditionType) {
     this.conditionType = conditionType;
   }
 

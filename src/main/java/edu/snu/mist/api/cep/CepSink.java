@@ -19,21 +19,21 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * An immutable action created by @CepActionBuilder. It corresponds to Sink in MIST stream query.
+ * An immutable sink. It corresponds to Sink in MIST stream query.
  */
 public final class CepSink {
 
   private final CepSinkType cepSinkType;
-  private final Map<String, Object> actionConfigs;
+  private final Map<String, Object> sinkConfigs;
 
   /**
    * Creates an immutable sink called from ActionBuilder.
    * @param cepSinkType
-   * @param actionConfigs
+   * @param sinkConfigs
    */
-  private CepSink(final CepSinkType cepSinkType, final Map<String, Object> actionConfigs) {
+  private CepSink(final CepSinkType cepSinkType, final Map<String, Object> sinkConfigs) {
     this.cepSinkType = cepSinkType;
-    this.actionConfigs = actionConfigs;
+    this.sinkConfigs = sinkConfigs;
   }
 
   /**
@@ -46,8 +46,8 @@ public final class CepSink {
   /**
    * @return Sink configuration values
    */
-  public Map<String, Object> getActionConfigs() {
-    return actionConfigs;
+  public Map<String, Object> getSinkConfigs() {
+    return sinkConfigs;
   }
 
   @Override
@@ -56,18 +56,18 @@ public final class CepSink {
       return false;
     }
     final CepSink sink = (CepSink) o;
-    return this.cepSinkType == sink.cepSinkType && this.actionConfigs.equals(sink.actionConfigs);
+    return this.cepSinkType == sink.cepSinkType && this.sinkConfigs.equals(sink.sinkConfigs);
   }
 
   @Override
   public int hashCode() {
-    return cepSinkType.hashCode() * 100 + actionConfigs.hashCode() * 100;
+    return cepSinkType.hashCode() * 100 + sinkConfigs.hashCode() * 100;
   }
 
   /**
    * A builder class for CepSink.
    */
-  public static final class InnerBuilder {
+  private static final class InnerBuilder {
     private CepSinkType cepSinkType;
     private Map<String, Object> actionConfigurations;
 
@@ -105,6 +105,10 @@ public final class CepSink {
     }
   }
 
+
+  /**
+   * A builder for CepSink which uses Text Socket as its output.
+   */
   public static final class TextSocketBuilder {
 
     private final String socketSinkAddressKey = "SOCKET_SINK_ADDRESS";
@@ -116,16 +120,30 @@ public final class CepSink {
           .setCepSinkType(CepSinkType.TEXT_SOCKET_OUTPUT);
     }
 
+    /**
+     * Sets socket address.
+     * @param socketAddress socket address
+     * @return builder
+     */
     public TextSocketBuilder setSocketAddress(final String socketAddress) {
       this.builder.addSinkConfigValue(socketSinkAddressKey, socketAddress);
       return this;
     }
 
+    /**
+     * Sets the socket port.
+     * @param socketPort socket port
+     * @return builder
+     */
     public TextSocketBuilder setSocketPort(final int socketPort) {
       this.builder.addSinkConfigValue(socketSinkPortKey, socketPort);
       return this;
     }
 
+    /**
+     * Creates an immutable CepSink.
+     * @return a new CepSink
+     */
     public CepSink build() {
       return builder.build();
     }
