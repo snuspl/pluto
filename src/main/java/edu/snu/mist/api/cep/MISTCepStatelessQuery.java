@@ -49,6 +49,9 @@ public final class MISTCepStatelessQuery {
     return this.cepStatelessRules;
   }
 
+  /**
+   * Builder for MISTCepStatelessQuery.
+   */
   public static class Builder {
     private CepInput cepInput;
     private final List<CepStatelessRule> cepStatelessRules;
