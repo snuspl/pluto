@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common;
+package edu.snu.mist.core.task;
 
 /**
  * This interface represents physical vertices of the query.
  */
-public interface PhysicalVertex {
+interface PhysicalVertex {
 
   public static enum Type {
     SOURCE,

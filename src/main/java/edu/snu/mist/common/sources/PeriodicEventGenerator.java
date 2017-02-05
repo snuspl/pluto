@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.sources;
 
+import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTFunction;
@@ -101,7 +102,8 @@ public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V>
   protected void startRemain() {
     result = scheduler.scheduleAtFixedRate(new Runnable() {
       public void run() {
-        outputEmitter.emitWatermark(new MistWatermarkEvent(getCurrentTimestamp() - expectedDelay));
+        latestWatermarkTimestamp = getCurrentTimestamp() - expectedDelay;
+        outputEmitter.emitWatermark(new MistWatermarkEvent(latestWatermarkTimestamp));
       }
     }, period, period, timeUnit);
   }
@@ -113,6 +115,9 @@ public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V>
 
   @Override
   public void emitData(final I input) {
-    outputEmitter.emitData(generateEvent(input));
+    MistDataEvent newInputEvent = generateEvent(input);
+    if (newInputEvent != null) {
+      outputEmitter.emitData(newInputEvent);
+    }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,9 +162,6 @@ public final class UnionOperator extends TwoStreamOperator {
     final long timestamp = event.getTimestamp();
     if (recentLeftTimestamp > timestamp) {
       throw new RuntimeException("The upstream events should be ordered by timestamp.");
-    } else if (recentLeftWatermark.getTimestamp() > timestamp){
-      throw new RuntimeException("The watermark should guarantee that " +
-          "all events having less timestamp than it are arrived already.");
     }
     LOG.log(Level.FINE, "{0} gets left data {1}", new Object[]{getOperatorIdentifier(), event});
     recentLeftTimestamp = timestamp;
@@ -179,9 +176,6 @@ public final class UnionOperator extends TwoStreamOperator {
     final long timestamp = event.getTimestamp();
     if (recentRightTimestamp > timestamp) {
       throw new RuntimeException("The upstream events should be ordered by timestamp.");
-    } else if (recentRightWatermark.getTimestamp() > timestamp){
-      throw new RuntimeException("The watermark should guarantee that " +
-          "all events having less timestamp than it are arrived already.");
     }
     LOG.log(Level.FINE, "{0} gets right data {1}", new Object[]{getOperatorIdentifier(), event});
     recentRightTimestamp = timestamp;
@@ -193,10 +187,6 @@ public final class UnionOperator extends TwoStreamOperator {
 
   @Override
   public void processLeftWatermark(final MistWatermarkEvent event) {
-    if (event.getTimestamp() < recentLeftWatermark.getTimestamp()) {
-      throw new RuntimeException("The timestamp of watermark should be greater or equal " +
-          "than the previous event timestamp.");
-    }
     LOG.log(Level.FINE, "{0} gets left watermark {1}", new Object[]{getOperatorIdentifier(), event});
     recentLeftWatermark = event;
 
@@ -206,10 +196,6 @@ public final class UnionOperator extends TwoStreamOperator {
 
   @Override
   public void processRightWatermark(final MistWatermarkEvent event) {
-    if (event.getTimestamp() < recentRightWatermark.getTimestamp()) {
-      throw new RuntimeException("The timestamp of watermark should be greater or equal " +
-          "than the previous event timestamp.");
-    }
     LOG.log(Level.FINE, "{0} gets right watermark {1}", new Object[]{getOperatorIdentifier(), event});
     recentRightWatermark = event;
 

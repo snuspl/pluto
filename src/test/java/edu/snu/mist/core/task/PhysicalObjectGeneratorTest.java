@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import edu.snu.mist.common.sources.*;
 import edu.snu.mist.utils.OperatorTestUtils;
 import junit.framework.Assert;
 import org.apache.reef.tang.Configuration;
+import org.apache.reef.tang.Configurations;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -65,7 +66,7 @@ public final class PhysicalObjectGeneratorTest {
   @Test(expected=InjectionException.class)
   public void testInjectionExceptionOfDataGenerator() throws IOException, InjectionException {
     final Configuration conf = UnionOperatorConfiguration.CONF.build();
-    generator.newDataGenerator(serializer.toString(conf), classLoader, urls);
+    generator.newDataGenerator(conf, classLoader);
   }
 
   @Test
@@ -75,7 +76,20 @@ public final class PhysicalObjectGeneratorTest {
         .setHostPort(13666)
         .build().getConfiguration();
     final DataGenerator<String> dataGenerator =
-        generator.newDataGenerator(serializer.toString(conf), classLoader, urls);
+        generator.newDataGenerator(conf, classLoader);
+    Assert.assertTrue(dataGenerator instanceof NettyTextDataGenerator);
+  }
+
+  @Test
+  public void testSuccessOfNettyTextDataGeneratorWithClassBinding() throws Exception {
+    final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
+    final Configuration conf = TextSocketSourceConfiguration.newBuilder()
+        .setHostAddress("localhost")
+        .setHostPort(13666)
+        .setTimestampExtractionFunction(OperatorTestUtils.TestNettyTimestampExtractFunc.class, funcConf)
+        .build().getConfiguration();
+    final DataGenerator<String> dataGenerator =
+        generator.newDataGenerator(conf, classLoader);
     Assert.assertTrue(dataGenerator instanceof NettyTextDataGenerator);
   }
 
@@ -87,14 +101,28 @@ public final class PhysicalObjectGeneratorTest {
         .setConsumerConfig(kafkaConsumerConf)
         .build().getConfiguration();
     final DataGenerator dataGenerator =
-        generator.newDataGenerator(serializer.toString(conf), classLoader, urls);
+        generator.newDataGenerator(conf, classLoader);
+    Assert.assertTrue(dataGenerator instanceof KafkaDataGenerator);
+  }
+
+  @Test
+  public void testSuccessOfKafkaDataGeneratorWithClassBinding() throws Exception {
+    final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
+    final HashMap<String, Object> kafkaConsumerConf = new HashMap<>();
+    final Configuration conf = KafkaSourceConfiguration.newBuilder()
+        .setTopic("localhost")
+        .setConsumerConfig(kafkaConsumerConf)
+        .setTimestampExtractionFunction(OperatorTestUtils.TestKafkaTimestampExtractFunc.class, funcConf)
+        .build().getConfiguration();
+    final DataGenerator dataGenerator =
+        generator.newDataGenerator(conf, classLoader);
     Assert.assertTrue(dataGenerator instanceof KafkaDataGenerator);
   }
 
   @Test(expected=InjectionException.class)
   public void testInjectionExceptionOfEventGenerator() throws IOException, InjectionException {
     final Configuration conf = UnionOperatorConfiguration.CONF.build();
-    generator.newEventGenerator(serializer.toString(conf), classLoader, urls);
+    generator.newEventGenerator(conf, classLoader);
   }
 
   @Test
@@ -103,7 +131,7 @@ public final class PhysicalObjectGeneratorTest {
         .setExpectedDelay(10)
         .setWatermarkPeriod(10)
         .build().getConfiguration();
-    final EventGenerator eg = generator.newEventGenerator(serializer.toString(conf), classLoader, urls);
+    final EventGenerator eg = generator.newEventGenerator(conf, classLoader);
     Assert.assertTrue(eg instanceof PeriodicEventGenerator);
   }
 
@@ -113,7 +141,24 @@ public final class PhysicalObjectGeneratorTest {
         .setParsingWatermarkFunction(input -> 1L)
         .setWatermarkPredicate(input -> true)
         .build().getConfiguration();
-    final EventGenerator eg = generator.newEventGenerator(serializer.toString(conf), classLoader, urls);
+    final EventGenerator eg = generator.newEventGenerator(conf, classLoader);
+    Assert.assertTrue(eg instanceof PunctuatedEventGenerator);
+  }
+
+  @Test
+  public void testSuccessOfPunctuatedEventGeneratorWithClassBinding() throws IOException, InjectionException {
+    final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
+    final Configuration watermarkConf = PunctuatedWatermarkConfiguration.<String>newBuilder()
+        .setParsingWatermarkFunction(OperatorTestUtils.TestWatermarkTimestampExtractFunc.class, funcConf)
+        .setWatermarkPredicate(OperatorTestUtils.TestPredicate.class, funcConf)
+        .build().getConfiguration();
+    final Configuration srcConf = TextSocketSourceConfiguration.newBuilder()
+        .setHostAddress("localhost")
+        .setHostPort(13666)
+        .setTimestampExtractionFunction(OperatorTestUtils.TestNettyTimestampExtractFunc.class, funcConf)
+        .build().getConfiguration();
+    final Configuration conf = Configurations.merge(watermarkConf, srcConf);
+    final EventGenerator eg = generator.newEventGenerator(conf, classLoader);
     Assert.assertTrue(eg instanceof PunctuatedEventGenerator);
   }
 
@@ -127,7 +172,7 @@ public final class PhysicalObjectGeneratorTest {
         .setHostAddress("localhost")
         .setHostPort(13666)
         .build().getConfiguration();
-    generator.newOperator("test", serializer.toString(conf), classLoader, urls);
+    generator.newOperator("test", conf, classLoader);
   }
 
   /**
@@ -136,7 +181,7 @@ public final class PhysicalObjectGeneratorTest {
    * @return operator
    */
   private Operator getOperator(final Configuration conf) throws IOException, InjectionException {
-    return generator.newOperator("test", serializer.toString(conf), classLoader, urls);
+    return generator.newOperator("test", conf, classLoader);
   }
 
   /**
@@ -326,7 +371,7 @@ public final class PhysicalObjectGeneratorTest {
         .setHostAddress("localhost")
         .setHostPort(13666)
         .build().getConfiguration();
-    generator.newSink("test", serializer.toString(conf), classLoader, urls);
+    generator.newSink("test", conf, classLoader);
   }
 
   @Test
@@ -337,7 +382,7 @@ public final class PhysicalObjectGeneratorTest {
         .set(TextSocketSinkConfiguration.SOCKET_HOST_ADDRESS, "localhost")
         .set(TextSocketSinkConfiguration.SOCKET_HOST_PORT, port)
         .build();
-    final Sink sink = generator.newSink("test", serializer.toString(conf), classLoader, urls);
+    final Sink sink = generator.newSink("test", conf, classLoader);
     Assert.assertTrue(sink instanceof NettyTextSink);
     socket.close();
   }

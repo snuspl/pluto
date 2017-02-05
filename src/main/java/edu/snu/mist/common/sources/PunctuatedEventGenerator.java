@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.sources;
 
+import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTFunction;
@@ -96,9 +97,13 @@ public final class PunctuatedEventGenerator<I, V> extends EventGeneratorImpl<I, 
   @Override
   public void emitData(final I input) {
     if (isWatermark.test(input)) {
-      outputEmitter.emitWatermark(new MistWatermarkEvent(parseTimestamp.apply(input)));
+      latestWatermarkTimestamp = parseTimestamp.apply(input);
+      outputEmitter.emitWatermark(new MistWatermarkEvent(latestWatermarkTimestamp));
     } else {
-      outputEmitter.emitData(generateEvent(input));
+      MistDataEvent newInputEvent = generateEvent(input);
+      if (newInputEvent != null) {
+        outputEmitter.emitData(newInputEvent);
+      }
     }
   }
 }

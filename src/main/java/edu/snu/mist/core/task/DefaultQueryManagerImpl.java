@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,7 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.GraphUtils;
-import edu.snu.mist.common.PhysicalVertex;
 import edu.snu.mist.common.sinks.Sink;
-import edu.snu.mist.common.sources.Source;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.LogicalPlan;
@@ -146,13 +144,13 @@ final class DefaultQueryManagerImpl implements QueryManager {
    * @param physicalPlan physical plan of PartitionedQuery
    */
   private void start(final DAG<PhysicalVertex, Direction> physicalPlan) {
-    final List<Source> sources = new LinkedList<>();
+    final List<PhysicalSource> sources = new LinkedList<>();
     final Iterator<PhysicalVertex> iterator = GraphUtils.topologicalSort(physicalPlan);
     while (iterator.hasNext()) {
       final PhysicalVertex physicalVertex = iterator.next();
       switch (physicalVertex.getType()) {
         case SOURCE: {
-          final Source source = (Source)physicalVertex;
+          final PhysicalSource source = (PhysicalSource)physicalVertex;
           final Map<PhysicalVertex, Direction> nextOps = physicalPlan.getEdges(source);
           // 3) Sets output emitters
           source.getEventGenerator().setOutputEmitter(new SourceOutputEmitter<>(nextOps));
@@ -178,7 +176,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
     }
 
     // 4) starts to receive input data stream from the sources
-    for (final Source source : sources) {
+    for (final PhysicalSource source : sources) {
       source.start();
     }
   }
@@ -199,7 +197,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
         switch (physicalVertex.getType()) {
           case SOURCE: {
             // Closes the channel of Source.
-            final Source src = (Source)physicalVertex;
+            final PhysicalSource src = (PhysicalSource)physicalVertex;
             try {
               src.close();
             } catch (final Exception e) {
@@ -217,7 +215,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
           }
           case SINK: {
             // Closes the channel of Sink.
-            final Sink sink = (Sink)physicalVertex;
+            final Sink sink = ((PhysicalSink)physicalVertex).getSink();
             try {
               sink.close();
             } catch (final Exception e) {

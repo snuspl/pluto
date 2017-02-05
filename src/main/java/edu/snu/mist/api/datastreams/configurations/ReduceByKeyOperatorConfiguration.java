@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import org.apache.reef.tang.formats.RequiredImpl;
 import org.apache.reef.tang.formats.RequiredParameter;
 
 /**
- * A configuration for ReduceByKeyOperator.
+ * A configuration for ReduceByKeyOperator that binds the udf class.
  */
 public final class ReduceByKeyOperatorConfiguration extends ConfigurationModuleBuilder {
   /**

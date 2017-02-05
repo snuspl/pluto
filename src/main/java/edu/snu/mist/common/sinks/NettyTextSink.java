@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,10 +97,5 @@ public final class NettyTextSink implements Sink<String> {
       sb.append("\n");
       channel.writeAndFlush(sb.toString());
     }
-  }
-
-  @Override
-  public Type getType() {
-    return Type.SINK;
   }
 }

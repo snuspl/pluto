@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,7 +103,7 @@ public final class NettySourceTest {
       final Injector injector = Tang.Factory.getTang().newInjector();
 
       // source list
-      final List<Source<String>> sources = new LinkedList<>();
+      final List<Tuple<DataGenerator, EventGenerator>> sources = new LinkedList<>();
       // result data list
       final List<List<String>> punctuatedDataResults = new LinkedList<>();
       // result watermark list
@@ -120,22 +120,21 @@ public final class NettySourceTest {
             (input) -> Long.parseLong(input.toString().split(":")[1]);
         final EventGenerator<String> eventGenerator =
             new PunctuatedEventGenerator<>(extractFunc, isWatermark, parseTsFunc);
-        final Source<String> source = new SourceImpl<>(
-            identifierFactory.getNewInstance(Integer.toString(i)), dataGenerator, eventGenerator);
-
-        sources.add(source);
+        sources.add(new Tuple<>(dataGenerator, eventGenerator));
+        dataGenerator.setEventGenerator(eventGenerator);
 
         final List<String> receivedData = new LinkedList<>();
         final List<Long> receivedWatermark = new LinkedList<>();
         punctuatedDataResults.add(receivedData);
         punctuatedWatermarkResults.add(receivedWatermark);
-        source.getEventGenerator().setOutputEmitter(new SourceTestOutputEmitter<>(receivedData, receivedWatermark,
+        eventGenerator.setOutputEmitter(new SourceTestOutputEmitter<>(receivedData, receivedWatermark,
             dataCountDownLatch, watermarkCountDownLatch));
       }
 
       // Start to receive data stream from stream generator
-      for (final Source<String> source : sources) {
-        source.start();
+      for (final Tuple<DataGenerator, EventGenerator> source : sources) {
+        source.getValue().start(); // start event generator
+        source.getKey().start(); // start data generator
       }
 
       // Wait until all sources connect to stream generator
@@ -152,8 +151,9 @@ public final class NettySourceTest {
       }
 
       // Closes
-      for (final Source<String> source : sources) {
-        source.close();
+      for (final Tuple<DataGenerator, EventGenerator> source : sources) {
+        source.getKey().close(); // stop data generator
+        source.getValue().close(); // stop event generator
       }
 
     }
@@ -190,16 +190,16 @@ public final class NettySourceTest {
           new NettyTextDataGenerator(SERVER_ADDR, SERVER_PORT, nettySharedResource);
       final EventGenerator<String> eventGenerator =
           new PeriodicEventGenerator<>(null, period, period, TimeUnit.MILLISECONDS, scheduler);
-      final Source<String> periodicSource = new SourceImpl<>(
-          identifierFactory.getNewInstance(Integer.toString(1)), dataGenerator, eventGenerator);
+      dataGenerator.setEventGenerator(eventGenerator);
 
       final List<String> periodicReceivedData = new LinkedList<>();
       final List<Long> periodicReceivedWatermark = new LinkedList<>();
-      periodicSource.getEventGenerator().setOutputEmitter(new SourceTestOutputEmitter<>(periodicReceivedData,
+      eventGenerator.setOutputEmitter(new SourceTestOutputEmitter<>(periodicReceivedData,
           periodicReceivedWatermark, dataCountDownLatch, watermarkCountDownLatch));
 
       // Start to receive data stream from stream generator
-      periodicSource.start();
+      eventGenerator.start();
+      dataGenerator.start();
 
       // Wait until all sources connect to stream generator
       channelCountDown.await();
@@ -218,7 +218,8 @@ public final class NettySourceTest {
       }
 
       // Closes
-      periodicSource.close();
+      eventGenerator.close();
+      dataGenerator.close();
     }
   }
 

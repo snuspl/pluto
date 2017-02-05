@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.sources;
+package edu.snu.mist.core.task;
 
+import edu.snu.mist.common.sources.DataGenerator;
+import edu.snu.mist.common.sources.EventGenerator;
 import org.apache.reef.wake.Identifier;
 
 /**
  * This class represents the implementation of Source interface.
  * @param <T> the type of input data
  */
-public final class SourceImpl<T> implements Source<T>{
+final class PhysicalSourceImpl<T> implements PhysicalSource<T> {
 
   /**
    * Source id.
@@ -38,8 +40,8 @@ public final class SourceImpl<T> implements Source<T>{
    */
   private final EventGenerator<T> eventGenerator;
 
-  public SourceImpl(final Identifier sourceId,
-                    final DataGenerator<T> dataGenerator, final EventGenerator<T> eventGenerator) {
+  public PhysicalSourceImpl(final Identifier sourceId,
+                            final DataGenerator<T> dataGenerator, final EventGenerator<T> eventGenerator) {
     this.sourceId = sourceId;
     this.dataGenerator = dataGenerator;
     this.eventGenerator = eventGenerator;
@@ -52,7 +54,8 @@ public final class SourceImpl<T> implements Source<T>{
       eventGenerator.start();
       dataGenerator.start();
     } else {
-      throw new RuntimeException("DataGenerator and EventGenerator should be set in " + SourceImpl.class.getName());
+      throw new RuntimeException("DataGenerator and EventGenerator should be set in " +
+          PhysicalSourceImpl.class.getName());
     }
   }
 

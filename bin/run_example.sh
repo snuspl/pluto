@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2016 Seoul National University
+# Copyright (C) 2017 Seoul National University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ case $1 in
   JoinAndApplyStateful) ;;
   KMeansClustering) ;;
   KafkaSource) ;;
+  SessionWindow) ;;
   *)
     echo "Invalid input. Here is an example for using this script."
     echo "If you want to run HelloMIST with sink source option, please type like below."

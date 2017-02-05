@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,9 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.common.PhysicalVertex;
 import edu.snu.mist.common.operators.*;
 import edu.snu.mist.common.sinks.NettyTextSink;
-import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.sources.NettyTextDataGenerator;
-import edu.snu.mist.common.sources.Source;
-import edu.snu.mist.common.sources.SourceImpl;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.formats.avro.AvroVertexChain;
 import edu.snu.mist.formats.avro.Direction;
@@ -104,8 +100,8 @@ public final class DefaultPhysicalPlanGeneratorTest {
 
     final Set<PhysicalVertex> sources = physicalPlan.getRootVertices();
     Assert.assertEquals(1, sources.size());
-    final Source source = (Source)sources.iterator().next();
-    Assert.assertTrue(source instanceof SourceImpl);
+    final PhysicalSource source = (PhysicalSource)sources.iterator().next();
+    Assert.assertTrue(source instanceof PhysicalSourceImpl);
     Assert.assertTrue(source.getDataGenerator() instanceof NettyTextDataGenerator);
     final Map<PhysicalVertex, Direction> nextOps = physicalPlan.getEdges(source);
     Assert.assertEquals(1, nextOps.size());
@@ -125,8 +121,8 @@ public final class DefaultPhysicalPlanGeneratorTest {
     pq1.insertToTail(mapOperator2);
     pq1.insertToTail(reduceByKeyOperator);
     final Map<PhysicalVertex, Direction> sinks = physicalPlan.getEdges(pq1);
-    final Sink sink = (Sink)sinks.entrySet().iterator().next().getKey();
-    Assert.assertTrue(sink instanceof NettyTextSink);
+    final PhysicalSink physicalSink = (PhysicalSink)sinks.entrySet().iterator().next().getKey();
+    Assert.assertTrue(physicalSink.getSink() instanceof NettyTextSink);
   }
 
 }

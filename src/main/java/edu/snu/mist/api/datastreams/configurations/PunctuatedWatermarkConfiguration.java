@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import edu.snu.mist.common.parameters.SerializedTimestampParseUdf;
 import edu.snu.mist.common.parameters.SerializedWatermarkPredicateUdf;
 import edu.snu.mist.common.sources.EventGenerator;
 import edu.snu.mist.common.sources.PunctuatedEventGenerator;
+import org.apache.reef.tang.Configuration;
+import org.apache.reef.tang.Configurations;
 import org.apache.reef.tang.formats.ConfigurationModule;
 import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
 import org.apache.reef.tang.formats.RequiredParameter;
@@ -36,7 +38,7 @@ public final class PunctuatedWatermarkConfiguration extends ConfigurationModuleB
   public static final RequiredParameter<String> TIMESTAMP_PARSE_OBJECT = new RequiredParameter<>();
   public static final RequiredParameter<String> WATERMARK_PREDICATE = new RequiredParameter<>();
 
-  public static final ConfigurationModule CONF = new PunctuatedWatermarkConfiguration()
+  private static final ConfigurationModule CONF = new PunctuatedWatermarkConfiguration()
       .bindNamedParameter(SerializedTimestampParseUdf.class, TIMESTAMP_PARSE_OBJECT)
       .bindNamedParameter(SerializedWatermarkPredicateUdf.class, WATERMARK_PREDICATE)
       .bindImplementation(EventGenerator.class, PunctuatedEventGenerator.class)
@@ -59,20 +61,42 @@ public final class PunctuatedWatermarkConfiguration extends ConfigurationModuleB
 
     private MISTPredicate<V> watermarkPredicate;
     private WatermarkTimestampFunction<V> timestampParseObject;
+    private Class<? extends MISTPredicate<V>> watermarkPredicateClass;
+    private Configuration watermarkPredicateConf;
+    private Class<? extends WatermarkTimestampFunction<V>> extractFuncClass;
+    private Configuration extractFuncConf;
 
     /**
      * Builds the PunctuatedWatermarkConfiguration.
      * @return the configuration
      */
     public WatermarkConfiguration build() {
-      try {
-        return new WatermarkConfiguration(CONF
-            .set(TIMESTAMP_PARSE_OBJECT, SerializeUtils.serializeToString(timestampParseObject))
-            .set(WATERMARK_PREDICATE, SerializeUtils.serializeToString(watermarkPredicate))
-                .build());
-      } catch (final IOException e) {
-        e.printStackTrace();
-        throw new RuntimeException(e);
+      if (watermarkPredicate != null && watermarkPredicateClass != null ||
+          timestampParseObject != null && extractFuncClass != null) {
+        throw new IllegalArgumentException("Cannot bind both udf lambda object and class of the udf");
+      }
+
+      if (watermarkPredicate == null && watermarkPredicateClass == null) {
+        // No udf is set
+        return new WatermarkConfiguration(CONF.build());
+      } else if (watermarkPredicate != null) {
+        // Lambda object is set
+        try {
+          return new WatermarkConfiguration(CONF
+              .set(TIMESTAMP_PARSE_OBJECT, SerializeUtils.serializeToString(timestampParseObject))
+              .set(WATERMARK_PREDICATE, SerializeUtils.serializeToString(watermarkPredicate))
+              .build());
+        } catch (final IOException e) {
+          e.printStackTrace();
+          throw new RuntimeException(e);
+        }
+      } else {
+        // Udf class is set
+        return new WatermarkConfiguration(Configurations.merge(
+            PunctuatedWatermarkUdfBindingConfiguration.CONF
+                .set(PunctuatedWatermarkUdfBindingConfiguration.TIMESTAMP_EXTRACT_FUNC, extractFuncClass)
+                .set(PunctuatedWatermarkUdfBindingConfiguration.WATERMARK_PREDICATE, watermarkPredicateClass)
+                .build(), watermarkPredicateConf, extractFuncConf));
       }
     }
 
@@ -88,6 +112,20 @@ public final class PunctuatedWatermarkConfiguration extends ConfigurationModuleB
     }
 
     /**
+     * Sets the watermark timestamp extract function by binding its class and configuration.
+     * @param functionClass the class of the timestamp extract function
+     * @param funcConf the configuration of the function
+     * @return the configured WatermarkBuilder
+     */
+    public PunctuatedWatermarkConfigurationBuilder<V> setParsingWatermarkFunction(
+        final Class<? extends WatermarkTimestampFunction<V>> functionClass,
+        final Configuration funcConf) {
+      extractFuncClass = functionClass;
+      extractFuncConf = funcConf;
+      return this;
+    }
+
+    /**
      * Sets the configuration for the predicate testing whether the input is watermark or not to the given function.
      * @param predicate the predicate given by users which they want to set
      * @return the configured WatermarkBuilder
@@ -95,6 +133,20 @@ public final class PunctuatedWatermarkConfiguration extends ConfigurationModuleB
     public PunctuatedWatermarkConfigurationBuilder<V> setWatermarkPredicate(
         final MISTPredicate<V> predicate) {
       watermarkPredicate = predicate;
+      return this;
+    }
+
+    /**
+     * Sets the predicate testing whether the input is watermark or not to the given function.
+     * @param functionClass the class of the predicate function
+     * @param funcConf the configuration of the function
+     * @return the configured WatermarkBuilder
+     */
+    public PunctuatedWatermarkConfigurationBuilder<V> setWatermarkPredicate(
+        final Class<? extends MISTPredicate<V>> functionClass,
+        final Configuration funcConf) {
+      watermarkPredicateClass = functionClass;
+      watermarkPredicateConf = funcConf;
       return this;
     }
   }

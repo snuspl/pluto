@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.OutputEmittable;
-import edu.snu.mist.common.PhysicalVertex;
 import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.formats.avro.Direction;
 

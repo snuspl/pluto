@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.functions.*;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.WindowData;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.reef.io.Tuple;
 import org.junit.Assert;
 
 import javax.inject.Inject;
@@ -142,6 +144,40 @@ public final class OperatorTestUtils {
     @Override
     public Integer produceResult() {
       return state;
+    }
+  }
+
+  public static final class TestNettyTimestampExtractFunc implements MISTFunction<String, Tuple<String, Long>> {
+    @Inject
+    private TestNettyTimestampExtractFunc() {
+
+    }
+    @Override
+    public Tuple<String, Long> apply(final String s) {
+      return new Tuple<>(s, 1L);
+    }
+  }
+
+  public static final class TestKafkaTimestampExtractFunc
+      implements MISTFunction<ConsumerRecord, Tuple<ConsumerRecord, Long>> {
+    @Inject
+    private TestKafkaTimestampExtractFunc() {
+
+    }
+    @Override
+    public Tuple<ConsumerRecord, Long> apply(final ConsumerRecord consumerRecord) {
+      return new Tuple<>(consumerRecord, 1L);
+    }
+  }
+
+  public static final class TestWatermarkTimestampExtractFunc implements WatermarkTimestampFunction<String> {
+    @Inject
+    private TestWatermarkTimestampExtractFunc() {
+
+    }
+    @Override
+    public Long apply(final String s) {
+      return 1L;
     }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,8 @@ import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
-import org.apache.reef.tang.formats.AvroConfigurationSerializer;
-import org.apache.reef.tang.implementation.java.ClassHierarchyImpl;
 
 import javax.inject.Inject;
-import java.io.IOException;
-import java.net.URL;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -40,11 +36,6 @@ import java.util.concurrent.TimeUnit;
  * from serialized configurations.
  */
 final class PhysicalObjectGenerator implements AutoCloseable {
-
-  /**
-   * Avro configuration serializer that serializes/deserializes objects.
-   */
-  private final AvroConfigurationSerializer avroSerializer;
 
   /**
    * Scheduled executor for event generators.
@@ -67,11 +58,9 @@ final class PhysicalObjectGenerator implements AutoCloseable {
   private final NettySharedResource nettySharedResource;
 
   @Inject
-  private PhysicalObjectGenerator(final AvroConfigurationSerializer avroSerializer,
-                                  final ScheduledExecutorServiceWrapper schedulerWrapper,
+  private PhysicalObjectGenerator(final ScheduledExecutorServiceWrapper schedulerWrapper,
                                   final KafkaSharedResource kafkaSharedResource,
                                   final NettySharedResource nettySharedResource) {
-    this.avroSerializer = avroSerializer;
     this.scheduler = schedulerWrapper.getScheduler();
     this.kafkaSharedResource = kafkaSharedResource;
     this.nettySharedResource = nettySharedResource;
@@ -79,16 +68,11 @@ final class PhysicalObjectGenerator implements AutoCloseable {
 
   /**
    * Get an injector from the serialized configuration with the external class loader.
-   * @param confString serialized configuration
    * @param classLoader external class loader
-   * @param urls urls for jar paths
    * @return injector
    */
-  private Injector newDefaultInjector(final String confString,
-                                      final ClassLoader classLoader,
-                                      final URL[] urls) throws IOException {
-    final Configuration conf = avroSerializer.fromString(confString,
-        new ClassHierarchyImpl(urls));
+  private Injector newDefaultInjector(final Configuration conf,
+                                      final ClassLoader classLoader) {
     final Injector injector = Tang.Factory.getTang().newInjector(conf);
     injector.bindVolatileInstance(ClassLoader.class, classLoader);
     return injector;
@@ -96,18 +80,16 @@ final class PhysicalObjectGenerator implements AutoCloseable {
 
   /**
    * Get a new event generator.
-   * @param confString serialized configuration
+   * @param conf configuration
    * @param classLoader external class loader
-   * @param urls urls for jar paths
    * @param <T> event type
    * @return event generator
    */
   @SuppressWarnings("unchecked")
   public <T> EventGenerator<T> newEventGenerator(
-      final String confString,
-      final ClassLoader classLoader,
-      final URL[] urls) throws IOException, InjectionException {
-    final Injector injector = newDefaultInjector(confString, classLoader, urls);
+      final Configuration conf,
+      final ClassLoader classLoader) throws InjectionException {
+    final Injector injector = newDefaultInjector(conf, classLoader);
     injector.bindVolatileInstance(TimeUnit.class, watermarkTimeUnit);
     injector.bindVolatileInstance(ScheduledExecutorService.class, scheduler);
     return injector.getInstance(EventGenerator.class);
@@ -115,18 +97,16 @@ final class PhysicalObjectGenerator implements AutoCloseable {
 
   /**
    * Get a new data generator.
-   * @param confString serialized configuration
+   * @param conf configuration
    * @param classLoader external class loader
-   * @param urls urls for jar paths
    * @param <T> data type
    * @return data generator
    */
   @SuppressWarnings("unchecked")
   public <T> DataGenerator<T> newDataGenerator(
-      final String confString,
-      final ClassLoader classLoader,
-      final URL[] urls) throws IOException, InjectionException {
-    final Injector injector = newDefaultInjector(confString, classLoader, urls);
+      final Configuration conf,
+      final ClassLoader classLoader) throws InjectionException {
+    final Injector injector = newDefaultInjector(conf, classLoader);
     // for netty
     injector.bindVolatileInstance(NettySharedResource.class, nettySharedResource);
     // for kafka
@@ -137,18 +117,16 @@ final class PhysicalObjectGenerator implements AutoCloseable {
   /**
    * Get a new operator.
    * @param operatorId operator id
-   * @param confString serialized configuration
+   * @param conf configuration
    * @param classLoader external class loader
-   * @param urls urls for jar paths
    * @return new operator
    */
   @SuppressWarnings("unchecked")
   public Operator newOperator(
       final String operatorId,
-      final String confString,
-      final ClassLoader classLoader,
-      final URL[] urls) throws IOException, InjectionException {
-    final Injector injector = newDefaultInjector(confString, classLoader, urls);
+      final Configuration conf,
+      final ClassLoader classLoader) throws InjectionException {
+    final Injector injector = newDefaultInjector(conf, classLoader);
     injector.bindVolatileParameter(OperatorId.class, operatorId);
     return injector.getInstance(Operator.class);
   }
@@ -156,18 +134,16 @@ final class PhysicalObjectGenerator implements AutoCloseable {
   /**
    * Get a new sink.
    * @param sinkId sink id
-   * @param confString serialized configuration
+   * @param conf configuration
    * @param classLoader external class loader
-   * @param urls urls for jar paths
    * @return new sink
    */
   @SuppressWarnings("unchecked")
   public <T> Sink<T> newSink(
       final String sinkId,
-      final String confString,
-      final ClassLoader classLoader,
-      final URL[] urls) throws IOException, InjectionException {
-    final Injector injector = newDefaultInjector(confString, classLoader, urls);
+      final Configuration conf,
+      final ClassLoader classLoader) throws InjectionException {
+    final Injector injector = newDefaultInjector(conf, classLoader);
     injector.bindVolatileParameter(OperatorId.class, sinkId);
     // for netty
     injector.bindVolatileInstance(NettySharedResource.class, nettySharedResource);

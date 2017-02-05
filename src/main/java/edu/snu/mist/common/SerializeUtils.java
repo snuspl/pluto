@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,8 +62,7 @@ public final class SerializeUtils {
     final byte[] data = Base64.getDecoder().decode(s);
     final ExternalJarObjectInputStream stream = new ExternalJarObjectInputStream(
         classLoader, data);
-    final ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data));
-    final T object  = (T)ois.readObject();
+    final T object  = (T)stream.readObject();
     stream.close();
     return object;
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,19 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.common.PhysicalVertex;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.operators.Operator;
-import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;
-import edu.snu.mist.common.sources.Source;
-import edu.snu.mist.common.sources.SourceImpl;
 import edu.snu.mist.core.parameters.TempFolderPath;
 import edu.snu.mist.formats.avro.*;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
+import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.exceptions.InjectionException;
+import org.apache.reef.tang.formats.AvroConfigurationSerializer;
+import org.apache.reef.tang.implementation.java.ClassHierarchyImpl;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -51,17 +50,20 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   private final ClassLoaderProvider classLoaderProvider;
   private final PhysicalObjectGenerator physicalObjectGenerator;
   private final StringIdentifierFactory identifierFactory;
+  private final AvroConfigurationSerializer avroConfigurationSerializer;
 
   @Inject
   private DefaultPhysicalPlanGeneratorImpl(final OperatorIdGenerator operatorIdGenerator,
                                            @Parameter(TempFolderPath.class) final String tmpFolderPath,
                                            final StringIdentifierFactory identifierFactory,
                                            final ClassLoaderProvider classLoaderProvider,
+                                           final AvroConfigurationSerializer avroConfigurationSerializer,
                                            final PhysicalObjectGenerator physicalObjectGenerator) {
     this.operatorIdGenerator = operatorIdGenerator;
     this.tmpFolderPath = tmpFolderPath;
     this.classLoaderProvider = classLoaderProvider;
     this.identifierFactory = identifierFactory;
+    this.avroConfigurationSerializer = avroConfigurationSerializer;
     this.physicalObjectGenerator = physicalObjectGenerator;
   }
 
@@ -83,14 +85,14 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
       switch (avroVertexChain.getAvroVertexChainType()) {
         case SOURCE: {
           final Vertex vertex = avroVertexChain.getVertexChain().get(0);
+          final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
+              new ClassHierarchyImpl(urls));
           // Create an event generator
-          final EventGenerator eventGenerator = physicalObjectGenerator.newEventGenerator(
-              vertex.getConfiguration(), classLoader, urls);
+          final EventGenerator eventGenerator = physicalObjectGenerator.newEventGenerator(conf, classLoader);
           // Create a data generator
-          final DataGenerator dataGenerator = physicalObjectGenerator.newDataGenerator(
-              vertex.getConfiguration(), classLoader, urls);
+          final DataGenerator dataGenerator = physicalObjectGenerator.newDataGenerator(conf, classLoader);
           // Create a source
-          final Source source = new SourceImpl<>(
+          final PhysicalSource source = new PhysicalSourceImpl<>(
               identifierFactory.getNewInstance(operatorIdGenerator.generate()),
               dataGenerator, eventGenerator);
           deserializedVertices.add(source);
@@ -101,8 +103,10 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
           final PartitionedQuery partitionedQuery = new DefaultPartitionedQuery();
           deserializedVertices.add(partitionedQuery);
           for (final Vertex vertex : avroVertexChain.getVertexChain()) {
+            final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
+                new ClassHierarchyImpl(urls));
             final Operator operator = physicalObjectGenerator.newOperator(
-                operatorIdGenerator.generate(), vertex.getConfiguration(), classLoader, urls);
+                operatorIdGenerator.generate(), conf, classLoader);
             partitionedQuery.insertToTail(operator);
           }
           dag.addVertex(partitionedQuery);
@@ -110,8 +114,10 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
         }
         case SINK: {
           final Vertex vertex = avroVertexChain.getVertexChain().get(0);
-          final Sink sink = physicalObjectGenerator.newSink(
-              operatorIdGenerator.generate(), vertex.getConfiguration(), classLoader, urls);
+          final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
+              new ClassHierarchyImpl(urls));
+          final PhysicalSink sink = new PhysicalSinkImpl<>(physicalObjectGenerator.newSink(
+              operatorIdGenerator.generate(), conf, classLoader));
           deserializedVertices.add(sink);
           dag.addVertex(sink);
           break;

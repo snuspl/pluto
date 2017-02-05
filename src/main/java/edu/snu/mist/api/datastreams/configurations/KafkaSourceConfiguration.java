@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,9 @@ import edu.snu.mist.common.sources.KafkaDataGenerator;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.tang.formats.ConfigurationModule;
-import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
-import org.apache.reef.tang.formats.OptionalParameter;
-import org.apache.reef.tang.formats.RequiredParameter;
+import org.apache.reef.tang.Configuration;
+import org.apache.reef.tang.Configurations;
+import org.apache.reef.tang.formats.*;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -43,11 +42,13 @@ public final class KafkaSourceConfiguration extends ConfigurationModuleBuilder {
   public static final RequiredParameter<String> KAFKA_TOPIC = new RequiredParameter<>();
   public static final RequiredParameter<String> KAFKA_CONSUMER_CONFIG = new RequiredParameter<>();
   public static final OptionalParameter<String> TIMESTAMP_EXTRACT_OBJECT = new OptionalParameter<>();
+  public static final OptionalImpl<MISTFunction> TIMESTAMP_EXTRACT_FUNC = new OptionalImpl<>();
 
-  public static final ConfigurationModule CONF = new KafkaSourceConfiguration()
+  private static final ConfigurationModule CONF = new KafkaSourceConfiguration()
       .bindNamedParameter(KafkaTopic.class, KAFKA_TOPIC)
       .bindNamedParameter(SerializedKafkaConfig.class, KAFKA_CONSUMER_CONFIG)
       .bindNamedParameter(SerializedTimestampExtractUdf.class, TIMESTAMP_EXTRACT_OBJECT)
+      .bindImplementation(MISTFunction.class, TIMESTAMP_EXTRACT_FUNC)
       .bindImplementation(DataGenerator.class, KafkaDataGenerator.class)
       .build();
 
@@ -68,18 +69,40 @@ public final class KafkaSourceConfiguration extends ConfigurationModuleBuilder {
     private String kafkaTopic;
     private HashMap<String, Object> kafkaConfig;
     private MISTFunction<ConsumerRecord, Tuple<ConsumerRecord, Long>> extractFunc;
+    private Class<? extends MISTFunction<ConsumerRecord, Tuple<ConsumerRecord, Long>>> extractFuncClass;
+    private Configuration extractFuncConf;
 
     /**
      * Tests that required parameters are set and builds the KafkaSourceConfiguration.
      * @return the configuration
      */
     public SourceConfiguration build() {
+      if (extractFunc != null && extractFuncClass != null) {
+        throw new IllegalArgumentException("Cannot bind both extractFunc and extractFuncClass");
+      }
+
       try {
-        return new SourceConfiguration(CONF
-            .set(KAFKA_TOPIC, kafkaTopic)
-            .set(KAFKA_CONSUMER_CONFIG, SerializeUtils.serializeToString(kafkaConfig))
-            .set(TIMESTAMP_EXTRACT_OBJECT, SerializeUtils.serializeToString(extractFunc))
-            .build(), SourceConfiguration.SourceType.KAFKA);
+        if (extractFunc == null && extractFuncClass == null) {
+          // No extract function is set
+          return new SourceConfiguration(CONF
+              .set(KAFKA_TOPIC, kafkaTopic)
+              .set(KAFKA_CONSUMER_CONFIG, SerializeUtils.serializeToString(kafkaConfig))
+              .build(), SourceConfiguration.SourceType.KAFKA);
+        } else if (extractFunc != null) {
+          // Lambda object is set
+          return new SourceConfiguration(CONF
+              .set(KAFKA_TOPIC, kafkaTopic)
+              .set(KAFKA_CONSUMER_CONFIG, SerializeUtils.serializeToString(kafkaConfig))
+              .set(TIMESTAMP_EXTRACT_OBJECT, SerializeUtils.serializeToString(extractFunc))
+              .build(), SourceConfiguration.SourceType.KAFKA);
+        } else {
+          // UDF class is set
+          return new SourceConfiguration(Configurations.merge(CONF
+              .set(KAFKA_TOPIC, kafkaTopic)
+              .set(KAFKA_CONSUMER_CONFIG, SerializeUtils.serializeToString(kafkaConfig))
+              .set(TIMESTAMP_EXTRACT_FUNC, extractFuncClass)
+              .build(), extractFuncConf), SourceConfiguration.SourceType.KAFKA);
+        }
       } catch (final IOException e) {
         e.printStackTrace();
         throw new RuntimeException(e);
@@ -125,6 +148,21 @@ public final class KafkaSourceConfiguration extends ConfigurationModuleBuilder {
     public KafkaSourceConfigurationBuilder setTimestampExtractionFunction(
         final MISTFunction<ConsumerRecord, Tuple<ConsumerRecord, Long>> function) {
       extractFunc = function;
+      return this;
+    }
+
+    /**
+     * Sets the timestamp extract function by binding classes and its configuration.
+     * This is an optional setting for event-time processing.
+     * @param functionClass the class of the timestamp extract function
+     * @param funcConf the configuration of the function
+     * @return the configured SourceBuilder
+     */
+    public KafkaSourceConfigurationBuilder setTimestampExtractionFunction(
+        final Class<? extends MISTFunction<ConsumerRecord, Tuple<ConsumerRecord, Long>>> functionClass,
+        final Configuration funcConf) {
+      extractFuncClass = functionClass;
+      extractFuncConf = funcConf;
       return this;
     }
   }

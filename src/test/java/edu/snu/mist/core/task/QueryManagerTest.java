@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
-import edu.snu.mist.common.PhysicalVertex;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
@@ -114,7 +113,7 @@ public final class QueryManagerTest {
     final TestDataGenerator dataGenerator = new TestDataGenerator(inputs);
     final EventGenerator eventGenerator =
         new PunctuatedEventGenerator(null, input -> false, null);
-    final Source src = new SourceImpl(identifierFactory.getNewInstance("testSource"),
+    final PhysicalSource src = new PhysicalSourceImpl(identifierFactory.getNewInstance("testSource"),
         dataGenerator, eventGenerator);
 
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
@@ -206,11 +205,11 @@ public final class QueryManagerTest {
     final TestDataGenerator beforeStopDataGenerator = new TestDataGenerator(beforeStopInputs);
     final EventGenerator eventGenerator =
         new PunctuatedEventGenerator(null, input -> false, null);
-    final Source beforeStopSrc = new SourceImpl(
+    final PhysicalSource beforeStopSrc = new PhysicalSourceImpl(
         identifierFactory.getNewInstance("testSource"), beforeStopDataGenerator, eventGenerator);
 
     final TestDataGenerator afterResumeDataGenerator = new TestDataGenerator(afterResumeInputs);
-    final Source afterResumeSrc = new SourceImpl(
+    final PhysicalSource afterResumeSrc = new PhysicalSourceImpl(
         identifierFactory.getNewInstance("testSource2"), afterResumeDataGenerator, eventGenerator);
 
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
@@ -295,7 +294,7 @@ public final class QueryManagerTest {
    */
   private void constructPhysicalPlan(final Tuple<String, LogicalPlan> tuple,
                                      final DAG<PhysicalVertex, Direction> dag,
-                                     final Source src,
+                                     final PhysicalSource src,
                                      final Sink sink1,
                                      final Sink sink2) {
 
@@ -333,10 +332,12 @@ public final class QueryManagerTest {
     dag.addEdge(pq1, pq3, Direction.LEFT);
 
     // Add Sink
-    dag.addVertex(sink1);
-    dag.addEdge(pq2, sink1, Direction.LEFT);
-    dag.addVertex(sink2);
-    dag.addEdge(pq3, sink2, Direction.LEFT);
+    final PhysicalSink physicalSink1 = new PhysicalSinkImpl<>(sink1);
+    final PhysicalSink physicalSink2 = new PhysicalSinkImpl<>(sink2);
+    dag.addVertex(physicalSink1);
+    dag.addEdge(pq2, physicalSink1, Direction.LEFT);
+    dag.addVertex(physicalSink2);
+    dag.addEdge(pq3, physicalSink2, Direction.LEFT);
   }
 
   /**
@@ -515,11 +516,6 @@ public final class QueryManagerTest {
     @Override
     public Identifier getIdentifier() {
       return null;
-    }
-
-    @Override
-    public Type getType() {
-      return Type.SINK;
     }
   }
 }

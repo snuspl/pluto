@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 package edu.snu.mist.common.sinks;
 
 import edu.snu.mist.common.InputHandler;
-import edu.snu.mist.common.PhysicalVertex;
 import org.apache.reef.wake.Identifier;
 
 /**
  * Sink consumes inputs and does final process, such as print, save input to database and so on.
  */
-public interface Sink<I> extends InputHandler<I>, AutoCloseable, PhysicalVertex {
+public interface Sink<I> extends InputHandler<I>, AutoCloseable {
 
   /**
    * Identifier of sink.
