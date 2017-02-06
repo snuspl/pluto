@@ -51,6 +51,9 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   private final PhysicalObjectGenerator physicalObjectGenerator;
   private final StringIdentifierFactory identifierFactory;
   private final AvroConfigurationSerializer avroConfigurationSerializer;
+  private final EventRouter eventRouter;
+  private final InvertedVertexIndex invertedVertexIndex;
+  private final HeadOperatorManager headOperatorManager;
 
   @Inject
   private DefaultPhysicalPlanGeneratorImpl(final OperatorIdGenerator operatorIdGenerator,
@@ -58,16 +61,65 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
                                            final StringIdentifierFactory identifierFactory,
                                            final ClassLoaderProvider classLoaderProvider,
                                            final AvroConfigurationSerializer avroConfigurationSerializer,
-                                           final PhysicalObjectGenerator physicalObjectGenerator) {
+                                           final PhysicalObjectGenerator physicalObjectGenerator,
+                                           final EventRouter eventRouter,
+                                           final InvertedVertexIndex invertedVertexIndex,
+                                           final HeadOperatorManager headOperatorManager) {
     this.operatorIdGenerator = operatorIdGenerator;
     this.tmpFolderPath = tmpFolderPath;
     this.classLoaderProvider = classLoaderProvider;
     this.identifierFactory = identifierFactory;
     this.avroConfigurationSerializer = avroConfigurationSerializer;
     this.physicalObjectGenerator = physicalObjectGenerator;
+    this.eventRouter = eventRouter;
+    this.invertedVertexIndex = invertedVertexIndex;
+    this.headOperatorManager = headOperatorManager;
   }
 
+  /**
+   * Create a physical source, operator, or sink by deserilizing the avro vertex.
+   * @param avroVertex avro vertex
+   * @param conf configuration of the vertex
+   * @param classLoader class loader for deserializing the vertex
+   * @return physical vertex
+   * @throws InjectionException
+   */
   @SuppressWarnings("unchecked")
+  private PhysicalVertex getPhysicalVertex(final AvroVertex avroVertex,
+                                           final Configuration conf,
+                                           final ClassLoader classLoader) throws InjectionException {
+    switch (avroVertex.getAvroVertexType()) {
+      case SOURCE: {
+        // Create an event generator
+        final EventGenerator eventGenerator = physicalObjectGenerator.newEventGenerator(conf, classLoader);
+        // Create a data generator
+        final DataGenerator dataGenerator = physicalObjectGenerator.newDataGenerator(conf, classLoader);
+        // Create a source
+        return new PhysicalSourceImpl(
+            identifierFactory.getNewInstance(operatorIdGenerator.generate()),
+            dataGenerator, eventGenerator, eventRouter);
+      }
+      case OPERATOR: {
+        final Operator operator = physicalObjectGenerator.newOperator(
+            operatorIdGenerator.generate(), conf, classLoader);
+        // Add the vertex to the head operator manager
+        final PhysicalOperator physicalOperator = new DefaultPhysicalOperator(
+            operator, avroVertex.getIsHead(), eventRouter);
+        if (avroVertex.getIsHead()) {
+          headOperatorManager.insert(physicalOperator);
+        }
+        return physicalOperator;
+      }
+      case SINK: {
+        return new PhysicalSinkImpl<>(physicalObjectGenerator.newSink(
+            operatorIdGenerator.generate(), conf, classLoader));
+      }
+      default: {
+        throw new IllegalArgumentException("MISTTask: Invalid vertex detected in LogicalPlan!");
+      }
+    }
+  }
+
   @Override
   public DAG<PhysicalVertex, Direction> generate(
       final Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
@@ -81,51 +133,15 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
     final ClassLoader classLoader = classLoaderProvider.newInstance(urls);
 
     // Deserialize vertices
-    for (final AvroVertexChain avroVertexChain : logicalPlan.getAvroVertices()) {
-      switch (avroVertexChain.getAvroVertexChainType()) {
-        case SOURCE: {
-          final Vertex vertex = avroVertexChain.getVertexChain().get(0);
-          final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
-              new ClassHierarchyImpl(urls));
-          // Create an event generator
-          final EventGenerator eventGenerator = physicalObjectGenerator.newEventGenerator(conf, classLoader);
-          // Create a data generator
-          final DataGenerator dataGenerator = physicalObjectGenerator.newDataGenerator(conf, classLoader);
-          // Create a source
-          final PhysicalSource source = new PhysicalSourceImpl<>(
-              identifierFactory.getNewInstance(operatorIdGenerator.generate()),
-              dataGenerator, eventGenerator);
-          deserializedVertices.add(source);
-          dag.addVertex(source);
-          break;
-        }
-        case OPERATOR_CHAIN: {
-          final PartitionedQuery partitionedQuery = new DefaultPartitionedQuery();
-          deserializedVertices.add(partitionedQuery);
-          for (final Vertex vertex : avroVertexChain.getVertexChain()) {
-            final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
-                new ClassHierarchyImpl(urls));
-            final Operator operator = physicalObjectGenerator.newOperator(
-                operatorIdGenerator.generate(), conf, classLoader);
-            partitionedQuery.insertToTail(operator);
-          }
-          dag.addVertex(partitionedQuery);
-          break;
-        }
-        case SINK: {
-          final Vertex vertex = avroVertexChain.getVertexChain().get(0);
-          final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
-              new ClassHierarchyImpl(urls));
-          final PhysicalSink sink = new PhysicalSinkImpl<>(physicalObjectGenerator.newSink(
-              operatorIdGenerator.generate(), conf, classLoader));
-          deserializedVertices.add(sink);
-          dag.addVertex(sink);
-          break;
-        }
-        default: {
-          throw new IllegalArgumentException("MISTTask: Invalid vertex detected in LogicalPlan!");
-        }
-      }
+    for (final AvroVertex avroVertex : logicalPlan.getAvroVertices()) {
+      final Configuration conf = avroConfigurationSerializer.fromString(avroVertex.getConfiguration(),
+          new ClassHierarchyImpl(urls));
+      // Get a physical vertex
+      final PhysicalVertex physicalVertex = getPhysicalVertex(avroVertex, conf, classLoader);
+      deserializedVertices.add(physicalVertex);
+      dag.addVertex(physicalVertex);
+      // Add the vertex to the inverted vertex index to route events
+      invertedVertexIndex.create(physicalVertex, dag);
     }
 
     // Add edge info to physical plan

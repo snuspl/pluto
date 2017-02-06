@@ -41,36 +41,25 @@
             "type": "array",
             "items":
             {
-              "name": "AvroVertexChain",
+              "name": "AvroVertex",
               "type": "record",
               "fields":
               [
                 {
-                  "name": "AvroVertexChainType",
+                  "name": "Configuration", /* Configuration that is serialized using Tang */
+                  "type": "string"
+                },
+                {
+                  "name": "IsHead", /* True if the operator should be performed independently from the upstream operators. */
+                  "type": "boolean"
+                },
+                {
+                  "name": "AvroVertexType",
                   "type":
                   {
                     "name": "AvroVertexTypeEnum",
                     "type": "enum",
-                    "symbols": ["SOURCE", "OPERATOR_CHAIN", "SINK"]
-                  }
-                },
-                {
-                  "name": "VertexChain",
-                  "type":
-                  {
-                    "type": "array",
-                    "items":
-                    {
-                      "name": "Vertex",
-                      "type": "record",
-                      "fields":
-                      [
-                        {
-                          "name": "Configuration", /* Configuration that is serialized using Tang */
-                          "type": "string"
-                        }
-                      ]
-                    }
+                    "symbols": ["SOURCE", "OPERATOR", "SINK"]
                   }
                 }
               ]

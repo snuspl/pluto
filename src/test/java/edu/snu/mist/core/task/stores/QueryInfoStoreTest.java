@@ -20,10 +20,9 @@ import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.core.parameters.TempFolderPath;
-import edu.snu.mist.formats.avro.AvroVertexChain;
+import edu.snu.mist.formats.avro.AvroVertex;
 import edu.snu.mist.formats.avro.Edge;
 import edu.snu.mist.formats.avro.LogicalPlan;
-import edu.snu.mist.formats.avro.Vertex;
 import edu.snu.mist.utils.TestParameters;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
@@ -84,7 +83,7 @@ public class QueryInfoStoreTest {
     }
 
     // Generate logical plan
-    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getSerializedDAG();
+    final Tuple<List<AvroVertex>, List<Edge>> serializedDag = query.getSerializedDAG();
     final LogicalPlan.Builder logicalPlanBuilder = LogicalPlan.newBuilder();
     final LogicalPlan logicalPlan = logicalPlanBuilder
         .setJarFilePaths(paths)
@@ -113,16 +112,12 @@ public class QueryInfoStoreTest {
    * @param vertices the first list of vertices
    * @param loadedVertices the second list of vertices
    */
-  private void testVerticesEqual(final List<AvroVertexChain> vertices, final List<AvroVertexChain> loadedVertices) {
+  private void testVerticesEqual(final List<AvroVertex> vertices, final List<AvroVertex> loadedVertices) {
     for (int i = 0; i < vertices.size(); i++) {
-      final AvroVertexChain avroVertexChain = vertices.get(i);
-      final AvroVertexChain loadedVertexChain = loadedVertices.get(i);
-      for (int j = 0; j < avroVertexChain.getVertexChain().size(); j++) {
-        final Vertex vertex = avroVertexChain.getVertexChain().get(j);
-        final Vertex loadedVertex = loadedVertexChain.getVertexChain().get(j);
-        Assert.assertEquals(vertex.getConfiguration(), loadedVertex.getConfiguration());
-        Assert.assertEquals(vertex.getSchema(), loadedVertex.getSchema());
-      }
+      final AvroVertex avroVertex = vertices.get(i);
+      final AvroVertex loadedVertex = loadedVertices.get(i);
+      Assert.assertEquals(avroVertex.getConfiguration(), loadedVertex.getConfiguration());
+      Assert.assertEquals(avroVertex.getSchema(), loadedVertex.getSchema());
     }
   }
 }

@@ -13,21 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.utils;
+
+import edu.snu.mist.common.MistDataEvent;
+import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.common.operators.OneStreamOperator;
 
 /**
- * This interface represents physical vertices of the query.
+ * Test operator that just forwards inputs to outputEmitter.
  */
-interface PhysicalVertex {
-
-  public static enum Type {
-    SOURCE,
-    OPERATOR,
-    SINK
+public final class TestOperator extends OneStreamOperator {
+  public TestOperator(final String opId) {
+    super(opId);
   }
 
-  /**
-   * Get the type of the physical vertex.
-   */
-  Type getType();
+  @Override
+  public void processLeftData(final MistDataEvent data) {
+    outputEmitter.emitData(data);
+  }
+
+  @Override
+  public void processLeftWatermark(final MistWatermarkEvent watermark) {
+    // do nothing
+  }
 }

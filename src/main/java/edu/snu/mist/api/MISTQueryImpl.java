@@ -18,9 +18,11 @@ package edu.snu.mist.api;
 import edu.snu.mist.api.datastreams.MISTStream;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.GraphUtils;
-import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.formats.avro.AvroVertex;
+import edu.snu.mist.formats.avro.AvroVertexTypeEnum;
+import edu.snu.mist.formats.avro.Direction;
+import edu.snu.mist.formats.avro.Edge;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
 
 import java.util.*;
@@ -38,33 +40,32 @@ public final class MISTQueryImpl implements MISTQuery {
   private final AvroConfigurationSerializer serializer;
 
   public MISTQueryImpl(final DAG<MISTStream, Direction> dag) {
-    this.queryPartitioner = new QueryPartitioner(dag);
     this.dag = dag;
+    this.queryPartitioner = new QueryPartitioner(dag);
     this.serializer = new AvroConfigurationSerializer();
   }
 
   @Override
-  public Tuple<List<AvroVertexChain>, List<Edge>> getSerializedDAG() {
-    final DAG<List<MISTStream>, Direction> chainedDAG =
-        queryPartitioner.generatePartitionedPlan();
-    final Queue<List<MISTStream>> queue = new LinkedList<>();
-    final List<List<MISTStream>> vertices = new ArrayList<>();
+  public Tuple<List<AvroVertex>, List<Edge>> getSerializedDAG() {
+    final Queue<Tuple<Boolean, MISTStream>> queue = new LinkedList<>();
+    final List<Tuple<Boolean, MISTStream>> vertices = new ArrayList<>();
     final List<Edge> edges = new ArrayList<>();
 
     // Put all vertices into a queue
-    final Iterator<List<MISTStream>> iterator = GraphUtils.topologicalSort(chainedDAG);
+    final DAG<Tuple<Boolean, MISTStream>, Direction> partitionedDag = queryPartitioner.generatePartitionedPlan();
+    final Iterator<Tuple<Boolean, MISTStream>> iterator = GraphUtils.topologicalSort(partitionedDag);
     while (iterator.hasNext()) {
-      final List<MISTStream> vertex = iterator.next();
+      final Tuple<Boolean, MISTStream> vertex = iterator.next();
       queue.add(vertex);
       vertices.add(vertex);
     }
 
     // Visit each vertex and serialize its edges
     while (!queue.isEmpty()) {
-      final List<MISTStream> vertex = queue.remove();
+      final Tuple<Boolean, MISTStream> vertex = queue.remove();
       final int fromIndex = vertices.indexOf(vertex);
-      final Map<List<MISTStream>, Direction> neighbors = chainedDAG.getEdges(vertex);
-      for (final Map.Entry<List<MISTStream>, Direction> neighbor : neighbors.entrySet()) {
+      final Map<Tuple<Boolean, MISTStream>, Direction> neighbors = partitionedDag.getEdges(vertex);
+      for (final Map.Entry<Tuple<Boolean, MISTStream>, Direction> neighbor : neighbors.entrySet()) {
         final int toIndex = vertices.indexOf(neighbor.getKey());
         final Edge.Builder edgeBuilder = Edge.newBuilder()
             .setFrom(fromIndex)
@@ -74,35 +75,25 @@ public final class MISTQueryImpl implements MISTQuery {
       }
     }
 
-    final Set<List<MISTStream>> rootVertices = chainedDAG.getRootVertices();
     // Serialize each vertex via avro.
-    final List<AvroVertexChain> serializedVertices = new ArrayList<>();
-    for (final List<MISTStream> vertex : vertices) {
-      final AvroVertexChain.Builder builder = AvroVertexChain.newBuilder();
-      final List<Vertex> serializedVertexChain = new LinkedList<>();
-      for (final MISTStream sv : vertex) {
-        final Configuration conf = sv.getConfiguration();
-        final String confToStr = serializer.toString(conf);
-        final Vertex.Builder vertexBuilder = Vertex.newBuilder();
-        vertexBuilder.setConfiguration(confToStr);
-        serializedVertexChain.add(vertexBuilder.build());
-      }
+    final List<AvroVertex> serializedVertices = new ArrayList<>();
+    for (final Tuple<Boolean, MISTStream> tup : vertices) {
+      final MISTStream vertex = tup.getValue();
+      final AvroVertex.Builder builder = AvroVertex.newBuilder();
+      final String confToStr = serializer.toString(vertex.getConfiguration());
+      builder.setConfiguration(confToStr);
+      builder.setIsHead(tup.getKey());
       // Set vertex type
-      if (vertex.size() == 1) {
-        final MISTStream v = vertex.get(0);
-        if (rootVertices.contains(vertex)) {
-          // this is a source
-          builder.setAvroVertexChainType(AvroVertexTypeEnum.SOURCE);
-        } else if (chainedDAG.getEdges(vertex).size() == 0) {
-          // this is a sink
-          builder.setAvroVertexChainType(AvroVertexTypeEnum.SINK);
-        } else {
-          builder.setAvroVertexChainType(AvroVertexTypeEnum.OPERATOR_CHAIN);
-        }
+      if (dag.getInDegree(vertex) == 0) {
+        // this is a source
+        builder.setAvroVertexType(AvroVertexTypeEnum.SOURCE);
+      } else if (dag.getEdges(vertex).size() == 0) {
+        // this is a sink
+        builder.setAvroVertexType(AvroVertexTypeEnum.SINK);
       } else {
-        builder.setAvroVertexChainType(AvroVertexTypeEnum.OPERATOR_CHAIN);
+        // this is an operator
+        builder.setAvroVertexType(AvroVertexTypeEnum.OPERATOR);
       }
-      builder.setVertexChain(serializedVertexChain);
       serializedVertices.add(builder.build());
     }
     return new Tuple<>(serializedVertices, edges);

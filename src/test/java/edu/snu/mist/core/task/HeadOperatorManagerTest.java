@@ -20,26 +20,28 @@ import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Test;
+import edu.snu.mist.utils.TestOperator;
 
-public class PartitionedQueryManagerTest {
+public class HeadOperatorManagerTest {
 
   /**
-   * Test whether RandomlyPickManager selects a query.
+   * Test whether RandomlyPickManager selects a head operator.
    */
   @Test
   public void randomPickManagerTest() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
-    final RandomlyPickManager partitionedQueryManager = injector.getInstance(RandomlyPickManager.class);
+    final RandomlyPickManager headOperatorManager = injector.getInstance(RandomlyPickManager.class);
 
     // Select a query
-    final PartitionedQuery query = new DefaultPartitionedQuery();
-    partitionedQueryManager.insert(query);
-    final PartitionedQuery selectedQuery = partitionedQueryManager.pickQuery();
-    Assert.assertEquals(query, selectedQuery);
+    final PhysicalOperator operator = new DefaultPhysicalOperator(
+        new TestOperator("op1"), true, null);
+    headOperatorManager.insert(operator);
+    final PhysicalOperator selectedOperator = headOperatorManager.pickHeadOperator();
+    Assert.assertEquals(operator, selectedOperator);
 
-    // When QueryPickManager has no query, it should returns null
-    partitionedQueryManager.delete(query);
-    final PartitionedQuery q = partitionedQueryManager.pickQuery();
-    Assert.assertEquals(null, q);
+    // When HeadOperatorManager has no operator, it should returns null
+    headOperatorManager.delete(operator);
+    final PhysicalOperator op = headOperatorManager.pickHeadOperator();
+    Assert.assertEquals(null, op);
   }
 }

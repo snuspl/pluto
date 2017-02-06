@@ -17,11 +17,9 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
-import edu.snu.mist.common.operators.OneStreamOperator;
 import edu.snu.mist.formats.avro.Direction;
-import edu.snu.mist.utils.TestOutputEmitter;
+import edu.snu.mist.utils.TestOperator;
 import junit.framework.Assert;
-import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -38,43 +36,40 @@ public final class EventProcessorTest {
   }
 
   /**
-   * Test whether the processor processes events from multiple queries correctly.
-   * This test adds 100 events to 2 queries in PartitionedQueryManager
-   * and the event processor processes the events by picking the queries randomly.
+   * Test whether the processor processes events from multiple head operators correctly.
+   * This test adds 100 events to 2 head operators
+   * and the event processor processes the events by picking the head operators randomly.
    */
   @Test
   public void randomPickProcessTest() throws InjectionException, InterruptedException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final PartitionedQueryManager queryManager = injector.getInstance(PartitionedQueryManager.class);
-    final StringIdentifierFactory idfac = injector.getInstance(StringIdentifierFactory.class);
+    final HeadOperatorManager headOperatorManager = injector.getInstance(HeadOperatorManager.class);
 
     final int numTasks = 1000000;
     final List<Integer> list1 = new LinkedList<>();
     final List<Integer> list2 = new LinkedList<>();
     final List<Integer> result = new LinkedList<>();
 
-    final PartitionedQuery query1 = new DefaultPartitionedQuery();
-    query1.insertToHead(new TestOperator("o1"));
-    query1.setOutputEmitter(new TestOutputEmitter<>(list1));
-    final PartitionedQuery query2 = new DefaultPartitionedQuery();
-    query2.insertToHead(new TestOperator("o2"));
-    query2.setOutputEmitter(new TestOutputEmitter<>(list2));
+    final PhysicalOperator operator1 = new DefaultPhysicalOperator(
+        new TestOperator("o1"), true, new TestEventRouter<>(list1));
+    final PhysicalOperator operator2 = new DefaultPhysicalOperator(
+        new TestOperator("o2"), true, new TestEventRouter<>(list2));
 
     for (int i = 0; i < numTasks; i++) {
       final int data = i;
-      // Add events to the partitioned queries
-      query1.addNextEvent(createEvent(data), Direction.LEFT);
-      query2.addNextEvent(createEvent(data), Direction.LEFT);
+      // Add events to the head operators
+      operator1.addOrProcessNextDataEvent(createEvent(data), Direction.LEFT);
+      operator2.addOrProcessNextDataEvent(createEvent(data), Direction.LEFT);
       result.add(data);
     }
 
-    // Add queries to queryManager
-    queryManager.insert(query1);
-    queryManager.insert(query2);
+    // Add head operators to headOperatorManager
+    headOperatorManager.insert(operator1);
+    headOperatorManager.insert(operator2);
 
     // Create a processor
-    final Thread processor = new Thread(new EventProcessor(queryManager));
+    final Thread processor = new Thread(new EventProcessor(headOperatorManager));
     processor.start();
 
     while (!(list1.size() == numTasks && list2.size() == numTasks)) {
@@ -96,31 +91,29 @@ public final class EventProcessorTest {
   public void concurrentProcessTest() throws InjectionException, InterruptedException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final PartitionedQueryManager queryManager = injector.getInstance(PartitionedQueryManager.class);
-    final StringIdentifierFactory idfac = injector.getInstance(StringIdentifierFactory.class);
+    final HeadOperatorManager headOperatorManager = injector.getInstance(HeadOperatorManager.class);
 
     final int numTasks = 1000000;
     final List<Integer> list1 = new LinkedList<>();
     final List<Integer> result = new LinkedList<>();
 
-    final PartitionedQuery query = new DefaultPartitionedQuery();
-    query.insertToHead(new TestOperator("o1"));
-    query.setOutputEmitter(new TestOutputEmitter<>(list1));
+    final PhysicalOperator operator = new DefaultPhysicalOperator(
+        new TestOperator("o1"), true, new TestEventRouter<>(list1));
 
     for (int i = 0; i < numTasks; i++) {
       final int data = i;
       // Add tasks to queues
-      query.addNextEvent(createEvent(data), Direction.LEFT);
+      operator.addOrProcessNextDataEvent(createEvent(data), Direction.LEFT);
       result.add(data);
     }
 
     // Add query to queryManager
-    queryManager.insert(query);
+    headOperatorManager.insert(operator);
 
     // Create three processors
-    final Thread processor1 = new Thread(new EventProcessor(queryManager));
-    final Thread processor2 = new Thread(new EventProcessor(queryManager));
-    final Thread processor3 = new Thread(new EventProcessor(queryManager));
+    final Thread processor1 = new Thread(new EventProcessor(headOperatorManager));
+    final Thread processor2 = new Thread(new EventProcessor(headOperatorManager));
+    final Thread processor3 = new Thread(new EventProcessor(headOperatorManager));
     processor1.start();
     processor2.start();
     processor3.start();
@@ -136,23 +129,21 @@ public final class EventProcessorTest {
     processor3.interrupt();
   }
 
-  /**
-   * Test operator for event processor.
-   * It just forwards inputs to outputEmitter.
-   */
-  class TestOperator extends OneStreamOperator {
-    public TestOperator(final String opId) {
-      super(opId);
+  class TestEventRouter<E> implements EventRouter {
+    private final List<E> events;
+
+    public TestEventRouter(final List<E> events) {
+      this.events = events;
     }
 
     @Override
-    public void processLeftData(final MistDataEvent data) {
-      outputEmitter.emitData(data);
+    public void emitData(final MistDataEvent data, final EventContext context) {
+      this.events.add((E)data.getValue());
     }
 
     @Override
-    public void processLeftWatermark(final MistWatermarkEvent watermark) {
-      // do nothing
+    public void emitWatermark(final MistWatermarkEvent watermark, final EventContext context) {
+
     }
   }
 }
