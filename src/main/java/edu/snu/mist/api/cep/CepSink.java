@@ -100,7 +100,7 @@ public final class CepSink {
       return this;
     }
 
-    public CepSink build() {
+    private CepSink build() {
       return new CepSink(cepSinkType, actionConfigurations);
     }
   }
