@@ -70,7 +70,7 @@ public class MISTCepQuerySubmissionTest {
       add(new Tuple<>(firstFieldName, firstFieldType));
       add(new Tuple<>(secondFieldName, secondFieldType));
     }};
-    Assert.assertEquals(expectedCepInputFields, exampleCepInput.getProperties());
+    Assert.assertEquals(expectedCepInputFields, exampleCepInput.getFields());
   }
 
   /**

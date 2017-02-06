@@ -26,16 +26,20 @@ public final class CepInput {
 
   private final CepInputType cepInputType;
   private final Map<String, Object> cepInputConfiguration;
-  private final List<Tuple<String, CepValueType>> properties;
+  private final List<Tuple<String, CepValueType>> fields;
 
   /**
-   * This constructor makes immutable CepInput.
-   * @param innerBuilder Cep input builder.
+   * Makes an immutable CepInput from InnerBuilder. Should not be exposed to public.
+   * @param cepInputTypeParam cep input type given by builder
+   * @param cepInputConfigurationParam eep input configuration given by builder
+   * @param fieldsParam properties given by builder
    */
-  private CepInput(final InnerBuilder innerBuilder) {
-    this.cepInputType = innerBuilder.cepInputType;
-    this.cepInputConfiguration = innerBuilder.cepInputConfiguration;
-    this.properties = innerBuilder.fields;
+  private CepInput(final CepInputType cepInputTypeParam,
+                   final Map<String, Object> cepInputConfigurationParam,
+                   final List<Tuple<String, CepValueType>> fieldsParam) {
+    this.cepInputType = cepInputTypeParam;
+    this.cepInputConfiguration = cepInputConfigurationParam;
+    this.fields = fieldsParam;
   }
 
   /**
@@ -55,8 +59,8 @@ public final class CepInput {
   /**
    * @return input field fields name and their types
    */
-  public List<Tuple<String, CepValueType>> getProperties() {
-    return properties;
+  public List<Tuple<String, CepValueType>> getFields() {
+    return fields;
   }
 
   @Override
@@ -67,12 +71,12 @@ public final class CepInput {
     final CepInput input = (CepInput) o;
     return this.cepInputType.equals(input.cepInputType)
         && this.cepInputConfiguration.equals(input.cepInputConfiguration)
-        && this.properties.equals(input.properties);
+        && this.fields.equals(input.fields);
   }
 
   @Override
   public int hashCode() {
-    return cepInputType.hashCode() * 100 + cepInputConfiguration.hashCode() * 100 + properties.hashCode();
+    return cepInputType.hashCode() * 100 + cepInputConfiguration.hashCode() * 100 + fields.hashCode();
   }
 
   /**
@@ -97,7 +101,7 @@ public final class CepInput {
      * @param cepInputTypeParam
      * @return updated cep input builder
      */
-    public InnerBuilder setSourceType(final CepInputType cepInputTypeParam) {
+    private InnerBuilder setSourceType(final CepInputType cepInputTypeParam) {
       if (cepInputType != null) {
         throw new IllegalStateException("Cep input type cannot be declared twice!");
       }
@@ -111,7 +115,7 @@ public final class CepInput {
      * @param value configuration value
      * @return cep input builder
      */
-    public InnerBuilder addInputConfigValue(final String key, final Object value) {
+    private InnerBuilder addInputConfigValue(final String key, final Object value) {
       if (cepInputConfiguration.containsKey(key)) {
         throw new IllegalStateException("Duplicated cep input key! Key: " + key);
       }
@@ -125,7 +129,7 @@ public final class CepInput {
      * @param valueType type of the field value
      * @return cep input builder
      */
-    public InnerBuilder addField(final String fieldName, final CepValueType valueType) {
+    private InnerBuilder addField(final String fieldName, final CepValueType valueType) {
       if (propertyNames.contains(fieldName)) {
         throw new IllegalStateException("Duplicated property name");
       }
@@ -137,8 +141,8 @@ public final class CepInput {
      * Creates an immutable Cep input.
      * @return new cep input
      */
-    public CepInput build() {
-      return new CepInput(this);
+    private CepInput build() {
+      return new CepInput(this.cepInputType, this.cepInputConfiguration, this.fields);
     }
   }
 
@@ -186,7 +190,7 @@ public final class CepInput {
       if (builder.propertyNames.contains(fieldName)) {
         throw new IllegalStateException("Duplicated property name");
       }
-      builder.fields.add(new Tuple<>(fieldName, valueType));
+      builder.addField(fieldName, valueType);
       return this;
     }
 

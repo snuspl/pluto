@@ -79,7 +79,7 @@ public final class CepSink {
      * @param cepSinkType the type of this sink
      * @return builder
      */
-    public InnerBuilder setCepSinkType(final CepSinkType cepSinkType) {
+    private InnerBuilder setCepSinkType(final CepSinkType cepSinkType) {
       if (this.cepSinkType != null) {
         throw new IllegalStateException("Sink type cannot be defined twice!");
       }
@@ -90,9 +90,9 @@ public final class CepSink {
     /**
      * @param key configuration key
      * @param value configuration value
-     * @return
+     * @return builder
      */
-    public InnerBuilder addSinkConfigValue(final String key, final Object value) {
+    private InnerBuilder addSinkConfigValue(final String key, final Object value) {
       if (actionConfigurations.containsKey(key)) {
         throw new IllegalStateException("Cannot define the same configuration value more than once!");
       }
@@ -104,7 +104,6 @@ public final class CepSink {
       return new CepSink(cepSinkType, actionConfigurations);
     }
   }
-
 
   /**
    * A builder for CepSink which uses Text Socket as its output.
