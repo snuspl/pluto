@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.formats.avro.LogicalPlan;
+import edu.snu.mist.formats.avro.AvroLogicalPlan;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
@@ -28,5 +28,5 @@ public interface QueryIdGenerator {
    * @param logicalPlan the submitted logical plan
    * @return query id
    */
-  String generate(LogicalPlan logicalPlan);
+  String generate(AvroLogicalPlan logicalPlan);
 }

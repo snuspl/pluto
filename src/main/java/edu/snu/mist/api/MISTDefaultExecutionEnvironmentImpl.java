@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentMap;
  * First, it communicates with MIST Driver to get a list of MIST Tasks.
  * After retrieving Tasks, it chooses a Task, and uploads its jar files to the MIST Task.
  * Then, the Task returns the paths of the stored jar files.
- * If the upload succeeds, it converts the query into avro LogicalPlan, and submits the logical plan to the task.
+ * If the upload succeeds, it converts the query into AvroLogicalPlan, and submits the logical plan to the task.
  */
 public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionEnvironment {
   /**
@@ -107,8 +107,8 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
 
     // Build logical plan using serialized vertices and edges.
     final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = queryToSubmit.getSerializedDAG();
-    final LogicalPlan.Builder logicalPlanBuilder = LogicalPlan.newBuilder();
-    final LogicalPlan logicalPlan = logicalPlanBuilder
+    final AvroLogicalPlan.Builder logicalPlanBuilder = AvroLogicalPlan.newBuilder();
+    final AvroLogicalPlan logicalPlan = logicalPlanBuilder
         .setJarFilePaths(jarUploadResult.getPaths())
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())

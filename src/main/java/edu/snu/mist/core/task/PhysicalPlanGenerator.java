@@ -17,7 +17,7 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.Direction;
-import edu.snu.mist.formats.avro.LogicalPlan;
+import edu.snu.mist.formats.avro.AvroLogicalPlan;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -32,9 +32,9 @@ import java.io.IOException;
 public interface PhysicalPlanGenerator {
   /**
    * Generates the physical plan by deserializing the logical plan.
-   * @param queryIdAndLogicalPlan the tuple of queryId and logical plan
+   * @param queryIdAndAvroLogicalPlan the tuple of queryId and avro logical plan
    * @return physical plan
    */
-  DAG<PhysicalVertex, Direction> generate(Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
+  DAG<PhysicalVertex, Direction> generate(Tuple<String, AvroLogicalPlan> queryIdAndAvroLogicalPlan)
       throws IOException, ClassNotFoundException, InjectionException;
 }
