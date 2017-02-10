@@ -15,20 +15,28 @@
  */
 package edu.snu.mist.core.task;
 
-/**
- * This interface represents physical vertices of the query.
- */
-interface PhysicalVertex {
+import edu.snu.mist.common.operators.Operator;
 
-  public static enum Type {
-    SOURCE,
-    OPERATOR_CHIAN,
-    OPERATOR,
-    SINK
-  }
+/**
+ * This interface represents a physical operator.
+ */
+interface PhysicalOperator extends PhysicalVertex {
 
   /**
-   * Get the type of the physical vertex.
+   * Get the operator object.
+   * @return operator
    */
-  Type getType();
+  Operator getOperator();
+
+  /**
+   * Gets the partitioned query that contains the operator.
+   * @return partitioned query that contains the operator.
+   */
+  PartitionedQuery getPartitionedQuery();
+
+  /**
+   * Updates the partitioned query that contains the operator.
+   * @param partitionedQuery partitioned query that contains the operator
+   */
+  void setPartitionedQuery(PartitionedQuery partitionedQuery);
 }

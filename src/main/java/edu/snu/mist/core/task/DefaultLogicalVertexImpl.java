@@ -16,19 +16,22 @@
 package edu.snu.mist.core.task;
 
 /**
- * This interface represents physical vertices of the query.
- */
-interface PhysicalVertex {
+ * This is the default implementation of the LogicalVertex.
+ **/
 
-  public static enum Type {
-    SOURCE,
-    OPERATOR_CHIAN,
-    OPERATOR,
-    SINK
-  }
+final class DefaultLogicalVertexImpl implements LogicalVertex {
 
   /**
-   * Get the type of the physical vertex.
+   * The physical vertex id corresponding to the logical vertex.
    */
-  Type getType();
+  private final String physicalVertexId;
+
+  public DefaultLogicalVertexImpl(final String physicalVertexId) {
+    this.physicalVertexId = physicalVertexId;
+  }
+
+  @Override
+  public String getPhysicalVertexId() {
+    return physicalVertexId;
+  }
 }

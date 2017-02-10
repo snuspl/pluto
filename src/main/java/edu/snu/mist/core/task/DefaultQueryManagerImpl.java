@@ -17,15 +17,13 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.GraphUtils;
-import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
-import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.AvroLogicalPlan;
+import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
 
 import javax.inject.Inject;
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -58,9 +56,9 @@ final class DefaultQueryManagerImpl implements QueryManager {
   private static final Logger LOG = Logger.getLogger(DefaultQueryManagerImpl.class.getName());
 
   /**
-   * Map of query id and physical plan.
+   * Map of query id and logical plan.
    */
-  private final ConcurrentMap<String, DAG<PhysicalVertex, Direction>> physicalPlanMap;
+  private final ConcurrentMap<String, DAG<LogicalVertex, Direction>> logicalPlanMap;
 
   /**
    * A partitioned query manager.
@@ -85,40 +83,39 @@ final class DefaultQueryManagerImpl implements QueryManager {
   /**
    * A physical plan generator.
    */
-  private final PhysicalPlanGenerator physicalPlanGenerator;
+  private final PlanGenerator planGenerator;
 
   /**
    * Default query manager in MistTask.
-   * @param physicalPlanGenerator the physical plan generator which generates physical plan from logical paln
+   * @param planGenerator the generator that generates the logical and physical plan from avro logical plan.
    * @param threadManager thread manager
    */
   @Inject
-  private DefaultQueryManagerImpl(final PhysicalPlanGenerator physicalPlanGenerator,
+  private DefaultQueryManagerImpl(final PlanGenerator planGenerator,
                                   final ThreadManager threadManager,
                                   final PartitionedQueryManager partitionedQueryManager,
                                   final ScheduledExecutorServiceWrapper schedulerWrapper,
                                   final QueryInfoStore planStore) {
-    this.physicalPlanMap = new ConcurrentHashMap<>();
+    this.logicalPlanMap = new ConcurrentHashMap<>();
     this.partitionedQueryManager = partitionedQueryManager;
-    this.physicalPlanGenerator = physicalPlanGenerator;
+    this.planGenerator = planGenerator;
     this.threadManager = threadManager;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
   }
 
   public QueryControlResult create(final Tuple<String, AvroLogicalPlan> tuple) {
-    final DAG<PhysicalVertex, Direction> physicalPlan;
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(tuple.getKey());
     try {
-      // 1) Saves the logical plan to the PlanStore and
-      // converts the logical plan to the physical plan
+      // 1) Saves the avro logical plan to the PlanStore and
+      // converts the avro logical plan to the logical and physical plan
       planStore.savePlan(tuple);
-      physicalPlan = physicalPlanGenerator.generate(tuple);
-      start(physicalPlan);
-      physicalPlanMap.putIfAbsent(tuple.getKey(), physicalPlan);
-      // 2) Inserts the PartitionedQueries to PartitionedQueryManager,
-      // 3) Sets output emitters and 4) starts to receive input data stream from the source
+      final LogicalAndPhysicalPlan logicalAndPhysicalPlan = planGenerator.generate(tuple);
+      // Store the logical plan in memory
+      logicalPlanMap.putIfAbsent(tuple.getKey(), logicalAndPhysicalPlan.getLogicalPlan());
+      // Execute the physical plan
+      start(logicalAndPhysicalPlan.getPhysicalPlan());
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
       return queryControlResult;
@@ -182,81 +179,11 @@ final class DefaultQueryManagerImpl implements QueryManager {
   }
 
   /**
-   * Deletes the PartitionedQueries from PartitionedQueryManager.
-   * @param queryId query to be deleted
-   * @return if the task has the query corresponding to the queryId,
-   * and deletes this query successfully, it returns true.
-   * Otherwise it returns false.
-   */
-  private boolean deleteQueryFromManager(final String queryId) {
-    final DAG<PhysicalVertex, Direction> physicalPlan = physicalPlanMap.remove(queryId);
-    if (physicalPlan != null) {
-      final Iterator<PhysicalVertex> iterator = GraphUtils.topologicalSort(physicalPlan);
-      while (iterator.hasNext()) {
-        final PhysicalVertex physicalVertex = iterator.next();
-        switch (physicalVertex.getType()) {
-          case SOURCE: {
-            // Closes the channel of Source.
-            final PhysicalSource src = (PhysicalSource)physicalVertex;
-            try {
-              src.close();
-            } catch (final Exception e) {
-              e.printStackTrace();
-            }
-            src.getEventGenerator().setOutputEmitter(null);
-            break;
-          }
-          case OPERATOR_CHIAN: {
-            // Sets the OutputEmitters of the sources, operators and sinks to null
-            final PartitionedQuery partitionedQuery = (PartitionedQuery)physicalVertex;
-            partitionedQueryManager.delete(partitionedQuery);
-            partitionedQuery.setOutputEmitter(null);
-            break;
-          }
-          case SINK: {
-            // Closes the channel of Sink.
-            final Sink sink = ((PhysicalSink)physicalVertex).getSink();
-            try {
-              sink.close();
-            } catch (final Exception e) {
-              e.printStackTrace();
-            }
-            break;
-          }
-          default:
-            throw new RuntimeException("Invalid Vertex Type: " + physicalVertex.getType());
-        }
-      }
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * Deletes the PartitionedQueries from PartitionedQueryManager and
-   * deletes corresponding logical plan from PlanStore.
-   * @param queryId query to be deleted
-   * @return It returns the result message.
+   * Deletes queries from MIST.
+   * TODO[MIST-431] To delete the queries, we need to implement reference counting mechanism.
    */
   @Override
   public QueryControlResult delete(final String queryId) {
-    final QueryControlResult queryControlResult = new QueryControlResult();
-    queryControlResult.setQueryId(queryId);
-    try {
-      planStore.delete(queryId);
-    } catch (final IOException e) {
-      e.printStackTrace();
-      queryControlResult.setIsSuccess(false);
-      queryControlResult.setMsg(ResultMessage.planDeletionFail(queryId));
-      return queryControlResult;
-    }
-    if (deleteQueryFromManager(queryId)) {
-      queryControlResult.setIsSuccess(true);
-      queryControlResult.setMsg(ResultMessage.deleteSuccess(queryId));
-    } else {
-      queryControlResult.setIsSuccess(false);
-      queryControlResult.setMsg(ResultMessage.noQueryId(queryId));
-    }
-    return queryControlResult;
+    throw new RuntimeException("Deleting queries is not implemented yet. We need to address [MIST-431]");
   }
 }

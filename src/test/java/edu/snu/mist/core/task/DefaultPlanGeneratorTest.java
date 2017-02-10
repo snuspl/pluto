@@ -42,9 +42,9 @@ import java.net.URISyntaxException;
 import java.util.*;
 
 /**
- * Test class for DefaultPhysicalPlanGenerator.
+ * Test class for DefaultPlanGenerator.
  */
-public final class DefaultPhysicalPlanGeneratorTest {
+public final class DefaultPlanGeneratorTest {
 
   /**
    * ServerSocket used for text socket sink connection.
@@ -74,7 +74,7 @@ public final class DefaultPhysicalPlanGeneratorTest {
    */
 
   @Test
-  public void testPhysicalPlanGenerator()
+  public void testPlanGenerator()
       throws InjectionException, IOException, URISyntaxException, ClassNotFoundException {
     // Generate a query
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
@@ -85,19 +85,21 @@ public final class DefaultPhysicalPlanGeneratorTest {
         .reduceByKey(0, String.class, (Integer x, Integer y) -> x + y)
         .textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
     final MISTQuery query = queryBuilder.build();
-    // Generate logical plan
+    // Generate avro logical plan
     final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getSerializedDAG();
     final AvroLogicalPlan.Builder logicalPlanBuilder = AvroLogicalPlan.newBuilder();
-    final AvroLogicalPlan logicalPlan = logicalPlanBuilder
+    final AvroLogicalPlan avroLogicalPlan = logicalPlanBuilder
         .setJarFilePaths(new LinkedList<>())
         .setAvroVertices(serializedDag.getKey())
             .setEdges(serializedDag.getValue())
             .build();
 
-    final PhysicalPlanGenerator ppg = Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
-    final Tuple<String, AvroLogicalPlan> tuple = new Tuple<>("query-test", logicalPlan);
-    final DAG<PhysicalVertex, Direction> physicalPlan = ppg.generate(tuple);
+    final PlanGenerator ppg = Tang.Factory.getTang().newInjector().getInstance(PlanGenerator.class);
+    final Tuple<String, AvroLogicalPlan> tuple = new Tuple<>("query-test", avroLogicalPlan);
+    final LogicalAndPhysicalPlan plan = ppg.generate(tuple);
 
+    // Test physical plan
+    final DAG<PhysicalVertex, Direction> physicalPlan = plan.getPhysicalPlan();
     final Set<PhysicalVertex> sources = physicalPlan.getRootVertices();
     Assert.assertEquals(1, sources.size());
     final PhysicalSource source = (PhysicalSource)sources.iterator().next();
@@ -123,6 +125,33 @@ public final class DefaultPhysicalPlanGeneratorTest {
     final Map<PhysicalVertex, Direction> sinks = physicalPlan.getEdges(pq1);
     final PhysicalSink physicalSink = (PhysicalSink)sinks.entrySet().iterator().next().getKey();
     Assert.assertTrue(physicalSink.getSink() instanceof NettyTextSink);
+
+    // Test logical plan
+    final DAG<LogicalVertex, Direction> logicalPlan = plan.getLogicalPlan();
+    final Set<LogicalVertex> logicalSources = logicalPlan.getRootVertices();
+    Assert.assertEquals(1, logicalSources.size());
+    final LogicalVertex logicalSource = logicalSources.iterator().next();
+    Assert.assertEquals(source.getIdentifier().toString(), logicalSource.getPhysicalVertexId());
+
+    final LogicalVertex flatMapLogicalVertex = getNextVertex(logicalSource, logicalPlan);
+    Assert.assertEquals(mapOperator.getOperatorIdentifier(), flatMapLogicalVertex.getPhysicalVertexId());
+
+    final LogicalVertex filterLogicalVertex = getNextVertex(flatMapLogicalVertex, logicalPlan);
+    Assert.assertEquals(filterOperator.getOperatorIdentifier(), filterLogicalVertex.getPhysicalVertexId());
+
+    final LogicalVertex mapLogicalVertex = getNextVertex(filterLogicalVertex, logicalPlan);
+    Assert.assertEquals(mapOperator2.getOperatorIdentifier(), mapLogicalVertex.getPhysicalVertexId());
+
+    final LogicalVertex reduceByKeyVertex = getNextVertex(mapLogicalVertex, logicalPlan);
+    Assert.assertEquals(reduceByKeyOperator.getOperatorIdentifier(), reduceByKeyVertex.getPhysicalVertexId());
+
+    final LogicalVertex sinkVertex = getNextVertex(reduceByKeyVertex, logicalPlan);
+    Assert.assertEquals(physicalSink.getSink().getIdentifier().toString(), sinkVertex.getPhysicalVertexId());
   }
 
+  private LogicalVertex getNextVertex(final LogicalVertex vertex, final DAG<LogicalVertex, Direction> logicalPlan) {
+    final Map<LogicalVertex, Direction> nextLogicalOps = logicalPlan.getEdges(vertex);
+    final LogicalVertex nextVertex = nextLogicalOps.entrySet().iterator().next().getKey();
+    return nextVertex;
+  }
 }

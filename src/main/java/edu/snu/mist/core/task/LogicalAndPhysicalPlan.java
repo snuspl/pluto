@@ -15,20 +15,23 @@
  */
 package edu.snu.mist.core.task;
 
-/**
- * This interface represents physical vertices of the query.
- */
-interface PhysicalVertex {
+import edu.snu.mist.common.DAG;
+import edu.snu.mist.formats.avro.Direction;
 
-  public static enum Type {
-    SOURCE,
-    OPERATOR_CHIAN,
-    OPERATOR,
-    SINK
-  }
+/**
+ * This interface holds the logical and physical plan.
+ */
+interface LogicalAndPhysicalPlan {
 
   /**
-   * Get the type of the physical vertex.
+   * Return the logical plan.
+   * @return logical plan
    */
-  Type getType();
+  DAG<LogicalVertex, Direction> getLogicalPlan();
+
+  /**
+   * Return the physical plan.
+   * @return physical plan
+   */
+  DAG<PhysicalVertex, Direction> getPhysicalPlan();
 }
