@@ -32,7 +32,7 @@ import java.io.IOException;
 public interface PhysicalPlanGenerator {
   /**
    * Generates the physical plan by deserializing the logical plan.
-   * @param queryIdAndAvroLogicalPlan the tuple of queryId and logical plan
+   * @param queryIdAndAvroLogicalPlan the tuple of queryId and avro logical plan
    * @return physical plan
    */
   DAG<PhysicalVertex, Direction> generate(Tuple<String, AvroLogicalPlan> queryIdAndAvroLogicalPlan)
