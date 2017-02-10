@@ -44,18 +44,4 @@ public interface QueryManager extends AutoCloseable {
    * @return Returns the result message of deletion.
    */
   QueryControlResult delete(String queryId);
-
-  /**
-   * Stopes the query corresponding to the queryId submitted by client.
-   * @param queryId
-   * @return Returns the results message of stop.
-   */
-  QueryControlResult stop(String queryId);
-
-  /**
-   * Resumes the query corresponding to the queryId submitted by client.
-   * @param queryId
-   * @return Returns the result message of resume.
-   */
-  QueryControlResult resume(String queryId);
 }
