@@ -190,28 +190,6 @@
         }
       ],
       "response": "QueryControlResult"
-    },
-    "stopQueries":
-    {
-      "request":
-      [
-        {
-          "name": "queryId",
-          "type": "string"
-        }
-      ],
-      "response": "QueryControlResult"
-    },
-    "resumeQueries":
-    {
-      "request":
-      [
-        {
-          "name": "queryId",
-          "type": "string"
-        }
-      ],
-      "response": "QueryControlResult"
     }
   }
 }
