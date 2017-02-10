@@ -16,7 +16,7 @@
 package edu.snu.mist.core.task.stores;
 
 
-import edu.snu.mist.formats.avro.LogicalPlan;
+import edu.snu.mist.formats.avro.AvroLogicalPlan;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
@@ -36,7 +36,7 @@ public interface QueryInfoStore {
    * @return true if saving the logical plan is success. Otherwise return false.
    * @throws IOException
    */
-  boolean savePlan(Tuple<String, LogicalPlan> tuple) throws IOException;
+  boolean savePlan(Tuple<String, AvroLogicalPlan> tuple) throws IOException;
 
   /**
    * Saves the jar files and returns paths of the stored jar files.
@@ -52,7 +52,7 @@ public interface QueryInfoStore {
    * @return logical plan
    * @throws IOException
    */
-  LogicalPlan load(String queryId) throws IOException;
+  AvroLogicalPlan load(String queryId) throws IOException;
 
   /**
    * Deletes the logical plan and its corresponding jar files.

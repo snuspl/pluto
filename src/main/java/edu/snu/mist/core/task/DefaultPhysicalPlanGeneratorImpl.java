@@ -70,9 +70,9 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
   @SuppressWarnings("unchecked")
   @Override
   public DAG<PhysicalVertex, Direction> generate(
-      final Tuple<String, LogicalPlan> queryIdAndLogicalPlan)
+      final Tuple<String, AvroLogicalPlan> queryIdAndAvroLogicalPlan)
       throws IllegalArgumentException, IOException, ClassNotFoundException, InjectionException {
-    final LogicalPlan logicalPlan = queryIdAndLogicalPlan.getValue();
+    final AvroLogicalPlan logicalPlan = queryIdAndAvroLogicalPlan.getValue();
     final List<PhysicalVertex> deserializedVertices = new ArrayList<>();
     final DAG<PhysicalVertex, Direction> dag = new AdjacentListDAG<>();
 
@@ -123,7 +123,7 @@ final class DefaultPhysicalPlanGeneratorImpl implements PhysicalPlanGenerator {
           break;
         }
         default: {
-          throw new IllegalArgumentException("MISTTask: Invalid vertex detected in LogicalPlan!");
+          throw new IllegalArgumentException("MISTTask: Invalid vertex detected in AvroLogicalPlan!");
         }
       }
     }

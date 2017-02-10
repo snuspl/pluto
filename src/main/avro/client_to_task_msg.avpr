@@ -23,7 +23,7 @@
   [
     {
       "type": "record",
-      "name": "LogicalPlan",
+      "name": "AvroLogicalPlan",
       "fields":
       [
         {
@@ -175,7 +175,7 @@
       [
         {
           "name": "logicalPlan",
-          "type": "LogicalPlan"
+          "type": "AvroLogicalPlan"
         }
       ],
       "response": "QueryControlResult"

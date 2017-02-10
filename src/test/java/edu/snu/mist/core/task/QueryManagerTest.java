@@ -28,7 +28,7 @@ import edu.snu.mist.core.parameters.NumThreads;
 import edu.snu.mist.core.parameters.PlanStorePath;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.Direction;
-import edu.snu.mist.formats.avro.LogicalPlan;
+import edu.snu.mist.formats.avro.AvroLogicalPlan;
 import junit.framework.Assert;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
@@ -127,7 +127,7 @@ public final class QueryManagerTest {
     final Sink sink2 = new TestSink<Integer>(sink2Result, countDownAllOutputs);
 
     // Fake logical plan of QueryManager
-    final Tuple<String, LogicalPlan> tuple = new Tuple<>(queryId, new LogicalPlan());
+    final Tuple<String, AvroLogicalPlan> tuple = new Tuple<>(queryId, new AvroLogicalPlan());
 
     // Construct physical plan
     constructPhysicalPlan(tuple, dag, src, sink1, sink2);
@@ -228,7 +228,7 @@ public final class QueryManagerTest {
     final Sink afterResumeSink2 = new TestSink<Integer>(afterResumeSink2Result, countDownAfterResumeOutputs);
 
     // Fake logical plan of QueryManager
-    final Tuple<String, LogicalPlan> tuple = new Tuple<>(queryId, new LogicalPlan());
+    final Tuple<String, AvroLogicalPlan> tuple = new Tuple<>(queryId, new AvroLogicalPlan());
 
     // Construct two physical plans
     constructPhysicalPlan(tuple, beforeStopDAG, beforeStopSrc, beforeStopSink1, beforeStopSink2);
@@ -292,7 +292,7 @@ public final class QueryManagerTest {
    * Construct physical plan.
    * Creates operators an partitioned queries and adds source, dag vertices, edges and sinks to dag.
    */
-  private void constructPhysicalPlan(final Tuple<String, LogicalPlan> tuple,
+  private void constructPhysicalPlan(final Tuple<String, AvroLogicalPlan> tuple,
                                      final DAG<PhysicalVertex, Direction> dag,
                                      final PhysicalSource src,
                                      final Sink sink1,
@@ -344,7 +344,7 @@ public final class QueryManagerTest {
    * QueryManager Builder.
    * It receives inputs tuple, physicalPlanGenerator, injector then makes query manager.
    */
-  private QueryManager queryManagerBuild(final Tuple<String, LogicalPlan> tuple,
+  private QueryManager queryManagerBuild(final Tuple<String, AvroLogicalPlan> tuple,
                                          final PhysicalPlanGenerator physicalPlanGenerator,
                                          final Injector injector) throws Exception {
     // Create mock PlanStore. It returns true and the above logical plan

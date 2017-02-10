@@ -18,7 +18,7 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import edu.snu.mist.formats.avro.JarUploadResult;
-import edu.snu.mist.formats.avro.LogicalPlan;
+import edu.snu.mist.formats.avro.AvroLogicalPlan;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.avro.AvroRemoteException;
 import org.apache.reef.io.Tuple;
@@ -84,7 +84,7 @@ public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage
   }
 
   @Override
-  public QueryControlResult sendQueries(final LogicalPlan logicalPlan) throws AvroRemoteException {
+  public QueryControlResult sendQueries(final AvroLogicalPlan logicalPlan) throws AvroRemoteException {
     final String queryId = queryIdGenerator.generate(logicalPlan);
     return queryManager.create(new Tuple<>(queryId, logicalPlan));
   }

@@ -26,7 +26,7 @@ import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.formats.avro.AvroVertexChain;
 import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.Edge;
-import edu.snu.mist.formats.avro.LogicalPlan;
+import edu.snu.mist.formats.avro.AvroLogicalPlan;
 import edu.snu.mist.utils.TestParameters;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Tang;
@@ -69,7 +69,7 @@ public final class DefaultPhysicalPlanGeneratorTest {
   }
 
   /**
-   * Round-trip test of de-serializing LogicalPlan.
+   * Round-trip test of de-serializing AvroLogicalPlan.
    * @throws org.apache.reef.tang.exceptions.InjectionException
    */
 
@@ -87,15 +87,15 @@ public final class DefaultPhysicalPlanGeneratorTest {
     final MISTQuery query = queryBuilder.build();
     // Generate logical plan
     final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getSerializedDAG();
-    final LogicalPlan.Builder logicalPlanBuilder = LogicalPlan.newBuilder();
-    final LogicalPlan logicalPlan = logicalPlanBuilder
+    final AvroLogicalPlan.Builder logicalPlanBuilder = AvroLogicalPlan.newBuilder();
+    final AvroLogicalPlan logicalPlan = logicalPlanBuilder
         .setJarFilePaths(new LinkedList<>())
         .setAvroVertices(serializedDag.getKey())
             .setEdges(serializedDag.getValue())
             .build();
 
     final PhysicalPlanGenerator ppg = Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
-    final Tuple<String, LogicalPlan> tuple = new Tuple<>("query-test", logicalPlan);
+    final Tuple<String, AvroLogicalPlan> tuple = new Tuple<>("query-test", logicalPlan);
     final DAG<PhysicalVertex, Direction> physicalPlan = ppg.generate(tuple);
 
     final Set<PhysicalVertex> sources = physicalPlan.getRootVertices();

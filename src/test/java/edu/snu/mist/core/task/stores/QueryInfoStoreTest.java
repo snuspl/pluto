@@ -22,7 +22,7 @@ import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.core.parameters.TempFolderPath;
 import edu.snu.mist.formats.avro.AvroVertexChain;
 import edu.snu.mist.formats.avro.Edge;
-import edu.snu.mist.formats.avro.LogicalPlan;
+import edu.snu.mist.formats.avro.AvroLogicalPlan;
 import edu.snu.mist.formats.avro.Vertex;
 import edu.snu.mist.utils.TestParameters;
 import org.apache.reef.io.Tuple;
@@ -85,8 +85,8 @@ public class QueryInfoStoreTest {
 
     // Generate logical plan
     final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getSerializedDAG();
-    final LogicalPlan.Builder logicalPlanBuilder = LogicalPlan.newBuilder();
-    final LogicalPlan logicalPlan = logicalPlanBuilder
+    final AvroLogicalPlan.Builder logicalPlanBuilder = AvroLogicalPlan.newBuilder();
+    final AvroLogicalPlan logicalPlan = logicalPlanBuilder
         .setJarFilePaths(paths)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
@@ -96,7 +96,7 @@ public class QueryInfoStoreTest {
     store.savePlan(new Tuple<>(queryId, logicalPlan));
     Assert.assertTrue(new File(tmpFolderPath, queryId + ".plan").exists());
 
-    final LogicalPlan loadedPlan = store.load(queryId);
+    final AvroLogicalPlan loadedPlan = store.load(queryId);
     Assert.assertEquals(logicalPlan.getEdges(), loadedPlan.getEdges());
     Assert.assertEquals(logicalPlan.getSchema(), loadedPlan.getSchema());
     testVerticesEqual(logicalPlan.getAvroVertices(), loadedPlan.getAvroVertices());

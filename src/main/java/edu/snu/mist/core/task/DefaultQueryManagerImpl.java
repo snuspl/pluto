@@ -20,7 +20,7 @@ import edu.snu.mist.common.GraphUtils;
 import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.Direction;
-import edu.snu.mist.formats.avro.LogicalPlan;
+import edu.snu.mist.formats.avro.AvroLogicalPlan;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
 
@@ -106,7 +106,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
     this.planStore = planStore;
   }
 
-  public QueryControlResult create(final Tuple<String, LogicalPlan> tuple) {
+  public QueryControlResult create(final Tuple<String, AvroLogicalPlan> tuple) {
     final DAG<PhysicalVertex, Direction> physicalPlan;
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(tuple.getKey());
@@ -292,8 +292,8 @@ final class DefaultQueryManagerImpl implements QueryManager {
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(queryId);
     try {
-      final LogicalPlan loadedPlan = planStore.load(queryId);
-      final Tuple<String, LogicalPlan> tuple = new Tuple<String, LogicalPlan>(queryId, loadedPlan);
+      final AvroLogicalPlan loadedPlan = planStore.load(queryId);
+      final Tuple<String, AvroLogicalPlan> tuple = new Tuple<String, AvroLogicalPlan>(queryId, loadedPlan);
       physicalPlan = physicalPlanGenerator.generate(tuple);
       physicalPlanMap.putIfAbsent(queryId, physicalPlan);
       start(physicalPlan);
