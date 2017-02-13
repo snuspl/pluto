@@ -20,11 +20,13 @@ import java.util.Map;
 /**
  * This is an interface that must be implemented by stateful operators.
  */
-public interface StatefulOperator {
+public interface StateHandler {
 
   /**
    * Save the state of the current operator.
    */
-  Map<String, Object> saveState();
+  Map<String, Object> getOperatorState();
+
+  void setState(Map<String, Object> loadedState);
 
 }

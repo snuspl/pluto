@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  * reorganize the queue to have available windows and put the watermark or data into the windows.
  * @param <T> the type of data
  */
-abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements StatefulOperator {
+abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements StateHandler {
   // TODO: [MIST-324] Refactor fixed size windowing operation semantics
   private static final Logger LOG = Logger.getLogger(FixedSizeWindowOperator.class.getName());
 
@@ -140,10 +140,17 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements S
   }
 
   @Override
-  public Map<String, Object> saveState() {
-    Map<String, Object> stateMap = new HashMap<>();
+  public Map<String, Object> getOperatorState() {
+    final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("windowCreationPoint", windowCreationPoint);
     stateMap.put("windowQueue", windowQueue);
     return stateMap;
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public void setState(final Map<String, Object> loadedState) {
+    windowCreationPoint = (long)loadedState.get("windowCreationPoint");
+    windowQueue.addAll((Queue<Window<T>>)loadedState.get("windowQueue"));
   }
 }

@@ -42,7 +42,7 @@ import java.util.logging.Logger;
  * This can be changed to Map when we support non-serializable state.
  */
 public final class ReduceByKeyOperator<K extends Serializable, V extends Serializable>
-    extends OneStreamOperator implements StatefulOperator{
+    extends OneStreamOperator implements StateHandler {
   private static final Logger LOG = Logger.getLogger(ReduceByKeyOperator.class.getName());
 
   /**
@@ -136,9 +136,15 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
   }
 
   @Override
-  public Map<String, Object> saveState() {
-    Map<String, Object> stateMap = new HashMap<>();
-    stateMap.put("state", state);
+  public Map<String, Object> getOperatorState() {
+    final Map<String, Object> stateMap = new HashMap<>();
+    stateMap.put("reduceByKeyState", state);
     return stateMap;
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public void setState(final Map<String, Object> loadedState) {
+    state = (HashMap<K, V>)loadedState.get("state");
   }
 }

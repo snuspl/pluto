@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  * @param <OUT> the type of output data
  */
 public final class ApplyStatefulOperator<IN, OUT>
-    extends OneStreamOperator implements StatefulOperator{
+    extends OneStreamOperator implements StateHandler {
 
   private static final Logger LOG = Logger.getLogger(ApplyStatefulOperator.class.getName());
 
@@ -82,9 +82,15 @@ public final class ApplyStatefulOperator<IN, OUT>
   }
 
   @Override
-  public Map<String, Object> saveState() {
-    Map<String, Object> stateMap = new HashMap<>();
+  public Map<String, Object> getOperatorState() {
+    final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("applyStatefulFunctionState", applyStatefulFunction.getCurrentState());
     return stateMap;
+  }
+
+  @Override
+  public void setState(final Map<String, Object> loadedState) {
+    // TODO[MIST-435] Implement stateful loading for ApplyStatefulFunctions
+    // applyStatefulFunction.setFunctionState(loadedState.get("applyStatefulFunctionState"));
   }
 }

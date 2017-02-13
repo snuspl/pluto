@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  * After that, a new session is created.
  * @param <T> the type of data
  */
-public final class SessionWindowOperator<T> extends OneStreamOperator implements StatefulOperator{
+public final class SessionWindowOperator<T> extends OneStreamOperator implements StateHandler {
   private static final Logger LOG = Logger.getLogger(SessionWindowOperator.class.getName());
 
   /**
@@ -110,11 +110,19 @@ public final class SessionWindowOperator<T> extends OneStreamOperator implements
   }
 
   @Override
-  public Map<String, Object> saveState() {
-    Map<String, Object> stateMap = new HashMap<>();
+  public Map<String, Object> getOperatorState() {
+    final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("currentWindow", currentWindow);
     stateMap.put("latestDataTimestamp", latestDataTimestamp);
     stateMap.put("startedNewWindow", startedNewWindow);
     return stateMap;
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public void setState(final Map<String, Object> loadedState) {
+    currentWindow = (Window<T>)loadedState.get("currentWindow");
+    latestDataTimestamp = (long)loadedState.get("latestDataTimestamp");
+    startedNewWindow = (boolean)loadedState.get("startedNewWindow");
   }
 }
