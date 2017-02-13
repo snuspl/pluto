@@ -25,6 +25,8 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,7 +35,8 @@ import java.util.logging.Logger;
  * @param <IN> the type of input data
  * @param <OUT> the type of output data
  */
-public final class ApplyStatefulOperator<IN, OUT> extends OneStreamOperator {
+public final class ApplyStatefulOperator<IN, OUT>
+    extends OneStreamOperator implements StatefulOperator{
 
   private static final Logger LOG = Logger.getLogger(ApplyStatefulOperator.class.getName());
 
@@ -76,5 +79,12 @@ public final class ApplyStatefulOperator<IN, OUT> extends OneStreamOperator {
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
     outputEmitter.emitWatermark(input);
+  }
+
+  @Override
+  public Map<String, Object> saveState() {
+    Map<String, Object> stateMap = new HashMap<>();
+    stateMap.put("applyStatefulFunctionState", applyStatefulFunction.getCurrentState());
+    return stateMap;
   }
 }

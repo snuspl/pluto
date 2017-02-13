@@ -21,6 +21,8 @@ import edu.snu.mist.common.parameters.OperatorId;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
@@ -34,7 +36,7 @@ import java.util.logging.Logger;
  * Each queue contains MistDataEvent and MistWatermarkEvent.
  * The operator drains events from the queues to the next operator until watermark timestamp.
  */
-public final class UnionOperator extends TwoStreamOperator {
+public final class UnionOperator extends TwoStreamOperator implements StatefulOperator {
   private static final Logger LOG = Logger.getLogger(UnionOperator.class.getName());
 
   private final Queue<MistDataEvent> leftUpstreamQueue;
@@ -201,5 +203,17 @@ public final class UnionOperator extends TwoStreamOperator {
 
     // Drain events until the minimum watermark.
     drainUntilMinimumWatermark();
+  }
+
+  @Override
+  public Map<String, Object> saveState() {
+    Map<String, Object> stateMap = new HashMap<>();
+    stateMap.put("leftUpstreamQueue", leftUpstreamQueue);
+    stateMap.put("rightUpstreamQueue", rightUpstreamQueue);
+    stateMap.put("recentLeftWatermark", recentLeftWatermark);
+    stateMap.put("recentRightWatermark", recentRightWatermark);
+    stateMap.put("recentLeftTimestamp", recentLeftTimestamp);
+    stateMap.put("recentRightTimestamp", recentRightTimestamp);
+    return stateMap;
   }
 }
