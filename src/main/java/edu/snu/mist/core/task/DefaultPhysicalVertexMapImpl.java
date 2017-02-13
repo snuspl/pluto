@@ -15,20 +15,24 @@
  */
 package edu.snu.mist.core.task;
 
-/**
- * This interface represents physical vertices of the query.
- */
-interface PhysicalVertex {
+import javax.inject.Inject;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
-  public static enum Type {
-    SOURCE,
-    OPERATOR_CHIAN,
-    OPERATOR,
-    SINK
+/**
+ * This class holds a map of <PhysicalVertexId, PhysicalVertex>.
+ * With this map, we can decouple the logical plan of the query and its physical plan.
+ */
+final class DefaultPhysicalVertexMapImpl implements PhysicalVertexMap {
+
+  private final ConcurrentMap<String, PhysicalVertex> physicalVertexMap;
+
+  @Inject
+  private DefaultPhysicalVertexMapImpl() {
+    this.physicalVertexMap = new ConcurrentHashMap<>();
   }
 
-  /**
-   * Get the type of the physical vertex.
-   */
-  Type getType();
+  public ConcurrentMap<String, PhysicalVertex> getPhysicalVertexMap() {
+    return physicalVertexMap;
+  }
 }

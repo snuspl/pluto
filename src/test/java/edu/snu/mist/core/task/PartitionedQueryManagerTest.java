@@ -32,7 +32,7 @@ public class PartitionedQueryManagerTest {
     final RandomlyPickManager partitionedQueryManager = injector.getInstance(RandomlyPickManager.class);
 
     // Select a query
-    final PartitionedQuery query = new DefaultPartitionedQuery();
+    final PartitionedQuery query = new DefaultPartitionedQueryImpl();
     partitionedQueryManager.insert(query);
     final PartitionedQuery selectedQuery = partitionedQueryManager.pickQuery();
     Assert.assertEquals(query, selectedQuery);

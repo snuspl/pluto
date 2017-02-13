@@ -105,8 +105,10 @@ public final class QueryManagerTest {
     // Number of expected outputs
     final CountDownLatch countDownAllOutputs = new CountDownLatch(intermediateResult.size() * 2);
 
-    // Create the DAG of the query
+    // Create the physical DAG of the query
     final DAG<PhysicalVertex, Direction> dag = new AdjacentListDAG<>();
+    // Create the logical DAG of the query
+    final DAG<LogicalVertex, Direction> logicalPlan = new AdjacentListDAG<>();
 
     // Create source
     final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
@@ -123,21 +125,23 @@ public final class QueryManagerTest {
     // Create sinks
     final List<String> sink1Result = new LinkedList<>();
     final List<Integer> sink2Result = new LinkedList<>();
-    final Sink sink1 = new TestSink<String>(sink1Result, countDownAllOutputs);
-    final Sink sink2 = new TestSink<Integer>(sink2Result, countDownAllOutputs);
+    final Sink sink1 = new TestSink<String>(
+        sink1Result, countDownAllOutputs, identifierFactory.getNewInstance("sink1"));
+    final Sink sink2 = new TestSink<Integer>(
+        sink2Result, countDownAllOutputs, identifierFactory.getNewInstance("sink2"));
 
     // Fake logical plan of QueryManager
     final Tuple<String, AvroLogicalPlan> tuple = new Tuple<>(queryId, new AvroLogicalPlan());
 
-    // Construct physical plan
-    constructPhysicalPlan(tuple, dag, src, sink1, sink2);
+    // Construct logical and physical plan
+    constructLogicalAndPhysicalPlan(tuple, dag, logicalPlan, src, sink1, sink2);
 
-    // Create mock PhysicalPlanGenerator. It returns the above physical plan
-    final PhysicalPlanGenerator physicalPlanGenerator = mock(PhysicalPlanGenerator.class);
-    when(physicalPlanGenerator.generate(tuple)).thenReturn(dag);
+    // Create mock PlanGenerator. It returns the above logical and physical plan
+    final PlanGenerator planGenerator = mock(PlanGenerator.class);
+    when(planGenerator.generate(tuple)).thenReturn(new DefaultLogicalAndPhysicalPlanImpl(logicalPlan, dag));
 
     // Build QueryManager
-    final QueryManager queryManager = queryManagerBuild(tuple, physicalPlanGenerator, injector);
+    final QueryManager queryManager = queryManagerBuild(tuple, planGenerator, injector);
     queryManager.create(tuple);
 
     // Wait until all of the outputs are generated
@@ -176,11 +180,12 @@ public final class QueryManagerTest {
    * Construct physical plan.
    * Creates operators an partitioned queries and adds source, dag vertices, edges and sinks to dag.
    */
-  private void constructPhysicalPlan(final Tuple<String, AvroLogicalPlan> tuple,
-                                     final DAG<PhysicalVertex, Direction> dag,
-                                     final PhysicalSource src,
-                                     final Sink sink1,
-                                     final Sink sink2) {
+  private void constructLogicalAndPhysicalPlan(final Tuple<String, AvroLogicalPlan> tuple,
+                                               final DAG<PhysicalVertex, Direction> dag,
+                                               final DAG<LogicalVertex, Direction> logicalPlan,
+                                               final PhysicalSource src,
+                                               final Sink sink1,
+                                               final Sink sink2) {
 
     // Create operators and partitioned queries
     //                     (pq1)                                     (pq2)
@@ -194,14 +199,47 @@ public final class QueryManagerTest {
     final Operator toStringMap = new MapOperator<>("toStringMap", toStringMapFunc);
     final Operator totalCountMap = new MapOperator<>("totalCountMap", totalCountMapFunc);
 
-    final PartitionedQuery pq1 = new DefaultPartitionedQuery();
+    // Build the logical plan
+    final LogicalVertex logicalSrc = new DefaultLogicalVertexImpl(src.getIdentifier().toString());
+    final LogicalVertex logicalFlatMap = new DefaultLogicalVertexImpl(flatMap.getOperatorIdentifier());
+    final LogicalVertex logicalFilter = new DefaultLogicalVertexImpl(filter.getOperatorIdentifier());
+    final LogicalVertex logicalToTupleMap = new DefaultLogicalVertexImpl(toTupleMap.getOperatorIdentifier());
+    final LogicalVertex logicalReduceByKey = new DefaultLogicalVertexImpl(reduceByKey.getOperatorIdentifier());
+    final LogicalVertex logicalToStringMap = new DefaultLogicalVertexImpl(toStringMap.getOperatorIdentifier());
+    final LogicalVertex logicalTotalCntMap = new DefaultLogicalVertexImpl(totalCountMap.getOperatorIdentifier());
+    final LogicalVertex logicalSink1 = new DefaultLogicalVertexImpl(sink1.getIdentifier().toString());
+    final LogicalVertex logicalSink2 = new DefaultLogicalVertexImpl(sink2.getIdentifier().toString());
+
+    // Add logical vertices
+    logicalPlan.addVertex(logicalSrc);
+    logicalPlan.addVertex(logicalFlatMap);
+    logicalPlan.addVertex(logicalFilter);
+    logicalPlan.addVertex(logicalToTupleMap);
+    logicalPlan.addVertex(logicalReduceByKey);
+    logicalPlan.addVertex(logicalToStringMap);
+    logicalPlan.addVertex(logicalTotalCntMap);
+    logicalPlan.addVertex(logicalSink1);
+    logicalPlan.addVertex(logicalSink2);
+
+    // Add logical edges
+    logicalPlan.addEdge(logicalSrc, logicalFlatMap, Direction.LEFT);
+    logicalPlan.addEdge(logicalFlatMap, logicalFilter, Direction.LEFT);
+    logicalPlan.addEdge(logicalFilter, logicalToTupleMap, Direction.LEFT);
+    logicalPlan.addEdge(logicalToTupleMap, logicalReduceByKey, Direction.LEFT);
+    logicalPlan.addEdge(logicalReduceByKey, logicalToStringMap, Direction.LEFT);
+    logicalPlan.addEdge(logicalReduceByKey, logicalTotalCntMap, Direction.LEFT);
+    logicalPlan.addEdge(logicalToStringMap, logicalSink1, Direction.LEFT);
+    logicalPlan.addEdge(logicalTotalCntMap, logicalSink2, Direction.LEFT);
+
+    // Build the physical plan
+    final PartitionedQuery pq1 = new DefaultPartitionedQueryImpl();
     pq1.insertToTail(flatMap);
     pq1.insertToTail(filter);
     pq1.insertToTail(toTupleMap);
     pq1.insertToTail(reduceByKey);
-    final PartitionedQuery pq2 = new DefaultPartitionedQuery();
+    final PartitionedQuery pq2 = new DefaultPartitionedQueryImpl();
     pq2.insertToTail(toStringMap);
-    final PartitionedQuery pq3 = new DefaultPartitionedQuery();
+    final PartitionedQuery pq3 = new DefaultPartitionedQueryImpl();
     pq3.insertToTail(totalCountMap);
 
     // Add Source
@@ -214,6 +252,7 @@ public final class QueryManagerTest {
     dag.addEdge(pq1, pq2, Direction.LEFT);
     dag.addVertex(pq3);
     dag.addEdge(pq1, pq3, Direction.LEFT);
+
 
     // Add Sink
     final PhysicalSink physicalSink1 = new PhysicalSinkImpl<>(sink1);
@@ -229,7 +268,7 @@ public final class QueryManagerTest {
    * It receives inputs tuple, physicalPlanGenerator, injector then makes query manager.
    */
   private QueryManager queryManagerBuild(final Tuple<String, AvroLogicalPlan> tuple,
-                                         final PhysicalPlanGenerator physicalPlanGenerator,
+                                         final PlanGenerator planGenerator,
                                          final Injector injector) throws Exception {
     // Create mock PlanStore. It returns true and the above logical plan
     final QueryInfoStore planStore = mock(QueryInfoStore.class);
@@ -237,7 +276,7 @@ public final class QueryManagerTest {
     when(planStore.load(tuple.getKey())).thenReturn(tuple.getValue());
 
     // Create QueryManager
-    injector.bindVolatileInstance(PhysicalPlanGenerator.class, physicalPlanGenerator);
+    injector.bindVolatileInstance(PlanGenerator.class, planGenerator);
     injector.bindVolatileInstance(QueryInfoStore.class, planStore);
 
     // Submit the fake logical plan
@@ -379,11 +418,14 @@ public final class QueryManagerTest {
   final class TestSink<I> implements Sink<I> {
     private final List<I> result;
     private final CountDownLatch countDownLatch;
+    private final Identifier id;
 
     TestSink(final List<I> result,
-             final CountDownLatch countDownLatch) {
+             final CountDownLatch countDownLatch,
+             final Identifier id) {
       this.result = result;
       this.countDownLatch = countDownLatch;
+      this.id = id;
     }
 
     @Override
@@ -399,7 +441,7 @@ public final class QueryManagerTest {
 
     @Override
     public Identifier getIdentifier() {
-      return null;
+      return id;
     }
   }
 }

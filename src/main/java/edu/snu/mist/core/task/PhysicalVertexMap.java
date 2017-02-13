@@ -15,20 +15,20 @@
  */
 package edu.snu.mist.core.task;
 
-/**
- * This interface represents physical vertices of the query.
- */
-interface PhysicalVertex {
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
-  public static enum Type {
-    SOURCE,
-    OPERATOR_CHIAN,
-    OPERATOR,
-    SINK
-  }
+import java.util.concurrent.ConcurrentMap;
+
+/**
+ * This interface holds a map of <PhysicalVertexId, PhysicalVertex>.
+ * With this map, we can decouple the logical plan of the query and its physical plan.
+ */
+@DefaultImplementation(DefaultPhysicalVertexMapImpl.class)
+interface PhysicalVertexMap {
 
   /**
-   * Get the type of the physical vertex.
+   * Get the physical vertex map.
+   * @return map of (physical vertex id, physical vertex)
    */
-  Type getType();
+  ConcurrentMap<String, PhysicalVertex> getPhysicalVertexMap();
 }

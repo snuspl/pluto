@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * TODO[MIST-70]: Consider concurrency issue in execution of PartitionedQuery
  */
 @SuppressWarnings("unchecked")
-final class DefaultPartitionedQuery implements PartitionedQuery {
+final class DefaultPartitionedQueryImpl implements PartitionedQuery {
 
   private enum Status {
     RUNNING, // When the query processes an event
@@ -64,7 +64,7 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
   private final AtomicReference<Status> status;
 
   @Inject
-  DefaultPartitionedQuery() {
+  DefaultPartitionedQueryImpl() {
     this.operators = new LinkedList<>();
     this.queue = new ConcurrentLinkedQueue<>();
     this.status = new AtomicReference<>(Status.READY);
@@ -195,7 +195,7 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final DefaultPartitionedQuery that = (DefaultPartitionedQuery) o;
+    final DefaultPartitionedQueryImpl that = (DefaultPartitionedQueryImpl) o;
     if (!operators.equals(that.operators)) {
       return false;
     }

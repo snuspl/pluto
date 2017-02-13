@@ -16,19 +16,16 @@
 package edu.snu.mist.core.task;
 
 /**
- * This interface represents physical vertices of the query.
+ * This interface represents logical vertices of the query.
+ * A logical vertex references a physical vertex that corresponds to it.
+ * By making the logical vertex reference the physical vertex,
+ * we can decouple the query and the physical plan.
  */
-interface PhysicalVertex {
-
-  public static enum Type {
-    SOURCE,
-    OPERATOR_CHIAN,
-    OPERATOR,
-    SINK
-  }
+interface LogicalVertex {
 
   /**
-   * Get the type of the physical vertex.
+   * Returns a physical vertex id that is coupled with the logical vertex.
+   * @return a physical vertex id.
    */
-  Type getType();
+  String getPhysicalVertexId();
 }

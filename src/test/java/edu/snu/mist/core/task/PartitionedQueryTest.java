@@ -49,7 +49,7 @@ public final class PartitionedQueryTest {
     final List<Integer> result = new LinkedList<>();
     final Integer input = 3;
 
-    final PartitionedQuery partitionedQuery = new DefaultPartitionedQuery();
+    final PartitionedQuery partitionedQuery = new DefaultPartitionedQueryImpl();
     partitionedQuery.setOutputEmitter(new TestOutputEmitter<>(result));
 
     final Injector injector = Tang.Factory.getTang().newInjector();
