@@ -20,6 +20,12 @@ import edu.snu.mist.formats.avro.Direction;
 
 /**
  * This interface holds the logical and physical plan.
+ * A logical plan is a DAG which consists of logical vertices and edges.
+ * A physical plan ins a DAG which consists of physical vertices and edges.
+ * In MIST, a logical vertex points to a physical vertex.
+ * The physical vertex holds the actual object that performs actual computations,
+ * such as receiving data stream (source), filter, map (operators), and sending results to clients (sink).
+ * The logical and physical vertex is in the M:1 relationship, because several physical vertices can be merged to one.
  */
 interface LogicalAndPhysicalPlan {
 

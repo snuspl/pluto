@@ -22,7 +22,6 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * This interface holds a map of <PhysicalVertexId, PhysicalVertex>.
  * With this map, we can decouple the logical plan of the query and its physical plan.
- * This map will be used to merge or delete queries.
  */
 @DefaultImplementation(DefaultPhysicalVertexMapImpl.class)
 interface PhysicalVertexMap {

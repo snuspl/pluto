@@ -22,17 +22,13 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
 
 
 /**
- * This interface receives a tuple of queryId and logical plan,
- * saves the logical plan to PlanStore and converts the logical plan to the physical plan,
- * chains operators, allocates the chains into Executors,
- * and starts to receive input data stream of the query.
- * And this interface receives a queryId, gets the correspond chained operators,
- * cuts the chain and closes sink and source channel.
+ * This interface manages queries that are submitted from clients.
+ * It executes the queries when they are submitted, and deletes them if requested.
  */
 @DefaultImplementation(DefaultQueryManagerImpl.class)
 public interface QueryManager extends AutoCloseable {
   /**
-   * Converts the submitted logical plan to the physical plan,
+   * Converts the submitted avro logical plan to the physical plan,
    * and starts to receive input data stream of the query.
    * @param tuple
    */

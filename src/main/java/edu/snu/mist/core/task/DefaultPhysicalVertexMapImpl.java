@@ -20,9 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * This interface holds a map of <PhysicalVertexId, PhysicalVertex>.
+ * This class holds a map of <PhysicalVertexId, PhysicalVertex>.
  * With this map, we can decouple the logical plan of the query and its physical plan.
- * This map will be used to delete queries.
  */
 final class DefaultPhysicalVertexMapImpl implements PhysicalVertexMap {
 

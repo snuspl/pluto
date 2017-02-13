@@ -35,20 +35,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * DefaultQueryManagerImpl starts the query by doing the following things:
- * 1) receives logical plans from clients stores the logical plan to PlanStore and
- * converts the logical plans to physical plans,
- * 2) make PartitionedQuery, inserts the PartitionedQueries to PartitionedQueryManager,
- * 3) and sets the OutputEmitters of the Source and PartitionedQueries
- * to forward their outputs to next PartitionedQueries.
- * 4) starts to receive input data stream from the source of the query.
- * And deletes the query by doing the following things:
- * 1) receives queryId from clients,
- * 2) and deletes PartitionedQueries from the PartitionedQueryManager,
- * 3) and sets the OutputEmitters of the Source and PartitionedQueries to null,
- * 4) and closes the channel of Source and Sink.
- * Stops the query by just deleting the query.
- * Resume the query by loading logical plan and starting the query.
+ * Default implementation of QueryManager.
  */
 @SuppressWarnings("unchecked")
 final class DefaultQueryManagerImpl implements QueryManager {
@@ -81,7 +68,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
   private final QueryInfoStore planStore;
 
   /**
-   * A physical plan generator.
+   * A physical and logical plan generator.
    */
   private final PlanGenerator planGenerator;
 
@@ -104,6 +91,15 @@ final class DefaultQueryManagerImpl implements QueryManager {
     this.planStore = planStore;
   }
 
+  /**
+   * It converts the avro logical plan (query) to the physical plan,
+   * and executes the sources in order to receives data streams.
+   * Before the queries are executed, it stores the avro logical plan into disk.
+   * We can regenerate the queries from the stored avro logical plan.
+   * @param tuple a pair of the query id and the avro logical plan
+   * @return submission result
+   */
+  @Override
   public QueryControlResult create(final Tuple<String, AvroLogicalPlan> tuple) {
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(tuple.getKey());

@@ -18,7 +18,6 @@ package edu.snu.mist.core.task;
 /**
  * This is the default implementation of the LogicalVertex.
  **/
-
 final class DefaultLogicalVertexImpl implements LogicalVertex {
 
   /**

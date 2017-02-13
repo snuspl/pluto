@@ -136,7 +136,7 @@ public final class QueryManagerTest {
     // Construct logical and physical plan
     constructLogicalAndPhysicalPlan(tuple, dag, logicalPlan, src, sink1, sink2);
 
-    // Create mock PhysicalPlanGenerator. It returns the above physical plan
+    // Create mock PlanGenerator. It returns the above logical and physical plan
     final PlanGenerator planGenerator = mock(PlanGenerator.class);
     when(planGenerator.generate(tuple)).thenReturn(new DefaultLogicalAndPhysicalPlanImpl(logicalPlan, dag));
 

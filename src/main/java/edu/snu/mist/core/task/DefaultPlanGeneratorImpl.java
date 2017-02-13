@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * A default implementation of PhysicalPlanGenerator.
+ * A default implementation of PlanGenerator.
  */
 final class DefaultPlanGeneratorImpl implements PlanGenerator {
 
@@ -83,20 +83,20 @@ final class DefaultPlanGeneratorImpl implements PlanGenerator {
   public LogicalAndPhysicalPlan generate(
       final Tuple<String, AvroLogicalPlan> queryIdAndAvroLogicalPlan)
       throws IllegalArgumentException, IOException, ClassNotFoundException, InjectionException {
-    final AvroLogicalPlan logicalPlan = queryIdAndAvroLogicalPlan.getValue();
+    final AvroLogicalPlan avroLogicalPlan = queryIdAndAvroLogicalPlan.getValue();
     // For physical plan
-    final List<PhysicalVertex> deserializedVertices = new ArrayList<>(logicalPlan.getAvroVertices().size());
+    final List<PhysicalVertex> deserializedVertices = new ArrayList<>(avroLogicalPlan.getAvroVertices().size());
     final DAG<PhysicalVertex, Direction> physicalDAG = new AdjacentListDAG<>();
     // This is for logical plan
-    final List<List<LogicalVertex>> logicalVertices = new ArrayList<>(logicalPlan.getAvroVertices().size());
+    final List<List<LogicalVertex>> logicalVertices = new ArrayList<>(avroLogicalPlan.getAvroVertices().size());
     final DAG<LogicalVertex, Direction> logicalDAG = new AdjacentListDAG<>();
 
     // Get a class loader
-    final URL[] urls = SerializeUtils.getURLs(logicalPlan.getJarFilePaths());
+    final URL[] urls = SerializeUtils.getURLs(avroLogicalPlan.getJarFilePaths());
     final ClassLoader classLoader = classLoaderProvider.newInstance(urls);
 
     // Deserialize vertices
-    for (final AvroVertexChain avroVertexChain : logicalPlan.getAvroVertices()) {
+    for (final AvroVertexChain avroVertexChain : avroLogicalPlan.getAvroVertices()) {
       switch (avroVertexChain.getAvroVertexChainType()) {
         case SOURCE: {
           final Vertex vertex = avroVertexChain.getVertexChain().get(0);
@@ -185,7 +185,7 @@ final class DefaultPlanGeneratorImpl implements PlanGenerator {
     }
 
     // Add edge info to physical plan and logical plan
-    for (final Edge edge : logicalPlan.getEdges()) {
+    for (final Edge edge : avroLogicalPlan.getEdges()) {
       final int srcIndex = edge.getFrom();
       final int dstIndex = edge.getTo();
 

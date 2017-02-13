@@ -42,9 +42,9 @@ import java.net.URISyntaxException;
 import java.util.*;
 
 /**
- * Test class for DefaultPlanGenerator.
+ * Test class for DefaultPlanGeneratorImpl.
  */
-public final class DefaultPlanGeneratorTest {
+public final class DefaultPlanGeneratorImplTest {
 
   /**
    * ServerSocket used for text socket sink connection.
@@ -94,9 +94,9 @@ public final class DefaultPlanGeneratorTest {
             .setEdges(serializedDag.getValue())
             .build();
 
-    final PlanGenerator ppg = Tang.Factory.getTang().newInjector().getInstance(PlanGenerator.class);
+    final PlanGenerator planGenerator = Tang.Factory.getTang().newInjector().getInstance(PlanGenerator.class);
     final Tuple<String, AvroLogicalPlan> tuple = new Tuple<>("query-test", avroLogicalPlan);
-    final LogicalAndPhysicalPlan plan = ppg.generate(tuple);
+    final LogicalAndPhysicalPlan plan = planGenerator.generate(tuple);
 
     // Test physical plan
     final DAG<PhysicalVertex, Direction> physicalPlan = plan.getPhysicalPlan();

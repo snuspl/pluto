@@ -18,12 +18,13 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.operators.Operator;
 
 /**
- * This interface represents a physical operator.
+ * This interface represents a physical operator that contains the actual object of the operator.
+ * It also holds the meta data of the operator.
  */
 interface PhysicalOperator extends PhysicalVertex {
 
   /**
-   * Get the operator object.
+   * Get the actual operator object.
    * @return operator
    */
   Operator getOperator();
