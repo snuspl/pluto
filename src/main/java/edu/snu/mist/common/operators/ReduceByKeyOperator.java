@@ -145,6 +145,6 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
   @SuppressWarnings("unchecked")
   @Override
   public void setState(final Map<String, Object> loadedState) {
-    state = (HashMap<K, V>)loadedState.get("state");
+    state = (HashMap<K, V>)loadedState.get("reduceByKeyState");
   }
 }
