@@ -33,11 +33,11 @@ public final class MISTQueryImpl implements MISTQuery {
   /**
    * DAG of the query.
    */
-  private final DAG<MISTStream, Direction> dag;
+  private final DAG<MISTStream, Tuple<Direction, Integer>> dag;
   private final QueryPartitioner queryPartitioner;
   private final AvroConfigurationSerializer serializer;
 
-  public MISTQueryImpl(final DAG<MISTStream, Direction> dag) {
+  public MISTQueryImpl(final DAG<MISTStream, Tuple<Direction, Integer>> dag) {
     this.queryPartitioner = new QueryPartitioner(dag);
     this.dag = dag;
     this.serializer = new AvroConfigurationSerializer();
@@ -45,7 +45,7 @@ public final class MISTQueryImpl implements MISTQuery {
 
   @Override
   public Tuple<List<AvroVertexChain>, List<Edge>> getSerializedDAG() {
-    final DAG<List<MISTStream>, Direction> chainedDAG =
+    final DAG<List<MISTStream>, Tuple<Direction, Integer>> chainedDAG =
         queryPartitioner.generatePartitionedPlan();
     final Queue<List<MISTStream>> queue = new LinkedList<>();
     final List<List<MISTStream>> vertices = new ArrayList<>();
@@ -63,13 +63,15 @@ public final class MISTQueryImpl implements MISTQuery {
     while (!queue.isEmpty()) {
       final List<MISTStream> vertex = queue.remove();
       final int fromIndex = vertices.indexOf(vertex);
-      final Map<List<MISTStream>, Direction> neighbors = chainedDAG.getEdges(vertex);
-      for (final Map.Entry<List<MISTStream>, Direction> neighbor : neighbors.entrySet()) {
+      final Map<List<MISTStream>, Tuple<Direction, Integer>> neighbors = chainedDAG.getEdges(vertex);
+      for (final Map.Entry<List<MISTStream>, Tuple<Direction, Integer>> neighbor : neighbors.entrySet()) {
         final int toIndex = vertices.indexOf(neighbor.getKey());
+        final Tuple<Direction, Integer> edgeInfo = neighbor.getValue();
         final Edge.Builder edgeBuilder = Edge.newBuilder()
             .setFrom(fromIndex)
             .setTo(toIndex)
-            .setDirection(neighbor.getValue());
+            .setDirection(edgeInfo.getKey())
+            .setBranchIndex(edgeInfo.getValue());
         edges.add(edgeBuilder.build());
       }
     }
@@ -109,7 +111,7 @@ public final class MISTQueryImpl implements MISTQuery {
   }
 
   @Override
-  public DAG<MISTStream, Direction> getDAG() {
+  public DAG<MISTStream, Tuple<Direction, Integer>> getDAG() {
     return dag;
   }
 }

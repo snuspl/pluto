@@ -19,6 +19,7 @@ import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.OutputEmitter;
 import edu.snu.mist.formats.avro.Direction;
+import org.apache.reef.io.Tuple;
 
 import java.util.Map;
 
@@ -32,24 +33,24 @@ final class SourceOutputEmitter<I> implements OutputEmitter {
   /**
    * Next PartitionedQueries.
    */
-  private final Map<PhysicalVertex, Direction> nextPartitionedQueries;
+  private final Map<PhysicalVertex, Tuple<Direction, Integer>> nextPartitionedQueries;
 
-  public SourceOutputEmitter(final Map<PhysicalVertex, Direction> nextPartitionedQueries) {
+  public SourceOutputEmitter(final Map<PhysicalVertex, Tuple<Direction, Integer>> nextPartitionedQueries) {
     this.nextPartitionedQueries = nextPartitionedQueries;
   }
 
   @Override
   public void emitData(final MistDataEvent data) {
     if (nextPartitionedQueries.size() == 1) {
-      for (final Map.Entry<PhysicalVertex, Direction> nextQuery :
+      for (final Map.Entry<PhysicalVertex, Tuple<Direction, Integer>> nextQuery :
           nextPartitionedQueries.entrySet()) {
-        final Direction direction = nextQuery.getValue();
+        final Direction direction = nextQuery.getValue().getKey();
         ((PartitionedQuery)nextQuery.getKey()).addNextEvent(data, direction);
       }
     } else {
-      for (final Map.Entry<PhysicalVertex, Direction> nextQuery :
+      for (final Map.Entry<PhysicalVertex, Tuple<Direction, Integer>> nextQuery :
           nextPartitionedQueries.entrySet()) {
-        final Direction direction = nextQuery.getValue();
+        final Direction direction = nextQuery.getValue().getKey();
         final MistDataEvent event = new MistDataEvent(data.getValue(), data.getTimestamp());
         ((PartitionedQuery)nextQuery.getKey()).addNextEvent(event, direction);
       }
@@ -58,9 +59,9 @@ final class SourceOutputEmitter<I> implements OutputEmitter {
 
   @Override
   public void emitWatermark(final MistWatermarkEvent watermark) {
-    for (final Map.Entry<PhysicalVertex, Direction> nextQuery :
+    for (final Map.Entry<PhysicalVertex, Tuple<Direction, Integer>> nextQuery :
         nextPartitionedQueries.entrySet()) {
-      final Direction direction = nextQuery.getValue();
+      final Direction direction = nextQuery.getValue().getKey();
       ((PartitionedQuery)nextQuery.getKey()).addNextEvent(watermark, direction);
     }
   }

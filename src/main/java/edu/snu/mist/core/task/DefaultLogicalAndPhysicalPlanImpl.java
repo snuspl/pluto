@@ -17,6 +17,7 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.Direction;
+import org.apache.reef.io.Tuple;
 
 /**
  * This class contains the logical and physical plan of a query.
@@ -24,10 +25,10 @@ import edu.snu.mist.formats.avro.Direction;
 final class DefaultLogicalAndPhysicalPlanImpl implements LogicalAndPhysicalPlan {
 
   private final DAG<LogicalVertex, Direction> logicalPlan;
-  private final DAG<PhysicalVertex, Direction> physicalPlan;
+  private final DAG<PhysicalVertex, Tuple<Direction, Integer>> physicalPlan;
 
   public DefaultLogicalAndPhysicalPlanImpl(final DAG<LogicalVertex, Direction> logicalPlan,
-                                           final DAG<PhysicalVertex, Direction> physicalPlan) {
+                                           final DAG<PhysicalVertex, Tuple<Direction, Integer>> physicalPlan) {
     this.logicalPlan = logicalPlan;
     this.physicalPlan = physicalPlan;
   }
@@ -44,7 +45,7 @@ final class DefaultLogicalAndPhysicalPlanImpl implements LogicalAndPhysicalPlan 
    * Return the physical plan.
    * @return physical plan
    */
-  public DAG<PhysicalVertex, Direction> getPhysicalPlan() {
+  public DAG<PhysicalVertex, Tuple<Direction, Integer>> getPhysicalPlan() {
     return physicalPlan;
   }
 }

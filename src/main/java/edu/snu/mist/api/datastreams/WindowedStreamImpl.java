@@ -25,6 +25,7 @@ import edu.snu.mist.common.operators.AggregateWindowOperator;
 import edu.snu.mist.common.operators.ApplyStatefulWindowOperator;
 import edu.snu.mist.common.windows.WindowData;
 import edu.snu.mist.formats.avro.Direction;
+import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
 
@@ -36,7 +37,7 @@ import java.util.Map;
  */
 final class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>> implements WindowedStream<T> {
 
-  WindowedStreamImpl(final DAG<MISTStream, Direction> dag,
+  WindowedStreamImpl(final DAG<MISTStream, Tuple<Direction, Integer>> dag,
                      final Configuration conf) {
     super(dag, conf);
   }

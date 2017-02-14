@@ -37,5 +37,5 @@ public interface MISTQuery {
   /**
    * Get the DAG of the query.
    */
-  DAG<MISTStream, Direction> getDAG();
+  DAG<MISTStream, Tuple<Direction, Integer>> getDAG();
 }

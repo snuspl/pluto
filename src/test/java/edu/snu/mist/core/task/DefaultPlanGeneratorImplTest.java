@@ -91,21 +91,21 @@ public final class DefaultPlanGeneratorImplTest {
     final AvroLogicalPlan avroLogicalPlan = logicalPlanBuilder
         .setJarFilePaths(new LinkedList<>())
         .setAvroVertices(serializedDag.getKey())
-            .setEdges(serializedDag.getValue())
-            .build();
+        .setEdges(serializedDag.getValue())
+        .build();
 
     final PlanGenerator planGenerator = Tang.Factory.getTang().newInjector().getInstance(PlanGenerator.class);
     final Tuple<String, AvroLogicalPlan> tuple = new Tuple<>("query-test", avroLogicalPlan);
     final LogicalAndPhysicalPlan plan = planGenerator.generate(tuple);
 
     // Test physical plan
-    final DAG<PhysicalVertex, Direction> physicalPlan = plan.getPhysicalPlan();
+    final DAG<PhysicalVertex, Tuple<Direction, Integer>> physicalPlan = plan.getPhysicalPlan();
     final Set<PhysicalVertex> sources = physicalPlan.getRootVertices();
     Assert.assertEquals(1, sources.size());
     final PhysicalSource source = (PhysicalSource)sources.iterator().next();
     Assert.assertTrue(source instanceof PhysicalSourceImpl);
     Assert.assertTrue(source.getDataGenerator() instanceof NettyTextDataGenerator);
-    final Map<PhysicalVertex, Direction> nextOps = physicalPlan.getEdges(source);
+    final Map<PhysicalVertex, Tuple<Direction, Integer>> nextOps = physicalPlan.getEdges(source);
     Assert.assertEquals(1, nextOps.size());
 
     final PartitionedQuery pq1 = (PartitionedQuery)nextOps.entrySet().iterator().next().getKey();
@@ -122,7 +122,7 @@ public final class DefaultPlanGeneratorImplTest {
     pq1.insertToTail(filterOperator);
     pq1.insertToTail(mapOperator2);
     pq1.insertToTail(reduceByKeyOperator);
-    final Map<PhysicalVertex, Direction> sinks = physicalPlan.getEdges(pq1);
+    final Map<PhysicalVertex, Tuple<Direction, Integer>> sinks = physicalPlan.getEdges(pq1);
     final PhysicalSink physicalSink = (PhysicalSink)sinks.entrySet().iterator().next().getKey();
     Assert.assertTrue(physicalSink.getSink() instanceof NettyTextSink);
 

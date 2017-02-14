@@ -106,7 +106,7 @@ public final class QueryManagerTest {
     final CountDownLatch countDownAllOutputs = new CountDownLatch(intermediateResult.size() * 2);
 
     // Create the physical DAG of the query
-    final DAG<PhysicalVertex, Direction> dag = new AdjacentListDAG<>();
+    final DAG<PhysicalVertex, Tuple<Direction, Integer>> dag = new AdjacentListDAG<>();
     // Create the logical DAG of the query
     final DAG<LogicalVertex, Direction> logicalPlan = new AdjacentListDAG<>();
 
@@ -181,7 +181,7 @@ public final class QueryManagerTest {
    * Creates operators an partitioned queries and adds source, dag vertices, edges and sinks to dag.
    */
   private void constructLogicalAndPhysicalPlan(final Tuple<String, AvroLogicalPlan> tuple,
-                                               final DAG<PhysicalVertex, Direction> dag,
+                                               final DAG<PhysicalVertex, Tuple<Direction, Integer>> dag,
                                                final DAG<LogicalVertex, Direction> logicalPlan,
                                                final PhysicalSource src,
                                                final Sink sink1,
@@ -247,20 +247,20 @@ public final class QueryManagerTest {
 
     // Add dag vertices and edges
     dag.addVertex(pq1);
-    dag.addEdge(src, pq1, Direction.LEFT);
+    dag.addEdge(src, pq1, new Tuple<>(Direction.LEFT, 0));
     dag.addVertex(pq2);
-    dag.addEdge(pq1, pq2, Direction.LEFT);
+    dag.addEdge(pq1, pq2, new Tuple<>(Direction.LEFT, 0));
     dag.addVertex(pq3);
-    dag.addEdge(pq1, pq3, Direction.LEFT);
+    dag.addEdge(pq1, pq3, new Tuple<>(Direction.LEFT, 0));
 
 
     // Add Sink
     final PhysicalSink physicalSink1 = new PhysicalSinkImpl<>(sink1);
     final PhysicalSink physicalSink2 = new PhysicalSinkImpl<>(sink2);
     dag.addVertex(physicalSink1);
-    dag.addEdge(pq2, physicalSink1, Direction.LEFT);
+    dag.addEdge(pq2, physicalSink1, new Tuple<>(Direction.LEFT, 0));
     dag.addVertex(physicalSink2);
-    dag.addEdge(pq3, physicalSink2, Direction.LEFT);
+    dag.addEdge(pq3, physicalSink2, new Tuple<>(Direction.LEFT, 0));
   }
 
   /**

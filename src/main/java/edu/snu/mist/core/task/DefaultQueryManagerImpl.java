@@ -136,7 +136,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
    * and starts to receive input data stream from the sources.
    * @param physicalPlan physical plan of PartitionedQuery
    */
-  private void start(final DAG<PhysicalVertex, Direction> physicalPlan) {
+  private void start(final DAG<PhysicalVertex, Tuple<Direction, Integer>> physicalPlan) {
     final List<PhysicalSource> sources = new LinkedList<>();
     final Iterator<PhysicalVertex> iterator = GraphUtils.topologicalSort(physicalPlan);
     while (iterator.hasNext()) {
@@ -144,7 +144,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
       switch (physicalVertex.getType()) {
         case SOURCE: {
           final PhysicalSource source = (PhysicalSource)physicalVertex;
-          final Map<PhysicalVertex, Direction> nextOps = physicalPlan.getEdges(source);
+          final Map<PhysicalVertex, Tuple<Direction, Integer>> nextOps = physicalPlan.getEdges(source);
           // 3) Sets output emitters
           source.getEventGenerator().setOutputEmitter(new SourceOutputEmitter<>(nextOps));
           sources.add(source);
@@ -154,7 +154,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
           // 2) Inserts the PartitionedQuery to PartitionedQueryManager.
           final PartitionedQuery partitionedQuery = (PartitionedQuery)physicalVertex;
           partitionedQueryManager.insert(partitionedQuery);
-          final Map<PhysicalVertex, Direction> edges =
+          final Map<PhysicalVertex, Tuple<Direction, Integer>> edges =
               physicalPlan.getEdges(partitionedQuery);
           // 3) Sets output emitters
           partitionedQuery.setOutputEmitter(new OperatorOutputEmitter(edges));

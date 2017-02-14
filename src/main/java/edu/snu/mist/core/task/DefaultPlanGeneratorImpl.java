@@ -42,7 +42,7 @@ import java.util.logging.Logger;
 /**
  * A default implementation of PlanGenerator.
  */
-final class DefaultPlanGeneratorImpl implements PlanGenerator {
+final class  DefaultPlanGeneratorImpl implements PlanGenerator {
 
   private static final Logger LOG = Logger.getLogger(DefaultPlanGeneratorImpl.class.getName());
 
@@ -86,7 +86,7 @@ final class DefaultPlanGeneratorImpl implements PlanGenerator {
     final AvroLogicalPlan avroLogicalPlan = queryIdAndAvroLogicalPlan.getValue();
     // For physical plan
     final List<PhysicalVertex> deserializedVertices = new ArrayList<>(avroLogicalPlan.getAvroVertices().size());
-    final DAG<PhysicalVertex, Direction> physicalDAG = new AdjacentListDAG<>();
+    final DAG<PhysicalVertex, Tuple<Direction, Integer>> physicalDAG = new AdjacentListDAG<>();
     // This is for logical plan
     final List<List<LogicalVertex>> logicalVertices = new ArrayList<>(avroLogicalPlan.getAvroVertices().size());
     final DAG<LogicalVertex, Direction> logicalDAG = new AdjacentListDAG<>();
@@ -192,7 +192,8 @@ final class DefaultPlanGeneratorImpl implements PlanGenerator {
       // Add edge to physical plan
       final PhysicalVertex deserializedSrcVertex = deserializedVertices.get(srcIndex);
       final PhysicalVertex deserializedDstVertex = deserializedVertices.get(dstIndex);
-      physicalDAG.addEdge(deserializedSrcVertex, deserializedDstVertex, edge.getDirection());
+      physicalDAG.addEdge(deserializedSrcVertex, deserializedDstVertex,
+          new Tuple<>(edge.getDirection(), edge.getBranchIndex()));
 
       // Add edge to logical plan
       final List<LogicalVertex> srcLogicalVertices = logicalVertices.get(srcIndex);

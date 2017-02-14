@@ -17,6 +17,7 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.Direction;
+import org.apache.reef.io.Tuple;
 
 /**
  * This interface holds the logical and physical plan.
@@ -39,5 +40,5 @@ interface LogicalAndPhysicalPlan {
    * Return the physical plan.
    * @return physical plan
    */
-  DAG<PhysicalVertex, Direction> getPhysicalPlan();
+  DAG<PhysicalVertex, Tuple<Direction, Integer>> getPhysicalPlan();
 }

@@ -25,6 +25,7 @@ import edu.snu.mist.common.AdjacentListDAG;
 import edu.snu.mist.common.DAG;
 import edu.snu.mist.formats.avro.Direction;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
 
@@ -36,7 +37,7 @@ public final class MISTQueryBuilder {
   /**
    * DAG of the query.
    */
-  private final DAG<MISTStream, Direction> dag;
+  private final DAG<MISTStream, Tuple<Direction, Integer>> dag;
 
   /**
    * Period of default watermark represented in milliseconds.
