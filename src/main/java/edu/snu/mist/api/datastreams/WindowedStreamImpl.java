@@ -16,16 +16,15 @@
 package edu.snu.mist.api.datastreams;
 
 import edu.snu.mist.api.datastreams.configurations.*;
-import edu.snu.mist.common.DAG;
+import edu.snu.mist.common.graphs.DAG;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.ApplyStatefulFunction;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.common.graphs.DirectionAndIndexEdge;
 import edu.snu.mist.common.operators.AggregateWindowOperator;
 import edu.snu.mist.common.operators.ApplyStatefulWindowOperator;
 import edu.snu.mist.common.windows.WindowData;
-import edu.snu.mist.formats.avro.Direction;
-import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
 
@@ -37,7 +36,7 @@ import java.util.Map;
  */
 final class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>> implements WindowedStream<T> {
 
-  WindowedStreamImpl(final DAG<MISTStream, Tuple<Direction, Integer>> dag,
+  WindowedStreamImpl(final DAG<MISTStream, DirectionAndIndexEdge> dag,
                      final Configuration conf) {
     super(dag, conf);
   }

@@ -15,20 +15,20 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.DAG;
-import edu.snu.mist.formats.avro.Direction;
-import org.apache.reef.io.Tuple;
+import edu.snu.mist.common.graphs.DAG;
+import edu.snu.mist.common.graphs.DirectionAndIndexEdge;
+import edu.snu.mist.common.graphs.DirectionEdge;
 
 /**
  * This class contains the logical and physical plan of a query.
  */
 final class DefaultLogicalAndPhysicalPlanImpl implements LogicalAndPhysicalPlan {
 
-  private final DAG<LogicalVertex, Direction> logicalPlan;
-  private final DAG<PhysicalVertex, Tuple<Direction, Integer>> physicalPlan;
+  private final DAG<LogicalVertex, DirectionEdge> logicalPlan;
+  private final DAG<PhysicalVertex, DirectionAndIndexEdge> physicalPlan;
 
-  public DefaultLogicalAndPhysicalPlanImpl(final DAG<LogicalVertex, Direction> logicalPlan,
-                                           final DAG<PhysicalVertex, Tuple<Direction, Integer>> physicalPlan) {
+  public DefaultLogicalAndPhysicalPlanImpl(final DAG<LogicalVertex, DirectionEdge> logicalPlan,
+                                           final DAG<PhysicalVertex, DirectionAndIndexEdge> physicalPlan) {
     this.logicalPlan = logicalPlan;
     this.physicalPlan = physicalPlan;
   }
@@ -37,7 +37,7 @@ final class DefaultLogicalAndPhysicalPlanImpl implements LogicalAndPhysicalPlan 
    * Return the logical plan.
    * @return logical plan
    */
-  public DAG<LogicalVertex, Direction> getLogicalPlan() {
+  public DAG<LogicalVertex, DirectionEdge> getLogicalPlan() {
     return logicalPlan;
   }
 
@@ -45,7 +45,7 @@ final class DefaultLogicalAndPhysicalPlanImpl implements LogicalAndPhysicalPlan 
    * Return the physical plan.
    * @return physical plan
    */
-  public DAG<PhysicalVertex, Tuple<Direction, Integer>> getPhysicalPlan() {
+  public DAG<PhysicalVertex, DirectionAndIndexEdge> getPhysicalPlan() {
     return physicalPlan;
   }
 }

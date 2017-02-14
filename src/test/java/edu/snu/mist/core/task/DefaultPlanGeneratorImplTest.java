@@ -18,13 +18,14 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
-import edu.snu.mist.common.DAG;
+import edu.snu.mist.common.graphs.DAG;
+import edu.snu.mist.common.graphs.DirectionAndIndexEdge;
+import edu.snu.mist.common.graphs.DirectionEdge;
 import edu.snu.mist.common.operators.*;
 import edu.snu.mist.common.sinks.NettyTextSink;
 import edu.snu.mist.common.sources.NettyTextDataGenerator;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.formats.avro.AvroVertexChain;
-import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.Edge;
 import edu.snu.mist.formats.avro.AvroLogicalPlan;
 import edu.snu.mist.utils.TestParameters;
@@ -99,13 +100,13 @@ public final class DefaultPlanGeneratorImplTest {
     final LogicalAndPhysicalPlan plan = planGenerator.generate(tuple);
 
     // Test physical plan
-    final DAG<PhysicalVertex, Tuple<Direction, Integer>> physicalPlan = plan.getPhysicalPlan();
+    final DAG<PhysicalVertex, DirectionAndIndexEdge> physicalPlan = plan.getPhysicalPlan();
     final Set<PhysicalVertex> sources = physicalPlan.getRootVertices();
     Assert.assertEquals(1, sources.size());
     final PhysicalSource source = (PhysicalSource)sources.iterator().next();
     Assert.assertTrue(source instanceof PhysicalSourceImpl);
     Assert.assertTrue(source.getDataGenerator() instanceof NettyTextDataGenerator);
-    final Map<PhysicalVertex, Tuple<Direction, Integer>> nextOps = physicalPlan.getEdges(source);
+    final Map<PhysicalVertex, DirectionAndIndexEdge> nextOps = physicalPlan.getEdges(source);
     Assert.assertEquals(1, nextOps.size());
 
     final PartitionedQuery pq1 = (PartitionedQuery)nextOps.entrySet().iterator().next().getKey();
@@ -122,12 +123,12 @@ public final class DefaultPlanGeneratorImplTest {
     pq1.insertToTail(filterOperator);
     pq1.insertToTail(mapOperator2);
     pq1.insertToTail(reduceByKeyOperator);
-    final Map<PhysicalVertex, Tuple<Direction, Integer>> sinks = physicalPlan.getEdges(pq1);
+    final Map<PhysicalVertex, DirectionAndIndexEdge> sinks = physicalPlan.getEdges(pq1);
     final PhysicalSink physicalSink = (PhysicalSink)sinks.entrySet().iterator().next().getKey();
     Assert.assertTrue(physicalSink.getSink() instanceof NettyTextSink);
 
     // Test logical plan
-    final DAG<LogicalVertex, Direction> logicalPlan = plan.getLogicalPlan();
+    final DAG<LogicalVertex, DirectionEdge> logicalPlan = plan.getLogicalPlan();
     final Set<LogicalVertex> logicalSources = logicalPlan.getRootVertices();
     Assert.assertEquals(1, logicalSources.size());
     final LogicalVertex logicalSource = logicalSources.iterator().next();
@@ -149,8 +150,8 @@ public final class DefaultPlanGeneratorImplTest {
     Assert.assertEquals(physicalSink.getSink().getIdentifier().toString(), sinkVertex.getPhysicalVertexId());
   }
 
-  private LogicalVertex getNextVertex(final LogicalVertex vertex, final DAG<LogicalVertex, Direction> logicalPlan) {
-    final Map<LogicalVertex, Direction> nextLogicalOps = logicalPlan.getEdges(vertex);
+  private LogicalVertex getNextVertex(final LogicalVertex vertex, final DAG<LogicalVertex, DirectionEdge> logicalPlan) {
+    final Map<LogicalVertex, DirectionEdge> nextLogicalOps = logicalPlan.getEdges(vertex);
     final LogicalVertex nextVertex = nextLogicalOps.entrySet().iterator().next().getKey();
     return nextVertex;
   }
