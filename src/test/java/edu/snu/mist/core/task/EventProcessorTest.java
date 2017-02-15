@@ -55,10 +55,12 @@ public final class EventProcessorTest {
     final List<Integer> result = new LinkedList<>();
 
     final PartitionedQuery query1 = new DefaultPartitionedQueryImpl();
-    query1.insertToHead(new TestOperator("o1"));
+    final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl(new TestOperator("o1"), query1);
+    query1.insertToHead(o1);
     query1.setOutputEmitter(new TestOutputEmitter<>(list1));
     final PartitionedQuery query2 = new DefaultPartitionedQueryImpl();
-    query2.insertToHead(new TestOperator("o2"));
+    final PhysicalOperator o2 = new DefaultPhysicalOperatorImpl(new TestOperator("o2"), query2);
+    query2.insertToHead(o2);
     query2.setOutputEmitter(new TestOutputEmitter<>(list2));
 
     for (int i = 0; i < numTasks; i++) {
@@ -104,7 +106,8 @@ public final class EventProcessorTest {
     final List<Integer> result = new LinkedList<>();
 
     final PartitionedQuery query = new DefaultPartitionedQueryImpl();
-    query.insertToHead(new TestOperator("o1"));
+    final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl(new TestOperator("o1"), query);
+    query.insertToHead(o1);
     query.setOutputEmitter(new TestOutputEmitter<>(list1));
 
     for (int i = 0; i < numTasks; i++) {

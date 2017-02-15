@@ -22,8 +22,25 @@ import edu.snu.mist.common.operators.Operator;
  */
 final class DefaultPhysicalOperatorImpl implements PhysicalOperator {
 
+  /**
+   * The operator that processes events.
+   */
   private final Operator operator;
+
+  /**
+   * The partitioned query that holds the operator.
+   */
   private PartitionedQuery partitionedQuery;
+
+  /**
+   * The timestamp of the data that is recently processed.
+   */
+  protected long latestDataTimestamp;
+
+  /**
+   * The timestamp of the watermark that is recently processed.
+   */
+  protected long latestWatermarkTimestamp;
 
   public DefaultPhysicalOperatorImpl(final Operator operator,
                                      final PartitionedQuery partitionedQuery) {
@@ -49,5 +66,25 @@ final class DefaultPhysicalOperatorImpl implements PhysicalOperator {
   @Override
   public Type getType() {
     return Type.OPERATOR;
+  }
+
+  @Override
+  public long getLatestDataTimestamp() {
+    return latestDataTimestamp;
+  }
+
+  @Override
+  public void setLatestDataTimestamp(final long timestamp) {
+    latestDataTimestamp = timestamp;
+  }
+
+  @Override
+  public long getLatestWatermarkTimestamp() {
+    return latestWatermarkTimestamp;
+  }
+
+  @Override
+  public void setLatestWatermarkTimestamp(final long timestamp) {
+    latestWatermarkTimestamp = timestamp;
   }
 }

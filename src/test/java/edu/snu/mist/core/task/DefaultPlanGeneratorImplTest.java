@@ -109,20 +109,16 @@ public final class DefaultPlanGeneratorImplTest {
     Assert.assertEquals(1, nextOps.size());
 
     final PartitionedQuery pq1 = (PartitionedQuery)nextOps.entrySet().iterator().next().getKey();
+    final Map<PhysicalVertex, Direction> sinks = physicalPlan.getEdges(pq1);
     Assert.assertEquals(4, pq1.size());
-    final Operator mapOperator = pq1.removeFromHead();
-    final Operator filterOperator = pq1.removeFromHead();
-    final Operator mapOperator2 = pq1.removeFromHead();
-    final Operator reduceByKeyOperator = pq1.removeFromHead();
+    final Operator mapOperator = pq1.removeFromHead().getOperator();
+    final Operator filterOperator = pq1.removeFromHead().getOperator();
+    final Operator mapOperator2 = pq1.removeFromHead().getOperator();
+    final Operator reduceByKeyOperator = pq1.removeFromHead().getOperator();
     Assert.assertTrue(mapOperator instanceof FlatMapOperator);
     Assert.assertTrue(filterOperator instanceof FilterOperator);
     Assert.assertTrue(mapOperator2 instanceof MapOperator);
     Assert.assertTrue(reduceByKeyOperator instanceof ReduceByKeyOperator);
-    pq1.insertToTail(mapOperator);
-    pq1.insertToTail(filterOperator);
-    pq1.insertToTail(mapOperator2);
-    pq1.insertToTail(reduceByKeyOperator);
-    final Map<PhysicalVertex, Direction> sinks = physicalPlan.getEdges(pq1);
     final PhysicalSink physicalSink = (PhysicalSink)sinks.entrySet().iterator().next().getKey();
     Assert.assertTrue(physicalSink.getSink() instanceof NettyTextSink);
 

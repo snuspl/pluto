@@ -16,9 +16,9 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.MistDataEvent;
+import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.operators.OneStreamOperator;
-import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.utils.TestOutputEmitter;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
@@ -34,8 +34,8 @@ import java.util.List;
 public final class PartitionedQueryTest {
   // TODO[MIST-70]: Consider concurrency issue in execution of PartitionedQuery
 
-  private MistDataEvent createEvent(final int val) {
-    return new MistDataEvent(val, System.currentTimeMillis());
+  private MistDataEvent createEvent(final int val, final long timestamp) {
+    return new MistDataEvent(val, timestamp);
   }
 
   /**
@@ -58,46 +58,79 @@ public final class PartitionedQueryTest {
     final String incOpId = "incOp";
     final String doubleOpId = "doubleOp";
 
-    final Operator squareOp = new SquareOperator(squareOpId);
-    final Operator incOp = new IncrementOperator(incOpId);
-    final Operator doubleOp = new DoubleOperator(doubleOpId);
+    final PhysicalOperator squareOp = new DefaultPhysicalOperatorImpl(
+        new SquareOperator(squareOpId), partitionedQuery);
+    final PhysicalOperator incOp = new DefaultPhysicalOperatorImpl(
+        new IncrementOperator(incOpId), partitionedQuery);
+    final PhysicalOperator doubleOp = new DefaultPhysicalOperatorImpl(
+        new DoubleOperator(doubleOpId), partitionedQuery);
 
     // 2 * (input * input + 1)
+    long timestamp = 1;
     final Integer expected1 = 2 * (input * input + 1);
     partitionedQuery.insertToHead(doubleOp);
     partitionedQuery.insertToHead(incOp);
     partitionedQuery.insertToHead(squareOp);
-    partitionedQuery.addNextEvent(createEvent(input), Direction.LEFT);
+    partitionedQuery.addNextEvent(createEvent(input, timestamp), Direction.LEFT);
     partitionedQuery.processNextEvent();
     Assert.assertEquals(expected1, result.remove(0));
+    // Check latest timestamp
+    Assert.assertEquals(timestamp, squareOp.getLatestDataTimestamp());
+    Assert.assertEquals(timestamp, doubleOp.getLatestDataTimestamp());
+    Assert.assertEquals(timestamp, incOp.getLatestDataTimestamp());
 
     // 2 * (input + 1)
+    timestamp += 1;
     partitionedQuery.removeFromHead();
     final Integer expected2 = 2 * (input + 1);
-    partitionedQuery.addNextEvent(createEvent(input), Direction.LEFT);
+    partitionedQuery.addNextEvent(createEvent(input, timestamp), Direction.LEFT);
     partitionedQuery.processNextEvent();
     Assert.assertEquals(expected2, result.remove(0));
+    // Check latest timestamp
+    Assert.assertEquals(timestamp, doubleOp.getLatestDataTimestamp());
+    Assert.assertEquals(timestamp, incOp.getLatestDataTimestamp());
 
     // input + 1
+    timestamp += 1;
     partitionedQuery.removeFromTail();
     final Integer expected3 = input + 1;
-    partitionedQuery.addNextEvent(createEvent(input), Direction.LEFT);
+    partitionedQuery.addNextEvent(createEvent(input, timestamp), Direction.LEFT);
     partitionedQuery.processNextEvent();
     Assert.assertEquals(expected3, result.remove(0));
+    // Check latest timestamp
+    Assert.assertEquals(timestamp, incOp.getLatestDataTimestamp());
 
     // 2 * input + 1
+    timestamp += 1;
     partitionedQuery.insertToHead(doubleOp);
     final Integer expected4 = 2 * input + 1;
-    partitionedQuery.addNextEvent(createEvent(input), Direction.LEFT);
+    partitionedQuery.addNextEvent(createEvent(input, timestamp), Direction.LEFT);
     partitionedQuery.processNextEvent();
     Assert.assertEquals(expected4, result.remove(0));
+    // Check latest timestamp
+    Assert.assertEquals(timestamp, doubleOp.getLatestDataTimestamp());
+    Assert.assertEquals(timestamp, incOp.getLatestDataTimestamp());
 
     // (2 * input + 1) * (2 * input + 1)
+    timestamp += 1;
     partitionedQuery.insertToTail(squareOp);
     final Integer expected5 = (2 * input + 1) * (2 * input + 1);
-    partitionedQuery.addNextEvent(createEvent(input), Direction.LEFT);
+    partitionedQuery.addNextEvent(createEvent(input, timestamp), Direction.LEFT);
     partitionedQuery.processNextEvent();
     Assert.assertEquals(expected5, result.remove(0));
+    // Check latest timestamp
+    Assert.assertEquals(timestamp, doubleOp.getLatestDataTimestamp());
+    Assert.assertEquals(timestamp, incOp.getLatestDataTimestamp());
+    Assert.assertEquals(timestamp, squareOp.getLatestDataTimestamp());
+
+    // Check watermark timestamp
+    timestamp += 1;
+    final MistEvent mistWatermarkEvent = new MistWatermarkEvent(timestamp);
+    partitionedQuery.addNextEvent(mistWatermarkEvent, Direction.LEFT);
+    partitionedQuery.processNextEvent();
+    Assert.assertEquals(timestamp, doubleOp.getLatestWatermarkTimestamp());
+    Assert.assertEquals(timestamp, incOp.getLatestWatermarkTimestamp());
+    Assert.assertEquals(timestamp, squareOp.getLatestWatermarkTimestamp());
   }
 
   /**
@@ -118,7 +151,7 @@ public final class PartitionedQueryTest {
 
     @Override
     public void processLeftWatermark(final MistWatermarkEvent watermark) {
-      // do nothing
+      outputEmitter.emitWatermark(watermark);
     }
   }
 
@@ -139,7 +172,7 @@ public final class PartitionedQueryTest {
 
     @Override
     public void processLeftWatermark(final MistWatermarkEvent watermark) {
-      // do nothing
+      outputEmitter.emitWatermark(watermark);
     }
   }
 
@@ -160,7 +193,7 @@ public final class PartitionedQueryTest {
 
     @Override
     public void processLeftWatermark(final MistWatermarkEvent watermark) {
-      // do nothing
+      outputEmitter.emitWatermark(watermark);
     }
   }
 }
