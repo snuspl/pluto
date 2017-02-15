@@ -46,11 +46,6 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
   private static final Logger LOG = Logger.getLogger(ReduceByKeyOperator.class.getName());
 
   /**
-   * The map that represents the state of the operator.
-   */
-  private final Map<String, Object> stateMap = new HashMap<>();
-
-  /**
    * A reduce function.
    */
   private final MISTBiFunction<V, V, V> reduceFunc;
@@ -142,6 +137,7 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
 
   @Override
   public Map<String, Object> getOperatorState() {
+    final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("reduceByKeyState", state);
     return stateMap;
   }

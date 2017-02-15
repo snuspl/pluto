@@ -39,11 +39,6 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements S
   private static final Logger LOG = Logger.getLogger(FixedSizeWindowOperator.class.getName());
 
   /**
-   * The map that represents the state of the operator.
-   */
-  protected final Map<String, Object> stateMap = new HashMap<>();
-
-  /**
    * The size of window expressed in milliseconds or the number of inputs.
    */
   private final int windowSize;
@@ -146,6 +141,7 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements S
 
   @Override
   public Map<String, Object> getOperatorState() {
+    final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("windowCreationPoint", windowCreationPoint);
     stateMap.put("windowQueue", windowQueue);
     return stateMap;
