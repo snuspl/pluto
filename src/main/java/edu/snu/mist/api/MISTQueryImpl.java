@@ -17,7 +17,7 @@ package edu.snu.mist.api;
 
 import edu.snu.mist.api.datastreams.MISTStream;
 import edu.snu.mist.common.graphs.DAG;
-import edu.snu.mist.common.graphs.DirectionAndIndexEdge;
+import edu.snu.mist.common.graphs.MISTEdge;
 import edu.snu.mist.common.graphs.GraphUtils;
 import edu.snu.mist.formats.avro.*;
 import org.apache.reef.io.Tuple;
@@ -34,11 +34,11 @@ public final class MISTQueryImpl implements MISTQuery {
   /**
    * DAG of the query.
    */
-  private final DAG<MISTStream, DirectionAndIndexEdge> dag;
+  private final DAG<MISTStream, MISTEdge> dag;
   private final QueryPartitioner queryPartitioner;
   private final AvroConfigurationSerializer serializer;
 
-  public MISTQueryImpl(final DAG<MISTStream, DirectionAndIndexEdge> dag) {
+  public MISTQueryImpl(final DAG<MISTStream, MISTEdge> dag) {
     this.queryPartitioner = new QueryPartitioner(dag);
     this.dag = dag;
     this.serializer = new AvroConfigurationSerializer();
@@ -46,7 +46,7 @@ public final class MISTQueryImpl implements MISTQuery {
 
   @Override
   public Tuple<List<AvroVertexChain>, List<Edge>> getSerializedDAG() {
-    final DAG<List<MISTStream>, DirectionAndIndexEdge> chainedDAG =
+    final DAG<List<MISTStream>, MISTEdge> chainedDAG =
         queryPartitioner.generatePartitionedPlan();
     final Queue<List<MISTStream>> queue = new LinkedList<>();
     final List<List<MISTStream>> vertices = new ArrayList<>();
@@ -64,10 +64,10 @@ public final class MISTQueryImpl implements MISTQuery {
     while (!queue.isEmpty()) {
       final List<MISTStream> vertex = queue.remove();
       final int fromIndex = vertices.indexOf(vertex);
-      final Map<List<MISTStream>, DirectionAndIndexEdge> neighbors = chainedDAG.getEdges(vertex);
-      for (final Map.Entry<List<MISTStream>, DirectionAndIndexEdge> neighbor : neighbors.entrySet()) {
+      final Map<List<MISTStream>, MISTEdge> neighbors = chainedDAG.getEdges(vertex);
+      for (final Map.Entry<List<MISTStream>, MISTEdge> neighbor : neighbors.entrySet()) {
         final int toIndex = vertices.indexOf(neighbor.getKey());
-        final DirectionAndIndexEdge edgeInfo = neighbor.getValue();
+        final MISTEdge edgeInfo = neighbor.getValue();
         final Edge.Builder edgeBuilder = Edge.newBuilder()
             .setFrom(fromIndex)
             .setTo(toIndex)
@@ -112,7 +112,7 @@ public final class MISTQueryImpl implements MISTQuery {
   }
 
   @Override
-  public DAG<MISTStream, DirectionAndIndexEdge> getDAG() {
+  public DAG<MISTStream, MISTEdge> getDAG() {
     return dag;
   }
 }

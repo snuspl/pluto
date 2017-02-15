@@ -21,7 +21,7 @@ import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.ApplyStatefulFunction;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
-import edu.snu.mist.common.graphs.DirectionAndIndexEdge;
+import edu.snu.mist.common.graphs.MISTEdge;
 import edu.snu.mist.common.operators.AggregateWindowOperator;
 import edu.snu.mist.common.operators.ApplyStatefulWindowOperator;
 import edu.snu.mist.common.windows.WindowData;
@@ -36,7 +36,7 @@ import java.util.Map;
  */
 final class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>> implements WindowedStream<T> {
 
-  WindowedStreamImpl(final DAG<MISTStream, DirectionAndIndexEdge> dag,
+  WindowedStreamImpl(final DAG<MISTStream, MISTEdge> dag,
                      final Configuration conf) {
     super(dag, conf);
   }

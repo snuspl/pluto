@@ -21,7 +21,7 @@ import edu.snu.mist.common.functions.ApplyStatefulFunction;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.graphs.DAG;
-import edu.snu.mist.common.graphs.DirectionAndIndexEdge;
+import edu.snu.mist.common.graphs.MISTEdge;
 import edu.snu.mist.common.parameters.KeyIndex;
 import edu.snu.mist.common.parameters.SerializedUdf;
 import edu.snu.mist.common.types.Tuple2;
@@ -84,7 +84,7 @@ public class WindowedStreamTest {
 
     // Check windowed -> reduce by key
     checkEdges(queryBuilder.build().getDAG(), 1, timeWindowedStream,
-        reducedWindowStream, new DirectionAndIndexEdge(Direction.LEFT));
+        reducedWindowStream, new MISTEdge(Direction.LEFT));
   }
 
   /**
@@ -105,7 +105,7 @@ public class WindowedStreamTest {
 
     // Check windowed -> reduce by key
     checkEdges(queryBuilder.build().getDAG(), 1, timeWindowedStream,
-        reducedWindowStream, new DirectionAndIndexEdge(Direction.LEFT));
+        reducedWindowStream, new MISTEdge(Direction.LEFT));
   }
 
   /**
@@ -127,7 +127,7 @@ public class WindowedStreamTest {
     // Check windowed -> stateful operation applied
     checkEdges(
         queryBuilder.build().getDAG(), 1, timeWindowedStream,
-        applyStatefulWindowStream, new DirectionAndIndexEdge(Direction.LEFT));
+        applyStatefulWindowStream, new MISTEdge(Direction.LEFT));
   }
 
   /**
@@ -148,7 +148,7 @@ public class WindowedStreamTest {
     // Check windowed -> stateful operation applied
     checkEdges(
         queryBuilder.build().getDAG(), 1, timeWindowedStream,
-        applyStatefulWindowStream, new DirectionAndIndexEdge(Direction.LEFT));
+        applyStatefulWindowStream, new MISTEdge(Direction.LEFT));
   }
 
   /**
@@ -165,7 +165,7 @@ public class WindowedStreamTest {
     Assert.assertEquals(SerializeUtils.serializeToString(func), serializedFunc);
     // Check windowed -> aggregated
     checkEdges(queryBuilder.build().getDAG(), 1, timeWindowedStream,
-        aggregateWindowStream, new DirectionAndIndexEdge(Direction.LEFT));
+        aggregateWindowStream, new MISTEdge(Direction.LEFT));
   }
 
   /**
@@ -182,7 +182,7 @@ public class WindowedStreamTest {
     Assert.assertTrue(func instanceof WindowAggregateFunction);
     // Check windowed -> aggregated
     checkEdges(queryBuilder.build().getDAG(), 1, timeWindowedStream,
-        aggregateWindowStream, new DirectionAndIndexEdge(Direction.LEFT));
+        aggregateWindowStream, new MISTEdge(Direction.LEFT));
   }
 
   static final class WindowAggregateFunction implements MISTFunction<WindowData<Tuple2<String, Integer>>, String> {
@@ -206,12 +206,12 @@ public class WindowedStreamTest {
   /**
    * Checks the size and direction of the edges from upstream.
    */
-  private void checkEdges(final DAG<MISTStream, DirectionAndIndexEdge> dag,
+  private void checkEdges(final DAG<MISTStream, MISTEdge> dag,
                           final int edgesSize,
                           final MISTStream upStream,
                           final MISTStream downStream,
-                          final DirectionAndIndexEdge edgeInfo) {
-    final Map<MISTStream, DirectionAndIndexEdge> neighbors = dag.getEdges(upStream);
+                          final MISTEdge edgeInfo) {
+    final Map<MISTStream, MISTEdge> neighbors = dag.getEdges(upStream);
     Assert.assertEquals(edgesSize, neighbors.size());
     Assert.assertEquals(edgeInfo, neighbors.get(downStream));
   }

@@ -19,7 +19,7 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.common.graphs.DAG;
-import edu.snu.mist.common.graphs.DirectionAndIndexEdge;
+import edu.snu.mist.common.graphs.MISTEdge;
 import edu.snu.mist.common.operators.*;
 import edu.snu.mist.common.sinks.NettyTextSink;
 import edu.snu.mist.common.sources.NettyTextDataGenerator;
@@ -99,13 +99,13 @@ public final class DefaultPlanGeneratorImplTest {
     final LogicalAndPhysicalPlan plan = planGenerator.generate(tuple);
 
     // Test physical plan
-    final DAG<PhysicalVertex, DirectionAndIndexEdge> physicalPlan = plan.getPhysicalPlan();
+    final DAG<PhysicalVertex, MISTEdge> physicalPlan = plan.getPhysicalPlan();
     final Set<PhysicalVertex> sources = physicalPlan.getRootVertices();
     Assert.assertEquals(1, sources.size());
     final PhysicalSource source = (PhysicalSource)sources.iterator().next();
     Assert.assertTrue(source instanceof PhysicalSourceImpl);
     Assert.assertTrue(source.getDataGenerator() instanceof NettyTextDataGenerator);
-    final Map<PhysicalVertex, DirectionAndIndexEdge> nextOps = physicalPlan.getEdges(source);
+    final Map<PhysicalVertex, MISTEdge> nextOps = physicalPlan.getEdges(source);
     Assert.assertEquals(1, nextOps.size());
 
     final PartitionedQuery pq1 = (PartitionedQuery)nextOps.entrySet().iterator().next().getKey();
@@ -122,12 +122,12 @@ public final class DefaultPlanGeneratorImplTest {
     pq1.insertToTail(filterOperator);
     pq1.insertToTail(mapOperator2);
     pq1.insertToTail(reduceByKeyOperator);
-    final Map<PhysicalVertex, DirectionAndIndexEdge> sinks = physicalPlan.getEdges(pq1);
+    final Map<PhysicalVertex, MISTEdge> sinks = physicalPlan.getEdges(pq1);
     final PhysicalSink physicalSink = (PhysicalSink)sinks.entrySet().iterator().next().getKey();
     Assert.assertTrue(physicalSink.getSink() instanceof NettyTextSink);
 
     // Test logical plan
-    final DAG<LogicalVertex, DirectionAndIndexEdge> logicalPlan = plan.getLogicalPlan();
+    final DAG<LogicalVertex, MISTEdge> logicalPlan = plan.getLogicalPlan();
     final Set<LogicalVertex> logicalSources = logicalPlan.getRootVertices();
     Assert.assertEquals(1, logicalSources.size());
     final LogicalVertex logicalSource = logicalSources.iterator().next();
@@ -150,8 +150,8 @@ public final class DefaultPlanGeneratorImplTest {
   }
 
   private LogicalVertex getNextVertex(final LogicalVertex vertex,
-                                      final DAG<LogicalVertex, DirectionAndIndexEdge> logicalPlan) {
-    final Map<LogicalVertex, DirectionAndIndexEdge> nextLogicalOps = logicalPlan.getEdges(vertex);
+                                      final DAG<LogicalVertex, MISTEdge> logicalPlan) {
+    final Map<LogicalVertex, MISTEdge> nextLogicalOps = logicalPlan.getEdges(vertex);
     final LogicalVertex nextVertex = nextLogicalOps.entrySet().iterator().next().getKey();
     return nextVertex;
   }

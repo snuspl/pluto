@@ -16,7 +16,7 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.graphs.DAG;
-import edu.snu.mist.common.graphs.DirectionAndIndexEdge;
+import edu.snu.mist.common.graphs.MISTEdge;
 import edu.snu.mist.common.graphs.GraphUtils;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroLogicalPlan;
@@ -45,7 +45,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
   /**
    * Map of query id and logical plan.
    */
-  private final ConcurrentMap<String, DAG<LogicalVertex, DirectionAndIndexEdge>> logicalPlanMap;
+  private final ConcurrentMap<String, DAG<LogicalVertex, MISTEdge>> logicalPlanMap;
 
   /**
    * A partitioned query manager.
@@ -136,7 +136,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
    * and starts to receive input data stream from the sources.
    * @param physicalPlan physical plan of PartitionedQuery
    */
-  private void start(final DAG<PhysicalVertex, DirectionAndIndexEdge> physicalPlan) {
+  private void start(final DAG<PhysicalVertex, MISTEdge> physicalPlan) {
     final List<PhysicalSource> sources = new LinkedList<>();
     final Iterator<PhysicalVertex> iterator = GraphUtils.topologicalSort(physicalPlan);
     while (iterator.hasNext()) {
@@ -144,7 +144,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
       switch (physicalVertex.getType()) {
         case SOURCE: {
           final PhysicalSource source = (PhysicalSource)physicalVertex;
-          final Map<PhysicalVertex, DirectionAndIndexEdge> nextOps = physicalPlan.getEdges(source);
+          final Map<PhysicalVertex, MISTEdge> nextOps = physicalPlan.getEdges(source);
           // 3) Sets output emitters
           source.getEventGenerator().setOutputEmitter(new SourceOutputEmitter<>(nextOps));
           sources.add(source);
@@ -154,7 +154,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
           // 2) Inserts the PartitionedQuery to PartitionedQueryManager.
           final PartitionedQuery partitionedQuery = (PartitionedQuery)physicalVertex;
           partitionedQueryManager.insert(partitionedQuery);
-          final Map<PhysicalVertex, DirectionAndIndexEdge> edges =
+          final Map<PhysicalVertex, MISTEdge> edges =
               physicalPlan.getEdges(partitionedQuery);
           // 3) Sets output emitters
           partitionedQuery.setOutputEmitter(new OperatorOutputEmitter(edges));

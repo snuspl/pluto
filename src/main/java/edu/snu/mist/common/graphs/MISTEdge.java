@@ -20,7 +20,7 @@ import edu.snu.mist.formats.avro.Direction;
 /**
  * This class represents an edge that has direction and index information.
  */
-public final class DirectionAndIndexEdge {
+public final class MISTEdge {
 
   /**
    * A index information.
@@ -35,12 +35,12 @@ public final class DirectionAndIndexEdge {
    */
   private static final Integer DEFAULT_INDEX = 0;
 
-  public DirectionAndIndexEdge(final Direction direction) {
+  public MISTEdge(final Direction direction) {
     this(direction, DEFAULT_INDEX);
   }
 
-  public DirectionAndIndexEdge(final Direction direction,
-                               final Integer index) {
+  public MISTEdge(final Direction direction,
+                  final Integer index) {
     this.direction = direction;
     this.index = index;
   }
@@ -61,11 +61,11 @@ public final class DirectionAndIndexEdge {
 
   @Override
   public boolean equals(final Object o) {
-    if (!(o instanceof DirectionAndIndexEdge)) {
+    if (!(o instanceof MISTEdge)) {
       return false;
     } else {
-      return direction == ((DirectionAndIndexEdge) o).getDirection() &&
-          index == ((DirectionAndIndexEdge) o).getIndex();
+      return direction == ((MISTEdge) o).getDirection() &&
+          index == ((MISTEdge) o).getIndex();
     }
   }
 

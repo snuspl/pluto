@@ -18,7 +18,7 @@ package edu.snu.mist.api;
 import edu.snu.mist.api.datastreams.ContinuousStream;
 import edu.snu.mist.api.datastreams.MISTStream;
 import edu.snu.mist.common.graphs.DAG;
-import edu.snu.mist.common.graphs.DirectionAndIndexEdge;
+import edu.snu.mist.common.graphs.MISTEdge;
 import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.utils.TestParameters;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -64,9 +64,9 @@ public final class QueryPartitionerTest {
     final MISTStream<String> sink2 = op23.textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
 
     final MISTQuery query = queryBuilder.build();
-    final DAG<MISTStream, DirectionAndIndexEdge> dag = query.getDAG();
+    final DAG<MISTStream, MISTEdge> dag = query.getDAG();
     final QueryPartitioner queryPartitioner = new QueryPartitioner(dag);
-    final DAG<List<MISTStream>, DirectionAndIndexEdge>
+    final DAG<List<MISTStream>, MISTEdge>
         chainedPlan = queryPartitioner.generatePartitionedPlan();
 
     final List<MISTStream> src1List = Arrays.asList(src1);
@@ -80,41 +80,41 @@ public final class QueryPartitionerTest {
     final List<MISTStream> sink2List = Arrays.asList(sink2);
 
     // Check src1 -> [op11->op12] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e1 = chainedPlan.getEdges(src1List);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result1 = new HashMap<>();
-    result1.put(op11op12, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e1 = chainedPlan.getEdges(src1List);
+    final Map<List<MISTStream>, MISTEdge> result1 = new HashMap<>();
+    result1.put(op11op12, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e1, result1);
     // Check src2 -> [op21->op22] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e2 = chainedPlan.getEdges(src2List);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result2 = new HashMap<>();
-    result2.put(op21op22, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e2 = chainedPlan.getEdges(src2List);
+    final Map<List<MISTStream>, MISTEdge> result2 = new HashMap<>();
+    result2.put(op21op22, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e2, result2);
     // Check [op11->op12] -> [union] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e3 = chainedPlan.getEdges(op11op12);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result3 = new HashMap<>();
-    result3.put(unionList, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e3 = chainedPlan.getEdges(op11op12);
+    final Map<List<MISTStream>, MISTEdge> result3 = new HashMap<>();
+    result3.put(unionList, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e3, result3);
     // Check [op21->op22] -> [union] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e4 = chainedPlan.getEdges(op21op22);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result4 = new HashMap<>();
-    result4.put(unionList, new DirectionAndIndexEdge(Direction.RIGHT));
+    final Map<List<MISTStream>, MISTEdge> e4 = chainedPlan.getEdges(op21op22);
+    final Map<List<MISTStream>, MISTEdge> result4 = new HashMap<>();
+    result4.put(unionList, new MISTEdge(Direction.RIGHT));
     Assert.assertEquals(e4, result4);
     // Check [union] -> [op14->op15] edge
     // Check [union] -> [op23] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e5 = chainedPlan.getEdges(unionList);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result5 = new HashMap<>();
-    result5.put(op14op15, new DirectionAndIndexEdge(Direction.LEFT));
-    result5.put(op23List, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e5 = chainedPlan.getEdges(unionList);
+    final Map<List<MISTStream>, MISTEdge> result5 = new HashMap<>();
+    result5.put(op14op15, new MISTEdge(Direction.LEFT));
+    result5.put(op23List, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e5, result5);
     // Check [op14->op15] -> sink1 edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e6 = chainedPlan.getEdges(op14op15);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result6 = new HashMap<>();
-    result6.put(sink1List, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e6 = chainedPlan.getEdges(op14op15);
+    final Map<List<MISTStream>, MISTEdge> result6 = new HashMap<>();
+    result6.put(sink1List, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e6, result6);
     // Check [op23] -> sink2 edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e7 = chainedPlan.getEdges(op23List);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result7 = new HashMap<>();
-    result7.put(sink2List, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e7 = chainedPlan.getEdges(op23List);
+    final Map<List<MISTStream>, MISTEdge> result7 = new HashMap<>();
+    result7.put(sink2List, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e7, result7);
   }
 
@@ -138,9 +138,9 @@ public final class QueryPartitionerTest {
     final MISTStream<String> sink1 = op13.textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
 
     final MISTQuery query = queryBuilder.build();
-    final DAG<MISTStream, DirectionAndIndexEdge> dag = query.getDAG();
+    final DAG<MISTStream, MISTEdge> dag = query.getDAG();
     final QueryPartitioner queryPartitioner = new QueryPartitioner(dag);
-    final DAG<List<MISTStream>, DirectionAndIndexEdge>
+    final DAG<List<MISTStream>, MISTEdge>
         chainedPlan = queryPartitioner.generatePartitionedPlan();
 
     final List<MISTStream> src1List = Arrays.asList(src1);
@@ -148,14 +148,14 @@ public final class QueryPartitionerTest {
     final List<MISTStream> sinkList = Arrays.asList(sink1);
 
     // Check src1 -> [op11->op12->op13] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e1 = chainedPlan.getEdges(src1List);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result1 = new HashMap<>();
-    result1.put(opList, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e1 = chainedPlan.getEdges(src1List);
+    final Map<List<MISTStream>, MISTEdge> result1 = new HashMap<>();
+    result1.put(opList, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e1, result1);
     // Check [op11->op12->op13] -> [sink1] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e2 = chainedPlan.getEdges(opList);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result2 = new HashMap<>();
-    result2.put(sinkList, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e2 = chainedPlan.getEdges(opList);
+    final Map<List<MISTStream>, MISTEdge> result2 = new HashMap<>();
+    result2.put(sinkList, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e2, result2);
   }
 
@@ -185,9 +185,9 @@ public final class QueryPartitionerTest {
     final MISTStream<String> sink3 = op15.textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
 
     final MISTQuery query = queryBuilder.build();
-    final DAG<MISTStream, DirectionAndIndexEdge> dag = query.getDAG();
+    final DAG<MISTStream, MISTEdge> dag = query.getDAG();
     final QueryPartitioner queryPartitioner = new QueryPartitioner(dag);
-    final DAG<List<MISTStream>, DirectionAndIndexEdge>
+    final DAG<List<MISTStream>, MISTEdge>
         chainedPlan = queryPartitioner.generatePartitionedPlan();
 
     // Expected outputs
@@ -201,33 +201,33 @@ public final class QueryPartitionerTest {
     final List<MISTStream> sink3List = Arrays.asList(sink3);
 
     // Check src1 -> [op11->op12] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e1 = chainedPlan.getEdges(src1List);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result1 = new HashMap<>();
-    result1.put(op11op12, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e1 = chainedPlan.getEdges(src1List);
+    final Map<List<MISTStream>, MISTEdge> result1 = new HashMap<>();
+    result1.put(op11op12, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e1, result1);
     // Check [op11->op12] -> [op13] edges
     //                    -> [op14]
     //                    -> [op15]
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e2 = chainedPlan.getEdges(op11op12);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result2 = new HashMap<>();
-    result2.put(op13List, new DirectionAndIndexEdge(Direction.LEFT));
-    result2.put(op14List, new DirectionAndIndexEdge(Direction.LEFT));
-    result2.put(op15List, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e2 = chainedPlan.getEdges(op11op12);
+    final Map<List<MISTStream>, MISTEdge> result2 = new HashMap<>();
+    result2.put(op13List, new MISTEdge(Direction.LEFT));
+    result2.put(op14List, new MISTEdge(Direction.LEFT));
+    result2.put(op15List, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e2, result2);
     // Check [op14] -> [sink2] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e3 = chainedPlan.getEdges(op14List);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result3 = new HashMap<>();
-    result3.put(sink2List, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e3 = chainedPlan.getEdges(op14List);
+    final Map<List<MISTStream>, MISTEdge> result3 = new HashMap<>();
+    result3.put(sink2List, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e3, result3);
     // Check [op13] -> [sink1] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e4 = chainedPlan.getEdges(op13List);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result4 = new HashMap<>();
-    result4.put(sink1List, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e4 = chainedPlan.getEdges(op13List);
+    final Map<List<MISTStream>, MISTEdge> result4 = new HashMap<>();
+    result4.put(sink1List, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e4, result4);
     // Check [op15] -> [sink3] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e5 = chainedPlan.getEdges(op15List);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result5 = new HashMap<>();
-    result5.put(sink3List, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e5 = chainedPlan.getEdges(op15List);
+    final Map<List<MISTStream>, MISTEdge> result5 = new HashMap<>();
+    result5.put(sink3List, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e5, result5);
   }
 
@@ -262,9 +262,9 @@ public final class QueryPartitionerTest {
     final MISTStream<String> sink1 = op14.textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
 
     final MISTQuery query = queryBuilder.build();
-    final DAG<MISTStream, DirectionAndIndexEdge> dag = query.getDAG();
+    final DAG<MISTStream, MISTEdge> dag = query.getDAG();
     final QueryPartitioner queryPartitioner = new QueryPartitioner(dag);
-    final DAG<List<MISTStream>, DirectionAndIndexEdge>
+    final DAG<List<MISTStream>, MISTEdge>
         chainedPlan = queryPartitioner.generatePartitionedPlan();
 
     // Expected outputs
@@ -279,44 +279,44 @@ public final class QueryPartitionerTest {
     final List<MISTStream> sink1List = Arrays.asList(sink1);
 
     // Check src1 -> [op11->op12] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e1 = chainedPlan.getEdges(src1List);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result1 = new HashMap<>();
-    result1.put(op11op12, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e1 = chainedPlan.getEdges(src1List);
+    final Map<List<MISTStream>, MISTEdge> result1 = new HashMap<>();
+    result1.put(op11op12, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e1, result1);
     // Check src2 -> [op21] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e2 = chainedPlan.getEdges(src2List);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result2 = new HashMap<>();
-    result2.put(op21List, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e2 = chainedPlan.getEdges(src2List);
+    final Map<List<MISTStream>, MISTEdge> result2 = new HashMap<>();
+    result2.put(op21List, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e2, result2);
     // Check src3 -> [op31] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e3 = chainedPlan.getEdges(src3List);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result3 = new HashMap<>();
-    result3.put(op31List, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e3 = chainedPlan.getEdges(src3List);
+    final Map<List<MISTStream>, MISTEdge> result3 = new HashMap<>();
+    result3.put(op31List, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e3, result3);
     // Check [op11->op12] -> [op13] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e4 = chainedPlan.getEdges(op11op12);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result4 = new HashMap<>();
-    result4.put(op13List, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e4 = chainedPlan.getEdges(op11op12);
+    final Map<List<MISTStream>, MISTEdge> result4 = new HashMap<>();
+    result4.put(op13List, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e4, result4);
     // Check [op21] -> [op13] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e5 = chainedPlan.getEdges(op21List);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result5 = new HashMap<>();
-    result5.put(op13List, new DirectionAndIndexEdge(Direction.RIGHT));
+    final Map<List<MISTStream>, MISTEdge> e5 = chainedPlan.getEdges(op21List);
+    final Map<List<MISTStream>, MISTEdge> result5 = new HashMap<>();
+    result5.put(op13List, new MISTEdge(Direction.RIGHT));
     Assert.assertEquals(e5, result5);
     // Check [op13] -> [op14] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e6 = chainedPlan.getEdges(op13List);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result6 = new HashMap<>();
-    result6.put(op14List, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e6 = chainedPlan.getEdges(op13List);
+    final Map<List<MISTStream>, MISTEdge> result6 = new HashMap<>();
+    result6.put(op14List, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e6, result6);
     // Check [op31] -> [op14] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e7 = chainedPlan.getEdges(op31List);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result7 = new HashMap<>();
-    result7.put(op14List, new DirectionAndIndexEdge(Direction.RIGHT));
+    final Map<List<MISTStream>, MISTEdge> e7 = chainedPlan.getEdges(op31List);
+    final Map<List<MISTStream>, MISTEdge> result7 = new HashMap<>();
+    result7.put(op14List, new MISTEdge(Direction.RIGHT));
     Assert.assertEquals(e7, result7);
     // Check [op14] -> [sink1] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e8 = chainedPlan.getEdges(op14List);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result8 = new HashMap<>();
-    result8.put(sink1List, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e8 = chainedPlan.getEdges(op14List);
+    final Map<List<MISTStream>, MISTEdge> result8 = new HashMap<>();
+    result8.put(sink1List, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e8, result8);
   }
 
@@ -346,9 +346,9 @@ public final class QueryPartitionerTest {
     final MISTStream<String> sink1 = opD.textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
 
     final MISTQuery query = queryBuilder.build();
-    final DAG<MISTStream, DirectionAndIndexEdge> dag = query.getDAG();
+    final DAG<MISTStream, MISTEdge> dag = query.getDAG();
     final QueryPartitioner queryPartitioner = new QueryPartitioner(dag);
-    final DAG<List<MISTStream>, DirectionAndIndexEdge>
+    final DAG<List<MISTStream>, MISTEdge>
         chainedPlan = queryPartitioner.generatePartitionedPlan();
 
     // Expected outputs
@@ -362,43 +362,43 @@ public final class QueryPartitionerTest {
     final List<MISTStream> sink1List = Arrays.asList(sink1);
 
     // Check src1 -> [opA] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e1 = chainedPlan.getEdges(src1List);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result1 = new HashMap<>();
-    result1.put(opAList, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e1 = chainedPlan.getEdges(src1List);
+    final Map<List<MISTStream>, MISTEdge> result1 = new HashMap<>();
+    result1.put(opAList, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e1, result1);
     // Check opA -> opB1 edges
     //           -> opB2
     //           -> opB3
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e2 = chainedPlan.getEdges(opAList);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result2 = new HashMap<>();
-    result2.put(opB1List, new DirectionAndIndexEdge(Direction.LEFT));
-    result2.put(opB2List, new DirectionAndIndexEdge(Direction.LEFT));
-    result2.put(opB3List, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e2 = chainedPlan.getEdges(opAList);
+    final Map<List<MISTStream>, MISTEdge> result2 = new HashMap<>();
+    result2.put(opB1List, new MISTEdge(Direction.LEFT));
+    result2.put(opB2List, new MISTEdge(Direction.LEFT));
+    result2.put(opB3List, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e2, result2);
     // Check opB1 -> [opC] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e3 = chainedPlan.getEdges(opB1List);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result3 = new HashMap<>();
-    result3.put(opCList, new DirectionAndIndexEdge(Direction.RIGHT));
+    final Map<List<MISTStream>, MISTEdge> e3 = chainedPlan.getEdges(opB1List);
+    final Map<List<MISTStream>, MISTEdge> result3 = new HashMap<>();
+    result3.put(opCList, new MISTEdge(Direction.RIGHT));
     Assert.assertEquals(e3, result3);
     // Check opB2 -> [opC] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e4 = chainedPlan.getEdges(opB2List);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result4 = new HashMap<>();
-    result4.put(opCList, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e4 = chainedPlan.getEdges(opB2List);
+    final Map<List<MISTStream>, MISTEdge> result4 = new HashMap<>();
+    result4.put(opCList, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e4, result4);
     // Check opC -> [opD] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e5 = chainedPlan.getEdges(opCList);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result5 = new HashMap<>();
-    result5.put(opDList, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e5 = chainedPlan.getEdges(opCList);
+    final Map<List<MISTStream>, MISTEdge> result5 = new HashMap<>();
+    result5.put(opDList, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e5, result5);
     // Check opB3 -> [opD] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e6 = chainedPlan.getEdges(opB3List);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result6 = new HashMap<>();
-    result6.put(opDList, new DirectionAndIndexEdge(Direction.RIGHT));
+    final Map<List<MISTStream>, MISTEdge> e6 = chainedPlan.getEdges(opB3List);
+    final Map<List<MISTStream>, MISTEdge> result6 = new HashMap<>();
+    result6.put(opDList, new MISTEdge(Direction.RIGHT));
     Assert.assertEquals(e6, result6);
     // Check opD -> [sink1] edge
-    final Map<List<MISTStream>, DirectionAndIndexEdge> e7 = chainedPlan.getEdges(opDList);
-    final Map<List<MISTStream>, DirectionAndIndexEdge> result7 = new HashMap<>();
-    result7.put(sink1List, new DirectionAndIndexEdge(Direction.LEFT));
+    final Map<List<MISTStream>, MISTEdge> e7 = chainedPlan.getEdges(opDList);
+    final Map<List<MISTStream>, MISTEdge> result7 = new HashMap<>();
+    result7.put(sink1List, new MISTEdge(Direction.LEFT));
     Assert.assertEquals(e7, result7);
   }
 }
