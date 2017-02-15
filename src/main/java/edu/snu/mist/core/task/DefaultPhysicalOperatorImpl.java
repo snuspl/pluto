@@ -35,12 +35,12 @@ final class DefaultPhysicalOperatorImpl implements PhysicalOperator {
   /**
    * The timestamp of the data that is recently processed.
    */
-  protected long latestDataTimestamp;
+  private long latestDataTimestamp;
 
   /**
    * The timestamp of the watermark that is recently processed.
    */
-  protected long latestWatermarkTimestamp;
+  private long latestWatermarkTimestamp;
 
   public DefaultPhysicalOperatorImpl(final Operator operator,
                                      final PartitionedQuery partitionedQuery) {
