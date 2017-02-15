@@ -34,6 +34,7 @@ import org.apache.reef.tang.formats.ConfigurationModule;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -290,8 +291,44 @@ public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements 
   }
 
   @Override
+  public List<ContinuousStream<T>> conditionalBranch(final List<MISTPredicate<T>> conditions) {
+    // copy the condition list into serializable ArrayList
+    final ArrayList<MISTPredicate<T>> serializableConditions = new ArrayList<>(conditions);
+
+    try {
+      final Configuration opConf = OperatorUDFListConfiguration.CONF
+          .set(OperatorUDFListConfiguration.UDF_LIST_STRING, SerializeUtils.serializeToString(serializableConditions))
+          .set(OperatorUDFListConfiguration.OPERATOR, ConditionalBranchOperator.class)
+          .build();
+
+      // create a branch point
+      final ConditionalBranchStreamImpl<T> branchStream = new ConditionalBranchStreamImpl<>(dag, opConf);
+      dag.addVertex(branchStream);
+      dag.addEdge(this, branchStream, new MISTEdge(Direction.LEFT));
+
+      // create branched streams diverged from the branch point
+      final int branchSize = conditions.size();
+      final List<ContinuousStream<T>> downStreams = new ArrayList<>(branchSize);
+      for (int i = 0; i < branchSize; i++) {
+        downStreams.add(branchStream.branch(i));
+      }
+      return downStreams;
+    } catch (final IOException e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public List<ContinuousStream<T>> conditionalBranch(final List<Class<? extends MISTPredicate<T>>> clazzes,
+                                                     final List<Configuration> funcConfs) {
+    // TODO: [MIST-436] Support predicate list generation through tang in branch operator API
+    throw new RuntimeException("Branch operator setting through Tang is not supported yet.");
+  }
+
+  @Override
   public MISTStream<String> textSocketOutput(final String serverAddress,
-                               final int serverPort) {
+                                             final int serverPort) {
     final Configuration opConf = TextSocketSinkConfiguration.CONF
         .set(TextSocketSinkConfiguration.SOCKET_HOST_ADDRESS, serverAddress)
         .set(TextSocketSinkConfiguration.SOCKET_HOST_PORT, serverPort)

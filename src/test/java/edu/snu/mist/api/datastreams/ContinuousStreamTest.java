@@ -40,6 +40,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -71,7 +72,6 @@ public final class ContinuousStreamTest {
   public void tearDown() {
     queryBuilder = null;
   }
-
 
   /**
    * Test for basic stateless OperatorStreams.
@@ -352,6 +352,39 @@ public final class ContinuousStreamTest {
     final Injector injector = Tang.Factory.getTang().newInjector(joinedStream.getConfiguration());
     final MISTBiPredicate func = injector.getInstance(MISTBiPredicate.class);
     Assert.assertTrue(func instanceof OperatorTestUtils.TestBiPredicate);
+  }
+
+  /**
+   * Test for creating conditional branch operator.
+   */
+  @Test
+  public void testConditionalBranchOperatorStream() {
+    final int branchNum = 3;
+    final List<MISTPredicate<Tuple2<String, Integer>>> predicates = new ArrayList<>(branchNum);
+    predicates.add((t) -> t.get(1).equals(0));
+    predicates.add((t) -> t.get(1).equals(1));
+    predicates.add((t) -> t.get(1).equals(2));
+
+    final List<ContinuousStream<Tuple2<String, Integer>>> branchStreams =
+        filteredMappedStream
+            .conditionalBranch(predicates);
+
+    //                                   --> branch 0
+    // filteredMappedStream--> branch op --> branch 1
+    //                                   --> branch 2
+    final DAG<MISTStream, MISTEdge> dag = queryBuilder.build().getDAG();
+    final Map<MISTStream, MISTEdge> n1 = dag.getEdges(filteredMappedStream);
+
+    Assert.assertEquals(1, n1.size());
+    final MISTStream<Tuple2<String, Integer>> branchOp =
+        n1.entrySet().iterator().next().getKey();
+    Assert.assertEquals(new MISTEdge(Direction.LEFT), n1.get(branchOp));
+
+    final Map<MISTStream, MISTEdge> n2 = dag.getEdges(branchOp);
+    Assert.assertEquals(3, n2.size());
+    Assert.assertEquals(new MISTEdge(Direction.LEFT, 0), n2.get(branchStreams.get(0)));
+    Assert.assertEquals(new MISTEdge(Direction.LEFT, 1), n2.get(branchStreams.get(1)));
+    Assert.assertEquals(new MISTEdge(Direction.LEFT, 2), n2.get(branchStreams.get(2)));
   }
 
   /**

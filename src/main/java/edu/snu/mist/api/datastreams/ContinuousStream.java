@@ -31,7 +31,7 @@ public interface ContinuousStream<T> extends MISTStream<T> {
 
   /**
    * Applies map operation to the current stream and creates a new stream.
-   * @param mapFunc the function used for the transformation provided by a user.
+   * @param mapFunc the function used for the transformation provided by a user
    * @param <OUT> the type of newly created stream output
    * @return new transformed stream after applying the operation
    */
@@ -49,7 +49,7 @@ public interface ContinuousStream<T> extends MISTStream<T> {
 
   /**
    * Applies flatMap operation to the current stream and creates a new stream.
-   * @param flatMapFunc the function used for the transformation provided by a user.
+   * @param flatMapFunc the function used for the transformation provided by a user
    * @param <OUT> the type of newly created stream output
    * @return new transformed stream after applying the operation
    */
@@ -57,7 +57,7 @@ public interface ContinuousStream<T> extends MISTStream<T> {
 
   /**
    * Applies flatMap operation to the current stream and creates a new stream.
-   * @param clazz the class of flat-map function used for the transformation.
+   * @param clazz the class of flat-map function used for the transformation
    * @param funcConf a configuration to instantiate the flat-map function from the provided class
    * @param <OUT> the type of newly created stream output
    * @return new transformed stream after applying the operation
@@ -67,14 +67,14 @@ public interface ContinuousStream<T> extends MISTStream<T> {
 
   /**
    * Applies filter operation to the current stream and creates a new stream.
-   * @param filterFunc the function used for the transformation provided by a user.
+   * @param filterFunc the function used for the transformation provided by a user
    * @return new transformed stream after applying the operation
    */
   ContinuousStream<T> filter(MISTPredicate<T> filterFunc);
 
   /**
    * Applies filter operation to the current stream and creates a new stream.
-   * @param clazz the class of filter function used for the transformation.
+   * @param clazz the class of filter function used for the transformation
    * @param funcConf a configuration to instantiate the filter function from the provided class
    * @return new transformed stream after applying the operation
    */
@@ -118,7 +118,7 @@ public interface ContinuousStream<T> extends MISTStream<T> {
   /**
    * Applies user-defined stateful operator to the current stream.
    * This stream will produce outputs on every stream input.
-   * @param clazz the class of apply stateful function used for the transformation.
+   * @param clazz the class of apply stateful function used for the transformation
    * @param funcConf a configuration to instantiate the apply stateful function from the provided class
    * @param <OUT> the type of stream output
    * @return new transformed stream after applying the user-defined stateful operation
@@ -167,6 +167,24 @@ public interface ContinuousStream<T> extends MISTStream<T> {
                                         Class<? extends MISTBiPredicate<T, U>> clazz,
                                         Configuration funcConf,
                                         WindowInformation windowInfo);
+
+  /**
+   * Branches out to multiple continuous streams with each condition.
+   * If many conditions are matched, the earliest condition will be taken.
+   * @param conditions the list of predicates which test the branch condition
+   * @return list of new continuous streams which are branched out from this branch point
+   */
+  List<ContinuousStream<T>> conditionalBranch(List<MISTPredicate<T>> conditions);
+
+  /**
+   * Branches out to multiple continuous streams with each condition.
+   * If many conditions are matched, the earliest condition will be taken.
+   * @param clazzes the list of classes of predicates which test the branch condition
+   * @param funcConfs a list of configurations to instantiate the predicates from the provided class
+   * @return list of new continuous streams which are branched out from this branch point
+   */
+  List<ContinuousStream<T>> conditionalBranch(List<Class<? extends MISTPredicate<T>>> clazzes,
+                                              List<Configuration> funcConfs);
 
   /**
    * Push the text stream to th socket server.
