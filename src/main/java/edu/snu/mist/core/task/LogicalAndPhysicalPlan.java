@@ -15,8 +15,8 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.graphs.DAG;
-import edu.snu.mist.common.graphs.MISTEdge;
+import edu.snu.mist.common.graph.DAG;
+import edu.snu.mist.common.graph.MISTEdge;
 
 /**
  * This interface holds the logical and physical plan.

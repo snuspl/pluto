@@ -15,10 +15,10 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.graphs.AdjacentListDAG;
-import edu.snu.mist.common.graphs.DAG;
+import edu.snu.mist.common.graph.AdjacentListDAG;
+import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.SerializeUtils;
-import edu.snu.mist.common.graphs.MISTEdge;
+import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;

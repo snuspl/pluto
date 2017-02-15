@@ -18,10 +18,10 @@ package edu.snu.mist.api.datastreams;
 
 
 import edu.snu.mist.api.datastreams.configurations.*;
-import edu.snu.mist.common.graphs.DAG;
+import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.*;
-import edu.snu.mist.common.graphs.MISTEdge;
+import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.*;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.CountWindowInformation;

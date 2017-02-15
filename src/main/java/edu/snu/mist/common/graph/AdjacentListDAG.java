@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.graphs;
+package edu.snu.mist.common.graph;
 
 import java.util.*;
 import java.util.logging.Level;

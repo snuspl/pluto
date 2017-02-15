@@ -18,7 +18,7 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.OutputEmitter;
-import edu.snu.mist.common.graphs.MISTEdge;
+import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.formats.avro.Direction;
 
 import java.util.Map;

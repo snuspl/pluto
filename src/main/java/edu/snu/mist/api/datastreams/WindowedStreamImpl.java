@@ -16,12 +16,12 @@
 package edu.snu.mist.api.datastreams;
 
 import edu.snu.mist.api.datastreams.configurations.*;
-import edu.snu.mist.common.graphs.DAG;
+import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.ApplyStatefulFunction;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
-import edu.snu.mist.common.graphs.MISTEdge;
+import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.AggregateWindowOperator;
 import edu.snu.mist.common.operators.ApplyStatefulWindowOperator;
 import edu.snu.mist.common.windows.WindowData;

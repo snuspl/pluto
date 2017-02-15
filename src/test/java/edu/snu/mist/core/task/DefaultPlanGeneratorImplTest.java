@@ -18,8 +18,8 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
-import edu.snu.mist.common.graphs.DAG;
-import edu.snu.mist.common.graphs.MISTEdge;
+import edu.snu.mist.common.graph.DAG;
+import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.*;
 import edu.snu.mist.common.sinks.NettyTextSink;
 import edu.snu.mist.common.sources.NettyTextDataGenerator;

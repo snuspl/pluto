@@ -15,12 +15,12 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.graphs.AdjacentListDAG;
-import edu.snu.mist.common.graphs.DAG;
+import edu.snu.mist.common.graph.AdjacentListDAG;
+import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
-import edu.snu.mist.common.graphs.MISTEdge;
+import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.*;
 import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.sources.*;

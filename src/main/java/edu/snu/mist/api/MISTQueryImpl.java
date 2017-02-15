@@ -16,9 +16,9 @@
 package edu.snu.mist.api;
 
 import edu.snu.mist.api.datastreams.MISTStream;
-import edu.snu.mist.common.graphs.DAG;
-import edu.snu.mist.common.graphs.MISTEdge;
-import edu.snu.mist.common.graphs.GraphUtils;
+import edu.snu.mist.common.graph.DAG;
+import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.formats.avro.*;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Configuration;

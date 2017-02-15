@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 /**
- * A package for graphs.
+ * A package for graph.
  */
-package edu.snu.mist.common.graphs;
+package edu.snu.mist.common.graph;

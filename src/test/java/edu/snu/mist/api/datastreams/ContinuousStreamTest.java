@@ -17,10 +17,10 @@ package edu.snu.mist.api.datastreams;
 
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
-import edu.snu.mist.common.graphs.DAG;
+import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.*;
-import edu.snu.mist.common.graphs.MISTEdge;
+import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.*;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.CountWindowInformation;
@@ -90,14 +90,14 @@ public final class ContinuousStreamTest {
     Assert.assertEquals(1, neighbors.size());
     final MISTEdge edgeInfo = neighbors.get(filteredStream);
     Assert.assertEquals(Direction.LEFT, edgeInfo.getDirection());
-    Assert.assertEquals(new Integer(0), edgeInfo.getIndex());
+    Assert.assertEquals(0, edgeInfo.getIndex());
 
     // Check filter -> map
     final Map<MISTStream, MISTEdge> neighbors2 = dag.getEdges(filteredStream);
     Assert.assertEquals(1, neighbors2.size());
     final MISTEdge edgeInfo2 = neighbors2.get(filteredMappedStream);
     Assert.assertEquals(Direction.LEFT, edgeInfo2.getDirection());
-    Assert.assertEquals(new Integer(0), edgeInfo2.getIndex());
+    Assert.assertEquals(0, edgeInfo2.getIndex());
   }
 
   /**

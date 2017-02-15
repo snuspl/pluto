@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.graphs;
+package edu.snu.mist.common.graph;
 
 import edu.snu.mist.formats.avro.Direction;
 
@@ -23,24 +23,27 @@ import edu.snu.mist.formats.avro.Direction;
 public final class MISTEdge {
 
   /**
-   * A index information.
-   */
-  private final Integer index;
-  /**
    * A direction information.
+   * It is used to determine the edge direction toward streams having two upstreams.
    */
   private final Direction direction;
   /**
+   * An index information.
+   * It is used to determine the index of edge diverged from branch operator.
+   *
+   */
+  private final int index;
+  /**
    * The default value of index.
    */
-  private static final Integer DEFAULT_INDEX = 0;
+  private static final int DEFAULT_INDEX = 0;
 
   public MISTEdge(final Direction direction) {
     this(direction, DEFAULT_INDEX);
   }
 
   public MISTEdge(final Direction direction,
-                  final Integer index) {
+                  final int index) {
     this.direction = direction;
     this.index = index;
   }
@@ -48,7 +51,7 @@ public final class MISTEdge {
   /**
    * @return the index information
    */
-  public Integer getIndex() {
+  public int getIndex() {
     return index;
   }
 
@@ -71,6 +74,6 @@ public final class MISTEdge {
 
   @Override
   public int hashCode() {
-    return 10 * direction.hashCode() + index.hashCode();
+    return 10 * direction.hashCode() + new Integer(index).hashCode();
   }
 }

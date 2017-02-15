@@ -15,9 +15,9 @@
  */
 package edu.snu.mist.api.datastreams;
 
-import edu.snu.mist.common.graphs.DAG;
+import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.exceptions.IllegalUdfConfigurationException;
-import edu.snu.mist.common.graphs.MISTEdge;
+import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.formats.avro.Direction;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
