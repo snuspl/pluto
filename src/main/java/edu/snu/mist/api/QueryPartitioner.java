@@ -16,9 +16,10 @@
 package edu.snu.mist.api;
 
 import edu.snu.mist.api.datastreams.MISTStream;
-import edu.snu.mist.common.AdjacentListDAG;
-import edu.snu.mist.common.DAG;
-import edu.snu.mist.common.GraphUtils;
+import edu.snu.mist.common.graph.AdjacentListDAG;
+import edu.snu.mist.common.graph.DAG;
+import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.formats.avro.Direction;
 
 import java.util.*;
@@ -57,8 +58,8 @@ public final class QueryPartitioner {
   /**
    * DAG of the logical query.
    */
-  private final DAG<MISTStream, Direction> dag;
-  public QueryPartitioner(final DAG<MISTStream, Direction> dag) {
+  private final DAG<MISTStream, MISTEdge> dag;
+  public QueryPartitioner(final DAG<MISTStream, MISTEdge> dag) {
     this.dag = dag;
   }
 
@@ -67,8 +68,8 @@ public final class QueryPartitioner {
    * @return DAG of the List<AvroVertexSerializable>
    * The partition is represented as a list and AvroVertexSerializable can be serialized by avro
    */
-  public DAG<List<MISTStream>, Direction> generatePartitionedPlan() {
-    final DAG<QueryPartition, Direction> partitionedQueryDAG =
+  public DAG<List<MISTStream>, MISTEdge> generatePartitionedPlan() {
+    final DAG<QueryPartition, MISTEdge> partitionedQueryDAG =
         new AdjacentListDAG<>();
     final Map<MISTStream, QueryPartition> vertexChainMap = new HashMap<>();
     // Check visited vertices
@@ -77,7 +78,7 @@ public final class QueryPartitioner {
     // It traverses the DAG of operators in DFS order
     // from the root operators which are following sources.
     for (final MISTStream source : dag.getRootVertices()) {
-      final Map<MISTStream, Direction> rootEdges = dag.getEdges(source);
+      final Map<MISTStream, MISTEdge> rootEdges = dag.getEdges(source);
       // This chaining group is a wrapper for List, for equality check
       final QueryPartition srcChain = new QueryPartition();
       // Partition Source
@@ -85,21 +86,23 @@ public final class QueryPartitioner {
       partitionedQueryDAG.addVertex(srcChain);
       visited.add(source);
       vertexChainMap.put(source, srcChain);
-      for (final Map.Entry<MISTStream, Direction> entry : rootEdges.entrySet()) {
+      for (final Map.Entry<MISTStream, MISTEdge> entry : rootEdges.entrySet()) {
         final MISTStream nextVertex = entry.getKey();
-        final Direction edgeDirection = entry.getValue();
+        final MISTEdge edgeInfo = entry.getValue();
+        final Direction edgeDirection = edgeInfo.getDirection();
+        final Integer branchIndex = edgeInfo.getIndex();
         final QueryPartition nextChain = vertexChainMap.getOrDefault(nextVertex, new QueryPartition());
         if (!vertexChainMap.containsKey(nextVertex)) {
           vertexChainMap.put(nextVertex, nextChain);
           partitionedQueryDAG.addVertex(nextChain);
         }
-        partitionedQueryDAG.addEdge(srcChain, nextChain, edgeDirection);
+        partitionedQueryDAG.addEdge(srcChain, nextChain, new MISTEdge(edgeDirection, branchIndex));
         chaining(nextChain, nextVertex, visited, partitionedQueryDAG, vertexChainMap);
       }
     }
 
     // Convert to List<AvroVertexSerializable>
-    final DAG<List<MISTStream>, Direction> result =
+    final DAG<List<MISTStream>, MISTEdge> result =
         new AdjacentListDAG<>();
     final Queue<QueryPartition> queue = new LinkedList<>();
     final Iterator<QueryPartition> iterator = GraphUtils.topologicalSort(partitionedQueryDAG);
@@ -109,8 +112,8 @@ public final class QueryPartitioner {
       result.addVertex(queryPartition.chain);
     }
     for (final QueryPartition queryPartition : queue) {
-      final Map<QueryPartition, Direction> edges = partitionedQueryDAG.getEdges(queryPartition);
-      for (final Map.Entry<QueryPartition, Direction> edge : edges.entrySet()) {
+      final Map<QueryPartition, MISTEdge> edges = partitionedQueryDAG.getEdges(queryPartition);
+      for (final Map.Entry<QueryPartition, MISTEdge> edge : edges.entrySet()) {
         result.addEdge(queryPartition.chain, edge.getKey().chain, edge.getValue());
       }
     }
@@ -128,15 +131,17 @@ public final class QueryPartitioner {
   private void chaining(final QueryPartition operatorChain,
                         final MISTStream currVertex,
                         final Set<MISTStream> visited,
-                        final DAG<QueryPartition, Direction> partitionedQueryDAG,
+                        final DAG<QueryPartition, MISTEdge> partitionedQueryDAG,
                         final Map<MISTStream, QueryPartition> vertexChainMap) {
     if (!visited.contains(currVertex)) {
       operatorChain.chain.add(currVertex);
       visited.add(currVertex);
-      final Map<MISTStream, Direction> edges = dag.getEdges(currVertex);
-      for (final Map.Entry<MISTStream, Direction> entry : edges.entrySet()) {
+      final Map<MISTStream, MISTEdge> edges = dag.getEdges(currVertex);
+      for (final Map.Entry<MISTStream, MISTEdge> entry : edges.entrySet()) {
         final MISTStream nextVertex = entry.getKey();
-        final Direction edgeDirection = entry.getValue();
+        final MISTEdge edgeInfo = entry.getValue();
+        final Direction edgeDirection = edgeInfo.getDirection();
+        final Integer branchIndex = edgeInfo.getIndex();
         if (dag.getInDegree(nextVertex) > 1 ||
             edges.size() > 1) {
           // The current vertex is 2) branching (have multiple next ops)
@@ -147,7 +152,7 @@ public final class QueryPartitioner {
             partitionedQueryDAG.addVertex(nextChain);
             vertexChainMap.put(nextVertex, nextChain);
           }
-          partitionedQueryDAG.addEdge(operatorChain, nextChain, edgeDirection);
+          partitionedQueryDAG.addEdge(operatorChain, nextChain, new MISTEdge(edgeDirection, branchIndex));
           chaining(nextChain, nextVertex, visited, partitionedQueryDAG, vertexChainMap);
         } else if (dag.getEdges(nextVertex).size() == 0) {
           // The next vertex is Sink. End of the chaining
@@ -156,7 +161,7 @@ public final class QueryPartitioner {
             partitionedQueryDAG.addVertex(nextChain);
             vertexChainMap.put(nextVertex, nextChain);
           }
-          partitionedQueryDAG.addEdge(operatorChain, nextChain, edgeDirection);
+          partitionedQueryDAG.addEdge(operatorChain, nextChain, new MISTEdge(edgeDirection, branchIndex));
           chaining(nextChain, nextVertex, visited, partitionedQueryDAG, vertexChainMap);
         } else {
           // 1) The next vertex is sequentially following the current vertex

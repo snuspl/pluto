@@ -18,9 +18,10 @@ package edu.snu.mist.api.datastreams;
 
 
 import edu.snu.mist.api.datastreams.configurations.*;
-import edu.snu.mist.common.DAG;
+import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.*;
+import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.*;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.CountWindowInformation;
@@ -42,7 +43,7 @@ import java.util.Map;
  */
 public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements ContinuousStream<T> {
 
-  public ContinuousStreamImpl(final DAG<MISTStream, Direction> dag,
+  public ContinuousStreamImpl(final DAG<MISTStream, MISTEdge> dag,
                               final Configuration conf) {
     super(dag, conf);
   }
@@ -60,7 +61,7 @@ public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements 
       final MISTStream upStream) {
     final WindowedStream<OUT> downStream = new WindowedStreamImpl<>(dag, conf);
     dag.addVertex(downStream);
-    dag.addEdge(upStream, downStream, Direction.LEFT);
+    dag.addEdge(upStream, downStream, new MISTEdge(Direction.LEFT));
     return downStream;
   }
 
@@ -79,8 +80,8 @@ public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements 
       final MISTStream rightStream) {
     final ContinuousStream<OUT> downStream = new ContinuousStreamImpl<>(dag, conf);
     dag.addVertex(downStream);
-    dag.addEdge(leftStream, downStream, Direction.LEFT);
-    dag.addEdge(rightStream, downStream, Direction.RIGHT);
+    dag.addEdge(leftStream, downStream, new MISTEdge(Direction.LEFT));
+    dag.addEdge(rightStream, downStream, new MISTEdge(Direction.RIGHT));
     return downStream;
   }
 
@@ -297,7 +298,7 @@ public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements 
         .build();
     final MISTStream<String> sink = new MISTStreamImpl<>(dag, opConf);
     dag.addVertex(sink);
-    dag.addEdge(this, sink, Direction.LEFT);
+    dag.addEdge(this, sink, new MISTEdge(Direction.LEFT));
     return sink;
   }
 }

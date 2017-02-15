@@ -86,7 +86,7 @@ public final class KafkaSourceTest {
    * from the Kafka server and generates data correctly.
    * @throws Exception
    */
-  @Test(timeout = 15000L)
+  @Test(timeout = 30000L)
   public void testKafkaDataGenerator() throws Exception {
     final Map<String, String> inputStream = new HashMap<>();
     inputStream.put("0", "Lorem ipsum dolor sit amet, consectetur adipiscing elit.");
