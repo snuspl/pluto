@@ -23,7 +23,7 @@ import org.apache.reef.wake.Identifier;
  * This class represents the implementation of Source interface.
  * @param <T> the type of input data
  */
-final class PhysicalSourceImpl<T> implements PhysicalSource<T> {
+final class PhysicalSourceImpl<T> extends BasePhysicalVertex implements PhysicalSource<T> {
 
   /**
    * Source id.
@@ -40,8 +40,18 @@ final class PhysicalSourceImpl<T> implements PhysicalSource<T> {
    */
   private final EventGenerator<T> eventGenerator;
 
+
   public PhysicalSourceImpl(final Identifier sourceId,
-                            final DataGenerator<T> dataGenerator, final EventGenerator<T> eventGenerator) {
+                            final DataGenerator<T> dataGenerator,
+                            final EventGenerator<T> eventGenerator) {
+    this(sourceId, dataGenerator, eventGenerator, null);
+  }
+
+  public PhysicalSourceImpl(final Identifier sourceId,
+                            final DataGenerator<T> dataGenerator,
+                            final EventGenerator<T> eventGenerator,
+                            final String configuration) {
+    super(configuration);
     this.sourceId = sourceId;
     this.dataGenerator = dataGenerator;
     this.eventGenerator = eventGenerator;

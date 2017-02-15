@@ -15,31 +15,22 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.sinks.Sink;
-
 /**
- * This is an implementation of PhysicalSink.
+ * This is the base class of the physical vertex.
  */
-final class PhysicalSinkImpl<I> extends BasePhysicalVertex implements PhysicalSink<I> {
+abstract class BasePhysicalVertex implements PhysicalVertex {
 
-  private final Sink<I> sink;
+  /**
+   * The configuration of the physical vertex.
+   */
+  protected final String configuration;
 
-  public PhysicalSinkImpl(final Sink<I> sink) {
-    this(sink, null);
-  }
-
-  public PhysicalSinkImpl(final Sink<I> sink,
-                          final String configuration) {
-    super(configuration);
-    this.sink = sink;
-  }
-
-  public Sink<I> getSink() {
-    return sink;
+  public BasePhysicalVertex(final String configuration) {
+    this.configuration = configuration;
   }
 
   @Override
-  public Type getType() {
-    return Type.SINK;
+  public String getConfiguration() {
+    return configuration;
   }
 }

@@ -111,7 +111,7 @@ final class  DefaultPlanGeneratorImpl implements PlanGenerator {
           final String id = operatorIdGenerator.generate();
           final PhysicalSource source = new PhysicalSourceImpl<>(
               identifierFactory.getNewInstance(id),
-              dataGenerator, eventGenerator);
+              dataGenerator, eventGenerator, vertex.getConfiguration());
           deserializedVertices.add(source);
           physicalDAG.addVertex(source);
           // Add the physical vertex to the physical map
@@ -134,7 +134,8 @@ final class  DefaultPlanGeneratorImpl implements PlanGenerator {
                 new ClassHierarchyImpl(urls));
             final String id = operatorIdGenerator.generate();
             final Operator operator = physicalObjectGenerator.newOperator(id, conf, classLoader);
-            final PhysicalOperator physicalOperator = new DefaultPhysicalOperatorImpl(operator, partitionedQuery);
+            final PhysicalOperator physicalOperator =
+                new DefaultPhysicalOperatorImpl(operator, partitionedQuery, vertex.getConfiguration());
             partitionedQuery.insertToTail(physicalOperator);
             // Add the physical vertex to the physical map
             physicalVertexMap.getPhysicalVertexMap().put(id, physicalOperator);
@@ -167,7 +168,8 @@ final class  DefaultPlanGeneratorImpl implements PlanGenerator {
           final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
               new ClassHierarchyImpl(urls));
           final String id = operatorIdGenerator.generate();
-          final PhysicalSink sink = new PhysicalSinkImpl<>(physicalObjectGenerator.newSink(id, conf, classLoader));
+          final PhysicalSink sink = new PhysicalSinkImpl<>(physicalObjectGenerator.newSink(id, conf, classLoader),
+              vertex.getConfiguration());
           deserializedVertices.add(sink);
           physicalDAG.addVertex(sink);
           // Add the physical vertex to the physical map
