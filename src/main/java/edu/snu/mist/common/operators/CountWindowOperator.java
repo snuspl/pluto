@@ -61,7 +61,7 @@ public final class CountWindowOperator<T> extends FixedSizeWindowOperator<T> imp
 
   @Override
   public Map<String, Object> getOperatorState() {
-    final Map<String, Object> stateMap = super.getOperatorState();
+    super.getOperatorState();
     stateMap.put("count", count);
     return stateMap;
   }

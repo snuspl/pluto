@@ -46,6 +46,11 @@ public final class ApplyStatefulWindowOperator<IN, OUT>
    */
   private final ApplyStatefulFunction<IN, OUT> applyStatefulFunction;
 
+  /**
+   * The map that represents the state of the operator.
+   */
+  private final Map<String, Object> stateMap = new HashMap<>();
+
   @Inject
   private ApplyStatefulWindowOperator(
       @Parameter(OperatorId.class) final String operatorId,
@@ -96,7 +101,6 @@ public final class ApplyStatefulWindowOperator<IN, OUT>
 
   @Override
   public Map<String, Object> getOperatorState() {
-    final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("applyStatefulFunctionState", applyStatefulFunction.getCurrentState());
     return stateMap;
   }

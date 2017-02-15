@@ -40,6 +40,11 @@ public final class SessionWindowOperator<T> extends OneStreamOperator implements
   private static final Logger LOG = Logger.getLogger(SessionWindowOperator.class.getName());
 
   /**
+   * The map that represents the state of the operator.
+   */
+  private final Map<String, Object> stateMap = new HashMap<>();
+
+  /**
    * The interval of emission expressed in milliseconds or the number of inputs.
    */
   private final int sessionInterval;
@@ -111,7 +116,6 @@ public final class SessionWindowOperator<T> extends OneStreamOperator implements
 
   @Override
   public Map<String, Object> getOperatorState() {
-    final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("currentWindow", currentWindow);
     stateMap.put("latestDataTimestamp", latestDataTimestamp);
     stateMap.put("startedNewWindow", startedNewWindow);

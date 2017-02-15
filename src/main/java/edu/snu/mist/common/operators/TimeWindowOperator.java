@@ -56,7 +56,7 @@ public final class TimeWindowOperator<T> extends FixedSizeWindowOperator<T> {
 
   @Override
   public Map<String, Object> getOperatorState() {
-    final Map<String, Object> stateMap = super.getOperatorState();
+    super.getOperatorState();
     return stateMap;
   }
 
