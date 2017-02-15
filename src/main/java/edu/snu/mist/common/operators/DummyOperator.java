@@ -17,42 +17,43 @@ package edu.snu.mist.common.operators;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
-import edu.snu.mist.common.SerializeUtils;
-import edu.snu.mist.common.functions.MISTPredicate;
-import edu.snu.mist.common.parameters.SerializedUdfList;
+import edu.snu.mist.common.parameters.OperatorId;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Conditional branch operator which branches out from input stream.
+ * Dummy operator which just passes the input event.
+ * TODO: [MIST-417] Implement control flow in task side
  * @param <I> input type
  */
-public final class ConditionalBranchOperator<I> extends OneStreamOperator {
-  private static final Logger LOG = Logger.getLogger(ConditionalBranchOperator.class.getName());
-
-  private final List<MISTPredicate<I>> predicates;
+public final class DummyOperator<I> extends OneStreamOperator {
+  private static final Logger LOG = Logger.getLogger(DummyOperator.class.getName());
 
   @Inject
-  private ConditionalBranchOperator(
-      @Parameter(SerializedUdfList.class) final List<String> serializedUdfList,
+  private DummyOperator(
+      @Parameter(OperatorId.class) final String operatorId,
       final ClassLoader classLoader) throws IOException, ClassNotFoundException {
-    predicates = new ArrayList<>(serializedUdfList.size());
-    for (final String serializedUdf : serializedUdfList) {
-      predicates.add(SerializeUtils.deserializeFromString(serializedUdf, classLoader));
-    }
+    this(operatorId);
+  }
+
+  @Inject
+  public DummyOperator(@Parameter(OperatorId.class) final String operatorId) {
+    super(operatorId);
   }
 
   /**
-   * Checks the branch conditions and forward to matched branch.
+   * Passes the input event.
    */
   @Override
   public void processLeftData(final MistDataEvent input) {
     final I value = (I)input.getValue();
+    LOG.log(Level.FINE, "{0} Passes {1}",
+        new Object[]{DummyOperator.class, value});
+    outputEmitter.emitData(input);
   }
 
   @Override
