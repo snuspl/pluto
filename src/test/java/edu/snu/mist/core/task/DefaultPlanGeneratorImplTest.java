@@ -20,7 +20,6 @@ import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.common.graphs.DAG;
 import edu.snu.mist.common.graphs.DirectionAndIndexEdge;
-import edu.snu.mist.common.graphs.DirectionEdge;
 import edu.snu.mist.common.operators.*;
 import edu.snu.mist.common.sinks.NettyTextSink;
 import edu.snu.mist.common.sources.NettyTextDataGenerator;
@@ -128,7 +127,7 @@ public final class DefaultPlanGeneratorImplTest {
     Assert.assertTrue(physicalSink.getSink() instanceof NettyTextSink);
 
     // Test logical plan
-    final DAG<LogicalVertex, DirectionEdge> logicalPlan = plan.getLogicalPlan();
+    final DAG<LogicalVertex, DirectionAndIndexEdge> logicalPlan = plan.getLogicalPlan();
     final Set<LogicalVertex> logicalSources = logicalPlan.getRootVertices();
     Assert.assertEquals(1, logicalSources.size());
     final LogicalVertex logicalSource = logicalSources.iterator().next();
@@ -150,8 +149,9 @@ public final class DefaultPlanGeneratorImplTest {
     Assert.assertEquals(physicalSink.getSink().getIdentifier().toString(), sinkVertex.getPhysicalVertexId());
   }
 
-  private LogicalVertex getNextVertex(final LogicalVertex vertex, final DAG<LogicalVertex, DirectionEdge> logicalPlan) {
-    final Map<LogicalVertex, DirectionEdge> nextLogicalOps = logicalPlan.getEdges(vertex);
+  private LogicalVertex getNextVertex(final LogicalVertex vertex,
+                                      final DAG<LogicalVertex, DirectionAndIndexEdge> logicalPlan) {
+    final Map<LogicalVertex, DirectionAndIndexEdge> nextLogicalOps = logicalPlan.getEdges(vertex);
     final LogicalVertex nextVertex = nextLogicalOps.entrySet().iterator().next().getKey();
     return nextVertex;
   }

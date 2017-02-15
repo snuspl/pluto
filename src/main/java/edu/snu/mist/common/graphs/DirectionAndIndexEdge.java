@@ -18,18 +18,30 @@ package edu.snu.mist.common.graphs;
 import edu.snu.mist.formats.avro.Direction;
 
 /**
- * This implements an edge that has direction and index information.
+ * This class represents an edge that has direction and index information.
  */
-public final class DirectionAndIndexEdge extends DirectionEdge implements EdgeInfo {
+public final class DirectionAndIndexEdge {
 
   /**
    * A index information.
    */
   private final Integer index;
+  /**
+   * A direction information.
+   */
+  private final Direction direction;
+  /**
+   * The default value of index.
+   */
+  private static final Integer DEFAULT_INDEX = 0;
+
+  public DirectionAndIndexEdge(final Direction direction) {
+    this(direction, DEFAULT_INDEX);
+  }
 
   public DirectionAndIndexEdge(final Direction direction,
                                final Integer index) {
-    super(direction);
+    this.direction = direction;
     this.index = index;
   }
 
@@ -40,19 +52,25 @@ public final class DirectionAndIndexEdge extends DirectionEdge implements EdgeIn
     return index;
   }
 
+  /**
+   * @return the direction information
+   */
+  public Direction getDirection() {
+    return direction;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (!(o instanceof DirectionAndIndexEdge)) {
       return false;
-    } else if (!super.equals(o)) {
-      return false;
     } else {
-      return index == ((DirectionAndIndexEdge) o).getIndex();
+      return direction == ((DirectionAndIndexEdge) o).getDirection() &&
+          index == ((DirectionAndIndexEdge) o).getIndex();
     }
   }
 
   @Override
   public int hashCode() {
-    return super.hashCode() + 10 * index.hashCode();
+    return 10 * direction.hashCode() + index.hashCode();
   }
 }

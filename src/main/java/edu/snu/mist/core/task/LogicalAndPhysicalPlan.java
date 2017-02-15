@@ -17,7 +17,6 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.graphs.DAG;
 import edu.snu.mist.common.graphs.DirectionAndIndexEdge;
-import edu.snu.mist.common.graphs.DirectionEdge;
 
 /**
  * This interface holds the logical and physical plan.
@@ -34,7 +33,7 @@ interface LogicalAndPhysicalPlan {
    * Return the logical plan.
    * @return logical plan
    */
-  DAG<LogicalVertex, DirectionEdge> getLogicalPlan();
+  DAG<LogicalVertex, DirectionAndIndexEdge> getLogicalPlan();
 
   /**
    * Return the physical plan.

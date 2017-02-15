@@ -84,7 +84,7 @@ public class WindowedStreamTest {
 
     // Check windowed -> reduce by key
     checkEdges(queryBuilder.build().getDAG(), 1, timeWindowedStream,
-        reducedWindowStream, new DirectionAndIndexEdge(Direction.LEFT, 0));
+        reducedWindowStream, new DirectionAndIndexEdge(Direction.LEFT));
   }
 
   /**
@@ -105,7 +105,7 @@ public class WindowedStreamTest {
 
     // Check windowed -> reduce by key
     checkEdges(queryBuilder.build().getDAG(), 1, timeWindowedStream,
-        reducedWindowStream, new DirectionAndIndexEdge(Direction.LEFT, 0));
+        reducedWindowStream, new DirectionAndIndexEdge(Direction.LEFT));
   }
 
   /**
@@ -127,7 +127,7 @@ public class WindowedStreamTest {
     // Check windowed -> stateful operation applied
     checkEdges(
         queryBuilder.build().getDAG(), 1, timeWindowedStream,
-        applyStatefulWindowStream, new DirectionAndIndexEdge(Direction.LEFT, 0));
+        applyStatefulWindowStream, new DirectionAndIndexEdge(Direction.LEFT));
   }
 
   /**
@@ -148,7 +148,7 @@ public class WindowedStreamTest {
     // Check windowed -> stateful operation applied
     checkEdges(
         queryBuilder.build().getDAG(), 1, timeWindowedStream,
-        applyStatefulWindowStream, new DirectionAndIndexEdge(Direction.LEFT, 0));
+        applyStatefulWindowStream, new DirectionAndIndexEdge(Direction.LEFT));
   }
 
   /**
@@ -165,7 +165,7 @@ public class WindowedStreamTest {
     Assert.assertEquals(SerializeUtils.serializeToString(func), serializedFunc);
     // Check windowed -> aggregated
     checkEdges(queryBuilder.build().getDAG(), 1, timeWindowedStream,
-        aggregateWindowStream, new DirectionAndIndexEdge(Direction.LEFT, 0));
+        aggregateWindowStream, new DirectionAndIndexEdge(Direction.LEFT));
   }
 
   /**
@@ -182,7 +182,7 @@ public class WindowedStreamTest {
     Assert.assertTrue(func instanceof WindowAggregateFunction);
     // Check windowed -> aggregated
     checkEdges(queryBuilder.build().getDAG(), 1, timeWindowedStream,
-        aggregateWindowStream, new DirectionAndIndexEdge(Direction.LEFT, 0));
+        aggregateWindowStream, new DirectionAndIndexEdge(Direction.LEFT));
   }
 
   static final class WindowAggregateFunction implements MISTFunction<WindowData<Tuple2<String, Integer>>, String> {

@@ -17,7 +17,6 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.graphs.DAG;
 import edu.snu.mist.common.graphs.DirectionAndIndexEdge;
-import edu.snu.mist.common.graphs.DirectionEdge;
 import edu.snu.mist.common.graphs.GraphUtils;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroLogicalPlan;
@@ -46,7 +45,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
   /**
    * Map of query id and logical plan.
    */
-  private final ConcurrentMap<String, DAG<LogicalVertex, DirectionEdge>> logicalPlanMap;
+  private final ConcurrentMap<String, DAG<LogicalVertex, DirectionAndIndexEdge>> logicalPlanMap;
 
   /**
    * A partitioned query manager.

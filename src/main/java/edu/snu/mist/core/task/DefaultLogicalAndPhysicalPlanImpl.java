@@ -17,17 +17,16 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.graphs.DAG;
 import edu.snu.mist.common.graphs.DirectionAndIndexEdge;
-import edu.snu.mist.common.graphs.DirectionEdge;
 
 /**
  * This class contains the logical and physical plan of a query.
  */
 final class DefaultLogicalAndPhysicalPlanImpl implements LogicalAndPhysicalPlan {
 
-  private final DAG<LogicalVertex, DirectionEdge> logicalPlan;
+  private final DAG<LogicalVertex, DirectionAndIndexEdge> logicalPlan;
   private final DAG<PhysicalVertex, DirectionAndIndexEdge> physicalPlan;
 
-  public DefaultLogicalAndPhysicalPlanImpl(final DAG<LogicalVertex, DirectionEdge> logicalPlan,
+  public DefaultLogicalAndPhysicalPlanImpl(final DAG<LogicalVertex, DirectionAndIndexEdge> logicalPlan,
                                            final DAG<PhysicalVertex, DirectionAndIndexEdge> physicalPlan) {
     this.logicalPlan = logicalPlan;
     this.physicalPlan = physicalPlan;
@@ -37,7 +36,7 @@ final class DefaultLogicalAndPhysicalPlanImpl implements LogicalAndPhysicalPlan 
    * Return the logical plan.
    * @return logical plan
    */
-  public DAG<LogicalVertex, DirectionEdge> getLogicalPlan() {
+  public DAG<LogicalVertex, DirectionAndIndexEdge> getLogicalPlan() {
     return logicalPlan;
   }
 

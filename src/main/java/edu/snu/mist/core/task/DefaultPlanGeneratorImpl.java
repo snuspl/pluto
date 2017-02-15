@@ -19,7 +19,6 @@ import edu.snu.mist.common.graphs.AdjacentListDAG;
 import edu.snu.mist.common.graphs.DAG;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.graphs.DirectionAndIndexEdge;
-import edu.snu.mist.common.graphs.DirectionEdge;
 import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;
@@ -91,7 +90,7 @@ final class  DefaultPlanGeneratorImpl implements PlanGenerator {
     final DAG<PhysicalVertex, DirectionAndIndexEdge> physicalDAG = new AdjacentListDAG<>();
     // This is for logical plan
     final List<List<LogicalVertex>> logicalVertices = new ArrayList<>(avroLogicalPlan.getAvroVertices().size());
-    final DAG<LogicalVertex, DirectionEdge> logicalDAG = new AdjacentListDAG<>();
+    final DAG<LogicalVertex, DirectionAndIndexEdge> logicalDAG = new AdjacentListDAG<>();
 
     // Get a class loader
     final URL[] urls = SerializeUtils.getURLs(avroLogicalPlan.getJarFilePaths());
@@ -152,7 +151,7 @@ final class  DefaultPlanGeneratorImpl implements PlanGenerator {
             if (prevLogicalVertex == null) {
               prevLogicalVertex = logicalVertex;
             } else {
-              logicalDAG.addEdge(prevLogicalVertex, logicalVertex, new DirectionEdge(Direction.LEFT));
+              logicalDAG.addEdge(prevLogicalVertex, logicalVertex, new DirectionAndIndexEdge(Direction.LEFT));
               prevLogicalVertex = logicalVertex;
             }
             logicalVertexList.add(logicalVertex);
@@ -202,7 +201,7 @@ final class  DefaultPlanGeneratorImpl implements PlanGenerator {
       final List<LogicalVertex> dstLogicalVertices = logicalVertices.get(dstIndex);
       final LogicalVertex srcLogicalVertex = srcLogicalVertices.get(srcLogicalVertices.size() - 1);
       final LogicalVertex dstLogicalVertex = dstLogicalVertices.get(0);
-      logicalDAG.addEdge(srcLogicalVertex, dstLogicalVertex, new DirectionEdge(edge.getDirection()));
+      logicalDAG.addEdge(srcLogicalVertex, dstLogicalVertex, new DirectionAndIndexEdge(edge.getDirection()));
     }
 
     return new DefaultLogicalAndPhysicalPlanImpl(logicalDAG, physicalDAG);

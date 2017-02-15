@@ -61,7 +61,7 @@ public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements 
       final MISTStream upStream) {
     final WindowedStream<OUT> downStream = new WindowedStreamImpl<>(dag, conf);
     dag.addVertex(downStream);
-    dag.addEdge(upStream, downStream, new DirectionAndIndexEdge(Direction.LEFT, 0));
+    dag.addEdge(upStream, downStream, new DirectionAndIndexEdge(Direction.LEFT));
     return downStream;
   }
 
@@ -80,8 +80,8 @@ public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements 
       final MISTStream rightStream) {
     final ContinuousStream<OUT> downStream = new ContinuousStreamImpl<>(dag, conf);
     dag.addVertex(downStream);
-    dag.addEdge(leftStream, downStream, new DirectionAndIndexEdge(Direction.LEFT, 0));
-    dag.addEdge(rightStream, downStream, new DirectionAndIndexEdge(Direction.RIGHT, 0));
+    dag.addEdge(leftStream, downStream, new DirectionAndIndexEdge(Direction.LEFT));
+    dag.addEdge(rightStream, downStream, new DirectionAndIndexEdge(Direction.RIGHT));
     return downStream;
   }
 
@@ -298,7 +298,7 @@ public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements 
         .build();
     final MISTStream<String> sink = new MISTStreamImpl<>(dag, opConf);
     dag.addVertex(sink);
-    dag.addEdge(this, sink, new DirectionAndIndexEdge(Direction.LEFT, 0));
+    dag.addEdge(this, sink, new DirectionAndIndexEdge(Direction.LEFT));
     return sink;
   }
 }

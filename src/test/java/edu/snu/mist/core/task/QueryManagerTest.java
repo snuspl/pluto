@@ -21,7 +21,6 @@ import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.common.graphs.DirectionAndIndexEdge;
-import edu.snu.mist.common.graphs.DirectionEdge;
 import edu.snu.mist.common.operators.*;
 import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.sources.*;
@@ -110,7 +109,7 @@ public final class QueryManagerTest {
     // Create the physical DAG of the query
     final DAG<PhysicalVertex, DirectionAndIndexEdge> dag = new AdjacentListDAG<>();
     // Create the logical DAG of the query
-    final DAG<LogicalVertex, DirectionEdge> logicalPlan = new AdjacentListDAG<>();
+    final DAG<LogicalVertex, DirectionAndIndexEdge> logicalPlan = new AdjacentListDAG<>();
 
     // Create source
     final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
@@ -184,7 +183,7 @@ public final class QueryManagerTest {
    */
   private void constructLogicalAndPhysicalPlan(final Tuple<String, AvroLogicalPlan> tuple,
                                                final DAG<PhysicalVertex, DirectionAndIndexEdge> dag,
-                                               final DAG<LogicalVertex, DirectionEdge> logicalPlan,
+                                               final DAG<LogicalVertex, DirectionAndIndexEdge> logicalPlan,
                                                final PhysicalSource src,
                                                final Sink sink1,
                                                final Sink sink2) {
@@ -224,14 +223,14 @@ public final class QueryManagerTest {
     logicalPlan.addVertex(logicalSink2);
 
     // Add logical edges
-    logicalPlan.addEdge(logicalSrc, logicalFlatMap, new DirectionEdge(Direction.LEFT));
-    logicalPlan.addEdge(logicalFlatMap, logicalFilter, new DirectionEdge(Direction.LEFT));
-    logicalPlan.addEdge(logicalFilter, logicalToTupleMap, new DirectionEdge(Direction.LEFT));
-    logicalPlan.addEdge(logicalToTupleMap, logicalReduceByKey, new DirectionEdge(Direction.LEFT));
-    logicalPlan.addEdge(logicalReduceByKey, logicalToStringMap, new DirectionEdge(Direction.LEFT));
-    logicalPlan.addEdge(logicalReduceByKey, logicalTotalCntMap, new DirectionEdge(Direction.LEFT));
-    logicalPlan.addEdge(logicalToStringMap, logicalSink1, new DirectionEdge(Direction.LEFT));
-    logicalPlan.addEdge(logicalTotalCntMap, logicalSink2, new DirectionEdge(Direction.LEFT));
+    logicalPlan.addEdge(logicalSrc, logicalFlatMap, new DirectionAndIndexEdge(Direction.LEFT));
+    logicalPlan.addEdge(logicalFlatMap, logicalFilter, new DirectionAndIndexEdge(Direction.LEFT));
+    logicalPlan.addEdge(logicalFilter, logicalToTupleMap, new DirectionAndIndexEdge(Direction.LEFT));
+    logicalPlan.addEdge(logicalToTupleMap, logicalReduceByKey, new DirectionAndIndexEdge(Direction.LEFT));
+    logicalPlan.addEdge(logicalReduceByKey, logicalToStringMap, new DirectionAndIndexEdge(Direction.LEFT));
+    logicalPlan.addEdge(logicalReduceByKey, logicalTotalCntMap, new DirectionAndIndexEdge(Direction.LEFT));
+    logicalPlan.addEdge(logicalToStringMap, logicalSink1, new DirectionAndIndexEdge(Direction.LEFT));
+    logicalPlan.addEdge(logicalTotalCntMap, logicalSink2, new DirectionAndIndexEdge(Direction.LEFT));
 
     // Build the physical plan
     final PartitionedQuery pq1 = new DefaultPartitionedQueryImpl();
@@ -249,20 +248,20 @@ public final class QueryManagerTest {
 
     // Add dag vertices and edges
     dag.addVertex(pq1);
-    dag.addEdge(src, pq1, new DirectionAndIndexEdge(Direction.LEFT, 0));
+    dag.addEdge(src, pq1, new DirectionAndIndexEdge(Direction.LEFT));
     dag.addVertex(pq2);
-    dag.addEdge(pq1, pq2, new DirectionAndIndexEdge(Direction.LEFT, 0));
+    dag.addEdge(pq1, pq2, new DirectionAndIndexEdge(Direction.LEFT));
     dag.addVertex(pq3);
-    dag.addEdge(pq1, pq3, new DirectionAndIndexEdge(Direction.LEFT, 0));
+    dag.addEdge(pq1, pq3, new DirectionAndIndexEdge(Direction.LEFT));
 
 
     // Add Sink
     final PhysicalSink physicalSink1 = new PhysicalSinkImpl<>(sink1);
     final PhysicalSink physicalSink2 = new PhysicalSinkImpl<>(sink2);
     dag.addVertex(physicalSink1);
-    dag.addEdge(pq2, physicalSink1, new DirectionAndIndexEdge(Direction.LEFT, 0));
+    dag.addEdge(pq2, physicalSink1, new DirectionAndIndexEdge(Direction.LEFT));
     dag.addVertex(physicalSink2);
-    dag.addEdge(pq3, physicalSink2, new DirectionAndIndexEdge(Direction.LEFT, 0));
+    dag.addEdge(pq3, physicalSink2, new DirectionAndIndexEdge(Direction.LEFT));
   }
 
   /**
