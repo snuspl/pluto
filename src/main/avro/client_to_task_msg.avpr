@@ -103,6 +103,10 @@
                     "type": "enum",
                     "symbols": ["LEFT", "RIGHT"]
                   }
+                },
+                {
+                  "name": "BranchIndex",
+                  "type": "int"
                 }
               ]
             }

@@ -15,8 +15,9 @@
  */
 package edu.snu.mist.api.datastreams;
 
-import edu.snu.mist.common.DAG;
+import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.exceptions.IllegalUdfConfigurationException;
+import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.formats.avro.Direction;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
@@ -31,13 +32,13 @@ class MISTStreamImpl<OUT> implements MISTStream<OUT> {
   /**
    * DAG of the query.
    */
-  protected final DAG<MISTStream, Direction> dag;
+  protected final DAG<MISTStream, MISTEdge> dag;
   /**
    * Configuration of the stream.
    */
   protected final Configuration conf;
 
-  public MISTStreamImpl(final DAG<MISTStream, Direction> dag,
+  public MISTStreamImpl(final DAG<MISTStream, MISTEdge> dag,
                         final Configuration conf) {
     this.dag = dag;
     this.conf = conf;
@@ -75,7 +76,8 @@ class MISTStreamImpl<OUT> implements MISTStream<OUT> {
       final MISTStream upStream) {
     final ContinuousStream<OUT> downStream = new ContinuousStreamImpl<>(dag, opConf);
     dag.addVertex(downStream);
-    dag.addEdge(upStream, downStream, Direction.LEFT);
+    // TODO: [MIST-410] we need to handle the edge index in MIST-410
+    dag.addEdge(upStream, downStream, new MISTEdge(Direction.LEFT, 0));
     return downStream;
   }
 

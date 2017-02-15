@@ -15,19 +15,19 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.DAG;
-import edu.snu.mist.formats.avro.Direction;
+import edu.snu.mist.common.graph.DAG;
+import edu.snu.mist.common.graph.MISTEdge;
 
 /**
  * This class contains the logical and physical plan of a query.
  */
 final class DefaultLogicalAndPhysicalPlanImpl implements LogicalAndPhysicalPlan {
 
-  private final DAG<LogicalVertex, Direction> logicalPlan;
-  private final DAG<PhysicalVertex, Direction> physicalPlan;
+  private final DAG<LogicalVertex, MISTEdge> logicalPlan;
+  private final DAG<PhysicalVertex, MISTEdge> physicalPlan;
 
-  public DefaultLogicalAndPhysicalPlanImpl(final DAG<LogicalVertex, Direction> logicalPlan,
-                                           final DAG<PhysicalVertex, Direction> physicalPlan) {
+  public DefaultLogicalAndPhysicalPlanImpl(final DAG<LogicalVertex, MISTEdge> logicalPlan,
+                                           final DAG<PhysicalVertex, MISTEdge> physicalPlan) {
     this.logicalPlan = logicalPlan;
     this.physicalPlan = physicalPlan;
   }
@@ -36,7 +36,7 @@ final class DefaultLogicalAndPhysicalPlanImpl implements LogicalAndPhysicalPlan 
    * Return the logical plan.
    * @return logical plan
    */
-  public DAG<LogicalVertex, Direction> getLogicalPlan() {
+  public DAG<LogicalVertex, MISTEdge> getLogicalPlan() {
     return logicalPlan;
   }
 
@@ -44,7 +44,7 @@ final class DefaultLogicalAndPhysicalPlanImpl implements LogicalAndPhysicalPlan 
    * Return the physical plan.
    * @return physical plan
    */
-  public DAG<PhysicalVertex, Direction> getPhysicalPlan() {
+  public DAG<PhysicalVertex, MISTEdge> getPhysicalPlan() {
     return physicalPlan;
   }
 }
