@@ -234,14 +234,14 @@ public final class QueryManagerTest {
 
     // Build the physical plan
     final PartitionedQuery pq1 = new DefaultPartitionedQueryImpl();
-    pq1.insertToTail(flatMap);
-    pq1.insertToTail(filter);
-    pq1.insertToTail(toTupleMap);
-    pq1.insertToTail(reduceByKey);
+    pq1.insertToTail(new DefaultPhysicalOperatorImpl(flatMap, pq1));
+    pq1.insertToTail(new DefaultPhysicalOperatorImpl(filter, pq1));
+    pq1.insertToTail(new DefaultPhysicalOperatorImpl(toTupleMap, pq1));
+    pq1.insertToTail(new DefaultPhysicalOperatorImpl(reduceByKey, pq1));
     final PartitionedQuery pq2 = new DefaultPartitionedQueryImpl();
-    pq2.insertToTail(toStringMap);
+    pq2.insertToTail(new DefaultPhysicalOperatorImpl(toStringMap, pq2));
     final PartitionedQuery pq3 = new DefaultPartitionedQueryImpl();
-    pq3.insertToTail(totalCountMap);
+    pq3.insertToTail(new DefaultPhysicalOperatorImpl(totalCountMap, pq3));
 
     // Add Source
     dag.addVertex(src);

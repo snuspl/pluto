@@ -17,7 +17,6 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.OutputEmittable;
-import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.formats.avro.Direction;
 
 /**
@@ -34,25 +33,25 @@ public interface PartitionedQuery extends OutputEmittable, PhysicalVertex {
    * Inserts an operator to the head of the chain.
    * @param newOperator operator
    */
-  void insertToHead(final Operator newOperator);
+  void insertToHead(final PhysicalOperator newOperator);
 
   /**
    * Inserts an operator to the tail of the chain.
    * @param newOperator operator
    */
-  void insertToTail(final Operator newOperator);
+  void insertToTail(final PhysicalOperator newOperator);
 
   /**
    * Removes an operator from the tail of the chain.
    * @return removed operator
    */
-  Operator removeFromTail();
+  PhysicalOperator removeFromTail();
 
   /**
    * Removes an operator from the head of the chain.
    * @return removed operator
    */
-  Operator removeFromHead();
+  PhysicalOperator removeFromHead();
 
   /**
    * Process the next event from the queue.

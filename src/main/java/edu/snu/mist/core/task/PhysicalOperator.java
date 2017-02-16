@@ -40,4 +40,26 @@ interface PhysicalOperator extends PhysicalVertex {
    * @param partitionedQuery partitioned query that contains the operator
    */
   void setPartitionedQuery(PartitionedQuery partitionedQuery);
+
+  /**
+   * Get the timestamp of the recently processed data.
+   * @return timestamp
+   */
+  long getLatestDataTimestamp();
+
+  /**
+   * Set the timestamp of the recently processed data.
+   */
+  void setLatestDataTimestamp(long timestamp);
+
+  /**
+   * Get the timestamp of the recently processed watermark.
+   * @return timestamp
+   */
+  long getLatestWatermarkTimestamp();
+
+  /**
+   * Set the timestamp of the recently processed watermark.
+   */
+  void setLatestWatermarkTimestamp(long timestamp);
 }

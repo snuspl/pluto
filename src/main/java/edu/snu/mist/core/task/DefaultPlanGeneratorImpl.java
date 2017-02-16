@@ -134,10 +134,10 @@ final class  DefaultPlanGeneratorImpl implements PlanGenerator {
                 new ClassHierarchyImpl(urls));
             final String id = operatorIdGenerator.generate();
             final Operator operator = physicalObjectGenerator.newOperator(id, conf, classLoader);
-            partitionedQuery.insertToTail(operator);
+            final PhysicalOperator physicalOperator = new DefaultPhysicalOperatorImpl(operator, partitionedQuery);
+            partitionedQuery.insertToTail(physicalOperator);
             // Add the physical vertex to the physical map
-            physicalVertexMap.getPhysicalVertexMap().put(id,
-                new DefaultPhysicalOperatorImpl(operator, partitionedQuery));
+            physicalVertexMap.getPhysicalVertexMap().put(id, physicalOperator);
 
             // Create a logical vertex
             final LogicalVertex logicalVertex = new DefaultLogicalVertexImpl(id);
