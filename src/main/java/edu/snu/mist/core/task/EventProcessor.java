@@ -17,24 +17,24 @@ package edu.snu.mist.core.task;
 
 /**
  * This class processes events of queries
- * by picking up one query from PartitionedQueryManager.
+ * by picking up an operator chain from the OperatorChainManager.
  */
 public final class EventProcessor implements Runnable {
 
   /**
-   * A partitioned query manager for picking up a query for event processing.
+   * The operator chain manager for picking up a chain for event processing.
    */
-  private final PartitionedQueryManager queryManager;
+  private final OperatorChainManager operatorChainManager;
 
-  public EventProcessor(final PartitionedQueryManager queryManager) {
-    this.queryManager = queryManager;
+  public EventProcessor(final OperatorChainManager operatorChainManager) {
+    this.operatorChainManager = operatorChainManager;
   }
 
   @Override
   public void run() {
     while (!Thread.currentThread().isInterrupted()) {
       try {
-        final PartitionedQuery query = queryManager.pickQuery();
+        final OperatorChain query = operatorChainManager.pickOperatorChain();
         if (query != null) {
           query.processNextEvent();
         }

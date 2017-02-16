@@ -30,16 +30,16 @@ interface PhysicalOperator extends PhysicalVertex {
   Operator getOperator();
 
   /**
-   * Gets the partitioned query that contains the operator.
-   * @return partitioned query that contains the operator.
+   * Gets the operator chain that contains the operator.
+   * @return operator chain that contains the operator.
    */
-  PartitionedQuery getPartitionedQuery();
+  OperatorChain getOperatorChain();
 
   /**
-   * Updates the partitioned query that contains the operator.
-   * @param partitionedQuery partitioned query that contains the operator
+   * Updates the operator chain that contains the operator.
+   * @param operatorChain operator chain that contains the operator
    */
-  void setPartitionedQuery(PartitionedQuery partitionedQuery);
+  void setOperatorChain(OperatorChain operatorChain);
 
   /**
    * Get the timestamp of the recently processed data.

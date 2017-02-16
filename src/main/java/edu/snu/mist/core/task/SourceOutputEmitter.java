@@ -24,35 +24,35 @@ import edu.snu.mist.formats.avro.Direction;
 import java.util.Map;
 
 /**
- * This emitter emits the outputs to the next PartitionedQueries that get inputs from the sources.
+ * This emitter emits the outputs to the next OperatorChains that get inputs from the sources.
  * It always submits jobs to MistExecutors.
  *  @param <I>
  */
 final class SourceOutputEmitter<I> implements OutputEmitter {
 
   /**
-   * Next PartitionedQueries.
+   * Next OperatorChains.
    */
-  private final Map<PhysicalVertex, MISTEdge> nextPartitionedQueries;
+  private final Map<PhysicalVertex, MISTEdge> nextOperatorChains;
 
-  public SourceOutputEmitter(final Map<PhysicalVertex, MISTEdge> nextPartitionedQueries) {
-    this.nextPartitionedQueries = nextPartitionedQueries;
+  public SourceOutputEmitter(final Map<PhysicalVertex, MISTEdge> nextOperatorChains) {
+    this.nextOperatorChains = nextOperatorChains;
   }
 
   @Override
   public void emitData(final MistDataEvent data) {
-    if (nextPartitionedQueries.size() == 1) {
+    if (nextOperatorChains.size() == 1) {
       for (final Map.Entry<PhysicalVertex, MISTEdge> nextQuery :
-          nextPartitionedQueries.entrySet()) {
+          nextOperatorChains.entrySet()) {
         final Direction direction = nextQuery.getValue().getDirection();
-        ((PartitionedQuery)nextQuery.getKey()).addNextEvent(data, direction);
+        ((OperatorChain)nextQuery.getKey()).addNextEvent(data, direction);
       }
     } else {
       for (final Map.Entry<PhysicalVertex, MISTEdge> nextQuery :
-          nextPartitionedQueries.entrySet()) {
+          nextOperatorChains.entrySet()) {
         final Direction direction = nextQuery.getValue().getDirection();
         final MistDataEvent event = new MistDataEvent(data.getValue(), data.getTimestamp());
-        ((PartitionedQuery)nextQuery.getKey()).addNextEvent(event, direction);
+        ((OperatorChain)nextQuery.getKey()).addNextEvent(event, direction);
       }
     }
   }
@@ -60,9 +60,9 @@ final class SourceOutputEmitter<I> implements OutputEmitter {
   @Override
   public void emitWatermark(final MistWatermarkEvent watermark) {
     for (final Map.Entry<PhysicalVertex, MISTEdge> nextQuery :
-        nextPartitionedQueries.entrySet()) {
+        nextOperatorChains.entrySet()) {
       final Direction direction = nextQuery.getValue().getDirection();
-      ((PartitionedQuery)nextQuery.getKey()).addNextEvent(watermark, direction);
+      ((OperatorChain)nextQuery.getKey()).addNextEvent(watermark, direction);
     }
   }
 }

@@ -179,7 +179,7 @@ public final class QueryManagerTest {
 
   /**
    * Construct physical plan.
-   * Creates operators an partitioned queries and adds source, dag vertices, edges and sinks to dag.
+   * Creates operators and adds source, dag vertices, edges and sinks to dag.
    */
   private void constructLogicalAndPhysicalPlan(final Tuple<String, AvroLogicalPlan> tuple,
                                                final DAG<PhysicalVertex, MISTEdge> dag,
@@ -188,11 +188,11 @@ public final class QueryManagerTest {
                                                final Sink sink1,
                                                final Sink sink2) {
 
-    // Create operators and partitioned queries
-    //                     (pq1)                                     (pq2)
+    // Create operators and operator chains
+    //                     (chain1)                                  (chain2)
     // src -> [flatMap -> filter -> toTupleMap -> reduceByKey] -> [toStringMap]   -> sink1
     //                                                         -> [totalCountMap] -> sink2
-    //                                                               (pq3)
+    //                                                               (chain3)
     final Operator flatMap = new FlatMapOperator<>("flatMap", flatMapFunc);
     final Operator filter = new FilterOperator<>("filter", filterFunc);
     final Operator toTupleMap = new MapOperator<>("toTupleMap", toTupleMapFunc);
@@ -233,35 +233,35 @@ public final class QueryManagerTest {
     logicalPlan.addEdge(logicalTotalCntMap, logicalSink2, new MISTEdge(Direction.LEFT));
 
     // Build the physical plan
-    final PartitionedQuery pq1 = new DefaultPartitionedQueryImpl();
-    pq1.insertToTail(new DefaultPhysicalOperatorImpl(flatMap, pq1));
-    pq1.insertToTail(new DefaultPhysicalOperatorImpl(filter, pq1));
-    pq1.insertToTail(new DefaultPhysicalOperatorImpl(toTupleMap, pq1));
-    pq1.insertToTail(new DefaultPhysicalOperatorImpl(reduceByKey, pq1));
-    final PartitionedQuery pq2 = new DefaultPartitionedQueryImpl();
-    pq2.insertToTail(new DefaultPhysicalOperatorImpl(toStringMap, pq2));
-    final PartitionedQuery pq3 = new DefaultPartitionedQueryImpl();
-    pq3.insertToTail(new DefaultPhysicalOperatorImpl(totalCountMap, pq3));
+    final OperatorChain chain1 = new DefaultOperatorChainImpl();
+    chain1.insertToTail(new DefaultPhysicalOperatorImpl(flatMap, chain1));
+    chain1.insertToTail(new DefaultPhysicalOperatorImpl(filter, chain1));
+    chain1.insertToTail(new DefaultPhysicalOperatorImpl(toTupleMap, chain1));
+    chain1.insertToTail(new DefaultPhysicalOperatorImpl(reduceByKey, chain1));
+    final OperatorChain chain2 = new DefaultOperatorChainImpl();
+    chain2.insertToTail(new DefaultPhysicalOperatorImpl(toStringMap, chain2));
+    final OperatorChain chain3 = new DefaultOperatorChainImpl();
+    chain3.insertToTail(new DefaultPhysicalOperatorImpl(totalCountMap, chain3));
 
     // Add Source
     dag.addVertex(src);
 
     // Add dag vertices and edges
-    dag.addVertex(pq1);
-    dag.addEdge(src, pq1, new MISTEdge(Direction.LEFT));
-    dag.addVertex(pq2);
-    dag.addEdge(pq1, pq2, new MISTEdge(Direction.LEFT));
-    dag.addVertex(pq3);
-    dag.addEdge(pq1, pq3, new MISTEdge(Direction.LEFT));
+    dag.addVertex(chain1);
+    dag.addEdge(src, chain1, new MISTEdge(Direction.LEFT));
+    dag.addVertex(chain2);
+    dag.addEdge(chain1, chain2, new MISTEdge(Direction.LEFT));
+    dag.addVertex(chain3);
+    dag.addEdge(chain1, chain3, new MISTEdge(Direction.LEFT));
 
 
     // Add Sink
     final PhysicalSink physicalSink1 = new PhysicalSinkImpl<>(sink1);
     final PhysicalSink physicalSink2 = new PhysicalSinkImpl<>(sink2);
     dag.addVertex(physicalSink1);
-    dag.addEdge(pq2, physicalSink1, new MISTEdge(Direction.LEFT));
+    dag.addEdge(chain2, physicalSink1, new MISTEdge(Direction.LEFT));
     dag.addVertex(physicalSink2);
-    dag.addEdge(pq3, physicalSink2, new MISTEdge(Direction.LEFT));
+    dag.addEdge(chain3, physicalSink2, new MISTEdge(Direction.LEFT));
   }
 
   /**

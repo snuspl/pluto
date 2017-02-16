@@ -24,9 +24,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * This class picks a query randomly.
  * It uses Random class for picking up a query randomly.
  */
-public final class RandomlyPickManager implements PartitionedQueryManager {
+public final class RandomlyPickManager implements OperatorChainManager {
 
-  private final List<PartitionedQuery> queues;
+  private final List<OperatorChain> queues;
   private final Random random;
 
   @Inject
@@ -38,21 +38,21 @@ public final class RandomlyPickManager implements PartitionedQueryManager {
   }
 
   @Override
-  public void insert(final PartitionedQuery query) {
+  public void insert(final OperatorChain query) {
     queues.add(query);
   }
 
   @Override
-  public void delete(final PartitionedQuery query) {
+  public void delete(final OperatorChain query) {
     queues.remove(query);
   }
 
   @Override
-  public PartitionedQuery pickQuery() {
+  public OperatorChain pickOperatorChain() {
     while (true) {
       try {
         final int pick = random.nextInt(queues.size());
-        final PartitionedQuery query = queues.get(pick);
+        final OperatorChain query = queues.get(pick);
         return query;
       } catch (final IllegalArgumentException e) {
         // This can occur when the size of queues is 0.

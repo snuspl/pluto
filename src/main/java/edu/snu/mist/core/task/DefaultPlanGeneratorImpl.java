@@ -124,18 +124,18 @@ final class  DefaultPlanGeneratorImpl implements PlanGenerator {
           break;
         }
         case OPERATOR_CHAIN: {
-          final PartitionedQuery partitionedQuery = new DefaultPartitionedQueryImpl();
+          final OperatorChain operatorChain = new DefaultOperatorChainImpl();
           LogicalVertex firstLogicalVertex = null;
           LogicalVertex prevLogicalVertex = null;
           final List<LogicalVertex> logicalVertexList = new ArrayList<>(avroVertexChain.getVertexChain().size());
-          deserializedVertices.add(partitionedQuery);
+          deserializedVertices.add(operatorChain);
           for (final Vertex vertex : avroVertexChain.getVertexChain()) {
             final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
                 new ClassHierarchyImpl(urls));
             final String id = operatorIdGenerator.generate();
             final Operator operator = physicalObjectGenerator.newOperator(id, conf, classLoader);
-            final PhysicalOperator physicalOperator = new DefaultPhysicalOperatorImpl(operator, partitionedQuery);
-            partitionedQuery.insertToTail(physicalOperator);
+            final PhysicalOperator physicalOperator = new DefaultPhysicalOperatorImpl(operator, operatorChain);
+            operatorChain.insertToTail(physicalOperator);
             // Add the physical vertex to the physical map
             physicalVertexMap.getPhysicalVertexMap().put(id, physicalOperator);
 
@@ -156,7 +156,7 @@ final class  DefaultPlanGeneratorImpl implements PlanGenerator {
             }
             logicalVertexList.add(logicalVertex);
           }
-          physicalDAG.addVertex(partitionedQuery);
+          physicalDAG.addVertex(operatorChain);
 
           // Add the logical partitioned vertex
           logicalVertices.add(logicalVertexList);

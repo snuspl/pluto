@@ -28,9 +28,9 @@ final class DefaultPhysicalOperatorImpl implements PhysicalOperator {
   private final Operator operator;
 
   /**
-   * The partitioned query that holds the operator.
+   * The operator chain that holds the operator.
    */
-  private PartitionedQuery partitionedQuery;
+  private OperatorChain operatorChain;
 
   /**
    * The timestamp of the data that is recently processed.
@@ -43,9 +43,9 @@ final class DefaultPhysicalOperatorImpl implements PhysicalOperator {
   private long latestWatermarkTimestamp;
 
   public DefaultPhysicalOperatorImpl(final Operator operator,
-                                     final PartitionedQuery partitionedQuery) {
+                                     final OperatorChain operatorChain) {
     this.operator = operator;
-    this.partitionedQuery = partitionedQuery;
+    this.operatorChain = operatorChain;
   }
 
   @Override
@@ -54,13 +54,13 @@ final class DefaultPhysicalOperatorImpl implements PhysicalOperator {
   }
 
   @Override
-  public PartitionedQuery getPartitionedQuery() {
-    return partitionedQuery;
+  public OperatorChain getOperatorChain() {
+    return operatorChain;
   }
 
   @Override
-  public void setPartitionedQuery(final PartitionedQuery newPartitionedQuery) {
-    partitionedQuery = newPartitionedQuery;
+  public void setOperatorChain(final OperatorChain newOperatorChain) {
+    operatorChain = newOperatorChain;
   }
 
   @Override
