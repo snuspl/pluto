@@ -104,24 +104,31 @@ public final class SessionWindowOperatorTest {
         result.get(3), expectedResult3, d6.getTimestamp(),
         w3.getTimestamp() - d6.getTimestamp() + 1, w3.getTimestamp());
     Assert.assertEquals(w3, result.get(4));
+  }
 
-    // Test for getting the state of SessionWindowOperator.
-    final SessionWindowOperator<Integer> sessionWindowOperator2 =
+  /**
+   * Test getting state of the SessionWindowOperator.
+   */
+  @Test
+  public void testGetSessionWindowOperator() throws InterruptedException {
+    final int sessionInterval = 500;
+
+    // Generate the current SessionWindowOperator.
+    final SessionWindowOperator<Integer> sessionWindowOperator =
         new SessionWindowOperator<>("getOp", sessionInterval);
-    sessionWindowOperator2.processLeftData(d6);
-    sessionWindowOperator2.processLeftWatermark(w3);
+    sessionWindowOperator.processLeftData(d6);
+    sessionWindowOperator.processLeftWatermark(w3);
 
     // Generate the expected SessionWindowOperator's state.
     final Window expectedCurrentWindow = new WindowImpl<>(d6.getTimestamp(), Long.MAX_VALUE, new LinkedList<>());
     expectedCurrentWindow.putData(d6);
     expectedCurrentWindow.putWatermark(w3);
     expectedCurrentWindow.setEnd(w3.getTimestamp());
-
     final long expectedLatestDataTimestamp = d6.getTimestamp();
     final boolean expectedStartedNewWindow = true;
 
     // Get the current SessionWindowOperator's state.
-    final Map<String, Object> operatorState = sessionWindowOperator2.getOperatorState();
+    final Map<String, Object> operatorState = sessionWindowOperator.getOperatorState();
     final Window<Integer> currentWindow = (Window<Integer>)operatorState.get("currentWindow");
     final long latestDataTimestamp = (long)operatorState.get("latestDataTimestamp");
     final boolean startedNewWindow = (boolean)operatorState.get("startedNewWindow");
@@ -130,26 +137,38 @@ public final class SessionWindowOperatorTest {
     Assert.assertEquals(expectedCurrentWindow, currentWindow);
     Assert.assertEquals(expectedLatestDataTimestamp, latestDataTimestamp);
     Assert.assertEquals(expectedStartedNewWindow, startedNewWindow);
+  }
 
-    // Test for setting the state of SessionWindowOperator.
-    final SessionWindowOperator sessionWindowOperator3 =
-        new SessionWindowOperator("setSessionWindowOperator", sessionInterval);
+  /**
+   * Test setting state of the SessionWindowOperator.
+   */
+  @Test
+  public void testSetSessionWindowOperator() throws InterruptedException {
+    final int sessionInterval = 500;
 
-    // Use the generated state above and set it to a new SessionWindowOperator.
+    // Generate a new state and set it to a new SessionWindowOperator.
+    final Window expectedCurrentWindow = new WindowImpl<>(d6.getTimestamp(), Long.MAX_VALUE, new LinkedList<>());
+    expectedCurrentWindow.putData(d6);
+    expectedCurrentWindow.putWatermark(w3);
+    expectedCurrentWindow.setEnd(w3.getTimestamp());
+    final long expectedLatestDataTimestamp = d6.getTimestamp();
+    final boolean expectedStartedNewWindow = true;
     final Map<String, Object> loadStateMap = new HashMap<>();
     loadStateMap.put("currentWindow", expectedCurrentWindow);
     loadStateMap.put("latestDataTimestamp", expectedLatestDataTimestamp);
     loadStateMap.put("startedNewWindow", expectedStartedNewWindow);
-    sessionWindowOperator3.setState(loadStateMap);
+    final SessionWindowOperator sessionWindowOperator =
+        new SessionWindowOperator("setSessionWindowOperator", sessionInterval);
+    sessionWindowOperator.setState(loadStateMap);
 
-    // Compare the set operator and the original.
-    final Map<String, Object> operatorState3 = sessionWindowOperator3.getOperatorState();
-    final Window<Integer> currentWindow3 =
-        (Window<Integer>)operatorState3.get("currentWindow");
-    final long latestDataTimestamp3 = (long)operatorState3.get("latestDataTimestamp");
-    final boolean startedNewWindow3 = (boolean)operatorState3.get("startedNewWindow");
-    Assert.assertEquals(currentWindow3, currentWindow);
-    Assert.assertEquals(latestDataTimestamp3, latestDataTimestamp);
-    Assert.assertEquals(startedNewWindow3, startedNewWindow);
+    // Compare the original and the set operator.
+    final Map<String, Object> operatorState = sessionWindowOperator.getOperatorState();
+    final Window<Integer> currentWindow =
+        (Window<Integer>)operatorState.get("currentWindow");
+    final long latestDataTimestamp = (long)operatorState.get("latestDataTimestamp");
+    final boolean startedNewWindow = (boolean)operatorState.get("startedNewWindow");
+    Assert.assertEquals(expectedCurrentWindow, currentWindow);
+    Assert.assertEquals(expectedLatestDataTimestamp, latestDataTimestamp);
+    Assert.assertEquals(expectedStartedNewWindow, startedNewWindow);
   }
 }

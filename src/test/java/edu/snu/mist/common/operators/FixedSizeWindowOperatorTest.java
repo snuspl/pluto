@@ -112,12 +112,21 @@ public final class FixedSizeWindowOperatorTest {
     checkWindowData(
         result.get(4), expectedResult4, d1.getTimestamp() + 2 * emissionInterval, windowSize, w2.getTimestamp());
     Assert.assertEquals(w2, result.get(5));
+  }
 
-    // Test for getting the state of TimeWindowOperator.
-    final TimeWindowOperator<Integer> timeWindowOperator2 =
+  /**
+   * Test getting state of the TimeWindowOperator.
+   */
+  @Test
+  public void testGetTimeWindowOperator() throws InterruptedException {
+    final int windowSize = 500;
+    final int emissionInterval = 250;
+
+    // Generate the current TimeWindowOperator.
+    final TimeWindowOperator<Integer> timeWindowOperator =
         new TimeWindowOperator<>("getStateOperator", windowSize, emissionInterval);
-    timeWindowOperator2.processLeftData(d4);
-    timeWindowOperator2.processLeftWatermark(w2);
+    timeWindowOperator.processLeftData(d4);
+    timeWindowOperator.processLeftWatermark(w2);
 
     // Generate the expected TimeWindowOperator's state.
     final Window expectedWindow1 = new WindowImpl<>(d4.getTimestamp(), emissionInterval, new LinkedList<Integer>());
@@ -132,32 +141,50 @@ public final class FixedSizeWindowOperatorTest {
     final long expectedWindowCreationPoint = d4.getTimestamp() + emissionInterval;
 
     // Get the current TimeWindowOperator's state.
-    final Map<String, Object> operatorState2 = timeWindowOperator2.getOperatorState();
-    final Queue<Window<Integer>> windowQueue2 = (Queue<Window<Integer>>)operatorState2.get("windowQueue");
-    final long windowCreationPoint2 = (long)operatorState2.get("windowCreationPoint");
+    final Map<String, Object> operatorState = timeWindowOperator.getOperatorState();
+    final Queue<Window<Integer>> windowQueue = (Queue<Window<Integer>>)operatorState.get("windowQueue");
+    final long windowCreationPoint = (long)operatorState.get("windowCreationPoint");
 
     // Compare the expected and original operator's state.
-    Assert.assertEquals(expectedWindowQueue, windowQueue2);
-    Assert.assertEquals(expectedWindowCreationPoint, windowCreationPoint2);
+    Assert.assertEquals(expectedWindowQueue, windowQueue);
+    Assert.assertEquals(expectedWindowCreationPoint, windowCreationPoint);
+  }
 
-    // Test for setting the state of TimeWindowOperator.
-    final TimeWindowOperator<Integer> timeWindowOperator3 =
-        new TimeWindowOperator<>("getStateOperator", windowSize, emissionInterval);
+  /**
+   * Test setting state of the TimeWindowOperator.
+   */
+  @Test
+  public void testSetTimeWindowOperator() throws InterruptedException {
+    final int windowSize = 500;
+    final int emissionInterval = 250;
 
-    // Use the generated state above and set it to a new TimeWindowOperator.
+    // Generate a new state and set it to a new TimeWindowOperator.
+    final Window expectedWindow1 = new WindowImpl<>(d4.getTimestamp(), emissionInterval, new LinkedList<Integer>());
+    expectedWindow1.putData(d4);
+    expectedWindow1.putWatermark(w2);
+    final Window expectedWindow2 = new WindowImpl<>(d4.getTimestamp(), windowSize, new LinkedList<Integer>());
+    expectedWindow2.putData(d4);
+    expectedWindow2.putWatermark(w2);
+    final Queue<Window<Integer>> expectedWindowQueue = new LinkedList<>();
+    expectedWindowQueue.add(expectedWindow1);
+    expectedWindowQueue.add(expectedWindow2);
+    final long expectedWindowCreationPoint = d4.getTimestamp() + emissionInterval;
     final Map<String, Object> loadStateMap = new HashMap<>();
     loadStateMap.put("windowQueue", expectedWindowQueue);
     loadStateMap.put("windowCreationPoint", expectedWindowCreationPoint);
-    timeWindowOperator3.setState(loadStateMap);
+    final TimeWindowOperator<Integer> timeWindowOperator =
+        new TimeWindowOperator<>("getStateOperator", windowSize, emissionInterval);
+    timeWindowOperator.setState(loadStateMap);
 
-    // Compare the set operator and the original.
-    final Map<String, Object> operatorState3 = timeWindowOperator3.getOperatorState();
-    final Queue<Window<Integer>> windowQueue3 = (Queue<Window<Integer>>)operatorState3.get("windowQueue");
-    final long windowCreationPoint3 = (long)operatorState2.get("windowCreationPoint");
-    Assert.assertEquals(windowQueue3, windowQueue2);
-    Assert.assertEquals(windowCreationPoint3, windowCreationPoint2);
+    // Get the current TimeWindowOperator's state.
+    final Map<String, Object> operatorState = timeWindowOperator.getOperatorState();
+    final Queue<Window<Integer>> windowQueue = (Queue<Window<Integer>>)operatorState.get("windowQueue");
+    final long windowCreationPoint = (long)operatorState.get("windowCreationPoint");
+
+    // Compare the original and the set operator.
+    Assert.assertEquals(expectedWindowQueue, windowQueue);
+    Assert.assertEquals(expectedWindowCreationPoint, windowCreationPoint);
   }
-
   /**
    * Test TimeWindowOperator creating hopping window.
    * It receives some continuous data stream and groups them as a collection.
@@ -272,12 +299,21 @@ public final class FixedSizeWindowOperatorTest {
     expectedResult3.add(9);
     checkWindowData(result.get(3), expectedResult3, 5L, windowSize, d9.getTimestamp());
     Assert.assertEquals(w2, result.get(4));
+  }
 
-    // Test for getting the state of CountWindowOperator.
-    final CountWindowOperator<Integer> countWindowOperator2 =
+  /**
+   * Test getting state of the CountWindowOperator.
+   */
+  @Test
+  public void testGetCountWindowOperator() throws InterruptedException {
+    final int windowSize = 5;
+    final int emissionInterval = 3;
+
+    // Generate the current TimeWindowOperator.
+    final CountWindowOperator<Integer> countWindowOperator =
         new CountWindowOperator<>("getStateOperator", windowSize, emissionInterval);
-    countWindowOperator2.processLeftData(d1);
-    countWindowOperator2.processLeftData(d2);
+    countWindowOperator.processLeftData(d1);
+    countWindowOperator.processLeftData(d2);
 
     // Generate the expected CountWindowOperator's state.
     final Window expectedWindow1 = new WindowImpl<>(1L, emissionInterval, new LinkedList<Integer>());
@@ -291,36 +327,53 @@ public final class FixedSizeWindowOperatorTest {
     final long expectedWindowCreationPoint = 2L + emissionInterval;
     final long expectedCount = 3L;
 
-    // Get the current CountWindowOperator's state.
-    final Map<String, Object> operatorState2 = countWindowOperator2.getOperatorState();
-    final Queue<Window<Integer>> windowQueue2 = (LinkedList<Window<Integer>>)operatorState2.get("windowQueue");
-    final long windowCreationPoint2 = (long)operatorState2.get("windowCreationPoint");
-    final long count2 = (long)operatorState2.get("count");
+    // Get the current TimeWindowOperator's state.
+    final Map<String, Object> operatorState = countWindowOperator.getOperatorState();
+    final Queue<Window<Integer>> windowQueue = (LinkedList<Window<Integer>>)operatorState.get("windowQueue");
+    final long windowCreationPoint = (long)operatorState.get("windowCreationPoint");
+    final long count = (long)operatorState.get("count");
 
     // Compare the expected and original operator's state.
-    Assert.assertEquals(expectedWindowQueue, windowQueue2);
-    Assert.assertEquals(expectedWindowCreationPoint, windowCreationPoint2);
-    Assert.assertEquals(expectedCount, count2);
+    Assert.assertEquals(expectedWindowQueue, windowQueue);
+    Assert.assertEquals(expectedWindowCreationPoint, windowCreationPoint);
+    Assert.assertEquals(expectedCount, count);
+  }
 
-    // Test for setting the state of CountWindowOperator.
-    final CountWindowOperator<Integer> countWindowOperator3 =
-        new CountWindowOperator<>("getStateOperator", windowSize, emissionInterval);
+  /**
+   * Test setting state of the CountWindowOperator.
+   */
+  @Test
+  public void testSetCountWindowOperator() throws InterruptedException {
+    final int windowSize = 5;
+    final int emissionInterval = 3;
 
-    // Use the generated state above and set it to a new CountWindowOperator.
+    // Generate a new state and set it to a new CountWindowOperator.
+    final Window expectedWindow1 = new WindowImpl<>(1L, emissionInterval, new LinkedList<Integer>());
+    expectedWindow1.putData(d1);
+    expectedWindow1.putData(d2);
+    final Window expectedWindow2 = new WindowImpl<>(2L, windowSize, new LinkedList<Integer>());
+    expectedWindow2.putData(d2);
+    final Queue<Window<Integer>> expectedWindowQueue = new LinkedList<>();
+    expectedWindowQueue.add(expectedWindow1);
+    expectedWindowQueue.add(expectedWindow2);
+    final long expectedWindowCreationPoint = 2L + emissionInterval;
+    final long expectedCount = 3L;
     final Map<String, Object> loadStateMap = new HashMap<>();
     loadStateMap.put("windowQueue", expectedWindowQueue);
     loadStateMap.put("windowCreationPoint", expectedWindowCreationPoint);
     loadStateMap.put("count", expectedCount);
-    countWindowOperator3.setState(loadStateMap);
+    final CountWindowOperator<Integer> countWindowOperator =
+        new CountWindowOperator<>("getStateOperator", windowSize, emissionInterval);
+    countWindowOperator.setState(loadStateMap);
 
-    // Compare the set operator and the original.
-    final Map<String, Object> operatorState3 = countWindowOperator3.getOperatorState();
-    final Queue<Window<Integer>> windowQueue3 = (Queue<Window<Integer>>)operatorState3.get("windowQueue");
-    final long windowCreationPoint3 = (long)operatorState2.get("windowCreationPoint");
-    final long count3 = (long)operatorState2.get("count");
-    Assert.assertEquals(windowQueue3, windowQueue2);
-    Assert.assertEquals(windowCreationPoint3, windowCreationPoint2);
-    Assert.assertEquals(count3, count2);
+    // Compare the original and the set operator.
+    final Map<String, Object> operatorState = countWindowOperator.getOperatorState();
+    final Queue<Window<Integer>> windowQueue = (Queue<Window<Integer>>)operatorState.get("windowQueue");
+    final long windowCreationPoint = (long)operatorState.get("windowCreationPoint");
+    final long count = (long)operatorState.get("count");
+    Assert.assertEquals(expectedWindowQueue, windowQueue);
+    Assert.assertEquals(expectedWindowCreationPoint, windowCreationPoint);
+    Assert.assertEquals(expectedCount, count);
   }
 
   /**

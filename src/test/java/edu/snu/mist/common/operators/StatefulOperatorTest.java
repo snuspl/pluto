@@ -101,16 +101,37 @@ public final class StatefulOperatorTest {
     LOG.info("expected: " + expected);
     LOG.info("result: " + result);
     Assert.assertEquals(expected, result);
+  }
 
-    // Test for getting the state of ReduceByKeyOperator.
+  /**
+   * Test getting state of the ReduceByKeyOperator.
+   */
+  @Test
+  public void testGetReduceByKeyOperator() throws InterruptedException {
+    // Generate the current ReduceByKeyOperator state.
+    final List<MistDataEvent> inputStream =
+        ImmutableList.of(createEvent("a", 1),
+            createEvent("b", 1),
+            createEvent("c", 1),
+            createEvent("a", 1),
+            createEvent("d", 1),
+            createEvent("a", 1),
+            createEvent("b", 1));
+    final String operatorId = "testReduceByKeyOperator";
+    final int keyIndex = 0;
+    final MISTBiFunction<Integer, Integer, Integer> wordCountFunc = (oldVal, val) -> oldVal + val;
+    final ReduceByKeyOperator<String, Integer> wcOperator =
+        new ReduceByKeyOperator<>(operatorId, keyIndex, wordCountFunc);
+    final List<Map<String, Integer>> result = new LinkedList<>();
+    wcOperator.setOutputEmitter(new TestOutputEmitter<>(result));
+    inputStream.stream().forEach(wcOperator::processLeftData);
 
-    // Generate the expected ReduceByKeyOperator state from the above instance.
+    // Generate the expected ReduceByKeyOperator state.
     final Map<String, Integer> expectedOperatorState = new HashMap<>();
     expectedOperatorState.put("a", 3);
     expectedOperatorState.put("b", 2);
     expectedOperatorState.put("c", 1);
     expectedOperatorState.put("d", 1);
-
 
     // Get the current ReduceByKeyOperator's state.
     final Map<String, Integer> operatorState =
@@ -118,20 +139,30 @@ public final class StatefulOperatorTest {
 
     // Compare the expected and original operator's state.
     Assert.assertEquals(expectedOperatorState, operatorState);
+  }
 
-    // Test for setting the state of ReduceByKeyOperator.
-
-    // Use the expected state above and set it to the state of a new ReduceByKeyWindowOperator.
+  /**
+   * Test setting state of the ReduceByKeyOperator.
+   */
+  @Test
+  public void testSetReduceByKeyOperator() throws InterruptedException {
+    // Generate a new state and set it to the state of a new ReduceByKeyWindowOperator.
+    final Map<String, Integer> expectedOperatorState = new HashMap<>();
+    expectedOperatorState.put("a", 3);
+    expectedOperatorState.put("b", 2);
+    expectedOperatorState.put("c", 1);
+    expectedOperatorState.put("d", 1);
     final Map<String, Object> loadStateMap = new HashMap<>();
     loadStateMap.put("reduceByKeyState", expectedOperatorState);
-
+    final int keyIndex = 0;
+    final MISTBiFunction<Integer, Integer, Integer> wordCountFunc = (oldVal, val) -> oldVal + val;
     final ReduceByKeyOperator expectedReduceByKeyOperator =
         new ReduceByKeyOperator("expectedOperator", keyIndex, wordCountFunc);
     expectedReduceByKeyOperator.setState(loadStateMap);
 
-    // Compare the set operator and the original.
-    final Map<String, Object> setOperatorStateMap = expectedReduceByKeyOperator.getOperatorState();
-    final Map<String, Integer> setOperatorState = (Map<String, Integer>)setOperatorStateMap.get("reduceByKeyState");
-    Assert.assertEquals(setOperatorState, operatorState);
+    // Compare the original and the set operator.
+    final Map<String, Object> operatorStateMap = expectedReduceByKeyOperator.getOperatorState();
+    final Map<String, Integer> operatorState = (Map<String, Integer>)operatorStateMap.get("reduceByKeyState");
+    Assert.assertEquals(expectedOperatorState, operatorState);
   }
 }
