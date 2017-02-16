@@ -21,25 +21,25 @@ import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Test;
 
-public class PartitionedQueryManagerTest {
+public class OperatorChainManagerTest {
 
   /**
-   * Test whether RandomlyPickManager selects a query.
+   * Test whether RandomlyPickManager selects an operator chain.
    */
   @Test
   public void randomPickManagerTest() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
-    final RandomlyPickManager partitionedQueryManager = injector.getInstance(RandomlyPickManager.class);
+    final RandomlyPickManager operatorChainManager = injector.getInstance(RandomlyPickManager.class);
 
-    // Select a query
-    final PartitionedQuery query = new DefaultPartitionedQueryImpl();
-    partitionedQueryManager.insert(query);
-    final PartitionedQuery selectedQuery = partitionedQueryManager.pickQuery();
-    Assert.assertEquals(query, selectedQuery);
+    // Select a chain
+    final OperatorChain chain = new DefaultOperatorChainImpl();
+    operatorChainManager.insert(chain);
+    final OperatorChain selectedChain = operatorChainManager.pickOperatorChain();
+    Assert.assertEquals(chain, selectedChain);
 
-    // When QueryPickManager has no query, it should returns null
-    partitionedQueryManager.delete(query);
-    final PartitionedQuery q = partitionedQueryManager.pickQuery();
-    Assert.assertEquals(null, q);
+    // When QueryPickManager has no chain, it should returns null
+    operatorChainManager.delete(chain);
+    final OperatorChain c = operatorChainManager.pickOperatorChain();
+    Assert.assertEquals(null, c);
   }
 }

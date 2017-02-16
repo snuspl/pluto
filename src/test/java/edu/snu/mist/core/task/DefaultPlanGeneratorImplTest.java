@@ -108,7 +108,7 @@ public final class DefaultPlanGeneratorImplTest {
     final Map<PhysicalVertex, MISTEdge> nextOps = physicalPlan.getEdges(source);
     Assert.assertEquals(1, nextOps.size());
 
-    final PartitionedQuery pq1 = (PartitionedQuery)nextOps.entrySet().iterator().next().getKey();
+    final OperatorChain pq1 = (OperatorChain)nextOps.entrySet().iterator().next().getKey();
     final Map<PhysicalVertex, MISTEdge> sinks = physicalPlan.getEdges(pq1);
     Assert.assertEquals(4, pq1.size());
     final Operator mapOperator = pq1.removeFromHead().getOperator();

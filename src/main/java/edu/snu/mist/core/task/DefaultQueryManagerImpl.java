@@ -48,9 +48,9 @@ final class DefaultQueryManagerImpl implements QueryManager {
   private final ConcurrentMap<String, DAG<LogicalVertex, MISTEdge>> logicalPlanMap;
 
   /**
-   * A partitioned query manager.
+   * An operator chain manager.
    */
-  private final PartitionedQueryManager partitionedQueryManager;
+  private final OperatorChainManager operatorChainManager;
 
   /**
    * A thread manager.
@@ -80,11 +80,11 @@ final class DefaultQueryManagerImpl implements QueryManager {
   @Inject
   private DefaultQueryManagerImpl(final PlanGenerator planGenerator,
                                   final ThreadManager threadManager,
-                                  final PartitionedQueryManager partitionedQueryManager,
+                                  final OperatorChainManager operatorChainManager,
                                   final ScheduledExecutorServiceWrapper schedulerWrapper,
                                   final QueryInfoStore planStore) {
     this.logicalPlanMap = new ConcurrentHashMap<>();
-    this.partitionedQueryManager = partitionedQueryManager;
+    this.operatorChainManager = operatorChainManager;
     this.planGenerator = planGenerator;
     this.threadManager = threadManager;
     this.scheduler = schedulerWrapper.getScheduler();
@@ -134,7 +134,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
   /**
    * Sets the OutputEmitters of the sources, operators and sinks
    * and starts to receive input data stream from the sources.
-   * @param physicalPlan physical plan of PartitionedQuery
+   * @param physicalPlan physical plan of the query
    */
   private void start(final DAG<PhysicalVertex, MISTEdge> physicalPlan) {
     final List<PhysicalSource> sources = new LinkedList<>();
@@ -151,13 +151,13 @@ final class DefaultQueryManagerImpl implements QueryManager {
           break;
         }
         case OPERATOR_CHIAN: {
-          // 2) Inserts the PartitionedQuery to PartitionedQueryManager.
-          final PartitionedQuery partitionedQuery = (PartitionedQuery)physicalVertex;
-          partitionedQueryManager.insert(partitionedQuery);
+          // 2) Inserts the OperatorChain to OperatorChainManager.
+          final OperatorChain operatorChain = (OperatorChain)physicalVertex;
+          operatorChainManager.insert(operatorChain);
           final Map<PhysicalVertex, MISTEdge> edges =
-              physicalPlan.getEdges(partitionedQuery);
+              physicalPlan.getEdges(operatorChain);
           // 3) Sets output emitters
-          partitionedQuery.setOutputEmitter(new OperatorOutputEmitter(edges));
+          operatorChain.setOutputEmitter(new OperatorOutputEmitter(edges));
           break;
         }
         case SINK: {

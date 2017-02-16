@@ -23,11 +23,15 @@ import edu.snu.mist.formats.avro.Direction;
  * This interface chains operators as a list and executes them in order
  * from the first to the last operator.
  *
- * PartitionedQuery is the unit of execution which is processed by EventProcessors.
+ * OperatorChain is the unit of execution which is processed by EventProcessors.
  * It queues inputs, performs computations through the list of operators,
- * and forwards final outputs to an OutputEmitter which sends the outputs to next PartitionedQueries.
+ * and forwards final outputs to an OutputEmitter which sends the outputs to next OperatorChain.
+ *
+ * We suppose that the events in the queue of the operator chain should be processed sequentially,
+ * which means that events must be processed one by one, instead of processing them concurrently.
+ * OperatorChain must block the concurrent processing of events in its queue.
  */
-public interface PartitionedQuery extends OutputEmittable, PhysicalVertex {
+public interface OperatorChain extends OutputEmittable, PhysicalVertex {
 
   /**
    * Inserts an operator to the head of the chain.
@@ -69,7 +73,7 @@ public interface PartitionedQuery extends OutputEmittable, PhysicalVertex {
   boolean addNextEvent(MistEvent event, Direction direction);
 
   /**
-   * Get the size of the partitioned query.
+   * Get the size of the chain.
    * @return the number of operators
    */
   int size();

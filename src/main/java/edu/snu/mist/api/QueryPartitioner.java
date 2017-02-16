@@ -146,7 +146,7 @@ public final class QueryPartitioner {
             edges.size() > 1) {
           // The current vertex is 2) branching (have multiple next ops)
           // or the next vertex is 3) merging operator (have multiple incoming edges)
-          // so try to create a new PartitionedQuery for the next operator.
+          // so try to create a new OperatorChain for the next operator.
           final QueryPartition nextChain = vertexChainMap.getOrDefault(nextVertex, new QueryPartition());
           if (!vertexChainMap.containsKey(nextVertex)) {
             partitionedQueryDAG.addVertex(nextChain);
@@ -165,7 +165,7 @@ public final class QueryPartitioner {
           chaining(nextChain, nextVertex, visited, partitionedQueryDAG, vertexChainMap);
         } else {
           // 1) The next vertex is sequentially following the current vertex
-          // so add the next operator to the current PartitionedQuery
+          // so add the next operator to the current OperatorChain
           chaining(operatorChain, nextVertex, visited, partitionedQueryDAG, vertexChainMap);
         }
       }

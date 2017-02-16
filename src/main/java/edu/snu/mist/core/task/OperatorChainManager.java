@@ -18,27 +18,25 @@ package edu.snu.mist.core.task;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * This interface manages partitioned queries.
+ * This interface manages operator chains.
  */
 @DefaultImplementation(RandomlyPickManager.class)
-public interface PartitionedQueryManager {
+public interface OperatorChainManager {
 
   /**
-   * Insert a partitioned query.
-   * @param query partitioned query
-   */
-  void insert(PartitionedQuery query);
+   * Insert an operator chain.
+=   */
+  void insert(OperatorChain operatorChain);
 
   /**
-   * Delete a partitioned query.
-   * @param query partitioned query
+   * Delete an operator chain.
    */
-  void delete(PartitionedQuery query);
+  void delete(OperatorChain operatorChain);
 
   /**
-   * Pick a partitioned query.
-   * @return a partitioned query.
-   * Returns null if there is no query.
+   * Pick an operator chain.
+   * @return an operator chain.
+   * Returns null if there is no operator chain that is executable.
    */
-  PartitionedQuery pickQuery();
+  OperatorChain pickOperatorChain();
 }
