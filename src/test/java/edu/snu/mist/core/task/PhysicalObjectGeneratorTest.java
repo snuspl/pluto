@@ -192,9 +192,9 @@ public final class PhysicalObjectGeneratorTest {
    */
   private Operator getSingleUdfOperator(final Class<? extends Operator> operatorClass,
                                         final Serializable obj) throws IOException, InjectionException {
-    final Configuration conf = SingleInputOperatorUDFConfiguration.CONF
-        .set(SingleInputOperatorUDFConfiguration.OPERATOR, operatorClass)
-        .set(SingleInputOperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(obj))
+    final Configuration conf = OperatorUDFConfiguration.CONF
+        .set(OperatorUDFConfiguration.OPERATOR, operatorClass)
+        .set(OperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(obj))
         .build();
     return getOperator(conf);
   }

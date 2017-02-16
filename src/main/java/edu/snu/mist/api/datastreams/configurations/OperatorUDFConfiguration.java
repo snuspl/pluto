@@ -26,7 +26,7 @@ import org.apache.reef.tang.formats.RequiredParameter;
  * A configuration for operators that use a single user-defined function.
  * Ex) map, flatMap, filter, applyStateful.
  */
-public final class SingleInputOperatorUDFConfiguration extends ConfigurationModuleBuilder {
+public final class OperatorUDFConfiguration extends ConfigurationModuleBuilder {
 
   /**
    * Required Parameter for binding the serialized objects of the user-defined function.
@@ -41,7 +41,7 @@ public final class SingleInputOperatorUDFConfiguration extends ConfigurationModu
   /**
    * A configuration for binding the serialized objects of the user-defined function.
    */
-  public static final ConfigurationModule CONF = new SingleInputOperatorUDFConfiguration()
+  public static final ConfigurationModule CONF = new OperatorUDFConfiguration()
       .bindNamedParameter(SerializedUdf.class, UDF_STRING)
       .bindImplementation(Operator.class, OPERATOR)
       .build();
