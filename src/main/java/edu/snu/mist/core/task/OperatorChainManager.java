@@ -25,7 +25,7 @@ public interface OperatorChainManager {
 
   /**
    * Insert an operator chain.
-=   */
+   */
   void insert(OperatorChain operatorChain);
 
   /**
