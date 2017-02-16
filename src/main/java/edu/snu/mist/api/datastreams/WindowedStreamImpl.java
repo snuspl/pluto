@@ -74,9 +74,9 @@ final class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>> implemen
   @Override
   public <R> ContinuousStream<R> aggregateWindow(final MISTFunction<WindowData<T>, R> aggregateFunc) {
     try {
-      final Configuration conf = SingleInputOperatorUDFConfiguration.CONF
-          .set(SingleInputOperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(aggregateFunc))
-          .set(SingleInputOperatorUDFConfiguration.OPERATOR, AggregateWindowOperator.class)
+      final Configuration conf = OperatorUDFConfiguration.CONF
+          .set(OperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(aggregateFunc))
+          .set(OperatorUDFConfiguration.OPERATOR, AggregateWindowOperator.class)
           .build();
       return transformToSingleInputContinuousStream(conf, this);
     } catch (final IOException e) {
@@ -99,10 +99,10 @@ final class WindowedStreamImpl<T> extends MISTStreamImpl<WindowData<T>> implemen
   public <R> ContinuousStream<R> applyStatefulWindow(
       final ApplyStatefulFunction<T, R> applyStatefulFunction) {
     try {
-      final Configuration conf = SingleInputOperatorUDFConfiguration.CONF
-          .set(SingleInputOperatorUDFConfiguration.UDF_STRING,
+      final Configuration conf = OperatorUDFConfiguration.CONF
+          .set(OperatorUDFConfiguration.UDF_STRING,
               SerializeUtils.serializeToString(applyStatefulFunction))
-          .set(SingleInputOperatorUDFConfiguration.OPERATOR, ApplyStatefulWindowOperator.class)
+          .set(OperatorUDFConfiguration.OPERATOR, ApplyStatefulWindowOperator.class)
           .build();
       return transformToSingleInputContinuousStream(conf, this);
     } catch (final IOException e) {

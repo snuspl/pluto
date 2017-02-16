@@ -97,9 +97,9 @@ public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements 
       final Serializable udf,
       final Class<? extends Operator> clazz) {
     try {
-      final Configuration opConf = SingleInputOperatorUDFConfiguration.CONF
-          .set(SingleInputOperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(udf))
-          .set(SingleInputOperatorUDFConfiguration.OPERATOR, clazz)
+      final Configuration opConf = OperatorUDFConfiguration.CONF
+          .set(OperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(udf))
+          .set(OperatorUDFConfiguration.OPERATOR, clazz)
           .build();
       return transformToSingleInputContinuousStream(opConf, this);
     } catch (final IOException e) {
@@ -259,9 +259,9 @@ public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements 
         .union(inputStream.map(secondMapFunc))
         .window(windowInfo);
     try {
-      final Configuration opConf = SingleInputOperatorUDFConfiguration.CONF
-          .set(SingleInputOperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(joinBiPredicate))
-          .set(SingleInputOperatorUDFConfiguration.OPERATOR, JoinOperator.class)
+      final Configuration opConf = OperatorUDFConfiguration.CONF
+          .set(OperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(joinBiPredicate))
+          .set(OperatorUDFConfiguration.OPERATOR, JoinOperator.class)
           .build();
       return transformToWindowedStream(opConf, windowedStream);
     } catch (final IOException e) {
