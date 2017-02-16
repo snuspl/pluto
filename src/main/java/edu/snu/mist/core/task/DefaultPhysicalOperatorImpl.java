@@ -20,7 +20,7 @@ import edu.snu.mist.common.operators.Operator;
 /**
  * This is the default implementation of PhysicalOperator.
  */
-final class DefaultPhysicalOperatorImpl implements PhysicalOperator {
+final class DefaultPhysicalOperatorImpl extends BasePhysicalVertex implements PhysicalOperator {
 
   /**
    * The operator that processes events.
@@ -44,6 +44,13 @@ final class DefaultPhysicalOperatorImpl implements PhysicalOperator {
 
   public DefaultPhysicalOperatorImpl(final Operator operator,
                                      final PartitionedQuery partitionedQuery) {
+    this(operator, partitionedQuery, null);
+  }
+
+  public DefaultPhysicalOperatorImpl(final Operator operator,
+                                     final PartitionedQuery partitionedQuery,
+                                     final String configuration) {
+    super(configuration);
     this.operator = operator;
     this.partitionedQuery = partitionedQuery;
   }

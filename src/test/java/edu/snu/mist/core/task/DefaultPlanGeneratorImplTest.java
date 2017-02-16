@@ -18,6 +18,8 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
+import edu.snu.mist.api.datastreams.ContinuousStream;
+import edu.snu.mist.api.datastreams.MISTStream;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.*;
@@ -31,6 +33,7 @@ import edu.snu.mist.utils.TestParameters;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
+import org.apache.reef.tang.formats.AvroConfigurationSerializer;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -78,12 +81,15 @@ public final class DefaultPlanGeneratorImplTest {
       throws InjectionException, IOException, URISyntaxException, ClassNotFoundException {
     // Generate a query
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
-    queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
-        .flatMap(s -> Arrays.asList(s.split(" ")))
-        .filter(s -> s.startsWith("A"))
-        .map(s -> new Tuple2<>(s, 1))
-        .reduceByKey(0, String.class, (Integer x, Integer y) -> x + y)
-        .textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
+    final ContinuousStream<String> srcStream =
+        queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
+    final ContinuousStream<String> flatMapStream = srcStream.flatMap(s -> Arrays.asList(s.split(" ")));
+    final ContinuousStream<String> filterStream = flatMapStream.filter(s -> s.startsWith("A"));
+    final ContinuousStream<Tuple2<String, Integer>> mapStream = filterStream.map(s -> new Tuple2<>(s, 1));
+    final ContinuousStream<Map<String, Integer>> reduceByKeyStream =
+        mapStream.reduceByKey(0, String.class, (Integer x, Integer y) -> x + y);
+    final MISTStream sinkStream = reduceByKeyStream.textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
+
     final MISTQuery query = queryBuilder.build();
     // Generate avro logical plan
     final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getSerializedDAG();
@@ -111,16 +117,26 @@ public final class DefaultPlanGeneratorImplTest {
     final PartitionedQuery pq1 = (PartitionedQuery)nextOps.entrySet().iterator().next().getKey();
     final Map<PhysicalVertex, MISTEdge> sinks = physicalPlan.getEdges(pq1);
     Assert.assertEquals(4, pq1.size());
-    final Operator mapOperator = pq1.removeFromHead().getOperator();
-    final Operator filterOperator = pq1.removeFromHead().getOperator();
-    final Operator mapOperator2 = pq1.removeFromHead().getOperator();
-    final Operator reduceByKeyOperator = pq1.removeFromHead().getOperator();
-    Assert.assertTrue(mapOperator instanceof FlatMapOperator);
-    Assert.assertTrue(filterOperator instanceof FilterOperator);
-    Assert.assertTrue(mapOperator2 instanceof MapOperator);
-    Assert.assertTrue(reduceByKeyOperator instanceof ReduceByKeyOperator);
+    final PhysicalOperator mapOperator = pq1.removeFromHead();
+    final PhysicalOperator filterOperator = pq1.removeFromHead();
+    final PhysicalOperator mapOperator2 = pq1.removeFromHead();
+    final PhysicalOperator reduceByKeyOperator = pq1.removeFromHead();
+    Assert.assertTrue(mapOperator.getOperator() instanceof FlatMapOperator);
+    Assert.assertTrue(filterOperator.getOperator() instanceof FilterOperator);
+    Assert.assertTrue(mapOperator2.getOperator() instanceof MapOperator);
+    Assert.assertTrue(reduceByKeyOperator.getOperator() instanceof ReduceByKeyOperator);
     final PhysicalSink physicalSink = (PhysicalSink)sinks.entrySet().iterator().next().getKey();
     Assert.assertTrue(physicalSink.getSink() instanceof NettyTextSink);
+
+    // Check physical vertex configuration
+    final AvroConfigurationSerializer avroSerializer = new AvroConfigurationSerializer();
+    Assert.assertEquals(avroSerializer.toString(srcStream.getConfiguration()), source.getConfiguration());
+    Assert.assertEquals(avroSerializer.toString(flatMapStream.getConfiguration()), mapOperator.getConfiguration());
+    Assert.assertEquals(avroSerializer.toString(filterStream.getConfiguration()), filterOperator.getConfiguration());
+    Assert.assertEquals(avroSerializer.toString(mapStream.getConfiguration()), mapOperator2.getConfiguration());
+    Assert.assertEquals(avroSerializer.toString(reduceByKeyStream.getConfiguration()),
+        reduceByKeyOperator.getConfiguration());
+    Assert.assertEquals(avroSerializer.toString(sinkStream.getConfiguration()), physicalSink.getConfiguration());
 
     // Test logical plan
     final DAG<LogicalVertex, MISTEdge> logicalPlan = plan.getLogicalPlan();
@@ -130,16 +146,20 @@ public final class DefaultPlanGeneratorImplTest {
     Assert.assertEquals(source.getIdentifier().toString(), logicalSource.getPhysicalVertexId());
 
     final LogicalVertex flatMapLogicalVertex = getNextVertex(logicalSource, logicalPlan);
-    Assert.assertEquals(mapOperator.getOperatorIdentifier(), flatMapLogicalVertex.getPhysicalVertexId());
+    Assert.assertEquals(mapOperator.getOperator().getOperatorIdentifier(),
+        flatMapLogicalVertex.getPhysicalVertexId());
 
     final LogicalVertex filterLogicalVertex = getNextVertex(flatMapLogicalVertex, logicalPlan);
-    Assert.assertEquals(filterOperator.getOperatorIdentifier(), filterLogicalVertex.getPhysicalVertexId());
+    Assert.assertEquals(filterOperator.getOperator().getOperatorIdentifier(),
+        filterLogicalVertex.getPhysicalVertexId());
 
     final LogicalVertex mapLogicalVertex = getNextVertex(filterLogicalVertex, logicalPlan);
-    Assert.assertEquals(mapOperator2.getOperatorIdentifier(), mapLogicalVertex.getPhysicalVertexId());
+    Assert.assertEquals(mapOperator2.getOperator().getOperatorIdentifier(),
+        mapLogicalVertex.getPhysicalVertexId());
 
     final LogicalVertex reduceByKeyVertex = getNextVertex(mapLogicalVertex, logicalPlan);
-    Assert.assertEquals(reduceByKeyOperator.getOperatorIdentifier(), reduceByKeyVertex.getPhysicalVertexId());
+    Assert.assertEquals(reduceByKeyOperator.getOperator().getOperatorIdentifier(),
+        reduceByKeyVertex.getPhysicalVertexId());
 
     final LogicalVertex sinkVertex = getNextVertex(reduceByKeyVertex, logicalPlan);
     Assert.assertEquals(physicalSink.getSink().getIdentifier().toString(), sinkVertex.getPhysicalVertexId());

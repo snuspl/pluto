@@ -31,4 +31,11 @@ interface PhysicalVertex {
    * Get the type of the physical vertex.
    */
   Type getType();
+
+  /**
+   * Get the configuration of the physical vertex.
+   * This will be used to merge two vertices.
+   * @return the serialized configuration
+   */
+  String getConfiguration();
 }

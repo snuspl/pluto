@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * TODO[MIST-70]: Consider concurrency issue in execution of PartitionedQuery
  */
 @SuppressWarnings("unchecked")
-final class DefaultPartitionedQueryImpl implements PartitionedQuery {
+final class DefaultPartitionedQueryImpl extends BasePhysicalVertex implements PartitionedQuery {
 
   private enum Status {
     RUNNING, // When the query processes an event
@@ -65,6 +65,7 @@ final class DefaultPartitionedQueryImpl implements PartitionedQuery {
 
   @Inject
   DefaultPartitionedQueryImpl() {
+    super(null);
     this.operators = new LinkedList<>();
     this.queue = new ConcurrentLinkedQueue<>();
     this.status = new AtomicReference<>(Status.READY);
