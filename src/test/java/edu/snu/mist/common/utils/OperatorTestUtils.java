@@ -15,12 +15,14 @@
  */
 package edu.snu.mist.common.utils;
 
+import edu.snu.mist.common.windows.Window;
 import edu.snu.mist.common.windows.WindowData;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistEvent;
 import org.junit.Assert;
 
 import java.util.Collection;
+import java.util.Queue;
 
 /**
  * This is a utility class for operator test.
@@ -46,5 +48,27 @@ public final class OperatorTestUtils {
     Assert.assertEquals(expectedWindowStartMoment, windowData.getStart());
     Assert.assertEquals(expectedWindowSize, windowData.getEnd() - windowData.getStart() + 1);
     Assert.assertEquals(expectedWindowTimestamp, result.getTimestamp());
+  }
+
+  /**
+   * Checks if two windows with integer data are equal.
+   */
+  public static void checkWindowEquality(final Window<Integer> window1, final Window<Integer> window2) {
+    Assert.assertEquals(window1.getStart(), window2.getStart());
+    Assert.assertEquals(window1.getEnd(), window2.getEnd());
+    Assert.assertEquals(window1.getDataCollection(), window2.getDataCollection());
+    Assert.assertEquals(window1.getLatestTimestamp(), window2.getLatestTimestamp());
+    Assert.assertEquals(window1.getLatestWatermark().getTimestamp(), window2.getLatestWatermark().getTimestamp());
+  }
+
+  /**
+   * Checks if two windows with integer data are equal.
+   */
+  public static void checkWindowQueueEquality(final Queue<Window<Integer>> windowQueue1,
+                                              final Queue<Window<Integer>> windowQueue2) {
+    Assert.assertEquals(windowQueue1.size(), windowQueue2.size());
+    while (!windowQueue1.isEmpty()) {
+      checkWindowEquality(windowQueue1.poll(), windowQueue2.poll());
+    }
   }
 }

@@ -101,5 +101,35 @@ public final class StatefulOperatorTest {
     LOG.info("expected: " + expected);
     LOG.info("result: " + result);
     Assert.assertEquals(expected, result);
+
+    // Test for getting and setting the state of ReduceByKeyOperator.
+
+    // Generate the expected result and set it to the state of a new TimeWindowOperator
+    final Map<String, Integer> expectedOperatorState = new HashMap<>();
+    expectedOperatorState.put("a", 3);
+    expectedOperatorState.put("b", 2);
+    expectedOperatorState.put("c", 1);
+    expectedOperatorState.put("d", 1);
+
+    final Map<String, Object> expectedStateMap = new HashMap<>();
+    expectedStateMap.put("reduceByKeyState", expectedOperatorState);
+
+    final ReduceByKeyOperator expectedReduceByKeyOperator =
+            new ReduceByKeyOperator("expectedOperator", keyIndex, wordCountFunc);
+    expectedReduceByKeyOperator.setState(expectedStateMap);
+
+    // Get the expected ReduceByKeyOperator's state.
+    final Map<String, Object> expectedOperatorStateMap = expectedReduceByKeyOperator.getOperatorState();
+    final Map<String, Integer> getExpectedOperatorState =
+            (Map<String, Integer>)expectedOperatorStateMap.get("reduceByKeyState");
+
+    // Get the current ReduceByKeyOperator's state.
+    final Map<String, Integer> operatorState =
+            (Map<String, Integer>)wcOperator.getOperatorState().get("reduceByKeyState");
+
+    // Compare the "set" state of the expected ReduceByKeyOperator
+    // with the "get" state from the current ReduceByKeyOperator.
+    Assert.assertTrue(getExpectedOperatorState.equals(operatorState));
+    System.out.println(wcOperator.getOperatorState().toString());
   }
 }
