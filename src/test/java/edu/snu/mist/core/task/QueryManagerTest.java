@@ -15,21 +15,26 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.graph.AdjacentListDAG;
-import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
+import edu.snu.mist.common.graph.AdjacentListDAG;
+import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.common.operators.*;
+import edu.snu.mist.common.operators.FilterOperator;
+import edu.snu.mist.common.operators.FlatMapOperator;
+import edu.snu.mist.common.operators.MapOperator;
+import edu.snu.mist.common.operators.ReduceByKeyOperator;
 import edu.snu.mist.common.sinks.Sink;
-import edu.snu.mist.common.sources.*;
+import edu.snu.mist.common.sources.DataGenerator;
+import edu.snu.mist.common.sources.EventGenerator;
+import edu.snu.mist.common.sources.PunctuatedEventGenerator;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.core.parameters.NumThreads;
 import edu.snu.mist.core.parameters.PlanStorePath;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
+import edu.snu.mist.formats.avro.AvroChainedDag;
 import edu.snu.mist.formats.avro.Direction;
-import edu.snu.mist.formats.avro.AvroLogicalPlan;
 import junit.framework.Assert;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
@@ -128,13 +133,13 @@ public final class QueryManagerTest {
     final PhysicalSink sink2 = new PhysicalSinkImpl<>("sink2",
         new TestSink<Integer>(sink2Result, countDownAllOutputs));
 
-    // Fake logical plan of QueryManager
-    final Tuple<String, AvroLogicalPlan> tuple = new Tuple<>(queryId, new AvroLogicalPlan());
+    // Fake chained dag of QueryManager
+    final Tuple<String, AvroChainedDag> tuple = new Tuple<>(queryId, new AvroChainedDag());
 
-    // Construct logical and physical plan
+    // Construct logical and execution dag
     constructLogicalAndExecutionDag(tuple, dag, logicalDag, src, sink1, sink2);
 
-    // Create mock PlanGenerator. It returns the above logical and physical plan
+    // Create mock DagGenerator. It returns the above logical and execution dag
     final DagGenerator dagGenerator = mock(DagGenerator.class);
     when(dagGenerator.generate(tuple)).thenReturn(new DefaultLogicalAndExecutionDagImpl(logicalDag, dag));
 
@@ -175,10 +180,10 @@ public final class QueryManagerTest {
   }
 
   /**
-   * Construct physical plan.
+   * Construct logical and execution dag.
    * Creates operators and adds source, dag vertices, edges and sinks to dag.
    */
-  private void constructLogicalAndExecutionDag(final Tuple<String, AvroLogicalPlan> tuple,
+  private void constructLogicalAndExecutionDag(final Tuple<String, AvroChainedDag> tuple,
                                                final DAG<ExecutionVertex, MISTEdge> dag,
                                                final DAG<LogicalVertex, MISTEdge> logicalDag,
                                                final PhysicalSource src,
@@ -270,12 +275,12 @@ public final class QueryManagerTest {
    * QueryManager Builder.
    * It receives inputs tuple, physicalPlanGenerator, injector then makes query manager.
    */
-  private QueryManager queryManagerBuild(final Tuple<String, AvroLogicalPlan> tuple,
+  private QueryManager queryManagerBuild(final Tuple<String, AvroChainedDag> tuple,
                                          final DagGenerator dagGenerator,
                                          final Injector injector) throws Exception {
     // Create mock PlanStore. It returns true and the above logical plan
     final QueryInfoStore planStore = mock(QueryInfoStore.class);
-    when(planStore.savePlan(tuple)).thenReturn(true);
+    when(planStore.saveChainedDag(tuple)).thenReturn(true);
     when(planStore.load(tuple.getKey())).thenReturn(tuple.getValue());
 
     // Create QueryManager

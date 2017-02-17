@@ -16,7 +16,7 @@
 package edu.snu.mist.core.task;
 
 /**
- * This interface represents physical vertices of the query.
+ * This interface represents execution vertices of the query.
  */
 interface ExecutionVertex {
 

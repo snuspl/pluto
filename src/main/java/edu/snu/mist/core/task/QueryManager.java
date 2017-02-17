@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.formats.avro.AvroLogicalPlan;
+import edu.snu.mist.formats.avro.AvroChainedDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
@@ -28,11 +28,10 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
 @DefaultImplementation(DefaultQueryManagerImpl.class)
 public interface QueryManager extends AutoCloseable {
   /**
-   * Converts the submitted avro logical plan to the physical plan,
-   * and starts to receive input data stream of the query.
-   * @param tuple
+   * Start to the query.
+   * @param tuple the query id and the chained dag
    */
-  QueryControlResult create(Tuple<String, AvroLogicalPlan> tuple);
+  QueryControlResult create(Tuple<String, AvroChainedDag> tuple);
 
   /**
    * Deletes the query corresponding to the queryId submitted by client.

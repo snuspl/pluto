@@ -19,7 +19,7 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 
 /**
- * This class contains the logical and physical plan of a query.
+ * This class contains the logical and execution dag of a query.
  */
 final class DefaultLogicalAndExecutionDagImpl implements LogicalAndExecutionDag {
 
@@ -33,16 +33,16 @@ final class DefaultLogicalAndExecutionDagImpl implements LogicalAndExecutionDag 
   }
 
   /**
-   * Return the logical plan.
-   * @return logical plan
+   * Return the logical dag.
+   * @return logical dag
    */
   public DAG<LogicalVertex, MISTEdge> getLogicalDag() {
     return logicalDag;
   }
 
   /**
-   * Return the physical plan.
-   * @return physical plan
+   * Return the execution dag.
+   * @return execution dag
    */
   public DAG<ExecutionVertex, MISTEdge> getExecutionDag() {
     return executionDag;

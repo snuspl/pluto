@@ -16,10 +16,10 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.graph.GraphUtils;
+import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
-import edu.snu.mist.formats.avro.AvroLogicalPlan;
+import edu.snu.mist.formats.avro.AvroChainedDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
 
@@ -43,9 +43,9 @@ final class DefaultQueryManagerImpl implements QueryManager {
   private static final Logger LOG = Logger.getLogger(DefaultQueryManagerImpl.class.getName());
 
   /**
-   * Map of query id and logical plan.
+   * Map of query id and logical dag.
    */
-  private final ConcurrentMap<String, DAG<LogicalVertex, MISTEdge>> logicalPlanMap;
+  private final ConcurrentMap<String, DAG<LogicalVertex, MISTEdge>> logicalDagMap;
 
   /**
    * An operator chain manager.
@@ -68,13 +68,13 @@ final class DefaultQueryManagerImpl implements QueryManager {
   private final QueryInfoStore planStore;
 
   /**
-   * A physical and logical plan generator.
+   * A execution and logical dag generator.
    */
   private final DagGenerator dagGenerator;
 
   /**
    * Default query manager in MistTask.
-   * @param dagGenerator the generator that generates the logical and physical plan from avro logical plan.
+   * @param dagGenerator the generator that generates the logical and execution dag from avro chained dag.
    * @param threadManager thread manager
    */
   @Inject
@@ -83,7 +83,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
                                   final OperatorChainManager operatorChainManager,
                                   final ScheduledExecutorServiceWrapper schedulerWrapper,
                                   final QueryInfoStore planStore) {
-    this.logicalPlanMap = new ConcurrentHashMap<>();
+    this.logicalDagMap = new ConcurrentHashMap<>();
     this.operatorChainManager = operatorChainManager;
     this.dagGenerator = dagGenerator;
     this.threadManager = threadManager;
@@ -92,25 +92,25 @@ final class DefaultQueryManagerImpl implements QueryManager {
   }
 
   /**
-   * It converts the avro logical plan (query) to the physical plan,
+   * It converts the avro chained dag (query) to the execution dag,
    * and executes the sources in order to receives data streams.
-   * Before the queries are executed, it stores the avro logical plan into disk.
-   * We can regenerate the queries from the stored avro logical plan.
-   * @param tuple a pair of the query id and the avro logical plan
+   * Before the queries are executed, it stores the avro chained dag into disk.
+   * We can regenerate the queries from the stored avro chained dag.
+   * @param tuple a pair of the query id and the avro chained dag
    * @return submission result
    */
   @Override
-  public QueryControlResult create(final Tuple<String, AvroLogicalPlan> tuple) {
+  public QueryControlResult create(final Tuple<String, AvroChainedDag> tuple) {
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(tuple.getKey());
     try {
-      // 1) Saves the avro logical plan to the PlanStore and
-      // converts the avro logical plan to the logical and physical plan
-      planStore.savePlan(tuple);
+      // 1) Saves the avro chained dag to the PlanStore and
+      // converts the avro chained dag to the logical and execution dag
+      planStore.saveChainedDag(tuple);
       final LogicalAndExecutionDag logicalAndExecutionDag = dagGenerator.generate(tuple);
-      // Store the logical plan in memory
-      logicalPlanMap.putIfAbsent(tuple.getKey(), logicalAndExecutionDag.getLogicalDag());
-      // Execute the physical plan
+      // Store the logical dag in memory
+      logicalDagMap.putIfAbsent(tuple.getKey(), logicalAndExecutionDag.getLogicalDag());
+      // Execute the execution dag
       start(logicalAndExecutionDag.getExecutionDag());
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));

@@ -17,7 +17,7 @@ package edu.snu.mist.core.task.stores;
 
 
 import edu.snu.mist.core.parameters.TempFolderPath;
-import edu.snu.mist.formats.avro.AvroLogicalPlan;
+import edu.snu.mist.formats.avro.AvroChainedDag;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.DatumReader;
@@ -40,24 +40,24 @@ import java.util.List;
 
 
 /**
- * It saves the information of a query (logical plan, jar files) into the disk.
+ * It saves the information of a query (chained dag, jar files) into the disk.
  */
 
 final class DiskQueryInfoStore implements QueryInfoStore {
   /**
-   * A path for the temporary folder that stores jar files and logical plans of queries.
+   * A path for the temporary folder that stores jar files and chained dags of queries.
    */
   private final String tmpFolderPath;
 
   /**
-   * A writer that stores logical plans.
+   * A writer that stores the dag.
    */
-  private final DatumWriter<AvroLogicalPlan> datumWriter;
+  private final DatumWriter<AvroChainedDag> datumWriter;
 
   /**
-   * A reader that reads stored logical plans.
+   * A reader that reads stored the dag.
    */
-  private final DatumReader<AvroLogicalPlan> datumReader;
+  private final DatumReader<AvroChainedDag> datumReader;
 
   /**
    * A file name generator that generates jar file's names.
@@ -69,9 +69,9 @@ final class DiskQueryInfoStore implements QueryInfoStore {
                              final FileNameGenerator fileNameGenerator) {
     this.tmpFolderPath = tmpFolderPath;
     this.fileNameGenerator = fileNameGenerator;
-    this.datumWriter = new SpecificDatumWriter<>(AvroLogicalPlan.class);
-    this.datumReader = new SpecificDatumReader<>(AvroLogicalPlan.class);
-    // Create a folder that stores logical plans and jar files
+    this.datumWriter = new SpecificDatumWriter<>(AvroChainedDag.class);
+    this.datumReader = new SpecificDatumReader<>(AvroChainedDag.class);
+    // Create a folder that stores the dags and jar files
     final File folder = new File(tmpFolderPath);
     if (!folder.exists()) {
       folder.mkdir();
@@ -84,29 +84,29 @@ final class DiskQueryInfoStore implements QueryInfoStore {
   }
 
   /**
-   * Gets a file of the stored logical plan corresponding to the queryId.
-   * @param queryId query id for the logical plan
-   * @return file of the stored logical plan
+   * Gets a file of the stored the dag corresponding to the queryId.
+   * @param queryId query id
+   * @return file of the stored dag
    */
-  private File getAvroLogicalPlanFile(final String queryId) {
+  private File getAvroChainedDagFile(final String queryId) {
     final StringBuilder sb = new StringBuilder(queryId);
     sb.append(".plan");
     return new File(tmpFolderPath, sb.toString());
   }
 
   /**
-   * Saves the logical plan as queryId.plan to disk.
+   * Saves the dag as queryId.plan to disk.
    * @param tuple
    * @throws IOException
    */
   @Override
-  public boolean savePlan(final Tuple<String, AvroLogicalPlan> tuple) throws IOException {
-    final AvroLogicalPlan plan = tuple.getValue();
-    final File storedPlanFile = getAvroLogicalPlanFile(tuple.getKey());
-    if (!storedPlanFile.exists()) {
-      final DataFileWriter<AvroLogicalPlan> dataFileWriter = new DataFileWriter<AvroLogicalPlan>(datumWriter);
-      dataFileWriter.create(plan.getSchema(), storedPlanFile);
-      dataFileWriter.append(plan);
+  public boolean saveChainedDag(final Tuple<String, AvroChainedDag> tuple) throws IOException {
+    final AvroChainedDag dag = tuple.getValue();
+    final File storedFile = getAvroChainedDagFile(tuple.getKey());
+    if (!storedFile.exists()) {
+      final DataFileWriter<AvroChainedDag> dataFileWriter = new DataFileWriter<AvroChainedDag>(datumWriter);
+      dataFileWriter.create(dag.getSchema(), storedFile);
+      dataFileWriter.append(dag);
       dataFileWriter.close();
       return true;
     }
@@ -136,40 +136,40 @@ final class DiskQueryInfoStore implements QueryInfoStore {
   }
 
   /**
-   * Load the stored logical plan from File.
+   * Load the stored dag from File.
    * @param storedPlanFile file
-   * @return logical plan
+   * @return chained dag
    * @throws IOException
    */
-  private AvroLogicalPlan loadFromFile(final File storedPlanFile) throws IOException {
-    final DataFileReader<AvroLogicalPlan> dataFileReader =
-        new DataFileReader<AvroLogicalPlan>(storedPlanFile, datumReader);
-    AvroLogicalPlan plan = null;
-    plan = dataFileReader.next(plan);
-    return plan;
+  private AvroChainedDag loadFromFile(final File storedPlanFile) throws IOException {
+    final DataFileReader<AvroChainedDag> dataFileReader =
+        new DataFileReader<AvroChainedDag>(storedPlanFile, datumReader);
+    AvroChainedDag dag = null;
+    dag = dataFileReader.next(dag);
+    return dag;
   }
 
   /**
-   * Loads the logical plan, queryId.plan, from disk.
+   * Loads the dag, queryId.plan, from disk.
    * @param queryId
-   * @return Logical plan corresponding to queryId
+   * @return the dag corresponding to queryId
    * @throws IOException
    */
   @Override
-  public AvroLogicalPlan load(final String queryId) throws IOException {
-    final File storedPlanFile = getAvroLogicalPlanFile(queryId);
-    return loadFromFile(storedPlanFile);
+  public AvroChainedDag load(final String queryId) throws IOException {
+    final File storedFile = getAvroChainedDagFile(queryId);
+    return loadFromFile(storedFile);
   }
 
   /**
-   * Deletes the logical plan and jar files.
+   * Deletes the dag and jar files.
    * @param queryId
    * @throws IOException
    */
   @Override
   public void delete(final String queryId) throws IOException {
-    final File storedPlanFile = getAvroLogicalPlanFile(queryId);
-    final AvroLogicalPlan logicalPlan = loadFromFile(storedPlanFile);
+    final File storedFile = getAvroChainedDagFile(queryId);
+    final AvroChainedDag logicalPlan = loadFromFile(storedFile);
     final List<String> paths = logicalPlan.getJarFilePaths();
 
     // Delete jar files for the query
@@ -184,8 +184,8 @@ final class DiskQueryInfoStore implements QueryInfoStore {
     }
 
     // Delete the logical plan
-    if (storedPlanFile.exists()) {
-      storedPlanFile.delete();
+    if (storedFile.exists()) {
+      storedFile.delete();
     }
   }
 }

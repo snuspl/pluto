@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.formats.avro.AvroLogicalPlan;
+import edu.snu.mist.formats.avro.AvroChainedDag;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -32,6 +32,6 @@ public interface DagGenerator {
    * @param queryIdAndAvroLogicalDag the tuple of queryId and avro logical dag
    * @return a pair of the logical and execution dag
    */
-  LogicalAndExecutionDag generate(Tuple<String, AvroLogicalPlan> queryIdAndAvroLogicalDag)
+  LogicalAndExecutionDag generate(Tuple<String, AvroChainedDag> queryIdAndAvroLogicalDag)
       throws IOException, ClassNotFoundException, InjectionException;
 }
