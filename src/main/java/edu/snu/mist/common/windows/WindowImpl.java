@@ -102,23 +102,22 @@ public final class WindowImpl<T> implements Window<T> {
     }
     Window<T> window = (Window<T>) o;
 
-    if (this.getLatestWatermark() == null && window.getLatestWatermark() == null) {
-      return true;
-    }
-    if (this.getLatestWatermark() == null || window.getLatestWatermark() == null) {
+    if (this.getLatestWatermark() == null ^ window.getLatestWatermark() == null) {
       return false;
     }
-    return this.getStart() == window.getStart()
+    return ((this.getLatestWatermark() == null && window.getLatestWatermark() == null) ||
+        this.getLatestWatermark().getTimestamp() == window.getLatestWatermark().getTimestamp())
+        && this.getStart() == window.getStart()
         && this.getEnd() == window.getEnd()
         && this.getLatestTimestamp() == window.getLatestTimestamp()
-        && this.getLatestWatermark().getTimestamp() == window.getLatestWatermark().getTimestamp()
         && this.getDataCollection().equals(window.getDataCollection());
   }
 
   @Override
   public int hashCode() {
     return Long.hashCode(this.getStart()) * 10000 + Long.hashCode(this.getEnd()) * 1000
-        + Long.hashCode(this.getLatestTimestamp()) * 100 + Long.hashCode(this.getLatestWatermark().getTimestamp()) * 10
+        + Long.hashCode(this.getLatestTimestamp()) * 1000
+        + (this.getLatestWatermark() == null ? 0 : Long.hashCode(this.getLatestWatermark().getTimestamp()) * 10)
         + this.getDataCollection().hashCode();
   }
 }
