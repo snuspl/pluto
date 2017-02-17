@@ -110,7 +110,7 @@ public final class SessionWindowOperatorTest {
    * Test getting state of the SessionWindowOperator.
    */
   @Test
-  public void testGetSessionWindowOperator() throws InterruptedException {
+  public void testSessionWindowOperatorGetState() throws InterruptedException {
     final int sessionInterval = 500;
 
     // Generate the current SessionWindowOperator.
@@ -143,20 +143,21 @@ public final class SessionWindowOperatorTest {
    * Test setting state of the SessionWindowOperator.
    */
   @Test
-  public void testSetSessionWindowOperator() throws InterruptedException {
+  public void testSessionWindowOperatorSetState() throws InterruptedException {
     final int sessionInterval = 500;
 
     // Generate a new state and set it to a new SessionWindowOperator.
-    final Window expectedCurrentWindow = new WindowImpl<>(d6.getTimestamp(), Long.MAX_VALUE, new LinkedList<>());
-    expectedCurrentWindow.putData(d6);
-    expectedCurrentWindow.putWatermark(w3);
-    expectedCurrentWindow.setEnd(w3.getTimestamp());
-    final long expectedLatestDataTimestamp = d6.getTimestamp();
+    final Window expectedCurrentWindow = new WindowImpl<>(d5.getTimestamp(), Long.MAX_VALUE, new LinkedList<>());
+    expectedCurrentWindow.putData(d5);
+    expectedCurrentWindow.putWatermark(w2);
+    expectedCurrentWindow.setEnd(w2.getTimestamp());
+    final long expectedLatestDataTimestamp = d5.getTimestamp();
     final boolean expectedStartedNewWindow = true;
     final Map<String, Object> loadStateMap = new HashMap<>();
     loadStateMap.put("currentWindow", expectedCurrentWindow);
     loadStateMap.put("latestDataTimestamp", expectedLatestDataTimestamp);
     loadStateMap.put("startedNewWindow", expectedStartedNewWindow);
+
     final SessionWindowOperator sessionWindowOperator =
         new SessionWindowOperator("setSessionWindowOperator", sessionInterval);
     sessionWindowOperator.setState(loadStateMap);
@@ -170,5 +171,17 @@ public final class SessionWindowOperatorTest {
     Assert.assertEquals(expectedCurrentWindow, currentWindow);
     Assert.assertEquals(expectedLatestDataTimestamp, latestDataTimestamp);
     Assert.assertEquals(expectedStartedNewWindow, startedNewWindow);
+
+    // Test if the operator can properly process data.
+    final List<MistEvent> result = new LinkedList<>();
+    sessionWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));
+    sessionWindowOperator.setState(operatorState);
+    sessionWindowOperator.processLeftData(d6);
+    Assert.assertEquals(2, result.size());
+    final Collection<Integer> expectedResult = new LinkedList<>();
+    expectedResult.add(5);
+    checkWindowData(result.get(0), expectedResult, d5.getTimestamp(),
+        w2.getTimestamp() - d5.getTimestamp() + 1, w2.getTimestamp());
+    Assert.assertEquals(w2, result.get(1));
   }
 }

@@ -46,11 +46,11 @@ public final class FixedSizeWindowOperatorTest {
   private final MistDataEvent d7 = new MistDataEvent(7, 4000L);
   private final MistDataEvent d8 = new MistDataEvent(8, 5000L);
   private final MistDataEvent d9 = new MistDataEvent(9, 6000L);
+  private final MistDataEvent d10 = new MistDataEvent(10, 2100L);
   private final MistWatermarkEvent w1 = new MistWatermarkEvent(1550L);
   private final MistWatermarkEvent w2 = new MistWatermarkEvent(1800L);
   private final MistWatermarkEvent w3 = new MistWatermarkEvent(2050L);
   private final MistWatermarkEvent w4 = new MistWatermarkEvent(2300L);
-  private final MistWatermarkEvent w5 = new MistWatermarkEvent(8600L);
 
   /**
    * Test TimeWindowOperator creating sliding window.
@@ -118,7 +118,7 @@ public final class FixedSizeWindowOperatorTest {
    * Test getting state of the TimeWindowOperator.
    */
   @Test
-  public void testGetTimeWindowOperator() throws InterruptedException {
+  public void testTimeWindowOperatorGetState() throws InterruptedException {
     final int windowSize = 500;
     final int emissionInterval = 250;
 
@@ -154,7 +154,7 @@ public final class FixedSizeWindowOperatorTest {
    * Test setting state of the TimeWindowOperator.
    */
   @Test
-  public void testSetTimeWindowOperator() throws InterruptedException {
+  public void testTimeWindowOperatorSetState() throws InterruptedException {
     final int windowSize = 500;
     final int emissionInterval = 250;
 
@@ -184,6 +184,16 @@ public final class FixedSizeWindowOperatorTest {
     // Compare the original and the set operator.
     Assert.assertEquals(expectedWindowQueue, windowQueue);
     Assert.assertEquals(expectedWindowCreationPoint, windowCreationPoint);
+
+    // Test if the operator can properly process data.
+    final List<MistEvent> result = new LinkedList<>();
+    timeWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));
+    timeWindowOperator.processLeftData(d10);
+    Assert.assertEquals(2, result.size());
+    final Collection<Integer> expectedResult1 = new LinkedList<>();
+    expectedResult1.add(4);
+    checkWindowData(result.get(0), expectedResult1, d4.getTimestamp(), emissionInterval, w2.getTimestamp());
+    Assert.assertEquals(result.get(1), w2);
   }
   /**
    * Test TimeWindowOperator creating hopping window.
@@ -305,11 +315,11 @@ public final class FixedSizeWindowOperatorTest {
    * Test getting state of the CountWindowOperator.
    */
   @Test
-  public void testGetCountWindowOperator() throws InterruptedException {
+  public void testCountWindowOperatorGetState() throws InterruptedException {
     final int windowSize = 5;
     final int emissionInterval = 3;
 
-    // Generate the current TimeWindowOperator.
+    // Generate the current CountWindowOperator.
     final CountWindowOperator<Integer> countWindowOperator =
         new CountWindowOperator<>("getStateOperator", windowSize, emissionInterval);
     countWindowOperator.processLeftData(d1);
@@ -327,7 +337,7 @@ public final class FixedSizeWindowOperatorTest {
     final long expectedWindowCreationPoint = 2L + emissionInterval;
     final long expectedCount = 3L;
 
-    // Get the current TimeWindowOperator's state.
+    // Get the current CountWindowOperator's state.
     final Map<String, Object> operatorState = countWindowOperator.getOperatorState();
     final Queue<Window<Integer>> windowQueue = (LinkedList<Window<Integer>>)operatorState.get("windowQueue");
     final long windowCreationPoint = (long)operatorState.get("windowCreationPoint");
@@ -343,7 +353,7 @@ public final class FixedSizeWindowOperatorTest {
    * Test setting state of the CountWindowOperator.
    */
   @Test
-  public void testSetCountWindowOperator() throws InterruptedException {
+  public void testCountWindowOperatorSetState() throws InterruptedException {
     final int windowSize = 5;
     final int emissionInterval = 3;
 
@@ -374,6 +384,17 @@ public final class FixedSizeWindowOperatorTest {
     Assert.assertEquals(expectedWindowQueue, windowQueue);
     Assert.assertEquals(expectedWindowCreationPoint, windowCreationPoint);
     Assert.assertEquals(expectedCount, count);
+
+    // Test if the operator can properly process data.
+    final List<MistEvent> result = new LinkedList<>();
+    countWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));
+    countWindowOperator.processLeftData(d3);
+    Assert.assertEquals(1, result.size());
+    final Collection<Integer> expectedResult1 = new LinkedList<>();
+    expectedResult1.add(1);
+    expectedResult1.add(2);
+    expectedResult1.add(3);
+    checkWindowData(result.get(0), expectedResult1, 1L, emissionInterval, d3.getTimestamp());
   }
 
   /**

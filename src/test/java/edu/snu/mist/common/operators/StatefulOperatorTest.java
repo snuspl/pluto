@@ -107,7 +107,7 @@ public final class StatefulOperatorTest {
    * Test getting state of the ReduceByKeyOperator.
    */
   @Test
-  public void testGetReduceByKeyOperator() throws InterruptedException {
+  public void testReduceByKeyOperatorGetState() throws InterruptedException {
     // Generate the current ReduceByKeyOperator state.
     final List<MistDataEvent> inputStream =
         ImmutableList.of(createEvent("a", 1),
@@ -145,7 +145,7 @@ public final class StatefulOperatorTest {
    * Test setting state of the ReduceByKeyOperator.
    */
   @Test
-  public void testSetReduceByKeyOperator() throws InterruptedException {
+  public void testReduceByKeyOperatorSetState() throws InterruptedException {
     // Generate a new state and set it to the state of a new ReduceByKeyWindowOperator.
     final Map<String, Integer> expectedOperatorState = new HashMap<>();
     expectedOperatorState.put("a", 3);
@@ -156,13 +156,29 @@ public final class StatefulOperatorTest {
     loadStateMap.put("reduceByKeyState", expectedOperatorState);
     final int keyIndex = 0;
     final MISTBiFunction<Integer, Integer, Integer> wordCountFunc = (oldVal, val) -> oldVal + val;
-    final ReduceByKeyOperator expectedReduceByKeyOperator =
+    final ReduceByKeyOperator reduceByKeyOperator =
         new ReduceByKeyOperator("expectedOperator", keyIndex, wordCountFunc);
-    expectedReduceByKeyOperator.setState(loadStateMap);
+    reduceByKeyOperator.setState(loadStateMap);
 
     // Compare the original and the set operator.
-    final Map<String, Object> operatorStateMap = expectedReduceByKeyOperator.getOperatorState();
+    final Map<String, Object> operatorStateMap = reduceByKeyOperator.getOperatorState();
     final Map<String, Integer> operatorState = (Map<String, Integer>)operatorStateMap.get("reduceByKeyState");
     Assert.assertEquals(expectedOperatorState, operatorState);
+
+    // Test if the operator can properly process data.
+    final List<Map<String, Integer>> result = new LinkedList<>();
+    reduceByKeyOperator.setOutputEmitter(new TestOutputEmitter<>(result));
+    reduceByKeyOperator.setState(operatorStateMap);
+    final List<MistDataEvent> inputStream =
+        ImmutableList.of(createEvent("a", 1));
+    inputStream.stream().forEach(reduceByKeyOperator::processLeftData);
+    final List<Map<String, Integer>> expected = new LinkedList<>();
+    final Map<String, Integer> o1 = new HashMap<>();
+    o1.put("a", 4);
+    o1.put("b", 2);
+    o1.put("c", 1);
+    o1.put("d", 1);
+    expected.add(o1);
+    Assert.assertEquals(expected, result);
   }
 }
