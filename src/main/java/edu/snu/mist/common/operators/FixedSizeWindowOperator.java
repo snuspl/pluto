@@ -23,6 +23,8 @@ import edu.snu.mist.common.windows.WindowImpl;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,7 +34,7 @@ import java.util.logging.Logger;
  * reorganize the queue to have available windows and put the watermark or data into the windows.
  * @param <T> the type of data
  */
-abstract class FixedSizeWindowOperator<T> extends OneStreamOperator {
+abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements StateHandler {
   // TODO: [MIST-324] Refactor fixed size windowing operation semantics
   private static final Logger LOG = Logger.getLogger(FixedSizeWindowOperator.class.getName());
 
@@ -135,5 +137,20 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamOperator {
       final Window<T> window = itr.next();
       window.putWatermark(input);
     }
+  }
+
+  @Override
+  public Map<String, Object> getOperatorState() {
+    final Map<String, Object> stateMap = new HashMap<>();
+    stateMap.put("windowCreationPoint", windowCreationPoint);
+    stateMap.put("windowQueue", windowQueue);
+    return stateMap;
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public void setState(final Map<String, Object> loadedState) {
+    windowCreationPoint = (long)loadedState.get("windowCreationPoint");
+    windowQueue.addAll((Queue<Window<T>>)loadedState.get("windowQueue"));
   }
 }

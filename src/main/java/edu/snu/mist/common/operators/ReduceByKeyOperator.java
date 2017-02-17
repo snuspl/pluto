@@ -29,6 +29,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,7 +42,7 @@ import java.util.logging.Logger;
  * This can be changed to Map when we support non-serializable state.
  */
 public final class ReduceByKeyOperator<K extends Serializable, V extends Serializable>
-    extends OneStreamOperator {
+    extends OneStreamOperator implements StateHandler {
   private static final Logger LOG = Logger.getLogger(ReduceByKeyOperator.class.getName());
 
   /**
@@ -132,5 +133,18 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
     outputEmitter.emitWatermark(input);
+  }
+
+  @Override
+  public Map<String, Object> getOperatorState() {
+    final Map<String, Object> stateMap = new HashMap<>();
+    stateMap.put("reduceByKeyState", state);
+    return stateMap;
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public void setState(final Map<String, Object> loadedState) {
+    state = (HashMap<K, V>)loadedState.get("reduceByKeyState");
   }
 }
