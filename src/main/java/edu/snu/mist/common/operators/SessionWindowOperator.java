@@ -23,6 +23,8 @@ import edu.snu.mist.common.windows.WindowImpl;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,7 +35,7 @@ import java.util.logging.Logger;
  * After that, a new session is created.
  * @param <T> the type of data
  */
-public final class SessionWindowOperator<T> extends OneStreamOperator {
+public final class SessionWindowOperator<T> extends OneStreamOperator implements StateHandler {
   private static final Logger LOG = Logger.getLogger(SessionWindowOperator.class.getName());
 
   /**
@@ -102,5 +104,22 @@ public final class SessionWindowOperator<T> extends OneStreamOperator {
   public void processLeftWatermark(final MistWatermarkEvent input) {
     emitAndCreateWindow(input.getTimestamp());
     currentWindow.putWatermark(input);
+  }
+
+  @Override
+  public Map<String, Object> getOperatorState() {
+    final Map<String, Object> stateMap = new HashMap<>();
+    stateMap.put("currentWindow", currentWindow);
+    stateMap.put("latestDataTimestamp", latestDataTimestamp);
+    stateMap.put("startedNewWindow", startedNewWindow);
+    return stateMap;
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public void setState(final Map<String, Object> loadedState) {
+    currentWindow = (Window<T>)loadedState.get("currentWindow");
+    latestDataTimestamp = (long)loadedState.get("latestDataTimestamp");
+    startedNewWindow = (boolean)loadedState.get("startedNewWindow");
   }
 }
