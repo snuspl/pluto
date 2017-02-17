@@ -24,7 +24,7 @@ interface PhysicalVertex {
   // TODO[MIST-438] hold the configuration of the physical vertex
 
   /**
-   * Get the ide of the physical vertex.
+   * Get the id of the physical vertex.
    * @return vertex id
    */
   String getId();
