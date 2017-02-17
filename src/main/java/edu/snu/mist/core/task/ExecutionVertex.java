@@ -17,6 +17,8 @@ package edu.snu.mist.core.task;
 
 /**
  * This interface represents execution vertices of the query.
+ * It is required to represent an execution dag, which consists of the execution vertices and edges.
+ * The execution vertex is one of the source, operator chain, or sink.
  */
 interface ExecutionVertex {
 
@@ -27,7 +29,7 @@ interface ExecutionVertex {
   }
 
   /**
-   * Get the type of the physical vertex.
+   * Get the type of the execution vertex.
    */
   Type getType();
 }

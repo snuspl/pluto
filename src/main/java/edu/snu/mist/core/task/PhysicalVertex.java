@@ -17,6 +17,8 @@ package edu.snu.mist.core.task;
 
 /**
  * This interface represents physical vertices of the query.
+ * The physical vertex is one of the source, operator, or sink.
+ * It holds the meta data of the source, operator, or sink.
  */
 interface PhysicalVertex {
   // TODO[MIST-438] hold the configuration of the physical vertex
