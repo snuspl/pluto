@@ -31,7 +31,7 @@ import edu.snu.mist.formats.avro.Direction;
  * which means that events must be processed one by one, instead of processing them concurrently.
  * OperatorChain must block the concurrent processing of events in its queue.
  */
-public interface OperatorChain extends OutputEmittable, PhysicalVertex {
+public interface OperatorChain extends OutputEmittable, ExecutionVertex {
 
   /**
    * Inserts an operator to the head of the chain.

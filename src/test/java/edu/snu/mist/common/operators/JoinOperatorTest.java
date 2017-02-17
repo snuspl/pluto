@@ -54,7 +54,7 @@ public final class JoinOperatorTest {
         (tuple1, tuple2) -> tuple1.get(1).equals(tuple2.get(0));
 
     final JoinOperator<Tuple2<String, Integer>, Tuple2<Integer, Long>> joinOperator =
-        new JoinOperator<>("testJoinOp", joinPredicate);
+        new JoinOperator<>(joinPredicate);
 
     // expected pairs
     // {Hello, 1} and {1, 3000L}

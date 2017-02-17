@@ -22,9 +22,13 @@ import edu.snu.mist.common.sinks.Sink;
  */
 final class PhysicalSinkImpl<I> implements PhysicalSink<I> {
 
+  private final String sinkId;
+
   private final Sink<I> sink;
 
-  public PhysicalSinkImpl(final Sink<I> sink) {
+  public PhysicalSinkImpl(final String sinkId,
+                          final Sink<I> sink) {
+    this.sinkId = sinkId;
     this.sink = sink;
   }
 
@@ -35,5 +39,10 @@ final class PhysicalSinkImpl<I> implements PhysicalSink<I> {
   @Override
   public Type getType() {
     return Type.SINK;
+  }
+
+  @Override
+  public String getId() {
+    return sinkId;
   }
 }

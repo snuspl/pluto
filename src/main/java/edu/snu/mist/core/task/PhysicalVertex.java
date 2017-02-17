@@ -19,16 +19,11 @@ package edu.snu.mist.core.task;
  * This interface represents physical vertices of the query.
  */
 interface PhysicalVertex {
-
-  public static enum Type {
-    SOURCE,
-    OPERATOR_CHIAN,
-    OPERATOR,
-    SINK
-  }
+  // TODO[MIST-438] hold the configuration of the physical vertex
 
   /**
-   * Get the type of the physical vertex.
+   * Get the ide of the physical vertex.
+   * @return vertex id
    */
-  Type getType();
+  String getId();
 }

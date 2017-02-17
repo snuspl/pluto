@@ -55,11 +55,11 @@ public final class EventProcessorTest {
     final List<Integer> result = new LinkedList<>();
 
     final OperatorChain chain1 = new DefaultOperatorChainImpl();
-    final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl(new TestOperator("o1"), chain1);
+    final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl("op1", new TestOperator(), chain1);
     chain1.insertToHead(o1);
     chain1.setOutputEmitter(new TestOutputEmitter<>(list1));
     final OperatorChain chain2 = new DefaultOperatorChainImpl();
-    final PhysicalOperator o2 = new DefaultPhysicalOperatorImpl(new TestOperator("o2"), chain2);
+    final PhysicalOperator o2 = new DefaultPhysicalOperatorImpl("op2", new TestOperator(), chain2);
     chain2.insertToHead(o2);
     chain2.setOutputEmitter(new TestOutputEmitter<>(list2));
 
@@ -106,7 +106,7 @@ public final class EventProcessorTest {
     final List<Integer> result = new LinkedList<>();
 
     final OperatorChain query = new DefaultOperatorChainImpl();
-    final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl(new TestOperator("o1"), query);
+    final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl("op1", new TestOperator(), query);
     query.insertToHead(o1);
     query.setOutputEmitter(new TestOutputEmitter<>(list1));
 
@@ -144,9 +144,6 @@ public final class EventProcessorTest {
    * It just forwards inputs to outputEmitter.
    */
   class TestOperator extends OneStreamOperator {
-    public TestOperator(final String opId) {
-      super(opId);
-    }
 
     @Override
     public void processLeftData(final MistDataEvent data) {

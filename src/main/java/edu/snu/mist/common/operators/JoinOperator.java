@@ -19,7 +19,6 @@ import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTBiPredicate;
-import edu.snu.mist.common.parameters.OperatorId;
 import edu.snu.mist.common.parameters.SerializedUdf;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.WindowData;
@@ -50,16 +49,13 @@ public final class JoinOperator<T, U> extends OneStreamOperator {
 
   @Inject
   private JoinOperator(
-      @Parameter(OperatorId.class) final String operatorId,
       @Parameter(SerializedUdf.class) final String serializedObject,
       final ClassLoader classLoader) throws IOException, ClassNotFoundException {
-    this(operatorId, SerializeUtils.deserializeFromString(serializedObject, classLoader));
+    this(SerializeUtils.deserializeFromString(serializedObject, classLoader));
   }
 
   @Inject
-  public JoinOperator(@Parameter(OperatorId.class) final String operatorId,
-                      final MISTBiPredicate<T, U> joinBiPredicate) {
-    super(operatorId);
+  public JoinOperator(final MISTBiPredicate<T, U> joinBiPredicate) {
     this.joinBiPredicate = joinBiPredicate;
   }
 
@@ -101,7 +97,7 @@ public final class JoinOperator<T, U> extends OneStreamOperator {
       final WindowImpl<Tuple2<T, U>> window = new WindowImpl<>(windowStart, windowEnd - windowStart + 1, outputList);
       LOG.log(Level.FINE, "{0} examines input window {1} which started at {2} and ended at {3}, and " +
           "emits window {4} with matched data list {5}",
-          new Object[]{getOperatorIdentifier(), input, windowStart, windowEnd, window, outputList});
+          new Object[]{this.getClass().getName(), input, windowStart, windowEnd, window, outputList});
       input.setValue(window);
       outputEmitter.emitData(input);
     } catch (final ClassCastException e) {

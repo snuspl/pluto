@@ -17,8 +17,6 @@ package edu.snu.mist.common.operators;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
-import edu.snu.mist.common.parameters.OperatorId;
-import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.Queue;
@@ -46,8 +44,7 @@ public final class UnionOperator extends TwoStreamOperator {
   private long recentRightTimestamp;
 
   @Inject
-  public UnionOperator(@Parameter(OperatorId.class) final String operatorId) {
-    super(operatorId);
+  public UnionOperator() {
     this.leftUpstreamQueue = new LinkedBlockingQueue<>();
     this.rightUpstreamQueue = new LinkedBlockingQueue<>();
     defaultWatermark = new MistWatermarkEvent(0L);
@@ -89,7 +86,7 @@ public final class UnionOperator extends TwoStreamOperator {
     final long rightWatermarkTimestamp = recentRightWatermark.getTimestamp();
     final long timestamp = getMinimumWatermark(leftWatermarkTimestamp, rightWatermarkTimestamp);
     LOG.log(Level.FINE, "{0} drains inputs until timestamp {1}",
-        new Object[]{getOperatorIdentifier(), timestamp});
+        new Object[]{this.getClass().getName(), timestamp});
 
     // The events in the queue is ordered by timestamp, so just peeks one by one
     while (!leftUpstreamQueue.isEmpty() && !rightUpstreamQueue.isEmpty()) {
@@ -163,7 +160,7 @@ public final class UnionOperator extends TwoStreamOperator {
     if (recentLeftTimestamp > timestamp) {
       throw new RuntimeException("The upstream events should be ordered by timestamp.");
     }
-    LOG.log(Level.FINE, "{0} gets left data {1}", new Object[]{getOperatorIdentifier(), event});
+    LOG.log(Level.FINE, "{0} gets left data {1}", new Object[]{this.getClass().getName(), event});
     recentLeftTimestamp = timestamp;
     leftUpstreamQueue.add(event);
 
@@ -177,7 +174,7 @@ public final class UnionOperator extends TwoStreamOperator {
     if (recentRightTimestamp > timestamp) {
       throw new RuntimeException("The upstream events should be ordered by timestamp.");
     }
-    LOG.log(Level.FINE, "{0} gets right data {1}", new Object[]{getOperatorIdentifier(), event});
+    LOG.log(Level.FINE, "{0} gets right data {1}", new Object[]{this.getClass().getName(), event});
     recentRightTimestamp = timestamp;
     rightUpstreamQueue.add(event);
 
@@ -187,7 +184,7 @@ public final class UnionOperator extends TwoStreamOperator {
 
   @Override
   public void processLeftWatermark(final MistWatermarkEvent event) {
-    LOG.log(Level.FINE, "{0} gets left watermark {1}", new Object[]{getOperatorIdentifier(), event});
+    LOG.log(Level.FINE, "{0} gets left watermark {1}", new Object[]{this.getClass().getName(), event});
     recentLeftWatermark = event;
 
     // Drain events until the minimum watermark.
@@ -196,7 +193,7 @@ public final class UnionOperator extends TwoStreamOperator {
 
   @Override
   public void processRightWatermark(final MistWatermarkEvent event) {
-    LOG.log(Level.FINE, "{0} gets right watermark {1}", new Object[]{getOperatorIdentifier(), event});
+    LOG.log(Level.FINE, "{0} gets right watermark {1}", new Object[]{this.getClass().getName(), event});
     recentRightWatermark = event;
 
     // Drain events until the minimum watermark.

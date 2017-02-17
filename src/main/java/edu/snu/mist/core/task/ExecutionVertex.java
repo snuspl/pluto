@@ -13,14 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.operators;
-
-import java.util.logging.Logger;
+package edu.snu.mist.core.task;
 
 /**
- * This abstract class is for two stream (LEFT/RIGHT) events.
+ * This interface represents physical vertices of the query.
  */
-public abstract class TwoStreamOperator extends BaseOperator {
-  private static final Logger LOG = Logger.getLogger(TwoStreamOperator.class.getName());
+interface ExecutionVertex {
 
+  public static enum Type {
+    SOURCE,
+    OPERATOR_CHIAN,
+    SINK
+  }
+
+  /**
+   * Get the type of the physical vertex.
+   */
+  Type getType();
 }

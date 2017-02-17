@@ -23,15 +23,15 @@ import org.apache.reef.tang.exceptions.InjectionException;
 import java.io.IOException;
 
 /**
- * This interface is for generating a pair of the logical and physical plan from avro logical plan.
+ * This interface is for generating a pair of the logical and execution dag from avro chained dag.
  */
-@DefaultImplementation(DefaultPlanGeneratorImpl.class)
-public interface PlanGenerator {
+@DefaultImplementation(DefaultDagGeneratorImpl.class)
+public interface DagGenerator {
   /**
-   * Generates the pair of the logical and physical plan by deserializing the avro logical plan.
-   * @param queryIdAndAvroLogicalPlan the tuple of queryId and avro logical plan
-   * @return a pair of the logical and physical plan
+   * Generates the pair of the logical and execution dag by deserializing the avro logical dag.
+   * @param queryIdAndAvroLogicalDag the tuple of queryId and avro logical dag
+   * @return a pair of the logical and execution dag
    */
-  LogicalAndPhysicalPlan generate(Tuple<String, AvroLogicalPlan> queryIdAndAvroLogicalPlan)
+  LogicalAndExecutionDag generate(Tuple<String, AvroLogicalPlan> queryIdAndAvroLogicalDag)
       throws IOException, ClassNotFoundException, InjectionException;
 }

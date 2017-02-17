@@ -106,7 +106,7 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
     }
 
     // Build logical plan using serialized vertices and edges.
-    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = queryToSubmit.getSerializedDAG();
+    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = queryToSubmit.getAvroChainedDAG();
     final AvroLogicalPlan.Builder logicalPlanBuilder = AvroLogicalPlan.newBuilder();
     final AvroLogicalPlan logicalPlan = logicalPlanBuilder
         .setJarFilePaths(jarUploadResult.getPaths())

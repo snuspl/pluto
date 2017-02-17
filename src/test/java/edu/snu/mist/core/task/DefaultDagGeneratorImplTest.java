@@ -44,7 +44,7 @@ import java.util.*;
 /**
  * Test class for DefaultPlanGeneratorImpl.
  */
-public final class DefaultPlanGeneratorImplTest {
+public final class DefaultDagGeneratorImplTest {
 
   /**
    * ServerSocket used for text socket sink connection.
@@ -86,7 +86,7 @@ public final class DefaultPlanGeneratorImplTest {
         .textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
     final MISTQuery query = queryBuilder.build();
     // Generate avro logical plan
-    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getSerializedDAG();
+    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getAvroChainedDAG();
     final AvroLogicalPlan.Builder logicalPlanBuilder = AvroLogicalPlan.newBuilder();
     final AvroLogicalPlan avroLogicalPlan = logicalPlanBuilder
         .setJarFilePaths(new LinkedList<>())
@@ -94,55 +94,55 @@ public final class DefaultPlanGeneratorImplTest {
         .setEdges(serializedDag.getValue())
         .build();
 
-    final PlanGenerator planGenerator = Tang.Factory.getTang().newInjector().getInstance(PlanGenerator.class);
+    final DagGenerator dagGenerator = Tang.Factory.getTang().newInjector().getInstance(DagGenerator.class);
     final Tuple<String, AvroLogicalPlan> tuple = new Tuple<>("query-test", avroLogicalPlan);
-    final LogicalAndPhysicalPlan plan = planGenerator.generate(tuple);
+    final LogicalAndExecutionDag plan = dagGenerator.generate(tuple);
 
     // Test physical plan
-    final DAG<PhysicalVertex, MISTEdge> physicalPlan = plan.getPhysicalPlan();
-    final Set<PhysicalVertex> sources = physicalPlan.getRootVertices();
+    final DAG<ExecutionVertex, MISTEdge> physicalPlan = plan.getExecutionDag();
+    final Set<ExecutionVertex> sources = physicalPlan.getRootVertices();
     Assert.assertEquals(1, sources.size());
     final PhysicalSource source = (PhysicalSource)sources.iterator().next();
     Assert.assertTrue(source instanceof PhysicalSourceImpl);
     Assert.assertTrue(source.getDataGenerator() instanceof NettyTextDataGenerator);
-    final Map<PhysicalVertex, MISTEdge> nextOps = physicalPlan.getEdges(source);
+    final Map<ExecutionVertex, MISTEdge> nextOps = physicalPlan.getEdges(source);
     Assert.assertEquals(1, nextOps.size());
 
     final OperatorChain pq1 = (OperatorChain)nextOps.entrySet().iterator().next().getKey();
-    final Map<PhysicalVertex, MISTEdge> sinks = physicalPlan.getEdges(pq1);
+    final Map<ExecutionVertex, MISTEdge> sinks = physicalPlan.getEdges(pq1);
     Assert.assertEquals(4, pq1.size());
-    final Operator mapOperator = pq1.removeFromHead().getOperator();
-    final Operator filterOperator = pq1.removeFromHead().getOperator();
-    final Operator mapOperator2 = pq1.removeFromHead().getOperator();
-    final Operator reduceByKeyOperator = pq1.removeFromHead().getOperator();
-    Assert.assertTrue(mapOperator instanceof FlatMapOperator);
-    Assert.assertTrue(filterOperator instanceof FilterOperator);
-    Assert.assertTrue(mapOperator2 instanceof MapOperator);
-    Assert.assertTrue(reduceByKeyOperator instanceof ReduceByKeyOperator);
+    final PhysicalOperator mapOperator = pq1.removeFromHead();
+    final PhysicalOperator filterOperator = pq1.removeFromHead();
+    final PhysicalOperator mapOperator2 = pq1.removeFromHead();
+    final PhysicalOperator reduceByKeyOperator = pq1.removeFromHead();
+    Assert.assertTrue(mapOperator.getOperator() instanceof FlatMapOperator);
+    Assert.assertTrue(filterOperator.getOperator() instanceof FilterOperator);
+    Assert.assertTrue(mapOperator2.getOperator() instanceof MapOperator);
+    Assert.assertTrue(reduceByKeyOperator.getOperator() instanceof ReduceByKeyOperator);
     final PhysicalSink physicalSink = (PhysicalSink)sinks.entrySet().iterator().next().getKey();
     Assert.assertTrue(physicalSink.getSink() instanceof NettyTextSink);
 
     // Test logical plan
-    final DAG<LogicalVertex, MISTEdge> logicalPlan = plan.getLogicalPlan();
+    final DAG<LogicalVertex, MISTEdge> logicalPlan = plan.getLogicalDag();
     final Set<LogicalVertex> logicalSources = logicalPlan.getRootVertices();
     Assert.assertEquals(1, logicalSources.size());
     final LogicalVertex logicalSource = logicalSources.iterator().next();
-    Assert.assertEquals(source.getIdentifier().toString(), logicalSource.getPhysicalVertexId());
+    Assert.assertEquals(source.getId(), logicalSource.getPhysicalVertexId());
 
     final LogicalVertex flatMapLogicalVertex = getNextVertex(logicalSource, logicalPlan);
-    Assert.assertEquals(mapOperator.getOperatorIdentifier(), flatMapLogicalVertex.getPhysicalVertexId());
+    Assert.assertEquals(mapOperator.getId(), flatMapLogicalVertex.getPhysicalVertexId());
 
     final LogicalVertex filterLogicalVertex = getNextVertex(flatMapLogicalVertex, logicalPlan);
-    Assert.assertEquals(filterOperator.getOperatorIdentifier(), filterLogicalVertex.getPhysicalVertexId());
+    Assert.assertEquals(filterOperator.getId(), filterLogicalVertex.getPhysicalVertexId());
 
     final LogicalVertex mapLogicalVertex = getNextVertex(filterLogicalVertex, logicalPlan);
-    Assert.assertEquals(mapOperator2.getOperatorIdentifier(), mapLogicalVertex.getPhysicalVertexId());
+    Assert.assertEquals(mapOperator2.getId(), mapLogicalVertex.getPhysicalVertexId());
 
     final LogicalVertex reduceByKeyVertex = getNextVertex(mapLogicalVertex, logicalPlan);
-    Assert.assertEquals(reduceByKeyOperator.getOperatorIdentifier(), reduceByKeyVertex.getPhysicalVertexId());
+    Assert.assertEquals(reduceByKeyOperator.getId(), reduceByKeyVertex.getPhysicalVertexId());
 
     final LogicalVertex sinkVertex = getNextVertex(reduceByKeyVertex, logicalPlan);
-    Assert.assertEquals(physicalSink.getSink().getIdentifier().toString(), sinkVertex.getPhysicalVertexId());
+    Assert.assertEquals(physicalSink.getId(), sinkVertex.getPhysicalVertexId());
   }
 
   private LogicalVertex getNextVertex(final LogicalVertex vertex,

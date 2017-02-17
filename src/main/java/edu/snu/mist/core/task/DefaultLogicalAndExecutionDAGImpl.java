@@ -21,30 +21,30 @@ import edu.snu.mist.common.graph.MISTEdge;
 /**
  * This class contains the logical and physical plan of a query.
  */
-final class DefaultLogicalAndPhysicalPlanImpl implements LogicalAndPhysicalPlan {
+final class DefaultLogicalAndExecutionDagImpl implements LogicalAndExecutionDag {
 
-  private final DAG<LogicalVertex, MISTEdge> logicalPlan;
-  private final DAG<PhysicalVertex, MISTEdge> physicalPlan;
+  private final DAG<LogicalVertex, MISTEdge> logicalDag;
+  private final DAG<ExecutionVertex, MISTEdge> executionDag;
 
-  public DefaultLogicalAndPhysicalPlanImpl(final DAG<LogicalVertex, MISTEdge> logicalPlan,
-                                           final DAG<PhysicalVertex, MISTEdge> physicalPlan) {
-    this.logicalPlan = logicalPlan;
-    this.physicalPlan = physicalPlan;
+  public DefaultLogicalAndExecutionDagImpl(final DAG<LogicalVertex, MISTEdge> logicalDag,
+                                           final DAG<ExecutionVertex, MISTEdge> executionDag) {
+    this.logicalDag = logicalDag;
+    this.executionDag = executionDag;
   }
 
   /**
    * Return the logical plan.
    * @return logical plan
    */
-  public DAG<LogicalVertex, MISTEdge> getLogicalPlan() {
-    return logicalPlan;
+  public DAG<LogicalVertex, MISTEdge> getLogicalDag() {
+    return logicalDag;
   }
 
   /**
    * Return the physical plan.
    * @return physical plan
    */
-  public DAG<PhysicalVertex, MISTEdge> getPhysicalPlan() {
-    return physicalPlan;
+  public DAG<ExecutionVertex, MISTEdge> getExecutionDag() {
+    return executionDag;
   }
 }

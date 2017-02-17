@@ -172,7 +172,7 @@ public final class PhysicalObjectGeneratorTest {
         .setHostAddress("localhost")
         .setHostPort(13666)
         .build().getConfiguration();
-    generator.newOperator("test", conf, classLoader);
+    generator.newOperator(conf, classLoader);
   }
 
   /**
@@ -181,7 +181,7 @@ public final class PhysicalObjectGeneratorTest {
    * @return operator
    */
   private Operator getOperator(final Configuration conf) throws IOException, InjectionException {
-    return generator.newOperator("test", conf, classLoader);
+    return generator.newOperator(conf, classLoader);
   }
 
   /**
@@ -371,7 +371,7 @@ public final class PhysicalObjectGeneratorTest {
         .setHostAddress("localhost")
         .setHostPort(13666)
         .build().getConfiguration();
-    generator.newSink("test", conf, classLoader);
+    generator.newSink(conf, classLoader);
   }
 
   @Test
@@ -382,7 +382,7 @@ public final class PhysicalObjectGeneratorTest {
         .set(TextSocketSinkConfiguration.SOCKET_HOST_ADDRESS, "localhost")
         .set(TextSocketSinkConfiguration.SOCKET_HOST_PORT, port)
         .build();
-    final Sink sink = generator.newSink("test", conf, classLoader);
+    final Sink sink = generator.newSink(conf, classLoader);
     Assert.assertTrue(sink instanceof NettyTextSink);
     socket.close();
   }

@@ -84,7 +84,7 @@ public class QueryInfoStoreTest {
     }
 
     // Generate logical plan
-    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getSerializedDAG();
+    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getAvroChainedDAG();
     final AvroLogicalPlan.Builder logicalPlanBuilder = AvroLogicalPlan.newBuilder();
     final AvroLogicalPlan logicalPlan = logicalPlanBuilder
         .setJarFilePaths(paths)

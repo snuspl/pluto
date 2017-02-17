@@ -41,11 +41,11 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * A default implementation of PlanGenerator.
+ * A default implementation of DagGenerator.
  */
-final class  DefaultPlanGeneratorImpl implements PlanGenerator {
+final class DefaultDagGeneratorImpl implements DagGenerator {
 
-  private static final Logger LOG = Logger.getLogger(DefaultPlanGeneratorImpl.class.getName());
+  private static final Logger LOG = Logger.getLogger(DefaultDagGeneratorImpl.class.getName());
 
   private final OperatorIdGenerator operatorIdGenerator;
   private final String tmpFolderPath;
@@ -56,13 +56,13 @@ final class  DefaultPlanGeneratorImpl implements PlanGenerator {
   private final PhysicalVertexMap physicalVertexMap;
 
   @Inject
-  private DefaultPlanGeneratorImpl(final OperatorIdGenerator operatorIdGenerator,
-                                   @Parameter(TempFolderPath.class) final String tmpFolderPath,
-                                   final StringIdentifierFactory identifierFactory,
-                                   final ClassLoaderProvider classLoaderProvider,
-                                   final AvroConfigurationSerializer avroConfigurationSerializer,
-                                   final PhysicalObjectGenerator physicalObjectGenerator,
-                                   final PhysicalVertexMap physicalVertexMap) {
+  private DefaultDagGeneratorImpl(final OperatorIdGenerator operatorIdGenerator,
+                                  @Parameter(TempFolderPath.class) final String tmpFolderPath,
+                                  final StringIdentifierFactory identifierFactory,
+                                  final ClassLoaderProvider classLoaderProvider,
+                                  final AvroConfigurationSerializer avroConfigurationSerializer,
+                                  final PhysicalObjectGenerator physicalObjectGenerator,
+                                  final PhysicalVertexMap physicalVertexMap) {
     this.operatorIdGenerator = operatorIdGenerator;
     this.tmpFolderPath = tmpFolderPath;
     this.classLoaderProvider = classLoaderProvider;
@@ -81,13 +81,13 @@ final class  DefaultPlanGeneratorImpl implements PlanGenerator {
    */
   @SuppressWarnings("unchecked")
   @Override
-  public LogicalAndPhysicalPlan generate(
+  public LogicalAndExecutionDag generate(
       final Tuple<String, AvroLogicalPlan> queryIdAndAvroLogicalPlan)
       throws IllegalArgumentException, IOException, ClassNotFoundException, InjectionException {
     final AvroLogicalPlan avroLogicalPlan = queryIdAndAvroLogicalPlan.getValue();
     // For physical plan
-    final List<PhysicalVertex> deserializedVertices = new ArrayList<>(avroLogicalPlan.getAvroVertices().size());
-    final DAG<PhysicalVertex, MISTEdge> physicalDAG = new AdjacentListDAG<>();
+    final List<ExecutionVertex> deserializedVertices = new ArrayList<>(avroLogicalPlan.getAvroVertices().size());
+    final DAG<ExecutionVertex, MISTEdge> executionDAG = new AdjacentListDAG<>();
     // This is for logical plan
     final List<List<LogicalVertex>> logicalVertices = new ArrayList<>(avroLogicalPlan.getAvroVertices().size());
     final DAG<LogicalVertex, MISTEdge> logicalDAG = new AdjacentListDAG<>();
@@ -109,11 +109,9 @@ final class  DefaultPlanGeneratorImpl implements PlanGenerator {
           final DataGenerator dataGenerator = physicalObjectGenerator.newDataGenerator(conf, classLoader);
           // Create a source
           final String id = operatorIdGenerator.generate();
-          final PhysicalSource source = new PhysicalSourceImpl<>(
-              identifierFactory.getNewInstance(id),
-              dataGenerator, eventGenerator);
+          final PhysicalSource source = new PhysicalSourceImpl<>(id, dataGenerator, eventGenerator);
           deserializedVertices.add(source);
-          physicalDAG.addVertex(source);
+          executionDAG.addVertex(source);
           // Add the physical vertex to the physical map
           physicalVertexMap.getPhysicalVertexMap().put(id, source);
 
@@ -133,8 +131,8 @@ final class  DefaultPlanGeneratorImpl implements PlanGenerator {
             final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
                 new ClassHierarchyImpl(urls));
             final String id = operatorIdGenerator.generate();
-            final Operator operator = physicalObjectGenerator.newOperator(id, conf, classLoader);
-            final PhysicalOperator physicalOperator = new DefaultPhysicalOperatorImpl(operator, operatorChain);
+            final Operator operator = physicalObjectGenerator.newOperator(conf, classLoader);
+            final PhysicalOperator physicalOperator = new DefaultPhysicalOperatorImpl(id, operator, operatorChain);
             operatorChain.insertToTail(physicalOperator);
             // Add the physical vertex to the physical map
             physicalVertexMap.getPhysicalVertexMap().put(id, physicalOperator);
@@ -156,7 +154,7 @@ final class  DefaultPlanGeneratorImpl implements PlanGenerator {
             }
             logicalVertexList.add(logicalVertex);
           }
-          physicalDAG.addVertex(operatorChain);
+          executionDAG.addVertex(operatorChain);
 
           // Add the logical partitioned vertex
           logicalVertices.add(logicalVertexList);
@@ -167,9 +165,9 @@ final class  DefaultPlanGeneratorImpl implements PlanGenerator {
           final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
               new ClassHierarchyImpl(urls));
           final String id = operatorIdGenerator.generate();
-          final PhysicalSink sink = new PhysicalSinkImpl<>(physicalObjectGenerator.newSink(id, conf, classLoader));
+          final PhysicalSink sink = new PhysicalSinkImpl<>(id, physicalObjectGenerator.newSink(conf, classLoader));
           deserializedVertices.add(sink);
-          physicalDAG.addVertex(sink);
+          executionDAG.addVertex(sink);
           // Add the physical vertex to the physical map
           physicalVertexMap.getPhysicalVertexMap().put(id, sink);
 
@@ -191,9 +189,9 @@ final class  DefaultPlanGeneratorImpl implements PlanGenerator {
       final int dstIndex = edge.getTo();
 
       // Add edge to physical plan
-      final PhysicalVertex deserializedSrcVertex = deserializedVertices.get(srcIndex);
-      final PhysicalVertex deserializedDstVertex = deserializedVertices.get(dstIndex);
-      physicalDAG.addEdge(deserializedSrcVertex, deserializedDstVertex,
+      final ExecutionVertex deserializedSrcVertex = deserializedVertices.get(srcIndex);
+      final ExecutionVertex deserializedDstVertex = deserializedVertices.get(dstIndex);
+      executionDAG.addEdge(deserializedSrcVertex, deserializedDstVertex,
           new MISTEdge(edge.getDirection(), edge.getBranchIndex()));
 
       // Add edge to logical plan
@@ -204,6 +202,6 @@ final class  DefaultPlanGeneratorImpl implements PlanGenerator {
       logicalDAG.addEdge(srcLogicalVertex, dstLogicalVertex, new MISTEdge(edge.getDirection()));
     }
 
-    return new DefaultLogicalAndPhysicalPlanImpl(logicalDAG, physicalDAG);
+    return new DefaultLogicalAndExecutionDagImpl(logicalDAG, executionDAG);
   }
 }

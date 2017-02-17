@@ -58,12 +58,12 @@ public final class OperatorChainTest {
     final String incOpId = "incOp";
     final String doubleOpId = "doubleOp";
 
-    final PhysicalOperator squareOp = new DefaultPhysicalOperatorImpl(
-        new SquareOperator(squareOpId), operatorChain);
-    final PhysicalOperator incOp = new DefaultPhysicalOperatorImpl(
-        new IncrementOperator(incOpId), operatorChain);
-    final PhysicalOperator doubleOp = new DefaultPhysicalOperatorImpl(
-        new DoubleOperator(doubleOpId), operatorChain);
+    final PhysicalOperator squareOp = new DefaultPhysicalOperatorImpl(squareOpId,
+        new SquareOperator(), operatorChain);
+    final PhysicalOperator incOp = new DefaultPhysicalOperatorImpl(incOpId,
+        new IncrementOperator(), operatorChain);
+    final PhysicalOperator doubleOp = new DefaultPhysicalOperatorImpl(doubleOpId,
+        new DoubleOperator(), operatorChain);
 
     // 2 * (input * input + 1)
     long timestamp = 1;
@@ -137,9 +137,6 @@ public final class OperatorChainTest {
    * This emits squared inputs.
    */
   class SquareOperator extends OneStreamOperator {
-    SquareOperator(final String operatorId) {
-      super(operatorId);
-    }
 
     @Override
     public void processLeftData(final MistDataEvent data) {
@@ -159,9 +156,6 @@ public final class OperatorChainTest {
    * This increments the input.
    */
   class IncrementOperator extends OneStreamOperator {
-    IncrementOperator(final String operatorId) {
-      super(operatorId);
-    }
 
     @Override
     public void processLeftData(final MistDataEvent data) {
@@ -180,9 +174,6 @@ public final class OperatorChainTest {
    * This doubles the input.
    */
   class DoubleOperator extends OneStreamOperator {
-    DoubleOperator(final String operatorId) {
-      super(operatorId);
-    }
 
     @Override
     public void processLeftData(final MistDataEvent data) {

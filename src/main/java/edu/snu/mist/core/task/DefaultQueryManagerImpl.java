@@ -70,22 +70,22 @@ final class DefaultQueryManagerImpl implements QueryManager {
   /**
    * A physical and logical plan generator.
    */
-  private final PlanGenerator planGenerator;
+  private final DagGenerator dagGenerator;
 
   /**
    * Default query manager in MistTask.
-   * @param planGenerator the generator that generates the logical and physical plan from avro logical plan.
+   * @param dagGenerator the generator that generates the logical and physical plan from avro logical plan.
    * @param threadManager thread manager
    */
   @Inject
-  private DefaultQueryManagerImpl(final PlanGenerator planGenerator,
+  private DefaultQueryManagerImpl(final DagGenerator dagGenerator,
                                   final ThreadManager threadManager,
                                   final OperatorChainManager operatorChainManager,
                                   final ScheduledExecutorServiceWrapper schedulerWrapper,
                                   final QueryInfoStore planStore) {
     this.logicalPlanMap = new ConcurrentHashMap<>();
     this.operatorChainManager = operatorChainManager;
-    this.planGenerator = planGenerator;
+    this.dagGenerator = dagGenerator;
     this.threadManager = threadManager;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
@@ -107,11 +107,11 @@ final class DefaultQueryManagerImpl implements QueryManager {
       // 1) Saves the avro logical plan to the PlanStore and
       // converts the avro logical plan to the logical and physical plan
       planStore.savePlan(tuple);
-      final LogicalAndPhysicalPlan logicalAndPhysicalPlan = planGenerator.generate(tuple);
+      final LogicalAndExecutionDag logicalAndExecutionDag = dagGenerator.generate(tuple);
       // Store the logical plan in memory
-      logicalPlanMap.putIfAbsent(tuple.getKey(), logicalAndPhysicalPlan.getLogicalPlan());
+      logicalPlanMap.putIfAbsent(tuple.getKey(), logicalAndExecutionDag.getLogicalDag());
       // Execute the physical plan
-      start(logicalAndPhysicalPlan.getPhysicalPlan());
+      start(logicalAndExecutionDag.getExecutionDag());
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
       return queryControlResult;
@@ -136,15 +136,15 @@ final class DefaultQueryManagerImpl implements QueryManager {
    * and starts to receive input data stream from the sources.
    * @param physicalPlan physical plan of the query
    */
-  private void start(final DAG<PhysicalVertex, MISTEdge> physicalPlan) {
+  private void start(final DAG<ExecutionVertex, MISTEdge> physicalPlan) {
     final List<PhysicalSource> sources = new LinkedList<>();
-    final Iterator<PhysicalVertex> iterator = GraphUtils.topologicalSort(physicalPlan);
+    final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(physicalPlan);
     while (iterator.hasNext()) {
-      final PhysicalVertex physicalVertex = iterator.next();
-      switch (physicalVertex.getType()) {
+      final ExecutionVertex executionVertex = iterator.next();
+      switch (executionVertex.getType()) {
         case SOURCE: {
-          final PhysicalSource source = (PhysicalSource)physicalVertex;
-          final Map<PhysicalVertex, MISTEdge> nextOps = physicalPlan.getEdges(source);
+          final PhysicalSource source = (PhysicalSource)executionVertex;
+          final Map<ExecutionVertex, MISTEdge> nextOps = physicalPlan.getEdges(source);
           // 3) Sets output emitters
           source.getEventGenerator().setOutputEmitter(new SourceOutputEmitter<>(nextOps));
           sources.add(source);
@@ -152,9 +152,9 @@ final class DefaultQueryManagerImpl implements QueryManager {
         }
         case OPERATOR_CHIAN: {
           // 2) Inserts the OperatorChain to OperatorChainManager.
-          final OperatorChain operatorChain = (OperatorChain)physicalVertex;
+          final OperatorChain operatorChain = (OperatorChain)executionVertex;
           operatorChainManager.insert(operatorChain);
-          final Map<PhysicalVertex, MISTEdge> edges =
+          final Map<ExecutionVertex, MISTEdge> edges =
               physicalPlan.getEdges(operatorChain);
           // 3) Sets output emitters
           operatorChain.setOutputEmitter(new OperatorOutputEmitter(edges));
@@ -164,7 +164,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
           break;
         }
         default:
-          throw new RuntimeException("Invalid vertex type: " + physicalVertex.getType());
+          throw new RuntimeException("Invalid vertex type: " + executionVertex.getType());
       }
     }
 
