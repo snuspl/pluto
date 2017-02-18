@@ -205,7 +205,7 @@ public final class FixedSizeWindowOperatorTest {
     final int emissionInterval = 750;
 
     final TimeWindowOperator<Integer> timeWindowOperator =
-            new TimeWindowOperator<>(windowSize, emissionInterval);
+        new TimeWindowOperator<>(windowSize, emissionInterval);
 
     final List<MistEvent> result = new LinkedList<>();
     timeWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));
@@ -252,7 +252,7 @@ public final class FixedSizeWindowOperatorTest {
     final int emissionInterval = 3;
 
     final CountWindowOperator<Integer> countWindowOperator =
-            new CountWindowOperator<>(windowSize, emissionInterval);
+        new CountWindowOperator<>(windowSize, emissionInterval);
 
     final List<MistEvent> result = new LinkedList<>();
     countWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));

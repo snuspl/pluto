@@ -36,17 +36,17 @@ public final class ChainedDagGeneratorTest {
 
   /**
    * Test complex chaining (branch and merge exist).
-   * PhysicalPlan:
+   * The logical DAG:
    * src1 -> op11 -> op12 -> union -> op14 -> op15 -> sink1
    * src2 -> op21 -> op22 ->       -> op23 ->      -> sink2.
    *
-   * should be converted to the expected chained PhysicalPlan:
+   * should be converted to the expected chained DAG:
    * src1 -> [op11 -> op12] -> [op13] -> [op14 -> op15] -> sink1
    * src2 -> [op21 -> op22] ->        -> [op23] -> sink2.
    */
   @Test
   public void testComplexQueryPartitioning() throws InjectionException {
-    // Build a physical plan
+    // Build a chained dag
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     final ContinuousStream<String> src1 =
         queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
@@ -121,10 +121,10 @@ public final class ChainedDagGeneratorTest {
 
   /**
    * Test sequential chaining.
-   * PhysicalPlan:
+   * logical dag:
    * src1 -> op11 -> op12 -> op13 -> sink1
    *
-   * should be converted to the expected chained PhysicalPlan:
+   * should be converted to the expected chained dag:
    * src1 -> [op11 -> op12 -> op13] -> sink1
    */
   @Test
@@ -161,11 +161,11 @@ public final class ChainedDagGeneratorTest {
 
   /**
    * Test branch chaining.
-   * PhysicalPlan:
+   * logical dag:
    *                      -> op14 -> sink2
    * src1 -> op11 -> op12 -> op13 -> sink1
    *                      -> op15 -> sink3
-   * should be converted to the expected chained PhysicalPlan:
+   * should be converted to the expected chained dag:
    *                        -> [op14] -> sink2
    * src1 -> [op11 -> op12] -> [op13] -> sink1
    *                        -> [op15] -> sink3
@@ -234,12 +234,12 @@ public final class ChainedDagGeneratorTest {
 
   /**
    * Test merge chaining.
-   * PhysicalPlan:
+   * logical dag:
    * src1 -> op11 -> op12 ->
    * src2 ---------> op21 -> op13 -> op14 -> sink1
    * src3 -----------------> op31 ->
    *
-   * should be converted to the expected chained PhysicalPlan:
+   * should be converted to the expected chained dag:
    * src1 -> [op11 -> op12] ->
    * src2 ---------> [op21] -> [op13] -> [op14] -> sink1
    * src3 -------------------> [op31] ->
@@ -322,12 +322,12 @@ public final class ChainedDagGeneratorTest {
 
   /**
    * Test fork/merge chaining.
-   * PhysicalPlan:
+   * logical dag:
    *             -> opB-1 ->
    * src1 -> opA -> opB-2 -> opC ---> opD -> sink1
    *             -> opB-3 ---------->
    *
-   * should be converted to the expected chained PhysicalPlan:
+   * should be converted to the expected chained dag:
    *               -> [opB-1] ->
    * src1 -> [opA] -> [opB-2] -> [opC] ---> [opD] -> sink1
    *               -> [opB-3] ------------>
