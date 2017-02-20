@@ -22,12 +22,7 @@ import edu.snu.mist.common.sources.EventGenerator;
  * This class represents the implementation of Source interface.
  * @param <T> the type of input data
  */
-final class PhysicalSourceImpl<T> implements PhysicalSource<T> {
-
-  /**
-   * Source id.
-   */
-  private final String sourceId;
+final class PhysicalSourceImpl<T> extends BasePhysicalVertex implements PhysicalSource<T> {
 
   /**
    * Data generator that generates data.
@@ -40,8 +35,9 @@ final class PhysicalSourceImpl<T> implements PhysicalSource<T> {
   private final EventGenerator<T> eventGenerator;
 
   public PhysicalSourceImpl(final String sourceId,
+                            final String configuration,
                             final DataGenerator<T> dataGenerator, final EventGenerator<T> eventGenerator) {
-    this.sourceId = sourceId;
+    super(sourceId, configuration);
     this.dataGenerator = dataGenerator;
     this.eventGenerator = eventGenerator;
   }
@@ -63,13 +59,7 @@ final class PhysicalSourceImpl<T> implements PhysicalSource<T> {
     dataGenerator.close();
     eventGenerator.close();
   }
-
-
-  @Override
-  public String getId() {
-    return sourceId;
-  }
-
+  
   @Override
   public DataGenerator<T> getDataGenerator() {
     return dataGenerator;

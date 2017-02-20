@@ -21,11 +21,16 @@ package edu.snu.mist.core.task;
  * It holds the meta data of the source, operator, or sink.
  */
 interface PhysicalVertex {
-  // TODO[MIST-438] hold the configuration of the physical vertex
 
   /**
    * Get the id of the physical vertex.
    * @return vertex id
    */
   String getId();
+
+  /**
+   * Get the configuration of the vertex.
+   * @return serialized configuration
+   */
+  String getConfiguration();
 }

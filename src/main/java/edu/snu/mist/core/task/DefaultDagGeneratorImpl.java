@@ -109,7 +109,8 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
           final DataGenerator dataGenerator = physicalObjectGenerator.newDataGenerator(conf, classLoader);
           // Create a source
           final String id = operatorIdGenerator.generate();
-          final PhysicalSource source = new PhysicalSourceImpl<>(id, dataGenerator, eventGenerator);
+          final PhysicalSource source = new PhysicalSourceImpl<>(id, vertex.getConfiguration(),
+              dataGenerator, eventGenerator);
           deserializedVertices.add(source);
           executionDAG.addVertex(source);
           // Add the physical vertex to the physical map
@@ -132,7 +133,8 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
                 new ClassHierarchyImpl(urls));
             final String id = operatorIdGenerator.generate();
             final Operator operator = physicalObjectGenerator.newOperator(conf, classLoader);
-            final PhysicalOperator physicalOperator = new DefaultPhysicalOperatorImpl(id, operator, operatorChain);
+            final PhysicalOperator physicalOperator = new DefaultPhysicalOperatorImpl(id, vertex.getConfiguration(),
+                operator, operatorChain);
             operatorChain.insertToTail(physicalOperator);
             // Add the physical vertex to the physical map
             physicalVertexMap.getPhysicalVertexMap().put(id, physicalOperator);
@@ -165,7 +167,8 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
           final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
               new ClassHierarchyImpl(urls));
           final String id = operatorIdGenerator.generate();
-          final PhysicalSink sink = new PhysicalSinkImpl<>(id, physicalObjectGenerator.newSink(conf, classLoader));
+          final PhysicalSink sink = new PhysicalSinkImpl<>(id, vertex.getConfiguration(),
+              physicalObjectGenerator.newSink(conf, classLoader));
           deserializedVertices.add(sink);
           executionDAG.addVertex(sink);
           // Add the physical vertex to the physical map

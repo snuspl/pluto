@@ -59,11 +59,11 @@ public final class OperatorChainTest {
     final String doubleOpId = "doubleOp";
 
     final PhysicalOperator squareOp = new DefaultPhysicalOperatorImpl(squareOpId,
-        new SquareOperator(), operatorChain);
+        null, new SquareOperator(), operatorChain);
     final PhysicalOperator incOp = new DefaultPhysicalOperatorImpl(incOpId,
-        new IncrementOperator(), operatorChain);
+        null, new IncrementOperator(), operatorChain);
     final PhysicalOperator doubleOp = new DefaultPhysicalOperatorImpl(doubleOpId,
-        new DoubleOperator(), operatorChain);
+        null, new DoubleOperator(), operatorChain);
 
     // 2 * (input * input + 1)
     long timestamp = 1;

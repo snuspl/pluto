@@ -119,7 +119,7 @@ public final class QueryManagerTest {
     final EventGenerator eventGenerator =
         new PunctuatedEventGenerator(null, input -> false, null);
     final PhysicalSource src = new PhysicalSourceImpl("testSource",
-        dataGenerator, eventGenerator);
+        null, dataGenerator, eventGenerator);
 
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(NumThreads.class, Integer.toString(4));
@@ -129,9 +129,9 @@ public final class QueryManagerTest {
     final List<String> sink1Result = new LinkedList<>();
     final List<Integer> sink2Result = new LinkedList<>();
     final PhysicalSink sink1 = new PhysicalSinkImpl<>("sink1",
-        new TestSink<String>(sink1Result, countDownAllOutputs));
+        null, new TestSink<String>(sink1Result, countDownAllOutputs));
     final PhysicalSink sink2 = new PhysicalSinkImpl<>("sink2",
-        new TestSink<Integer>(sink2Result, countDownAllOutputs));
+        null, new TestSink<Integer>(sink2Result, countDownAllOutputs));
 
     // Fake chained dag of QueryManager
     final Tuple<String, AvroChainedDag> tuple = new Tuple<>(queryId, new AvroChainedDag());
@@ -200,17 +200,17 @@ public final class QueryManagerTest {
     final OperatorChain chain3 = new DefaultOperatorChainImpl();
 
     final PhysicalOperator flatMap = new DefaultPhysicalOperatorImpl("flatMap",
-        new FlatMapOperator<>(flatMapFunc), chain1);
+        null, new FlatMapOperator<>(flatMapFunc), chain1);
     final PhysicalOperator filter = new DefaultPhysicalOperatorImpl("filter",
-        new FilterOperator<>(filterFunc), chain1);
+        null, new FilterOperator<>(filterFunc), chain1);
     final PhysicalOperator toTupleMap = new DefaultPhysicalOperatorImpl("toTupleMap",
-        new MapOperator<>(toTupleMapFunc), chain1);
+        null, new MapOperator<>(toTupleMapFunc), chain1);
     final PhysicalOperator reduceByKey = new DefaultPhysicalOperatorImpl("reduceByKey",
-        new ReduceByKeyOperator<>(0, reduceByKeyFunc), chain1);
+        null, new ReduceByKeyOperator<>(0, reduceByKeyFunc), chain1);
     final PhysicalOperator toStringMap = new DefaultPhysicalOperatorImpl("toStringMap",
-        new MapOperator<>(toStringMapFunc), chain2);
+        null, new MapOperator<>(toStringMapFunc), chain2);
     final PhysicalOperator totalCountMap = new DefaultPhysicalOperatorImpl("totalCountMap",
-        new MapOperator<>(totalCountMapFunc), chain3);
+        null, new MapOperator<>(totalCountMapFunc), chain3);
 
     // Build the logical dag
     final LogicalVertex logicalSrc = new DefaultLogicalVertexImpl(src.getId());

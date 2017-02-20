@@ -15,28 +15,36 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.sinks.Sink;
-
 /**
- * This is an implementation of PhysicalSink.
+ * This interface represents physical vertices of the query.
+ * The physical vertex is one of the source, operator, or sink.
+ * It holds the meta data of the source, operator, or sink.
  */
-final class PhysicalSinkImpl<I> extends BasePhysicalVertex implements PhysicalSink<I> {
+abstract class BasePhysicalVertex implements PhysicalVertex {
 
-  private final Sink<I> sink;
+  /**
+   * Get the id of the vertex.
+   */
+  protected final String id;
 
-  public PhysicalSinkImpl(final String sinkId,
-                          final String configuration,
-                          final Sink<I> sink) {
-    super(sinkId, configuration);
-    this.sink = sink;
-  }
+  /**
+   * Get the configuration.
+   */
+  protected final String configuration;
 
-  public Sink<I> getSink() {
-    return sink;
+  public BasePhysicalVertex(final String id,
+                            final String configuration) {
+    this.id = id;
+    this.configuration = configuration;
   }
 
   @Override
-  public Type getType() {
-    return Type.SINK;
+  public String getId() {
+    return id;
+  }
+
+  @Override
+  public String getConfiguration() {
+    return configuration;
   }
 }
