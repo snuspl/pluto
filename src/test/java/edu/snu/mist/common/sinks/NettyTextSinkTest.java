@@ -83,7 +83,7 @@ public final class NettyTextSinkTest {
       // result list
       // Create sinks
       for (int i = 0; i < numSinks; i++) {
-        final Sink<String> sink = new NettyTextSink("sink", SERVER_ADDR, SERVER_PORT,
+        final Sink<String> sink = new NettyTextSink(SERVER_ADDR, SERVER_PORT,
             nettySharedResource, stringIdentifierFactory);
         sinks.add(sink);
       }

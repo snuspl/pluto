@@ -17,7 +17,6 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;
-import org.apache.reef.wake.Identifier;
 
 /**
  * Source receives input stream.
@@ -28,18 +27,12 @@ import org.apache.reef.wake.Identifier;
  * After that, it sends the MistEvent to the OutputEmitter which forwards the inputs to next Operators.
  * @param <T> the type of input data
  */
-interface PhysicalSource<T> extends AutoCloseable, PhysicalVertex {
+interface PhysicalSource<T> extends AutoCloseable, PhysicalVertex, ExecutionVertex {
 
   /**
    * Starts to receive source stream and forwards inputs to the OutputEmitter.
    */
   void start();
-
-  /**
-   * Identifier of source.
-   * @return identifier of source
-   */
-  Identifier getIdentifier();
 
   /**
    * Gets the data generator.

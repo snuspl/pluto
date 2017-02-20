@@ -15,8 +15,8 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.formats.avro.AvroLogicalPlan;
 import edu.snu.mist.core.parameters.QueryIdPrefix;
+import edu.snu.mist.formats.avro.AvroChainedDag;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -45,7 +45,7 @@ final class DefaultQueryIdGeneratorImpl implements QueryIdGenerator {
   }
 
   @Override
-  public String generate(final AvroLogicalPlan logicalPlan) {
+  public String generate(final AvroChainedDag chainedDag) {
     final StringBuilder sb = new StringBuilder();
     sb.append(prefix);
     sb.append(numSubmittedQueries.getAndIncrement());

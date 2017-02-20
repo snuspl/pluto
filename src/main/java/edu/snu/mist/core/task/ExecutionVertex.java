@@ -15,28 +15,21 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.sinks.Sink;
-
 /**
- * This is an implementation of PhysicalSink.
+ * This interface represents execution vertices of the query.
+ * It is required to represent an execution dag, which consists of the execution vertices and edges.
+ * The execution vertex is one of the source, operator chain, or sink.
  */
-final class PhysicalSinkImpl<I> extends BasePhysicalVertex implements PhysicalSink<I> {
+interface ExecutionVertex {
 
-  private final Sink<I> sink;
-
-  public PhysicalSinkImpl(final String sinkId,
-                          final String configuration,
-                          final Sink<I> sink) {
-    super(sinkId, configuration);
-    this.sink = sink;
+  public static enum Type {
+    SOURCE,
+    OPERATOR_CHIAN,
+    SINK
   }
 
-  public Sink<I> getSink() {
-    return sink;
-  }
-
-  @Override
-  public Type getType() {
-    return Type.SINK;
-  }
+  /**
+   * Get the type of the execution vertex.
+   */
+  Type getType();
 }

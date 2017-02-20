@@ -86,13 +86,12 @@ public final class StatefulOperatorTest {
     expected.add(o5);
     expected.add(o6);
 
-    final String operatorId = "testReduceByKeyOperator";
     // Set the key index of tuple
     final int keyIndex = 0;
     // Reduce function for word count
     final MISTBiFunction<Integer, Integer, Integer> wordCountFunc = (oldVal, val) -> oldVal + val;
     final ReduceByKeyOperator<String, Integer> wcOperator =
-        new ReduceByKeyOperator<>(operatorId, keyIndex, wordCountFunc);
+        new ReduceByKeyOperator<>(keyIndex, wordCountFunc);
 
     // output test
     final List<Map<String, Integer>> result = new LinkedList<>();
@@ -100,6 +99,84 @@ public final class StatefulOperatorTest {
     inputStream.stream().forEach(wcOperator::processLeftData);
     LOG.info("expected: " + expected);
     LOG.info("result: " + result);
+    Assert.assertEquals(expected, result);
+  }
+
+  /**
+   * Test getting state of the ReduceByKeyOperator.
+   */
+  @Test
+  public void testReduceByKeyOperatorGetState() throws InterruptedException {
+    // Generate the current ReduceByKeyOperator state.
+    final List<MistDataEvent> inputStream =
+        ImmutableList.of(createEvent("a", 1),
+            createEvent("b", 1),
+            createEvent("c", 1),
+            createEvent("a", 1),
+            createEvent("d", 1),
+            createEvent("a", 1),
+            createEvent("b", 1));
+    final int keyIndex = 0;
+    final MISTBiFunction<Integer, Integer, Integer> wordCountFunc = (oldVal, val) -> oldVal + val;
+    final ReduceByKeyOperator<String, Integer> wcOperator =
+        new ReduceByKeyOperator<>(keyIndex, wordCountFunc);
+    final List<Map<String, Integer>> result = new LinkedList<>();
+    wcOperator.setOutputEmitter(new TestOutputEmitter<>(result));
+    inputStream.stream().forEach(wcOperator::processLeftData);
+
+    // Generate the expected ReduceByKeyOperator state.
+    final Map<String, Integer> expectedOperatorState = new HashMap<>();
+    expectedOperatorState.put("a", 3);
+    expectedOperatorState.put("b", 2);
+    expectedOperatorState.put("c", 1);
+    expectedOperatorState.put("d", 1);
+
+    // Get the current ReduceByKeyOperator's state.
+    final Map<String, Integer> operatorState =
+        (Map<String, Integer>)wcOperator.getOperatorState().get("reduceByKeyState");
+
+    // Compare the expected and original operator's state.
+    Assert.assertEquals(expectedOperatorState, operatorState);
+  }
+
+  /**
+   * Test setting state of the ReduceByKeyOperator.
+   */
+  @Test
+  public void testReduceByKeyOperatorSetState() throws InterruptedException {
+    // Generate a new state and set it to the state of a new ReduceByKeyWindowOperator.
+    final Map<String, Integer> expectedOperatorState = new HashMap<>();
+    expectedOperatorState.put("a", 3);
+    expectedOperatorState.put("b", 2);
+    expectedOperatorState.put("c", 1);
+    expectedOperatorState.put("d", 1);
+    final Map<String, Object> loadStateMap = new HashMap<>();
+    loadStateMap.put("reduceByKeyState", expectedOperatorState);
+    final int keyIndex = 0;
+    final MISTBiFunction<Integer, Integer, Integer> wordCountFunc = (oldVal, val) -> oldVal + val;
+    final ReduceByKeyOperator reduceByKeyOperator =
+        new ReduceByKeyOperator(keyIndex, wordCountFunc);
+    reduceByKeyOperator.setState(loadStateMap);
+
+    // Compare the original and the set operator.
+    final Map<String, Object> operatorStateMap = reduceByKeyOperator.getOperatorState();
+    final Map<String, Integer> operatorState = (Map<String, Integer>)operatorStateMap.get("reduceByKeyState");
+    Assert.assertEquals(expectedOperatorState, operatorState);
+
+    // Test if the operator can properly process data.
+    final List<Map<String, Integer>> result = new LinkedList<>();
+    reduceByKeyOperator.setOutputEmitter(new TestOutputEmitter<>(result));
+    reduceByKeyOperator.setState(operatorStateMap);
+    final List<MistDataEvent> inputStream =
+        ImmutableList.of(createEvent("a", 1));
+    inputStream.stream().forEach(reduceByKeyOperator::processLeftData);
+    final List<Map<String, Integer>> expected = new LinkedList<>();
+    final Map<String, Integer> o1 = new HashMap<>();
+    o1.put("a", 4);
+    o1.put("b", 2);
+    o1.put("c", 1);
+    o1.put("d", 1);
+    expected.add(o1);
     Assert.assertEquals(expected, result);
   }
 }

@@ -17,18 +17,12 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;
-import org.apache.reef.wake.Identifier;
 
 /**
  * This class represents the implementation of Source interface.
  * @param <T> the type of input data
  */
-final class PhysicalSourceImpl<T> implements PhysicalSource<T> {
-
-  /**
-   * Source id.
-   */
-  private final Identifier sourceId;
+final class PhysicalSourceImpl<T> extends BasePhysicalVertex implements PhysicalSource<T> {
 
   /**
    * Data generator that generates data.
@@ -40,9 +34,10 @@ final class PhysicalSourceImpl<T> implements PhysicalSource<T> {
    */
   private final EventGenerator<T> eventGenerator;
 
-  public PhysicalSourceImpl(final Identifier sourceId,
+  public PhysicalSourceImpl(final String sourceId,
+                            final String configuration,
                             final DataGenerator<T> dataGenerator, final EventGenerator<T> eventGenerator) {
-    this.sourceId = sourceId;
+    super(sourceId, configuration);
     this.dataGenerator = dataGenerator;
     this.eventGenerator = eventGenerator;
   }
@@ -63,12 +58,6 @@ final class PhysicalSourceImpl<T> implements PhysicalSource<T> {
   public void close() throws Exception {
     dataGenerator.close();
     eventGenerator.close();
-  }
-
-
-  @Override
-  public Identifier getIdentifier() {
-    return sourceId;
   }
 
   @Override

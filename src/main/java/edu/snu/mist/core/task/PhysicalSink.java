@@ -20,7 +20,7 @@ import edu.snu.mist.common.sinks.Sink;
 /**
  * This is a physical sink interface that is used in MistTask.
  */
-interface PhysicalSink<I> extends PhysicalVertex {
+interface PhysicalSink<I> extends PhysicalVertex, ExecutionVertex {
 
   /**
    * Get a sink instance.

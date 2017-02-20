@@ -35,19 +35,19 @@ public final class MISTQueryImpl implements MISTQuery {
    * DAG of the query.
    */
   private final DAG<MISTStream, MISTEdge> dag;
-  private final QueryPartitioner queryPartitioner;
+  private final ChainedDagGenerator chainedDagGenerator;
   private final AvroConfigurationSerializer serializer;
 
   public MISTQueryImpl(final DAG<MISTStream, MISTEdge> dag) {
-    this.queryPartitioner = new QueryPartitioner(dag);
+    this.chainedDagGenerator = new ChainedDagGenerator(dag);
     this.dag = dag;
     this.serializer = new AvroConfigurationSerializer();
   }
 
   @Override
-  public Tuple<List<AvroVertexChain>, List<Edge>> getSerializedDAG() {
+  public Tuple<List<AvroVertexChain>, List<Edge>> getAvroChainedDAG() {
     final DAG<List<MISTStream>, MISTEdge> chainedDAG =
-        queryPartitioner.generatePartitionedPlan();
+        chainedDagGenerator.generateChainedDAG();
     final Queue<List<MISTStream>> queue = new LinkedList<>();
     final List<List<MISTStream>> vertices = new ArrayList<>();
     final List<Edge> edges = new ArrayList<>();

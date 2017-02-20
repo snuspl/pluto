@@ -26,12 +26,6 @@ import edu.snu.mist.common.OutputEmittable;
 public interface Operator extends OutputEmittable {
 
   /**
-   * Gets the operator identifier.
-   * @return an identifier
-   */
-  String getOperatorIdentifier();
-
-  /**
    * Process data of left upstream.
    * @param data data
    */

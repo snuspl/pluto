@@ -33,22 +33,22 @@ final class SourceOutputEmitter<I> implements OutputEmitter {
   /**
    * Next OperatorChains.
    */
-  private final Map<PhysicalVertex, MISTEdge> nextOperatorChains;
+  private final Map<ExecutionVertex, MISTEdge> nextOperatorChains;
 
-  public SourceOutputEmitter(final Map<PhysicalVertex, MISTEdge> nextOperatorChains) {
+  public SourceOutputEmitter(final Map<ExecutionVertex, MISTEdge> nextOperatorChains) {
     this.nextOperatorChains = nextOperatorChains;
   }
 
   @Override
   public void emitData(final MistDataEvent data) {
     if (nextOperatorChains.size() == 1) {
-      for (final Map.Entry<PhysicalVertex, MISTEdge> nextQuery :
+      for (final Map.Entry<ExecutionVertex, MISTEdge> nextQuery :
           nextOperatorChains.entrySet()) {
         final Direction direction = nextQuery.getValue().getDirection();
         ((OperatorChain)nextQuery.getKey()).addNextEvent(data, direction);
       }
     } else {
-      for (final Map.Entry<PhysicalVertex, MISTEdge> nextQuery :
+      for (final Map.Entry<ExecutionVertex, MISTEdge> nextQuery :
           nextOperatorChains.entrySet()) {
         final Direction direction = nextQuery.getValue().getDirection();
         final MistDataEvent event = new MistDataEvent(data.getValue(), data.getTimestamp());
@@ -59,7 +59,7 @@ final class SourceOutputEmitter<I> implements OutputEmitter {
 
   @Override
   public void emitWatermark(final MistWatermarkEvent watermark) {
-    for (final Map.Entry<PhysicalVertex, MISTEdge> nextQuery :
+    for (final Map.Entry<ExecutionVertex, MISTEdge> nextQuery :
         nextOperatorChains.entrySet()) {
       final Direction direction = nextQuery.getValue().getDirection();
       ((OperatorChain)nextQuery.getKey()).addNextEvent(watermark, direction);

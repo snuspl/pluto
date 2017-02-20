@@ -13,30 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.common.operators;
 
-import edu.snu.mist.common.sinks.Sink;
+import java.util.Map;
 
 /**
- * This is an implementation of PhysicalSink.
+ * This is an interface that must be implemented by stateful operators.
  */
-final class PhysicalSinkImpl<I> extends BasePhysicalVertex implements PhysicalSink<I> {
+public interface StateHandler {
 
-  private final Sink<I> sink;
+  /**
+   * Gets the state of the current operator.
+   */
+  Map<String, Object> getOperatorState();
 
-  public PhysicalSinkImpl(final String sinkId,
-                          final String configuration,
-                          final Sink<I> sink) {
-    super(sinkId, configuration);
-    this.sink = sink;
-  }
+  /**
+   * Sets the state of the current operator.
+   * @param loadedState
+   */
+  void setState(Map<String, Object> loadedState);
 
-  public Sink<I> getSink() {
-    return sink;
-  }
-
-  @Override
-  public Type getType() {
-    return Type.SINK;
-  }
 }

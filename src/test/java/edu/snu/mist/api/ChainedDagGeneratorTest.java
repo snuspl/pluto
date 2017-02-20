@@ -31,22 +31,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-public final class QueryPartitionerTest {
-  private static final Logger LOG = Logger.getLogger(QueryPartitionerTest.class.getName());
+public final class ChainedDagGeneratorTest {
+  private static final Logger LOG = Logger.getLogger(ChainedDagGeneratorTest.class.getName());
 
   /**
    * Test complex chaining (branch and merge exist).
-   * PhysicalPlan:
+   * The logical DAG:
    * src1 -> op11 -> op12 -> union -> op14 -> op15 -> sink1
    * src2 -> op21 -> op22 ->       -> op23 ->      -> sink2.
    *
-   * should be converted to the expected chained PhysicalPlan:
+   * should be converted to the expected chained DAG:
    * src1 -> [op11 -> op12] -> [op13] -> [op14 -> op15] -> sink1
    * src2 -> [op21 -> op22] ->        -> [op23] -> sink2.
    */
   @Test
   public void testComplexQueryPartitioning() throws InjectionException {
-    // Build a physical plan
+    // Build a chained dag
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     final ContinuousStream<String> src1 =
         queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
@@ -65,9 +65,9 @@ public final class QueryPartitionerTest {
 
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
-    final QueryPartitioner queryPartitioner = new QueryPartitioner(dag);
+    final ChainedDagGenerator chainedDagGenerator = new ChainedDagGenerator(dag);
     final DAG<List<MISTStream>, MISTEdge>
-        chainedPlan = queryPartitioner.generatePartitionedPlan();
+        chainedPlan = chainedDagGenerator.generateChainedDAG();
 
     final List<MISTStream> src1List = Arrays.asList(src1);
     final List<MISTStream> src2List = Arrays.asList(src2);
@@ -121,10 +121,10 @@ public final class QueryPartitionerTest {
 
   /**
    * Test sequential chaining.
-   * PhysicalPlan:
+   * logical dag:
    * src1 -> op11 -> op12 -> op13 -> sink1
    *
-   * should be converted to the expected chained PhysicalPlan:
+   * should be converted to the expected chained dag:
    * src1 -> [op11 -> op12 -> op13] -> sink1
    */
   @Test
@@ -139,9 +139,9 @@ public final class QueryPartitionerTest {
 
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
-    final QueryPartitioner queryPartitioner = new QueryPartitioner(dag);
+    final ChainedDagGenerator chainedDagGenerator = new ChainedDagGenerator(dag);
     final DAG<List<MISTStream>, MISTEdge>
-        chainedPlan = queryPartitioner.generatePartitionedPlan();
+        chainedPlan = chainedDagGenerator.generateChainedDAG();
 
     final List<MISTStream> src1List = Arrays.asList(src1);
     final List<MISTStream> opList = Arrays.asList(op11, op12, op13);
@@ -161,11 +161,11 @@ public final class QueryPartitionerTest {
 
   /**
    * Test branch chaining.
-   * PhysicalPlan:
+   * logical dag:
    *                      -> op14 -> sink2
    * src1 -> op11 -> op12 -> op13 -> sink1
    *                      -> op15 -> sink3
-   * should be converted to the expected chained PhysicalPlan:
+   * should be converted to the expected chained dag:
    *                        -> [op14] -> sink2
    * src1 -> [op11 -> op12] -> [op13] -> sink1
    *                        -> [op15] -> sink3
@@ -186,9 +186,9 @@ public final class QueryPartitionerTest {
 
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
-    final QueryPartitioner queryPartitioner = new QueryPartitioner(dag);
+    final ChainedDagGenerator chainedDagGenerator = new ChainedDagGenerator(dag);
     final DAG<List<MISTStream>, MISTEdge>
-        chainedPlan = queryPartitioner.generatePartitionedPlan();
+        chainedPlan = chainedDagGenerator.generateChainedDAG();
 
     // Expected outputs
     final List<MISTStream> src1List = Arrays.asList(src1);
@@ -234,12 +234,12 @@ public final class QueryPartitionerTest {
 
   /**
    * Test merge chaining.
-   * PhysicalPlan:
+   * logical dag:
    * src1 -> op11 -> op12 ->
    * src2 ---------> op21 -> op13 -> op14 -> sink1
    * src3 -----------------> op31 ->
    *
-   * should be converted to the expected chained PhysicalPlan:
+   * should be converted to the expected chained dag:
    * src1 -> [op11 -> op12] ->
    * src2 ---------> [op21] -> [op13] -> [op14] -> sink1
    * src3 -------------------> [op31] ->
@@ -263,9 +263,9 @@ public final class QueryPartitionerTest {
 
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
-    final QueryPartitioner queryPartitioner = new QueryPartitioner(dag);
+    final ChainedDagGenerator chainedDagGenerator = new ChainedDagGenerator(dag);
     final DAG<List<MISTStream>, MISTEdge>
-        chainedPlan = queryPartitioner.generatePartitionedPlan();
+        chainedPlan = chainedDagGenerator.generateChainedDAG();
 
     // Expected outputs
     final List<MISTStream> src1List = Arrays.asList(src1);
@@ -322,12 +322,12 @@ public final class QueryPartitionerTest {
 
   /**
    * Test fork/merge chaining.
-   * PhysicalPlan:
+   * logical dag:
    *             -> opB-1 ->
    * src1 -> opA -> opB-2 -> opC ---> opD -> sink1
    *             -> opB-3 ---------->
    *
-   * should be converted to the expected chained PhysicalPlan:
+   * should be converted to the expected chained dag:
    *               -> [opB-1] ->
    * src1 -> [opA] -> [opB-2] -> [opC] ---> [opD] -> sink1
    *               -> [opB-3] ------------>
@@ -347,9 +347,9 @@ public final class QueryPartitionerTest {
 
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
-    final QueryPartitioner queryPartitioner = new QueryPartitioner(dag);
+    final ChainedDagGenerator chainedDagGenerator = new ChainedDagGenerator(dag);
     final DAG<List<MISTStream>, MISTEdge>
-        chainedPlan = queryPartitioner.generatePartitionedPlan();
+        chainedPlan = chainedDagGenerator.generateChainedDAG();
 
     // Expected outputs
     final List<MISTStream> src1List = Arrays.asList(src1);
