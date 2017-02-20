@@ -59,7 +59,7 @@ final class PhysicalSourceImpl<T> extends BasePhysicalVertex implements Physical
     dataGenerator.close();
     eventGenerator.close();
   }
-
+  
   @Override
   public DataGenerator<T> getDataGenerator() {
     return dataGenerator;

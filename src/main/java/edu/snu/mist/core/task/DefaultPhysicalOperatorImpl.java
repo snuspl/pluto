@@ -85,9 +85,4 @@ final class DefaultPhysicalOperatorImpl extends BasePhysicalVertex implements Ph
   public void setLatestWatermarkTimestamp(final long timestamp) {
     latestWatermarkTimestamp = timestamp;
   }
-
-  @Override
-  public String getId() {
-    return id;
-  }
 }
