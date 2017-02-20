@@ -15,28 +15,31 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.graph.AdjacentListDAG;
-import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
+import edu.snu.mist.common.graph.AdjacentListDAG;
+import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.common.operators.*;
+import edu.snu.mist.common.operators.FilterOperator;
+import edu.snu.mist.common.operators.FlatMapOperator;
+import edu.snu.mist.common.operators.MapOperator;
+import edu.snu.mist.common.operators.ReduceByKeyOperator;
 import edu.snu.mist.common.sinks.Sink;
-import edu.snu.mist.common.sources.*;
+import edu.snu.mist.common.sources.DataGenerator;
+import edu.snu.mist.common.sources.EventGenerator;
+import edu.snu.mist.common.sources.PunctuatedEventGenerator;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.core.parameters.NumThreads;
 import edu.snu.mist.core.parameters.PlanStorePath;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
+import edu.snu.mist.formats.avro.AvroChainedDag;
 import edu.snu.mist.formats.avro.Direction;
-import edu.snu.mist.formats.avro.AvroLogicalPlan;
 import junit.framework.Assert;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
-import org.apache.reef.wake.Identifier;
 import org.junit.Test;
 
 import java.io.File;
@@ -106,17 +109,16 @@ public final class QueryManagerTest {
     // Number of expected outputs
     final CountDownLatch countDownAllOutputs = new CountDownLatch(intermediateResult.size() * 2);
 
-    // Create the physical DAG of the query
-    final DAG<PhysicalVertex, MISTEdge> dag = new AdjacentListDAG<>();
+    // Create the execution DAG of the query
+    final DAG<ExecutionVertex, MISTEdge> dag = new AdjacentListDAG<>();
     // Create the logical DAG of the query
-    final DAG<LogicalVertex, MISTEdge> logicalPlan = new AdjacentListDAG<>();
+    final DAG<LogicalVertex, MISTEdge> logicalDag = new AdjacentListDAG<>();
 
     // Create source
-    final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
     final TestDataGenerator dataGenerator = new TestDataGenerator(inputs);
     final EventGenerator eventGenerator =
         new PunctuatedEventGenerator(null, input -> false, null);
-    final PhysicalSource src = new PhysicalSourceImpl(identifierFactory.getNewInstance("testSource"),
+    final PhysicalSource src = new PhysicalSourceImpl("testSource",
         dataGenerator, eventGenerator);
 
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
@@ -126,23 +128,23 @@ public final class QueryManagerTest {
     // Create sinks
     final List<String> sink1Result = new LinkedList<>();
     final List<Integer> sink2Result = new LinkedList<>();
-    final Sink sink1 = new TestSink<String>(
-        sink1Result, countDownAllOutputs, identifierFactory.getNewInstance("sink1"));
-    final Sink sink2 = new TestSink<Integer>(
-        sink2Result, countDownAllOutputs, identifierFactory.getNewInstance("sink2"));
+    final PhysicalSink sink1 = new PhysicalSinkImpl<>("sink1",
+        new TestSink<String>(sink1Result, countDownAllOutputs));
+    final PhysicalSink sink2 = new PhysicalSinkImpl<>("sink2",
+        new TestSink<Integer>(sink2Result, countDownAllOutputs));
 
-    // Fake logical plan of QueryManager
-    final Tuple<String, AvroLogicalPlan> tuple = new Tuple<>(queryId, new AvroLogicalPlan());
+    // Fake chained dag of QueryManager
+    final Tuple<String, AvroChainedDag> tuple = new Tuple<>(queryId, new AvroChainedDag());
 
-    // Construct logical and physical plan
-    constructLogicalAndPhysicalPlan(tuple, dag, logicalPlan, src, sink1, sink2);
+    // Construct logical and execution dag
+    constructLogicalAndExecutionDag(tuple, dag, logicalDag, src, sink1, sink2);
 
-    // Create mock PlanGenerator. It returns the above logical and physical plan
-    final PlanGenerator planGenerator = mock(PlanGenerator.class);
-    when(planGenerator.generate(tuple)).thenReturn(new DefaultLogicalAndPhysicalPlanImpl(logicalPlan, dag));
+    // Create mock DagGenerator. It returns the above logical and execution dag
+    final DagGenerator dagGenerator = mock(DagGenerator.class);
+    when(dagGenerator.generate(tuple)).thenReturn(new DefaultLogicalAndExecutionDagImpl(logicalDag, dag));
 
     // Build QueryManager
-    final QueryManager queryManager = queryManagerBuild(tuple, planGenerator, injector);
+    final QueryManager queryManager = queryManagerBuild(tuple, dagGenerator, injector);
     queryManager.create(tuple);
 
     // Wait until all of the outputs are generated
@@ -178,70 +180,77 @@ public final class QueryManagerTest {
   }
 
   /**
-   * Construct physical plan.
+   * Construct logical and execution dag.
    * Creates operators and adds source, dag vertices, edges and sinks to dag.
    */
-  private void constructLogicalAndPhysicalPlan(final Tuple<String, AvroLogicalPlan> tuple,
-                                               final DAG<PhysicalVertex, MISTEdge> dag,
-                                               final DAG<LogicalVertex, MISTEdge> logicalPlan,
+  private void constructLogicalAndExecutionDag(final Tuple<String, AvroChainedDag> tuple,
+                                               final DAG<ExecutionVertex, MISTEdge> dag,
+                                               final DAG<LogicalVertex, MISTEdge> logicalDag,
                                                final PhysicalSource src,
-                                               final Sink sink1,
-                                               final Sink sink2) {
+                                               final PhysicalSink sink1,
+                                               final PhysicalSink sink2) {
 
     // Create operators and operator chains
     //                     (chain1)                                  (chain2)
     // src -> [flatMap -> filter -> toTupleMap -> reduceByKey] -> [toStringMap]   -> sink1
     //                                                         -> [totalCountMap] -> sink2
     //                                                               (chain3)
-    final Operator flatMap = new FlatMapOperator<>("flatMap", flatMapFunc);
-    final Operator filter = new FilterOperator<>("filter", filterFunc);
-    final Operator toTupleMap = new MapOperator<>("toTupleMap", toTupleMapFunc);
-    final Operator reduceByKey = new ReduceByKeyOperator<>("reduceByKey", 0, reduceByKeyFunc);
-    final Operator toStringMap = new MapOperator<>("toStringMap", toStringMapFunc);
-    final Operator totalCountMap = new MapOperator<>("totalCountMap", totalCountMapFunc);
+    final OperatorChain chain1 = new DefaultOperatorChainImpl();
+    final OperatorChain chain2 = new DefaultOperatorChainImpl();
+    final OperatorChain chain3 = new DefaultOperatorChainImpl();
 
-    // Build the logical plan
-    final LogicalVertex logicalSrc = new DefaultLogicalVertexImpl(src.getIdentifier().toString());
-    final LogicalVertex logicalFlatMap = new DefaultLogicalVertexImpl(flatMap.getOperatorIdentifier());
-    final LogicalVertex logicalFilter = new DefaultLogicalVertexImpl(filter.getOperatorIdentifier());
-    final LogicalVertex logicalToTupleMap = new DefaultLogicalVertexImpl(toTupleMap.getOperatorIdentifier());
-    final LogicalVertex logicalReduceByKey = new DefaultLogicalVertexImpl(reduceByKey.getOperatorIdentifier());
-    final LogicalVertex logicalToStringMap = new DefaultLogicalVertexImpl(toStringMap.getOperatorIdentifier());
-    final LogicalVertex logicalTotalCntMap = new DefaultLogicalVertexImpl(totalCountMap.getOperatorIdentifier());
-    final LogicalVertex logicalSink1 = new DefaultLogicalVertexImpl(sink1.getIdentifier().toString());
-    final LogicalVertex logicalSink2 = new DefaultLogicalVertexImpl(sink2.getIdentifier().toString());
+    final PhysicalOperator flatMap = new DefaultPhysicalOperatorImpl("flatMap",
+        new FlatMapOperator<>(flatMapFunc), chain1);
+    final PhysicalOperator filter = new DefaultPhysicalOperatorImpl("filter",
+        new FilterOperator<>(filterFunc), chain1);
+    final PhysicalOperator toTupleMap = new DefaultPhysicalOperatorImpl("toTupleMap",
+        new MapOperator<>(toTupleMapFunc), chain1);
+    final PhysicalOperator reduceByKey = new DefaultPhysicalOperatorImpl("reduceByKey",
+        new ReduceByKeyOperator<>(0, reduceByKeyFunc), chain1);
+    final PhysicalOperator toStringMap = new DefaultPhysicalOperatorImpl("toStringMap",
+        new MapOperator<>(toStringMapFunc), chain2);
+    final PhysicalOperator totalCountMap = new DefaultPhysicalOperatorImpl("totalCountMap",
+        new MapOperator<>(totalCountMapFunc), chain3);
+
+    // Build the logical dag
+    final LogicalVertex logicalSrc = new DefaultLogicalVertexImpl(src.getId());
+    final LogicalVertex logicalFlatMap = new DefaultLogicalVertexImpl(flatMap.getId());
+    final LogicalVertex logicalFilter = new DefaultLogicalVertexImpl(filter.getId());
+    final LogicalVertex logicalToTupleMap = new DefaultLogicalVertexImpl(toTupleMap.getId());
+    final LogicalVertex logicalReduceByKey = new DefaultLogicalVertexImpl(reduceByKey.getId());
+    final LogicalVertex logicalToStringMap = new DefaultLogicalVertexImpl(toStringMap.getId());
+    final LogicalVertex logicalTotalCntMap = new DefaultLogicalVertexImpl(totalCountMap.getId());
+    final LogicalVertex logicalSink1 = new DefaultLogicalVertexImpl(sink1.getId());
+    final LogicalVertex logicalSink2 = new DefaultLogicalVertexImpl(sink2.getId());
 
     // Add logical vertices
-    logicalPlan.addVertex(logicalSrc);
-    logicalPlan.addVertex(logicalFlatMap);
-    logicalPlan.addVertex(logicalFilter);
-    logicalPlan.addVertex(logicalToTupleMap);
-    logicalPlan.addVertex(logicalReduceByKey);
-    logicalPlan.addVertex(logicalToStringMap);
-    logicalPlan.addVertex(logicalTotalCntMap);
-    logicalPlan.addVertex(logicalSink1);
-    logicalPlan.addVertex(logicalSink2);
+    logicalDag.addVertex(logicalSrc);
+    logicalDag.addVertex(logicalFlatMap);
+    logicalDag.addVertex(logicalFilter);
+    logicalDag.addVertex(logicalToTupleMap);
+    logicalDag.addVertex(logicalReduceByKey);
+    logicalDag.addVertex(logicalToStringMap);
+    logicalDag.addVertex(logicalTotalCntMap);
+    logicalDag.addVertex(logicalSink1);
+    logicalDag.addVertex(logicalSink2);
 
     // Add logical edges
-    logicalPlan.addEdge(logicalSrc, logicalFlatMap, new MISTEdge(Direction.LEFT));
-    logicalPlan.addEdge(logicalFlatMap, logicalFilter, new MISTEdge(Direction.LEFT));
-    logicalPlan.addEdge(logicalFilter, logicalToTupleMap, new MISTEdge(Direction.LEFT));
-    logicalPlan.addEdge(logicalToTupleMap, logicalReduceByKey, new MISTEdge(Direction.LEFT));
-    logicalPlan.addEdge(logicalReduceByKey, logicalToStringMap, new MISTEdge(Direction.LEFT));
-    logicalPlan.addEdge(logicalReduceByKey, logicalTotalCntMap, new MISTEdge(Direction.LEFT));
-    logicalPlan.addEdge(logicalToStringMap, logicalSink1, new MISTEdge(Direction.LEFT));
-    logicalPlan.addEdge(logicalTotalCntMap, logicalSink2, new MISTEdge(Direction.LEFT));
+    logicalDag.addEdge(logicalSrc, logicalFlatMap, new MISTEdge(Direction.LEFT));
+    logicalDag.addEdge(logicalFlatMap, logicalFilter, new MISTEdge(Direction.LEFT));
+    logicalDag.addEdge(logicalFilter, logicalToTupleMap, new MISTEdge(Direction.LEFT));
+    logicalDag.addEdge(logicalToTupleMap, logicalReduceByKey, new MISTEdge(Direction.LEFT));
+    logicalDag.addEdge(logicalReduceByKey, logicalToStringMap, new MISTEdge(Direction.LEFT));
+    logicalDag.addEdge(logicalReduceByKey, logicalTotalCntMap, new MISTEdge(Direction.LEFT));
+    logicalDag.addEdge(logicalToStringMap, logicalSink1, new MISTEdge(Direction.LEFT));
+    logicalDag.addEdge(logicalTotalCntMap, logicalSink2, new MISTEdge(Direction.LEFT));
 
-    // Build the physical plan
-    final OperatorChain chain1 = new DefaultOperatorChainImpl();
-    chain1.insertToTail(new DefaultPhysicalOperatorImpl(flatMap, chain1));
-    chain1.insertToTail(new DefaultPhysicalOperatorImpl(filter, chain1));
-    chain1.insertToTail(new DefaultPhysicalOperatorImpl(toTupleMap, chain1));
-    chain1.insertToTail(new DefaultPhysicalOperatorImpl(reduceByKey, chain1));
-    final OperatorChain chain2 = new DefaultOperatorChainImpl();
-    chain2.insertToTail(new DefaultPhysicalOperatorImpl(toStringMap, chain2));
-    final OperatorChain chain3 = new DefaultOperatorChainImpl();
-    chain3.insertToTail(new DefaultPhysicalOperatorImpl(totalCountMap, chain3));
+    // Build the execution dag
+    chain1.insertToTail(flatMap);
+    chain1.insertToTail(filter);
+    chain1.insertToTail(toTupleMap);
+    chain1.insertToTail(reduceByKey);
+    chain2.insertToTail(toStringMap);
+    chain3.insertToTail(totalCountMap);
 
     // Add Source
     dag.addVertex(src);
@@ -256,28 +265,26 @@ public final class QueryManagerTest {
 
 
     // Add Sink
-    final PhysicalSink physicalSink1 = new PhysicalSinkImpl<>(sink1);
-    final PhysicalSink physicalSink2 = new PhysicalSinkImpl<>(sink2);
-    dag.addVertex(physicalSink1);
-    dag.addEdge(chain2, physicalSink1, new MISTEdge(Direction.LEFT));
-    dag.addVertex(physicalSink2);
-    dag.addEdge(chain3, physicalSink2, new MISTEdge(Direction.LEFT));
+    dag.addVertex(sink1);
+    dag.addEdge(chain2, sink1, new MISTEdge(Direction.LEFT));
+    dag.addVertex(sink2);
+    dag.addEdge(chain3, sink2, new MISTEdge(Direction.LEFT));
   }
 
   /**
    * QueryManager Builder.
    * It receives inputs tuple, physicalPlanGenerator, injector then makes query manager.
    */
-  private QueryManager queryManagerBuild(final Tuple<String, AvroLogicalPlan> tuple,
-                                         final PlanGenerator planGenerator,
+  private QueryManager queryManagerBuild(final Tuple<String, AvroChainedDag> tuple,
+                                         final DagGenerator dagGenerator,
                                          final Injector injector) throws Exception {
     // Create mock PlanStore. It returns true and the above logical plan
     final QueryInfoStore planStore = mock(QueryInfoStore.class);
-    when(planStore.savePlan(tuple)).thenReturn(true);
+    when(planStore.saveChainedDag(tuple)).thenReturn(true);
     when(planStore.load(tuple.getKey())).thenReturn(tuple.getValue());
 
     // Create QueryManager
-    injector.bindVolatileInstance(PlanGenerator.class, planGenerator);
+    injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
     injector.bindVolatileInstance(QueryInfoStore.class, planStore);
 
     // Submit the fake logical plan
@@ -419,14 +426,11 @@ public final class QueryManagerTest {
   final class TestSink<I> implements Sink<I> {
     private final List<I> result;
     private final CountDownLatch countDownLatch;
-    private final Identifier id;
 
     TestSink(final List<I> result,
-             final CountDownLatch countDownLatch,
-             final Identifier id) {
+             final CountDownLatch countDownLatch) {
       this.result = result;
       this.countDownLatch = countDownLatch;
-      this.id = id;
     }
 
     @Override
@@ -438,11 +442,6 @@ public final class QueryManagerTest {
     public void handle(final I input) {
       result.add(input);
       countDownLatch.countDown();
-    }
-
-    @Override
-    public Identifier getIdentifier() {
-      return id;
     }
   }
 }

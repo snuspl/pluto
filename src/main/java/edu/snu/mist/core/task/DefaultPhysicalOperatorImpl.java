@@ -23,6 +23,11 @@ import edu.snu.mist.common.operators.Operator;
 final class DefaultPhysicalOperatorImpl implements PhysicalOperator {
 
   /**
+   * The id of the operator.
+   */
+  private final String id;
+
+  /**
    * The operator that processes events.
    */
   private final Operator operator;
@@ -42,8 +47,10 @@ final class DefaultPhysicalOperatorImpl implements PhysicalOperator {
    */
   private long latestWatermarkTimestamp;
 
-  public DefaultPhysicalOperatorImpl(final Operator operator,
+  public DefaultPhysicalOperatorImpl(final String id,
+                                     final Operator operator,
                                      final OperatorChain operatorChain) {
+    this.id = id;
     this.operator = operator;
     this.operatorChain = operatorChain;
   }
@@ -64,11 +71,6 @@ final class DefaultPhysicalOperatorImpl implements PhysicalOperator {
   }
 
   @Override
-  public Type getType() {
-    return Type.OPERATOR;
-  }
-
-  @Override
   public long getLatestDataTimestamp() {
     return latestDataTimestamp;
   }
@@ -86,5 +88,10 @@ final class DefaultPhysicalOperatorImpl implements PhysicalOperator {
   @Override
   public void setLatestWatermarkTimestamp(final long timestamp) {
     latestWatermarkTimestamp = timestamp;
+  }
+
+  @Override
+  public String getId() {
+    return id;
   }
 }

@@ -55,7 +55,7 @@ public final class SessionWindowOperatorTest {
   public void testSessionWindowOperator() throws InterruptedException {
     final int sessionInterval = 500;
     final SessionWindowOperator<Integer> sessionWindowOperator =
-        new SessionWindowOperator<>("testAggOp", sessionInterval);
+        new SessionWindowOperator<>(sessionInterval);
     final List<MistEvent> result = new LinkedList<>();
     sessionWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));
 
@@ -115,7 +115,7 @@ public final class SessionWindowOperatorTest {
 
     // Generate the current SessionWindowOperator.
     final SessionWindowOperator<Integer> sessionWindowOperator =
-        new SessionWindowOperator<>("getOp", sessionInterval);
+        new SessionWindowOperator<>(sessionInterval);
     sessionWindowOperator.processLeftData(d6);
     sessionWindowOperator.processLeftWatermark(w3);
 
@@ -159,7 +159,7 @@ public final class SessionWindowOperatorTest {
     loadStateMap.put("startedNewWindow", expectedStartedNewWindow);
 
     final SessionWindowOperator sessionWindowOperator =
-        new SessionWindowOperator("setSessionWindowOperator", sessionInterval);
+        new SessionWindowOperator(sessionInterval);
     sessionWindowOperator.setState(loadStateMap);
 
     // Compare the original and the set operator.

@@ -30,9 +30,9 @@ import java.util.List;
 public interface MISTQuery {
 
   /**
-   * Get the serialized vertices and edges of the DAG.
+   * Get the serialized vertices and edges of the chained DAG.
    */
-  Tuple<List<AvroVertexChain>, List<Edge>> getSerializedDAG();
+  Tuple<List<AvroVertexChain>, List<Edge>> getAvroChainedDAG();
 
   /**
    * Get the DAG of the query.

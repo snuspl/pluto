@@ -63,7 +63,7 @@ public final class FixedSizeWindowOperatorTest {
     final int emissionInterval = 250;
 
     final TimeWindowOperator<Integer> timeWindowOperator =
-        new TimeWindowOperator<>("testAggOp", windowSize, emissionInterval);
+        new TimeWindowOperator<>(windowSize, emissionInterval);
 
     final List<MistEvent> result = new LinkedList<>();
     timeWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));
@@ -124,7 +124,7 @@ public final class FixedSizeWindowOperatorTest {
 
     // Generate the current TimeWindowOperator.
     final TimeWindowOperator<Integer> timeWindowOperator =
-        new TimeWindowOperator<>("getStateOperator", windowSize, emissionInterval);
+        new TimeWindowOperator<>(windowSize, emissionInterval);
     timeWindowOperator.processLeftData(d4);
     timeWindowOperator.processLeftWatermark(w2);
 
@@ -173,7 +173,7 @@ public final class FixedSizeWindowOperatorTest {
     loadStateMap.put("windowQueue", expectedWindowQueue);
     loadStateMap.put("windowCreationPoint", expectedWindowCreationPoint);
     final TimeWindowOperator<Integer> timeWindowOperator =
-        new TimeWindowOperator<>("getStateOperator", windowSize, emissionInterval);
+        new TimeWindowOperator<>(windowSize, emissionInterval);
     timeWindowOperator.setState(loadStateMap);
 
     // Get the current TimeWindowOperator's state.
@@ -205,7 +205,7 @@ public final class FixedSizeWindowOperatorTest {
     final int emissionInterval = 750;
 
     final TimeWindowOperator<Integer> timeWindowOperator =
-        new TimeWindowOperator<>("testAggOp", windowSize, emissionInterval);
+        new TimeWindowOperator<>(windowSize, emissionInterval);
 
     final List<MistEvent> result = new LinkedList<>();
     timeWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));
@@ -252,7 +252,7 @@ public final class FixedSizeWindowOperatorTest {
     final int emissionInterval = 3;
 
     final CountWindowOperator<Integer> countWindowOperator =
-        new CountWindowOperator<>("testAggOp", windowSize, emissionInterval);
+        new CountWindowOperator<>(windowSize, emissionInterval);
 
     final List<MistEvent> result = new LinkedList<>();
     countWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));
@@ -321,7 +321,7 @@ public final class FixedSizeWindowOperatorTest {
 
     // Generate the current CountWindowOperator.
     final CountWindowOperator<Integer> countWindowOperator =
-        new CountWindowOperator<>("getStateOperator", windowSize, emissionInterval);
+        new CountWindowOperator<>(windowSize, emissionInterval);
     countWindowOperator.processLeftData(d1);
     countWindowOperator.processLeftData(d2);
 
@@ -373,7 +373,7 @@ public final class FixedSizeWindowOperatorTest {
     loadStateMap.put("windowCreationPoint", expectedWindowCreationPoint);
     loadStateMap.put("count", expectedCount);
     final CountWindowOperator<Integer> countWindowOperator =
-        new CountWindowOperator<>("getStateOperator", windowSize, emissionInterval);
+        new CountWindowOperator<>(windowSize, emissionInterval);
     countWindowOperator.setState(loadStateMap);
 
     // Compare the original and the set operator.
@@ -407,7 +407,7 @@ public final class FixedSizeWindowOperatorTest {
     final int emissionInterval = 5;
 
     final CountWindowOperator<Integer> countWindowOperator =
-        new CountWindowOperator<>("testAggOp", windowSize, emissionInterval);
+        new CountWindowOperator<>(windowSize, emissionInterval);
 
     final List<MistEvent> result = new LinkedList<>();
     countWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));

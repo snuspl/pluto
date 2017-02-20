@@ -32,9 +32,9 @@ final class OperatorOutputEmitter implements OutputEmitter {
   /**
    * Next OperatorChains.
    */
-  private final Map<PhysicalVertex, MISTEdge> nextOperatorChains;
+  private final Map<ExecutionVertex, MISTEdge> nextOperatorChains;
 
-  OperatorOutputEmitter(final Map<PhysicalVertex, MISTEdge> nextOperatorChains) {
+  OperatorOutputEmitter(final Map<ExecutionVertex, MISTEdge> nextOperatorChains) {
     this.nextOperatorChains = nextOperatorChains;
   }
 
@@ -47,7 +47,7 @@ final class OperatorOutputEmitter implements OutputEmitter {
    */
   private void sendData(final MistDataEvent output,
                         final Direction direction,
-                        final PhysicalVertex nextVertex) {
+                        final ExecutionVertex nextVertex) {
     switch (nextVertex.getType()) {
       case OPERATOR_CHIAN: {
         ((OperatorChain)nextVertex).addNextEvent(output, direction);
@@ -70,7 +70,7 @@ final class OperatorOutputEmitter implements OutputEmitter {
    */
   private void sendWatermark(final MistWatermarkEvent watermark,
                              final Direction direction,
-                             final PhysicalVertex nextVertex) {
+                             final ExecutionVertex nextVertex) {
     switch (nextVertex.getType()) {
       case OPERATOR_CHIAN: {
         ((OperatorChain)nextVertex).addNextEvent(watermark, direction);
@@ -97,13 +97,13 @@ final class OperatorOutputEmitter implements OutputEmitter {
   public void emitData(final MistDataEvent output) {
     // Optimization: do not create new MistEvent and reuse it if it has one downstream operator chain.
     if (nextOperatorChains.size() == 1) {
-      for (final Map.Entry<PhysicalVertex, MISTEdge> nextQuery :
+      for (final Map.Entry<ExecutionVertex, MISTEdge> nextQuery :
           nextOperatorChains.entrySet()) {
         final Direction direction = nextQuery.getValue().getDirection();
         sendData(output, direction, nextQuery.getKey());
       }
     } else {
-      for (final Map.Entry<PhysicalVertex, MISTEdge> nextQuery :
+      for (final Map.Entry<ExecutionVertex, MISTEdge> nextQuery :
           nextOperatorChains.entrySet()) {
         final MistDataEvent event = new MistDataEvent(output.getValue(), output.getTimestamp());
         final Direction direction = nextQuery.getValue().getDirection();
@@ -115,7 +115,7 @@ final class OperatorOutputEmitter implements OutputEmitter {
   @Override
   public void emitWatermark(final MistWatermarkEvent output) {
     // Watermark is not changed, so we just forward watermark to next operator chains.
-    for (final Map.Entry<PhysicalVertex, MISTEdge> nextQuery :
+    for (final Map.Entry<ExecutionVertex, MISTEdge> nextQuery :
         nextOperatorChains.entrySet()) {
       final Direction direction = nextQuery.getValue().getDirection();
       sendWatermark(output, direction, nextQuery.getKey());

@@ -16,7 +16,7 @@
 package edu.snu.mist.core.task.stores;
 
 
-import edu.snu.mist.formats.avro.AvroLogicalPlan;
+import edu.snu.mist.formats.avro.AvroChainedDag;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
@@ -25,18 +25,18 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 /**
- * This interface saves the information related to a query (the logical plan of a query and jar files).
+ * This interface saves the information related to a query (the chained dag of a query and jar files).
  * Also, this supports loading a logical plan and removing the plan and its corresponding jar files.
  */
 @DefaultImplementation(DiskQueryInfoStore.class)
 public interface QueryInfoStore {
   /**
-   * Saves the logical plan.
+   * Saves the chained dag.
    * @param tuple
-   * @return true if saving the logical plan is success. Otherwise return false.
+   * @return true if saving is success. Otherwise return false.
    * @throws IOException
    */
-  boolean savePlan(Tuple<String, AvroLogicalPlan> tuple) throws IOException;
+  boolean saveChainedDag(Tuple<String, AvroChainedDag> tuple) throws IOException;
 
   /**
    * Saves the jar files and returns paths of the stored jar files.
@@ -47,15 +47,15 @@ public interface QueryInfoStore {
   List<String> saveJar(List<ByteBuffer> jarFiles) throws IOException;
 
   /**
-   * Loads the logical plan corresponding to the queryId.
+   * Loads the chained dag corresponding to the queryId.
    * @param queryId
-   * @return logical plan
+   * @return chained dag
    * @throws IOException
    */
-  AvroLogicalPlan load(String queryId) throws IOException;
+  AvroChainedDag load(String queryId) throws IOException;
 
   /**
-   * Deletes the logical plan and its corresponding jar files.
+   * Deletes the chained dag and its corresponding jar files.
    * @param queryId
    * @throws IOException
    */

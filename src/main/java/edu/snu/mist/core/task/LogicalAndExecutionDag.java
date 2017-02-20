@@ -19,25 +19,26 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 
 /**
- * This interface holds the logical and physical plan.
- * A logical plan is a DAG which consists of logical vertices and edges.
- * A physical plan ins a DAG which consists of physical vertices and edges.
+ * This interface holds the logical and execution dag.
+ * A logical dag consists of logical vertices and edges.
+ * An execution dag consists of execution vertices and edges.
+ * The execution vertex is one of the source, operator chain, and sink.
  * In MIST, a logical vertex points to a physical vertex.
  * The physical vertex holds the actual object that performs actual computations,
  * such as receiving data stream (source), filter, map (operators), and sending results to clients (sink).
  * The logical and physical vertex is in the M:1 relationship, because several physical vertices can be merged to one.
  */
-interface LogicalAndPhysicalPlan {
+interface LogicalAndExecutionDag {
 
   /**
-   * Return the logical plan.
-   * @return logical plan
+   * Return the logical dag.
+   * @return logical dag
    */
-  DAG<LogicalVertex, MISTEdge> getLogicalPlan();
+  DAG<LogicalVertex, MISTEdge> getLogicalDag();
 
   /**
-   * Return the physical plan.
-   * @return physical plan
+   * Return the execution dag.
+   * @return execution dag
    */
-  DAG<PhysicalVertex, MISTEdge> getPhysicalPlan();
+  DAG<ExecutionVertex, MISTEdge> getExecutionDag();
 }

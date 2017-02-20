@@ -13,14 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.operators;
-
-import java.util.logging.Logger;
+package edu.snu.mist.core.task;
 
 /**
- * This abstract class is for two stream (LEFT/RIGHT) events.
+ * This interface represents execution vertices of the query.
+ * It is required to represent an execution dag, which consists of the execution vertices and edges.
+ * The execution vertex is one of the source, operator chain, or sink.
  */
-public abstract class TwoStreamOperator extends BaseOperator {
-  private static final Logger LOG = Logger.getLogger(TwoStreamOperator.class.getName());
+interface ExecutionVertex {
 
+  public static enum Type {
+    SOURCE,
+    OPERATOR_CHIAN,
+    SINK
+  }
+
+  /**
+   * Get the type of the execution vertex.
+   */
+  Type getType();
 }

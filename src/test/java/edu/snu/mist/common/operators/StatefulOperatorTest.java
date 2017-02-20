@@ -86,13 +86,12 @@ public final class StatefulOperatorTest {
     expected.add(o5);
     expected.add(o6);
 
-    final String operatorId = "testReduceByKeyOperator";
     // Set the key index of tuple
     final int keyIndex = 0;
     // Reduce function for word count
     final MISTBiFunction<Integer, Integer, Integer> wordCountFunc = (oldVal, val) -> oldVal + val;
     final ReduceByKeyOperator<String, Integer> wcOperator =
-        new ReduceByKeyOperator<>(operatorId, keyIndex, wordCountFunc);
+        new ReduceByKeyOperator<>(keyIndex, wordCountFunc);
 
     // output test
     final List<Map<String, Integer>> result = new LinkedList<>();
@@ -117,11 +116,10 @@ public final class StatefulOperatorTest {
             createEvent("d", 1),
             createEvent("a", 1),
             createEvent("b", 1));
-    final String operatorId = "testReduceByKeyOperator";
     final int keyIndex = 0;
     final MISTBiFunction<Integer, Integer, Integer> wordCountFunc = (oldVal, val) -> oldVal + val;
     final ReduceByKeyOperator<String, Integer> wcOperator =
-        new ReduceByKeyOperator<>(operatorId, keyIndex, wordCountFunc);
+        new ReduceByKeyOperator<>(keyIndex, wordCountFunc);
     final List<Map<String, Integer>> result = new LinkedList<>();
     wcOperator.setOutputEmitter(new TestOutputEmitter<>(result));
     inputStream.stream().forEach(wcOperator::processLeftData);
@@ -157,7 +155,7 @@ public final class StatefulOperatorTest {
     final int keyIndex = 0;
     final MISTBiFunction<Integer, Integer, Integer> wordCountFunc = (oldVal, val) -> oldVal + val;
     final ReduceByKeyOperator reduceByKeyOperator =
-        new ReduceByKeyOperator("expectedOperator", keyIndex, wordCountFunc);
+        new ReduceByKeyOperator(keyIndex, wordCountFunc);
     reduceByKeyOperator.setState(loadStateMap);
 
     // Compare the original and the set operator.

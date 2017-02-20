@@ -17,7 +17,6 @@ package edu.snu.mist.common.operators;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
-import edu.snu.mist.common.parameters.OperatorId;
 import edu.snu.mist.common.parameters.WindowInterval;
 import edu.snu.mist.common.windows.Window;
 import edu.snu.mist.common.windows.WindowImpl;
@@ -60,9 +59,7 @@ public final class SessionWindowOperator<T> extends OneStreamOperator implements
   private boolean startedNewWindow = false;
 
   @Inject
-  public SessionWindowOperator(@Parameter(OperatorId.class) final String operatorId,
-                               @Parameter(WindowInterval.class) final int sessionInterval) {
-    super(operatorId);
+  public SessionWindowOperator(@Parameter(WindowInterval.class) final int sessionInterval) {
     this.sessionInterval = sessionInterval;
     currentWindow = null;
   }
@@ -96,7 +93,7 @@ public final class SessionWindowOperator<T> extends OneStreamOperator implements
   @Override
   public void processLeftData(final MistDataEvent input) {
     LOG.log(Level.FINE, "{0} puts input data {1} into current window {2}",
-            new Object[]{getOperatorIdentifier(), input, currentWindow});
+            new Object[]{this.getClass().getName(), input, currentWindow});
     emitAndCreateWindow(input.getTimestamp());
     currentWindow.putData(input);
     startedNewWindow = true;

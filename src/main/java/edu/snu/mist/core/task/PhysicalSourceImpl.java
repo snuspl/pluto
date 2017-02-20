@@ -17,7 +17,6 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;
-import org.apache.reef.wake.Identifier;
 
 /**
  * This class represents the implementation of Source interface.
@@ -28,7 +27,7 @@ final class PhysicalSourceImpl<T> implements PhysicalSource<T> {
   /**
    * Source id.
    */
-  private final Identifier sourceId;
+  private final String sourceId;
 
   /**
    * Data generator that generates data.
@@ -40,7 +39,7 @@ final class PhysicalSourceImpl<T> implements PhysicalSource<T> {
    */
   private final EventGenerator<T> eventGenerator;
 
-  public PhysicalSourceImpl(final Identifier sourceId,
+  public PhysicalSourceImpl(final String sourceId,
                             final DataGenerator<T> dataGenerator, final EventGenerator<T> eventGenerator) {
     this.sourceId = sourceId;
     this.dataGenerator = dataGenerator;
@@ -67,7 +66,7 @@ final class PhysicalSourceImpl<T> implements PhysicalSource<T> {
 
 
   @Override
-  public Identifier getIdentifier() {
+  public String getId() {
     return sourceId;
   }
 

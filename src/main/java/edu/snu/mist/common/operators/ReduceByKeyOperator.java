@@ -20,7 +20,6 @@ import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.parameters.KeyIndex;
-import edu.snu.mist.common.parameters.OperatorId;
 import edu.snu.mist.common.parameters.SerializedUdf;
 import edu.snu.mist.common.types.Tuple2;
 import org.apache.reef.tang.annotations.Parameter;
@@ -62,23 +61,19 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
 
   @Inject
   private ReduceByKeyOperator(
-      @Parameter(OperatorId.class) final String operatorId,
       @Parameter(KeyIndex.class) final int keyIndex,
       @Parameter(SerializedUdf.class) final String serializedObject,
       final ClassLoader classLoader) throws IOException, ClassNotFoundException {
-    this(operatorId, keyIndex, SerializeUtils.deserializeFromString(serializedObject, classLoader));
+    this(keyIndex, SerializeUtils.deserializeFromString(serializedObject, classLoader));
   }
 
   /**
    * @param reduceFunc reduce function
-   * @param operatorId identifier of operator
    * @param keyIndex index of key
    */
   @Inject
-  public ReduceByKeyOperator(@Parameter(OperatorId.class) final String operatorId,
-                             @Parameter(KeyIndex.class) final int keyIndex,
+  public ReduceByKeyOperator(@Parameter(KeyIndex.class) final int keyIndex,
                              final MISTBiFunction<V, V, V> reduceFunc) {
-    super(operatorId);
     this.reduceFunc = reduceFunc;
     this.keyIndex = keyIndex;
     this.state = createInitialState();
@@ -124,7 +119,7 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
     final HashMap<K, V> intermediateState = updateState((Tuple2)input.getValue(), state);
     final HashMap<K, V> output = generateOutput(intermediateState);
     LOG.log(Level.FINE, "{0} updates the state {1} with input {2} to {3}, and generates {4}",
-        new Object[]{getOperatorIdentifier(), state, input, intermediateState, output});
+        new Object[]{this.getClass().getName(), state, input, intermediateState, output});
     input.setValue(output);
     outputEmitter.emitData(input);
     state = intermediateState;
