@@ -49,6 +49,7 @@ public final class ConditionalBranchOperator<I> extends OneStreamOperator {
 
   /**
    * Checks the branch conditions and forward to matched branch.
+   * TODO: [MIST-417] Implement control flow in task side
    */
   @Override
   public void processLeftData(final MistDataEvent input) {
