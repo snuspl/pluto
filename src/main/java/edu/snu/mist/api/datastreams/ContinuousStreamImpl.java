@@ -44,7 +44,7 @@ import java.util.Map;
 public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements ContinuousStream<T> {
 
   /**
-   * The conditional branch count that represents how many branches does this stream have.
+   * The conditional branch count that represents the number of branches diverged from this stream.
    */
   private int condBranchCount;
   /**

@@ -49,7 +49,7 @@ public final class MISTQueryImpl implements MISTQuery {
   @Override
   public Tuple<List<AvroVertexChain>, List<Edge>> getAvroChainedDAG() {
     logicalDagOptimizer.setDag(dag);
-    chainedDagGenerator.setDag(logicalDagOptimizer.getOptimizedDAG());
+    chainedDagGenerator.setOptimizedDag(logicalDagOptimizer.getOptimizedDAG());
     final DAG<List<MISTStream>, MISTEdge> chainedDAG =
         chainedDagGenerator.generateChainedDAG();
     final Queue<List<MISTStream>> queue = new LinkedList<>();

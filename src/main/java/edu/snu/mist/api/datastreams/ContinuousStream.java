@@ -30,7 +30,7 @@ import java.util.Map;
 public interface ContinuousStream<T> extends MISTStream<T> {
 
   /**
-   * @return how many conditional branches does this stream have
+   * @return the number of conditional branches diverged from this stream
    */
   int getCondBranchCount();
 
@@ -201,7 +201,7 @@ public interface ContinuousStream<T> extends MISTStream<T> {
                                Configuration funcConf);
 
   /**
-   * Push the text stream to th socket server.
+   * Push the text stream to the socket server.
    * @param serverAddr socket server address
    * @param serverPort socket server port
    * @return sink stream

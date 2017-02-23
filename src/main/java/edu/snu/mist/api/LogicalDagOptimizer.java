@@ -64,8 +64,7 @@ public final class LogicalDagOptimizer {
     for (final MISTStream source : dag.getRootVertices()) {
       final Map<MISTStream, MISTEdge> rootEdges = dag.getEdges(source);
       visited.add(source);
-      for (final Map.Entry<MISTStream, MISTEdge> entry : rootEdges.entrySet()) {
-        final MISTStream nextVertex = entry.getKey();
+      for (final MISTStream nextVertex : rootEdges.keySet()) {
         optimizing(nextVertex, visited);
       }
     }
@@ -82,8 +81,8 @@ public final class LogicalDagOptimizer {
       if (!(currVertex instanceof ContinuousStreamImpl) ||
           ((ContinuousStreamImpl) currVertex).getCondBranchCount() == 0) {
         // current vertex is not a continuous stream or this edge is an ordinary (non-branch) edge
-        for (final Map.Entry<MISTStream, MISTEdge> entry : edges.entrySet()) {
-          optimizing(entry.getKey(), visited);
+        for (final MISTStream nextVertex : edges.keySet()) {
+          optimizing(nextVertex, visited);
         }
       } else {
         // current vertex has some conditionally branching edges
@@ -91,8 +90,7 @@ public final class LogicalDagOptimizer {
             new ArrayList<>(((ContinuousStreamImpl) currVertex).getCondBranchCount());
 
         // gather the branching streams
-        for (final Map.Entry<MISTStream, MISTEdge> entry : edges.entrySet()) {
-          final MISTStream nextVertex = entry.getKey();
+        for (final MISTStream nextVertex : edges.keySet()) {
           if (nextVertex instanceof ContinuousStreamImpl &&
               ((ContinuousStreamImpl) nextVertex).getBranchIndex() > 0) {
             // this edge is a conditionally branching edge
