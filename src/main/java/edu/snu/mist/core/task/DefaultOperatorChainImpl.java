@@ -31,12 +31,12 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Default implementation of PartitionedQuery.
+ * Default implementation of OperatorChain.
  * It uses List to chain operators.
- * TODO[MIST-70]: Consider concurrency issue in execution of PartitionedQuery
+ * TODO[MIST-70]: Consider concurrency issue in execution of OperatorChain
  */
 @SuppressWarnings("unchecked")
-final class DefaultPartitionedQuery implements PartitionedQuery {
+final class DefaultOperatorChainImpl implements OperatorChain {
 
   private enum Status {
     RUNNING, // When the query processes an event
@@ -46,67 +46,67 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
   /**
    * A chain of operators.
    */
-  private final List<Operator> operators;
+  private final List<PhysicalOperator> operators;
 
   /**
-   * An output emitter which forwards outputs to next PartitionedQueries.
+   * An output emitter which forwards outputs to next OperatorChains.
    */
   private OutputEmitter outputEmitter;
 
   /**
-   * A queue for the partitioned query's events.
+   * A queue for the first operator's events.
    */
   private final Queue<Tuple<MistEvent, Direction>> queue;
 
   /**
-   * Status of the partitioned query.
+   * Status of the operator chain that is being executed or ready.
    */
   private final AtomicReference<Status> status;
 
   @Inject
-  DefaultPartitionedQuery() {
+  DefaultOperatorChainImpl() {
     this.operators = new LinkedList<>();
     this.queue = new ConcurrentLinkedQueue<>();
     this.status = new AtomicReference<>(Status.READY);
   }
 
   @Override
-  public void insertToHead(final Operator newOperator) {
+  public void insertToHead(final PhysicalOperator newOperator) {
     if (!operators.isEmpty()) {
-      final Operator firstOperator = operators.get(0);
-      newOperator.setOutputEmitter(new NextOperatorEmitter(firstOperator));
+      final PhysicalOperator firstOperator = operators.get(0);
+      newOperator.getOperator().setOutputEmitter(new NextOperatorEmitter(firstOperator));
     } else {
       if (outputEmitter != null) {
-        newOperator.setOutputEmitter(outputEmitter);
+        newOperator.getOperator().setOutputEmitter(outputEmitter);
       }
     }
     operators.add(0, newOperator);
   }
 
   @Override
-  public void insertToTail(final Operator newOperator) {
+  public void insertToTail(final PhysicalOperator newOperator) {
     if (!operators.isEmpty()) {
-      final Operator lastOperator = operators.get(operators.size() - 1);
-      lastOperator.setOutputEmitter(new NextOperatorEmitter(newOperator));
+      final PhysicalOperator lastOperator = operators.get(operators.size() - 1);
+      lastOperator.getOperator().setOutputEmitter(new NextOperatorEmitter(newOperator));
     }
     if (outputEmitter != null) {
-      newOperator.setOutputEmitter(outputEmitter);
+      newOperator.getOperator().setOutputEmitter(outputEmitter);
     }
     operators.add(operators.size(), newOperator);
   }
 
   @Override
-  public Operator removeFromTail() {
-    final Operator prevLastOperator = operators.remove(operators.size() - 1);
-    final Operator lastOperator = operators.get(operators.size() - 1);
+  public PhysicalOperator removeFromTail() {
+    final PhysicalOperator prevLastOperator = operators.remove(operators.size() - 1);
+    final PhysicalOperator lastOperator = operators.get(operators.size() - 1);
     if (outputEmitter != null) {
-      lastOperator.setOutputEmitter(outputEmitter);
+      lastOperator.getOperator().setOutputEmitter(outputEmitter);
     }
     return prevLastOperator;
   }
 
   @Override
-  public Operator removeFromHead() {
+  public PhysicalOperator removeFromHead() {
     return operators.remove(0);
   }
 
@@ -147,27 +147,29 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
 
   private void process(final Tuple<MistEvent, Direction> input) {
     if (outputEmitter == null) {
-      throw new RuntimeException("OutputEmitter should be set in PartitionedQuery");
+      throw new RuntimeException("OutputEmitter should be set in OperatorChain");
     }
     if (operators.size() == 0) {
       throw new RuntimeException("The number of operators should be greater than zero");
     }
-    final Operator firstOperator = operators.get(0);
+    final PhysicalOperator firstOperator = operators.get(0);
     if (firstOperator != null) {
       final Direction direction = input.getValue();
       final MistEvent event = input.getKey();
       if (event.isData()) {
         if (direction == Direction.LEFT) {
-          firstOperator.processLeftData((MistDataEvent)event);
+          firstOperator.getOperator().processLeftData((MistDataEvent) event);
         } else {
-          firstOperator.processRightData((MistDataEvent) event);
+          firstOperator.getOperator().processRightData((MistDataEvent) event);
         }
+        firstOperator.setLatestDataTimestamp(event.getTimestamp());
       } else {
         if (direction == Direction.LEFT) {
-          firstOperator.processLeftWatermark((MistWatermarkEvent) event);
+          firstOperator.getOperator().processLeftWatermark((MistWatermarkEvent) event);
         } else {
-          firstOperator.processRightWatermark((MistWatermarkEvent) event);
+          firstOperator.getOperator().processRightWatermark((MistWatermarkEvent) event);
         }
+        firstOperator.setLatestWatermarkTimestamp(event.getTimestamp());
       }
     }
   }
@@ -180,7 +182,7 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
   public void setOutputEmitter(final OutputEmitter emitter) {
     this.outputEmitter = emitter;
     if (operators.size() > 0) {
-      final Operator lastOperator = operators.get(operators.size() - 1);
+      final Operator lastOperator = operators.get(operators.size() - 1).getOperator();
       if (outputEmitter != null) {
         lastOperator.setOutputEmitter(outputEmitter);
       }
@@ -195,7 +197,7 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final DefaultPartitionedQuery that = (DefaultPartitionedQuery) o;
+    final DefaultOperatorChainImpl that = (DefaultOperatorChainImpl) o;
     if (!operators.equals(that.operators)) {
       return false;
     }
@@ -214,24 +216,28 @@ final class DefaultPartitionedQuery implements PartitionedQuery {
 
   /**
    * An output emitter forwarding events to the next operator.
-   * As partitioned query consists of operator chains, it only has one stream for input.
+   * It only has one stream for input because the operators are chained sequentially.
    * Thus, it only calls processLeftData/processLeftWatermark.
    */
   class NextOperatorEmitter implements OutputEmitter {
-    private final Operator nextOp;
+    private final PhysicalOperator nextPhysicalOp;
+    private final Operator op;
 
-    public NextOperatorEmitter(final Operator nextOp) {
-      this.nextOp = nextOp;
+    public NextOperatorEmitter(final PhysicalOperator nextPhysicalOp) {
+      this.nextPhysicalOp = nextPhysicalOp;
+      this.op = nextPhysicalOp.getOperator();
     }
 
     @Override
     public void emitData(final MistDataEvent output) {
-      nextOp.processLeftData(output);
+      op.processLeftData(output);
+      nextPhysicalOp.setLatestDataTimestamp(output.getTimestamp());
     }
 
     @Override
     public void emitWatermark(final MistWatermarkEvent output) {
-      nextOp.processLeftWatermark(output);
+      op.processLeftWatermark(output);
+      nextPhysicalOp.setLatestWatermarkTimestamp(output.getTimestamp());
     }
   }
 }

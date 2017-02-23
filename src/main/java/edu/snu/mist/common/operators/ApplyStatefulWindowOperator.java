@@ -15,13 +15,12 @@
  */
 package edu.snu.mist.common.operators;
 
-import edu.snu.mist.common.SerializeUtils;
-import edu.snu.mist.common.functions.ApplyStatefulFunction;
-import edu.snu.mist.common.parameters.OperatorId;
-import edu.snu.mist.common.parameters.SerializedUdf;
-import edu.snu.mist.common.windows.WindowData;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.functions.ApplyStatefulFunction;
+import edu.snu.mist.common.parameters.SerializedUdf;
+import edu.snu.mist.common.windows.WindowData;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -48,20 +47,16 @@ public final class ApplyStatefulWindowOperator<IN, OUT>
 
   @Inject
   private ApplyStatefulWindowOperator(
-      @Parameter(OperatorId.class) final String operatorId,
       @Parameter(SerializedUdf.class) final String serializedObject,
       final ClassLoader classLoader) throws IOException, ClassNotFoundException {
-    this(operatorId, SerializeUtils.deserializeFromString(serializedObject, classLoader));
+    this(SerializeUtils.deserializeFromString(serializedObject, classLoader));
   }
 
   /**
-   * @param operatorId identifier of operator
    * @param applyStatefulFunction the user-defined ApplyStatefulFunction
    */
   @Inject
-  public ApplyStatefulWindowOperator(@Parameter(OperatorId.class) final String operatorId,
-                                     final ApplyStatefulFunction<IN, OUT> applyStatefulFunction) {
-    super(operatorId);
+  public ApplyStatefulWindowOperator(final ApplyStatefulFunction<IN, OUT> applyStatefulFunction) {
     this.applyStatefulFunction = applyStatefulFunction;
   }
 
@@ -80,7 +75,8 @@ public final class ApplyStatefulWindowOperator<IN, OUT>
       final OUT operationResult = applyStatefulFunction.produceResult();
       LOG.log(Level.FINE, "{0} initializes and updates the operator state to {1} with input window {2} " +
           "which started at {3} and ended at {4}, and generates {5}",
-          new Object[]{getOperatorIdentifier(), applyStatefulFunction.getCurrentState(), input,
+          new Object[]{this.getClass().getName(),
+              applyStatefulFunction.getCurrentState(), input,
               windowData.getStart(), windowData.getEnd(), operationResult});
       input.setValue(operationResult);
       outputEmitter.emitData(input);

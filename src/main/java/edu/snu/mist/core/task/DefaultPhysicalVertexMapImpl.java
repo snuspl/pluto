@@ -15,28 +15,24 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.sinks.Sink;
+import javax.inject.Inject;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
- * This is an implementation of PhysicalSink.
+ * This class holds a map of <PhysicalVertexId, PhysicalVertex>.
+ * With this map, we can decouple the logical plan of the query and its physical plan.
  */
-final class PhysicalSinkImpl<I> extends BasePhysicalVertex implements PhysicalSink<I> {
+final class DefaultPhysicalVertexMapImpl implements PhysicalVertexMap {
 
-  private final Sink<I> sink;
+  private final ConcurrentMap<String, PhysicalVertex> physicalVertexMap;
 
-  public PhysicalSinkImpl(final String sinkId,
-                          final String configuration,
-                          final Sink<I> sink) {
-    super(sinkId, configuration);
-    this.sink = sink;
+  @Inject
+  private DefaultPhysicalVertexMapImpl() {
+    this.physicalVertexMap = new ConcurrentHashMap<>();
   }
 
-  public Sink<I> getSink() {
-    return sink;
-  }
-
-  @Override
-  public Type getType() {
-    return Type.SINK;
+  public ConcurrentMap<String, PhysicalVertex> getPhysicalVertexMap() {
+    return physicalVertexMap;
   }
 }

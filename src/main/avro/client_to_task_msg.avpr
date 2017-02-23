@@ -23,7 +23,7 @@
   [
     {
       "type": "record",
-      "name": "AvroLogicalPlan",
+      "name": "AvroChainedDag",
       "fields":
       [
         {
@@ -103,6 +103,10 @@
                     "type": "enum",
                     "symbols": ["LEFT", "RIGHT"]
                   }
+                },
+                {
+                  "name": "BranchIndex",
+                  "type": "int"
                 }
               ]
             }
@@ -174,8 +178,8 @@
       "request":
       [
         {
-          "name": "logicalPlan",
-          "type": "AvroLogicalPlan"
+          "name": "chainedDag",
+          "type": "AvroChainedDag"
         }
       ],
       "response": "QueryControlResult"

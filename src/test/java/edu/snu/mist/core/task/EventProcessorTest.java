@@ -39,14 +39,14 @@ public final class EventProcessorTest {
 
   /**
    * Test whether the processor processes events from multiple queries correctly.
-   * This test adds 100 events to 2 queries in PartitionedQueryManager
-   * and the event processor processes the events by picking the queries randomly.
+   * This test adds 100 events to 2 queries in OperatorChainManager
+   * and the event processor processes the events by picking the chain randomly.
    */
   @Test
   public void randomPickProcessTest() throws InjectionException, InterruptedException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final PartitionedQueryManager queryManager = injector.getInstance(PartitionedQueryManager.class);
+    final OperatorChainManager operatorChainManager = injector.getInstance(OperatorChainManager.class);
     final StringIdentifierFactory idfac = injector.getInstance(StringIdentifierFactory.class);
 
     final int numTasks = 1000000;
@@ -54,27 +54,29 @@ public final class EventProcessorTest {
     final List<Integer> list2 = new LinkedList<>();
     final List<Integer> result = new LinkedList<>();
 
-    final PartitionedQuery query1 = new DefaultPartitionedQuery();
-    query1.insertToHead(new TestOperator("o1"));
-    query1.setOutputEmitter(new TestOutputEmitter<>(list1));
-    final PartitionedQuery query2 = new DefaultPartitionedQuery();
-    query2.insertToHead(new TestOperator("o2"));
-    query2.setOutputEmitter(new TestOutputEmitter<>(list2));
+    final OperatorChain chain1 = new DefaultOperatorChainImpl();
+    final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl("op1", null, new TestOperator(), chain1);
+    chain1.insertToHead(o1);
+    chain1.setOutputEmitter(new TestOutputEmitter<>(list1));
+    final OperatorChain chain2 = new DefaultOperatorChainImpl();
+    final PhysicalOperator o2 = new DefaultPhysicalOperatorImpl("op2", null, new TestOperator(), chain2);
+    chain2.insertToHead(o2);
+    chain2.setOutputEmitter(new TestOutputEmitter<>(list2));
 
     for (int i = 0; i < numTasks; i++) {
       final int data = i;
-      // Add events to the partitioned queries
-      query1.addNextEvent(createEvent(data), Direction.LEFT);
-      query2.addNextEvent(createEvent(data), Direction.LEFT);
+      // Add events to the operator chains
+      chain1.addNextEvent(createEvent(data), Direction.LEFT);
+      chain2.addNextEvent(createEvent(data), Direction.LEFT);
       result.add(data);
     }
 
-    // Add queries to queryManager
-    queryManager.insert(query1);
-    queryManager.insert(query2);
+    // Add queries to operatorChainManager
+    operatorChainManager.insert(chain1);
+    operatorChainManager.insert(chain2);
 
     // Create a processor
-    final Thread processor = new Thread(new EventProcessor(queryManager));
+    final Thread processor = new Thread(new EventProcessor(operatorChainManager));
     processor.start();
 
     while (!(list1.size() == numTasks && list2.size() == numTasks)) {
@@ -88,7 +90,7 @@ public final class EventProcessorTest {
   }
 
   /**
-   * When multiple EventProcessors process events from a query concurrently,
+   * When multiple EventProcessors process events from an operator chain concurrently,
    * they should process events one by one and do not process multiple events at a time.
    * @throws org.apache.reef.tang.exceptions.InjectionException
    */
@@ -96,15 +98,16 @@ public final class EventProcessorTest {
   public void concurrentProcessTest() throws InjectionException, InterruptedException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final PartitionedQueryManager queryManager = injector.getInstance(PartitionedQueryManager.class);
+    final OperatorChainManager queryManager = injector.getInstance(OperatorChainManager.class);
     final StringIdentifierFactory idfac = injector.getInstance(StringIdentifierFactory.class);
 
     final int numTasks = 1000000;
     final List<Integer> list1 = new LinkedList<>();
     final List<Integer> result = new LinkedList<>();
 
-    final PartitionedQuery query = new DefaultPartitionedQuery();
-    query.insertToHead(new TestOperator("o1"));
+    final OperatorChain query = new DefaultOperatorChainImpl();
+    final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl("op1", null, new TestOperator(), query);
+    query.insertToHead(o1);
     query.setOutputEmitter(new TestOutputEmitter<>(list1));
 
     for (int i = 0; i < numTasks; i++) {
@@ -141,9 +144,6 @@ public final class EventProcessorTest {
    * It just forwards inputs to outputEmitter.
    */
   class TestOperator extends OneStreamOperator {
-    public TestOperator(final String opId) {
-      super(opId);
-    }
 
     @Override
     public void processLeftData(final MistDataEvent data) {

@@ -15,28 +15,20 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.sinks.Sink;
+import org.apache.reef.tang.annotations.DefaultImplementation;
+
+import java.util.concurrent.ConcurrentMap;
 
 /**
- * This is an implementation of PhysicalSink.
+ * This interface holds a map of <PhysicalVertexId, PhysicalVertex>.
+ * With this map, we can decouple the logical plan of the query and its physical plan.
  */
-final class PhysicalSinkImpl<I> extends BasePhysicalVertex implements PhysicalSink<I> {
+@DefaultImplementation(DefaultPhysicalVertexMapImpl.class)
+interface PhysicalVertexMap {
 
-  private final Sink<I> sink;
-
-  public PhysicalSinkImpl(final String sinkId,
-                          final String configuration,
-                          final Sink<I> sink) {
-    super(sinkId, configuration);
-    this.sink = sink;
-  }
-
-  public Sink<I> getSink() {
-    return sink;
-  }
-
-  @Override
-  public Type getType() {
-    return Type.SINK;
-  }
+  /**
+   * Get the physical vertex map.
+   * @return map of (physical vertex id, physical vertex)
+   */
+  ConcurrentMap<String, PhysicalVertex> getPhysicalVertexMap();
 }

@@ -17,7 +17,6 @@ package edu.snu.mist.common.operators;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
-import edu.snu.mist.common.parameters.OperatorId;
 import edu.snu.mist.common.parameters.WindowInterval;
 import edu.snu.mist.common.parameters.WindowSize;
 import org.apache.reef.tang.annotations.Parameter;
@@ -39,10 +38,9 @@ public final class CountWindowOperator<T> extends FixedSizeWindowOperator<T> imp
   private long count;
 
   @Inject
-  public CountWindowOperator(@Parameter(OperatorId.class) final String operatorId,
-                             @Parameter(WindowSize.class) final int windowSize,
+  public CountWindowOperator(@Parameter(WindowSize.class) final int windowSize,
                              @Parameter(WindowInterval.class) final int windowEmissionInterval) {
-    super(operatorId, windowSize, windowEmissionInterval);
+    super(windowSize, windowEmissionInterval);
     this.count = 1L;
   }
 
@@ -69,6 +67,6 @@ public final class CountWindowOperator<T> extends FixedSizeWindowOperator<T> imp
   @Override
   public void setState(final Map<String, Object> loadedState) {
     super.setState(loadedState);
-    count = (Integer)loadedState.get("count");
+    count = (long)loadedState.get("count");
   }
 }

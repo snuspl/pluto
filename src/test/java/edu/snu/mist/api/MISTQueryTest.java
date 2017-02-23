@@ -80,7 +80,7 @@ public final class MISTQueryTest {
 
     // Build a query
     final MISTQuery complexQuery = queryBuilder.build();
-    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDAG = complexQuery.getSerializedDAG();
+    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDAG = complexQuery.getAvroChainedDAG();
     final List<AvroVertexChain> vertices = serializedDAG.getKey();
     Assert.assertEquals(3, vertices.size());
 
@@ -127,8 +127,8 @@ public final class MISTQueryTest {
 
     final List<Edge> edges = serializedDAG.getValue();
     final List<Edge> expectedEdges = Arrays.asList(
-        Edge.newBuilder().setFrom(0).setTo(1).setDirection(Direction.LEFT).build(),
-        Edge.newBuilder().setFrom(1).setTo(2).setDirection(Direction.LEFT).build());
+        Edge.newBuilder().setFrom(0).setTo(1).setDirection(Direction.LEFT).setBranchIndex(0).build(),
+        Edge.newBuilder().setFrom(1).setTo(2).setDirection(Direction.LEFT).setBranchIndex(0).build());
     Assert.assertEquals(new HashSet<>(expectedEdges), new HashSet<>(edges));
   }
 }

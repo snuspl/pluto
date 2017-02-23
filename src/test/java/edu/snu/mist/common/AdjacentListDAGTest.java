@@ -16,6 +16,8 @@
 package edu.snu.mist.common;
 
 import com.google.common.collect.ImmutableList;
+import edu.snu.mist.common.graph.AdjacentListDAG;
+import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.formats.avro.Direction;
 import junit.framework.Assert;
 import org.junit.Test;

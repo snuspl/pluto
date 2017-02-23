@@ -15,30 +15,36 @@
  */
 package edu.snu.mist.core.task;
 
-import org.apache.reef.tang.annotations.DefaultImplementation;
-
 /**
- * This interface manages partitioned queries.
+ * This interface represents physical vertices of the query.
+ * The physical vertex is one of the source, operator, or sink.
+ * It holds the meta data of the source, operator, or sink.
  */
-@DefaultImplementation(RandomlyPickManager.class)
-public interface PartitionedQueryManager {
+abstract class BasePhysicalVertex implements PhysicalVertex {
 
   /**
-   * Insert a partitioned query.
-   * @param query partitioned query
+   * Get the id of the vertex.
    */
-  void insert(PartitionedQuery query);
+  protected final String id;
 
   /**
-   * Delete a partitioned query.
-   * @param query partitioned query
+   * Get the configuration.
    */
-  void delete(PartitionedQuery query);
+  protected final String configuration;
 
-  /**
-   * Pick a partitioned query.
-   * @return a partitioned query.
-   * Returns null if there is no query.
-   */
-  PartitionedQuery pickQuery();
+  public BasePhysicalVertex(final String id,
+                            final String configuration) {
+    this.id = id;
+    this.configuration = configuration;
+  }
+
+  @Override
+  public String getId() {
+    return id;
+  }
+
+  @Override
+  public String getConfiguration() {
+    return configuration;
+  }
 }

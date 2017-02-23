@@ -23,10 +23,15 @@ import java.util.Map;
 public interface StateHandler {
 
   /**
-   * Save the state of the current operator.
+   * Gets the state of the current operator.
    */
   Map<String, Object> getOperatorState();
 
+  /**
+   * Sets the state of the current operator.
+   * @param loadedState
+   */
+>>>>>>> c2f48c9e99b696f73d3c1393e2f8d3aa27f27619
   void setState(Map<String, Object> loadedState);
 
 }

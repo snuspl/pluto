@@ -46,7 +46,7 @@ public final class UnionOperatorTest {
     final MistDataEvent g = new MistDataEvent("g", 6L);
     final MistWatermarkEvent rw2 = new MistWatermarkEvent(11L);
 
-    final UnionOperator unionOperator = new UnionOperator("testUnionOp");
+    final UnionOperator unionOperator = new UnionOperator();
 
     final List<MistEvent> result = new LinkedList<>();
     unionOperator.setOutputEmitter(new SimpleOutputEmitter(result));

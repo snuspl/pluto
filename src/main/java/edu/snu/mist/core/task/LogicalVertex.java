@@ -15,28 +15,17 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.sinks.Sink;
-
 /**
- * This is an implementation of PhysicalSink.
+ * This interface represents logical vertices of the query.
+ * A logical vertex references a physical vertex that corresponds to it.
+ * By making the logical vertex reference the physical vertex,
+ * we can decouple the query and the physical plan.
  */
-final class PhysicalSinkImpl<I> extends BasePhysicalVertex implements PhysicalSink<I> {
+interface LogicalVertex {
 
-  private final Sink<I> sink;
-
-  public PhysicalSinkImpl(final String sinkId,
-                          final String configuration,
-                          final Sink<I> sink) {
-    super(sinkId, configuration);
-    this.sink = sink;
-  }
-
-  public Sink<I> getSink() {
-    return sink;
-  }
-
-  @Override
-  public Type getType() {
-    return Type.SINK;
-  }
+  /**
+   * Returns a physical vertex id that is coupled with the logical vertex.
+   * @return a physical vertex id.
+   */
+  String getPhysicalVertexId();
 }

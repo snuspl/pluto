@@ -15,9 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.DAG;
-import edu.snu.mist.formats.avro.Direction;
-import edu.snu.mist.formats.avro.AvroLogicalPlan;
+import edu.snu.mist.formats.avro.AvroChainedDag;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -25,16 +23,15 @@ import org.apache.reef.tang.exceptions.InjectionException;
 import java.io.IOException;
 
 /**
- * This interface is for generating physical plan from logical plan.
- * This deserializes the logical plan and creates physical plan.
+ * This interface is for generating a pair of the logical and execution dag from avro chained dag.
  */
-@DefaultImplementation(DefaultPhysicalPlanGeneratorImpl.class)
-public interface PhysicalPlanGenerator {
+@DefaultImplementation(DefaultDagGeneratorImpl.class)
+public interface DagGenerator {
   /**
-   * Generates the physical plan by deserializing the logical plan.
-   * @param queryIdAndAvroLogicalPlan the tuple of queryId and avro logical plan
-   * @return physical plan
+   * Generates the pair of the logical and execution dag by deserializing the avro logical dag.
+   * @param queryIdAndAvroLogicalDag the tuple of queryId and avro logical dag
+   * @return a pair of the logical and execution dag
    */
-  DAG<PhysicalVertex, Direction> generate(Tuple<String, AvroLogicalPlan> queryIdAndAvroLogicalPlan)
+  LogicalAndExecutionDag generate(Tuple<String, AvroChainedDag> queryIdAndAvroLogicalDag)
       throws IOException, ClassNotFoundException, InjectionException;
 }

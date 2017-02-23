@@ -15,28 +15,28 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.sinks.Sink;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * This is an implementation of PhysicalSink.
+ * This interface manages operator chains.
  */
-final class PhysicalSinkImpl<I> extends BasePhysicalVertex implements PhysicalSink<I> {
+@DefaultImplementation(RandomlyPickManager.class)
+public interface OperatorChainManager {
 
-  private final Sink<I> sink;
+  /**
+   * Insert an operator chain.
+   */
+  void insert(OperatorChain operatorChain);
 
-  public PhysicalSinkImpl(final String sinkId,
-                          final String configuration,
-                          final Sink<I> sink) {
-    super(sinkId, configuration);
-    this.sink = sink;
-  }
+  /**
+   * Delete an operator chain.
+   */
+  void delete(OperatorChain operatorChain);
 
-  public Sink<I> getSink() {
-    return sink;
-  }
-
-  @Override
-  public Type getType() {
-    return Type.SINK;
-  }
+  /**
+   * Pick an operator chain.
+   * @return an operator chain.
+   * Returns null if there is no operator chain that is executable.
+   */
+  OperatorChain pickOperatorChain();
 }

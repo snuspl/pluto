@@ -21,9 +21,9 @@ import edu.snu.mist.api.datastreams.MISTStream;
 import edu.snu.mist.api.datastreams.configurations.PeriodicWatermarkConfiguration;
 import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.api.datastreams.configurations.WatermarkConfiguration;
-import edu.snu.mist.common.AdjacentListDAG;
-import edu.snu.mist.common.DAG;
-import edu.snu.mist.formats.avro.Direction;
+import edu.snu.mist.common.graph.AdjacentListDAG;
+import edu.snu.mist.common.graph.DAG;
+import edu.snu.mist.common.graph.MISTEdge;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
@@ -36,7 +36,7 @@ public final class MISTQueryBuilder {
   /**
    * DAG of the query.
    */
-  private final DAG<MISTStream, Direction> dag;
+  private final DAG<MISTStream, MISTEdge> dag;
 
   /**
    * Period of default watermark represented in milliseconds.

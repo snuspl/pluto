@@ -16,7 +16,6 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.operators.Operator;
-import edu.snu.mist.common.parameters.OperatorId;
 import edu.snu.mist.common.shared.KafkaSharedResource;
 import edu.snu.mist.common.shared.NettySharedResource;
 import edu.snu.mist.common.sinks.Sink;
@@ -116,35 +115,29 @@ final class PhysicalObjectGenerator implements AutoCloseable {
 
   /**
    * Get a new operator.
-   * @param operatorId operator id
    * @param conf configuration
    * @param classLoader external class loader
    * @return new operator
    */
   @SuppressWarnings("unchecked")
   public Operator newOperator(
-      final String operatorId,
       final Configuration conf,
       final ClassLoader classLoader) throws InjectionException {
     final Injector injector = newDefaultInjector(conf, classLoader);
-    injector.bindVolatileParameter(OperatorId.class, operatorId);
     return injector.getInstance(Operator.class);
   }
 
   /**
    * Get a new sink.
-   * @param sinkId sink id
    * @param conf configuration
    * @param classLoader external class loader
    * @return new sink
    */
   @SuppressWarnings("unchecked")
   public <T> Sink<T> newSink(
-      final String sinkId,
       final Configuration conf,
       final ClassLoader classLoader) throws InjectionException {
     final Injector injector = newDefaultInjector(conf, classLoader);
-    injector.bindVolatileParameter(OperatorId.class, sinkId);
     // for netty
     injector.bindVolatileInstance(NettySharedResource.class, nettySharedResource);
     // for kafka
