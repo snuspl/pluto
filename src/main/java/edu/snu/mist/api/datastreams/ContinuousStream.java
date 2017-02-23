@@ -30,6 +30,16 @@ import java.util.Map;
 public interface ContinuousStream<T> extends MISTStream<T> {
 
   /**
+   * @return how many conditional branches does this stream have
+   */
+  int getCondBranchCount();
+
+  /**
+   * @return the branch index of this stream
+   */
+  int getBranchIndex();
+
+  /**
    * Applies map operation to the current stream and creates a new stream.
    * @param mapFunc the function used for the transformation provided by a user
    * @param <OUT> the type of newly created stream output
@@ -169,22 +179,26 @@ public interface ContinuousStream<T> extends MISTStream<T> {
                                         WindowInformation windowInfo);
 
   /**
-   * Branches out to multiple continuous streams with each condition.
-   * If many conditions are matched, the earliest condition will be taken.
-   * @param conditions the list of predicates which test the branch condition
-   * @return list of new continuous streams which are branched out from this branch point
+   * Branches out to a continuous stream with condition.
+   * If an input data is matched with the condition, it will be passed only to the relevant downstream.
+   * If many conditions in one branch point are matched, the earliest condition will be taken.
+   * These branches can represent a control flow.
+   * @param condition the predicate which test the branch condition
+   * @return the new continuous stream which is branched out from this branch point
    */
-  List<ContinuousStream<T>> conditionalBranch(List<MISTPredicate<T>> conditions);
+  ContinuousStream<T> branchIf(MISTPredicate<T> condition);
 
   /**
-   * Branches out to multiple continuous streams with each condition.
-   * If many conditions are matched, the earliest condition will be taken.
-   * @param clazzes the list of classes of predicates which test the branch condition
-   * @param funcConfs a list of configurations to instantiate the predicates from the provided class
-   * @return list of new continuous streams which are branched out from this branch point
+   * Branches out to a continuous stream with condition.
+   * If an input data is matched with the condition, it will be passed only to the relevant downstream.
+   * If many conditions in one branch point are matched, the earliest condition will be taken.
+   * These branches can represent a control flow.
+   * @param clazz the class of predicate which test the branch condition
+   * @param funcConf the configurations to instantiate the predicate from the provided class
+   * @return the new continuous stream which is branched out from this branch point
    */
-  List<ContinuousStream<T>> conditionalBranch(List<Class<? extends MISTPredicate<T>>> clazzes,
-                                              List<Configuration> funcConfs);
+  ContinuousStream<T> branchIf(Class<? extends MISTPredicate<T>> clazz,
+                               Configuration funcConf);
 
   /**
    * Push the text stream to th socket server.

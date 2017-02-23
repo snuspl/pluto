@@ -34,7 +34,6 @@ import org.apache.reef.tang.formats.ConfigurationModule;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -42,11 +41,38 @@ import java.util.Map;
  * This class implements ContinuousStream by configuring operations using Tang.
  * <T> data type of the stream.
  */
-public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements ContinuousStream<T> {
+public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements ContinuousStream<T> {
+
+  /**
+   * The conditional branch count that represents how many branches does this stream have.
+   */
+  private int condBranchCount;
+  /**
+   * The branch index that represents the order of branch.
+   */
+  private final int branchIndex;
 
   public ContinuousStreamImpl(final DAG<MISTStream, MISTEdge> dag,
                               final Configuration conf) {
+    this(dag, conf, 0);
+  }
+
+  private ContinuousStreamImpl(final DAG<MISTStream, MISTEdge> dag,
+                               final Configuration conf,
+                               final int branchIndex) {
     super(dag, conf);
+    this.condBranchCount = 0;
+    this.branchIndex = branchIndex;
+  }
+
+  @Override
+  public int getCondBranchCount() {
+    return condBranchCount;
+  }
+
+  @Override
+  public int getBranchIndex() {
+    return branchIndex;
   }
 
   /**
@@ -291,28 +317,17 @@ public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements 
   }
 
   @Override
-  public List<ContinuousStream<T>> conditionalBranch(final List<MISTPredicate<T>> conditions) {
-    // copy the condition list into serializable ArrayList
-    final ArrayList<MISTPredicate<T>> serializableConditions = new ArrayList<>(conditions);
-
+  public ContinuousStream<T> branchIf(final MISTPredicate<T> condition) {
+    condBranchCount++;
     try {
-      final Configuration opConf = OperatorUDFListConfiguration.CONF
-          .set(OperatorUDFListConfiguration.UDF_LIST_STRING, SerializeUtils.serializeToString(serializableConditions))
-          .set(OperatorUDFListConfiguration.OPERATOR, ConditionalBranchOperator.class)
+      final Configuration opConf = UDFConfiguration.CONF
+          .set(UDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(condition))
           .build();
 
-      // create a branch point
-      final ConditionalBranchStreamImpl<T> branchStream = new ConditionalBranchStreamImpl<>(dag, opConf);
-      dag.addVertex(branchStream);
-      dag.addEdge(this, branchStream, new MISTEdge(Direction.LEFT));
-
-      // create branched streams diverged from the branch point
-      final int branchSize = conditions.size();
-      final List<ContinuousStream<T>> downStreams = new ArrayList<>(branchSize);
-      for (int i = 0; i < branchSize; i++) {
-        downStreams.add(branchStream.branch(i));
-      }
-      return downStreams;
+      final ContinuousStream<T> downStream = new ContinuousStreamImpl<>(dag, opConf, condBranchCount);
+      dag.addVertex(downStream);
+      dag.addEdge(this, downStream, new MISTEdge(Direction.LEFT));
+      return downStream;
     } catch (final IOException e) {
       e.printStackTrace();
       throw new RuntimeException(e);
@@ -320,8 +335,8 @@ public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements 
   }
 
   @Override
-  public List<ContinuousStream<T>> conditionalBranch(final List<Class<? extends MISTPredicate<T>>> clazzes,
-                                                     final List<Configuration> funcConfs) {
+  public ContinuousStream<T> branchIf(final Class<? extends MISTPredicate<T>> clazz,
+                                      final Configuration funcConf) {
     // TODO: [MIST-436] Support predicate list generation through tang in branch operator API
     throw new RuntimeException("Branch operator setting through Tang is not supported yet.");
   }

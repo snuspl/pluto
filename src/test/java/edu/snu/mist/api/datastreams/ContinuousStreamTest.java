@@ -40,7 +40,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -359,32 +358,37 @@ public final class ContinuousStreamTest {
    */
   @Test
   public void testConditionalBranchOperatorStream() {
-    final int branchNum = 3;
-    final List<MISTPredicate<Tuple2<String, Integer>>> predicates = new ArrayList<>(branchNum);
-    predicates.add((t) -> t.get(1).equals(0));
-    predicates.add((t) -> t.get(1).equals(1));
-    predicates.add((t) -> t.get(1).equals(2));
 
-    final List<ContinuousStream<Tuple2<String, Integer>>> branchStreams =
+    final ContinuousStream<Tuple2<String, Integer>> branch1 =
         filteredMappedStream
-            .conditionalBranch(predicates);
+            .branchIf((t) -> t.get(1).equals(1));
+    final ContinuousStream<Tuple2<String, Integer>> branch2 =
+        filteredMappedStream
+            .branchIf((t) -> t.get(1).equals(2));
+    final ContinuousStream<Tuple2<String, Integer>> branch3 =
+        filteredMappedStream
+            .branchIf((t) -> t.get(1).equals(3));
+    final ContinuousStream<String> mapStream =
+        filteredMappedStream
+            .map((t) -> (String) t.get(0));
 
-    //                                   --> branch 0
-    // filteredMappedStream--> branch op --> branch 1
-    //                                   --> branch 2
+    //                      --> branch 1
+    // filteredMappedStream --> branch 2
+    //                      --> branch 3
+    //                      --> mapStream
     final DAG<MISTStream, MISTEdge> dag = queryBuilder.build().getDAG();
-    final Map<MISTStream, MISTEdge> n1 = dag.getEdges(filteredMappedStream);
+    final Map<MISTStream, MISTEdge> edges = dag.getEdges(filteredMappedStream);
 
-    Assert.assertEquals(1, n1.size());
-    final MISTStream<Tuple2<String, Integer>> branchOp =
-        n1.entrySet().iterator().next().getKey();
-    Assert.assertEquals(new MISTEdge(Direction.LEFT), n1.get(branchOp));
-
-    final Map<MISTStream, MISTEdge> n2 = dag.getEdges(branchOp);
-    Assert.assertEquals(3, n2.size());
-    Assert.assertEquals(new MISTEdge(Direction.LEFT, 0), n2.get(branchStreams.get(0)));
-    Assert.assertEquals(new MISTEdge(Direction.LEFT, 1), n2.get(branchStreams.get(1)));
-    Assert.assertEquals(new MISTEdge(Direction.LEFT, 2), n2.get(branchStreams.get(2)));
+    Assert.assertEquals(3, filteredMappedStream.getCondBranchCount());
+    Assert.assertEquals(4, edges.size());
+    Assert.assertEquals(new MISTEdge(Direction.LEFT), edges.get(branch1));
+    Assert.assertEquals(new MISTEdge(Direction.LEFT), edges.get(branch2));
+    Assert.assertEquals(new MISTEdge(Direction.LEFT), edges.get(branch3));
+    Assert.assertEquals(new MISTEdge(Direction.LEFT), edges.get(mapStream));
+    Assert.assertEquals(1, branch1.getBranchIndex());
+    Assert.assertEquals(2, branch2.getBranchIndex());
+    Assert.assertEquals(3, branch3.getBranchIndex());
+    Assert.assertEquals(0, mapStream.getBranchIndex());
   }
 
   /**

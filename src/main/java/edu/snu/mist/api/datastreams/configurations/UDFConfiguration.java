@@ -15,17 +15,26 @@
  */
 package edu.snu.mist.api.datastreams.configurations;
 
-import edu.snu.mist.common.operators.DummyOperator;
-import edu.snu.mist.common.operators.Operator;
+import edu.snu.mist.common.parameters.SerializedUdf;
 import org.apache.reef.tang.formats.ConfigurationModule;
 import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
+import org.apache.reef.tang.formats.RequiredParameter;
 
 /**
- * A configuration for dummy operator.
+ * A configuration containing a UDF string only.
+ * It is used for a conditional branch stream, and will be combined with other UDFConfigurations.
  */
-public final class DummyOperatorConfiguration extends ConfigurationModuleBuilder {
+public final class UDFConfiguration extends ConfigurationModuleBuilder {
 
-  public static final ConfigurationModule CONF = new DummyOperatorConfiguration()
-      .bindImplementation(Operator.class, DummyOperator.class)
+  /**
+   * Required Parameter for binding the serialized objects of the user-defined function.
+   */
+  public static final RequiredParameter<String> UDF_STRING = new RequiredParameter<>();
+
+  /**
+   * A configuration for binding the serialized objects of the user-defined function.
+   */
+  public static final ConfigurationModule CONF = new UDFConfiguration()
+      .bindNamedParameter(SerializedUdf.class, UDF_STRING)
       .build();
 }

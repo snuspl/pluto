@@ -58,10 +58,17 @@ import java.util.*;
 public final class ChainedDagGenerator {
 
   /**
-   * DAG of the logical query.
+   * The optimized DAG of a query to convert into chained DAG.
    */
-  private final DAG<MISTStream, MISTEdge> dag;
-  public ChainedDagGenerator(final DAG<MISTStream, MISTEdge> dag) {
+  private DAG<MISTStream, MISTEdge> dag;
+
+  public ChainedDagGenerator() {
+  }
+
+  /**
+   * Set the DAG to convert into chained DAG.
+   */
+  public void setDag(final DAG<MISTStream, MISTEdge> dag) {
     this.dag = dag;
   }
 

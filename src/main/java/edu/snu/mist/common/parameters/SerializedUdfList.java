@@ -18,6 +18,8 @@ package edu.snu.mist.common.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "A string for a serialized user-defined function list in operators")
-public final class SerializedUdfList implements Name<String> {
+import java.util.List;
+
+@NamedParameter(doc = "A list of string for a serialized user-defined functions in operators")
+public final class SerializedUdfList implements Name<List<String>> {
 }

@@ -17,35 +17,39 @@ package edu.snu.mist.common.operators;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
-import edu.snu.mist.common.parameters.OperatorId;
+import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.functions.MISTPredicate;
+import edu.snu.mist.common.parameters.SerializedUdfList;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
  * Conditional branch operator which branches out from input stream.
- * TODO: [MIST-417] Implement control flow in task side
  * @param <I> input type
  */
 public final class ConditionalBranchOperator<I> extends OneStreamOperator {
   private static final Logger LOG = Logger.getLogger(ConditionalBranchOperator.class.getName());
 
-  @Inject
-  private ConditionalBranchOperator(
-      @Parameter(OperatorId.class) final String operatorId,
-      final ClassLoader classLoader) throws IOException, ClassNotFoundException {
-    this(operatorId);
-  }
+  private final List<MISTPredicate<I>> predicates;
 
   @Inject
-  public ConditionalBranchOperator(@Parameter(OperatorId.class) final String operatorId) {
-    super(operatorId);
+  private ConditionalBranchOperator(
+      @Parameter(SerializedUdfList.class) final List<String> serializedUdfList,
+      final ClassLoader classLoader) throws IOException, ClassNotFoundException {
+    predicates = new ArrayList<>(serializedUdfList.size());
+    for (final String serializedUdf : serializedUdfList) {
+      predicates.add(SerializeUtils.deserializeFromString(serializedUdf, classLoader));
+    }
   }
 
   /**
    * Checks the branch conditions and forward to matched branch.
+   * TODO: [MIST-417] Implement control flow in task side
    */
   @Override
   public void processLeftData(final MistDataEvent input) {

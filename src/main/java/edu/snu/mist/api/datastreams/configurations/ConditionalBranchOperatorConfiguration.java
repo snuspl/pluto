@@ -15,34 +15,30 @@
  */
 package edu.snu.mist.api.datastreams.configurations;
 
+import edu.snu.mist.common.operators.ConditionalBranchOperator;
 import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.common.parameters.SerializedUdfList;
 import org.apache.reef.tang.formats.ConfigurationModule;
 import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
-import org.apache.reef.tang.formats.RequiredImpl;
 import org.apache.reef.tang.formats.RequiredParameter;
 
+import java.util.List;
+
 /**
- * A configuration for operators that use multiple user-defined functions.
- * Ex) conditional branch.
+ * A configuration for conditional branch operator that binds a list of serialized udfs.
  */
-public final class OperatorUDFListConfiguration extends ConfigurationModuleBuilder {
+public final class ConditionalBranchOperatorConfiguration extends ConfigurationModuleBuilder {
 
   /**
    * Required Parameter for binding the serialized objects of the list of user-defined functions.
    */
-  public static final RequiredParameter<String> UDF_LIST_STRING = new RequiredParameter<>();
+  public static final RequiredParameter<List> UDF_LIST_STRING = new RequiredParameter<>();
 
   /**
-   * Required operator class.
+   * A configuration for binding a list of serialized udfs of conditional branch operator.
    */
-  public static final RequiredImpl<Operator> OPERATOR = new RequiredImpl<>();
-
-  /**
-   * A configuration for binding the serialized objects of the list of user-defined function.
-   */
-  public static final ConfigurationModule CONF = new OperatorUDFListConfiguration()
-      .bindNamedParameter(SerializedUdfList.class, UDF_LIST_STRING)
-      .bindImplementation(Operator.class, OPERATOR)
+  public static final ConfigurationModule CONF = new ConditionalBranchOperatorConfiguration()
+      .bindImplementation(Operator.class, ConditionalBranchOperator.class)
+      .bindList(SerializedUdfList.class, UDF_LIST_STRING)
       .build();
 }
