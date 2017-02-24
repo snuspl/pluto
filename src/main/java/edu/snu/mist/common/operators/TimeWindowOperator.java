@@ -22,7 +22,6 @@ import edu.snu.mist.common.parameters.WindowSize;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -50,16 +49,5 @@ public final class TimeWindowOperator<T> extends FixedSizeWindowOperator<T> {
     emitElapsedWindow(input.getTimestamp());
     createWindow(input.getTimestamp());
     putWatermark(input);
-  }
-
-  @Override
-  public Map<String, Object> getOperatorState() {
-    final Map<String, Object> stateMap = super.getOperatorState();
-    return stateMap;
-  }
-
-  @Override
-  public void setState(final Map<String, Object> loadedState) {
-    super.setState(loadedState);
   }
 }

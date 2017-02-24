@@ -23,8 +23,10 @@ import edu.snu.mist.common.utils.FindMaxIntFunction;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public final class ApplyStatefulOperatorTest {
 
@@ -71,5 +73,70 @@ public final class ApplyStatefulOperatorTest {
     applyStatefulOperator.processLeftWatermark(watermarkEvent);
     Assert.assertEquals(5, result.size());
     Assert.assertEquals(watermarkEvent, result.get(4));
+  }
+
+  /**
+   * Test getting state of the ApplyStatefulOperator.
+   */
+  @Test
+  public void testApplyStatefulOperatorGetState() throws InterruptedException {
+    // Generate the current ApplyStatefulOperator.
+    final ApplyStatefulFunction applyStatefulFunction = new FindMaxIntFunction();
+    final ApplyStatefulOperator<Integer, Integer> applyStatefulOperator =
+        new ApplyStatefulOperator<>(applyStatefulFunction);
+    final MistDataEvent data10 = new MistDataEvent(10, 0L);
+    final MistDataEvent data20 = new MistDataEvent(20, 1L);
+    final List<MistEvent> result = new LinkedList<>();
+    applyStatefulOperator.setOutputEmitter(new SimpleOutputEmitter(result));
+    applyStatefulOperator.processLeftData(data10);
+    applyStatefulOperator.processLeftData(data20);
+
+    // Generate the expected ApplyStatefulOperator's state.
+    final int expectedApplyStatefulOperatorState = 20;
+
+    // Get the current ApplyStatefulOperator's state.
+    final Map<String, Object> operatorState= applyStatefulOperator.getOperatorState();
+    final int applyStatefulOperatorState = (int)operatorState.get("applyStatefulFunctionState");
+
+    // Compare the expected and original operator's state.
+    Assert.assertEquals(expectedApplyStatefulOperatorState, applyStatefulOperatorState);
+  }
+
+  /**
+   * Test setting state of the ApplyStatefulOperator.
+   */
+  @Test
+  public void testApplyStatefulOperatorSetState() throws InterruptedException {
+    // Generate a new state and set it to a new ApplyStatefulOperator.
+    final ApplyStatefulFunction applyStatefulFunction = new FindMaxIntFunction();
+    final int expectedApplyStatefulFunctionState = 5;
+    final Map<String, Object> loadStateMap = new HashMap<>();
+    loadStateMap.put("applyStatefulFunctionState", expectedApplyStatefulFunctionState);
+    final ApplyStatefulOperator<Integer, Integer> applyStatefulOperator =
+        new ApplyStatefulOperator<>(applyStatefulFunction);
+    applyStatefulOperator.setState(loadStateMap);
+
+    // Get the current ApplyStatefulOperator's state.
+    final Map<String, Object> operatorState = applyStatefulOperator.getOperatorState();
+    final int applyStatefulFunctionState = (Integer)operatorState.get("applyStatefulFunctionState");
+
+    // Compare the original and the set operator.
+    Assert.assertEquals(expectedApplyStatefulFunctionState, applyStatefulFunctionState);
+
+    // Test if the operator can properly process data.
+    final List<MistEvent> result = new LinkedList<>();
+    applyStatefulOperator.setOutputEmitter(new SimpleOutputEmitter(result));
+    final MistDataEvent data10 = new MistDataEvent(10, 0L);
+    final MistDataEvent data20 = new MistDataEvent(20, 1L);
+    final MistDataEvent data15 = new MistDataEvent(15, 2L);
+    applyStatefulOperator.processLeftData(data10);
+    Assert.assertEquals(1, result.size());
+    Assert.assertEquals(10, ((MistDataEvent)result.get(0)).getValue());
+    applyStatefulOperator.processLeftData(data20);
+    Assert.assertEquals(2, result.size());
+    Assert.assertEquals(20, ((MistDataEvent)result.get(1)).getValue());
+    applyStatefulOperator.processLeftData(data15);
+    Assert.assertEquals(3, result.size());
+    Assert.assertEquals(20, ((MistDataEvent)result.get(2)).getValue());
   }
 }

@@ -130,6 +130,12 @@ public final class JoinAndApplyStateful {
       return state;
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public void setFunctionState(final Object loadedState) throws RuntimeException {
+      state = (Collection<String>) loadedState;
+    }
+
     @Override
     public String produceResult() {
       return this.state.toString();

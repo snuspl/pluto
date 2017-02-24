@@ -58,14 +58,11 @@ public final class ApplyStatefulWindowOperator<IN, OUT>
   @Inject
   public ApplyStatefulWindowOperator(final ApplyStatefulFunction<IN, OUT> applyStatefulFunction) {
     this.applyStatefulFunction = applyStatefulFunction;
+    applyStatefulFunction.initialize();
   }
 
   @Override
   public void processLeftData(final MistDataEvent input) {
-    /**
-     * The temporal ApplyStatefulFunction which is used for a single input collection.
-     */
-    applyStatefulFunction.initialize();
     try {
       final WindowData<IN> windowData = (WindowData<IN>) input.getValue();
       final Collection<IN> value = windowData.getDataCollection();
@@ -99,7 +96,6 @@ public final class ApplyStatefulWindowOperator<IN, OUT>
 
   @Override
   public void setState(final Map<String, Object> loadedState) {
-    // TODO[MIST-435] Implement stateful loading for ApplyStatefulFunctions
-    // applyStatefulFunction.setFunctionState(loadedState.get("applyStatefulFunctionState"));
+    applyStatefulFunction.setFunctionState(loadedState.get("applyStatefulFunctionState"));
   }
 }

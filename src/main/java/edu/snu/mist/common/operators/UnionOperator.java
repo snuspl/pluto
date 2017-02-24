@@ -19,8 +19,6 @@ import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 
 import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
@@ -34,7 +32,7 @@ import java.util.logging.Logger;
  * Each queue contains MistDataEvent and MistWatermarkEvent.
  * The operator drains events from the queues to the next operator until watermark timestamp.
  */
-public final class UnionOperator extends TwoStreamOperator implements StateHandler {
+public final class UnionOperator extends TwoStreamOperator {
   private static final Logger LOG = Logger.getLogger(UnionOperator.class.getName());
 
   private final Queue<MistDataEvent> leftUpstreamQueue;
@@ -200,28 +198,5 @@ public final class UnionOperator extends TwoStreamOperator implements StateHandl
 
     // Drain events until the minimum watermark.
     drainUntilMinimumWatermark();
-  }
-
-  @Override
-  public Map<String, Object> getOperatorState() {
-    final Map<String, Object> stateMap = new HashMap<>();
-    stateMap.put("leftUpstreamQueue", leftUpstreamQueue);
-    stateMap.put("rightUpstreamQueue", rightUpstreamQueue);
-    stateMap.put("recentLeftWatermark", recentLeftWatermark);
-    stateMap.put("recentRightWatermark", recentRightWatermark);
-    stateMap.put("recentLeftTimestamp", recentLeftTimestamp);
-    stateMap.put("recentRightTimestamp", recentRightTimestamp);
-    return stateMap;
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public void setState(final Map<String, Object> loadedState) {
-    leftUpstreamQueue.addAll((Queue<MistDataEvent>)loadedState.get("leftUpstreamQueue"));
-    rightUpstreamQueue.addAll((Queue<MistDataEvent>)loadedState.get("rightUpstreamQueue"));
-    recentLeftWatermark = (MistWatermarkEvent)loadedState.get("recentLeftWatermark");
-    recentRightWatermark = (MistWatermarkEvent)loadedState.get("recentRightWatermark");
-    recentLeftTimestamp = (long)loadedState.get("recentLeftTimestamp");
-    recentRightTimestamp = (long)loadedState.get("recentRightTimestamp");
   }
 }

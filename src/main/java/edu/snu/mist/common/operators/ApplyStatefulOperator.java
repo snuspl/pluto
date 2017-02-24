@@ -86,7 +86,6 @@ public final class ApplyStatefulOperator<IN, OUT>
 
   @Override
   public void setState(final Map<String, Object> loadedState) {
-    // TODO[MIST-435] Implement stateful loading for ApplyStatefulFunctions
-    // applyStatefulFunction.setFunctionState(loadedState.get("applyStatefulFunctionState"));
+    applyStatefulFunction.setFunctionState(loadedState.get("applyStatefulFunctionState"));
   }
 }

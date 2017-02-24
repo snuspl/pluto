@@ -198,6 +198,12 @@ public final class KMeansClustering {
       return clusters;
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public void setFunctionState(final Object loadedState) throws RuntimeException {
+      clusters = (Collection<Cluster>) loadedState;
+    }
+
     /**
      * @return the cluster information
      */
