@@ -31,6 +31,8 @@ import java.util.logging.Logger;
 
 /**
  * This operator applies user-defined stateful operation to the collection received from window operator.
+ * It is designed to do separate stateful operation over each window input
+ * with the same form of ApplyStatefulFunction.
  * @param <IN> the type of input data
  * @param <OUT> the type of output data
  */
@@ -59,6 +61,9 @@ public final class ApplyStatefulWindowOperator<IN, OUT> extends OneStreamOperato
 
   @Override
   public void processLeftData(final MistDataEvent input) {
+    /**
+     * The temporal ApplyStatefulFunction which is used for a single input collection.
+     */
     applyStatefulFunction.initialize();
     try {
       final WindowData<IN> windowData = (WindowData<IN>) input.getValue();

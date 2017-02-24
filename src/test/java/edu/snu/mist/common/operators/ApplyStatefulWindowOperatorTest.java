@@ -36,13 +36,18 @@ public final class ApplyStatefulWindowOperatorTest {
   @Test
   public void testApplyStatefulWindowOperator() {
     // input stream events
-    final WindowImpl<Integer> window = new WindowImpl<>(0L, 100L);
-    window.putData(new MistDataEvent(10, 10));
-    window.putData(new MistDataEvent(20, 20));
-    window.putData(new MistDataEvent(30, 30));
-    window.putData(new MistDataEvent(15, 90));
-    final MistDataEvent dataEvent = new MistDataEvent(window, 90L);
-    final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(101L);
+    final WindowImpl<Integer> window1 = new WindowImpl<>(0L, 100L);
+    final WindowImpl<Integer> window2 = new WindowImpl<>(100L, 100L);
+    window1.putData(new MistDataEvent(10, 10));
+    window1.putData(new MistDataEvent(20, 20));
+    window1.putData(new MistDataEvent(30, 30));
+    window1.putData(new MistDataEvent(15, 90));
+    window2.putData(new MistDataEvent(10, 110));
+    window2.putData(new MistDataEvent(20, 120));
+    final MistDataEvent dataEvent1 = new MistDataEvent(window1, 90L);
+    final MistDataEvent dataEvent2 = new MistDataEvent(window2, 190L);
+    final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(201L);
+
     // the state finding maximum integer value among received inputs
     final ApplyStatefulFunction<Integer, Integer> applyStatefulFunction = new FindMaxIntFunction();
 
@@ -52,14 +57,23 @@ public final class ApplyStatefulWindowOperatorTest {
     final List<MistEvent> result = new LinkedList<>();
     applyStatefulWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));
 
-    applyStatefulWindowOperator.processLeftData(dataEvent);
+    // check that the operator processes a window input properly
+    applyStatefulWindowOperator.processLeftData(dataEvent1);
     Assert.assertEquals(1, result.size());
     Assert.assertTrue(result.get(0).isData());
     Assert.assertEquals(30, ((MistDataEvent)result.get(0)).getValue());
     Assert.assertEquals(90L, result.get(0).getTimestamp());
 
-    applyStatefulWindowOperator.processLeftWatermark(watermarkEvent);
+    // check that the operator processes another window separately
+    applyStatefulWindowOperator.processLeftData(dataEvent2);
     Assert.assertEquals(2, result.size());
-    Assert.assertEquals(watermarkEvent, result.get(1));
+    Assert.assertTrue(result.get(0).isData());
+    Assert.assertEquals(20, ((MistDataEvent)result.get(1)).getValue());
+    Assert.assertEquals(190L, result.get(1).getTimestamp());
+
+    // check that the operator processes watermark event well
+    applyStatefulWindowOperator.processLeftWatermark(watermarkEvent);
+    Assert.assertEquals(3, result.size());
+    Assert.assertEquals(watermarkEvent, result.get(2));
   }
 }
