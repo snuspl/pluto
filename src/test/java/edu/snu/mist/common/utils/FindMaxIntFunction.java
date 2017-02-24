@@ -45,6 +45,11 @@ public final class FindMaxIntFunction implements ApplyStatefulFunction<Integer, 
   }
 
   @Override
+  public void setFunctionState(final Object loadedState) throws RuntimeException {
+    state = (Integer)loadedState;
+  }
+
+  @Override
   public Integer produceResult() {
     return state;
   }

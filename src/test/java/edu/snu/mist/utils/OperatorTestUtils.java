@@ -142,6 +142,11 @@ public final class OperatorTestUtils {
     }
 
     @Override
+    public void setFunctionState(final Object loadedState) throws RuntimeException {
+      state = (Integer)loadedState;
+    }
+
+    @Override
     public Integer produceResult() {
       return state;
     }
