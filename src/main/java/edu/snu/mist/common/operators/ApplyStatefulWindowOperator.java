@@ -26,8 +26,6 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,8 +34,7 @@ import java.util.logging.Logger;
  * @param <IN> the type of input data
  * @param <OUT> the type of output data
  */
-public final class ApplyStatefulWindowOperator<IN, OUT>
-    extends OneStreamOperator implements StateHandler {
+public final class ApplyStatefulWindowOperator<IN, OUT> extends OneStreamOperator {
   private static final Logger LOG = Logger.getLogger(ApplyStatefulWindowOperator.class.getName());
 
   /**
@@ -58,11 +55,11 @@ public final class ApplyStatefulWindowOperator<IN, OUT>
   @Inject
   public ApplyStatefulWindowOperator(final ApplyStatefulFunction<IN, OUT> applyStatefulFunction) {
     this.applyStatefulFunction = applyStatefulFunction;
-    applyStatefulFunction.initialize();
   }
 
   @Override
   public void processLeftData(final MistDataEvent input) {
+    applyStatefulFunction.initialize();
     try {
       final WindowData<IN> windowData = (WindowData<IN>) input.getValue();
       final Collection<IN> value = windowData.getDataCollection();
@@ -85,17 +82,5 @@ public final class ApplyStatefulWindowOperator<IN, OUT>
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
     outputEmitter.emitWatermark(input);
-  }
-
-  @Override
-  public Map<String, Object> getOperatorState() {
-    final Map<String, Object> stateMap = new HashMap<>();
-    stateMap.put("applyStatefulFunctionState", applyStatefulFunction.getCurrentState());
-    return stateMap;
-  }
-
-  @Override
-  public void setState(final Map<String, Object> loadedState) {
-    applyStatefulFunction.setFunctionState(loadedState.get("applyStatefulFunctionState"));
   }
 }
