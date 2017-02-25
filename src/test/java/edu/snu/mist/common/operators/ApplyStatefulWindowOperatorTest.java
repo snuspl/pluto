@@ -67,7 +67,7 @@ public final class ApplyStatefulWindowOperatorTest {
     // check that the operator processes another window separately
     applyStatefulWindowOperator.processLeftData(dataEvent2);
     Assert.assertEquals(2, result.size());
-    Assert.assertTrue(result.get(0).isData());
+    Assert.assertTrue(result.get(1).isData());
     Assert.assertEquals(20, ((MistDataEvent)result.get(1)).getValue());
     Assert.assertEquals(190L, result.get(1).getTimestamp());
 
