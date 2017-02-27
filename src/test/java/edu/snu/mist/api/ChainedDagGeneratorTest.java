@@ -65,7 +65,8 @@ public final class ChainedDagGeneratorTest {
 
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
-    final ChainedDagGenerator chainedDagGenerator = new ChainedDagGenerator(dag);
+    final ChainedDagGenerator chainedDagGenerator = new ChainedDagGenerator();
+    chainedDagGenerator.setOptimizedDag(dag);
     final DAG<List<MISTStream>, MISTEdge>
         chainedPlan = chainedDagGenerator.generateChainedDAG();
 
@@ -139,7 +140,8 @@ public final class ChainedDagGeneratorTest {
 
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
-    final ChainedDagGenerator chainedDagGenerator = new ChainedDagGenerator(dag);
+    final ChainedDagGenerator chainedDagGenerator = new ChainedDagGenerator();
+    chainedDagGenerator.setOptimizedDag(dag);
     final DAG<List<MISTStream>, MISTEdge>
         chainedPlan = chainedDagGenerator.generateChainedDAG();
 
@@ -186,7 +188,8 @@ public final class ChainedDagGeneratorTest {
 
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
-    final ChainedDagGenerator chainedDagGenerator = new ChainedDagGenerator(dag);
+    final ChainedDagGenerator chainedDagGenerator = new ChainedDagGenerator();
+    chainedDagGenerator.setOptimizedDag(dag);
     final DAG<List<MISTStream>, MISTEdge>
         chainedPlan = chainedDagGenerator.generateChainedDAG();
 
@@ -263,7 +266,8 @@ public final class ChainedDagGeneratorTest {
 
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
-    final ChainedDagGenerator chainedDagGenerator = new ChainedDagGenerator(dag);
+    final ChainedDagGenerator chainedDagGenerator = new ChainedDagGenerator();
+    chainedDagGenerator.setOptimizedDag(dag);
     final DAG<List<MISTStream>, MISTEdge>
         chainedPlan = chainedDagGenerator.generateChainedDAG();
 
@@ -347,7 +351,8 @@ public final class ChainedDagGeneratorTest {
 
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
-    final ChainedDagGenerator chainedDagGenerator = new ChainedDagGenerator(dag);
+    final ChainedDagGenerator chainedDagGenerator = new ChainedDagGenerator();
+    chainedDagGenerator.setOptimizedDag(dag);
     final DAG<List<MISTStream>, MISTEdge>
         chainedPlan = chainedDagGenerator.generateChainedDAG();
 

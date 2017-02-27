@@ -58,11 +58,18 @@ import java.util.*;
 public final class ChainedDagGenerator {
 
   /**
-   * DAG of the logical query.
+   * The optimized DAG of a query to convert into chained DAG.
    */
-  private final DAG<MISTStream, MISTEdge> dag;
-  public ChainedDagGenerator(final DAG<MISTStream, MISTEdge> dag) {
-    this.dag = dag;
+  private DAG<MISTStream, MISTEdge> optimizedDag;
+
+  public ChainedDagGenerator() {
+  }
+
+  /**
+   * Set the optimized DAG to convert into chained DAG.
+   */
+  public void setOptimizedDag(final DAG<MISTStream, MISTEdge> optimizedDag) {
+    this.optimizedDag = optimizedDag;
   }
 
   /**
@@ -79,8 +86,8 @@ public final class ChainedDagGenerator {
 
     // It traverses the DAG of operators in DFS order
     // from the root operators which are following sources.
-    for (final MISTStream source : dag.getRootVertices()) {
-      final Map<MISTStream, MISTEdge> rootEdges = dag.getEdges(source);
+    for (final MISTStream source : optimizedDag.getRootVertices()) {
+      final Map<MISTStream, MISTEdge> rootEdges = optimizedDag.getEdges(source);
       // This chaining group is a wrapper for List, for equality check
       final OperatorChain srcChain = new OperatorChain();
       // Partition Source
@@ -99,7 +106,7 @@ public final class ChainedDagGenerator {
           partitionedQueryDAG.addVertex(nextChain);
         }
         partitionedQueryDAG.addEdge(srcChain, nextChain, new MISTEdge(edgeDirection, branchIndex));
-        chaining(nextChain, nextVertex, visited, partitionedQueryDAG, vertexChainMap);
+        chainSubDag(nextChain, nextVertex, visited, partitionedQueryDAG, vertexChainMap);
       }
     }
 
@@ -127,24 +134,24 @@ public final class ChainedDagGenerator {
    * @param operatorChain current chain
    * @param currVertex  current vertex
    * @param visited visited vertices
-   * @param partitionedQueryDAG dag
+   * @param partitionedQueryDAG optimizedDag
    * @param vertexChainMap vertex and chain mapping
    */
-  private void chaining(final OperatorChain operatorChain,
-                        final MISTStream currVertex,
-                        final Set<MISTStream> visited,
-                        final DAG<OperatorChain, MISTEdge> partitionedQueryDAG,
-                        final Map<MISTStream, OperatorChain> vertexChainMap) {
+  private void chainSubDag(final OperatorChain operatorChain,
+                           final MISTStream currVertex,
+                           final Set<MISTStream> visited,
+                           final DAG<OperatorChain, MISTEdge> partitionedQueryDAG,
+                           final Map<MISTStream, OperatorChain> vertexChainMap) {
     if (!visited.contains(currVertex)) {
       operatorChain.chain.add(currVertex);
       visited.add(currVertex);
-      final Map<MISTStream, MISTEdge> edges = dag.getEdges(currVertex);
+      final Map<MISTStream, MISTEdge> edges = optimizedDag.getEdges(currVertex);
       for (final Map.Entry<MISTStream, MISTEdge> entry : edges.entrySet()) {
         final MISTStream nextVertex = entry.getKey();
         final MISTEdge edgeInfo = entry.getValue();
         final Direction edgeDirection = edgeInfo.getDirection();
         final Integer branchIndex = edgeInfo.getIndex();
-        if (dag.getInDegree(nextVertex) > 1 ||
+        if (optimizedDag.getInDegree(nextVertex) > 1 ||
             edges.size() > 1) {
           // The current vertex is 2) branching (have multiple next ops)
           // or the next vertex is 3) merging operator (have multiple incoming edges)
@@ -155,8 +162,8 @@ public final class ChainedDagGenerator {
             vertexChainMap.put(nextVertex, nextChain);
           }
           partitionedQueryDAG.addEdge(operatorChain, nextChain, new MISTEdge(edgeDirection, branchIndex));
-          chaining(nextChain, nextVertex, visited, partitionedQueryDAG, vertexChainMap);
-        } else if (dag.getEdges(nextVertex).size() == 0) {
+          chainSubDag(nextChain, nextVertex, visited, partitionedQueryDAG, vertexChainMap);
+        } else if (optimizedDag.getEdges(nextVertex).size() == 0) {
           // The next vertex is Sink. End of the chaining
           final OperatorChain nextChain = vertexChainMap.getOrDefault(nextVertex, new OperatorChain());
           if (!vertexChainMap.containsKey(nextVertex)) {
@@ -164,11 +171,11 @@ public final class ChainedDagGenerator {
             vertexChainMap.put(nextVertex, nextChain);
           }
           partitionedQueryDAG.addEdge(operatorChain, nextChain, new MISTEdge(edgeDirection, branchIndex));
-          chaining(nextChain, nextVertex, visited, partitionedQueryDAG, vertexChainMap);
+          chainSubDag(nextChain, nextVertex, visited, partitionedQueryDAG, vertexChainMap);
         } else {
           // 1) The next vertex is sequentially following the current vertex
           // so add the next operator to the current OperatorChain
-          chaining(operatorChain, nextVertex, visited, partitionedQueryDAG, vertexChainMap);
+          chainSubDag(operatorChain, nextVertex, visited, partitionedQueryDAG, vertexChainMap);
         }
       }
     }

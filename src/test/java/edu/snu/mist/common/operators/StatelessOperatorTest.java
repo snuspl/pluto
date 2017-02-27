@@ -32,8 +32,8 @@ import java.util.List;
 public final class StatelessOperatorTest {
 
   private <O> void testStatelessOperator(final List<MistDataEvent> inputStream,
-                                            final List<O> expected,
-                                            final Operator operator) {
+                                         final List<O> expected,
+                                         final Operator operator) {
     final List<O> result = new LinkedList<>();
     operator.setOutputEmitter(new TestOutputEmitter<>(result));
     inputStream.stream().forEach(operator::processLeftData);
@@ -67,7 +67,7 @@ public final class StatelessOperatorTest {
   }
 
   /**
-   * Test filter opeator.
+   * Test filter operator.
    * It filters string values which start with "a".
    */
   @Test

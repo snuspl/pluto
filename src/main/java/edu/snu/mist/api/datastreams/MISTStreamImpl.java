@@ -76,8 +76,7 @@ class MISTStreamImpl<OUT> implements MISTStream<OUT> {
       final MISTStream upStream) {
     final ContinuousStream<OUT> downStream = new ContinuousStreamImpl<>(dag, opConf);
     dag.addVertex(downStream);
-    // TODO: [MIST-410] we need to handle the edge index in MIST-410
-    dag.addEdge(upStream, downStream, new MISTEdge(Direction.LEFT, 0));
+    dag.addEdge(upStream, downStream, new MISTEdge(Direction.LEFT));
     return downStream;
   }
 

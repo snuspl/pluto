@@ -72,7 +72,6 @@ public final class ContinuousStreamTest {
     queryBuilder = null;
   }
 
-
   /**
    * Test for basic stateless OperatorStreams.
    */
@@ -352,6 +351,44 @@ public final class ContinuousStreamTest {
     final Injector injector = Tang.Factory.getTang().newInjector(joinedStream.getConfiguration());
     final MISTBiPredicate func = injector.getInstance(MISTBiPredicate.class);
     Assert.assertTrue(func instanceof OperatorTestUtils.TestBiPredicate);
+  }
+
+  /**
+   * Test for creating conditional branch operator.
+   */
+  @Test
+  public void testConditionalBranchOperatorStream() {
+
+    final ContinuousStream<Tuple2<String, Integer>> branch1 =
+        filteredMappedStream
+            .routeIf((t) -> t.get(1).equals(1));
+    final ContinuousStream<Tuple2<String, Integer>> branch2 =
+        filteredMappedStream
+            .routeIf((t) -> t.get(1).equals(2));
+    final ContinuousStream<Tuple2<String, Integer>> branch3 =
+        filteredMappedStream
+            .routeIf((t) -> t.get(1).equals(3));
+    final ContinuousStream<String> mapStream =
+        filteredMappedStream
+            .map((t) -> (String) t.get(0));
+
+    //                      --> branch 1
+    // filteredMappedStream --> branch 2
+    //                      --> branch 3
+    //                      --> mapStream
+    final DAG<MISTStream, MISTEdge> dag = queryBuilder.build().getDAG();
+    final Map<MISTStream, MISTEdge> edges = dag.getEdges(filteredMappedStream);
+
+    Assert.assertEquals(3, filteredMappedStream.getCondBranchCount());
+    Assert.assertEquals(4, edges.size());
+    Assert.assertEquals(new MISTEdge(Direction.LEFT), edges.get(branch1));
+    Assert.assertEquals(new MISTEdge(Direction.LEFT), edges.get(branch2));
+    Assert.assertEquals(new MISTEdge(Direction.LEFT), edges.get(branch3));
+    Assert.assertEquals(new MISTEdge(Direction.LEFT), edges.get(mapStream));
+    Assert.assertEquals(1, branch1.getBranchIndex());
+    Assert.assertEquals(2, branch2.getBranchIndex());
+    Assert.assertEquals(3, branch3.getBranchIndex());
+    Assert.assertEquals(0, mapStream.getBranchIndex());
   }
 
   /**
