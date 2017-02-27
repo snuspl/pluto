@@ -65,14 +65,19 @@ public final class LogicalDagOptimizer {
       final Map<MISTStream, MISTEdge> rootEdges = dag.getEdges(source);
       visited.add(source);
       for (final MISTStream nextVertex : rootEdges.keySet()) {
-        optimizing(nextVertex, visited);
+        optimizeSubDag(nextVertex, visited);
       }
     }
     return dag;
   }
 
-  private void optimizing(final MISTStream currVertex,
-                          final Set<MISTStream> visited) {
+  /**
+   * Obtimize the operators and sinks recursively (DFS order) according to the mechanism.
+   * @param currVertex  current vertex
+   * @param visited visited vertices
+   */
+  private void optimizeSubDag(final MISTStream currVertex,
+                              final Set<MISTStream> visited) {
     if (!visited.contains(currVertex)) {
       visited.add(currVertex);
       final Map<MISTStream, MISTEdge> edges = dag.getEdges(currVertex);
@@ -82,26 +87,28 @@ public final class LogicalDagOptimizer {
           ((ContinuousStreamImpl) currVertex).getCondBranchCount() == 0) {
         // current vertex is not a continuous stream or this edge is an ordinary (non-branch) edge
         for (final MISTStream nextVertex : edges.keySet()) {
-          optimizing(nextVertex, visited);
+          optimizeSubDag(nextVertex, visited);
         }
       } else {
         // current vertex has some conditionally branching edges
-        final List<ContinuousStreamImpl> branchStreams =
-            new ArrayList<>(((ContinuousStreamImpl) currVertex).getCondBranchCount());
+        final Map<Integer, ContinuousStreamImpl> branchStreams = new HashMap<>();
 
         // gather the branching streams
         for (final MISTStream nextVertex : edges.keySet()) {
-          if (nextVertex instanceof ContinuousStreamImpl &&
-              ((ContinuousStreamImpl) nextVertex).getBranchIndex() > 0) {
-            // this edge is a conditionally branching edge
-            branchStreams.add((ContinuousStreamImpl) nextVertex);
+          if (nextVertex instanceof ContinuousStreamImpl) {
+            final ContinuousStreamImpl contNextVertex = (ContinuousStreamImpl) nextVertex;
+            if (contNextVertex.getBranchIndex() > 0) {
+              // this edge is a conditionally branching edge
+              branchStreams.put(contNextVertex.getBranchIndex(), contNextVertex);
+            }
           }
-          optimizing(nextVertex, visited);
+          optimizeSubDag(nextVertex, visited);
         }
 
         // gather condition udfs from each branch stream
         final List<String> udfs = new ArrayList<>(branchStreams.size());
-        for (final ContinuousStreamImpl branchStream : branchStreams) {
+        for (int i = 1; i <= branchStreams.size(); i++) {
+          final ContinuousStreamImpl branchStream = branchStreams.get(i);
           final Configuration conf = branchStream.getConfiguration();
           try {
             udfs.add(Tang.Factory.getTang().newInjector(conf).getNamedInstance(SerializedUdf.class));
@@ -120,7 +127,7 @@ public final class LogicalDagOptimizer {
         dag.addEdge(currVertex, unifiedBranchStream, new MISTEdge(Direction.LEFT));
 
         // merging all the branching vertices from the current vertex into a single conditional branch vertex
-        for (final ContinuousStreamImpl branchStream : branchStreams) {
+        for (final ContinuousStreamImpl branchStream : branchStreams.values()) {
           final List<MISTStream> branchDownStreams = new ArrayList<>();
           for (final Map.Entry<MISTStream, MISTEdge> edgeFromBranch : dag.getEdges(branchStream).entrySet()) {
             final MISTStream branchDownStream = edgeFromBranch.getKey();

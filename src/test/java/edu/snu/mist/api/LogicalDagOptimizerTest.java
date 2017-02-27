@@ -53,9 +53,9 @@ public final class LogicalDagOptimizerTest {
     final ContinuousStream<String> src1 =
         queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
     final ContinuousStream<String> op1 = src1.filter((x) -> true);
-    final ContinuousStream<String> cbr1 = op1.branchIf((x) -> true);
-    final ContinuousStream<String> cbr2 = op1.branchIf((x) -> true);
-    final ContinuousStream<String> cbr3 = op1.branchIf((x) -> true);
+    final ContinuousStream<String> cbr1 = op1.routeIf((x) -> true);
+    final ContinuousStream<String> cbr2 = op1.routeIf((x) -> true);
+    final ContinuousStream<String> cbr3 = op1.routeIf((x) -> true);
     final ContinuousStream<String> op2 = cbr1.filter((x) -> true);
     final ContinuousStream<String> op3 = cbr1.filter((x) -> true);
     final ContinuousStream<String> op4 = cbr3.filter((x) -> true);
@@ -69,8 +69,7 @@ public final class LogicalDagOptimizerTest {
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
     final LogicalDagOptimizer logicalDagOptimizer = new LogicalDagOptimizer();
     logicalDagOptimizer.setDag(dag);
-    final DAG<MISTStream, MISTEdge>
-        optimizedDAG = logicalDagOptimizer.getOptimizedDAG();
+    final DAG<MISTStream, MISTEdge> optimizedDAG = logicalDagOptimizer.getOptimizedDAG();
 
     // Check src1 -> op1
     final Map<MISTStream, MISTEdge> e1 = optimizedDAG.getEdges(src1);

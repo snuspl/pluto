@@ -361,13 +361,13 @@ public final class ContinuousStreamTest {
 
     final ContinuousStream<Tuple2<String, Integer>> branch1 =
         filteredMappedStream
-            .branchIf((t) -> t.get(1).equals(1));
+            .routeIf((t) -> t.get(1).equals(1));
     final ContinuousStream<Tuple2<String, Integer>> branch2 =
         filteredMappedStream
-            .branchIf((t) -> t.get(1).equals(2));
+            .routeIf((t) -> t.get(1).equals(2));
     final ContinuousStream<Tuple2<String, Integer>> branch3 =
         filteredMappedStream
-            .branchIf((t) -> t.get(1).equals(3));
+            .routeIf((t) -> t.get(1).equals(3));
     final ContinuousStream<String> mapStream =
         filteredMappedStream
             .map((t) -> (String) t.get(0));

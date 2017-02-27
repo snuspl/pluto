@@ -180,25 +180,25 @@ public interface ContinuousStream<T> extends MISTStream<T> {
 
   /**
    * Branches out to a continuous stream with condition.
-   * If an input data is matched with the condition, it will be passed only to the relevant downstream.
+   * If an input data is matched with the condition, it will be routed only to the relevant downstream.
    * If many conditions in one branch point are matched, the earliest condition will be taken.
    * These branches can represent a control flow.
    * @param condition the predicate which test the branch condition
    * @return the new continuous stream which is branched out from this branch point
    */
-  ContinuousStream<T> branchIf(MISTPredicate<T> condition);
+  ContinuousStream<T> routeIf(MISTPredicate<T> condition);
 
   /**
    * Branches out to a continuous stream with condition.
-   * If an input data is matched with the condition, it will be passed only to the relevant downstream.
+   * If an input data is matched with the condition, it will be routed only to the relevant downstream.
    * If many conditions in one branch point are matched, the earliest condition will be taken.
    * These branches can represent a control flow.
    * @param clazz the class of predicate which test the branch condition
    * @param funcConf the configurations to instantiate the predicate from the provided class
    * @return the new continuous stream which is branched out from this branch point
    */
-  ContinuousStream<T> branchIf(Class<? extends MISTPredicate<T>> clazz,
-                               Configuration funcConf);
+  ContinuousStream<T> routeIf(Class<? extends MISTPredicate<T>> clazz,
+                              Configuration funcConf);
 
   /**
    * Push the text stream to the socket server.

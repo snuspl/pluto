@@ -44,11 +44,13 @@ import java.util.Map;
 public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements ContinuousStream<T> {
 
   /**
-   * The conditional branch count that represents the number of branches diverged from this stream.
+   * The number of branches diverged from this stream.
    */
   private int condBranchCount;
   /**
    * The branch index that represents the order of branch.
+   * If this index is n which is greater than 0,
+   * than it means that this stream is n'th (conditional) branch from upstream.
    */
   private final int branchIndex;
 
@@ -317,7 +319,7 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
   }
 
   @Override
-  public ContinuousStream<T> branchIf(final MISTPredicate<T> condition) {
+  public ContinuousStream<T> routeIf(final MISTPredicate<T> condition) {
     condBranchCount++;
     try {
       final Configuration opConf = UDFConfiguration.CONF
@@ -335,8 +337,8 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
   }
 
   @Override
-  public ContinuousStream<T> branchIf(final Class<? extends MISTPredicate<T>> clazz,
-                                      final Configuration funcConf) {
+  public ContinuousStream<T> routeIf(final Class<? extends MISTPredicate<T>> clazz,
+                                     final Configuration funcConf) {
     // TODO: [MIST-436] Support predicate list generation through tang in branch operator API
     throw new RuntimeException("Branch operator setting through Tang is not supported yet.");
   }
