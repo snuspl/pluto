@@ -23,7 +23,7 @@
   [
     {
       "type": "record",
-      "name": "AvroChainedDag",
+      "name": "AvroOperatorChainDag",
       "fields":
       [
         {
@@ -178,8 +178,8 @@
       "request":
       [
         {
-          "name": "chainedDag",
-          "type": "AvroChainedDag"
+          "name": "operatorChainDag",
+          "type": "AvroOperatorChainDag"
         }
       ],
       "response": "QueryControlResult"

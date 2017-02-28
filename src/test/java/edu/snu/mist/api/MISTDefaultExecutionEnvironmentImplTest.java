@@ -58,7 +58,7 @@ public class MISTDefaultExecutionEnvironmentImplTest {
     }
 
     @Override
-    public QueryControlResult sendQueries(final AvroChainedDag chainedDag) throws AvroRemoteException {
+    public QueryControlResult sendQueries(final AvroOperatorChainDag operatorChainDag) throws AvroRemoteException {
       return new QueryControlResult(testQueryResult, true, testQueryResult);
     }
     @Override

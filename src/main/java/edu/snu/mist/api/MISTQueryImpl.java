@@ -35,29 +35,29 @@ public final class MISTQueryImpl implements MISTQuery {
    * DAG of the query.
    */
   private final DAG<MISTStream, MISTEdge> dag;
-  private final ChainedDagGenerator chainedDagGenerator;
+  private final OperatorChainDagGenerator chainDagGenerator;
   private final LogicalDagOptimizer logicalDagOptimizer;
   private final AvroConfigurationSerializer serializer;
 
   public MISTQueryImpl(final DAG<MISTStream, MISTEdge> dag) {
     this.logicalDagOptimizer = new LogicalDagOptimizer();
-    this.chainedDagGenerator = new ChainedDagGenerator();
+    this.chainDagGenerator = new OperatorChainDagGenerator();
     this.dag = dag;
     this.serializer = new AvroConfigurationSerializer();
   }
 
   @Override
-  public Tuple<List<AvroVertexChain>, List<Edge>> getAvroChainedDAG() {
+  public Tuple<List<AvroVertexChain>, List<Edge>> getAvroOperatorChainDag() {
     logicalDagOptimizer.setDag(dag);
-    chainedDagGenerator.setOptimizedDag(logicalDagOptimizer.getOptimizedDAG());
-    final DAG<List<MISTStream>, MISTEdge> chainedDAG =
-        chainedDagGenerator.generateChainedDAG();
+    chainDagGenerator.setOptimizedDag(logicalDagOptimizer.getOptimizedDAG());
+    final DAG<List<MISTStream>, MISTEdge> operatorChainDag =
+        chainDagGenerator.generateOperatorChainDAG();
     final Queue<List<MISTStream>> queue = new LinkedList<>();
     final List<List<MISTStream>> vertices = new ArrayList<>();
     final List<Edge> edges = new ArrayList<>();
 
     // Put all vertices into a queue
-    final Iterator<List<MISTStream>> iterator = GraphUtils.topologicalSort(chainedDAG);
+    final Iterator<List<MISTStream>> iterator = GraphUtils.topologicalSort(operatorChainDag);
     while (iterator.hasNext()) {
       final List<MISTStream> vertex = iterator.next();
       queue.add(vertex);
@@ -68,7 +68,7 @@ public final class MISTQueryImpl implements MISTQuery {
     while (!queue.isEmpty()) {
       final List<MISTStream> vertex = queue.remove();
       final int fromIndex = vertices.indexOf(vertex);
-      final Map<List<MISTStream>, MISTEdge> neighbors = chainedDAG.getEdges(vertex);
+      final Map<List<MISTStream>, MISTEdge> neighbors = operatorChainDag.getEdges(vertex);
       for (final Map.Entry<List<MISTStream>, MISTEdge> neighbor : neighbors.entrySet()) {
         final int toIndex = vertices.indexOf(neighbor.getKey());
         final MISTEdge edgeInfo = neighbor.getValue();
@@ -81,7 +81,7 @@ public final class MISTQueryImpl implements MISTQuery {
       }
     }
 
-    final Set<List<MISTStream>> rootVertices = chainedDAG.getRootVertices();
+    final Set<List<MISTStream>> rootVertices = operatorChainDag.getRootVertices();
     // Serialize each vertex via avro.
     final List<AvroVertexChain> serializedVertices = new ArrayList<>();
     for (final List<MISTStream> vertex : vertices) {
@@ -100,7 +100,7 @@ public final class MISTQueryImpl implements MISTQuery {
         if (rootVertices.contains(vertex)) {
           // this is a source
           builder.setAvroVertexChainType(AvroVertexTypeEnum.SOURCE);
-        } else if (chainedDAG.getEdges(vertex).size() == 0) {
+        } else if (operatorChainDag.getEdges(vertex).size() == 0) {
           // this is a sink
           builder.setAvroVertexChainType(AvroVertexTypeEnum.SINK);
         } else {

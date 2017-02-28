@@ -55,29 +55,29 @@ import java.util.*;
  *         [... op2] ->
  *
  */
-public final class ChainedDagGenerator {
+public final class OperatorChainDagGenerator {
 
   /**
-   * The optimized DAG of a query to convert into chained DAG.
+   * The optimized DAG of a query to convert into OperatorChain DAG.
    */
   private DAG<MISTStream, MISTEdge> optimizedDag;
 
-  public ChainedDagGenerator() {
+  public OperatorChainDagGenerator() {
   }
 
   /**
-   * Set the optimized DAG to convert into chained DAG.
+   * Set the optimized DAG to convert into OperatorChainDAG.
    */
   public void setOptimizedDag(final DAG<MISTStream, MISTEdge> optimizedDag) {
     this.optimizedDag = optimizedDag;
   }
 
   /**
-   * Generate chained DAG according to the logic described above.
-   * @return the chained DAG
+   * Generate OperatorChain DAG according to the logic described above.
+   * @return the OperatorChain DAG
    * The chain is represented as a list and AvroVertexSerializable can be serialized by avro
    */
-  public DAG<List<MISTStream>, MISTEdge> generateChainedDAG() {
+  public DAG<List<MISTStream>, MISTEdge> generateOperatorChainDAG() {
     final DAG<OperatorChain, MISTEdge> partitionedQueryDAG =
         new AdjacentListDAG<>();
     final Map<MISTStream, OperatorChain> vertexChainMap = new HashMap<>();

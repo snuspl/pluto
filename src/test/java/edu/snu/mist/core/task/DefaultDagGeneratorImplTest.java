@@ -27,7 +27,7 @@ import edu.snu.mist.common.operators.ReduceByKeyOperator;
 import edu.snu.mist.common.sinks.NettyTextSink;
 import edu.snu.mist.common.sources.NettyTextDataGenerator;
 import edu.snu.mist.common.types.Tuple2;
-import edu.snu.mist.formats.avro.AvroChainedDag;
+import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.AvroVertexChain;
 import edu.snu.mist.formats.avro.Edge;
 import edu.snu.mist.utils.TestParameters;
@@ -72,7 +72,7 @@ public final class DefaultDagGeneratorImplTest {
   }
 
   /**
-   * Round-trip test of de-serializing AvroChainedDag.
+   * Round-trip test of de-serializing AvroOperatorChainDag.
    * @throws org.apache.reef.tang.exceptions.InjectionException
    */
 
@@ -88,17 +88,17 @@ public final class DefaultDagGeneratorImplTest {
         .reduceByKey(0, String.class, (Integer x, Integer y) -> x + y)
         .textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
     final MISTQuery query = queryBuilder.build();
-    // Generate avro chained dag
-    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getAvroChainedDAG();
-    final AvroChainedDag.Builder chainedDagBuilder = AvroChainedDag.newBuilder();
-    final AvroChainedDag avroChainedDag = chainedDagBuilder
+    // Generate avro operator chain dag
+    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getAvroOperatorChainDag();
+    final AvroOperatorChainDag.Builder avroOpChainDagBuilder = AvroOperatorChainDag.newBuilder();
+    final AvroOperatorChainDag avroChainedDag = avroOpChainDagBuilder
         .setJarFilePaths(new LinkedList<>())
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .build();
 
     final DagGenerator dagGenerator = Tang.Factory.getTang().newInjector().getInstance(DagGenerator.class);
-    final Tuple<String, AvroChainedDag> tuple = new Tuple<>("query-test", avroChainedDag);
+    final Tuple<String, AvroOperatorChainDag> tuple = new Tuple<>("query-test", avroChainedDag);
     final LogicalAndExecutionDag plan = dagGenerator.generate(tuple);
 
     // Test execution dag

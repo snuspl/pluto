@@ -16,7 +16,7 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.core.task.stores.QueryInfoStore;
-import edu.snu.mist.formats.avro.AvroChainedDag;
+import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import edu.snu.mist.formats.avro.JarUploadResult;
 import edu.snu.mist.formats.avro.QueryControlResult;
@@ -84,9 +84,9 @@ public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage
   }
 
   @Override
-  public QueryControlResult sendQueries(final AvroChainedDag avroChainedDag) throws AvroRemoteException {
-    final String queryId = queryIdGenerator.generate(avroChainedDag);
-    return queryManager.create(new Tuple<>(queryId, avroChainedDag));
+  public QueryControlResult sendQueries(final AvroOperatorChainDag chainDag) throws AvroRemoteException {
+    final String queryId = queryIdGenerator.generate(chainDag);
+    return queryManager.create(new Tuple<>(queryId, chainDag));
   }
 
   @Override
