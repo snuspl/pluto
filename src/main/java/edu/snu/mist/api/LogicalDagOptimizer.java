@@ -31,7 +31,7 @@ import java.util.*;
 /**
  * This class implements a logical DAG optimizer.
  * Through this optimizer, a few DAG optimization techniques will be applied to the logical DAG in client-side.
- * The optimized DAG will be chained through ChainedDagGenerator.
+ * The optimized DAG will be chained through OperatorChainDagGenerator.
  * TODO: [MIST-452] (Minor) handle corner case in conditional branch API
  */
 public final class LogicalDagOptimizer {

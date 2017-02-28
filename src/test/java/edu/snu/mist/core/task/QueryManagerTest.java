@@ -33,7 +33,7 @@ import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.core.parameters.NumThreads;
 import edu.snu.mist.core.parameters.PlanStorePath;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
-import edu.snu.mist.formats.avro.AvroChainedDag;
+import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.Direction;
 import junit.framework.Assert;
 import org.apache.reef.io.Tuple;
@@ -133,8 +133,8 @@ public final class QueryManagerTest {
     final PhysicalSink sink2 = new PhysicalSinkImpl<>("sink2",
         null, new TestSink<Integer>(sink2Result, countDownAllOutputs));
 
-    // Fake chained dag of QueryManager
-    final Tuple<String, AvroChainedDag> tuple = new Tuple<>(queryId, new AvroChainedDag());
+    // Fake operator chain dag of QueryManager
+    final Tuple<String, AvroOperatorChainDag> tuple = new Tuple<>(queryId, new AvroOperatorChainDag());
 
     // Construct logical and execution dag
     constructLogicalAndExecutionDag(tuple, dag, logicalDag, src, sink1, sink2);
@@ -183,7 +183,7 @@ public final class QueryManagerTest {
    * Construct logical and execution dag.
    * Creates operators and adds source, dag vertices, edges and sinks to dag.
    */
-  private void constructLogicalAndExecutionDag(final Tuple<String, AvroChainedDag> tuple,
+  private void constructLogicalAndExecutionDag(final Tuple<String, AvroOperatorChainDag> tuple,
                                                final DAG<ExecutionVertex, MISTEdge> dag,
                                                final DAG<LogicalVertex, MISTEdge> logicalDag,
                                                final PhysicalSource src,
@@ -275,12 +275,12 @@ public final class QueryManagerTest {
    * QueryManager Builder.
    * It receives inputs tuple, physicalPlanGenerator, injector then makes query manager.
    */
-  private QueryManager queryManagerBuild(final Tuple<String, AvroChainedDag> tuple,
+  private QueryManager queryManagerBuild(final Tuple<String, AvroOperatorChainDag> tuple,
                                          final DagGenerator dagGenerator,
                                          final Injector injector) throws Exception {
     // Create mock PlanStore. It returns true and the above logical plan
     final QueryInfoStore planStore = mock(QueryInfoStore.class);
-    when(planStore.saveChainedDag(tuple)).thenReturn(true);
+    when(planStore.saveAvroOpChainDag(tuple)).thenReturn(true);
     when(planStore.load(tuple.getKey())).thenReturn(tuple.getValue());
 
     // Create QueryManager

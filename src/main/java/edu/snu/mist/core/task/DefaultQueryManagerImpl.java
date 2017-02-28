@@ -19,7 +19,7 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
-import edu.snu.mist.formats.avro.AvroChainedDag;
+import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
 
@@ -74,7 +74,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
 
   /**
    * Default query manager in MistTask.
-   * @param dagGenerator the generator that generates the logical and execution dag from avro chained dag.
+   * @param dagGenerator the generator that generates the logical and execution dag from avro operator chain dag.
    * @param threadManager thread manager
    */
   @Inject
@@ -92,21 +92,21 @@ final class DefaultQueryManagerImpl implements QueryManager {
   }
 
   /**
-   * It converts the avro chained dag (query) to the execution dag,
+   * It converts the avro operator chain dag (query) to the execution dag,
    * and executes the sources in order to receives data streams.
-   * Before the queries are executed, it stores the avro chained dag into disk.
-   * We can regenerate the queries from the stored avro chained dag.
-   * @param tuple a pair of the query id and the avro chained dag
+   * Before the queries are executed, it stores the avro operator chain dag into disk.
+   * We can regenerate the queries from the stored avro operator chain dag.
+   * @param tuple a pair of the query id and the avro operator chain dag
    * @return submission result
    */
   @Override
-  public QueryControlResult create(final Tuple<String, AvroChainedDag> tuple) {
+  public QueryControlResult create(final Tuple<String, AvroOperatorChainDag> tuple) {
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(tuple.getKey());
     try {
-      // 1) Saves the avro chained dag to the PlanStore and
-      // converts the avro chained dag to the logical and execution dag
-      planStore.saveChainedDag(tuple);
+      // 1) Saves the avro operator chain dag to the PlanStore and
+      // converts the avro operator chain dag to the logical and execution dag
+      planStore.saveAvroOpChainDag(tuple);
       final LogicalAndExecutionDag logicalAndExecutionDag = dagGenerator.generate(tuple);
       // Store the logical dag in memory
       logicalDagMap.putIfAbsent(tuple.getKey(), logicalAndExecutionDag.getLogicalDag());

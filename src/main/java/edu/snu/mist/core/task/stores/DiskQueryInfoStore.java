@@ -17,7 +17,7 @@ package edu.snu.mist.core.task.stores;
 
 
 import edu.snu.mist.core.parameters.TempFolderPath;
-import edu.snu.mist.formats.avro.AvroChainedDag;
+import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.DatumReader;
@@ -40,24 +40,24 @@ import java.util.List;
 
 
 /**
- * It saves the information of a query (chained dag, jar files) into the disk.
+ * It saves the information of a query (operator chain dag, jar files) into the disk.
  */
 
 final class DiskQueryInfoStore implements QueryInfoStore {
   /**
-   * A path for the temporary folder that stores jar files and chained dags of queries.
+   * A path for the temporary folder that stores jar files and operator chain dags of queries.
    */
   private final String tmpFolderPath;
 
   /**
    * A writer that stores the dag.
    */
-  private final DatumWriter<AvroChainedDag> datumWriter;
+  private final DatumWriter<AvroOperatorChainDag> datumWriter;
 
   /**
    * A reader that reads stored the dag.
    */
-  private final DatumReader<AvroChainedDag> datumReader;
+  private final DatumReader<AvroOperatorChainDag> datumReader;
 
   /**
    * A file name generator that generates jar file's names.
@@ -69,8 +69,8 @@ final class DiskQueryInfoStore implements QueryInfoStore {
                              final FileNameGenerator fileNameGenerator) {
     this.tmpFolderPath = tmpFolderPath;
     this.fileNameGenerator = fileNameGenerator;
-    this.datumWriter = new SpecificDatumWriter<>(AvroChainedDag.class);
-    this.datumReader = new SpecificDatumReader<>(AvroChainedDag.class);
+    this.datumWriter = new SpecificDatumWriter<>(AvroOperatorChainDag.class);
+    this.datumReader = new SpecificDatumReader<>(AvroOperatorChainDag.class);
     // Create a folder that stores the dags and jar files
     final File folder = new File(tmpFolderPath);
     if (!folder.exists()) {
@@ -88,7 +88,7 @@ final class DiskQueryInfoStore implements QueryInfoStore {
    * @param queryId query id
    * @return file of the stored dag
    */
-  private File getAvroChainedDagFile(final String queryId) {
+  private File getAvroOperatorChainDagFile(final String queryId) {
     final StringBuilder sb = new StringBuilder(queryId);
     sb.append(".plan");
     return new File(tmpFolderPath, sb.toString());
@@ -100,11 +100,11 @@ final class DiskQueryInfoStore implements QueryInfoStore {
    * @throws IOException
    */
   @Override
-  public boolean saveChainedDag(final Tuple<String, AvroChainedDag> tuple) throws IOException {
-    final AvroChainedDag dag = tuple.getValue();
-    final File storedFile = getAvroChainedDagFile(tuple.getKey());
+  public boolean saveAvroOpChainDag(final Tuple<String, AvroOperatorChainDag> tuple) throws IOException {
+    final AvroOperatorChainDag dag = tuple.getValue();
+    final File storedFile = getAvroOperatorChainDagFile(tuple.getKey());
     if (!storedFile.exists()) {
-      final DataFileWriter<AvroChainedDag> dataFileWriter = new DataFileWriter<AvroChainedDag>(datumWriter);
+      final DataFileWriter<AvroOperatorChainDag> dataFileWriter = new DataFileWriter<AvroOperatorChainDag>(datumWriter);
       dataFileWriter.create(dag.getSchema(), storedFile);
       dataFileWriter.append(dag);
       dataFileWriter.close();
@@ -141,10 +141,10 @@ final class DiskQueryInfoStore implements QueryInfoStore {
    * @return chained dag
    * @throws IOException
    */
-  private AvroChainedDag loadFromFile(final File storedPlanFile) throws IOException {
-    final DataFileReader<AvroChainedDag> dataFileReader =
-        new DataFileReader<AvroChainedDag>(storedPlanFile, datumReader);
-    AvroChainedDag dag = null;
+  private AvroOperatorChainDag loadFromFile(final File storedPlanFile) throws IOException {
+    final DataFileReader<AvroOperatorChainDag> dataFileReader =
+        new DataFileReader<AvroOperatorChainDag>(storedPlanFile, datumReader);
+    AvroOperatorChainDag dag = null;
     dag = dataFileReader.next(dag);
     return dag;
   }
@@ -156,8 +156,8 @@ final class DiskQueryInfoStore implements QueryInfoStore {
    * @throws IOException
    */
   @Override
-  public AvroChainedDag load(final String queryId) throws IOException {
-    final File storedFile = getAvroChainedDagFile(queryId);
+  public AvroOperatorChainDag load(final String queryId) throws IOException {
+    final File storedFile = getAvroOperatorChainDagFile(queryId);
     return loadFromFile(storedFile);
   }
 
@@ -168,8 +168,8 @@ final class DiskQueryInfoStore implements QueryInfoStore {
    */
   @Override
   public void delete(final String queryId) throws IOException {
-    final File storedFile = getAvroChainedDagFile(queryId);
-    final AvroChainedDag logicalPlan = loadFromFile(storedFile);
+    final File storedFile = getAvroOperatorChainDagFile(queryId);
+    final AvroOperatorChainDag logicalPlan = loadFromFile(storedFile);
     final List<String> paths = logicalPlan.getJarFilePaths();
 
     // Delete jar files for the query

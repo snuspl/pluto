@@ -80,7 +80,7 @@ public final class MISTQueryTest {
 
     // Build a query
     final MISTQuery complexQuery = queryBuilder.build();
-    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDAG = complexQuery.getAvroChainedDAG();
+    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDAG = complexQuery.getAvroOperatorChainDag();
     final List<AvroVertexChain> vertices = serializedDAG.getKey();
     Assert.assertEquals(3, vertices.size());
 

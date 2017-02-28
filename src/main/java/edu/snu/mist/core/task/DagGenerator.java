@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.formats.avro.AvroChainedDag;
+import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -23,7 +23,7 @@ import org.apache.reef.tang.exceptions.InjectionException;
 import java.io.IOException;
 
 /**
- * This interface is for generating a pair of the logical and execution dag from avro chained dag.
+ * This interface is for generating a pair of the logical and execution dag from avro operator chain dag.
  */
 @DefaultImplementation(DefaultDagGeneratorImpl.class)
 public interface DagGenerator {
@@ -32,6 +32,6 @@ public interface DagGenerator {
    * @param queryIdAndAvroLogicalDag the tuple of queryId and avro logical dag
    * @return a pair of the logical and execution dag
    */
-  LogicalAndExecutionDag generate(Tuple<String, AvroChainedDag> queryIdAndAvroLogicalDag)
+  LogicalAndExecutionDag generate(Tuple<String, AvroOperatorChainDag> queryIdAndAvroLogicalDag)
       throws IOException, ClassNotFoundException, InjectionException;
 }

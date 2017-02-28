@@ -106,14 +106,14 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
     }
 
     // Build logical plan using serialized vertices and edges.
-    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = queryToSubmit.getAvroChainedDAG();
-    final AvroChainedDag.Builder chainedDagBuilder = AvroChainedDag.newBuilder();
-    final AvroChainedDag chainedDag = chainedDagBuilder
+    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = queryToSubmit.getAvroOperatorChainDag();
+    final AvroOperatorChainDag.Builder operatorChainDagBuilder = AvroOperatorChainDag.newBuilder();
+    final AvroOperatorChainDag operatorChainDag = operatorChainDagBuilder
         .setJarFilePaths(jarUploadResult.getPaths())
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .build();
-    final QueryControlResult queryControlResult = proxyToTask.sendQueries(chainedDag);
+    final QueryControlResult queryControlResult = proxyToTask.sendQueries(operatorChainDag);
 
     // Transform QueryControlResult to APIQueryControlResult
     final APIQueryControlResult apiQueryControlResult =

@@ -20,7 +20,7 @@ import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.core.parameters.TempFolderPath;
-import edu.snu.mist.formats.avro.AvroChainedDag;
+import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.AvroVertexChain;
 import edu.snu.mist.formats.avro.Edge;
 import edu.snu.mist.formats.avro.Vertex;
@@ -43,7 +43,7 @@ import java.util.List;
 
 public class QueryInfoStoreTest {
   /**
-   * Tests whether the PlanStore correctly saves, deletes and loads the chained dag.
+   * Tests whether the PlanStore correctly saves, deletes and loads the operator chain dag.
    * @throws InjectionException
    * @throws IOException
    */
@@ -84,22 +84,22 @@ public class QueryInfoStoreTest {
     }
 
     // Generate logical plan
-    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getAvroChainedDAG();
-    final AvroChainedDag.Builder chainedDagBuilder = AvroChainedDag.newBuilder();
-    final AvroChainedDag avroChainedDag = chainedDagBuilder
+    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getAvroOperatorChainDag();
+    final AvroOperatorChainDag.Builder avroOpChainDagBuilder = AvroOperatorChainDag.newBuilder();
+    final AvroOperatorChainDag avroOpChainDag = avroOpChainDagBuilder
         .setJarFilePaths(paths)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .build();
 
     // Store the chained dag
-    store.saveChainedDag(new Tuple<>(queryId, avroChainedDag));
+    store.saveAvroOpChainDag(new Tuple<>(queryId, avroOpChainDag));
     Assert.assertTrue(new File(tmpFolderPath, queryId + ".plan").exists());
 
-    final AvroChainedDag loadedDag = store.load(queryId);
-    Assert.assertEquals(avroChainedDag.getEdges(), loadedDag.getEdges());
-    Assert.assertEquals(avroChainedDag.getSchema(), loadedDag.getSchema());
-    testVerticesEqual(avroChainedDag.getAvroVertices(), loadedDag.getAvroVertices());
+    final AvroOperatorChainDag loadedDag = store.load(queryId);
+    Assert.assertEquals(avroOpChainDag.getEdges(), loadedDag.getEdges());
+    Assert.assertEquals(avroOpChainDag.getSchema(), loadedDag.getSchema());
+    testVerticesEqual(avroOpChainDag.getAvroVertices(), loadedDag.getAvroVertices());
     store.delete(queryId);
     Assert.assertFalse(new File(tmpFolderPath, queryId + ".plan").exists());
     for (final String path : paths) {

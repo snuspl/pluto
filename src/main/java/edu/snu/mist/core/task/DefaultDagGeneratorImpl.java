@@ -73,31 +73,31 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
   }
 
   /**
-   * This generates the logical and physical plan from the avro chained dag.
-   * Note that the avro chained dag is already partitioned,
+   * This generates the logical and physical plan from the avro operator chain dag.
+   * Note that the avro operator chain dag is already partitioned,
    * so we need to rewind the partition to generate the logical dag.
-   * @param queryIdAndAvroChainedDag the tuple of queryId and avro chained dag
+   * @param queryIdAndAvroOperatorChainDag the tuple of queryId and avro operator chain dag
    * @return the logical and execution dag
    */
   @SuppressWarnings("unchecked")
   @Override
   public LogicalAndExecutionDag generate(
-      final Tuple<String, AvroChainedDag> queryIdAndAvroChainedDag)
+      final Tuple<String, AvroOperatorChainDag> queryIdAndAvroOperatorChainDag)
       throws IllegalArgumentException, IOException, ClassNotFoundException, InjectionException {
-    final AvroChainedDag avroChainedDag = queryIdAndAvroChainedDag.getValue();
+    final AvroOperatorChainDag avroOpChainDag = queryIdAndAvroOperatorChainDag.getValue();
     // For execution dag
-    final List<ExecutionVertex> deserializedVertices = new ArrayList<>(avroChainedDag.getAvroVertices().size());
+    final List<ExecutionVertex> deserializedVertices = new ArrayList<>(avroOpChainDag.getAvroVertices().size());
     final DAG<ExecutionVertex, MISTEdge> executionDAG = new AdjacentListDAG<>();
     // This is for logical dag
-    final List<List<LogicalVertex>> logicalVertices = new ArrayList<>(avroChainedDag.getAvroVertices().size());
+    final List<List<LogicalVertex>> logicalVertices = new ArrayList<>(avroOpChainDag.getAvroVertices().size());
     final DAG<LogicalVertex, MISTEdge> logicalDAG = new AdjacentListDAG<>();
 
     // Get a class loader
-    final URL[] urls = SerializeUtils.getURLs(avroChainedDag.getJarFilePaths());
+    final URL[] urls = SerializeUtils.getURLs(avroOpChainDag.getJarFilePaths());
     final ClassLoader classLoader = classLoaderProvider.newInstance(urls);
 
     // Deserialize vertices
-    for (final AvroVertexChain avroVertexChain : avroChainedDag.getAvroVertices()) {
+    for (final AvroVertexChain avroVertexChain : avroOpChainDag.getAvroVertices()) {
       switch (avroVertexChain.getAvroVertexChainType()) {
         case SOURCE: {
           final Vertex vertex = avroVertexChain.getVertexChain().get(0);
@@ -189,7 +189,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
     }
 
     // Add edge info to the execution dag and logical dag
-    for (final Edge edge : avroChainedDag.getEdges()) {
+    for (final Edge edge : avroOpChainDag.getEdges()) {
       final int srcIndex = edge.getFrom();
       final int dstIndex = edge.getTo();
 

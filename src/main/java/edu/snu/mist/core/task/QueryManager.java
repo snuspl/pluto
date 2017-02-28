@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.formats.avro.AvroChainedDag;
+import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
@@ -29,9 +29,9 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
 public interface QueryManager extends AutoCloseable {
   /**
    * Start to the query.
-   * @param tuple the query id and the chained dag
+   * @param tuple the query id and the operator chain dag
    */
-  QueryControlResult create(Tuple<String, AvroChainedDag> tuple);
+  QueryControlResult create(Tuple<String, AvroOperatorChainDag> tuple);
 
   /**
    * Deletes the query corresponding to the queryId submitted by client.

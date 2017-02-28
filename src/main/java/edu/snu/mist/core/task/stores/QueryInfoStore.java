@@ -16,7 +16,7 @@
 package edu.snu.mist.core.task.stores;
 
 
-import edu.snu.mist.formats.avro.AvroChainedDag;
+import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
@@ -25,18 +25,18 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 /**
- * This interface saves the information related to a query (the chained dag of a query and jar files).
+ * This interface saves the information related to a query (the operator chain dag of a query and jar files).
  * Also, this supports loading a logical plan and removing the plan and its corresponding jar files.
  */
 @DefaultImplementation(DiskQueryInfoStore.class)
 public interface QueryInfoStore {
   /**
-   * Saves the chained dag.
+   * Saves the operator chain dag.
    * @param tuple
    * @return true if saving is success. Otherwise return false.
    * @throws IOException
    */
-  boolean saveChainedDag(Tuple<String, AvroChainedDag> tuple) throws IOException;
+  boolean saveAvroOpChainDag(Tuple<String, AvroOperatorChainDag> tuple) throws IOException;
 
   /**
    * Saves the jar files and returns paths of the stored jar files.
@@ -47,15 +47,15 @@ public interface QueryInfoStore {
   List<String> saveJar(List<ByteBuffer> jarFiles) throws IOException;
 
   /**
-   * Loads the chained dag corresponding to the queryId.
+   * Loads the operator chain dag corresponding to the queryId.
    * @param queryId
-   * @return chained dag
+   * @return operator chain dag
    * @throws IOException
    */
-  AvroChainedDag load(String queryId) throws IOException;
+  AvroOperatorChainDag load(String queryId) throws IOException;
 
   /**
-   * Deletes the chained dag and its corresponding jar files.
+   * Deletes the operator chain dag and its corresponding jar files.
    * @param queryId
    * @throws IOException
    */
