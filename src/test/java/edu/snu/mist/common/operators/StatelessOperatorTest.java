@@ -19,7 +19,7 @@ import com.google.common.collect.ImmutableList;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
-import edu.snu.mist.utils.TestOutputEmitter;
+import edu.snu.mist.utils.ValueStoringOutputEmitter;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
@@ -35,7 +35,7 @@ public final class StatelessOperatorTest {
                                          final List<O> expected,
                                          final Operator operator) {
     final List<O> result = new LinkedList<>();
-    operator.setOutputEmitter(new TestOutputEmitter<>(result));
+    operator.setOutputEmitter(new ValueStoringOutputEmitter<>(result));
     inputStream.stream().forEach(operator::processLeftData);
     System.out.println("expected: " + expected);
     System.out.println("result: " + result);

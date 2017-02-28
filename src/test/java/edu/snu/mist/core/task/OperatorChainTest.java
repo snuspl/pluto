@@ -20,7 +20,7 @@ import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.operators.OneStreamOperator;
 import edu.snu.mist.formats.avro.Direction;
-import edu.snu.mist.utils.TestOutputEmitter;
+import edu.snu.mist.utils.ValueStoringOutputEmitter;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -50,7 +50,7 @@ public final class OperatorChainTest {
     final Integer input = 3;
 
     final OperatorChain operatorChain = new DefaultOperatorChainImpl();
-    operatorChain.setOutputEmitter(new TestOutputEmitter<>(result));
+    operatorChain.setOutputEmitter(new ValueStoringOutputEmitter<>(result));
 
     final Injector injector = Tang.Factory.getTang().newInjector();
     final StringIdentifierFactory idFactory = injector.getInstance(StringIdentifierFactory.class);

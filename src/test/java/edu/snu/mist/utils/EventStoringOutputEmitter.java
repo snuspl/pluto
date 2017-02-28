@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.operators;
+package edu.snu.mist.utils;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistEvent;
@@ -23,12 +23,12 @@ import edu.snu.mist.common.OutputEmitter;
 import java.util.List;
 
 /**
- * Simple output emitter which adds events to the list.
+ * Output emitter which just adds input events to a list.
  */
-class SimpleOutputEmitter implements OutputEmitter {
+public class EventStoringOutputEmitter implements OutputEmitter {
   private final List<MistEvent> list;
 
-  SimpleOutputEmitter(final List<MistEvent> list) {
+  public EventStoringOutputEmitter(final List<MistEvent> list) {
     this.list = list;
   }
 

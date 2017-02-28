@@ -19,7 +19,7 @@ import com.google.common.collect.ImmutableList;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.types.Tuple2;
-import edu.snu.mist.utils.TestOutputEmitter;
+import edu.snu.mist.utils.ValueStoringOutputEmitter;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -95,7 +95,7 @@ public final class StatefulOperatorTest {
 
     // output test
     final List<Map<String, Integer>> result = new LinkedList<>();
-    wcOperator.setOutputEmitter(new TestOutputEmitter<>(result));
+    wcOperator.setOutputEmitter(new ValueStoringOutputEmitter<>(result));
     inputStream.stream().forEach(wcOperator::processLeftData);
     LOG.info("expected: " + expected);
     LOG.info("result: " + result);
@@ -121,7 +121,7 @@ public final class StatefulOperatorTest {
     final ReduceByKeyOperator<String, Integer> wcOperator =
         new ReduceByKeyOperator<>(keyIndex, wordCountFunc);
     final List<Map<String, Integer>> result = new LinkedList<>();
-    wcOperator.setOutputEmitter(new TestOutputEmitter<>(result));
+    wcOperator.setOutputEmitter(new ValueStoringOutputEmitter<>(result));
     inputStream.stream().forEach(wcOperator::processLeftData);
 
     // Generate the expected ReduceByKeyOperator state.
@@ -165,7 +165,7 @@ public final class StatefulOperatorTest {
 
     // Test if the operator can properly process data.
     final List<Map<String, Integer>> result = new LinkedList<>();
-    reduceByKeyOperator.setOutputEmitter(new TestOutputEmitter<>(result));
+    reduceByKeyOperator.setOutputEmitter(new ValueStoringOutputEmitter<>(result));
     reduceByKeyOperator.setState(operatorStateMap);
     final List<MistDataEvent> inputStream =
         ImmutableList.of(createEvent("a", 1));

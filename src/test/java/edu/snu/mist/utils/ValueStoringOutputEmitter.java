@@ -22,13 +22,13 @@ import edu.snu.mist.common.OutputEmitter;
 import java.util.List;
 
 /**
- * Test output emitter which just adds the outputs to a list.
+ * Output emitter which just adds values of input events to a list.
  * @param <E> element type
  */
-public final class TestOutputEmitter<E> implements OutputEmitter {
+public final class ValueStoringOutputEmitter<E> implements OutputEmitter {
   private final List<E> list;
 
-  public TestOutputEmitter(final List<E> list) {
+  public ValueStoringOutputEmitter(final List<E> list) {
     this.list = list;
   }
 

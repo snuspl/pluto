@@ -21,6 +21,7 @@ import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.functions.ApplyStatefulFunction;
 import edu.snu.mist.common.utils.FindMaxIntFunction;
 import edu.snu.mist.common.windows.WindowImpl;
+import edu.snu.mist.utils.EventStoringOutputEmitter;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -55,7 +56,7 @@ public final class ApplyStatefulWindowOperatorTest {
         new ApplyStatefulWindowOperator<>(applyStatefulFunction);
 
     final List<MistEvent> result = new LinkedList<>();
-    applyStatefulWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));
+    applyStatefulWindowOperator.setOutputEmitter(new EventStoringOutputEmitter(result));
 
     // check that the operator processes a window input properly
     applyStatefulWindowOperator.processLeftData(dataEvent1);

@@ -19,7 +19,7 @@ import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.operators.OneStreamOperator;
 import edu.snu.mist.formats.avro.Direction;
-import edu.snu.mist.utils.TestOutputEmitter;
+import edu.snu.mist.utils.ValueStoringOutputEmitter;
 import junit.framework.Assert;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
@@ -57,11 +57,11 @@ public final class EventProcessorTest {
     final OperatorChain chain1 = new DefaultOperatorChainImpl();
     final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl("op1", null, new TestOperator(), chain1);
     chain1.insertToHead(o1);
-    chain1.setOutputEmitter(new TestOutputEmitter<>(list1));
+    chain1.setOutputEmitter(new ValueStoringOutputEmitter<>(list1));
     final OperatorChain chain2 = new DefaultOperatorChainImpl();
     final PhysicalOperator o2 = new DefaultPhysicalOperatorImpl("op2", null, new TestOperator(), chain2);
     chain2.insertToHead(o2);
-    chain2.setOutputEmitter(new TestOutputEmitter<>(list2));
+    chain2.setOutputEmitter(new ValueStoringOutputEmitter<>(list2));
 
     for (int i = 0; i < numTasks; i++) {
       final int data = i;
@@ -108,7 +108,7 @@ public final class EventProcessorTest {
     final OperatorChain query = new DefaultOperatorChainImpl();
     final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl("op1", null, new TestOperator(), query);
     query.insertToHead(o1);
-    query.setOutputEmitter(new TestOutputEmitter<>(list1));
+    query.setOutputEmitter(new ValueStoringOutputEmitter<>(list1));
 
     for (int i = 0; i < numTasks; i++) {
       final int data = i;
