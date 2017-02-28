@@ -35,21 +35,18 @@ public final class MISTQueryImpl implements MISTQuery {
    * DAG of the query.
    */
   private final DAG<MISTStream, MISTEdge> dag;
-  private final OperatorChainDagGenerator chainDagGenerator;
-  private final LogicalDagOptimizer logicalDagOptimizer;
   private final AvroConfigurationSerializer serializer;
 
   public MISTQueryImpl(final DAG<MISTStream, MISTEdge> dag) {
-    this.logicalDagOptimizer = new LogicalDagOptimizer();
-    this.chainDagGenerator = new OperatorChainDagGenerator();
     this.dag = dag;
     this.serializer = new AvroConfigurationSerializer();
   }
 
   @Override
   public Tuple<List<AvroVertexChain>, List<Edge>> getAvroOperatorChainDag() {
-    logicalDagOptimizer.setDag(dag);
-    chainDagGenerator.setOptimizedDag(logicalDagOptimizer.getOptimizedDAG());
+    final LogicalDagOptimizer logicalDagOptimizer = new LogicalDagOptimizer(dag);
+    final OperatorChainDagGenerator chainDagGenerator =
+        new OperatorChainDagGenerator(logicalDagOptimizer.getOptimizedDAG());
     final DAG<List<MISTStream>, MISTEdge> operatorChainDag =
         chainDagGenerator.generateOperatorChainDAG();
     final Queue<List<MISTStream>> queue = new LinkedList<>();

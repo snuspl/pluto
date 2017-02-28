@@ -65,8 +65,7 @@ public final class OperatorChainDagGeneratorTest {
 
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
-    final OperatorChainDagGenerator chainDagGenerator = new OperatorChainDagGenerator();
-    chainDagGenerator.setOptimizedDag(dag);
+    final OperatorChainDagGenerator chainDagGenerator = new OperatorChainDagGenerator(dag);
     final DAG<List<MISTStream>, MISTEdge>
         operatorChainDag = chainDagGenerator.generateOperatorChainDAG();
 
@@ -140,8 +139,7 @@ public final class OperatorChainDagGeneratorTest {
 
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
-    final OperatorChainDagGenerator chainDagGenerator = new OperatorChainDagGenerator();
-    chainDagGenerator.setOptimizedDag(dag);
+    final OperatorChainDagGenerator chainDagGenerator = new OperatorChainDagGenerator(dag);
     final DAG<List<MISTStream>, MISTEdge>
         operatorChainDag = chainDagGenerator.generateOperatorChainDAG();
 
@@ -188,8 +186,7 @@ public final class OperatorChainDagGeneratorTest {
 
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
-    final OperatorChainDagGenerator chainDagGenerator = new OperatorChainDagGenerator();
-    chainDagGenerator.setOptimizedDag(dag);
+    final OperatorChainDagGenerator chainDagGenerator = new OperatorChainDagGenerator(dag);
     final DAG<List<MISTStream>, MISTEdge>
         chainPlan = chainDagGenerator.generateOperatorChainDAG();
 
@@ -266,8 +263,7 @@ public final class OperatorChainDagGeneratorTest {
 
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
-    final OperatorChainDagGenerator chainDagGenerator = new OperatorChainDagGenerator();
-    chainDagGenerator.setOptimizedDag(dag);
+    final OperatorChainDagGenerator chainDagGenerator = new OperatorChainDagGenerator(dag);
     final DAG<List<MISTStream>, MISTEdge>
         operatorChainDag = chainDagGenerator.generateOperatorChainDAG();
 
@@ -351,8 +347,7 @@ public final class OperatorChainDagGeneratorTest {
 
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
-    final OperatorChainDagGenerator chainDagGenerator = new OperatorChainDagGenerator();
-    chainDagGenerator.setOptimizedDag(dag);
+    final OperatorChainDagGenerator chainDagGenerator = new OperatorChainDagGenerator(dag);
     final DAG<List<MISTStream>, MISTEdge>
         operatorChainDag = chainDagGenerator.generateOperatorChainDAG();
 

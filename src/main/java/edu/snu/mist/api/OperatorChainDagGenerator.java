@@ -60,15 +60,9 @@ public final class OperatorChainDagGenerator {
   /**
    * The optimized DAG of a query to convert into OperatorChain DAG.
    */
-  private DAG<MISTStream, MISTEdge> optimizedDag;
+  private final DAG<MISTStream, MISTEdge> optimizedDag;
 
-  public OperatorChainDagGenerator() {
-  }
-
-  /**
-   * Set the optimized DAG to convert into OperatorChainDAG.
-   */
-  public void setOptimizedDag(final DAG<MISTStream, MISTEdge> optimizedDag) {
+  public OperatorChainDagGenerator(final DAG<MISTStream, MISTEdge> optimizedDag) {
     this.optimizedDag = optimizedDag;
   }
 
