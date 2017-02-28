@@ -39,15 +39,9 @@ public final class LogicalDagOptimizer {
   /**
    * The logical DAG of a query to getOptimizedDAG.
    */
-  private DAG<MISTStream, MISTEdge> dag;
+  private final DAG<MISTStream, MISTEdge> dag;
 
-  public LogicalDagOptimizer() {
-  }
-
-  /**
-   * Set the DAG to convert into chained DAG.
-   */
-  public void setDag(final DAG<MISTStream, MISTEdge> dag) {
+  public LogicalDagOptimizer(final DAG<MISTStream, MISTEdge> dag) {
     this.dag = dag;
   }
 

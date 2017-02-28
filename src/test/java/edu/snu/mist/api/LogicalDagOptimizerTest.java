@@ -67,8 +67,7 @@ public final class LogicalDagOptimizerTest {
 
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
-    final LogicalDagOptimizer logicalDagOptimizer = new LogicalDagOptimizer();
-    logicalDagOptimizer.setDag(dag);
+    final LogicalDagOptimizer logicalDagOptimizer = new LogicalDagOptimizer(dag);
     final DAG<MISTStream, MISTEdge> optimizedDAG = logicalDagOptimizer.getOptimizedDAG();
 
     // Check src1 -> op1
