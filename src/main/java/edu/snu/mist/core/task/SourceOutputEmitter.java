@@ -58,6 +58,12 @@ final class SourceOutputEmitter<I> implements OutputEmitter {
   }
 
   @Override
+  public void emitData(final MistDataEvent data, final int index) {
+    // source output emitter does not emit data according to the index
+    this.emitData(data);
+  }
+
+  @Override
   public void emitWatermark(final MistWatermarkEvent watermark) {
     for (final Map.Entry<ExecutionVertex, MISTEdge> nextQuery :
         nextOperatorChains.entrySet()) {

@@ -47,13 +47,26 @@ public final class ConditionalBranchOperator<I> extends OneStreamOperator {
     }
   }
 
+  @Inject
+  public ConditionalBranchOperator(final List<MISTPredicate<I>> predicates) {
+    this.predicates = predicates;
+  }
+
   /**
    * Checks the branch conditions and forward to matched branch.
-   * TODO: [MIST-417] Implement control flow in task side
    */
   @Override
   public void processLeftData(final MistDataEvent input) {
     final I value = (I)input.getValue();
+    for (int i = 0; i < predicates.size(); i++) {
+      // test the input data with each predicate
+      final MISTPredicate<I> predicate = predicates.get(i);
+      if (predicate.test(value)) {
+        // if there is matched predicate, emit the data with the index of matched predicate
+        outputEmitter.emitData(input, i + 1);
+        return;
+      }
+    }
   }
 
   @Override

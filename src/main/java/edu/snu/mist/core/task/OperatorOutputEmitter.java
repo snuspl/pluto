@@ -25,7 +25,6 @@ import java.util.Map;
 
 /**
  * This emitter forwards current OperatorChain's outputs as next OperatorChains' inputs.
- * TODO: [MIST-410] we need another output emitter for branch operator to handle the edge index
  */
 final class OperatorOutputEmitter implements OutputEmitter {
 
@@ -97,17 +96,44 @@ final class OperatorOutputEmitter implements OutputEmitter {
   public void emitData(final MistDataEvent output) {
     // Optimization: do not create new MistEvent and reuse it if it has one downstream operator chain.
     if (nextOperatorChains.size() == 1) {
-      for (final Map.Entry<ExecutionVertex, MISTEdge> nextQuery :
+      for (final Map.Entry<ExecutionVertex, MISTEdge> nextChain :
           nextOperatorChains.entrySet()) {
-        final Direction direction = nextQuery.getValue().getDirection();
-        sendData(output, direction, nextQuery.getKey());
+        final Direction direction = nextChain.getValue().getDirection();
+        sendData(output, direction, nextChain.getKey());
       }
     } else {
-      for (final Map.Entry<ExecutionVertex, MISTEdge> nextQuery :
+      for (final Map.Entry<ExecutionVertex, MISTEdge> nextChain :
           nextOperatorChains.entrySet()) {
         final MistDataEvent event = new MistDataEvent(output.getValue(), output.getTimestamp());
-        final Direction direction = nextQuery.getValue().getDirection();
-        sendData(event, direction, nextQuery.getKey());
+        final Direction direction = nextChain.getValue().getDirection();
+        sendData(event, direction, nextChain.getKey());
+      }
+    }
+  }
+
+  @Override
+  public void emitData(final MistDataEvent output, final int index) {
+    // Optimization: do not create new MistEvent and reuse it if it has one downstream operator chain.
+    if (nextOperatorChains.size() == 1) {
+      for (final Map.Entry<ExecutionVertex, MISTEdge> nextChain :
+          nextOperatorChains.entrySet()) {
+        final MISTEdge edge = nextChain.getValue();
+        final int edgeIndex = edge.getIndex();
+        if (edgeIndex == index) {
+          // send the data only if the index of this edge is equal to the target index
+          sendData(output, edge.getDirection(), nextChain.getKey());
+        }
+      }
+    } else {
+      for (final Map.Entry<ExecutionVertex, MISTEdge> nextChain :
+          nextOperatorChains.entrySet()) {
+        final MISTEdge edge = nextChain.getValue();
+        final int edgeIndex = edge.getIndex();
+        if (edgeIndex == index) {
+          // send the data only if the index of this edge is equal to the target index
+          final MistDataEvent event = new MistDataEvent(output.getValue(), output.getTimestamp());
+          sendData(event, edge.getDirection(), nextChain.getKey());
+        }
       }
     }
   }
