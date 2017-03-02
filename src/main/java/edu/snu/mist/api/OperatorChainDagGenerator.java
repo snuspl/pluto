@@ -107,7 +107,7 @@ public final class OperatorChainDagGenerator {
         final MISTEdge edge = entry.getValue();
         final OperatorChain nextChain = getOperatorChain(nextVertex, vertexChainMap, chainDag);
         chainDag.addEdge(srcChain, nextChain, edge);
-        dfsChaining(nextChain, nextVertex, chainDag, vertexChainMap);
+        chainingInDfsOrder(nextChain, nextVertex, chainDag, vertexChainMap);
       }
     }
 
@@ -136,10 +136,10 @@ public final class OperatorChainDagGenerator {
    * @param chainDag operator chain dag
    * @param vertexChainMap vertex and chain mapping
    */
-  private void dfsChaining(final OperatorChain operatorChain,
-                           final MISTStream currVertex,
-                           final DAG<OperatorChain, MISTEdge> chainDag,
-                           final Map<MISTStream, OperatorChain> vertexChainMap) {
+  private void chainingInDfsOrder(final OperatorChain operatorChain,
+                                  final MISTStream currVertex,
+                                  final DAG<OperatorChain, MISTEdge> chainDag,
+                                  final Map<MISTStream, OperatorChain> vertexChainMap) {
     if (vertexChainMap.containsKey(currVertex)) {
       return;
     }
@@ -157,16 +157,16 @@ public final class OperatorChainDagGenerator {
         // so try to create a new OperatorChain for the next operator.
         final OperatorChain nextChain = getOperatorChain(nextVertex, vertexChainMap, chainDag);
         chainDag.addEdge(operatorChain, nextChain, edge);
-        dfsChaining(nextChain, nextVertex, chainDag, vertexChainMap);
+        chainingInDfsOrder(nextChain, nextVertex, chainDag, vertexChainMap);
       } else if (optimizedDag.getEdges(nextVertex).size() == 0) {
         // The next vertex is Sink. End of the chaining
         final OperatorChain nextChain = getOperatorChain(nextVertex, vertexChainMap, chainDag);
         chainDag.addEdge(operatorChain, nextChain, edge);
-        dfsChaining(nextChain, nextVertex, chainDag, vertexChainMap);
+        chainingInDfsOrder(nextChain, nextVertex, chainDag, vertexChainMap);
       } else {
         // 1) The next vertex is sequentially following the current vertex
         // so add the next operator to the current OperatorChain
-        dfsChaining(operatorChain, nextVertex, chainDag, vertexChainMap);
+        chainingInDfsOrder(operatorChain, nextVertex, chainDag, vertexChainMap);
       }
     }
   }
