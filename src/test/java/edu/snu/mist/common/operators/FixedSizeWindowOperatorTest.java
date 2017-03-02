@@ -20,7 +20,7 @@ import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.windows.Window;
 import edu.snu.mist.common.windows.WindowImpl;
-import edu.snu.mist.utils.EventStoringOutputEmitter;
+import edu.snu.mist.utils.OutputBufferEmitter;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -67,7 +67,7 @@ public final class FixedSizeWindowOperatorTest {
         new TimeWindowOperator<>(windowSize, emissionInterval);
 
     final List<MistEvent> result = new LinkedList<>();
-    timeWindowOperator.setOutputEmitter(new EventStoringOutputEmitter(result));
+    timeWindowOperator.setOutputEmitter(new OutputBufferEmitter(result));
 
     // (1000)Window1-----(1249):
     // (1000)Window2----------------------(1499):
@@ -188,7 +188,7 @@ public final class FixedSizeWindowOperatorTest {
 
     // Test if the operator can properly process data.
     final List<MistEvent> result = new LinkedList<>();
-    timeWindowOperator.setOutputEmitter(new EventStoringOutputEmitter(result));
+    timeWindowOperator.setOutputEmitter(new OutputBufferEmitter(result));
     timeWindowOperator.processLeftData(d10);
     Assert.assertEquals(2, result.size());
     final Collection<Integer> expectedResult1 = new LinkedList<>();
@@ -209,7 +209,7 @@ public final class FixedSizeWindowOperatorTest {
         new TimeWindowOperator<>(windowSize, emissionInterval);
 
     final List<MistEvent> result = new LinkedList<>();
-    timeWindowOperator.setOutputEmitter(new EventStoringOutputEmitter(result));
+    timeWindowOperator.setOutputEmitter(new OutputBufferEmitter(result));
 
     // (1000)Window1------------------(1499):
     //                                                     (1750)Window2------------------(2249):
@@ -256,7 +256,7 @@ public final class FixedSizeWindowOperatorTest {
         new CountWindowOperator<>(windowSize, emissionInterval);
 
     final List<MistEvent> result = new LinkedList<>();
-    countWindowOperator.setOutputEmitter(new EventStoringOutputEmitter(result));
+    countWindowOperator.setOutputEmitter(new OutputBufferEmitter(result));
 
     // (1)Window1(3):
     //       (2)Window2--------(6):
@@ -388,7 +388,7 @@ public final class FixedSizeWindowOperatorTest {
 
     // Test if the operator can properly process data.
     final List<MistEvent> result = new LinkedList<>();
-    countWindowOperator.setOutputEmitter(new EventStoringOutputEmitter(result));
+    countWindowOperator.setOutputEmitter(new OutputBufferEmitter(result));
     countWindowOperator.processLeftData(d3);
     Assert.assertEquals(1, result.size());
     final Collection<Integer> expectedResult1 = new LinkedList<>();
@@ -411,7 +411,7 @@ public final class FixedSizeWindowOperatorTest {
         new CountWindowOperator<>(windowSize, emissionInterval);
 
     final List<MistEvent> result = new LinkedList<>();
-    countWindowOperator.setOutputEmitter(new EventStoringOutputEmitter(result));
+    countWindowOperator.setOutputEmitter(new OutputBufferEmitter(result));
 
     // (1)Window1-(3):
     //                        (6)Window2--(8):

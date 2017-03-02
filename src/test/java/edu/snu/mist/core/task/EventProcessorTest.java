@@ -16,10 +16,11 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.MistDataEvent;
+import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.operators.OneStreamOperator;
 import edu.snu.mist.formats.avro.Direction;
-import edu.snu.mist.utils.ValueStoringOutputEmitter;
+import edu.snu.mist.utils.OutputBufferEmitter;
 import junit.framework.Assert;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
@@ -32,10 +33,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 public final class EventProcessorTest {
-
-  private MistDataEvent createEvent(final int val) {
-    return new MistDataEvent(val, System.currentTimeMillis());
-  }
 
   /**
    * Test whether the processor processes events from multiple queries correctly.
@@ -50,25 +47,24 @@ public final class EventProcessorTest {
     final StringIdentifierFactory idfac = injector.getInstance(StringIdentifierFactory.class);
 
     final int numTasks = 1000000;
-    final List<Integer> list1 = new LinkedList<>();
-    final List<Integer> list2 = new LinkedList<>();
-    final List<Integer> result = new LinkedList<>();
+    final List<MistEvent> list1 = new LinkedList<>();
+    final List<MistEvent> list2 = new LinkedList<>();
+    final List<MistEvent> result = new LinkedList<>();
 
     final OperatorChain chain1 = new DefaultOperatorChainImpl();
     final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl("op1", null, new TestOperator(), chain1);
     chain1.insertToHead(o1);
-    chain1.setOutputEmitter(new ValueStoringOutputEmitter<>(list1));
+    chain1.setOutputEmitter(new OutputBufferEmitter(list1));
     final OperatorChain chain2 = new DefaultOperatorChainImpl();
     final PhysicalOperator o2 = new DefaultPhysicalOperatorImpl("op2", null, new TestOperator(), chain2);
     chain2.insertToHead(o2);
-    chain2.setOutputEmitter(new ValueStoringOutputEmitter<>(list2));
+    chain2.setOutputEmitter(new OutputBufferEmitter(list2));
 
     for (int i = 0; i < numTasks; i++) {
-      final int data = i;
       // Add events to the operator chains
-      chain1.addNextEvent(createEvent(data), Direction.LEFT);
-      chain2.addNextEvent(createEvent(data), Direction.LEFT);
-      result.add(data);
+      chain1.addNextEvent(new MistDataEvent(i, i), Direction.LEFT);
+      chain2.addNextEvent(new MistDataEvent(i, i), Direction.LEFT);
+      result.add(new MistDataEvent(i, i));
     }
 
     // Add queries to operatorChainManager
@@ -102,19 +98,18 @@ public final class EventProcessorTest {
     final StringIdentifierFactory idfac = injector.getInstance(StringIdentifierFactory.class);
 
     final int numTasks = 1000000;
-    final List<Integer> list1 = new LinkedList<>();
-    final List<Integer> result = new LinkedList<>();
+    final List<MistEvent> list1 = new LinkedList<>();
+    final List<MistEvent> result = new LinkedList<>();
 
     final OperatorChain query = new DefaultOperatorChainImpl();
     final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl("op1", null, new TestOperator(), query);
     query.insertToHead(o1);
-    query.setOutputEmitter(new ValueStoringOutputEmitter<>(list1));
+    query.setOutputEmitter(new OutputBufferEmitter(list1));
 
     for (int i = 0; i < numTasks; i++) {
-      final int data = i;
       // Add tasks to queues
-      query.addNextEvent(createEvent(data), Direction.LEFT);
-      result.add(data);
+      query.addNextEvent(new MistDataEvent(i, i), Direction.LEFT);
+      result.add(new MistDataEvent(i, i));
     }
 
     // Add query to queryManager

@@ -25,10 +25,10 @@ import java.util.List;
 /**
  * Output emitter which just adds input events to a list.
  */
-public class EventStoringOutputEmitter implements OutputEmitter {
+public final class OutputBufferEmitter implements OutputEmitter {
   private final List<MistEvent> list;
 
-  public EventStoringOutputEmitter(final List<MistEvent> list) {
+  public OutputBufferEmitter(final List<MistEvent> list) {
     this.list = list;
   }
 
