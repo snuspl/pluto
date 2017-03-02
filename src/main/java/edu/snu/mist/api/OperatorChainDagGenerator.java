@@ -65,6 +65,13 @@ public final class OperatorChainDagGenerator {
     this.optimizedDag = optimizedDag;
   }
 
+  /**
+   * Get the operator chain that holds the next vertex.
+   * @param nextVertex next vertex of the optimized dag
+   * @param chainMap map that holds the vertex as a key and the operator chain as a value
+   * @param chainDag operator chain dag
+   * @return operator chain that holds the next vertex
+   */
   private OperatorChain getOperatorChain(final MISTStream nextVertex,
                                          final Map<MISTStream, OperatorChain> chainMap,
                                          final DAG<OperatorChain, MISTEdge> chainDag) {
