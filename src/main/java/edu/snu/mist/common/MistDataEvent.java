@@ -84,6 +84,10 @@ public final class MistDataEvent implements MistEvent {
 
   @Override
   public String toString() {
-    return "MistDataEvent with value: " + value.toString() + ", timestamp: " + timestamp;
+    return new StringBuilder("MistDataEvent with value: ")
+        .append(value.toString())
+        .append(", timestamp: ")
+        .append(timestamp)
+        .toString();
   }
 }

@@ -60,6 +60,8 @@ public final class MistWatermarkEvent implements MistEvent {
 
   @Override
   public String toString() {
-    return "MistWatermarkEvent with timestamp: " + timestamp;
+    return new StringBuilder("MistWatermarkEvent with timestamp: ")
+        .append(timestamp)
+        .toString();
   }
 }
