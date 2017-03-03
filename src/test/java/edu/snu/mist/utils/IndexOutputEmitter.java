@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.operators;
+package edu.snu.mist.utils;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistEvent;
@@ -26,10 +26,10 @@ import java.util.List;
 /**
  * Simple output emitter which records events and indices to the list.
  */
-class IndexOutputEmitter implements OutputEmitter {
+public final class IndexOutputEmitter implements OutputEmitter {
   private final List<Tuple<MistEvent, Integer>> list;
 
-  IndexOutputEmitter(final List<Tuple<MistEvent, Integer>> list) {
+  public IndexOutputEmitter(final List<Tuple<MistEvent, Integer>> list) {
     this.list = list;
   }
 

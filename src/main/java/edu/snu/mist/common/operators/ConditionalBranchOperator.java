@@ -47,7 +47,6 @@ public final class ConditionalBranchOperator<I> extends OneStreamOperator {
     }
   }
 
-  @Inject
   public ConditionalBranchOperator(final List<MISTPredicate<I>> predicates) {
     this.predicates = predicates;
   }

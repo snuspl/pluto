@@ -19,6 +19,7 @@ import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.functions.MISTPredicate;
+import edu.snu.mist.utils.IndexOutputEmitter;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
