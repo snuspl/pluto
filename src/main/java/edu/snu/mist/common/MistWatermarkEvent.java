@@ -41,4 +41,27 @@ public final class MistWatermarkEvent implements MistEvent {
   public boolean isData() {
     return false;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    return timestamp == ((MistWatermarkEvent) o).getTimestamp();
+  }
+
+  @Override
+  public int hashCode() {
+    return 10 * ((Long) timestamp).hashCode();
+  }
+
+  @Override
+  public String toString() {
+    return new StringBuilder("MistWatermarkEvent with timestamp: ")
+        .append(timestamp)
+        .toString();
+  }
 }

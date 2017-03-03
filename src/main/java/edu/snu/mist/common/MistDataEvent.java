@@ -64,4 +64,30 @@ public final class MistDataEvent implements MistEvent {
   public boolean isData() {
     return true;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final MistDataEvent that = (MistDataEvent) o;
+    return value.equals(that.getValue()) && timestamp == that.getTimestamp();
+  }
+
+  @Override
+  public int hashCode() {
+    return 100 * value.hashCode() + 10 * ((Long) timestamp).hashCode();
+  }
+
+  @Override
+  public String toString() {
+    return new StringBuilder("MistDataEvent with value: ")
+        .append(value.toString())
+        .append(", timestamp: ")
+        .append(timestamp)
+        .toString();
+  }
 }

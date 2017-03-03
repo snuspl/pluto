@@ -20,6 +20,7 @@ import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.windows.Window;
 import edu.snu.mist.common.windows.WindowImpl;
+import edu.snu.mist.utils.OutputBufferEmitter;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -57,7 +58,7 @@ public final class SessionWindowOperatorTest {
     final SessionWindowOperator<Integer> sessionWindowOperator =
         new SessionWindowOperator<>(sessionInterval);
     final List<MistEvent> result = new LinkedList<>();
-    sessionWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));
+    sessionWindowOperator.setOutputEmitter(new OutputBufferEmitter(result));
 
     // (200)Window1-(1200):
     //                        (1750)Window2-----(2000):
@@ -174,7 +175,7 @@ public final class SessionWindowOperatorTest {
 
     // Test if the operator can properly process data.
     final List<MistEvent> result = new LinkedList<>();
-    sessionWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));
+    sessionWindowOperator.setOutputEmitter(new OutputBufferEmitter(result));
     sessionWindowOperator.setState(operatorState);
     sessionWindowOperator.processLeftData(d6);
     Assert.assertEquals(2, result.size());

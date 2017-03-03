@@ -20,10 +20,7 @@ import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.operators.OneStreamOperator;
 import edu.snu.mist.formats.avro.Direction;
-import edu.snu.mist.utils.TestOutputEmitter;
-import org.apache.reef.io.network.util.StringIdentifierFactory;
-import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.Tang;
+import edu.snu.mist.utils.OutputBufferEmitter;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -34,10 +31,6 @@ import java.util.List;
 public final class OperatorChainTest {
   // TODO[MIST-70]: Consider concurrency issue in execution of OperatorChain
 
-  private MistDataEvent createEvent(final int val, final long timestamp) {
-    return new MistDataEvent(val, timestamp);
-  }
-
   /**
    * Tests whether the OperatorChain correctly executes the chained operators.
    * @throws org.apache.reef.tang.exceptions.InjectionException
@@ -46,14 +39,12 @@ public final class OperatorChainTest {
   @Test
   public void operatorChainExecutionTest() throws InjectionException {
 
-    final List<Integer> result = new LinkedList<>();
+    final List<MistEvent> result = new LinkedList<>();
     final Integer input = 3;
 
     final OperatorChain operatorChain = new DefaultOperatorChainImpl();
-    operatorChain.setOutputEmitter(new TestOutputEmitter<>(result));
+    operatorChain.setOutputEmitter(new OutputBufferEmitter(result));
 
-    final Injector injector = Tang.Factory.getTang().newInjector();
-    final StringIdentifierFactory idFactory = injector.getInstance(StringIdentifierFactory.class);
     final String squareOpId = "squareOp";
     final String incOpId = "incOp";
     final String doubleOpId = "doubleOp";
@@ -67,11 +58,11 @@ public final class OperatorChainTest {
 
     // 2 * (input * input + 1)
     long timestamp = 1;
-    final Integer expected1 = 2 * (input * input + 1);
+    final MistDataEvent expected1 = new MistDataEvent(2 * (input * input + 1), timestamp);
     operatorChain.insertToHead(doubleOp);
     operatorChain.insertToHead(incOp);
     operatorChain.insertToHead(squareOp);
-    operatorChain.addNextEvent(createEvent(input, timestamp), Direction.LEFT);
+    operatorChain.addNextEvent(new MistDataEvent(input, timestamp), Direction.LEFT);
     operatorChain.processNextEvent();
     Assert.assertEquals(expected1, result.remove(0));
     // Check latest timestamp
@@ -82,8 +73,8 @@ public final class OperatorChainTest {
     // 2 * (input + 1)
     timestamp += 1;
     operatorChain.removeFromHead();
-    final Integer expected2 = 2 * (input + 1);
-    operatorChain.addNextEvent(createEvent(input, timestamp), Direction.LEFT);
+    final MistDataEvent expected2 = new MistDataEvent(2 * (input + 1), timestamp);
+    operatorChain.addNextEvent(new MistDataEvent(input, timestamp), Direction.LEFT);
     operatorChain.processNextEvent();
     Assert.assertEquals(expected2, result.remove(0));
     // Check latest timestamp
@@ -93,8 +84,8 @@ public final class OperatorChainTest {
     // input + 1
     timestamp += 1;
     operatorChain.removeFromTail();
-    final Integer expected3 = input + 1;
-    operatorChain.addNextEvent(createEvent(input, timestamp), Direction.LEFT);
+    final MistDataEvent expected3 = new MistDataEvent(input + 1, timestamp);
+    operatorChain.addNextEvent(new MistDataEvent(input, timestamp), Direction.LEFT);
     operatorChain.processNextEvent();
     Assert.assertEquals(expected3, result.remove(0));
     // Check latest timestamp
@@ -103,8 +94,8 @@ public final class OperatorChainTest {
     // 2 * input + 1
     timestamp += 1;
     operatorChain.insertToHead(doubleOp);
-    final Integer expected4 = 2 * input + 1;
-    operatorChain.addNextEvent(createEvent(input, timestamp), Direction.LEFT);
+    final MistDataEvent expected4 = new MistDataEvent(2 * input + 1, timestamp);
+    operatorChain.addNextEvent(new MistDataEvent(input, timestamp), Direction.LEFT);
     operatorChain.processNextEvent();
     Assert.assertEquals(expected4, result.remove(0));
     // Check latest timestamp
@@ -114,8 +105,8 @@ public final class OperatorChainTest {
     // (2 * input + 1) * (2 * input + 1)
     timestamp += 1;
     operatorChain.insertToTail(squareOp);
-    final Integer expected5 = (2 * input + 1) * (2 * input + 1);
-    operatorChain.addNextEvent(createEvent(input, timestamp), Direction.LEFT);
+    final MistDataEvent expected5 = new MistDataEvent((2 * input + 1) * (2 * input + 1), timestamp);
+    operatorChain.addNextEvent(new MistDataEvent(input, timestamp), Direction.LEFT);
     operatorChain.processNextEvent();
     Assert.assertEquals(expected5, result.remove(0));
     // Check latest timestamp

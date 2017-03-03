@@ -17,9 +17,10 @@ package edu.snu.mist.common.operators;
 
 import com.google.common.collect.ImmutableList;
 import edu.snu.mist.common.MistDataEvent;
+import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
-import edu.snu.mist.utils.TestOutputEmitter;
+import edu.snu.mist.utils.OutputBufferEmitter;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
@@ -28,22 +29,20 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public final class StatelessOperatorTest {
+  private static final Logger LOG = Logger.getLogger(StatelessOperatorTest.class.getName());
 
-  private <O> void testStatelessOperator(final List<MistDataEvent> inputStream,
-                                         final List<O> expected,
-                                         final Operator operator) {
-    final List<O> result = new LinkedList<>();
-    operator.setOutputEmitter(new TestOutputEmitter<>(result));
+  private void testStatelessOperator(final List<MistDataEvent> inputStream,
+                                     final List<MistEvent> expected,
+                                     final Operator operator) {
+    final List<MistEvent> result = new LinkedList<>();
+    operator.setOutputEmitter(new OutputBufferEmitter(result));
     inputStream.stream().forEach(operator::processLeftData);
-    System.out.println("expected: " + expected);
-    System.out.println("result: " + result);
+    LOG.info("expected: " + expected);
+    LOG.info("result: " + result);
     Assert.assertEquals(expected, result);
-  }
-
-  private MistDataEvent createEvent(final String val) {
-    return new MistDataEvent(val, System.currentTimeMillis());
   }
 
   /**
@@ -53,17 +52,24 @@ public final class StatelessOperatorTest {
   @Test
   public void testMapOperation() throws InjectionException {
     // input stream
-    final List<MistDataEvent> inputStream = ImmutableList.of(createEvent("a"),
-        createEvent("b"), createEvent("d"), createEvent("b"), createEvent("c"));
+    final List<MistDataEvent> inputStream = ImmutableList.of(
+        new MistDataEvent("a", 1L),
+        new MistDataEvent("b", 2L),
+        new MistDataEvent("d", 3L),
+        new MistDataEvent("b", 4L),
+        new MistDataEvent("c", 5L));
     // expected output
-    final Tuple[] outputs = {new Tuple<>("a", 1), new Tuple<>("b", 1),
-        new Tuple<>("d", 1), new Tuple<>("b", 1), new Tuple<>("c", 1)};
-    final List<Tuple> expected = Arrays.asList(outputs);
+    final List<MistEvent> expectedStream = ImmutableList.of(
+        new MistDataEvent(new Tuple<>("a", 1), 1L),
+        new MistDataEvent(new Tuple<>("b", 1), 2L),
+        new MistDataEvent(new Tuple<>("d", 1), 3L),
+        new MistDataEvent(new Tuple<>("b", 1), 4L),
+        new MistDataEvent(new Tuple<>("c", 1), 5L));
 
     // map function: convert string to tuple
     final MISTFunction<String, Tuple> mapFunc = (mapInput) -> new Tuple<>(mapInput, 1);
     final MapOperator<String, Tuple> mapOperator = new MapOperator<>(mapFunc);
-    testStatelessOperator(inputStream, expected, mapOperator);
+    testStatelessOperator(inputStream, expectedStream, mapOperator);
   }
 
   /**
@@ -74,17 +80,28 @@ public final class StatelessOperatorTest {
   public void testFilterOperator() throws InjectionException {
     // input stream
     final List<MistDataEvent> inputStream = ImmutableList.of(
-        createEvent("alpha"), createEvent("gamma"), createEvent("bravo"), createEvent("area"),
-        createEvent("charlie"), createEvent("delta"), createEvent("application"),
-        createEvent("echo"), createEvent("ally"), createEvent("foxtrot"));
+        new MistDataEvent("alpha", 1L),
+        new MistDataEvent("gamma", 2L),
+        new MistDataEvent("bravo", 3L),
+        new MistDataEvent("area", 4L),
+        new MistDataEvent("charlie", 5L),
+        new MistDataEvent("delta", 6L),
+        new MistDataEvent("application", 7L),
+        new MistDataEvent("echo", 8L),
+        new MistDataEvent("ally", 9L),
+        new MistDataEvent("foxtrot", 10L));
 
     // expected output
-    final List<String> expected = Arrays.asList("alpha", "area", "application", "ally");
+    final List<MistEvent> expectedStream = ImmutableList.of(
+        new MistDataEvent("alpha", 1L),
+        new MistDataEvent("area", 4L),
+        new MistDataEvent("application", 7L),
+        new MistDataEvent("ally", 9L));
 
     // create a filter function
     final MISTPredicate<String> filterFunc = (input) -> input.startsWith("a");
     final FilterOperator<String> filterOperator = new FilterOperator<>(filterFunc);
-    testStatelessOperator(inputStream, expected, filterOperator);
+    testStatelessOperator(inputStream, expectedStream, filterOperator);
   }
 
   /**
@@ -95,14 +112,24 @@ public final class StatelessOperatorTest {
   public void testFlatMapOperation() throws InjectionException {
     // input stream
     final List<MistDataEvent> inputStream = ImmutableList.of(
-        createEvent("a b c"), createEvent("b c d"), createEvent("d e f"));
+        new MistDataEvent("a b c", 1L),
+        new MistDataEvent("b c d", 2L),
+        new MistDataEvent("d e f", 3L));
     // expected output
-    final String[] outputs = {"a", "b", "c", "b", "c", "d", "d", "e", "f"};
-    final List<String> expected = Arrays.asList(outputs);
+    final List<MistEvent> expectedStream = ImmutableList.of(
+        new MistDataEvent("a", 1L),
+        new MistDataEvent("b", 1L),
+        new MistDataEvent("c", 1L),
+        new MistDataEvent("b", 2L),
+        new MistDataEvent("c", 2L),
+        new MistDataEvent("d", 2L),
+        new MistDataEvent("d", 3L),
+        new MistDataEvent("e", 3L),
+        new MistDataEvent("f", 3L));
 
     // map function: splits the string by space.
     final MISTFunction<String, List<String>> flatMapFunc = (mapInput) -> Arrays.asList(mapInput.split(" "));
     final FlatMapOperator<String, String> flatMapOperator = new FlatMapOperator<>(flatMapFunc);
-    testStatelessOperator(inputStream, expected, flatMapOperator);
+    testStatelessOperator(inputStream, expectedStream, flatMapOperator);
   }
 }

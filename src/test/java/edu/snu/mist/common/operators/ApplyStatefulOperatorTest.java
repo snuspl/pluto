@@ -20,6 +20,7 @@ import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.functions.ApplyStatefulFunction;
 import edu.snu.mist.common.utils.FindMaxIntFunction;
+import edu.snu.mist.utils.OutputBufferEmitter;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -50,7 +51,7 @@ public final class ApplyStatefulOperatorTest {
     final ApplyStatefulOperator<Integer, Integer> applyStatefulOperator =
         new ApplyStatefulOperator<>(applyStatefulFunction);
     final List<MistEvent> result = new LinkedList<>();
-    applyStatefulOperator.setOutputEmitter(new SimpleOutputEmitter(result));
+    applyStatefulOperator.setOutputEmitter(new OutputBufferEmitter(result));
 
     applyStatefulOperator.processLeftData(data10);
     Assert.assertEquals(1, result.size());
@@ -87,7 +88,7 @@ public final class ApplyStatefulOperatorTest {
     final MistDataEvent data10 = new MistDataEvent(10, 0L);
     final MistDataEvent data20 = new MistDataEvent(20, 1L);
     final List<MistEvent> result = new LinkedList<>();
-    applyStatefulOperator.setOutputEmitter(new SimpleOutputEmitter(result));
+    applyStatefulOperator.setOutputEmitter(new OutputBufferEmitter(result));
     applyStatefulOperator.processLeftData(data10);
     applyStatefulOperator.processLeftData(data20);
 
@@ -125,7 +126,7 @@ public final class ApplyStatefulOperatorTest {
 
     // Test if the operator can properly process data.
     final List<MistEvent> result = new LinkedList<>();
-    applyStatefulOperator.setOutputEmitter(new SimpleOutputEmitter(result));
+    applyStatefulOperator.setOutputEmitter(new OutputBufferEmitter(result));
     final MistDataEvent data10 = new MistDataEvent(10, 0L);
     final MistDataEvent data20 = new MistDataEvent(20, 1L);
     final MistDataEvent data15 = new MistDataEvent(15, 2L);
