@@ -18,9 +18,8 @@ package edu.snu.mist.api;
 import edu.snu.mist.api.datastreams.MISTStream;
 import edu.snu.mist.common.graph.AdjacentListDAG;
 import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.graph.GraphUtils;
-import edu.snu.mist.formats.avro.Direction;
+import edu.snu.mist.common.graph.MISTEdge;
 
 import java.util.*;
 
@@ -67,17 +66,32 @@ public final class OperatorChainDagGenerator {
   }
 
   /**
+   * Get the operator chain that holds the next vertex.
+   * @param nextVertex next vertex of the optimized dag
+   * @param chainMap map that holds the vertex as a key and the operator chain as a value
+   * @param chainDag operator chain dag
+   * @return operator chain that holds the next vertex
+   */
+  private OperatorChain getOperatorChain(final MISTStream nextVertex,
+                                         final Map<MISTStream, OperatorChain> chainMap,
+                                         final DAG<OperatorChain, MISTEdge> chainDag) {
+    if (!chainMap.containsKey(nextVertex)) {
+      final OperatorChain operatorChain = new OperatorChain();
+      chainDag.addVertex(operatorChain);
+      return operatorChain;
+    } else {
+      return chainMap.get(nextVertex);
+    }
+  }
+
+  /**
    * Generate OperatorChain DAG according to the logic described above.
    * @return the OperatorChain DAG
    * The chain is represented as a list and AvroVertexSerializable can be serialized by avro
    */
   public DAG<List<MISTStream>, MISTEdge> generateOperatorChainDAG() {
-    final DAG<OperatorChain, MISTEdge> partitionedQueryDAG =
-        new AdjacentListDAG<>();
+    final DAG<OperatorChain, MISTEdge> chainDag = new AdjacentListDAG<>();
     final Map<MISTStream, OperatorChain> vertexChainMap = new HashMap<>();
-    // Check visited vertices
-    final Set<MISTStream> visited = new HashSet<>();
-
     // It traverses the DAG of operators in DFS order
     // from the root operators which are following sources.
     for (final MISTStream source : optimizedDag.getRootVertices()) {
@@ -86,36 +100,28 @@ public final class OperatorChainDagGenerator {
       final OperatorChain srcChain = new OperatorChain();
       // Partition Source
       srcChain.chain.add(source);
-      partitionedQueryDAG.addVertex(srcChain);
-      visited.add(source);
+      chainDag.addVertex(srcChain);
       vertexChainMap.put(source, srcChain);
       for (final Map.Entry<MISTStream, MISTEdge> entry : rootEdges.entrySet()) {
         final MISTStream nextVertex = entry.getKey();
-        final MISTEdge edgeInfo = entry.getValue();
-        final Direction edgeDirection = edgeInfo.getDirection();
-        final Integer branchIndex = edgeInfo.getIndex();
-        final OperatorChain nextChain = vertexChainMap.getOrDefault(nextVertex, new OperatorChain());
-        if (!vertexChainMap.containsKey(nextVertex)) {
-          vertexChainMap.put(nextVertex, nextChain);
-          partitionedQueryDAG.addVertex(nextChain);
-        }
-        partitionedQueryDAG.addEdge(srcChain, nextChain, new MISTEdge(edgeDirection, branchIndex));
-        chainSubDag(nextChain, nextVertex, visited, partitionedQueryDAG, vertexChainMap);
+        final MISTEdge edge = entry.getValue();
+        final OperatorChain nextChain = getOperatorChain(nextVertex, vertexChainMap, chainDag);
+        chainDag.addEdge(srcChain, nextChain, edge);
+        chainingInDfsOrder(nextChain, nextVertex, chainDag, vertexChainMap);
       }
     }
 
-    // Convert to List<AvroVertexSerializable>
-    final DAG<List<MISTStream>, MISTEdge> result =
-        new AdjacentListDAG<>();
+    // Convert to List<AvroVertexSerializable> for AvroOperatorChainDag
+    final DAG<List<MISTStream>, MISTEdge> result = new AdjacentListDAG<>();
     final Queue<OperatorChain> queue = new LinkedList<>();
-    final Iterator<OperatorChain> iterator = GraphUtils.topologicalSort(partitionedQueryDAG);
+    final Iterator<OperatorChain> iterator = GraphUtils.topologicalSort(chainDag);
     while (iterator.hasNext()) {
       final OperatorChain queryPartition = iterator.next();
       queue.add(queryPartition);
       result.addVertex(queryPartition.chain);
     }
     for (final OperatorChain operatorChain : queue) {
-      final Map<OperatorChain, MISTEdge> edges = partitionedQueryDAG.getEdges(operatorChain);
+      final Map<OperatorChain, MISTEdge> edges = chainDag.getEdges(operatorChain);
       for (final Map.Entry<OperatorChain, MISTEdge> edge : edges.entrySet()) {
         result.addEdge(operatorChain.chain, edge.getKey().chain, edge.getValue());
       }
@@ -127,50 +133,40 @@ public final class OperatorChainDagGenerator {
    * Chain the operators and sinks recursively (DFS order) according to the mechanism.
    * @param operatorChain current chain
    * @param currVertex  current vertex
-   * @param visited visited vertices
-   * @param partitionedQueryDAG optimizedDag
+   * @param chainDag operator chain dag
    * @param vertexChainMap vertex and chain mapping
    */
-  private void chainSubDag(final OperatorChain operatorChain,
-                           final MISTStream currVertex,
-                           final Set<MISTStream> visited,
-                           final DAG<OperatorChain, MISTEdge> partitionedQueryDAG,
-                           final Map<MISTStream, OperatorChain> vertexChainMap) {
-    if (!visited.contains(currVertex)) {
-      operatorChain.chain.add(currVertex);
-      visited.add(currVertex);
-      final Map<MISTStream, MISTEdge> edges = optimizedDag.getEdges(currVertex);
-      for (final Map.Entry<MISTStream, MISTEdge> entry : edges.entrySet()) {
-        final MISTStream nextVertex = entry.getKey();
-        final MISTEdge edgeInfo = entry.getValue();
-        final Direction edgeDirection = edgeInfo.getDirection();
-        final Integer branchIndex = edgeInfo.getIndex();
-        if (optimizedDag.getInDegree(nextVertex) > 1 ||
-            edges.size() > 1) {
-          // The current vertex is 2) branching (have multiple next ops)
-          // or the next vertex is 3) merging operator (have multiple incoming edges)
-          // so try to create a new OperatorChain for the next operator.
-          final OperatorChain nextChain = vertexChainMap.getOrDefault(nextVertex, new OperatorChain());
-          if (!vertexChainMap.containsKey(nextVertex)) {
-            partitionedQueryDAG.addVertex(nextChain);
-            vertexChainMap.put(nextVertex, nextChain);
-          }
-          partitionedQueryDAG.addEdge(operatorChain, nextChain, new MISTEdge(edgeDirection, branchIndex));
-          chainSubDag(nextChain, nextVertex, visited, partitionedQueryDAG, vertexChainMap);
-        } else if (optimizedDag.getEdges(nextVertex).size() == 0) {
-          // The next vertex is Sink. End of the chaining
-          final OperatorChain nextChain = vertexChainMap.getOrDefault(nextVertex, new OperatorChain());
-          if (!vertexChainMap.containsKey(nextVertex)) {
-            partitionedQueryDAG.addVertex(nextChain);
-            vertexChainMap.put(nextVertex, nextChain);
-          }
-          partitionedQueryDAG.addEdge(operatorChain, nextChain, new MISTEdge(edgeDirection, branchIndex));
-          chainSubDag(nextChain, nextVertex, visited, partitionedQueryDAG, vertexChainMap);
-        } else {
-          // 1) The next vertex is sequentially following the current vertex
-          // so add the next operator to the current OperatorChain
-          chainSubDag(operatorChain, nextVertex, visited, partitionedQueryDAG, vertexChainMap);
-        }
+  private void chainingInDfsOrder(final OperatorChain operatorChain,
+                                  final MISTStream currVertex,
+                                  final DAG<OperatorChain, MISTEdge> chainDag,
+                                  final Map<MISTStream, OperatorChain> vertexChainMap) {
+    if (vertexChainMap.containsKey(currVertex)) {
+      return;
+    }
+
+    vertexChainMap.put(currVertex, operatorChain);
+    operatorChain.chain.add(currVertex);
+    final Map<MISTStream, MISTEdge> edges = optimizedDag.getEdges(currVertex);
+    for (final Map.Entry<MISTStream, MISTEdge> entry : edges.entrySet()) {
+      final MISTStream nextVertex = entry.getKey();
+      final MISTEdge edge = entry.getValue();
+      if (optimizedDag.getInDegree(nextVertex) > 1 ||
+          edges.size() > 1) {
+        // The current vertex is 2) branching (have multiple next ops)
+        // or the next vertex is 3) merging operator (have multiple incoming edges)
+        // so try to create a new OperatorChain for the next operator.
+        final OperatorChain nextChain = getOperatorChain(nextVertex, vertexChainMap, chainDag);
+        chainDag.addEdge(operatorChain, nextChain, edge);
+        chainingInDfsOrder(nextChain, nextVertex, chainDag, vertexChainMap);
+      } else if (optimizedDag.getEdges(nextVertex).size() == 0) {
+        // The next vertex is Sink. End of the chaining
+        final OperatorChain nextChain = getOperatorChain(nextVertex, vertexChainMap, chainDag);
+        chainDag.addEdge(operatorChain, nextChain, edge);
+        chainingInDfsOrder(nextChain, nextVertex, chainDag, vertexChainMap);
+      } else {
+        // 1) The next vertex is sequentially following the current vertex
+        // so add the next operator to the current OperatorChain
+        chainingInDfsOrder(operatorChain, nextVertex, chainDag, vertexChainMap);
       }
     }
   }

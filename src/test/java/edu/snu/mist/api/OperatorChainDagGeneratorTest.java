@@ -365,7 +365,7 @@ public final class OperatorChainDagGeneratorTest {
     final Map<List<MISTStream>, MISTEdge> e1 = operatorChainDag.getEdges(src1List);
     final Map<List<MISTStream>, MISTEdge> result1 = new HashMap<>();
     result1.put(opAList, new MISTEdge(Direction.LEFT));
-    Assert.assertEquals(e1, result1);
+    Assert.assertEquals(result1, e1);
     // Check opA -> opB1 edges
     //           -> opB2
     //           -> opB3
@@ -374,31 +374,31 @@ public final class OperatorChainDagGeneratorTest {
     result2.put(opB1List, new MISTEdge(Direction.LEFT));
     result2.put(opB2List, new MISTEdge(Direction.LEFT));
     result2.put(opB3List, new MISTEdge(Direction.LEFT));
-    Assert.assertEquals(e2, result2);
+    Assert.assertEquals(result2, e2);
     // Check opB1 -> [opC] edge
     final Map<List<MISTStream>, MISTEdge> e3 = operatorChainDag.getEdges(opB1List);
     final Map<List<MISTStream>, MISTEdge> result3 = new HashMap<>();
     result3.put(opCList, new MISTEdge(Direction.RIGHT));
-    Assert.assertEquals(e3, result3);
+    Assert.assertEquals(result3, e3);
     // Check opB2 -> [opC] edge
     final Map<List<MISTStream>, MISTEdge> e4 = operatorChainDag.getEdges(opB2List);
     final Map<List<MISTStream>, MISTEdge> result4 = new HashMap<>();
     result4.put(opCList, new MISTEdge(Direction.LEFT));
-    Assert.assertEquals(e4, result4);
+    Assert.assertEquals(result4, e4);
     // Check opC -> [opD] edge
     final Map<List<MISTStream>, MISTEdge> e5 = operatorChainDag.getEdges(opCList);
     final Map<List<MISTStream>, MISTEdge> result5 = new HashMap<>();
     result5.put(opDList, new MISTEdge(Direction.LEFT));
-    Assert.assertEquals(e5, result5);
+    Assert.assertEquals(result5, e5);
     // Check opB3 -> [opD] edge
     final Map<List<MISTStream>, MISTEdge> e6 = operatorChainDag.getEdges(opB3List);
     final Map<List<MISTStream>, MISTEdge> result6 = new HashMap<>();
     result6.put(opDList, new MISTEdge(Direction.RIGHT));
-    Assert.assertEquals(e6, result6);
+    Assert.assertEquals(result6, e6);
     // Check opD -> [sink1] edge
     final Map<List<MISTStream>, MISTEdge> e7 = operatorChainDag.getEdges(opDList);
     final Map<List<MISTStream>, MISTEdge> result7 = new HashMap<>();
     result7.put(sink1List, new MISTEdge(Direction.LEFT));
-    Assert.assertEquals(e7, result7);
+    Assert.assertEquals(result7, e7);
   }
 }
