@@ -87,7 +87,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
     final AvroOperatorChainDag avroOpChainDag = queryIdAndAvroOperatorChainDag.getValue();
     // For execution dag
     final List<ExecutionVertex> deserializedVertices = new ArrayList<>(avroOpChainDag.getAvroVertices().size());
-    final DAG<ExecutionVertex, MISTEdge> executionDAG = new AdjacentListDAG<>();
+    final DAG<ExecutionVertex, MISTEdge> executionDAG = new AdjacentListConcurrentMapDAG<>();
     // This is for logical dag
     final List<List<LogicalVertex>> logicalVertices = new ArrayList<>(avroOpChainDag.getAvroVertices().size());
     final DAG<LogicalVertex, MISTEdge> logicalDAG = new AdjacentListDAG<>();
