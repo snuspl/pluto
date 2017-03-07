@@ -151,13 +151,13 @@ final class DefaultQueryManagerImpl implements QueryManager {
           break;
         }
         case OPERATOR_CHIAN: {
-          // 2) Inserts the OperatorChain to OperatorChainManager.
           final OperatorChain operatorChain = (OperatorChain)executionVertex;
-          operatorChainManager.insert(operatorChain);
+          // Does not insert operator chain into operator chain manager here.
           final Map<ExecutionVertex, MISTEdge> edges =
               physicalPlan.getEdges(operatorChain);
-          // 3) Sets output emitters
+          // 3) Sets output emitters and operator chain manager for operator chain.
           operatorChain.setOutputEmitter(new OperatorOutputEmitter(edges));
+          operatorChain.setOperatorChainManager(operatorChainManager);
           break;
         }
         case SINK: {

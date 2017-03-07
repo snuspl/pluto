@@ -77,4 +77,15 @@ public interface OperatorChain extends OutputEmittable, ExecutionVertex {
    * @return the number of operators
    */
   int size();
+
+  /**
+   * Returns whether the operator chain's queue is empty or not.
+   * @return true when the queue is empty
+   */
+  boolean isQueueEmpty();
+
+  /**
+   * Sets the operator chain manager which manages this operator chain.
+   */
+  void setOperatorChainManager(OperatorChainManager operatorChainManager);
 }

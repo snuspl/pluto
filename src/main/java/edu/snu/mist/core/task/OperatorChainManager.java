@@ -20,7 +20,7 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
 /**
  * This interface manages operator chains.
  */
-@DefaultImplementation(RandomlyPickManager.class)
+@DefaultImplementation(ActiveQueryPickManager.class)
 public interface OperatorChainManager {
 
   /**

@@ -63,11 +63,18 @@ final class DefaultOperatorChainImpl implements OperatorChain {
    */
   private final AtomicReference<Status> status;
 
+  /**
+   * The operator chain manager which would manage this operator chain.
+   */
+  private OperatorChainManager operatorChainManager;
+
   @Inject
   DefaultOperatorChainImpl() {
     this.operators = new LinkedList<>();
     this.queue = new ConcurrentLinkedQueue<>();
     this.status = new AtomicReference<>(Status.READY);
+    this.outputEmitter = null;
+    this.operatorChainManager = null;
   }
 
   @Override
@@ -132,6 +139,11 @@ final class DefaultOperatorChainImpl implements OperatorChain {
 
   @Override
   public boolean addNextEvent(final MistEvent event, final Direction direction) {
+    // Insert this operator chain into the new operator chain manager when its queue becomes not empty.
+    // Does not synchronize for efficiency, because duplicated insertion does not hurt the correctness.
+    if (operatorChainManager != null && queue.isEmpty()) {
+      operatorChainManager.insert(this);
+    }
     return queue.add(new Tuple<>(event, direction));
   }
 
@@ -190,6 +202,11 @@ final class DefaultOperatorChainImpl implements OperatorChain {
   }
 
   @Override
+  public void setOperatorChainManager(final OperatorChainManager chainManager) {
+    this.operatorChainManager = chainManager;
+  }
+
+  @Override
   public boolean equals(final Object o) {
     if (this == o) {
       return true;
@@ -212,6 +229,11 @@ final class DefaultOperatorChainImpl implements OperatorChain {
   @Override
   public String toString() {
     return operators.toString();
+  }
+
+  @Override
+  public boolean isQueueEmpty() {
+    return queue.isEmpty();
   }
 
   /**
