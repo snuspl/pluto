@@ -136,7 +136,6 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
             final PhysicalOperator physicalOperator = new DefaultPhysicalOperatorImpl(id, vertex.getConfiguration(),
                 operator, operatorChain);
             operatorChain.insertToTail(physicalOperator);
-            // TODO: [MIST-417] if the operator is conditional branch operator, mark as branching partition.
 
             // Add the physical vertex to the physical map
             physicalVertexMap.getPhysicalVertexMap().put(id, physicalOperator);

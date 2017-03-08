@@ -19,30 +19,30 @@ import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.OutputEmitter;
+import org.apache.reef.io.Tuple;
 
 import java.util.List;
 
 /**
- * Output emitter which just adds input events to a list.
+ * Simple output emitter which records events and indices to the list.
  */
-public final class OutputBufferEmitter implements OutputEmitter {
-  private final List<MistEvent> list;
+public final class IndexOutputEmitter implements OutputEmitter {
+  private final List<Tuple<MistEvent, Integer>> list;
 
-  public OutputBufferEmitter(final List<MistEvent> list) {
+  public IndexOutputEmitter(final List<Tuple<MistEvent, Integer>> list) {
     this.list = list;
   }
 
   @Override
   public void emitData(final MistDataEvent data) {
-    list.add(data);
+    this.emitData(data, 0);
   }
   @Override
   public void emitData(final MistDataEvent data, final int index) {
-    // simple output emitter does not emit data according to the index
-    this.emitData(data);
+    list.add(new Tuple<>(data, index));
   }
   @Override
   public void emitWatermark(final MistWatermarkEvent watermark) {
-    list.add(watermark);
+    list.add(new Tuple<>(watermark, 0));
   }
 }

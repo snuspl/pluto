@@ -235,6 +235,12 @@ final class DefaultOperatorChainImpl implements OperatorChain {
     }
 
     @Override
+    public void emitData(final MistDataEvent output, final int index) {
+      // operator chain internal emitter does not emit data according to the index
+      this.emitData(output);
+    }
+
+    @Override
     public void emitWatermark(final MistWatermarkEvent output) {
       op.processLeftWatermark(output);
       nextPhysicalOp.setLatestWatermarkTimestamp(output.getTimestamp());
