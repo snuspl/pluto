@@ -37,9 +37,6 @@ public final class EventProcessor implements Runnable {
         final OperatorChain query = operatorChainManager.pickOperatorChain();
         if (query != null) {
           query.processNextEvent();
-          if (!query.isQueueEmpty()) {
-            operatorChainManager.insert(query);
-          }
         }
       } catch (final Exception t) {
         throw t;

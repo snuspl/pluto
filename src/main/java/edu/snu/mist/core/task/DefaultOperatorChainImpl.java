@@ -68,6 +68,11 @@ final class DefaultOperatorChainImpl implements OperatorChain {
    */
   private OperatorChainManager operatorChainManager;
 
+  /**
+   * A shared lock used to maintain minimum consistency over the queue.
+   */
+  private final Object sharedLock;
+
   @Inject
   DefaultOperatorChainImpl() {
     this.operators = new LinkedList<>();
@@ -75,6 +80,7 @@ final class DefaultOperatorChainImpl implements OperatorChain {
     this.status = new AtomicReference<>(Status.READY);
     this.outputEmitter = null;
     this.operatorChainManager = null;
+    this.sharedLock = new Object();
   }
 
   @Override
@@ -128,9 +134,16 @@ final class DefaultOperatorChainImpl implements OperatorChain {
         status.set(Status.READY);
         return false;
       }
-      final Tuple<MistEvent, Direction> event = queue.poll();
+      final Tuple<MistEvent, Direction> event;
+      // Synchronization is necessary to prevent omitting events.
+      synchronized (sharedLock) {
+        event = queue.poll();
+      }
       process(event);
       status.set(Status.READY);
+      if (operatorChainManager != null && !queue.isEmpty()) {
+        operatorChainManager.insert(this);
+      }
       return true;
     } else {
       return false;
@@ -139,12 +152,16 @@ final class DefaultOperatorChainImpl implements OperatorChain {
 
   @Override
   public boolean addNextEvent(final MistEvent event, final Direction direction) {
+    final boolean isAdded;
     // Insert this operator chain into the new operator chain manager when its queue becomes not empty.
-    // Does not synchronize for efficiency, because duplicated insertion does not hurt the correctness.
-    if (operatorChainManager != null && queue.isEmpty()) {
-      operatorChainManager.insert(this);
+    // This operation is not performed concurrently with queue polling to prevent event omitting.
+    synchronized (sharedLock) {
+      if (operatorChainManager != null && queue.isEmpty()) {
+        operatorChainManager.insert(this);
+      }
+      isAdded = queue.add(new Tuple<>(event, direction));
     }
-    return queue.add(new Tuple<>(event, direction));
+    return isAdded;
   }
 
   @Override

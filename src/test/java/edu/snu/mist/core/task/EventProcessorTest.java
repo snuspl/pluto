@@ -43,7 +43,7 @@ public final class EventProcessorTest {
   public void activePickProcessTest() throws InjectionException, InterruptedException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final OperatorChainManager operatorChainManager = injector.getInstance(OperatorChainManager.class);
+    final OperatorChainManager operatorChainManager = injector.getInstance(ActiveQueryPickManager.class);
     final StringIdentifierFactory idfac = injector.getInstance(StringIdentifierFactory.class);
 
     final int numTasks = 1000000;
@@ -68,6 +68,51 @@ public final class EventProcessorTest {
       chain2.addNextEvent(new MistDataEvent(i, i), Direction.LEFT);
       result.add(new MistDataEvent(i, i));
     }
+
+    // Create a processor
+    final Thread processor = new Thread(new EventProcessor(operatorChainManager));
+    processor.start();
+
+    while (!(list1.size() == numTasks && list2.size() == numTasks)) {
+      // do nothing until the processor consumes all of the events
+      Thread.sleep(1000);
+    }
+
+    Assert.assertEquals(result, list1);
+    Assert.assertEquals(result, list2);
+    processor.interrupt();
+  }
+
+  @Test
+  public void randomPickProcessTest() throws InjectionException, InterruptedException {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final OperatorChainManager operatorChainManager = injector.getInstance(RandomlyPickManager.class);
+    final StringIdentifierFactory idfac = injector.getInstance(StringIdentifierFactory.class);
+
+    final int numTasks = 1000000;
+    final List<MistEvent> list1 = new LinkedList<>();
+    final List<MistEvent> list2 = new LinkedList<>();
+    final List<MistEvent> result = new LinkedList<>();
+
+    final OperatorChain chain1 = new DefaultOperatorChainImpl();
+    final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl("op1", null, new TestOperator(), chain1);
+    chain1.insertToHead(o1);
+    chain1.setOutputEmitter(new OutputBufferEmitter(list1));
+    final OperatorChain chain2 = new DefaultOperatorChainImpl();
+    final PhysicalOperator o2 = new DefaultPhysicalOperatorImpl("op2", null, new TestOperator(), chain2);
+    chain2.insertToHead(o2);
+    chain2.setOutputEmitter(new OutputBufferEmitter(list2));
+
+    for (int i = 0; i < numTasks; i++) {
+      // Add events to the operator chains
+      chain1.addNextEvent(new MistDataEvent(i, i), Direction.LEFT);
+      chain2.addNextEvent(new MistDataEvent(i, i), Direction.LEFT);
+      result.add(new MistDataEvent(i, i));
+    }
+
+    operatorChainManager.insert(chain1);
+    operatorChainManager.insert(chain2);
 
     // Create a processor
     final Thread processor = new Thread(new EventProcessor(operatorChainManager));

@@ -44,9 +44,9 @@ public final class ActiveQueryPickManager implements OperatorChainManager {
   @Inject
   private ActiveQueryPickManager() {
     // ConcurrentLinkedQueue is used to assure concurrency as well as maintain exactly-once query picking.
-    activeQueryWorkingQueue = new ConcurrentLinkedQueue<>();
-    activeQueryWaitingQueue = new ConcurrentLinkedQueue<>();
-    sharedLock = new Object();
+    this.activeQueryWorkingQueue = new ConcurrentLinkedQueue<>();
+    this.activeQueryWaitingQueue = new ConcurrentLinkedQueue<>();
+    this.sharedLock = new Object();
   }
 
   /**
