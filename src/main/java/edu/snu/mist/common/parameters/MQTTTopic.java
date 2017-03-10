@@ -22,6 +22,6 @@ import org.apache.reef.tang.annotations.NamedParameter;
  * MQTT topic name.
  */
 @NamedParameter(doc="MQTT topic")
-public class MQTTTopic implements Name<String> {
+public final class MQTTTopic implements Name<String> {
   // empty
 }

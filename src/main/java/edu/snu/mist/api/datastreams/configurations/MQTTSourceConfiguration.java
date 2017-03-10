@@ -32,7 +32,7 @@ import java.io.IOException;
  * Configuration class for setting up MQTT sources.
  * This class is agnostic to which broker implementation the source uses.
  */
-public class MQTTSourceConfiguration extends ConfigurationModuleBuilder {
+public final class MQTTSourceConfiguration extends ConfigurationModuleBuilder {
 
   /**
    * The parameter for MQTT broker address.
@@ -69,6 +69,9 @@ public class MQTTSourceConfiguration extends ConfigurationModuleBuilder {
     return new MQTTSourceConfigurationBuilder();
   }
 
+  /**
+   * A builder class for making source configuration for MQTT connections.
+   */
   public static final class MQTTSourceConfigurationBuilder {
 
     private String mqttBrokerAddress;
@@ -111,8 +114,6 @@ public class MQTTSourceConfiguration extends ConfigurationModuleBuilder {
         throw new RuntimeException(e);
       }
     }
-
-
 
     /**
      * Sets the broker address with specified port.
@@ -161,5 +162,4 @@ public class MQTTSourceConfiguration extends ConfigurationModuleBuilder {
       return this;
     }
   }
-
 }
