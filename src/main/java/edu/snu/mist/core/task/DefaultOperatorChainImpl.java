@@ -248,11 +248,6 @@ final class DefaultOperatorChainImpl implements OperatorChain {
     return operators.toString();
   }
 
-  @Override
-  public boolean isQueueEmpty() {
-    return queue.isEmpty();
-  }
-
   /**
    * An output emitter forwarding events to the next operator.
    * It only has one stream for input because the operators are chained sequentially.
