@@ -24,10 +24,7 @@ import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
 
 import javax.inject.Inject;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -48,16 +45,6 @@ final class DefaultQueryManagerImpl implements QueryManager {
   private final ConcurrentMap<String, DAG<LogicalVertex, MISTEdge>> logicalDagMap;
 
   /**
-   * An operator chain manager.
-   */
-  private final OperatorChainManager operatorChainManager;
-
-  /**
-   * A thread manager.
-   */
-  private final ThreadManager threadManager;
-
-  /**
    * Scheduler for periodic watermark emission.
    */
   private final ScheduledExecutorService scheduler;
@@ -72,23 +59,21 @@ final class DefaultQueryManagerImpl implements QueryManager {
    */
   private final DagGenerator dagGenerator;
 
+  private final Map<OperatorChain, Thread> threads;
+
   /**
    * Default query manager in MistTask.
    * @param dagGenerator the generator that generates the logical and execution dag from avro operator chain dag.
-   * @param threadManager thread manager
    */
   @Inject
   private DefaultQueryManagerImpl(final DagGenerator dagGenerator,
-                                  final ThreadManager threadManager,
-                                  final OperatorChainManager operatorChainManager,
                                   final ScheduledExecutorServiceWrapper schedulerWrapper,
                                   final QueryInfoStore planStore) {
     this.logicalDagMap = new ConcurrentHashMap<>();
-    this.operatorChainManager = operatorChainManager;
     this.dagGenerator = dagGenerator;
-    this.threadManager = threadManager;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
+    this.threads = new ConcurrentHashMap<>();
   }
 
   /**
@@ -128,7 +113,6 @@ final class DefaultQueryManagerImpl implements QueryManager {
   @Override
   public void close() throws Exception {
     scheduler.shutdown();
-    threadManager.close();
   }
 
   /**
@@ -153,9 +137,20 @@ final class DefaultQueryManagerImpl implements QueryManager {
         case OPERATOR_CHIAN: {
           // 2) Inserts the OperatorChain to OperatorChainManager.
           final OperatorChain operatorChain = (OperatorChain)executionVertex;
-          operatorChainManager.insert(operatorChain);
           final Map<ExecutionVertex, MISTEdge> edges =
               physicalPlan.getEdges(operatorChain);
+
+          // Create a thread per operator chain
+          final Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+              while (!Thread.currentThread().isInterrupted()) {
+                operatorChain.processNextEvent();
+              }
+            }
+          });
+          thread.start();
+          threads.put(operatorChain, thread);
           // 3) Sets output emitters
           operatorChain.setOutputEmitter(new OperatorOutputEmitter(edges));
           break;

@@ -123,7 +123,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
           break;
         }
         case OPERATOR_CHAIN: {
-          final OperatorChain operatorChain = new DefaultOperatorChainImpl();
+          final OperatorChain operatorChain = new ThreadBasedOperatorChainImpl();
           LogicalVertex firstLogicalVertex = null;
           LogicalVertex prevLogicalVertex = null;
           final List<LogicalVertex> logicalVertexList = new ArrayList<>(avroVertexChain.getVertexChain().size());
