@@ -27,6 +27,7 @@ import edu.snu.mist.common.graph.MISTEdge;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 /**
  * This class builds MIST query.
@@ -116,6 +117,27 @@ public final class MISTQueryBuilder {
   public <K, V> ContinuousStream<ConsumerRecord<K, V>> kafkaStream(final SourceConfiguration srcConf,
                                                                    final WatermarkConfiguration watermarkConf) {
     assert srcConf.getType() == SourceConfiguration.SourceType.KAFKA;
+    return buildStream(srcConf.getConfiguration(), watermarkConf.getConfiguration());
+  }
+
+  /**
+   * Create a continuous stream that subscribes data from MQTT broker.
+   * @param srcConf mqtt configuration
+   * @return a new continuous stream
+   */
+  public ContinuousStream<MqttMessage> mqttStream(final SourceConfiguration srcConf) {
+    return mqttStream(srcConf, getDefaultWatermarkConf());
+  }
+
+  /**
+   * Create a continuous stream that subscribes data from MQTT broker.
+   * @param srcConf mqtt configuration
+   * @param watermarkConf a watermark configuration
+   * @return a new continuous stream
+   */
+  public ContinuousStream<MqttMessage> mqttStream(final SourceConfiguration srcConf,
+                                                  final WatermarkConfiguration watermarkConf) {
+    assert srcConf.getType() == SourceConfiguration.SourceType.MQTT;
     return buildStream(srcConf.getConfiguration(), watermarkConf.getConfiguration());
   }
 

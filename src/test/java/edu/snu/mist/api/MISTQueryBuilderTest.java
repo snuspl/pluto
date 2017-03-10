@@ -17,6 +17,7 @@ package edu.snu.mist.api;
 
 import edu.snu.mist.api.datastreams.ContinuousStream;
 import edu.snu.mist.api.datastreams.configurations.KafkaSourceConfiguration;
+import edu.snu.mist.api.datastreams.configurations.MQTTSourceConfiguration;
 import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTFunction;
@@ -29,6 +30,7 @@ import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -140,6 +142,33 @@ public class MISTQueryBuilderTest {
     Assert.assertEquals(consumerConfig, deConsumerConfig);
 
     // Check about watermark configuration
+    final long period = injector.getNamedInstance(PeriodicWatermarkPeriod.class);
+    final long delay = injector.getNamedInstance(PeriodicWatermarkDelay.class);
+    Assert.assertEquals(100, period);
+    Assert.assertEquals(0, delay);
+  }
+
+  @Test
+  public void testMQTTSourceSerialization()
+    throws InjectionException, IOException, ClassNotFoundException {
+    final String expectedBrokerAddress = "192.168.0.1:3386";
+    final String expectedTopic = "region/system/subsystem/device/sensor";
+
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    final ContinuousStream<MqttMessage> mqttSourceStream =
+        queryBuilder.mqttStream(MQTTSourceConfiguration.newBuilder()
+            .setBrokerAddress(expectedBrokerAddress)
+            .setTopic(expectedTopic)
+            .build());
+
+    // Check source configuration
+    final Injector injector = Tang.Factory.getTang().newInjector(mqttSourceStream.getConfiguration());
+    final String resultBrokerAddress = injector.getNamedInstance(MQTTBrokerAddress.class);
+    final String resultTopic = injector.getNamedInstance(MQTTTopic.class);
+    Assert.assertEquals(expectedBrokerAddress, resultBrokerAddress);
+    Assert.assertEquals(expectedTopic, resultTopic);
+
+    // Check watermark configuration
     final long period = injector.getNamedInstance(PeriodicWatermarkPeriod.class);
     final long delay = injector.getNamedInstance(PeriodicWatermarkDelay.class);
     Assert.assertEquals(100, period);

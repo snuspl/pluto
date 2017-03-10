@@ -24,7 +24,7 @@ import org.apache.reef.tang.Configuration;
 public final class SourceConfiguration {
 
   public enum SourceType {
-    KAFKA, SOCKET;
+    KAFKA, SOCKET, MQTT;
   }
 
   private final Configuration conf;
