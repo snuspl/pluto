@@ -29,7 +29,7 @@ public final class ActiveQueryPickManager implements OperatorChainManager {
   /**
    * A working queue which contains queries that will be processed soon.
    */
-  private Queue<OperatorChain> activeQueryQueue;
+  private final Queue<OperatorChain> activeQueryQueue;
 
   @Inject
   private ActiveQueryPickManager() {

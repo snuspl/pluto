@@ -68,11 +68,6 @@ final class DefaultOperatorChainImpl implements OperatorChain {
    */
   private OperatorChainManager operatorChainManager;
 
-  /**
-   * A shared lock used to maintain minimum consistency over the queue.
-   */
-  private final Object sharedLock;
-
   @Inject
   DefaultOperatorChainImpl() {
     this.operators = new LinkedList<>();
@@ -80,7 +75,6 @@ final class DefaultOperatorChainImpl implements OperatorChain {
     this.status = new AtomicReference<>(Status.READY);
     this.outputEmitter = null;
     this.operatorChainManager = null;
-    this.sharedLock = new Object();
   }
 
   @Override
@@ -136,7 +130,7 @@ final class DefaultOperatorChainImpl implements OperatorChain {
       }
       final Tuple<MistEvent, Direction> event;
       // Synchronization is necessary to prevent omitting events.
-      synchronized (sharedLock) {
+      synchronized (this) {
         event = queue.poll();
       }
       process(event);
@@ -155,7 +149,7 @@ final class DefaultOperatorChainImpl implements OperatorChain {
     final boolean isAdded;
     // Insert this operator chain into the new operator chain manager when its queue becomes not empty.
     // This operation is not performed concurrently with queue polling to prevent event omitting.
-    synchronized (sharedLock) {
+    synchronized (this) {
       if (operatorChainManager != null && queue.isEmpty()) {
         operatorChainManager.insert(this);
       }
