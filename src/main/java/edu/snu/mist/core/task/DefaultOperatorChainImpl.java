@@ -151,9 +151,11 @@ final class DefaultOperatorChainImpl implements OperatorChain {
     // This operation is not performed concurrently with queue polling to prevent event omitting.
     synchronized (this) {
       if (operatorChainManager != null && queue.isEmpty()) {
+        isAdded = queue.add(new Tuple<>(event, direction));
         operatorChainManager.insert(this);
+      } else {
+        isAdded = queue.add(new Tuple<>(event, direction));
       }
-      isAdded = queue.add(new Tuple<>(event, direction));
     }
     return isAdded;
   }
