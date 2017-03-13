@@ -63,11 +63,18 @@ final class DefaultOperatorChainImpl implements OperatorChain {
    */
   private final AtomicReference<Status> status;
 
+  /**
+   * The operator chain manager which would manage this operator chain.
+   */
+  private OperatorChainManager operatorChainManager;
+
   @Inject
   DefaultOperatorChainImpl() {
     this.operators = new LinkedList<>();
     this.queue = new ConcurrentLinkedQueue<>();
     this.status = new AtomicReference<>(Status.READY);
+    this.outputEmitter = null;
+    this.operatorChainManager = null;
   }
 
   @Override
@@ -121,9 +128,16 @@ final class DefaultOperatorChainImpl implements OperatorChain {
         status.set(Status.READY);
         return false;
       }
-      final Tuple<MistEvent, Direction> event = queue.poll();
+      final Tuple<MistEvent, Direction> event;
+      // Synchronization is necessary to prevent omitting events.
+      synchronized (this) {
+        event = queue.poll();
+      }
       process(event);
       status.set(Status.READY);
+      if (operatorChainManager != null && !queue.isEmpty()) {
+        operatorChainManager.insert(this);
+      }
       return true;
     } else {
       return false;
@@ -132,7 +146,18 @@ final class DefaultOperatorChainImpl implements OperatorChain {
 
   @Override
   public boolean addNextEvent(final MistEvent event, final Direction direction) {
-    return queue.add(new Tuple<>(event, direction));
+    final boolean isAdded;
+    // Insert this operator chain into the new operator chain manager when its queue becomes not empty.
+    // This operation is not performed concurrently with queue polling to prevent event omitting.
+    synchronized (this) {
+      if (operatorChainManager != null && queue.isEmpty()) {
+        isAdded = queue.add(new Tuple<>(event, direction));
+        operatorChainManager.insert(this);
+      } else {
+        isAdded = queue.add(new Tuple<>(event, direction));
+      }
+    }
+    return isAdded;
   }
 
   @Override
@@ -187,6 +212,11 @@ final class DefaultOperatorChainImpl implements OperatorChain {
         lastOperator.setOutputEmitter(outputEmitter);
       }
     }
+  }
+
+  @Override
+  public void setOperatorChainManager(final OperatorChainManager chainManager) {
+    this.operatorChainManager = chainManager;
   }
 
   @Override

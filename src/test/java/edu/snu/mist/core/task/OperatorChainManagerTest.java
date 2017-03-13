@@ -15,10 +15,10 @@
  */
 package edu.snu.mist.core.task;
 
-import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class OperatorChainManagerTest {
@@ -30,6 +30,23 @@ public class OperatorChainManagerTest {
   public void randomPickManagerTest() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     final RandomlyPickManager operatorChainManager = injector.getInstance(RandomlyPickManager.class);
+
+    // Select a chain
+    final OperatorChain chain = new DefaultOperatorChainImpl();
+    operatorChainManager.insert(chain);
+    final OperatorChain selectedChain = operatorChainManager.pickOperatorChain();
+    Assert.assertEquals(chain, selectedChain);
+
+    // When QueryPickManager has no chain, it should returns null
+    operatorChainManager.delete(chain);
+    final OperatorChain c = operatorChainManager.pickOperatorChain();
+    Assert.assertEquals(null, c);
+  }
+
+  @Test
+  public void activeQueryPickManagerTest() throws InjectionException {
+    final Injector injector = Tang.Factory.getTang().newInjector();
+    final ActiveQueryPickManager operatorChainManager = injector.getInstance(ActiveQueryPickManager.class);
 
     // Select a chain
     final OperatorChain chain = new DefaultOperatorChainImpl();

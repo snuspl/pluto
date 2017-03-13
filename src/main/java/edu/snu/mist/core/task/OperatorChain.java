@@ -77,4 +77,9 @@ public interface OperatorChain extends OutputEmittable, ExecutionVertex {
    * @return the number of operators
    */
   int size();
+
+  /**
+   * Sets the operator chain manager which manages this operator chain.
+   */
+  void setOperatorChainManager(OperatorChainManager operatorChainManager);
 }
