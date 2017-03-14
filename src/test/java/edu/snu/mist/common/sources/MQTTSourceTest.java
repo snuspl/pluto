@@ -36,7 +36,8 @@ import static java.lang.Thread.sleep;
 public final class MQTTSourceTest {
 
   private static final String HOST = "127.0.0.1";
-  private static final String PORT = "12113";
+  private static final String PORT = "9121";
+  private static final String WEBSOKET_PORT = "9122";
   private static final String BROKER_URI =
       new StringBuilder().append("tcp://").append(HOST).append(":").append(PORT).toString();
   private static final String FIRST_TOPIC = "testTopic1";
@@ -54,6 +55,7 @@ public final class MQTTSourceTest {
     final Properties brokerProps = new Properties();
     brokerProps.put("port", PORT);
     brokerProps.put("host", HOST);
+    brokerProps.put("websocket_port", WEBSOKET_PORT);
     brokerProps.put("allow_anonymous", "true");
     brokerProps.put("persistent_store", new StringBuilder()
         .append(DIR_PATH_PREFIX)
