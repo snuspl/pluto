@@ -19,6 +19,7 @@ import edu.snu.mist.common.functions.*;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.WindowInformation;
 import org.apache.reef.tang.Configuration;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.util.List;
 import java.util.Map;
@@ -207,4 +208,12 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    * @return sink stream
    */
   MISTStream<String> textSocketOutput(String serverAddr, int serverPort);
+
+  /**
+   * Publish the mqtt text stream to the mqtt broker.
+   * @param brokerAddr broker address
+   * @param topic topic
+   * @return sink stream
+   */
+  MISTStream<MqttMessage> mqttOutput(String brokerAddr, String topic);
 }

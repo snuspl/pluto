@@ -33,6 +33,7 @@ public final class TestParameters {
   public static final String HOST = "localhost";
   public static final int SERVER_PORT = 13666;
   public static final int SINK_PORT = 13667;
+  public static final String TOPIC = "mqttTopic";
 
   public static final SourceConfiguration LOCAL_TEXT_SOCKET_SOURCE_CONF =
       TextSocketSourceConfiguration.newBuilder()
