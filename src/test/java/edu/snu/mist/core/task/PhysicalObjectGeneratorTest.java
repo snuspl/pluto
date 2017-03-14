@@ -32,6 +32,7 @@ import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -117,6 +118,31 @@ public final class PhysicalObjectGeneratorTest {
     final DataGenerator dataGenerator =
         generator.newDataGenerator(conf, classLoader);
     Assert.assertTrue(dataGenerator instanceof KafkaDataGenerator);
+  }
+
+  @Test
+  public void testSuccessOfMQTTDataGenerator() throws Exception {
+    final Configuration conf = MQTTSourceConfiguration.newBuilder()
+        .setBrokerAddress("localhost")
+        .setTopic("topic")
+        .build().getConfiguration();
+    final DataGenerator<MqttMessage> dataGenerator =
+        generator.newDataGenerator(conf, classLoader);
+    Assert.assertTrue(dataGenerator instanceof MQTTDataGenerator);
+
+  }
+
+  @Test
+  public void testSuccessOfMQTTDataGeneratorWithClassBinding() throws Exception {
+    final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
+    final Configuration conf = MQTTSourceConfiguration.newBuilder()
+        .setBrokerAddress("localhost")
+        .setTopic("topic")
+        .setTimestampExtractionFunction(OperatorTestUtils.TestMQTTTimestampExtractFunc.class, funcConf)
+        .build().getConfiguration();
+    final DataGenerator<MqttMessage> dataGenerator =
+        generator.newDataGenerator(conf, classLoader);
+    Assert.assertTrue(dataGenerator instanceof MQTTDataGenerator);
   }
 
   @Test(expected=InjectionException.class)
