@@ -30,12 +30,27 @@ limitations under the License.
         <avro.version>1.7.7</avro.version>
         <kafka.version>0.10.1.0</kafka.version>
         <paho.version>1.1.0</paho.version>
+        <moquette.version>0.8</moquette.version>
     </properties>
 
     <organization>
         <name>SNU</name>
         <url>http://cmslab.snu.ac.kr</url>
     </organization>
+
+    <!--Mosquitte for local MQTT-->
+    <repositories>
+        <repository>
+            <id>bintray</id>
+            <url>http://dl.bintray.com/andsel/maven/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 
     <dependencies>
         <dependency>
@@ -130,6 +145,11 @@ limitations under the License.
             <groupId>org.eclipse.paho</groupId>
             <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
             <version>${paho.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.moquette</groupId>
+            <artifactId>moquette-broker</artifactId>
+            <version>${moquette.version}</version>
         </dependency>
     </dependencies>
 

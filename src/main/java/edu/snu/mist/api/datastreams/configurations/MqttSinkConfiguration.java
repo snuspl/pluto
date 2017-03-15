@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.api.datastreams.configurations;
 
-import edu.snu.mist.common.parameters.MQTTBrokerAddress;
+import edu.snu.mist.common.parameters.MQTTBrokerURI;
 import edu.snu.mist.common.parameters.MQTTTopic;
 import org.apache.reef.tang.formats.ConfigurationModule;
 import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
@@ -36,7 +36,7 @@ public final class MqttSinkConfiguration extends ConfigurationModuleBuilder {
   public static final RequiredParameter<String> MQTT_TOPIC = new RequiredParameter<>();
 
   public static final ConfigurationModule CONF = new MqttSinkConfiguration()
-      .bindNamedParameter(MQTTBrokerAddress.class, MQTT_BROKER_URI)
+      .bindNamedParameter(MQTTBrokerURI.class, MQTT_BROKER_URI)
       .bindNamedParameter(MQTTTopic.class, MQTT_TOPIC)
       // TODO[MIST-487]: .bindImplementation(Sink.class, MqttSink.class)
       .build();

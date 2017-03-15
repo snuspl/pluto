@@ -422,7 +422,7 @@ public final class ContinuousStreamTest {
         filteredMappedStream.mqttOutput(TestParameters.HOST, TestParameters.TOPIC);
     final Configuration conf = sink.getConfiguration();
     final Injector injector = Tang.Factory.getTang().newInjector(conf);
-    final String brokerAddr = injector.getNamedInstance(MQTTBrokerAddress.class);
+    final String brokerAddr = injector.getNamedInstance(MQTTBrokerURI.class);
     final String topic = injector.getNamedInstance(MQTTTopic.class);
     Assert.assertEquals(TestParameters.HOST, brokerAddr);
     Assert.assertEquals(TestParameters.TOPIC, topic);
