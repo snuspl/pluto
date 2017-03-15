@@ -78,9 +78,13 @@ public final class MQTTSubscribeClient implements MqttCallback {
    * @return requested MQTTDataGenerator connected with the target broker and topic
    */
   public MQTTDataGenerator connectToTopic(final String topic) {
-    MQTTDataGenerator dataGenerator = new MQTTDataGenerator(this, topic);
-    dataGeneratorMap.putIfAbsent(topic, dataGenerator);
-    return dataGeneratorMap.get(topic);
+    MQTTDataGenerator dataGenerator = dataGeneratorMap.get(topic);
+    if (dataGenerator == null) {
+      dataGenerator = new MQTTDataGenerator(this, topic);
+      dataGeneratorMap.putIfAbsent(topic, dataGenerator);
+      dataGenerator = dataGeneratorMap.get(topic);
+    }
+    return dataGenerator;
   }
 
   /**

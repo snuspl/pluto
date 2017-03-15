@@ -47,19 +47,20 @@ public final class MQTTSharedResource implements AutoCloseable {
    */
   public MQTTDataGenerator getDataGenerator(final String brokerURI,
                                             final String topic) {
-    MQTTSubscribeClient subscribeClient
-        = new MQTTSubscribeClient(brokerURI, "MISTClient", mqttSubscribeClientMap);
-    mqttSubscribeClientMap.putIfAbsent(brokerURI, subscribeClient);
-    return mqttSubscribeClientMap.get(brokerURI).connectToTopic(topic);
+    MQTTSubscribeClient subscribeClient = mqttSubscribeClientMap.get(brokerURI);
+    if (subscribeClient == null) {
+      subscribeClient = new MQTTSubscribeClient(brokerURI, "MISTClient", mqttSubscribeClientMap);
+      mqttSubscribeClientMap.putIfAbsent(brokerURI, subscribeClient);
+      subscribeClient = mqttSubscribeClientMap.get(brokerURI);
+    }
+    return subscribeClient.connectToTopic(topic);
   }
 
   @Override
   public void close() throws Exception {
     // TODO: [MIST-489] Deal with close and connection problem in MQTT source
-    synchronized (this) {
-      for (final MQTTSubscribeClient subClient : mqttSubscribeClientMap.values()) {
-        subClient.disconnect();
-      }
+    for (final MQTTSubscribeClient subClient : mqttSubscribeClientMap.values()) {
+      subClient.disconnect();
     }
   }
 }
