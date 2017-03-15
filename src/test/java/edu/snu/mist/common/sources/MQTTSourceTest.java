@@ -17,6 +17,7 @@ package edu.snu.mist.common.sources;
 
 import edu.snu.mist.common.OutputEmitter;
 import edu.snu.mist.common.shared.MQTTSharedResource;
+import edu.snu.mist.common.utils.MqttUtils;
 import io.moquette.server.Server;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
@@ -33,14 +34,8 @@ import java.util.concurrent.CountDownLatch;
 
 public final class MQTTSourceTest {
 
-  private static final String HOST = "127.0.0.1";
-  private static final String PORT = "9121";
-  private static final String WEBSOKET_PORT = "9122";
-  private static final String BROKER_URI =
-      new StringBuilder().append("tcp://").append(HOST).append(":").append(PORT).toString();
   private static final String FIRST_TOPIC = "testTopic1";
   private static final String SECOND_TOPIC = "testTopic2";
-  private static final String DIR_PATH_PREFIX = "/tmp/mist/MQTTSourceTest-";
 
   private MQTTSharedResource mqttSharedResource;
   private Server mqttBroker;
@@ -50,18 +45,7 @@ public final class MQTTSourceTest {
     final Injector injector = Tang.Factory.getTang().newInjector();
     mqttSharedResource = injector.getInstance(MQTTSharedResource.class);
     // create local mqtt broker
-    final Properties brokerProps = new Properties();
-    brokerProps.put("port", PORT);
-    brokerProps.put("host", HOST);
-    brokerProps.put("websocket_port", WEBSOKET_PORT);
-    brokerProps.put("allow_anonymous", "true");
-    brokerProps.put("persistent_store", new StringBuilder()
-        .append(DIR_PATH_PREFIX)
-        .append((Long)System.currentTimeMillis())
-        .append(".mapdb")
-        .toString());
-    mqttBroker = new Server();
-    mqttBroker.startServer(brokerProps);
+    mqttBroker = MqttUtils.createMqttBroker();
   }
 
   @After
@@ -90,8 +74,8 @@ public final class MQTTSourceTest {
     final List<String> result2 = new ArrayList<>();
 
     // create data generators
-    final MQTTDataGenerator dataGenerator1 = mqttSharedResource.getDataGenerator(BROKER_URI, FIRST_TOPIC);
-    final MQTTDataGenerator dataGenerator2 = mqttSharedResource.getDataGenerator(BROKER_URI, SECOND_TOPIC);
+    final MQTTDataGenerator dataGenerator1 = mqttSharedResource.getDataGenerator(MqttUtils.BROKER_URI, FIRST_TOPIC);
+    final MQTTDataGenerator dataGenerator2 = mqttSharedResource.getDataGenerator(MqttUtils.BROKER_URI, SECOND_TOPIC);
     final SourceTestEventGenerator eventGenerator1 = new SourceTestEventGenerator(result1, dataCountDownLatch1);
     final SourceTestEventGenerator eventGenerator2 = new SourceTestEventGenerator(result2, dataCountDownLatch2);
     dataGenerator1.setEventGenerator(eventGenerator1);
@@ -101,7 +85,7 @@ public final class MQTTSourceTest {
     dataGenerator2.start();
 
     // create test client and publish data
-    final PublishTestClient publishClient = new PublishTestClient(BROKER_URI);
+    final PublishTestClient publishClient = new PublishTestClient(MqttUtils.BROKER_URI);
     publishClient.publish(inputStream1, FIRST_TOPIC);
     publishClient.publish(inputStream2, SECOND_TOPIC);
 

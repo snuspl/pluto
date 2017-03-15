@@ -17,6 +17,7 @@ package edu.snu.mist.common.shared;
 
 import edu.snu.mist.common.sources.MQTTDataGenerator;
 import edu.snu.mist.common.sources.MQTTSubscribeClient;
+import org.eclipse.paho.client.mqttv3.MqttClient;
 
 import javax.inject.Inject;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,13 +31,32 @@ public final class MQTTSharedResource implements AutoCloseable {
   private static final Logger LOG = Logger.getLogger(MQTTSharedResource.class.getName());
 
   /**
+   * MQTT publisher id.
+   */
+  public static final String MQTT_PUBLISHER_ID = "MIST_MQTT_PUBLISHER";
+
+  /**
    * The map coupling MQTT broker URI and MQTTSubscribeClient.
    */
   private final ConcurrentMap<String, MQTTSubscribeClient> mqttSubscribeClientMap;
 
+  /**
+   * The map that has broker URI as a key and mqtt client as a value.
+   */
+  private final ConcurrentMap<String, MqttClient> mqttPublisherMap;
+
   @Inject
   private MQTTSharedResource() {
     this.mqttSubscribeClientMap = new ConcurrentHashMap<>();
+    this.mqttPublisherMap = new ConcurrentHashMap<>();
+  }
+
+  /**
+   * Get the MQTT publisher client map.
+   * @return MQTT publisher client map
+   */
+  public ConcurrentMap<String, MqttClient> getMqttPublisherMap() {
+    return mqttPublisherMap;
   }
 
   /**
@@ -62,5 +82,14 @@ public final class MQTTSharedResource implements AutoCloseable {
     for (final MQTTSubscribeClient subClient : mqttSubscribeClientMap.values()) {
       subClient.disconnect();
     }
+
+    for (final MqttClient mqttClient : mqttPublisherMap.values()) {
+      try {
+        mqttClient.disconnect();
+      } catch (final Exception e) {
+        // do nothing
+      }
+    }
+    mqttPublisherMap.clear();
   }
 }
