@@ -16,7 +16,7 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.operators.Operator;
-import edu.snu.mist.common.parameters.MQTTBrokerAddress;
+import edu.snu.mist.common.parameters.MQTTBrokerURI;
 import edu.snu.mist.common.parameters.MQTTTopic;
 import edu.snu.mist.common.shared.KafkaSharedResource;
 import edu.snu.mist.common.shared.NettySharedResource;
@@ -116,9 +116,9 @@ final class PhysicalObjectGenerator implements AutoCloseable {
       final ClassLoader classLoader) throws InjectionException {
     final Injector injector = newDefaultInjector(conf, classLoader);
 
-    if (injector.isParameterSet(MQTTBrokerAddress.class)) {
+    if (injector.isParameterSet(MQTTBrokerURI.class)) {
       // for MQTT
-      final String brokerURI = injector.getNamedInstance(MQTTBrokerAddress.class);
+      final String brokerURI = injector.getNamedInstance(MQTTBrokerURI.class);
       final String topic = injector.getNamedInstance(MQTTTopic.class);
       return mqttSharedResource.getDataGenerator(brokerURI, topic);
     }

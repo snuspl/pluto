@@ -123,7 +123,7 @@ public final class PhysicalObjectGeneratorTest {
   @Test
   public void testSuccessOfMQTTDataGenerator() throws Exception {
     final Configuration conf = MQTTSourceConfiguration.newBuilder()
-        .setBrokerAddress("localhost")
+        .setBrokerURI("tcp://localhost:12345")
         .setTopic("topic")
         .build().getConfiguration();
     final DataGenerator<MqttMessage> dataGenerator =
@@ -136,7 +136,7 @@ public final class PhysicalObjectGeneratorTest {
   public void testSuccessOfMQTTDataGeneratorWithClassBinding() throws Exception {
     final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
     final Configuration conf = MQTTSourceConfiguration.newBuilder()
-        .setBrokerAddress("localhost")
+        .setBrokerURI("tcp://localhost:12345")
         .setTopic("topic")
         .setTimestampExtractionFunction(OperatorTestUtils.TestMQTTTimestampExtractFunc.class, funcConf)
         .build().getConfiguration();

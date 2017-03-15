@@ -21,7 +21,7 @@ import org.apache.reef.tang.annotations.NamedParameter;
 /**
  * MQTT broker address.
  */
-@NamedParameter(doc="MQTT broker address")
-public final class MQTTBrokerAddress implements Name<String> {
+@NamedParameter(doc="MQTT broker URI")
+public final class MQTTBrokerURI implements Name<String> {
   // empty
 }

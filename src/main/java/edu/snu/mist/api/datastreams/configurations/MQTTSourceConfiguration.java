@@ -17,7 +17,7 @@ package edu.snu.mist.api.datastreams.configurations;
 
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTFunction;
-import edu.snu.mist.common.parameters.MQTTBrokerAddress;
+import edu.snu.mist.common.parameters.MQTTBrokerURI;
 import edu.snu.mist.common.parameters.MQTTTopic;
 import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
 import org.apache.reef.io.Tuple;
@@ -35,9 +35,9 @@ import java.io.IOException;
 public final class MQTTSourceConfiguration extends ConfigurationModuleBuilder {
 
   /**
-   * The parameter for MQTT broker address.
+   * The parameter for MQTT broker URI.
    */
-  public static final RequiredParameter<String> MQTT_BROKER_ADDRRESS = new RequiredParameter<>();
+  public static final RequiredParameter<String> MQTT_BROKER_URI = new RequiredParameter<>();
 
   /**
    * The parameter for MQTT topic name.
@@ -55,7 +55,7 @@ public final class MQTTSourceConfiguration extends ConfigurationModuleBuilder {
   public static final OptionalImpl<MISTFunction> TIMESTAMP_EXTRACT_FUNC = new OptionalImpl<>();
 
   private static final ConfigurationModule CONF = new MQTTSourceConfiguration()
-      .bindNamedParameter(MQTTBrokerAddress.class, MQTT_BROKER_ADDRRESS)
+      .bindNamedParameter(MQTTBrokerURI.class, MQTT_BROKER_URI)
       .bindNamedParameter(MQTTTopic.class, MQTT_TOPIC)
       .bindNamedParameter(SerializedTimestampExtractUdf.class, TIMESTAMP_EXTRACT_OBJECT)
       .bindImplementation(MISTFunction.class, TIMESTAMP_EXTRACT_FUNC)
@@ -74,7 +74,7 @@ public final class MQTTSourceConfiguration extends ConfigurationModuleBuilder {
    */
   public static final class MQTTSourceConfigurationBuilder {
 
-    private String mqttBrokerAddress;
+    private String mqttBrokerURI;
     private String mqttTopic;
     private MISTFunction<MqttMessage, Tuple<MqttMessage, Long>> extractFunc;
     private Class<? extends MISTFunction<MqttMessage, Tuple<MqttMessage, Long>>> extractFuncClass;
@@ -86,25 +86,25 @@ public final class MQTTSourceConfiguration extends ConfigurationModuleBuilder {
         throw new IllegalArgumentException("Cannot bind both extractFunc and extractFuncClass");
       }
 
-      if (mqttBrokerAddress == null || mqttTopic == null) {
-        throw new IllegalArgumentException("MQTT broker address and topic name should be set");
+      if (mqttBrokerURI == null || mqttTopic == null) {
+        throw new IllegalArgumentException("MQTT broker URI and topic name should be set");
       }
 
       try {
         if (extractFunc == null && extractFuncClass == null) {
           return new SourceConfiguration(CONF
-              .set(MQTT_BROKER_ADDRRESS, mqttBrokerAddress)
+              .set(MQTT_BROKER_URI, mqttBrokerURI)
               .set(MQTT_TOPIC, mqttTopic)
               .build(), SourceConfiguration.SourceType.MQTT);
         } else if (extractFunc != null && extractFuncClass == null) {
           return new SourceConfiguration(CONF
-              .set(MQTT_BROKER_ADDRRESS, mqttBrokerAddress)
+              .set(MQTT_BROKER_URI, mqttBrokerURI)
               .set(MQTT_TOPIC, mqttTopic)
               .set(TIMESTAMP_EXTRACT_OBJECT, SerializeUtils.serializeToString(extractFunc))
               .build(), SourceConfiguration.SourceType.MQTT);
         } else {
           return new SourceConfiguration(Configurations.merge(CONF
-              .set(MQTT_BROKER_ADDRRESS, mqttBrokerAddress)
+              .set(MQTT_BROKER_URI, mqttBrokerURI)
               .set(MQTT_TOPIC, mqttTopic)
               .set(TIMESTAMP_EXTRACT_FUNC, extractFuncClass)
               .build(), extractFuncConf), SourceConfiguration.SourceType.MQTT);
@@ -116,12 +116,12 @@ public final class MQTTSourceConfiguration extends ConfigurationModuleBuilder {
     }
 
     /**
-     * Sets the broker address with specified port.
-     * @param mqttBrokerAddressParam the mqtt broker address given by users
+     * Sets the broker URI with specified port.
+     * @param mqttBrokerURIParam the mqtt broker URI given by users
      * @return builder
      */
-    public MQTTSourceConfigurationBuilder setBrokerAddress(final String mqttBrokerAddressParam) {
-     this.mqttBrokerAddress = mqttBrokerAddressParam;
+    public MQTTSourceConfigurationBuilder setBrokerURI(final String mqttBrokerURIParam) {
+     this.mqttBrokerURI = mqttBrokerURIParam;
       return this;
     }
 

@@ -151,21 +151,21 @@ public class MISTQueryBuilderTest {
   @Test
   public void testMQTTSourceSerialization()
     throws InjectionException, IOException, ClassNotFoundException {
-    final String expectedBrokerAddress = "192.168.0.1:3386";
+    final String expectedBrokerURI = "tcp://192.168.0.1:3386";
     final String expectedTopic = "region/system/subsystem/device/sensor";
 
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     final ContinuousStream<MqttMessage> mqttSourceStream =
         queryBuilder.mqttStream(MQTTSourceConfiguration.newBuilder()
-            .setBrokerAddress(expectedBrokerAddress)
+            .setBrokerURI(expectedBrokerURI)
             .setTopic(expectedTopic)
             .build());
 
     // Check source configuration
     final Injector injector = Tang.Factory.getTang().newInjector(mqttSourceStream.getConfiguration());
-    final String resultBrokerAddress = injector.getNamedInstance(MQTTBrokerAddress.class);
+    final String resultBrokerAddress = injector.getNamedInstance(MQTTBrokerURI.class);
     final String resultTopic = injector.getNamedInstance(MQTTTopic.class);
-    Assert.assertEquals(expectedBrokerAddress, resultBrokerAddress);
+    Assert.assertEquals(expectedBrokerURI, resultBrokerAddress);
     Assert.assertEquals(expectedTopic, resultTopic);
 
     // Check watermark configuration

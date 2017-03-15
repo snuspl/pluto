@@ -46,16 +46,16 @@ public final class MQTTDataGenerator implements DataGenerator<MqttMessage> {
   /**
    * The MQTT client subscribing a broker.
    */
-  private final MQTTSubscribeClient client;
+  private final MQTTSubscribeClient subClient;
 
   /**
    * Event generator which is the destination of fetched data.
    */
   private EventGenerator<MqttMessage> eventGenerator;
 
-  public MQTTDataGenerator(final MQTTSubscribeClient client,
+  public MQTTDataGenerator(final MQTTSubscribeClient subClient,
                            final String topic) {
-    this.client = client;
+    this.subClient = subClient;
     this.topic = topic;
     this.started = new AtomicBoolean(false);
     this.closed = new AtomicBoolean(false);
@@ -76,7 +76,7 @@ public final class MQTTDataGenerator implements DataGenerator<MqttMessage> {
   public void start() {
     if (started.compareAndSet(false, true)) {
       try {
-        client.subscribe(topic);
+        subClient.subscribe(topic);
       } catch (final MqttException e) {
         LOG.log(Level.SEVERE, "{0} failed to subscribe topic {1}",
             new Object[]{this.getClass().getName(), topic});

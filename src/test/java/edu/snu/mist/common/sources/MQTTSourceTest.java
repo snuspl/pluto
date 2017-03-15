@@ -31,8 +31,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 
-import static java.lang.Thread.sleep;
-
 public final class MQTTSourceTest {
 
   private static final String HOST = "127.0.0.1";
@@ -107,7 +105,8 @@ public final class MQTTSourceTest {
     publishClient.publish(inputStream1, FIRST_TOPIC);
     publishClient.publish(inputStream2, SECOND_TOPIC);
 
-    sleep(1000); //asdasds
+    dataCountDownLatch1.await();
+    dataCountDownLatch2.await();
 
     publishClient.stop();
     dataGenerator1.close();

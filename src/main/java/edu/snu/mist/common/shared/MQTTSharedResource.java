@@ -19,8 +19,8 @@ import edu.snu.mist.common.sources.MQTTDataGenerator;
 import edu.snu.mist.common.sources.MQTTSubscribeClient;
 
 import javax.inject.Inject;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -32,11 +32,11 @@ public final class MQTTSharedResource implements AutoCloseable {
   /**
    * The map coupling MQTT broker URI and MQTTSubscribeClient.
    */
-  private final ConcurrentMap<String, MQTTSubscribeClient> mqttSubscribeClientMap;
+  private final Map<String, MQTTSubscribeClient> mqttSubscribeClientMap;
 
   @Inject
   private MQTTSharedResource() {
-    this.mqttSubscribeClientMap = new ConcurrentHashMap<>();
+    this.mqttSubscribeClientMap = new HashMap<>();
   }
 
   /**
@@ -47,10 +47,13 @@ public final class MQTTSharedResource implements AutoCloseable {
    */
   public MQTTDataGenerator getDataGenerator(final String brokerURI,
                                             final String topic) {
-    MQTTSubscribeClient subscribeClient = mqttSubscribeClientMap.get(brokerURI);
-    if (subscribeClient == null) {
-      subscribeClient = new MQTTSubscribeClient(brokerURI, "MISTClient", mqttSubscribeClientMap);
-      mqttSubscribeClientMap.put(brokerURI, subscribeClient);
+    MQTTSubscribeClient subscribeClient;
+    synchronized (this) {
+       subscribeClient = mqttSubscribeClientMap.get(brokerURI);
+      if (subscribeClient == null) {
+        subscribeClient = new MQTTSubscribeClient(brokerURI, "MISTClient", mqttSubscribeClientMap);
+        mqttSubscribeClientMap.putIfAbsent(brokerURI, subscribeClient);
+      }
     }
     return subscribeClient.connectToTopic(topic);
   }
@@ -58,8 +61,10 @@ public final class MQTTSharedResource implements AutoCloseable {
   @Override
   public void close() throws Exception {
     // TODO: [MIST-489] Deal with close and connection problem in MQTT source
-    for (final MQTTSubscribeClient subClient : mqttSubscribeClientMap.values()) {
-      subClient.disconnect();
+    synchronized (this) {
+      for (final MQTTSubscribeClient subClient : mqttSubscribeClientMap.values()) {
+        subClient.disconnect();
+      }
     }
   }
 }
