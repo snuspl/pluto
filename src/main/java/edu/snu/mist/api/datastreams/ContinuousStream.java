@@ -211,9 +211,9 @@ public interface ContinuousStream<T> extends MISTStream<T> {
 
   /**
    * Publish the mqtt text stream to the mqtt broker.
-   * @param brokerAddr broker address
+   * @param brokerURI broker URI
    * @param topic topic
    * @return sink stream
    */
-  MISTStream<MqttMessage> mqttOutput(String brokerAddr, String topic);
+  MISTStream<MqttMessage> mqttOutput(String brokerURI, String topic);
 }

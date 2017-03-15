@@ -358,9 +358,9 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
   }
 
   @Override
-  public MISTStream<MqttMessage> mqttOutput(final String brokerAddr, final String topic) {
+  public MISTStream<MqttMessage> mqttOutput(final String brokerURI, final String topic) {
     final Configuration opConf = MqttSinkConfiguration.CONF
-        .set(MqttSinkConfiguration.MQTT_BROKER_ADDRRESS, brokerAddr)
+        .set(MqttSinkConfiguration.MQTT_BROKER_URI, brokerURI)
         .set(MqttSinkConfiguration.MQTT_TOPIC, topic)
         .build();
     final MISTStream<MqttMessage> sink = new MISTStreamImpl<>(dag, opConf);

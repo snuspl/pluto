@@ -26,9 +26,9 @@ import org.apache.reef.tang.formats.RequiredParameter;
  */
 public final class MqttSinkConfiguration extends ConfigurationModuleBuilder {
   /**
-   * The parameter for MQTT broker address.
+   * The parameter for MQTT broker URI.
    */
-  public static final RequiredParameter<String> MQTT_BROKER_ADDRRESS = new RequiredParameter<>();
+  public static final RequiredParameter<String> MQTT_BROKER_URI = new RequiredParameter<>();
 
   /**
    * The parameter for MQTT topic name.
@@ -36,7 +36,7 @@ public final class MqttSinkConfiguration extends ConfigurationModuleBuilder {
   public static final RequiredParameter<String> MQTT_TOPIC = new RequiredParameter<>();
 
   public static final ConfigurationModule CONF = new MqttSinkConfiguration()
-      .bindNamedParameter(MQTTBrokerAddress.class, MQTT_BROKER_ADDRRESS)
+      .bindNamedParameter(MQTTBrokerAddress.class, MQTT_BROKER_URI)
       .bindNamedParameter(MQTTTopic.class, MQTT_TOPIC)
       // TODO[MIST-487]: .bindImplementation(Sink.class, MqttSink.class)
       .build();
