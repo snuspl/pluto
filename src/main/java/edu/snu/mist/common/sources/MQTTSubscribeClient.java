@@ -17,8 +17,8 @@ package edu.snu.mist.common.sources;
 
 import org.eclipse.paho.client.mqttv3.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * This class represents MQTT clients implemented with eclipse Paho.
@@ -44,15 +44,11 @@ public final class MQTTSubscribeClient implements MqttCallback {
   /**
    * The map coupling MQTT topic name and MQTTDataGenerator.
    */
-  private final Map<String, MQTTDataGenerator> dataGeneratorMap;
+  private final ConcurrentMap<String, MQTTDataGenerator> dataGeneratorMap;
   /**
    * The map coupling MQTT broker URI and MQTTSubscribeClient.
    */
-  private final Map<String, MQTTSubscribeClient> mqttSubscribeClientMap;
-  /**
-   * The lock used when a subscribing client map is read or written.
-   */
-  private final Object subMapLock;
+  private final ConcurrentMap<String, MQTTSubscribeClient> mqttSubscribeClientMap;
   /**
    * The lock used when a DataGenerator want to start subscription.
    */
@@ -64,13 +60,12 @@ public final class MQTTSubscribeClient implements MqttCallback {
    */
   public MQTTSubscribeClient(final String brokerURI,
                              final String clientId,
-                             final Map<String, MQTTSubscribeClient> mqttSubscribeClientMap) {
+                             final ConcurrentMap<String, MQTTSubscribeClient> mqttSubscribeClientMap) {
     this.started = false;
     this.brokerURI = brokerURI;
     this.clientId = clientId;
-    this.dataGeneratorMap = new HashMap<>();
+    this.dataGeneratorMap = new ConcurrentHashMap<>();
     this.mqttSubscribeClientMap = mqttSubscribeClientMap;
-    this.subMapLock = new Object();
     this.subscribeLock = new Object();
   }
 
@@ -83,16 +78,9 @@ public final class MQTTSubscribeClient implements MqttCallback {
    * @return requested MQTTDataGenerator connected with the target broker and topic
    */
   public MQTTDataGenerator connectToTopic(final String topic) {
-    MQTTDataGenerator dataGenerator;
-    synchronized (subMapLock) {
-      dataGenerator = dataGeneratorMap.get(topic);
-      if (dataGenerator == null) {
-        // there was not any MQTTDataGenerator subscribing target topic
-        dataGenerator = new MQTTDataGenerator(this, topic);
-        dataGeneratorMap.put(topic, dataGenerator);
-      }
-    }
-    return dataGenerator;
+    MQTTDataGenerator dataGenerator = new MQTTDataGenerator(this, topic);
+    dataGeneratorMap.putIfAbsent(topic, dataGenerator);
+    return dataGeneratorMap.get(topic);
   }
 
   /**
@@ -115,9 +103,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
    */
   void unsubscribe(final String topic) throws MqttException {
     client.unsubscribe(topic);
-    synchronized (subMapLock) {
-      dataGeneratorMap.remove(topic);
-    }
+    dataGeneratorMap.remove(topic);
   }
 
   /**
@@ -134,10 +120,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
 
   @Override
   public void messageArrived(final String topic, final MqttMessage message) {
-    final MQTTDataGenerator dataGenerator;
-    synchronized (subMapLock) {
-      dataGenerator = dataGeneratorMap.get(topic);
-    }
+    final MQTTDataGenerator dataGenerator = dataGeneratorMap.get(topic);
     if (dataGenerator != null) {
       dataGenerator.emitData(message);
     }

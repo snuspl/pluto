@@ -19,8 +19,8 @@ import edu.snu.mist.common.sources.MQTTDataGenerator;
 import edu.snu.mist.common.sources.MQTTSubscribeClient;
 
 import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 
 /**
@@ -32,11 +32,11 @@ public final class MQTTSharedResource implements AutoCloseable {
   /**
    * The map coupling MQTT broker URI and MQTTSubscribeClient.
    */
-  private final Map<String, MQTTSubscribeClient> mqttSubscribeClientMap;
+  private final ConcurrentMap<String, MQTTSubscribeClient> mqttSubscribeClientMap;
 
   @Inject
   private MQTTSharedResource() {
-    this.mqttSubscribeClientMap = new HashMap<>();
+    this.mqttSubscribeClientMap = new ConcurrentHashMap<>();
   }
 
   /**
@@ -47,15 +47,10 @@ public final class MQTTSharedResource implements AutoCloseable {
    */
   public MQTTDataGenerator getDataGenerator(final String brokerURI,
                                             final String topic) {
-    MQTTSubscribeClient subscribeClient;
-    synchronized (this) {
-       subscribeClient = mqttSubscribeClientMap.get(brokerURI);
-      if (subscribeClient == null) {
-        subscribeClient = new MQTTSubscribeClient(brokerURI, "MISTClient", mqttSubscribeClientMap);
-        mqttSubscribeClientMap.putIfAbsent(brokerURI, subscribeClient);
-      }
-    }
-    return subscribeClient.connectToTopic(topic);
+    MQTTSubscribeClient subscribeClient
+        = new MQTTSubscribeClient(brokerURI, "MISTClient", mqttSubscribeClientMap);
+    mqttSubscribeClientMap.putIfAbsent(brokerURI, subscribeClient);
+    return mqttSubscribeClientMap.get(brokerURI).connectToTopic(topic);
   }
 
   @Override
