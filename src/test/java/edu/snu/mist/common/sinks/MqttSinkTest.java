@@ -103,7 +103,7 @@ public final class MqttSinkTest {
 
     // Wait until all data are sent to subscriber
     countDownLatch.await();
-    for (List<String> received : topicListMap.values()) {
+    for (final List<String> received : topicListMap.values()) {
       Assert.assertEquals(outputStream, received);
     }
 
