@@ -155,9 +155,14 @@ final class PhysicalObjectGenerator implements AutoCloseable {
       final Configuration conf,
       final ClassLoader classLoader) throws InjectionException {
     final Injector injector = newDefaultInjector(conf, classLoader);
-    // for netty
-    injector.bindVolatileInstance(NettySharedResource.class, nettySharedResource);
-    // for kafka
+    if (injector.isParameterSet(MQTTBrokerURI.class)) {
+      // for MQTT
+      injector.bindVolatileInstance(MQTTSharedResource.class, mqttSharedResource);
+    } else {
+      // for netty
+      injector.bindVolatileInstance(NettySharedResource.class, nettySharedResource);
+      // TODO: for kafka
+    }
     return injector.getInstance(Sink.class);
   }
 

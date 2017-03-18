@@ -21,10 +21,13 @@ import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.common.operators.*;
+import edu.snu.mist.common.sinks.MqttSink;
 import edu.snu.mist.common.sinks.NettyTextSink;
 import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.sources.*;
+import edu.snu.mist.common.utils.MqttUtils;
 import edu.snu.mist.utils.OperatorTestUtils;
+import io.moquette.server.Server;
 import junit.framework.Assert;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
@@ -401,7 +404,7 @@ public final class PhysicalObjectGeneratorTest {
   }
 
   @Test
-  public void testSucessOfSink() throws IOException, InjectionException {
+  public void testSuccessOfSink() throws IOException, InjectionException {
     final int port = 13667;
     final ServerSocket socket = new ServerSocket(port);
     final Configuration conf = TextSocketSinkConfiguration.CONF
@@ -411,5 +414,21 @@ public final class PhysicalObjectGeneratorTest {
     final Sink sink = generator.newSink(conf, classLoader);
     Assert.assertTrue(sink instanceof NettyTextSink);
     socket.close();
+  }
+
+  /**
+   * Test if the mqtt sink is created successfully.
+   */
+  @Test
+  public void testSuccessOfMqttSink() throws IOException, InjectionException {
+    final Server mqttBroker = MqttUtils.createMqttBroker();
+    final String topic = "mqttTest";
+    final Configuration conf = MqttSinkConfiguration.CONF
+        .set(MqttSinkConfiguration.MQTT_BROKER_URI, MqttUtils.BROKER_URI)
+        .set(MqttSinkConfiguration.MQTT_TOPIC, topic)
+        .build();
+    final Sink sink = generator.newSink(conf, classLoader);
+    Assert.assertTrue(sink instanceof MqttSink);
+    mqttBroker.stopServer();
   }
 }
