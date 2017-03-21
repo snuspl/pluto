@@ -69,6 +69,10 @@ public final class OperatorChainTest {
     Assert.assertEquals(timestamp, squareOp.getLatestDataTimestamp());
     Assert.assertEquals(timestamp, doubleOp.getLatestDataTimestamp());
     Assert.assertEquals(timestamp, incOp.getLatestDataTimestamp());
+    // Check index
+    Assert.assertEquals(squareOp, operatorChain.get(0));
+    Assert.assertEquals(incOp, operatorChain.get(1));
+    Assert.assertEquals(doubleOp, operatorChain.get(2));
 
     // 2 * (input + 1)
     timestamp += 1;
@@ -80,6 +84,9 @@ public final class OperatorChainTest {
     // Check latest timestamp
     Assert.assertEquals(timestamp, doubleOp.getLatestDataTimestamp());
     Assert.assertEquals(timestamp, incOp.getLatestDataTimestamp());
+    // Check index
+    Assert.assertEquals(incOp, operatorChain.get(0));
+    Assert.assertEquals(doubleOp, operatorChain.get(1));
 
     // input + 1
     timestamp += 1;
@@ -90,6 +97,9 @@ public final class OperatorChainTest {
     Assert.assertEquals(expected3, result.remove(0));
     // Check latest timestamp
     Assert.assertEquals(timestamp, incOp.getLatestDataTimestamp());
+    // Check index
+    Assert.assertEquals(incOp, operatorChain.get(0));
+
 
     // 2 * input + 1
     timestamp += 1;
@@ -101,6 +111,9 @@ public final class OperatorChainTest {
     // Check latest timestamp
     Assert.assertEquals(timestamp, doubleOp.getLatestDataTimestamp());
     Assert.assertEquals(timestamp, incOp.getLatestDataTimestamp());
+    // Check index
+    Assert.assertEquals(doubleOp, operatorChain.get(0));
+    Assert.assertEquals(incOp, operatorChain.get(1));
 
     // (2 * input + 1) * (2 * input + 1)
     timestamp += 1;
@@ -113,6 +126,10 @@ public final class OperatorChainTest {
     Assert.assertEquals(timestamp, doubleOp.getLatestDataTimestamp());
     Assert.assertEquals(timestamp, incOp.getLatestDataTimestamp());
     Assert.assertEquals(timestamp, squareOp.getLatestDataTimestamp());
+    // Check index
+    Assert.assertEquals(doubleOp, operatorChain.get(0));
+    Assert.assertEquals(incOp, operatorChain.get(1));
+    Assert.assertEquals(squareOp, operatorChain.get(2));
 
     // Check watermark timestamp
     timestamp += 1;
