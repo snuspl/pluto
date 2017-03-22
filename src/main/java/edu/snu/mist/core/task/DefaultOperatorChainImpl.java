@@ -166,6 +166,11 @@ final class DefaultOperatorChainImpl implements OperatorChain {
   }
 
   @Override
+  public PhysicalOperator get(final int index) {
+    return operators.get(index);
+  }
+
+  @Override
   public Type getType() {
     return Type.OPERATOR_CHIAN;
   }

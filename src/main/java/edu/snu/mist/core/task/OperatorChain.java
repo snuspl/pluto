@@ -79,6 +79,13 @@ public interface OperatorChain extends OutputEmittable, ExecutionVertex {
   int size();
 
   /**
+   * Get the i-th physical operator.
+   * @param index index of the physical operator
+   * @return physical operator
+   */
+  PhysicalOperator get(int index);
+
+  /**
    * Sets the operator chain manager which manages this operator chain.
    */
   void setOperatorChainManager(OperatorChainManager operatorChainManager);
