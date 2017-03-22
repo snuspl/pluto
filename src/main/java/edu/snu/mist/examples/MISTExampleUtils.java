@@ -21,6 +21,7 @@ import edu.snu.mist.api.MISTDefaultExecutionEnvironmentImpl;
 import edu.snu.mist.api.MISTExecutionEnvironment;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.datastreams.configurations.KafkaSourceConfiguration;
+import edu.snu.mist.api.datastreams.configurations.MQTTSourceConfiguration;
 import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
 import edu.snu.mist.examples.parameters.DriverAddress;
@@ -70,6 +71,9 @@ public final class MISTExampleUtils {
         .build();
   }
 
+  /**
+   * Get socket configuration for local kafka source.
+   */
   public static SourceConfiguration getLocalKafkaSourceConf(final String topic,
                                                             final String socket) {
     return getLocalKafkaSourceConf(topic, socket, DEFAULT_KEY_DESERIALIZER, DEFAULT_VALUE_DESERIALIZER);
@@ -90,6 +94,17 @@ public final class MISTExampleUtils {
     return KafkaSourceConfiguration.newBuilder()
         .setTopic(topic)
         .setConsumerConfig(kafkaConsumerConfig)
+        .build();
+  }
+
+  /**
+   * Get socket configuration for local MQTT source.
+   */
+  public static SourceConfiguration getLocalMQTTSourceConf(final String topic,
+                                                           final String brokerURI) {
+    return MQTTSourceConfiguration.newBuilder()
+        .setTopic(topic)
+        .setBrokerURI(brokerURI)
         .build();
   }
 
