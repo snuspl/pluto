@@ -93,7 +93,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
     final DAG<LogicalVertex, MISTEdge> logicalDAG = new AdjacentListDAG<>();
 
     // Get a class loader
-    final URL[] urls = SerializeUtils.getURLs(avroOpChainDag.getJarFilePaths());
+    final URL[] urls = SerializeUtils.getJarFileURLs(avroOpChainDag.getJarFilePaths());
     final ClassLoader classLoader = classLoaderProvider.newInstance(urls);
 
     // Deserialize vertices
