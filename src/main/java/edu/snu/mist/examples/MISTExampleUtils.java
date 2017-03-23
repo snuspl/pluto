@@ -98,10 +98,10 @@ public final class MISTExampleUtils {
   }
 
   /**
-   * Get socket configuration for local MQTT source.
+   * Get socket configuration for MQTT source.
    */
-  public static SourceConfiguration getLocalMQTTSourceConf(final String topic,
-                                                           final String brokerURI) {
+  public static SourceConfiguration getMQTTSourceConf(final String topic,
+                                                      final String brokerURI) {
     return MQTTSourceConfiguration.newBuilder()
         .setTopic(topic)
         .setBrokerURI(brokerURI)

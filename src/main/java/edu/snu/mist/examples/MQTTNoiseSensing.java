@@ -22,7 +22,6 @@ import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.api.datastreams.ContinuousStream;
 import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
 
-import edu.snu.mist.examples.parameters.NettySourceAddress;
 import edu.snu.mist.examples.parameters.TestMQTTBrokerURI;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -52,7 +51,7 @@ public final class MQTTNoiseSensing {
     final String brokerURI =
         Tang.Factory.getTang().newInjector(configuration).getNamedInstance(TestMQTTBrokerURI.class);
     final SourceConfiguration localMQTTSourceConf =
-        MISTExampleUtils.getLocalMQTTSourceConf("MISTExampleSub", brokerURI);
+        MISTExampleUtils.getMQTTSourceConf("MISTExampleSub", brokerURI);
 
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     final ContinuousStream<Integer> sensedData = queryBuilder.mqttStream(localMQTTSourceConf)
@@ -88,7 +87,6 @@ public final class MQTTNoiseSensing {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
 
     final CommandLine commandLine = MISTExampleUtils.getDefaultCommandLine(jcb)
-        .registerShortNameOfClass(NettySourceAddress.class) // Additional parameter
         .processCommandLine(args);
 
     if (commandLine == null) {  // Option '?' was entered and processCommandLine printed the help.
