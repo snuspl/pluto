@@ -26,6 +26,18 @@ import java.util.Set;
 public interface DAG<V, I> {
 
   /**
+   * Get the number of vertices.
+   * @return the number of vertices
+   */
+  int numberOfVertices();
+
+  /**
+   * Get the number of edges.
+   * @return the number of edge
+   */
+  int numberOfEdges();
+
+  /**
    * Gets root vertices for graph traversal.
    * @return set of root vertices
    */
