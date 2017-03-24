@@ -225,28 +225,12 @@ final class DefaultOperatorChainImpl implements OperatorChain {
   }
 
   @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final DefaultOperatorChainImpl that = (DefaultOperatorChainImpl) o;
-    if (!operators.equals(that.operators)) {
-      return false;
-    }
-    return true;
-  }
-
-  @Override
-  public int hashCode() {
-    return operators.hashCode();
-  }
-
-  @Override
   public String toString() {
-    return operators.toString();
+    final StringBuilder sb = new StringBuilder();
+    sb.append(this.hashCode());
+    sb.append("|");
+    sb.append(operators.toString());
+    return sb.toString();
   }
 
   /**
