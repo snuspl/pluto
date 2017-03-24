@@ -39,6 +39,16 @@ public final class AdjacentListDAG<V, I> implements DAG<V, I> {
   private final Map<V, Integer> inDegrees;
 
   /**
+   * The number of edges.
+   */
+  private int numVertices;
+
+  /**
+   * The number of vertices.
+   */
+  private int numEdges;
+
+  /**
    * A set of root vertices.
    */
   private final Set<V> rootVertices;
@@ -47,6 +57,18 @@ public final class AdjacentListDAG<V, I> implements DAG<V, I> {
     this.adjacent = new HashMap<>();
     this.inDegrees = new HashMap<>();
     this.rootVertices = new HashSet<>();
+    this.numVertices = 0;
+    this.numEdges = 0;
+  }
+
+  @Override
+  public int numberOfVertices() {
+    return numVertices;
+  }
+
+  @Override
+  public int numberOfEdges() {
+    return numEdges;
   }
 
   @Override
@@ -75,6 +97,7 @@ public final class AdjacentListDAG<V, I> implements DAG<V, I> {
       adjacent.put(v, new HashMap<>());
       inDegrees.put(v, 0);
       rootVertices.add(v);
+      numVertices += 1;
       return true;
     } else {
       LOG.log(Level.WARNING, "The vertex {0} already exists", new Object[]{v});
@@ -86,7 +109,10 @@ public final class AdjacentListDAG<V, I> implements DAG<V, I> {
   public boolean removeVertex(final V v) {
     final Map<V, I> edges = adjacent.remove(v);
     if (edges != null) {
-      inDegrees.remove(v);
+      numVertices -= 1;
+      final int inDegreeEdges = inDegrees.remove(v);
+      numEdges -= inDegreeEdges;
+      numEdges -= edges.size();
       // update inDegrees of neighbor vertices
       // and update rootVertices
       for (final Map.Entry<V, I> edge : edges.entrySet()) {
@@ -106,7 +132,7 @@ public final class AdjacentListDAG<V, I> implements DAG<V, I> {
       }
       return true;
     } else {
-      LOG.log(Level.WARNING, "The vertex {0} does exists", new Object[]{v});
+      LOG.log(Level.WARNING, "The vertex {0} does not exists", new Object[]{v});
       return false;
     }
   }
@@ -119,6 +145,7 @@ public final class AdjacentListDAG<V, I> implements DAG<V, I> {
     }
 
     if (!adjEdges.containsKey(v2)) {
+      numEdges += 1;
       adjEdges.put(v2, i);
       final int inDegree = inDegrees.get(v2);
       inDegrees.put(v2, inDegree + 1);
@@ -140,6 +167,7 @@ public final class AdjacentListDAG<V, I> implements DAG<V, I> {
     }
 
     if (adjEdges.remove(v2) != null) {
+      numEdges -= 1;
       final int inDegree = inDegrees.get(v2);
       inDegrees.put(v2, inDegree - 1);
       if (inDegree == 1) {
