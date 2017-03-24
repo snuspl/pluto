@@ -36,6 +36,7 @@ case $1 in
   JoinAndApplyStateful) ;;
   KMeansClustering) ;;
   KafkaSource) ;;
+  MQTTNoiseSensing) ;;
   SessionWindow) ;;
   *)
     echo "Invalid input. Here is an example for using this script."
