@@ -166,6 +166,11 @@ final class DefaultOperatorChainImpl implements OperatorChain {
   }
 
   @Override
+  public int numberOfEvents() {
+    return queue.size();
+  }
+
+  @Override
   public PhysicalOperator get(final int index) {
     return operators.get(index);
   }

@@ -63,7 +63,9 @@ public final class OperatorChainTest {
     operatorChain.insertToHead(incOp);
     operatorChain.insertToHead(squareOp);
     operatorChain.addNextEvent(new MistDataEvent(input, timestamp), Direction.LEFT);
+    Assert.assertEquals(1, operatorChain.numberOfEvents());
     operatorChain.processNextEvent();
+    Assert.assertEquals(0, operatorChain.numberOfEvents());
     Assert.assertEquals(expected1, result.remove(0));
     // Check latest timestamp
     Assert.assertEquals(timestamp, squareOp.getLatestDataTimestamp());
@@ -79,7 +81,9 @@ public final class OperatorChainTest {
     operatorChain.removeFromHead();
     final MistDataEvent expected2 = new MistDataEvent(2 * (input + 1), timestamp);
     operatorChain.addNextEvent(new MistDataEvent(input, timestamp), Direction.LEFT);
+    Assert.assertEquals(1, operatorChain.numberOfEvents());
     operatorChain.processNextEvent();
+    Assert.assertEquals(0, operatorChain.numberOfEvents());
     Assert.assertEquals(expected2, result.remove(0));
     // Check latest timestamp
     Assert.assertEquals(timestamp, doubleOp.getLatestDataTimestamp());
@@ -93,7 +97,9 @@ public final class OperatorChainTest {
     operatorChain.removeFromTail();
     final MistDataEvent expected3 = new MistDataEvent(input + 1, timestamp);
     operatorChain.addNextEvent(new MistDataEvent(input, timestamp), Direction.LEFT);
+    Assert.assertEquals(1, operatorChain.numberOfEvents());
     operatorChain.processNextEvent();
+    Assert.assertEquals(0, operatorChain.numberOfEvents());
     Assert.assertEquals(expected3, result.remove(0));
     // Check latest timestamp
     Assert.assertEquals(timestamp, incOp.getLatestDataTimestamp());
@@ -106,7 +112,9 @@ public final class OperatorChainTest {
     operatorChain.insertToHead(doubleOp);
     final MistDataEvent expected4 = new MistDataEvent(2 * input + 1, timestamp);
     operatorChain.addNextEvent(new MistDataEvent(input, timestamp), Direction.LEFT);
+    Assert.assertEquals(1, operatorChain.numberOfEvents());
     operatorChain.processNextEvent();
+    Assert.assertEquals(0, operatorChain.numberOfEvents());
     Assert.assertEquals(expected4, result.remove(0));
     // Check latest timestamp
     Assert.assertEquals(timestamp, doubleOp.getLatestDataTimestamp());
@@ -120,7 +128,9 @@ public final class OperatorChainTest {
     operatorChain.insertToTail(squareOp);
     final MistDataEvent expected5 = new MistDataEvent((2 * input + 1) * (2 * input + 1), timestamp);
     operatorChain.addNextEvent(new MistDataEvent(input, timestamp), Direction.LEFT);
+    Assert.assertEquals(1, operatorChain.numberOfEvents());
     operatorChain.processNextEvent();
+    Assert.assertEquals(0, operatorChain.numberOfEvents());
     Assert.assertEquals(expected5, result.remove(0));
     // Check latest timestamp
     Assert.assertEquals(timestamp, doubleOp.getLatestDataTimestamp());
@@ -135,7 +145,9 @@ public final class OperatorChainTest {
     timestamp += 1;
     final MistEvent mistWatermarkEvent = new MistWatermarkEvent(timestamp);
     operatorChain.addNextEvent(mistWatermarkEvent, Direction.LEFT);
+    Assert.assertEquals(1, operatorChain.numberOfEvents());
     operatorChain.processNextEvent();
+    Assert.assertEquals(0, operatorChain.numberOfEvents());
     Assert.assertEquals(timestamp, doubleOp.getLatestWatermarkTimestamp());
     Assert.assertEquals(timestamp, incOp.getLatestWatermarkTimestamp());
     Assert.assertEquals(timestamp, squareOp.getLatestWatermarkTimestamp());
