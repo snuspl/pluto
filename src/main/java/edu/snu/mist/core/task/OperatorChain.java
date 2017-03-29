@@ -79,6 +79,12 @@ public interface OperatorChain extends OutputEmittable, ExecutionVertex {
   int size();
 
   /**
+   * Get the number of events that are in the queue of OperatorChain.
+   * @return the number of events in the queue
+   */
+  int numberOfEvents();
+
+  /**
    * Get the i-th physical operator.
    * @param index index of the physical operator
    * @return physical operator
