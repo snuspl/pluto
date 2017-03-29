@@ -15,8 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.sources.DataGenerator;
-import edu.snu.mist.common.sources.EventGenerator;
+import edu.snu.mist.common.OutputEmittable;
 
 /**
  * Source receives input stream.
@@ -25,24 +24,11 @@ import edu.snu.mist.common.sources.EventGenerator;
  * Also, it has EventGenerator that generates MistWatermarkEvent periodically,
  * or parse the punctuated watermark from input, and generate MistDataEvent from input that not means watermark.
  * After that, it sends the MistEvent to the OutputEmitter which forwards the inputs to next Operators.
- * @param <T> the type of input data
  */
-interface PhysicalSource<T> extends AutoCloseable, PhysicalVertex, ExecutionVertex {
+interface PhysicalSource extends AutoCloseable, OutputEmittable, PhysicalVertex, ExecutionVertex {
 
   /**
    * Starts to receive source stream and forwards inputs to the OutputEmitter.
    */
   void start();
-
-  /**
-   * Gets the data generator.
-   * @return the data generator
-   */
-  DataGenerator<T> getDataGenerator();
-
-  /**
-   * Gets the watermark source.
-   * @return the wataermark source
-   */
-  EventGenerator<T> getEventGenerator();
 }

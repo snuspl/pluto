@@ -146,7 +146,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
           final PhysicalSource source = (PhysicalSource)executionVertex;
           final Map<ExecutionVertex, MISTEdge> nextOps = physicalPlan.getEdges(source);
           // 3) Sets output emitters
-          source.getEventGenerator().setOutputEmitter(new SourceOutputEmitter<>(nextOps));
+          source.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
           sources.add(source);
           break;
         }

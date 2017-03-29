@@ -25,7 +25,6 @@ import edu.snu.mist.common.operators.FlatMapOperator;
 import edu.snu.mist.common.operators.MapOperator;
 import edu.snu.mist.common.operators.ReduceByKeyOperator;
 import edu.snu.mist.common.sinks.NettyTextSink;
-import edu.snu.mist.common.sources.NettyTextDataGenerator;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.AvroVertexChain;
@@ -105,9 +104,8 @@ public final class DefaultDagGeneratorImplTest {
     final DAG<ExecutionVertex, MISTEdge> executionDag = plan.getExecutionDag();
     final Set<ExecutionVertex> sources = executionDag.getRootVertices();
     Assert.assertEquals(1, sources.size());
+    Assert.assertTrue(sources.iterator().next() instanceof PhysicalSource);
     final PhysicalSource source = (PhysicalSource)sources.iterator().next();
-    Assert.assertTrue(source instanceof PhysicalSourceImpl);
-    Assert.assertTrue(source.getDataGenerator() instanceof NettyTextDataGenerator);
     final Map<ExecutionVertex, MISTEdge> nextOps = executionDag.getEdges(source);
     Assert.assertEquals(1, nextOps.size());
 
