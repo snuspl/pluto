@@ -16,7 +16,6 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
@@ -24,10 +23,6 @@ import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
 
 import javax.inject.Inject;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -73,6 +68,11 @@ final class DefaultQueryManagerImpl implements QueryManager {
   private final DagGenerator dagGenerator;
 
   /**
+   * A query starter.
+   */
+  private final QueryStarter queryStarter;
+
+  /**
    * Default query manager in MistTask.
    * @param dagGenerator the generator that generates the logical and execution dag from avro operator chain dag.
    * @param threadManager thread manager
@@ -82,6 +82,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
                                   final ThreadManager threadManager,
                                   final OperatorChainManager operatorChainManager,
                                   final ScheduledExecutorServiceWrapper schedulerWrapper,
+                                  final QueryStarter queryStarter,
                                   final QueryInfoStore planStore) {
     this.logicalDagMap = new ConcurrentHashMap<>();
     this.operatorChainManager = operatorChainManager;
@@ -89,6 +90,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
     this.threadManager = threadManager;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
+    this.queryStarter = queryStarter;
   }
 
   /**
@@ -110,8 +112,8 @@ final class DefaultQueryManagerImpl implements QueryManager {
       final LogicalAndExecutionDag logicalAndExecutionDag = dagGenerator.generate(tuple);
       // Store the logical dag in memory
       logicalDagMap.putIfAbsent(tuple.getKey(), logicalAndExecutionDag.getLogicalDag());
-      // Execute the execution dag
-      start(logicalAndExecutionDag.getExecutionDag());
+      // Start the submitted dag
+      queryStarter.start(logicalAndExecutionDag.getExecutionDag());
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
       return queryControlResult;
@@ -129,48 +131,6 @@ final class DefaultQueryManagerImpl implements QueryManager {
   public void close() throws Exception {
     scheduler.shutdown();
     threadManager.close();
-  }
-
-  /**
-   * Sets the OutputEmitters of the sources, operators and sinks
-   * and starts to receive input data stream from the sources.
-   * @param physicalPlan physical plan of the query
-   */
-  private void start(final DAG<ExecutionVertex, MISTEdge> physicalPlan) {
-    final List<PhysicalSource> sources = new LinkedList<>();
-    final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(physicalPlan);
-    while (iterator.hasNext()) {
-      final ExecutionVertex executionVertex = iterator.next();
-      switch (executionVertex.getType()) {
-        case SOURCE: {
-          final PhysicalSource source = (PhysicalSource)executionVertex;
-          final Map<ExecutionVertex, MISTEdge> nextOps = physicalPlan.getEdges(source);
-          // 3) Sets output emitters
-          source.getEventGenerator().setOutputEmitter(new SourceOutputEmitter<>(nextOps));
-          sources.add(source);
-          break;
-        }
-        case OPERATOR_CHIAN: {
-          final OperatorChain operatorChain = (OperatorChain)executionVertex;
-          final Map<ExecutionVertex, MISTEdge> edges =
-              physicalPlan.getEdges(operatorChain);
-          // 3) Sets output emitters and operator chain manager for operator chain.
-          operatorChain.setOutputEmitter(new OperatorOutputEmitter(edges));
-          operatorChain.setOperatorChainManager(operatorChainManager);
-          break;
-        }
-        case SINK: {
-          break;
-        }
-        default:
-          throw new RuntimeException("Invalid vertex type: " + executionVertex.getType());
-      }
-    }
-
-    // 4) starts to receive input data stream from the sources
-    for (final PhysicalSource source : sources) {
-      source.start();
-    }
   }
 
   /**
