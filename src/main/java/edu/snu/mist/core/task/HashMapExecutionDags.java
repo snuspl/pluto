@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * An implementation of ExecutionDags that uses concurrent hash map.
  */
-public final class HashMapExecutionDags implements ExecutionDags<String> {
+final class HashMapExecutionDags implements ExecutionDags<String> {
 
   private final ConcurrentHashMap<String, DAG<ExecutionVertex, MISTEdge>> map;
 

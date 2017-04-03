@@ -23,7 +23,7 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
  * This interface represents a component that is responsible for starting and executing queries.
  */
 @DefaultImplementation(DefaultQueryStarter.class)
-public interface QueryStarter {
+interface QueryStarter {
 
   /**
    * Start to execute the submitted query.

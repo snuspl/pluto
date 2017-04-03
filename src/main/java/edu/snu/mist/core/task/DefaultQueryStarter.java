@@ -29,7 +29,7 @@ import java.util.Map;
  * This query starter does not merge queries.
  * Instead, it executes them separately.
  */
-public final class DefaultQueryStarter implements QueryStarter {
+final class DefaultQueryStarter implements QueryStarter {
 
   /**
    * Operator chain manager that manages the operator chains.

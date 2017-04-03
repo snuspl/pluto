@@ -36,13 +36,34 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * Test whether ImmediateQueryMergingStarter merges and starts the submitted queries correctly.
+ */
 public final class ImmediateQueryMergingStarterTest {
 
+  /**
+   * Execution dag generator.
+   */
   private DagGenerator dagGenerator;
+
+  /**
+   * Immediate query merging starter.
+   */
   private ImmediateQueryMergingStarter queryMerger;
+
+  /**
+   * Execution dags.
+   */
   private ExecutionDags executionDags;
 
+  /**
+   * A variable for creating configurations.
+   */
   private int confCount = 0;
+
+  /**
+   * A variable for creating identifiers.
+   */
   private int idCount = 0;
 
   @Before
@@ -93,19 +114,8 @@ public final class ImmediateQueryMergingStarterTest {
     return new PhysicalSinkImpl<>(generateId(), conf, new TestSink<>(result));
   }
 
-  private void dfsExecution(final DAG<ExecutionVertex, MISTEdge> dag,
-                            final ExecutionVertex currVertex) {
-    if (currVertex.getType() == ExecutionVertex.Type.OPERATOR_CHIAN) {
-      final OperatorChain operatorChain = (OperatorChain)currVertex;
-      operatorChain.processNextEvent();
-      for (final Map.Entry<ExecutionVertex, MISTEdge> child : dag.getEdges(operatorChain).entrySet()) {
-        dfsExecution(dag, child.getKey());
-      }
-    }
-  }
-
   /**
-   * Generate a simple query that has the structure: src -> operator chain -> sink.
+   * Generate a simple query that has the following structure: src -> operator chain -> sink.
    * @param source source
    * @param operatorChain operator chain
    * @param sink sink
@@ -145,18 +155,19 @@ public final class ImmediateQueryMergingStarterTest {
 
   /**
    * Test cases
-   * 1. Two queries are not same
-   * 2. Two queries have one source, same source, and same operator chain
-   * 3. Two queries have one source, same, source, but different operator chain
-   * 4. Two queries have two sources, same two sources, same operator chains
-   * 5. Two queries have two sources, one same source, one different source
-   *
-   * 6. Three queries - two execution Dags and one submitted Dag
+   * Case 1. Start a single query
+   * Case 2. Two queries have one source but the sources are different.
+   * Case 3. Two queries have one same source, and same operator chain
+   * Case 4. Two queries have one same, source, but different operator chain
+   * Case 5. Two queries have two sources, same two sources, same operator chains
+   * Case 6. Two queries have two sources, one same source, one different source
+   * Case 7. Three queries - two execution Dags and one submitted Dag
    *  - The submitted query has two same sources with the two execution dags
    */
 
   /**
-   * Test if it executes a single query correctly when there are no execution dags that are currently running.
+   * Case 1: Start a single query.
+   * Test if it executes a single query correctly when there are no execution dags that are currently running
    */
   @Test
   public void singleQueryMergingTest() {
@@ -179,7 +190,7 @@ public final class ImmediateQueryMergingStarterTest {
   }
 
   /**
-   * Merging two queries that have different sources.
+   * Case 2: Merging two queries that have different sources.
    */
   @Test
   public void mergingDifferentSourceQueriesTest() {
@@ -225,7 +236,7 @@ public final class ImmediateQueryMergingStarterTest {
   }
 
   /**
-   * Merging two dags that have same source and operator chain.
+   * Case 3: Merging two dags that have same source and operator chain.
    * @throws InjectionException
    */
   @Test
@@ -280,7 +291,7 @@ public final class ImmediateQueryMergingStarterTest {
   }
 
   /**
-   * Merging two dags that have same source but different operator chain.
+   * Case 4: Merging two dags that have same source but different operator chain.
    * @throws InjectionException
    */
   @Test
@@ -346,21 +357,9 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(Arrays.asList(data2), result2);
   }
 
-  @Test
-  public void mergingSameMultipleSourcesQueriesTest() {
-
-  }
-
-  private void checkEquals(final DAG<ExecutionVertex, MISTEdge> dag1,
-                           final DAG<ExecutionVertex, MISTEdge> dag2) {
-    final Iterator<ExecutionVertex> iter = GraphUtils.topologicalSort(dag1);
-    while (iter.hasNext()) {
-      final ExecutionVertex vertex = iter.next();
-      final Map<ExecutionVertex, MISTEdge> edges = dag1.getEdges(vertex);
-
-    }
-  }
-
+  /**
+   * Test source that sends data to next operator chains.
+   */
   final class TestSource implements PhysicalSource {
     private OutputEmitter outputEmitter;
     private final String id;
@@ -374,9 +373,14 @@ public final class ImmediateQueryMergingStarterTest {
 
     @Override
     public void start() {
-
+      // do nothing
     }
 
+    /**
+     * Send the data to the next operator chains.
+     * @param data data
+     * @param <T> data type
+     */
     public <T> void send(final T data) {
       outputEmitter.emitData(new MistDataEvent(data));
     }
@@ -407,6 +411,10 @@ public final class ImmediateQueryMergingStarterTest {
     }
   }
 
+  /**
+   * Test sink that receives results and stores them to the list.
+   * @param <T>
+   */
   final class TestSink<T> implements Sink<T> {
     private final List<T> result;
 

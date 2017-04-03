@@ -22,7 +22,7 @@ import javax.inject.Inject;
 import java.util.*;
 
 /**
- * This algorithm considers only a single thread.
+ * This algorithm finds the sub-dag between submitted dag and execution dag in DFS order.
  */
 final class DfsSubDagFindAlgorithm implements SubDagFindAlgorithm {
 
@@ -31,33 +31,49 @@ final class DfsSubDagFindAlgorithm implements SubDagFindAlgorithm {
   private DfsSubDagFindAlgorithm() {
   }
 
+  /**
+   * Find the sub-dag in DFS order.
+   * @param executionDag execution dag
+   * @param submittedDag submitted dag that is newly submitted
+   * @return
+   */
   @Override
-  public Map<ExecutionVertex, ExecutionVertex> mark(final DAG<ExecutionVertex, MISTEdge> mergeableDag,
-                                                    final DAG<ExecutionVertex, MISTEdge> submittedDag) {
+  public Map<ExecutionVertex, ExecutionVertex> findSubDag(final DAG<ExecutionVertex, MISTEdge> executionDag,
+                                                          final DAG<ExecutionVertex, MISTEdge> submittedDag) {
     // Key: vertex of the submitted dag, Value: vertex of the execution dag
     final Map<ExecutionVertex, ExecutionVertex> vertexMap = new HashMap<>();
     final Set<ExecutionVertex> visited = new HashSet<>(submittedDag.numberOfVertices());
     final Set<ExecutionVertex> markedVertices = new HashSet<>();
 
-    final Set<ExecutionVertex> sourcesInExecutionDag = mergeableDag.getRootVertices();
+    final Set<ExecutionVertex> sourcesInExecutionDag = executionDag.getRootVertices();
     for (final ExecutionVertex executionVertex : submittedDag.getRootVertices()) {
       final PhysicalSource sourceInSubmitDag = (PhysicalSource) executionVertex;
       final ExecutionVertex sameVertex = findSameVertex(sourcesInExecutionDag, sourceInSubmitDag);
       if (sameVertex != null) {
         // do dfs search
-        dfsMark(mergeableDag, submittedDag, markedVertices, sameVertex, sourceInSubmitDag, vertexMap, visited);
+        dfsSearch(executionDag, submittedDag, markedVertices, sameVertex, sourceInSubmitDag, vertexMap, visited);
       }
     }
     return vertexMap;
   }
 
-  private void dfsMark(final DAG<ExecutionVertex, MISTEdge> executionDag,
-                       final DAG<ExecutionVertex, MISTEdge> submittedDag,
-                       final Set<ExecutionVertex> markedVertices,
-                       final ExecutionVertex currExecutionDagVertex,
-                       final ExecutionVertex currSubmitDagVertex,
-                       final Map<ExecutionVertex, ExecutionVertex> vertexMap,
-                       final Set<ExecutionVertex> visited) {
+  /**
+   * Recursive function that traverses the dag in DFS order.
+   * @param executionDag execution dag
+   * @param submittedDag submitted dag
+   * @param markedVertices a set for checking join/union operator
+   * @param currExecutionDagVertex currently searched vertex of the execution dag
+   * @param currSubmitDagVertex currently searched vertex of the submitted dag
+   * @param vertexMap a map that holds vertices of the sub-dag
+   * @param visited a set for checking visited vertices
+   */
+  private void dfsSearch(final DAG<ExecutionVertex, MISTEdge> executionDag,
+                         final DAG<ExecutionVertex, MISTEdge> submittedDag,
+                         final Set<ExecutionVertex> markedVertices,
+                         final ExecutionVertex currExecutionDagVertex,
+                         final ExecutionVertex currSubmitDagVertex,
+                         final Map<ExecutionVertex, ExecutionVertex> vertexMap,
+                         final Set<ExecutionVertex> visited) {
     // Check if the vertex is already visited
     if (visited.contains(currSubmitDagVertex)) {
       return;
@@ -84,7 +100,7 @@ final class DfsSubDagFindAlgorithm implements SubDagFindAlgorithm {
       if (sameVertex != null) {
         // First, we need to check if the vertex has union or join operator
         // dfs search
-        dfsMark(executionDag, submittedDag, markedVertices, sameVertex, entry.getKey(), vertexMap, visited);
+        dfsSearch(executionDag, submittedDag, markedVertices, sameVertex, entry.getKey(), vertexMap, visited);
       }
     }
   }

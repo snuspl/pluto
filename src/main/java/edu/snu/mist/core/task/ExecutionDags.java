@@ -24,7 +24,7 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
  * <K> configuration type
  */
 @DefaultImplementation(HashMapExecutionDags.class)
-public interface ExecutionDags<K> {
+interface ExecutionDags<K> {
 
   /**
    * Get the execution dag that has the source configuration.

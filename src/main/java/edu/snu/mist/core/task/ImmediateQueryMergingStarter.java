@@ -27,7 +27,7 @@ import java.util.*;
  * When a query is submitted, this starter first finds mergeable execution dags.
  * After that, it merges them with the submitted query.
  */
-public final class ImmediateQueryMergingStarter implements QueryStarter {
+final class ImmediateQueryMergingStarter implements QueryStarter {
 
   /**
    * Operator chain manager that manages the operator chains.
@@ -88,7 +88,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
     }
 
     // After that, find the sub-dag between the sharableDAG and the submitted dag
-    final Map<ExecutionVertex, ExecutionVertex> subDagMap = subDagFindAlgorithm.mark(sharableDag, submittedDag);
+    final Map<ExecutionVertex, ExecutionVertex> subDagMap = subDagFindAlgorithm.findSubDag(sharableDag, submittedDag);
 
     // After that, we should merge the sharable dag with the submitted dag
     // and update the output emitters of the sharable dag

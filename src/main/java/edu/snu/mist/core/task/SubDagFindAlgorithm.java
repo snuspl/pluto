@@ -22,7 +22,7 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
 import java.util.Map;
 
 /**
- * This is the interface for the algorithm that finds a sub-dag between execution dag and submitted dag.
+ * This is the interface for the algorithm that finds a common sub-dag between execution dag and submitted dag.
  */
 @DefaultImplementation(DfsSubDagFindAlgorithm.class)
 interface SubDagFindAlgorithm {
@@ -33,8 +33,8 @@ interface SubDagFindAlgorithm {
    * This map holds which execution vertex in the submitted dag is equal to the vertex in the execution dag
    * @param executionDag execution dag that is currently running
    * @param submittedDag submitted dag that is newly submitted
-   * @return map that holds the sub-dag vertices
+   * @return map that holds the common sub-dag vertices
    */
-  Map<ExecutionVertex, ExecutionVertex> mark(DAG<ExecutionVertex, MISTEdge> executionDag,
-                                             DAG<ExecutionVertex, MISTEdge> submittedDag);
+  Map<ExecutionVertex, ExecutionVertex> findSubDag(DAG<ExecutionVertex, MISTEdge> executionDag,
+                                                   DAG<ExecutionVertex, MISTEdge> submittedDag);
 }
