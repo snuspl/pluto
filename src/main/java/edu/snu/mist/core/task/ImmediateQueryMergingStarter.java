@@ -102,6 +102,7 @@ final class ImmediateQueryMergingStarter implements QueryStarter {
     for (final ExecutionVertex source : submittedDag.getRootVertices()) {
       final PhysicalSource src = (PhysicalSource)source;
       if (!subDagMap.containsKey(src)) {
+        executionDags.put(src.getConfiguration(), sharableDag);
         src.start();
       }
     }
@@ -152,7 +153,8 @@ final class ImmediateQueryMergingStarter implements QueryStarter {
       }
     }
 
-    // TODO: We need to integrate ExecutionVertex and PhysicalVertex
+    // [TODO:MIST-527] Integrate ExecutionVertex and PhysicalVertex
+    // We need to integrate ExecutionVertex and PhysicalVertex
     // The output emitter of the current vertex of the execution dag needs to be updated
     if (outputEmitterUpdateNeeded) {
       if (correspondingVertex.getType() == ExecutionVertex.Type.SOURCE) {

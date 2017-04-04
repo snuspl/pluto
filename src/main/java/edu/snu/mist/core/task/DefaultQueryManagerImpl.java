@@ -43,11 +43,6 @@ final class DefaultQueryManagerImpl implements QueryManager {
   private final ConcurrentMap<String, DAG<LogicalVertex, MISTEdge>> logicalDagMap;
 
   /**
-   * An operator chain manager.
-   */
-  private final OperatorChainManager operatorChainManager;
-
-  /**
    * A thread manager.
    */
   private final ThreadManager threadManager;
@@ -80,12 +75,10 @@ final class DefaultQueryManagerImpl implements QueryManager {
   @Inject
   private DefaultQueryManagerImpl(final DagGenerator dagGenerator,
                                   final ThreadManager threadManager,
-                                  final OperatorChainManager operatorChainManager,
                                   final ScheduledExecutorServiceWrapper schedulerWrapper,
                                   final QueryStarter queryStarter,
                                   final QueryInfoStore planStore) {
     this.logicalDagMap = new ConcurrentHashMap<>();
-    this.operatorChainManager = operatorChainManager;
     this.dagGenerator = dagGenerator;
     this.threadManager = threadManager;
     this.scheduler = schedulerWrapper.getScheduler();

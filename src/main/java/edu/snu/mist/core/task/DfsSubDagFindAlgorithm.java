@@ -26,7 +26,6 @@ import java.util.*;
  */
 final class DfsSubDagFindAlgorithm implements SubDagFindAlgorithm {
 
-
   @Inject
   private DfsSubDagFindAlgorithm() {
   }
@@ -104,7 +103,6 @@ final class DfsSubDagFindAlgorithm implements SubDagFindAlgorithm {
       }
     }
   }
-
 
   /**
    * Get the configuration of the operator chain.
