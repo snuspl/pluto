@@ -56,7 +56,7 @@ final class ImmediateQueryMergingStarter implements QueryStarter {
   @Override
   public synchronized void start(final DAG<ExecutionVertex, MISTEdge> submittedDag) {
     // Set up the output emitters of the submitted DAG
-    setUpOutputEmitters(submittedDag);
+    QueryStarterUtils.setUpOutputEmitters(operatorChainManager, submittedDag);
 
     // Find mergeable DAGs from the execution dags
     final Map<String, DAG<ExecutionVertex, MISTEdge>> mergeableDags = findMergeableDags(submittedDag);
@@ -96,7 +96,7 @@ final class ImmediateQueryMergingStarter implements QueryStarter {
     for (final ExecutionVertex source : submittedDag.getRootVertices()) {
       // dfs search
       dfsMerge(subDagMap, visited, source, sharableDag, submittedDag);
-    }
+  }
 
     // If there are sources that are not shared, start them
     for (final ExecutionVertex source : submittedDag.getRootVertices()) {
@@ -203,39 +203,5 @@ final class ImmediateQueryMergingStarter implements QueryStarter {
       }
     }
     return mergeableDags;
-  }
-
-  /**
-   * Sets the OutputEmitters of the sources, operators and sinks.
-   * @param submittedDag the dag of the submitted query
-   */
-  private void setUpOutputEmitters(final DAG<ExecutionVertex, MISTEdge> submittedDag) {
-    final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(submittedDag);
-    while (iterator.hasNext()) {
-      final ExecutionVertex executionVertex = iterator.next();
-      switch (executionVertex.getType()) {
-        case SOURCE: {
-          final PhysicalSource source = (PhysicalSource)executionVertex;
-          final Map<ExecutionVertex, MISTEdge> nextOps = submittedDag.getEdges(source);
-          // Sets output emitters
-          source.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
-          break;
-        }
-        case OPERATOR_CHIAN: {
-          final OperatorChain operatorChain = (OperatorChain)executionVertex;
-          final Map<ExecutionVertex, MISTEdge> edges =
-              submittedDag.getEdges(operatorChain);
-          // Sets output emitters and operator chain manager for operator chain.
-          operatorChain.setOutputEmitter(new OperatorOutputEmitter(edges));
-          operatorChain.setOperatorChainManager(operatorChainManager);
-          break;
-        }
-        case SINK: {
-          break;
-        }
-        default:
-          throw new RuntimeException("Invalid vertex type: " + executionVertex.getType());
-      }
-    }
   }
 }

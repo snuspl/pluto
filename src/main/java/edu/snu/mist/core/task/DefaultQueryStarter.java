@@ -16,14 +16,9 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 
 import javax.inject.Inject;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * This query starter does not merge queries.
@@ -48,39 +43,11 @@ final class DefaultQueryStarter implements QueryStarter {
    */
   @Override
   public void start(final DAG<ExecutionVertex, MISTEdge> submittedDag) {
-    final List<PhysicalSource> sources = new LinkedList<>();
-    final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(submittedDag);
-    while (iterator.hasNext()) {
-      final ExecutionVertex executionVertex = iterator.next();
-      switch (executionVertex.getType()) {
-        case SOURCE: {
-          final PhysicalSource source = (PhysicalSource)executionVertex;
-          final Map<ExecutionVertex, MISTEdge> nextOps = submittedDag.getEdges(source);
-          // Sets output emitters
-          source.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
-          sources.add(source);
-          break;
-        }
-        case OPERATOR_CHIAN: {
-          final OperatorChain operatorChain = (OperatorChain)executionVertex;
-          final Map<ExecutionVertex, MISTEdge> edges =
-              submittedDag.getEdges(operatorChain);
-          // Sets output emitters and operator chain manager for operator chain.
-          operatorChain.setOutputEmitter(new OperatorOutputEmitter(edges));
-          operatorChain.setOperatorChainManager(operatorChainManager);
-          break;
-        }
-        case SINK: {
-          break;
-        }
-        default:
-          throw new RuntimeException("Invalid vertex type: " + executionVertex.getType());
-      }
-    }
-
+    QueryStarterUtils.setUpOutputEmitters(operatorChainManager, submittedDag);
     // starts to receive input data stream from the sources
-    for (final PhysicalSource source : sources) {
-      source.start();
+    for (final ExecutionVertex source : submittedDag.getRootVertices()) {
+      final PhysicalSource ps = (PhysicalSource)source;
+      ps.start();
     }
   }
 }
