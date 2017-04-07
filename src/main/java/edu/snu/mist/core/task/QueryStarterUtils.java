@@ -32,7 +32,7 @@ final class QueryStarterUtils {
   }
 
   /**
-   * Sets the OutputEmitters of the sources, operators and sinks
+   * Sets the OutputEmitters of the sources, operators and sinks.
    * @param operatorChainManager operator chain manager
    * @param submittedDag the dag of the submitted query
    */
