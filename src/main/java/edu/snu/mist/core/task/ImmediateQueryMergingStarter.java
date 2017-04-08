@@ -37,7 +37,7 @@ final class ImmediateQueryMergingStarter implements QueryStarter {
   /**
    * An algorithm for finding the sub-dag between the execution and submitted dag.
    */
-  private final SubDagFindAlgorithm subDagFindAlgorithm;
+  private final CommonSubDagFinder commonSubDagFinder;
 
   /**
    * Execution dags.
@@ -46,10 +46,10 @@ final class ImmediateQueryMergingStarter implements QueryStarter {
 
   @Inject
   private ImmediateQueryMergingStarter(final OperatorChainManager operatorChainManager,
-                                       final SubDagFindAlgorithm subDagFindAlgorithm,
+                                       final CommonSubDagFinder commonSubDagFinder,
                                        final ExecutionDags executionDags) {
     this.operatorChainManager = operatorChainManager;
-    this.subDagFindAlgorithm = subDagFindAlgorithm;
+    this.commonSubDagFinder = commonSubDagFinder;
     this.executionDags = executionDags;
   }
 
@@ -88,7 +88,7 @@ final class ImmediateQueryMergingStarter implements QueryStarter {
     }
 
     // After that, find the sub-dag between the sharableDAG and the submitted dag
-    final Map<ExecutionVertex, ExecutionVertex> subDagMap = subDagFindAlgorithm.findSubDag(sharableDag, submittedDag);
+    final Map<ExecutionVertex, ExecutionVertex> subDagMap = commonSubDagFinder.findSubDag(sharableDag, submittedDag);
 
     // After that, we should merge the sharable dag with the submitted dag
     // and update the output emitters of the sharable dag
@@ -168,6 +168,7 @@ final class ImmediateQueryMergingStarter implements QueryStarter {
   }
 
   /**
+   * TODO:[MIST-538] Select a sharable DAG that minimizes merging cost in immediate merging
    * Select one execution dag for merging.
    * @param dags mergeable dags
    * @return a dag where all of the dags will be merged

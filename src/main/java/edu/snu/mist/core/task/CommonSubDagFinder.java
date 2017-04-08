@@ -24,8 +24,8 @@ import java.util.Map;
 /**
  * This is the interface for the algorithm that finds a common sub-dag between execution dag and submitted dag.
  */
-@DefaultImplementation(DfsSubDagFindAlgorithm.class)
-interface SubDagFindAlgorithm {
+@DefaultImplementation(DfsCommonSubDagFinder.class)
+interface CommonSubDagFinder {
 
   /**
    * Return a map that has ExecutionVertex of the submitted dag as a key and

@@ -22,12 +22,12 @@ import javax.inject.Inject;
 import java.util.*;
 
 /**
- * This algorithm finds the sub-dag between submitted dag and execution dag in DFS order.
+ * This algorithm finds the common sub-dag between submitted dag and execution dag in DFS order.
  */
-final class DfsSubDagFindAlgorithm implements SubDagFindAlgorithm {
+final class DfsCommonSubDagFinder implements CommonSubDagFinder {
 
   @Inject
-  private DfsSubDagFindAlgorithm() {
+  private DfsCommonSubDagFinder() {
   }
 
   /**
