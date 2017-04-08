@@ -20,7 +20,6 @@ import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.types.Tuple2;
-import edu.snu.mist.core.task.StateSerializer;
 import edu.snu.mist.utils.OutputBufferEmitter;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
@@ -137,8 +136,7 @@ public final class ReduceByKeyOperatorTest {
     inputStream.stream().forEach(wcOperator::processLeftData);
 
     // Get the current ReduceByKeyOperator's state.
-    final Map<String, Object> operatorStateMap =
-        StateSerializer.getDeserializedStateMap(wcOperator.getOperatorState());
+    final Map<String, Object> operatorStateMap = wcOperator.getOperatorState();
     final Map<String, Integer> operatorState =
         (Map<String, Integer>)operatorStateMap.get("reduceByKeyState");
 
@@ -164,18 +162,17 @@ public final class ReduceByKeyOperatorTest {
     final MISTBiFunction<Integer, Integer, Integer> wordCountFunc = (oldVal, val) -> oldVal + val;
     final ReduceByKeyOperator reduceByKeyOperator =
         new ReduceByKeyOperator(keyIndex, wordCountFunc);
-    reduceByKeyOperator.setState(StateSerializer.getSerializedStateMap(loadStateMap));
+    reduceByKeyOperator.setState(loadStateMap);
 
     // Compare the original and the set operator.
-    final Map<String, Object> operatorStateMap =
-        StateSerializer.getDeserializedStateMap(reduceByKeyOperator.getOperatorState());
+    final Map<String, Object> operatorStateMap = reduceByKeyOperator.getOperatorState();
     final Map<String, Integer> operatorState = (Map<String, Integer>)operatorStateMap.get("reduceByKeyState");
     Assert.assertEquals(expectedOperatorState, operatorState);
 
     // Test if the operator can properly process data.
     final List<MistEvent> result = new LinkedList<>();
     reduceByKeyOperator.setOutputEmitter(new OutputBufferEmitter(result));
-    reduceByKeyOperator.setState(StateSerializer.getSerializedStateMap(operatorStateMap));
+    reduceByKeyOperator.setState(operatorStateMap);
     final List<MistDataEvent> inputStream =
         ImmutableList.of(createTupleEvent("a", 1, 10L));
     inputStream.stream().forEach(reduceByKeyOperator::processLeftData);

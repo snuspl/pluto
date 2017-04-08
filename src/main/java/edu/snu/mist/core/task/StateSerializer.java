@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task;
 
-
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -32,10 +31,20 @@ public final class StateSerializer {
    * @param stateMap
    * @return the serialized StateMap
    */
-  public static Map<String, ByteBuffer> getSerializedStateMap(final Map<String, Object> stateMap) throws IOException {
-    final Map<String, ByteBuffer> result = new HashMap<>();
+  public static Map<String, Object> getSerializedStateMap(final Map<String, Object> stateMap) throws IOException {
+    final Map<String, Object> result = new HashMap<>();
     for (Map.Entry<String, Object> mapEntry : stateMap.entrySet()) {
-      result.put(mapEntry.getKey(), serializeState(mapEntry.getValue()));
+      final Object state = mapEntry.getValue();
+      if ((state instanceof Boolean)
+          || (state instanceof Integer)
+          || (state instanceof Long)
+          || (state instanceof Float)
+          || (state instanceof Double)
+          || (state instanceof String)) {
+        result.put(mapEntry.getKey(), state);
+      } else {
+        result.put(mapEntry.getKey(), serializeState(mapEntry.getValue()));
+      }
     }
     return result;
   }
@@ -60,15 +69,16 @@ public final class StateSerializer {
    * @param serializedStateMap
    * @return the deserialized StateMap
    */
-  public static Map<String, Object> getDeserializedStateMap(final Map<String, ByteBuffer> serializedStateMap)
+  public static Map<String, Object> getDeserializedStateMap(final Map<String, Object> serializedStateMap)
       throws IOException, ClassNotFoundException {
     final Map<String, Object> result = new HashMap<>();
-    for (Map.Entry<String, ByteBuffer> mapEntry : serializedStateMap.entrySet()) {
-      System.out.println("keys: " + mapEntry.getKey());
-    }
-    for (Map.Entry<String, ByteBuffer> mapEntry : serializedStateMap.entrySet()) {
-      System.out.println(serializedStateMap.size() + " " + mapEntry.getKey());
-      result.put(mapEntry.getKey(), deserializeState(mapEntry.getValue()));
+    for (Map.Entry<String, Object> mapEntry : serializedStateMap.entrySet()) {
+      final Object state = mapEntry.getValue();
+      if (state instanceof ByteBuffer) {
+        result.put(mapEntry.getKey(), deserializeState((ByteBuffer)state));
+      } else {
+        result.put(mapEntry.getKey(), state);
+      }
     }
     return result;
   }

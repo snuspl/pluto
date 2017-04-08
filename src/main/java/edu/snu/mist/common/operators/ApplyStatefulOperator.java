@@ -20,12 +20,10 @@ import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.ApplyStatefulFunction;
 import edu.snu.mist.common.parameters.SerializedUdf;
-import edu.snu.mist.core.task.StateSerializer;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -80,15 +78,14 @@ public final class ApplyStatefulOperator<IN, OUT>
   }
 
   @Override
-  public Map<String, ByteBuffer> getOperatorState() throws IOException {
+  public Map<String, Object> getOperatorState() throws IOException {
     final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("applyStatefulFunctionState", applyStatefulFunction.getCurrentState());
-    return StateSerializer.getSerializedStateMap(stateMap);
+    return stateMap;
   }
 
   @Override
-  public void setState(final Map<String, ByteBuffer> loadedState) throws IOException, ClassNotFoundException {
-    final Map<String, Object> deserializedState = StateSerializer.getDeserializedStateMap(loadedState);
-    applyStatefulFunction.setFunctionState(deserializedState.get("applyStatefulFunctionState"));
+  public void setState(final Map<String, Object> loadedState) throws IOException, ClassNotFoundException {
+    applyStatefulFunction.setFunctionState(loadedState.get("applyStatefulFunctionState"));
   }
 }

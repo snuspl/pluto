@@ -22,13 +22,11 @@ import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.parameters.KeyIndex;
 import edu.snu.mist.common.parameters.SerializedUdf;
 import edu.snu.mist.common.types.Tuple2;
-import edu.snu.mist.core.task.StateSerializer;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -118,7 +116,6 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
 
   @Override
   public void processLeftData(final MistDataEvent input) {
-    System.out.print("before processLeftData" + state.toString());
     final HashMap<K, V> intermediateState = updateState((Tuple2)input.getValue(), state);
     final HashMap<K, V> output = generateOutput(intermediateState);
     LOG.log(Level.FINE, "{0} updates the state {1} with input {2} to {3}, and generates {4}",
@@ -126,7 +123,6 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
     input.setValue(output);
     outputEmitter.emitData(input);
     state = intermediateState;
-    System.out.println(", after processLeftData" + state.toString());
   }
 
   @Override
@@ -135,16 +131,15 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
   }
 
   @Override
-  public Map<String, ByteBuffer> getOperatorState() throws IOException {
+  public Map<String, Object> getOperatorState() throws IOException {
     final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("reduceByKeyState", state);
-    return StateSerializer.getSerializedStateMap(stateMap);
+    return stateMap;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public void setState(final Map<String, ByteBuffer> loadedState) throws IOException, ClassNotFoundException {
-    final Map<String, Object> deserializedState = StateSerializer.getDeserializedStateMap(loadedState);
-    state = (HashMap<K, V>)deserializedState.get("reduceByKeyState");
+  public void setState(final Map<String, Object> loadedState) throws IOException, ClassNotFoundException {
+    state = (HashMap<K, V>)loadedState.get("reduceByKeyState");
   }
 }

@@ -20,7 +20,6 @@ import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.functions.ApplyStatefulFunction;
 import edu.snu.mist.common.utils.FindMaxIntFunction;
-import edu.snu.mist.core.task.StateSerializer;
 import edu.snu.mist.utils.OutputBufferEmitter;
 import org.junit.Assert;
 import org.junit.Test;
@@ -98,8 +97,7 @@ public final class ApplyStatefulOperatorTest {
     final int expectedApplyStatefulOperatorState = 20;
 
     // Get the current ApplyStatefulOperator's state.
-    final Map<String, Object> operatorState =
-        StateSerializer.getDeserializedStateMap(applyStatefulOperator.getOperatorState());
+    final Map<String, Object> operatorState = applyStatefulOperator.getOperatorState();
     final int applyStatefulOperatorState = (int)operatorState.get("applyStatefulFunctionState");
 
     // Compare the expected and original operator's state.
@@ -118,11 +116,10 @@ public final class ApplyStatefulOperatorTest {
     loadStateMap.put("applyStatefulFunctionState", expectedApplyStatefulFunctionState);
     final ApplyStatefulOperator<Integer, Integer> applyStatefulOperator =
         new ApplyStatefulOperator<>(applyStatefulFunction);
-    applyStatefulOperator.setState(StateSerializer.getSerializedStateMap(loadStateMap));
+    applyStatefulOperator.setState(loadStateMap);
 
     // Get the current ApplyStatefulOperator's state.
-    final Map<String, Object> operatorState =
-        StateSerializer.getDeserializedStateMap(applyStatefulOperator.getOperatorState());
+    final Map<String, Object> operatorState = applyStatefulOperator.getOperatorState();
     final int applyStatefulFunctionState = (Integer)operatorState.get("applyStatefulFunctionState");
 
     // Compare the original and the set operator.

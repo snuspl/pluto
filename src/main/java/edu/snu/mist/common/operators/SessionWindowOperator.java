@@ -20,12 +20,10 @@ import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.parameters.WindowInterval;
 import edu.snu.mist.common.windows.Window;
 import edu.snu.mist.common.windows.WindowImpl;
-import edu.snu.mist.core.task.StateSerializer;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -110,20 +108,19 @@ public final class SessionWindowOperator<T> extends OneStreamOperator implements
   }
 
   @Override
-  public Map<String, ByteBuffer> getOperatorState() throws IOException {
+  public Map<String, Object> getOperatorState() throws IOException {
     final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("currentWindow", currentWindow);
     stateMap.put("latestDataTimestamp", latestDataTimestamp);
     stateMap.put("startedNewWindow", startedNewWindow);
-    return StateSerializer.getSerializedStateMap(stateMap);
+    return stateMap;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public void setState(final Map<String, ByteBuffer> loadedState) throws IOException, ClassNotFoundException {
-    final Map<String, Object> deserializedState = StateSerializer.getDeserializedStateMap(loadedState);
-    currentWindow = (Window<T>)deserializedState.get("currentWindow");
-    latestDataTimestamp = (long)deserializedState.get("latestDataTimestamp");
-    startedNewWindow = (boolean)deserializedState.get("startedNewWindow");
+  public void setState(final Map<String, Object> loadedState) throws IOException, ClassNotFoundException {
+    currentWindow = (Window<T>)loadedState.get("currentWindow");
+    latestDataTimestamp = (long)loadedState.get("latestDataTimestamp");
+    startedNewWindow = (boolean)loadedState.get("startedNewWindow");
   }
 }
