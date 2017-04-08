@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.common.operators;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Map;
 
 /**
@@ -25,12 +27,12 @@ public interface StateHandler {
   /**
    * Gets the state of the current operator.
    */
-  Map<String, Object> getOperatorState();
+  Map<String, ByteBuffer> getOperatorState() throws IOException;
 
   /**
    * Sets the state of the current operator.
    * @param loadedState
    */
-  void setState(Map<String, Object> loadedState);
+  void setState(Map<String, ByteBuffer> loadedState) throws IOException, ClassNotFoundException;
 
 }

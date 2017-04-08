@@ -20,10 +20,12 @@ import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.functions.ApplyStatefulFunction;
 import edu.snu.mist.common.utils.FindMaxIntFunction;
+import edu.snu.mist.core.task.StateSerializer;
 import edu.snu.mist.utils.OutputBufferEmitter;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -80,7 +82,7 @@ public final class ApplyStatefulOperatorTest {
    * Test getting state of the ApplyStatefulOperator.
    */
   @Test
-  public void testApplyStatefulOperatorGetState() throws InterruptedException {
+  public void testApplyStatefulOperatorGetState() throws InterruptedException, IOException, ClassNotFoundException {
     // Generate the current ApplyStatefulOperator.
     final ApplyStatefulFunction applyStatefulFunction = new FindMaxIntFunction();
     final ApplyStatefulOperator<Integer, Integer> applyStatefulOperator =
@@ -96,7 +98,8 @@ public final class ApplyStatefulOperatorTest {
     final int expectedApplyStatefulOperatorState = 20;
 
     // Get the current ApplyStatefulOperator's state.
-    final Map<String, Object> operatorState= applyStatefulOperator.getOperatorState();
+    final Map<String, Object> operatorState =
+        StateSerializer.getDeserializedStateMap(applyStatefulOperator.getOperatorState());
     final int applyStatefulOperatorState = (int)operatorState.get("applyStatefulFunctionState");
 
     // Compare the expected and original operator's state.
@@ -107,7 +110,7 @@ public final class ApplyStatefulOperatorTest {
    * Test setting state of the ApplyStatefulOperator.
    */
   @Test
-  public void testApplyStatefulOperatorSetState() throws InterruptedException {
+  public void testApplyStatefulOperatorSetState() throws InterruptedException, IOException, ClassNotFoundException {
     // Generate a new state and set it to a new ApplyStatefulOperator.
     final ApplyStatefulFunction applyStatefulFunction = new FindMaxIntFunction();
     final int expectedApplyStatefulFunctionState = 5;
@@ -115,10 +118,11 @@ public final class ApplyStatefulOperatorTest {
     loadStateMap.put("applyStatefulFunctionState", expectedApplyStatefulFunctionState);
     final ApplyStatefulOperator<Integer, Integer> applyStatefulOperator =
         new ApplyStatefulOperator<>(applyStatefulFunction);
-    applyStatefulOperator.setState(loadStateMap);
+    applyStatefulOperator.setState(StateSerializer.getSerializedStateMap(loadStateMap));
 
     // Get the current ApplyStatefulOperator's state.
-    final Map<String, Object> operatorState = applyStatefulOperator.getOperatorState();
+    final Map<String, Object> operatorState =
+        StateSerializer.getDeserializedStateMap(applyStatefulOperator.getOperatorState());
     final int applyStatefulFunctionState = (Integer)operatorState.get("applyStatefulFunctionState");
 
     // Compare the original and the set operator.

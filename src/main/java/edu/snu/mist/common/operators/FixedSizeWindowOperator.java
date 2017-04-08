@@ -19,7 +19,10 @@ import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.windows.Window;
 import edu.snu.mist.common.windows.WindowImpl;
+import edu.snu.mist.core.task.StateSerializer;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -138,17 +141,22 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements S
   }
 
   @Override
-  public Map<String, Object> getOperatorState() {
-    final Map<String, Object> stateMap = new HashMap<>();
-    stateMap.put("windowCreationPoint", windowCreationPoint);
-    stateMap.put("windowQueue", windowQueue);
+  public Map<String, ByteBuffer> getOperatorState() throws IOException {
+    final Map<String, ByteBuffer> stateMap = new HashMap<>();
+    stateMap.put("windowCreationPoint", StateSerializer.serializeState(windowCreationPoint));
+    stateMap.put("windowQueue", StateSerializer.serializeState(windowQueue));
     return stateMap;
   }
 
+  // Stores the deserialized state that is used for setState().
+  // This exists because a loadedState can only be deserialized once.
+  protected Map<String, Object> deserializedState;
+
   @SuppressWarnings("unchecked")
   @Override
-  public void setState(final Map<String, Object> loadedState) {
-    windowCreationPoint = (long)loadedState.get("windowCreationPoint");
-    windowQueue.addAll((Queue<Window<T>>)loadedState.get("windowQueue"));
+  public void setState(final Map<String, ByteBuffer> loadedState) throws IOException, ClassNotFoundException {
+    deserializedState = StateSerializer.getDeserializedStateMap(loadedState);
+    windowCreationPoint = (long)deserializedState.get("windowCreationPoint");
+    windowQueue.addAll((Queue<Window<T>>)deserializedState.get("windowQueue"));
   }
 }

@@ -20,11 +20,13 @@ import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.types.Tuple2;
+import edu.snu.mist.core.task.StateSerializer;
 import edu.snu.mist.utils.OutputBufferEmitter;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -107,7 +109,8 @@ public final class ReduceByKeyOperatorTest {
    * Test getting state of the ReduceByKeyOperator.
    */
   @Test
-  public void testReduceByKeyOperatorGetState() throws InterruptedException {
+  @SuppressWarnings("unchecked")
+  public void testReduceByKeyOperatorGetState() throws InterruptedException, IOException, ClassNotFoundException {
     // Generate the current ReduceByKeyOperator state.
     final List<MistDataEvent> inputStream = ImmutableList.of(
         createTupleEvent("a", 1, 1L),
@@ -134,8 +137,10 @@ public final class ReduceByKeyOperatorTest {
     inputStream.stream().forEach(wcOperator::processLeftData);
 
     // Get the current ReduceByKeyOperator's state.
+    final Map<String, Object> operatorStateMap =
+        StateSerializer.getDeserializedStateMap(wcOperator.getOperatorState());
     final Map<String, Integer> operatorState =
-        (Map<String, Integer>)wcOperator.getOperatorState().get("reduceByKeyState");
+        (Map<String, Integer>)operatorStateMap.get("reduceByKeyState");
 
     // Compare the expected and original operator's state.
     Assert.assertEquals(expectedOperatorState, operatorState);
@@ -145,7 +150,8 @@ public final class ReduceByKeyOperatorTest {
    * Test setting state of the ReduceByKeyOperator.
    */
   @Test
-  public void testReduceByKeyOperatorSetState() throws InterruptedException {
+  @SuppressWarnings("unchecked")
+  public void testReduceByKeyOperatorSetState() throws InterruptedException, IOException, ClassNotFoundException {
     // Generate a new state and set it to the state of a new ReduceByKeyWindowOperator.
     final Map<String, Integer> expectedOperatorState = new HashMap<>();
     expectedOperatorState.put("a", 3);
@@ -158,17 +164,18 @@ public final class ReduceByKeyOperatorTest {
     final MISTBiFunction<Integer, Integer, Integer> wordCountFunc = (oldVal, val) -> oldVal + val;
     final ReduceByKeyOperator reduceByKeyOperator =
         new ReduceByKeyOperator(keyIndex, wordCountFunc);
-    reduceByKeyOperator.setState(loadStateMap);
+    reduceByKeyOperator.setState(StateSerializer.getSerializedStateMap(loadStateMap));
 
     // Compare the original and the set operator.
-    final Map<String, Object> operatorStateMap = reduceByKeyOperator.getOperatorState();
+    final Map<String, Object> operatorStateMap =
+        StateSerializer.getDeserializedStateMap(reduceByKeyOperator.getOperatorState());
     final Map<String, Integer> operatorState = (Map<String, Integer>)operatorStateMap.get("reduceByKeyState");
     Assert.assertEquals(expectedOperatorState, operatorState);
 
     // Test if the operator can properly process data.
     final List<MistEvent> result = new LinkedList<>();
     reduceByKeyOperator.setOutputEmitter(new OutputBufferEmitter(result));
-    reduceByKeyOperator.setState(operatorStateMap);
+    reduceByKeyOperator.setState(StateSerializer.getSerializedStateMap(operatorStateMap));
     final List<MistDataEvent> inputStream =
         ImmutableList.of(createTupleEvent("a", 1, 10L));
     inputStream.stream().forEach(reduceByKeyOperator::processLeftData);

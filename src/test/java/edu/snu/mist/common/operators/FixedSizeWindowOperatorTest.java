@@ -20,10 +20,13 @@ import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.windows.Window;
 import edu.snu.mist.common.windows.WindowImpl;
+import edu.snu.mist.core.task.StateSerializer;
 import edu.snu.mist.utils.OutputBufferEmitter;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -119,7 +122,7 @@ public final class FixedSizeWindowOperatorTest {
    * Test getting state of the TimeWindowOperator.
    */
   @Test
-  public void testTimeWindowOperatorGetState() throws InterruptedException {
+  public void testTimeWindowOperatorGetState() throws InterruptedException, IOException, ClassNotFoundException {
     final int windowSize = 500;
     final int emissionInterval = 250;
 
@@ -142,7 +145,8 @@ public final class FixedSizeWindowOperatorTest {
     final long expectedWindowCreationPoint = d4.getTimestamp() + emissionInterval;
 
     // Get the current TimeWindowOperator's state.
-    final Map<String, Object> operatorState = timeWindowOperator.getOperatorState();
+    final Map<String, Object> operatorState =
+        StateSerializer.getDeserializedStateMap(timeWindowOperator.getOperatorState());
     final Queue<Window<Integer>> windowQueue = (Queue<Window<Integer>>)operatorState.get("windowQueue");
     final long windowCreationPoint = (long)operatorState.get("windowCreationPoint");
 
@@ -155,7 +159,7 @@ public final class FixedSizeWindowOperatorTest {
    * Test setting state of the TimeWindowOperator.
    */
   @Test
-  public void testTimeWindowOperatorSetState() throws InterruptedException {
+  public void testTimeWindowOperatorSetState() throws InterruptedException, IOException, ClassNotFoundException {
     final int windowSize = 500;
     final int emissionInterval = 250;
 
@@ -170,15 +174,16 @@ public final class FixedSizeWindowOperatorTest {
     expectedWindowQueue.add(expectedWindow1);
     expectedWindowQueue.add(expectedWindow2);
     final long expectedWindowCreationPoint = d4.getTimestamp() + emissionInterval;
-    final Map<String, Object> loadStateMap = new HashMap<>();
-    loadStateMap.put("windowQueue", expectedWindowQueue);
-    loadStateMap.put("windowCreationPoint", expectedWindowCreationPoint);
+    final Map<String, ByteBuffer> loadStateMap = new HashMap<>();
+    loadStateMap.put("windowQueue", StateSerializer.serializeState(expectedWindowQueue));
+    loadStateMap.put("windowCreationPoint", StateSerializer.serializeState(expectedWindowCreationPoint));
     final TimeWindowOperator<Integer> timeWindowOperator =
         new TimeWindowOperator<>(windowSize, emissionInterval);
     timeWindowOperator.setState(loadStateMap);
 
     // Get the current TimeWindowOperator's state.
-    final Map<String, Object> operatorState = timeWindowOperator.getOperatorState();
+    final Map<String, Object> operatorState =
+        StateSerializer.getDeserializedStateMap(timeWindowOperator.getOperatorState());
     final Queue<Window<Integer>> windowQueue = (Queue<Window<Integer>>)operatorState.get("windowQueue");
     final long windowCreationPoint = (long)operatorState.get("windowCreationPoint");
 
@@ -316,7 +321,7 @@ public final class FixedSizeWindowOperatorTest {
    * Test getting state of the CountWindowOperator.
    */
   @Test
-  public void testCountWindowOperatorGetState() throws InterruptedException {
+  public void testCountWindowOperatorGetState() throws InterruptedException, IOException, ClassNotFoundException {
     final int windowSize = 5;
     final int emissionInterval = 3;
 
@@ -339,7 +344,8 @@ public final class FixedSizeWindowOperatorTest {
     final long expectedCount = 3L;
 
     // Get the current CountWindowOperator's state.
-    final Map<String, Object> operatorState = countWindowOperator.getOperatorState();
+    final Map<String, Object> operatorState =
+        StateSerializer.getDeserializedStateMap(countWindowOperator.getOperatorState());
     final Queue<Window<Integer>> windowQueue = (LinkedList<Window<Integer>>)operatorState.get("windowQueue");
     final long windowCreationPoint = (long)operatorState.get("windowCreationPoint");
     final long count = (long)operatorState.get("count");
@@ -354,7 +360,7 @@ public final class FixedSizeWindowOperatorTest {
    * Test setting state of the CountWindowOperator.
    */
   @Test
-  public void testCountWindowOperatorSetState() throws InterruptedException {
+  public void testCountWindowOperatorSetState() throws InterruptedException, IOException, ClassNotFoundException {
     final int windowSize = 5;
     final int emissionInterval = 3;
 
@@ -369,16 +375,17 @@ public final class FixedSizeWindowOperatorTest {
     expectedWindowQueue.add(expectedWindow2);
     final long expectedWindowCreationPoint = 2L + emissionInterval;
     final long expectedCount = 3L;
-    final Map<String, Object> loadStateMap = new HashMap<>();
-    loadStateMap.put("windowQueue", expectedWindowQueue);
-    loadStateMap.put("windowCreationPoint", expectedWindowCreationPoint);
-    loadStateMap.put("count", expectedCount);
+    final Map<String, ByteBuffer> loadStateMap = new HashMap<>();
+    loadStateMap.put("windowQueue", StateSerializer.serializeState(expectedWindowQueue));
+    loadStateMap.put("windowCreationPoint", StateSerializer.serializeState(expectedWindowCreationPoint));
+    loadStateMap.put("count", StateSerializer.serializeState(expectedCount));
     final CountWindowOperator<Integer> countWindowOperator =
         new CountWindowOperator<>(windowSize, emissionInterval);
     countWindowOperator.setState(loadStateMap);
 
     // Compare the original and the set operator.
-    final Map<String, Object> operatorState = countWindowOperator.getOperatorState();
+    final Map<String, Object> operatorState =
+        StateSerializer.getDeserializedStateMap(countWindowOperator.getOperatorState());
     final Queue<Window<Integer>> windowQueue = (Queue<Window<Integer>>)operatorState.get("windowQueue");
     final long windowCreationPoint = (long)operatorState.get("windowCreationPoint");
     final long count = (long)operatorState.get("count");

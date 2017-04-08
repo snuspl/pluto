@@ -19,9 +19,12 @@ import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.parameters.WindowInterval;
 import edu.snu.mist.common.parameters.WindowSize;
+import edu.snu.mist.core.task.StateSerializer;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -58,15 +61,15 @@ public final class CountWindowOperator<T> extends FixedSizeWindowOperator<T> imp
   }
 
   @Override
-  public Map<String, Object> getOperatorState() {
-    final Map<String, Object> stateMap = super.getOperatorState();
-    stateMap.put("count", count);
-    return stateMap;
+  public Map<String, ByteBuffer> getOperatorState() throws IOException {
+    final Map<String, ByteBuffer> fizedSizeWindowStateMap = super.getOperatorState();
+    fizedSizeWindowStateMap.put("count", StateSerializer.serializeState(count));
+    return fizedSizeWindowStateMap;
   }
 
   @Override
-  public void setState(final Map<String, Object> loadedState) {
+  public void setState(final Map<String, ByteBuffer> loadedState) throws IOException, ClassNotFoundException {
     super.setState(loadedState);
-    count = (long)loadedState.get("count");
+    count = (long)deserializedState.get("count");
   }
 }

@@ -20,10 +20,12 @@ import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.windows.Window;
 import edu.snu.mist.common.windows.WindowImpl;
+import edu.snu.mist.core.task.StateSerializer;
 import edu.snu.mist.utils.OutputBufferEmitter;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -111,7 +113,7 @@ public final class SessionWindowOperatorTest {
    * Test getting state of the SessionWindowOperator.
    */
   @Test
-  public void testSessionWindowOperatorGetState() throws InterruptedException {
+  public void testSessionWindowOperatorGetState() throws InterruptedException, IOException, ClassNotFoundException {
     final int sessionInterval = 500;
 
     // Generate the current SessionWindowOperator.
@@ -129,7 +131,8 @@ public final class SessionWindowOperatorTest {
     final boolean expectedStartedNewWindow = true;
 
     // Get the current SessionWindowOperator's state.
-    final Map<String, Object> operatorState = sessionWindowOperator.getOperatorState();
+    final Map<String, Object> operatorState =
+        StateSerializer.getDeserializedStateMap(sessionWindowOperator.getOperatorState());
     final Window<Integer> currentWindow = (Window<Integer>)operatorState.get("currentWindow");
     final long latestDataTimestamp = (long)operatorState.get("latestDataTimestamp");
     final boolean startedNewWindow = (boolean)operatorState.get("startedNewWindow");
@@ -144,7 +147,7 @@ public final class SessionWindowOperatorTest {
    * Test setting state of the SessionWindowOperator.
    */
   @Test
-  public void testSessionWindowOperatorSetState() throws InterruptedException {
+  public void testSessionWindowOperatorSetState() throws InterruptedException, IOException, ClassNotFoundException {
     final int sessionInterval = 500;
 
     // Generate a new state and set it to a new SessionWindowOperator.
@@ -161,10 +164,11 @@ public final class SessionWindowOperatorTest {
 
     final SessionWindowOperator sessionWindowOperator =
         new SessionWindowOperator(sessionInterval);
-    sessionWindowOperator.setState(loadStateMap);
+    sessionWindowOperator.setState(StateSerializer.getSerializedStateMap(loadStateMap));
 
     // Compare the original and the set operator.
-    final Map<String, Object> operatorState = sessionWindowOperator.getOperatorState();
+    final Map<String, Object> operatorState =
+        StateSerializer.getDeserializedStateMap(sessionWindowOperator.getOperatorState());
     final Window<Integer> currentWindow =
         (Window<Integer>)operatorState.get("currentWindow");
     final long latestDataTimestamp = (long)operatorState.get("latestDataTimestamp");
@@ -176,7 +180,7 @@ public final class SessionWindowOperatorTest {
     // Test if the operator can properly process data.
     final List<MistEvent> result = new LinkedList<>();
     sessionWindowOperator.setOutputEmitter(new OutputBufferEmitter(result));
-    sessionWindowOperator.setState(operatorState);
+    sessionWindowOperator.setState(StateSerializer.getSerializedStateMap(operatorState));
     sessionWindowOperator.processLeftData(d6);
     Assert.assertEquals(2, result.size());
     final Collection<Integer> expectedResult = new LinkedList<>();
