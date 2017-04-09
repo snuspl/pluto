@@ -24,7 +24,6 @@ import edu.snu.mist.utils.OutputBufferEmitter;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.*;
 
 import static edu.snu.mist.common.utils.OperatorTestUtils.checkWindowData;
@@ -115,7 +114,7 @@ public final class FixedSizeWindowOperatorTest {
    * Test getting state of the TimeWindowOperator.
    */
   @Test
-  public void testTimeWindowOperatorGetState() throws InterruptedException, IOException, ClassNotFoundException {
+  public void testTimeWindowOperatorGetState() throws InterruptedException {
     final int windowSize = 500;
     final int emissionInterval = 250;
 
@@ -151,7 +150,7 @@ public final class FixedSizeWindowOperatorTest {
    * Test setting state of the TimeWindowOperator.
    */
   @Test
-  public void testTimeWindowOperatorSetState() throws InterruptedException, IOException, ClassNotFoundException {
+  public void testTimeWindowOperatorSetState() throws InterruptedException {
     final int windowSize = 500;
     final int emissionInterval = 250;
 
@@ -312,7 +311,7 @@ public final class FixedSizeWindowOperatorTest {
    * Test getting state of the CountWindowOperator.
    */
   @Test
-  public void testCountWindowOperatorGetState() throws InterruptedException, IOException, ClassNotFoundException {
+  public void testCountWindowOperatorGetState() throws InterruptedException {
     final int windowSize = 5;
     final int emissionInterval = 3;
 
@@ -350,7 +349,7 @@ public final class FixedSizeWindowOperatorTest {
    * Test setting state of the CountWindowOperator.
    */
   @Test
-  public void testCountWindowOperatorSetState() throws InterruptedException, IOException, ClassNotFoundException {
+  public void testCountWindowOperatorSetState() throws InterruptedException {
     final int windowSize = 5;
     final int emissionInterval = 3;
 

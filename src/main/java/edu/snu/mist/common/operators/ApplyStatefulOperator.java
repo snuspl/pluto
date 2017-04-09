@@ -78,14 +78,14 @@ public final class ApplyStatefulOperator<IN, OUT>
   }
 
   @Override
-  public Map<String, Object> getOperatorState() throws IOException {
+  public Map<String, Object> getOperatorState() {
     final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("applyStatefulFunctionState", applyStatefulFunction.getCurrentState());
     return stateMap;
   }
 
   @Override
-  public void setState(final Map<String, Object> loadedState) throws IOException, ClassNotFoundException {
+  public void setState(final Map<String, Object> loadedState) {
     applyStatefulFunction.setFunctionState(loadedState.get("applyStatefulFunctionState"));
   }
 }

@@ -131,7 +131,7 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
   }
 
   @Override
-  public Map<String, Object> getOperatorState() throws IOException {
+  public Map<String, Object> getOperatorState() {
     final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("reduceByKeyState", state);
     return stateMap;
@@ -139,7 +139,7 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
 
   @SuppressWarnings("unchecked")
   @Override
-  public void setState(final Map<String, Object> loadedState) throws IOException, ClassNotFoundException {
+  public void setState(final Map<String, Object> loadedState) {
     state = (HashMap<K, V>)loadedState.get("reduceByKeyState");
   }
 }

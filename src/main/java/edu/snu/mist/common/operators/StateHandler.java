@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.common.operators;
 
-import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -24,14 +23,14 @@ import java.util.Map;
 public interface StateHandler {
 
   /**
-   * Gets the state of the current operator without any serialization.
+   * Gets the state of the current operator.
    */
-  Map<String, Object> getOperatorState() throws IOException;
+  Map<String, Object> getOperatorState();
 
   /**
    * Sets the state of the current operator.
-   * @param loadedState the deserialized state map of the operator
+   * @param loadedState
    */
-  void setState(Map<String, Object> loadedState) throws IOException, ClassNotFoundException;
+  void setState(Map<String, Object> loadedState);
 
 }

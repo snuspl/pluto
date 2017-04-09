@@ -25,7 +25,6 @@ import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -109,7 +108,7 @@ public final class ReduceByKeyOperatorTest {
    */
   @Test
   @SuppressWarnings("unchecked")
-  public void testReduceByKeyOperatorGetState() throws InterruptedException, IOException, ClassNotFoundException {
+  public void testReduceByKeyOperatorGetState() throws InterruptedException {
     // Generate the current ReduceByKeyOperator state.
     final List<MistDataEvent> inputStream = ImmutableList.of(
         createTupleEvent("a", 1, 1L),
@@ -149,7 +148,7 @@ public final class ReduceByKeyOperatorTest {
    */
   @Test
   @SuppressWarnings("unchecked")
-  public void testReduceByKeyOperatorSetState() throws InterruptedException, IOException, ClassNotFoundException {
+  public void testReduceByKeyOperatorSetState() throws InterruptedException {
     // Generate a new state and set it to the state of a new ReduceByKeyWindowOperator.
     final Map<String, Integer> expectedOperatorState = new HashMap<>();
     expectedOperatorState.put("a", 3);

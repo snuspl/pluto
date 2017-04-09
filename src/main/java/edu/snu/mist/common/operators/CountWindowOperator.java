@@ -22,7 +22,6 @@ import edu.snu.mist.common.parameters.WindowSize;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -59,14 +58,14 @@ public final class CountWindowOperator<T> extends FixedSizeWindowOperator<T> imp
   }
 
   @Override
-  public Map<String, Object> getOperatorState() throws IOException {
+  public Map<String, Object> getOperatorState() {
     final Map<String, Object> stateMap = super.getOperatorState();
     stateMap.put("count", count);
     return stateMap;
   }
 
   @Override
-  public void setState(final Map<String, Object> loadedState) throws IOException, ClassNotFoundException {
+  public void setState(final Map<String, Object> loadedState) {
     super.setState(loadedState);
     count = (long)loadedState.get("count");
   }

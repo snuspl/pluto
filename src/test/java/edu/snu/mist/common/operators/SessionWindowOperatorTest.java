@@ -24,7 +24,6 @@ import edu.snu.mist.utils.OutputBufferEmitter;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.*;
 
 import static edu.snu.mist.common.utils.OperatorTestUtils.checkWindowData;
@@ -108,7 +107,7 @@ public final class SessionWindowOperatorTest {
    * Test getting state of the SessionWindowOperator.
    */
   @Test
-  public void testSessionWindowOperatorGetState() throws InterruptedException, IOException, ClassNotFoundException {
+  public void testSessionWindowOperatorGetState() throws InterruptedException {
     final int sessionInterval = 500;
 
     // Generate the current SessionWindowOperator.
@@ -141,7 +140,7 @@ public final class SessionWindowOperatorTest {
    * Test setting state of the SessionWindowOperator.
    */
   @Test
-  public void testSessionWindowOperatorSetState() throws InterruptedException, IOException, ClassNotFoundException {
+  public void testSessionWindowOperatorSetState() throws InterruptedException {
     final int sessionInterval = 500;
 
     // Generate a new state and set it to a new SessionWindowOperator.

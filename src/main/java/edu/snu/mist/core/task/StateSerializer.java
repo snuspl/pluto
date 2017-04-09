@@ -31,9 +31,9 @@ public final class StateSerializer {
    * @param stateMap
    * @return the serialized StateMap
    */
-  public static Map<String, Object> getSerializedStateMap(final Map<String, Object> stateMap) throws IOException {
+  public static Map<String, Object> serializeStateMap(final Map<String, Object> stateMap) {
     final Map<String, Object> result = new HashMap<>();
-    for (Map.Entry<String, Object> mapEntry : stateMap.entrySet()) {
+    for (final Map.Entry<String, Object> mapEntry : stateMap.entrySet()) {
       final Object state = mapEntry.getValue();
       if ((state instanceof Boolean)
           || (state instanceof Integer)
@@ -54,13 +54,18 @@ public final class StateSerializer {
    * @param obj
    * @return the serialized state
    */
-  public static ByteBuffer serializeState(final Object obj) throws IOException {
-    try(ByteArrayOutputStream b = new ByteArrayOutputStream()){
-      try(ObjectOutputStream o = new ObjectOutputStream(b)){
-        o.writeObject(obj);
-        o.flush();
+  private static ByteBuffer serializeState(final Object obj) {
+    try {
+      try (final ByteArrayOutputStream b = new ByteArrayOutputStream()) {
+        try (final ObjectOutputStream o = new ObjectOutputStream(b)) {
+          o.writeObject(obj);
+          o.flush();
+        }
+        return ByteBuffer.wrap(b.toByteArray());
       }
-      return ByteBuffer.wrap(b.toByteArray());
+    } catch (IOException e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
     }
   }
 
@@ -69,10 +74,9 @@ public final class StateSerializer {
    * @param serializedStateMap
    * @return the deserialized StateMap
    */
-  public static Map<String, Object> getDeserializedStateMap(final Map<String, Object> serializedStateMap)
-      throws IOException, ClassNotFoundException {
+  public static Map<String, Object> deserializeStateMap(final Map<String, Object> serializedStateMap) {
     final Map<String, Object> result = new HashMap<>();
-    for (Map.Entry<String, Object> mapEntry : serializedStateMap.entrySet()) {
+    for (final Map.Entry<String, Object> mapEntry : serializedStateMap.entrySet()) {
       final Object state = mapEntry.getValue();
       if (state instanceof ByteBuffer) {
         result.put(mapEntry.getKey(), deserializeState((ByteBuffer)state));
@@ -88,13 +92,18 @@ public final class StateSerializer {
    * @param byteBuffer
    * @return the deserialized state
    */
-  public static Object deserializeState(final ByteBuffer byteBuffer) throws IOException, ClassNotFoundException {
+  private static Object deserializeState(final ByteBuffer byteBuffer) {
     final byte[] bytes = new byte[byteBuffer.remaining()];
     byteBuffer.get(bytes);
-    try(ByteArrayInputStream b = new ByteArrayInputStream(bytes)){
-      try(ObjectInputStream o = new ObjectInputStream(b)){
-        return o.readObject();
+    try {
+      try (final ByteArrayInputStream b = new ByteArrayInputStream(bytes)) {
+        try (final ObjectInputStream o = new ObjectInputStream(b)) {
+          return o.readObject();
+        }
       }
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
     }
   }
 

@@ -20,7 +20,6 @@ import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.windows.Window;
 import edu.snu.mist.common.windows.WindowImpl;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -135,7 +134,7 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements S
   }
 
   @Override
-  public Map<String, Object> getOperatorState() throws IOException {
+  public Map<String, Object> getOperatorState(){
     final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("windowCreationPoint", windowCreationPoint);
     stateMap.put("windowQueue", windowQueue);
@@ -144,7 +143,7 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements S
 
   @SuppressWarnings("unchecked")
   @Override
-  public void setState(final Map<String, Object> loadedState) throws IOException, ClassNotFoundException {
+  public void setState(final Map<String, Object> loadedState) {
     windowCreationPoint = (long)loadedState.get("windowCreationPoint");
     windowQueue.addAll((Queue<Window<T>>)loadedState.get("windowQueue"));
   }

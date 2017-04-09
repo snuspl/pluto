@@ -23,7 +23,6 @@ import edu.snu.mist.common.windows.WindowImpl;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -108,7 +107,7 @@ public final class SessionWindowOperator<T> extends OneStreamOperator implements
   }
 
   @Override
-  public Map<String, Object> getOperatorState() throws IOException {
+  public Map<String, Object> getOperatorState() {
     final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("currentWindow", currentWindow);
     stateMap.put("latestDataTimestamp", latestDataTimestamp);
@@ -118,7 +117,7 @@ public final class SessionWindowOperator<T> extends OneStreamOperator implements
 
   @SuppressWarnings("unchecked")
   @Override
-  public void setState(final Map<String, Object> loadedState) throws IOException, ClassNotFoundException {
+  public void setState(final Map<String, Object> loadedState) {
     currentWindow = (Window<T>)loadedState.get("currentWindow");
     latestDataTimestamp = (long)loadedState.get("latestDataTimestamp");
     startedNewWindow = (boolean)loadedState.get("startedNewWindow");

@@ -24,7 +24,6 @@ import edu.snu.mist.utils.OutputBufferEmitter;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -81,7 +80,7 @@ public final class ApplyStatefulOperatorTest {
    * Test getting state of the ApplyStatefulOperator.
    */
   @Test
-  public void testApplyStatefulOperatorGetState() throws InterruptedException, IOException, ClassNotFoundException {
+  public void testApplyStatefulOperatorGetState() throws InterruptedException {
     // Generate the current ApplyStatefulOperator.
     final ApplyStatefulFunction applyStatefulFunction = new FindMaxIntFunction();
     final ApplyStatefulOperator<Integer, Integer> applyStatefulOperator =
@@ -108,7 +107,7 @@ public final class ApplyStatefulOperatorTest {
    * Test setting state of the ApplyStatefulOperator.
    */
   @Test
-  public void testApplyStatefulOperatorSetState() throws InterruptedException, IOException, ClassNotFoundException {
+  public void testApplyStatefulOperatorSetState() throws InterruptedException {
     // Generate a new state and set it to a new ApplyStatefulOperator.
     final ApplyStatefulFunction applyStatefulFunction = new FindMaxIntFunction();
     final int expectedApplyStatefulFunctionState = 5;
