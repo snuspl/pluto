@@ -19,12 +19,16 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class is used to serialize the states of operators.
  * The states must be ensured that they implement the Serializable interface.
  */
 public final class StateSerializer {
+
+  private static final Logger LOG = Logger.getLogger(StateSerializer.class.getName());
 
   /**
    * Receives a Map<String, Object>, serializes the values, and returns it.
@@ -64,6 +68,7 @@ public final class StateSerializer {
         return ByteBuffer.wrap(b.toByteArray());
       }
     } catch (IOException e) {
+      LOG.log(Level.SEVERE, "An exception occured while serializing the state.");
       e.printStackTrace();
       throw new RuntimeException(e);
     }
@@ -102,6 +107,7 @@ public final class StateSerializer {
         }
       }
     } catch (Exception e) {
+      LOG.log(Level.SEVERE, "An exception occured while deserializing the state.");
       e.printStackTrace();
       throw new RuntimeException(e);
     }
