@@ -17,6 +17,7 @@ package edu.snu.mist.api.datastreams.configurations;
 
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
 import edu.snu.mist.common.parameters.SocketServerIp;
 import edu.snu.mist.common.parameters.SocketServerPort;
@@ -34,12 +35,33 @@ import java.io.IOException;
  */
 public final class TextSocketSourceConfiguration extends ConfigurationModuleBuilder {
 
+  /**
+   * The group id of the source.
+   */
+  public static final RequiredParameter<String> GROUP_ID = new RequiredParameter<>();
+
+  /**
+   * The address of the socket source.
+   */
   public static final RequiredParameter<String> SOCKET_HOST_ADDR = new RequiredParameter<>();
+
+  /**
+   * The port number of the socket source.
+   */
   public static final RequiredParameter<Integer> SOCKET_HOST_PORT = new RequiredParameter<>();
+
+  /**
+   * The parameter for timestamp extract object.
+   */
   public static final OptionalParameter<String> TIMESTAMP_EXTRACT_OBJECT = new OptionalParameter<>();
+
+  /**
+   * The parameter for timestamp extract function.
+   */
   public static final OptionalImpl<MISTFunction> TIMESTAMP_EXTRACT_FUNC = new OptionalImpl<>();
 
   private static final ConfigurationModule CONF = new TextSocketSourceConfiguration()
+      .bindNamedParameter(GroupId.class, GROUP_ID)
       .bindNamedParameter(SocketServerIp.class, SOCKET_HOST_ADDR)
       .bindNamedParameter(SocketServerPort.class, SOCKET_HOST_PORT)
       .bindNamedParameter(SerializedTimestampExtractUdf.class, TIMESTAMP_EXTRACT_OBJECT)
@@ -60,6 +82,7 @@ public final class TextSocketSourceConfiguration extends ConfigurationModuleBuil
    */
   public static final class TextSocketSourceConfigurationBuilder {
 
+    private String groupId;
     private String socketServerAddr;
     private int socketServerPort;
     private MISTFunction<String, Tuple<String, Long>> extractFunc;
@@ -71,6 +94,10 @@ public final class TextSocketSourceConfiguration extends ConfigurationModuleBuil
      * @return the configuration
      */
     public SourceConfiguration build() {
+      if (groupId == null) {
+        throw new IllegalArgumentException("The group id should not be null");
+      }
+
       if (extractFunc != null && extractFuncClass != null) {
         throw new IllegalArgumentException("Cannot bind both extractFunc and extractFuncClass");
       }
@@ -78,6 +105,7 @@ public final class TextSocketSourceConfiguration extends ConfigurationModuleBuil
       if (extractFunc == null && extractFuncClass == null) {
         // No udf
         return new SourceConfiguration(CONF
+            .set(GROUP_ID, groupId)
             .set(SOCKET_HOST_ADDR, socketServerAddr)
             .set(SOCKET_HOST_PORT, socketServerPort)
             .build(), SourceConfiguration.SourceType.SOCKET);
@@ -85,6 +113,7 @@ public final class TextSocketSourceConfiguration extends ConfigurationModuleBuil
         // Lambda object is set
         try {
           return new SourceConfiguration(CONF
+              .set(GROUP_ID, groupId)
               .set(SOCKET_HOST_ADDR, socketServerAddr)
               .set(SOCKET_HOST_PORT, socketServerPort)
               .set(TIMESTAMP_EXTRACT_OBJECT, SerializeUtils.serializeToString(extractFunc))
@@ -96,11 +125,22 @@ public final class TextSocketSourceConfiguration extends ConfigurationModuleBuil
       } else {
         // Class binding
         return new SourceConfiguration(Configurations.merge(CONF
+            .set(GROUP_ID, groupId)
             .set(SOCKET_HOST_ADDR, socketServerAddr)
             .set(SOCKET_HOST_PORT, socketServerPort)
             .set(TIMESTAMP_EXTRACT_FUNC, extractFuncClass)
             .build(), extractFuncConf), SourceConfiguration.SourceType.SOCKET);
       }
+    }
+
+    /**
+     * Set the group id.
+     * @param gid group id
+     * @return the configured SourceBuilder
+     */
+    public TextSocketSourceConfigurationBuilder setGroupId(final String gid) {
+      groupId =  gid;
+      return this;
     }
 
     /**
