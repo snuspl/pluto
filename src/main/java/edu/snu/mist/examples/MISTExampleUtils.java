@@ -66,6 +66,7 @@ public final class MISTExampleUtils {
     final String sourceHostname = sourceSocket[0];
     final int sourcePort = Integer.parseInt(sourceSocket[1]);
     return TextSocketSourceConfiguration.newBuilder()
+        .setGroupId("test_group")
         .setHostAddress(sourceHostname)
         .setHostPort(sourcePort)
         .build();
@@ -92,6 +93,7 @@ public final class MISTExampleUtils {
     kafkaConsumerConfig.put("key.deserializer", keyDeserializer);
     kafkaConsumerConfig.put("value.deserializer", valueDeserializer);
     return KafkaSourceConfiguration.newBuilder()
+        .setGroupId("test_group")
         .setTopic(topic)
         .setConsumerConfig(kafkaConsumerConfig)
         .build();
@@ -103,6 +105,7 @@ public final class MISTExampleUtils {
   public static SourceConfiguration getMQTTSourceConf(final String topic,
                                                       final String brokerURI) {
     return MQTTSourceConfiguration.newBuilder()
+        .setGroupId("test_group")
         .setTopic(topic)
         .setBrokerURI(brokerURI)
         .build();
