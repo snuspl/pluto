@@ -47,7 +47,12 @@ public final class StateSerializer {
           || (state instanceof String)) {
         result.put(mapEntry.getKey(), state);
       } else {
-        result.put(mapEntry.getKey(), serializeState(mapEntry.getValue()));
+        final Object serializedState = serializeState(state);
+        if (serializedState == null) {
+          throw new RuntimeException("Error while serializing the operator state.");
+        } else {
+          result.put(mapEntry.getKey(), serializedState);
+        }
       }
     }
     return result;
@@ -84,7 +89,12 @@ public final class StateSerializer {
     for (final Map.Entry<String, Object> mapEntry : serializedStateMap.entrySet()) {
       final Object state = mapEntry.getValue();
       if (state instanceof ByteBuffer) {
-        result.put(mapEntry.getKey(), deserializeState((ByteBuffer)state));
+        final Object deserializedState = deserializeState((ByteBuffer)state);
+        if (deserializedState == null) {
+          throw new RuntimeException("Error while deserializing the operator state.");
+        } else {
+          result.put(mapEntry.getKey(), deserializedState);
+        }
       } else {
         result.put(mapEntry.getKey(), state);
       }

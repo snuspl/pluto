@@ -17,12 +17,10 @@ package edu.snu.mist.common;
 
 import edu.snu.mist.common.exceptions.NegativeTimestampException;
 
-import java.io.Serializable;
-
 /**
  * This class represents watermark event.
  */
-public final class MistWatermarkEvent implements MistEvent, Serializable {
+public final class MistWatermarkEvent implements MistEvent {
   /**
    * Timestamp for the WATERMARK.
    */

@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.windows.Window;
 import edu.snu.mist.common.windows.WindowImpl;
 import org.junit.Assert;
@@ -46,8 +45,16 @@ public final class StateSerializerTest {
     testStateMap.put("testDouble", testDouble);
     testStateMap.put("testString", testString);
 
-    // Serialize and deserialize the stateMap.
+    // Serialize the stateMap and check that primitive types are not serialized to ByteBuffer.
     final Map<String, Object> serializedMap = StateSerializer.serializeStateMap(testStateMap);
+    Assert.assertEquals(testInt, serializedMap.get("testInt"));
+    Assert.assertEquals(testBoolean, serializedMap.get("testBoolean"));
+    Assert.assertEquals(testLong, serializedMap.get("testLong"));
+    Assert.assertEquals(testFloat, serializedMap.get("testFloat"));
+    Assert.assertEquals(testDouble, serializedMap.get("testDouble"));
+    Assert.assertEquals(testString, serializedMap.get("testString"));
+
+    // Deserialize the stateMap.
     final Map<String, Object> deserializedMap = StateSerializer.deserializeStateMap(serializedMap);
     final int deserializedInt = (int)deserializedMap.get("testInt");
     final boolean deserializedBoolean = (boolean)deserializedMap.get("testBoolean");
@@ -71,7 +78,6 @@ public final class StateSerializerTest {
     final Map<String, Integer> testMap = new HashMap<>();
     testMap.put("Cheeseburgers", 6);
     testMap.put("Drinks", 3);
-    final MistWatermarkEvent testWatermarkEvent = new MistWatermarkEvent(98L);
     final Window<String> testWindow = new WindowImpl<>(100L);
     final Queue<Window<String>> testQueue = new LinkedList<>();
     testQueue.add(testWindow);
@@ -79,7 +85,6 @@ public final class StateSerializerTest {
     // The map that contains the above states.
     final Map<String, Object> testStateMap = new HashMap<>();
     testStateMap.put("testMap", testMap);
-    testStateMap.put("testWatermarkEvent", testWatermarkEvent);
     testStateMap.put("testWindow", testWindow);
     testStateMap.put("testQueue", testQueue);
 
@@ -87,14 +92,11 @@ public final class StateSerializerTest {
     final Map<String, Object> serializedStateMap = StateSerializer.serializeStateMap(testStateMap);
     final Map<String, Object> deserializedStateMap = StateSerializer.deserializeStateMap(serializedStateMap);
     final Map<String, Integer> deserializedMap = (Map<String, Integer>)deserializedStateMap.get("testMap");
-    final MistWatermarkEvent deserializedWatermarkEvent =
-        (MistWatermarkEvent)deserializedStateMap.get("testWatermarkEvent");
     final Window<String> deserializedWindow = (Window<String>)deserializedStateMap.get("testWindow");
     final Queue<Window<String>> deserializedQueue = (Queue<Window<String>>)deserializedStateMap.get("testQueue");
 
     // Compare the results.
     Assert.assertEquals(testMap, deserializedMap);
-    Assert.assertEquals(testWatermarkEvent, deserializedWatermarkEvent);
     Assert.assertEquals(testWindow, deserializedWindow);
     Assert.assertEquals(testQueue, deserializedQueue);
   }

@@ -134,7 +134,7 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements S
   }
 
   @Override
-  public Map<String, Object> getOperatorState(){
+  public Map<String, Object> getOperatorState() {
     final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("windowCreationPoint", windowCreationPoint);
     stateMap.put("windowQueue", windowQueue);
