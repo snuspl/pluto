@@ -53,8 +53,10 @@ public class MISTQueryBuilderTest {
         queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
     // check
     final Injector injector = Tang.Factory.getTang().newInjector(stream.getConfiguration());
+    final String groupId = injector.getNamedInstance(GroupId.class);
     final String deHost = injector.getNamedInstance(SocketServerIp.class);
     final int dePort = injector.getNamedInstance(SocketServerPort.class);
+    Assert.assertEquals(TestParameters.GROUP_ID, groupId);
     Assert.assertEquals(TestParameters.HOST, deHost);
     Assert.assertEquals(TestParameters.SERVER_PORT, dePort);
   }
@@ -69,15 +71,18 @@ public class MISTQueryBuilderTest {
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     final ContinuousStream<String> stream =
         queryBuilder.socketTextStream(TextSocketSourceConfiguration.newBuilder()
-          .setHostAddress(TestParameters.HOST)
-          .setHostPort(TestParameters.SERVER_PORT)
-          .setTimestampExtractionFunction(timestampExtFunc)
-          .build());
+            .setGroupId(TestParameters.GROUP_ID)
+            .setHostAddress(TestParameters.HOST)
+            .setHostPort(TestParameters.SERVER_PORT)
+            .setTimestampExtractionFunction(timestampExtFunc)
+            .build());
     // check
     final Injector injector = Tang.Factory.getTang().newInjector(stream.getConfiguration());
+    final String groupId = injector.getNamedInstance(GroupId.class);
     final String deHost = injector.getNamedInstance(SocketServerIp.class);
     final int dePort = injector.getNamedInstance(SocketServerPort.class);
     final String seTimeFunc = injector.getNamedInstance(SerializedTimestampExtractUdf.class);
+    Assert.assertEquals(TestParameters.GROUP_ID, groupId);
     Assert.assertEquals(TestParameters.HOST, deHost);
     Assert.assertEquals(TestParameters.SERVER_PORT, dePort);
     Assert.assertEquals(SerializeUtils.serializeToString(timestampExtFunc), seTimeFunc);
@@ -94,15 +99,18 @@ public class MISTQueryBuilderTest {
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     final ContinuousStream<String> stream =
         queryBuilder.socketTextStream(TextSocketSourceConfiguration.newBuilder()
+            .setGroupId(TestParameters.GROUP_ID)
             .setHostAddress(TestParameters.HOST)
             .setHostPort(TestParameters.SERVER_PORT)
             .setTimestampExtractionFunction(OperatorTestUtils.TestNettyTimestampExtractFunc.class, funcConf)
             .build());
     // check
     final Injector injector = Tang.Factory.getTang().newInjector(stream.getConfiguration());
+    final String groupId = injector.getNamedInstance(GroupId.class);
     final String deHost = injector.getNamedInstance(SocketServerIp.class);
     final int dePort = injector.getNamedInstance(SocketServerPort.class);
     final MISTFunction func = injector.getInstance(MISTFunction.class);
+    Assert.assertEquals(TestParameters.GROUP_ID, groupId);
     Assert.assertEquals(TestParameters.HOST, deHost);
     Assert.assertEquals(TestParameters.SERVER_PORT, dePort);
     Assert.assertTrue(func instanceof OperatorTestUtils.TestNettyTimestampExtractFunc);
@@ -129,15 +137,18 @@ public class MISTQueryBuilderTest {
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     final ContinuousStream<ConsumerRecord<Integer, String>> kafkaSourceStream =
         queryBuilder.kafkaStream(KafkaSourceConfiguration.newBuilder()
+            .setGroupId(TestParameters.GROUP_ID)
             .setTopic(topic)
             .setConsumerConfig(consumerConfig)
             .build());
 
     // Check about source configuration
     final Injector injector = Tang.Factory.getTang().newInjector(kafkaSourceStream.getConfiguration());
+    final String groupId = injector.getNamedInstance(GroupId.class);
     final String desTopic = injector.getNamedInstance(KafkaTopic.class);
     final String seConsumerConfig = injector.getNamedInstance(SerializedKafkaConfig.class);
     final Map<String, Object> deConsumerConfig = SerializeUtils.deserializeFromString(seConsumerConfig);
+    Assert.assertEquals(TestParameters.GROUP_ID, groupId);
     Assert.assertEquals(topic, desTopic);
     Assert.assertEquals(consumerConfig, deConsumerConfig);
 
@@ -157,14 +168,17 @@ public class MISTQueryBuilderTest {
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     final ContinuousStream<MqttMessage> mqttSourceStream =
         queryBuilder.mqttStream(MQTTSourceConfiguration.newBuilder()
+            .setGroupId(TestParameters.GROUP_ID)
             .setBrokerURI(expectedBrokerURI)
             .setTopic(expectedTopic)
             .build());
 
     // Check source configuration
     final Injector injector = Tang.Factory.getTang().newInjector(mqttSourceStream.getConfiguration());
+    final String groupId = injector.getNamedInstance(GroupId.class);
     final String resultBrokerAddress = injector.getNamedInstance(MQTTBrokerURI.class);
     final String resultTopic = injector.getNamedInstance(MQTTTopic.class);
+    Assert.assertEquals(TestParameters.GROUP_ID, groupId);
     Assert.assertEquals(expectedBrokerURI, resultBrokerAddress);
     Assert.assertEquals(expectedTopic, resultTopic);
 
