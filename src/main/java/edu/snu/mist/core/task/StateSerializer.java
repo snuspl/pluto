@@ -67,10 +67,10 @@ public final class StateSerializer {
         }
         return ByteBuffer.wrap(b.toByteArray());
       }
-    } catch (IOException e) {
+    } catch (final IOException e) {
       LOG.log(Level.SEVERE, "An exception occured while serializing the state.");
       e.printStackTrace();
-      throw new RuntimeException(e);
+      return null;
     }
   }
 
@@ -106,10 +106,10 @@ public final class StateSerializer {
           return o.readObject();
         }
       }
-    } catch (Exception e) {
+    } catch (final Exception e) {
       LOG.log(Level.SEVERE, "An exception occured while deserializing the state.");
       e.printStackTrace();
-      throw new RuntimeException(e);
+      return null;
     }
   }
 
