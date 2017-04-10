@@ -29,7 +29,7 @@ import java.util.LinkedList;
 public final class WindowImpl<T> implements Window<T>, Serializable {
 
   private long latestTimestamp;
-  private long latestWatermarkTimestamp;
+  private MistWatermarkEvent latestWatermark;
   private Collection<T> dataCollection;
   private final long start;
   private long end;
@@ -44,7 +44,7 @@ public final class WindowImpl<T> implements Window<T>, Serializable {
 
   public WindowImpl(final long start, final long size, final Collection<T> dataCollection) {
     latestTimestamp = 0L;
-    latestWatermarkTimestamp = -1L;
+    latestWatermark = null;
     this.dataCollection = dataCollection;
     this.start = start;
     this.end = start + size - 1;
@@ -78,7 +78,7 @@ public final class WindowImpl<T> implements Window<T>, Serializable {
     if (latestTimestamp < timestamp) {
       latestTimestamp = timestamp;
     }
-    latestWatermarkTimestamp = event.getTimestamp();
+    latestWatermark = event;
   }
 
   @Override
@@ -93,11 +93,7 @@ public final class WindowImpl<T> implements Window<T>, Serializable {
 
   @Override
   public MistWatermarkEvent getLatestWatermark() {
-    if (latestWatermarkTimestamp == -1L) {
-      return null;
-    } else {
-      return new MistWatermarkEvent(latestWatermarkTimestamp);
-    }
+    return latestWatermark;
   }
 
   @Override

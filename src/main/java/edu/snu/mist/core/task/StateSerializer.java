@@ -35,7 +35,7 @@ public final class StateSerializer {
    * @param stateMap
    * @return the serialized StateMap
    */
-  public static Map<String, Object> serializeStateMap(final Map<String, Object> stateMap) {
+  public static Map<String, Object> serializeStateMap(final Map<String, Object> stateMap) throws RuntimeException {
     final Map<String, Object> result = new HashMap<>();
     for (final Map.Entry<String, Object> mapEntry : stateMap.entrySet()) {
       final Object state = mapEntry.getValue();
@@ -47,11 +47,11 @@ public final class StateSerializer {
           || (state instanceof String)) {
         result.put(mapEntry.getKey(), state);
       } else {
-        final Object serializedState = serializeState(state);
-        if (serializedState == null) {
-          throw new RuntimeException("Error while serializing the operator state.");
-        } else {
+        try {
+          final Object serializedState = serializeState(state);
           result.put(mapEntry.getKey(), serializedState);
+        } catch (RuntimeException e) {
+          throw e;
         }
       }
     }
@@ -63,7 +63,7 @@ public final class StateSerializer {
    * @param obj
    * @return the serialized state
    */
-  private static ByteBuffer serializeState(final Object obj) {
+  private static ByteBuffer serializeState(final Object obj) throws RuntimeException {
     try {
       try (final ByteArrayOutputStream b = new ByteArrayOutputStream()) {
         try (final ObjectOutputStream o = new ObjectOutputStream(b)) {
@@ -75,7 +75,7 @@ public final class StateSerializer {
     } catch (final IOException e) {
       LOG.log(Level.SEVERE, "An exception occured while serializing the state.");
       e.printStackTrace();
-      return null;
+      throw new RuntimeException("Error while serializing the operator state.");
     }
   }
 
@@ -84,16 +84,17 @@ public final class StateSerializer {
    * @param serializedStateMap
    * @return the deserialized StateMap
    */
-  public static Map<String, Object> deserializeStateMap(final Map<String, Object> serializedStateMap) {
+  public static Map<String, Object> deserializeStateMap(final Map<String, Object> serializedStateMap)
+      throws RuntimeException {
     final Map<String, Object> result = new HashMap<>();
     for (final Map.Entry<String, Object> mapEntry : serializedStateMap.entrySet()) {
       final Object state = mapEntry.getValue();
       if (state instanceof ByteBuffer) {
-        final Object deserializedState = deserializeState((ByteBuffer)state);
-        if (deserializedState == null) {
-          throw new RuntimeException("Error while deserializing the operator state.");
-        } else {
+        try {
+          final Object deserializedState = deserializeState((ByteBuffer)state);
           result.put(mapEntry.getKey(), deserializedState);
+        } catch (final RuntimeException e) {
+          throw e;
         }
       } else {
         result.put(mapEntry.getKey(), state);
@@ -107,7 +108,7 @@ public final class StateSerializer {
    * @param byteBuffer
    * @return the deserialized state
    */
-  private static Object deserializeState(final ByteBuffer byteBuffer) {
+  private static Object deserializeState(final ByteBuffer byteBuffer) throws RuntimeException {
     final byte[] bytes = new byte[byteBuffer.remaining()];
     byteBuffer.get(bytes);
     try {
@@ -119,7 +120,7 @@ public final class StateSerializer {
     } catch (final Exception e) {
       LOG.log(Level.SEVERE, "An exception occured while deserializing the state.");
       e.printStackTrace();
-      return null;
+      throw new RuntimeException("Error while deserializing the operator state.");
     }
   }
 
