@@ -57,7 +57,7 @@ public final class WordCount {
 
     // Simple reduce function.
     final MISTBiFunction<Integer, Integer, Integer> reduceFunction = (v1, v2) -> { return v1 + v2; };
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group");
     queryBuilder.socketTextStream(localTextSocketSourceConf)
         .filter(s -> isAlpha(s))
         .map(s -> new Tuple2(s, 1))

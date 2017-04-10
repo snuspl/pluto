@@ -79,7 +79,7 @@ public final class DefaultDagGeneratorImplTest {
   public void testPlanGenerator()
       throws InjectionException, IOException, URISyntaxException, ClassNotFoundException {
     // Generate a query
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(TestParameters.GROUP_ID);
     queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
         .flatMap(s -> Arrays.asList(s.split(" ")))
         .filter(s -> s.startsWith("A"))
@@ -91,6 +91,7 @@ public final class DefaultDagGeneratorImplTest {
     final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getAvroOperatorChainDag();
     final AvroOperatorChainDag.Builder avroOpChainDagBuilder = AvroOperatorChainDag.newBuilder();
     final AvroOperatorChainDag avroChainedDag = avroOpChainDagBuilder
+        .setGroupId(TestParameters.GROUP_ID)
         .setJarFilePaths(new LinkedList<>())
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())

@@ -50,6 +50,11 @@ public final class MISTQueryBuilder {
   private static final int DEFAULT_EXPECTED_DELAY = 0;
 
   /**
+   * The group id of the query.
+   */
+  private final String groupId;
+
+  /**
    * The default watermark configuration.
    */
   private WatermarkConfiguration getDefaultWatermarkConf() {
@@ -59,8 +64,9 @@ public final class MISTQueryBuilder {
         .build();
   }
 
-  public MISTQueryBuilder() {
+  public MISTQueryBuilder(final String groupId) {
     this.dag = new AdjacentListDAG<>();
+    this.groupId = groupId;
   }
 
   /**
@@ -146,6 +152,6 @@ public final class MISTQueryBuilder {
    * @return the query
    */
   public MISTQuery build() {
-    return new MISTQueryImpl(dag);
+    return new MISTQueryImpl(dag, groupId);
   }
 }

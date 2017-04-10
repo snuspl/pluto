@@ -76,7 +76,6 @@ public final class PhysicalObjectGeneratorTest {
   @Test
   public void testSuccessOfNettyTextDataGenerator() throws Exception {
     final Configuration conf = TextSocketSourceConfiguration.newBuilder()
-        .setGroupId("test_group")
         .setHostAddress("localhost")
         .setHostPort(13666)
         .build().getConfiguration();
@@ -89,7 +88,6 @@ public final class PhysicalObjectGeneratorTest {
   public void testSuccessOfNettyTextDataGeneratorWithClassBinding() throws Exception {
     final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
     final Configuration conf = TextSocketSourceConfiguration.newBuilder()
-        .setGroupId("test_group")
         .setHostAddress("localhost")
         .setHostPort(13666)
         .setTimestampExtractionFunction(OperatorTestUtils.TestNettyTimestampExtractFunc.class, funcConf)
@@ -103,7 +101,6 @@ public final class PhysicalObjectGeneratorTest {
   public void testSuccessOfKafkaDataGenerator() throws Exception {
     final HashMap<String, Object> kafkaConsumerConf = new HashMap<>();
     final Configuration conf = KafkaSourceConfiguration.newBuilder()
-        .setGroupId("test_group")
         .setTopic("localhost")
         .setConsumerConfig(kafkaConsumerConf)
         .build().getConfiguration();
@@ -117,7 +114,6 @@ public final class PhysicalObjectGeneratorTest {
     final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
     final HashMap<String, Object> kafkaConsumerConf = new HashMap<>();
     final Configuration conf = KafkaSourceConfiguration.newBuilder()
-        .setGroupId("test_group")
         .setTopic("localhost")
         .setConsumerConfig(kafkaConsumerConf)
         .setTimestampExtractionFunction(OperatorTestUtils.TestKafkaTimestampExtractFunc.class, funcConf)
@@ -130,7 +126,6 @@ public final class PhysicalObjectGeneratorTest {
   @Test
   public void testSuccessOfMQTTDataGenerator() throws Exception {
     final Configuration conf = MQTTSourceConfiguration.newBuilder()
-        .setGroupId("test_group")
         .setBrokerURI("tcp://localhost:12345")
         .setTopic("topic")
         .build().getConfiguration();
@@ -144,7 +139,6 @@ public final class PhysicalObjectGeneratorTest {
   public void testSuccessOfMQTTDataGeneratorWithClassBinding() throws Exception {
     final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
     final Configuration conf = MQTTSourceConfiguration.newBuilder()
-        .setGroupId("test_group")
         .setBrokerURI("tcp://localhost:12345")
         .setTopic("topic")
         .setTimestampExtractionFunction(OperatorTestUtils.TestMQTTTimestampExtractFunc.class, funcConf)
@@ -188,7 +182,6 @@ public final class PhysicalObjectGeneratorTest {
         .setWatermarkPredicate(OperatorTestUtils.TestPredicate.class, funcConf)
         .build().getConfiguration();
     final Configuration srcConf = TextSocketSourceConfiguration.newBuilder()
-        .setGroupId("test_group")
         .setHostAddress("localhost")
         .setHostPort(13666)
         .setTimestampExtractionFunction(OperatorTestUtils.TestNettyTimestampExtractFunc.class, funcConf)
@@ -205,7 +198,6 @@ public final class PhysicalObjectGeneratorTest {
   @Test(expected=InjectionException.class)
   public void testInjectionExceptionOfOperator() throws IOException, InjectionException {
     final Configuration conf = TextSocketSourceConfiguration.newBuilder()
-        .setGroupId("test_group")
         .setHostAddress("localhost")
         .setHostPort(13666)
         .build().getConfiguration();
@@ -405,7 +397,6 @@ public final class PhysicalObjectGeneratorTest {
   @Test(expected=InjectionException.class)
   public void testInjectionExceptionOfSink() throws IOException, InjectionException {
     final Configuration conf = TextSocketSourceConfiguration.newBuilder()
-        .setGroupId("test_group")
         .setHostAddress("localhost")
         .setHostPort(13666)
         .build().getConfiguration();

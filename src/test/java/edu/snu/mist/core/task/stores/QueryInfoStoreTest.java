@@ -50,7 +50,7 @@ public class QueryInfoStoreTest {
   @Test
   public void diskStoreTest() throws InjectionException, IOException {
     // Generate a query
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(TestParameters.GROUP_ID);
     queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
         .flatMap(s -> Arrays.asList(s.split(" ")))
         .filter(s -> s.startsWith("A"))
@@ -87,6 +87,7 @@ public class QueryInfoStoreTest {
     final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getAvroOperatorChainDag();
     final AvroOperatorChainDag.Builder avroOpChainDagBuilder = AvroOperatorChainDag.newBuilder();
     final AvroOperatorChainDag avroOpChainDag = avroOpChainDagBuilder
+        .setGroupId(TestParameters.GROUP_ID)
         .setJarFilePaths(paths)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
