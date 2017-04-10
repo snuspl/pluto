@@ -13,19 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.parameters;
 
-import org.apache.reef.tang.annotations.DefaultImplementation;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * This interface contains necessary methods for generating operator IDs.
+ * Prefix used for making sink IDs.
  */
-@DefaultImplementation(DefaultOperatorIdGeneratorImpl.class)
-public interface OperatorIdGenerator {
-
-  /**
-   * Generates operator Id.
-   * @return generated operator Id
-   */
-  String generate();
+@NamedParameter(doc = "A prefix used for making sink ID", default_value = "sink-")
+public final class SinkIdPrefix implements Name<String> {
+  // empty
 }

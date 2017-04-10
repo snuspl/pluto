@@ -47,7 +47,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
 
   private static final Logger LOG = Logger.getLogger(DefaultDagGeneratorImpl.class.getName());
 
-  private final OperatorIdGenerator operatorIdGenerator;
+  private final IdGenerator idGenerator;
   private final String tmpFolderPath;
   private final ClassLoaderProvider classLoaderProvider;
   private final PhysicalObjectGenerator physicalObjectGenerator;
@@ -56,14 +56,14 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
   private final PhysicalVertexMap physicalVertexMap;
 
   @Inject
-  private DefaultDagGeneratorImpl(final OperatorIdGenerator operatorIdGenerator,
+  private DefaultDagGeneratorImpl(final IdGenerator idGenerator,
                                   @Parameter(TempFolderPath.class) final String tmpFolderPath,
                                   final StringIdentifierFactory identifierFactory,
                                   final ClassLoaderProvider classLoaderProvider,
                                   final AvroConfigurationSerializer avroConfigurationSerializer,
                                   final PhysicalObjectGenerator physicalObjectGenerator,
                                   final PhysicalVertexMap physicalVertexMap) {
-    this.operatorIdGenerator = operatorIdGenerator;
+    this.idGenerator = idGenerator;
     this.tmpFolderPath = tmpFolderPath;
     this.classLoaderProvider = classLoaderProvider;
     this.identifierFactory = identifierFactory;
@@ -75,7 +75,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
   /**
    * This generates the logical and physical plan from the avro operator chain dag.
    * Note that the avro operator chain dag is already partitioned,
-   * so we need to rewind the partition to generate the logical dag.
+   * so we need to rewind the partition to generate OperatorId the logical dag.
    * @param queryIdAndAvroOperatorChainDag the tuple of queryId and avro operator chain dag
    * @return the logical and execution dag
    */
@@ -108,7 +108,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
           // Create a data generator
           final DataGenerator dataGenerator = physicalObjectGenerator.newDataGenerator(conf, classLoader);
           // Create a source
-          final String id = operatorIdGenerator.generate();
+          final String id = idGenerator.generateSourceId();
           final PhysicalSource source = new PhysicalSourceImpl<>(id, vertex.getConfiguration(),
               dataGenerator, eventGenerator);
           deserializedVertices.add(source);
@@ -131,7 +131,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
           for (final Vertex vertex : avroVertexChain.getVertexChain()) {
             final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
                 new ClassHierarchyImpl(urls));
-            final String id = operatorIdGenerator.generate();
+            final String id = idGenerator.generateOperatorId();
             final Operator operator = physicalObjectGenerator.newOperator(conf, classLoader);
             final PhysicalOperator physicalOperator = new DefaultPhysicalOperatorImpl(id, vertex.getConfiguration(),
                 operator, operatorChain);
@@ -167,7 +167,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
           final Vertex vertex = avroVertexChain.getVertexChain().get(0);
           final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
               new ClassHierarchyImpl(urls));
-          final String id = operatorIdGenerator.generate();
+          final String id = idGenerator.generateSinkId();
           final PhysicalSink sink = new PhysicalSinkImpl<>(id, vertex.getConfiguration(),
               physicalObjectGenerator.newSink(conf, classLoader));
           deserializedVertices.add(sink);
