@@ -38,4 +38,9 @@ public interface MISTQuery {
    * Get the DAG of the query.
    */
   DAG<MISTStream, MISTEdge> getDAG();
+
+  /**
+   * Get the group id.
+   */
+  String getGroupId();
 }

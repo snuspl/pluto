@@ -17,7 +17,6 @@ package edu.snu.mist.api.datastreams.configurations;
 
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTFunction;
-import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.common.parameters.MQTTBrokerURI;
 import edu.snu.mist.common.parameters.MQTTTopic;
 import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
@@ -34,11 +33,6 @@ import java.io.IOException;
  * This class is agnostic to which broker implementation the source uses.
  */
 public final class MQTTSourceConfiguration extends ConfigurationModuleBuilder {
-
-  /**
-   * The group id of the source.
-   */
-  public static final RequiredParameter<String> GROUP_ID = new RequiredParameter<>();
 
   /**
    * The parameter for MQTT broker URI.
@@ -61,7 +55,6 @@ public final class MQTTSourceConfiguration extends ConfigurationModuleBuilder {
   public static final OptionalImpl<MISTFunction> TIMESTAMP_EXTRACT_FUNC = new OptionalImpl<>();
 
   private static final ConfigurationModule CONF = new MQTTSourceConfiguration()
-      .bindNamedParameter(GroupId.class, GROUP_ID)
       .bindNamedParameter(MQTTBrokerURI.class, MQTT_BROKER_URI)
       .bindNamedParameter(MQTTTopic.class, MQTT_TOPIC)
       .bindNamedParameter(SerializedTimestampExtractUdf.class, TIMESTAMP_EXTRACT_OBJECT)
@@ -81,7 +74,6 @@ public final class MQTTSourceConfiguration extends ConfigurationModuleBuilder {
    */
   public static final class MQTTSourceConfigurationBuilder {
 
-    private String groupId;
     private String mqttBrokerURI;
     private String mqttTopic;
     private MISTFunction<MqttMessage, Tuple<MqttMessage, Long>> extractFunc;
@@ -89,9 +81,6 @@ public final class MQTTSourceConfiguration extends ConfigurationModuleBuilder {
     private Configuration extractFuncConf;
 
     public SourceConfiguration build() {
-      if (groupId == null) {
-        throw new IllegalArgumentException("The group id should not be null");
-      }
 
       if (extractFunc != null && extractFuncClass != null) {
         throw new IllegalArgumentException("Cannot bind both extractFunc and extractFuncClass");
@@ -104,20 +93,17 @@ public final class MQTTSourceConfiguration extends ConfigurationModuleBuilder {
       try {
         if (extractFunc == null && extractFuncClass == null) {
           return new SourceConfiguration(CONF
-              .set(GROUP_ID, groupId)
               .set(MQTT_BROKER_URI, mqttBrokerURI)
               .set(MQTT_TOPIC, mqttTopic)
               .build(), SourceConfiguration.SourceType.MQTT);
         } else if (extractFunc != null && extractFuncClass == null) {
           return new SourceConfiguration(CONF
-              .set(GROUP_ID, groupId)
               .set(MQTT_BROKER_URI, mqttBrokerURI)
               .set(MQTT_TOPIC, mqttTopic)
               .set(TIMESTAMP_EXTRACT_OBJECT, SerializeUtils.serializeToString(extractFunc))
               .build(), SourceConfiguration.SourceType.MQTT);
         } else {
           return new SourceConfiguration(Configurations.merge(CONF
-              .set(GROUP_ID, groupId)
               .set(MQTT_BROKER_URI, mqttBrokerURI)
               .set(MQTT_TOPIC, mqttTopic)
               .set(TIMESTAMP_EXTRACT_FUNC, extractFuncClass)
@@ -127,16 +113,6 @@ public final class MQTTSourceConfiguration extends ConfigurationModuleBuilder {
         e.printStackTrace();
         throw new RuntimeException(e);
       }
-    }
-
-    /**
-     * Set the group id.
-     * @param gid group id
-     * @return the configured SourceBuilder
-     */
-    public MQTTSourceConfigurationBuilder setGroupId(final String gid) {
-      groupId =  gid;
-      return this;
     }
 
     /**

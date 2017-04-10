@@ -54,7 +54,7 @@ public class WindowedStreamTest {
 
   @Before
   public void setUp() {
-    queryBuilder = new MISTQueryBuilder();
+    queryBuilder = new MISTQueryBuilder(TestParameters.GROUP_ID);
     timeWindowedStream = queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
         .map(s -> new Tuple2<>(s, 1))
         .window(new TimeWindowInformation(5000, 1000));

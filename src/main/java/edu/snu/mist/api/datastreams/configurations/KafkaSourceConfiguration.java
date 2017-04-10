@@ -17,7 +17,6 @@ package edu.snu.mist.api.datastreams.configurations;
 
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTFunction;
-import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.common.parameters.KafkaTopic;
 import edu.snu.mist.common.parameters.SerializedKafkaConfig;
 import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
@@ -41,11 +40,6 @@ import java.util.Set;
 public final class KafkaSourceConfiguration extends ConfigurationModuleBuilder {
 
   /**
-   * The group id of the source.
-   */
-  public static final RequiredParameter<String> GROUP_ID = new RequiredParameter<>();
-
-  /**
    * The kafka topic.
    */
   public static final RequiredParameter<String> KAFKA_TOPIC = new RequiredParameter<>();
@@ -66,7 +60,6 @@ public final class KafkaSourceConfiguration extends ConfigurationModuleBuilder {
   public static final OptionalImpl<MISTFunction> TIMESTAMP_EXTRACT_FUNC = new OptionalImpl<>();
 
   private static final ConfigurationModule CONF = new KafkaSourceConfiguration()
-      .bindNamedParameter(GroupId.class, GROUP_ID)
       .bindNamedParameter(KafkaTopic.class, KAFKA_TOPIC)
       .bindNamedParameter(SerializedKafkaConfig.class, KAFKA_CONSUMER_CONFIG)
       .bindNamedParameter(SerializedTimestampExtractUdf.class, TIMESTAMP_EXTRACT_OBJECT)
@@ -87,7 +80,6 @@ public final class KafkaSourceConfiguration extends ConfigurationModuleBuilder {
    */
   public static final class KafkaSourceConfigurationBuilder {
 
-    private String groupId;
     private String kafkaTopic;
     private HashMap<String, Object> kafkaConfig;
     private MISTFunction<ConsumerRecord, Tuple<ConsumerRecord, Long>> extractFunc;
@@ -99,9 +91,6 @@ public final class KafkaSourceConfiguration extends ConfigurationModuleBuilder {
      * @return the configuration
      */
     public SourceConfiguration build() {
-      if (groupId == null) {
-        throw new IllegalArgumentException("The group id should not be null");
-      }
 
       if (extractFunc != null && extractFuncClass != null) {
         throw new IllegalArgumentException("Cannot bind both extractFunc and extractFuncClass");
@@ -111,14 +100,12 @@ public final class KafkaSourceConfiguration extends ConfigurationModuleBuilder {
         if (extractFunc == null && extractFuncClass == null) {
           // No extract function is set
           return new SourceConfiguration(CONF
-              .set(GROUP_ID, groupId)
               .set(KAFKA_TOPIC, kafkaTopic)
               .set(KAFKA_CONSUMER_CONFIG, SerializeUtils.serializeToString(kafkaConfig))
               .build(), SourceConfiguration.SourceType.KAFKA);
         } else if (extractFunc != null) {
           // Lambda object is set
           return new SourceConfiguration(CONF
-              .set(GROUP_ID, groupId)
               .set(KAFKA_TOPIC, kafkaTopic)
               .set(KAFKA_CONSUMER_CONFIG, SerializeUtils.serializeToString(kafkaConfig))
               .set(TIMESTAMP_EXTRACT_OBJECT, SerializeUtils.serializeToString(extractFunc))
@@ -126,7 +113,6 @@ public final class KafkaSourceConfiguration extends ConfigurationModuleBuilder {
         } else {
           // UDF class is set
           return new SourceConfiguration(Configurations.merge(CONF
-              .set(GROUP_ID, groupId)
               .set(KAFKA_TOPIC, kafkaTopic)
               .set(KAFKA_CONSUMER_CONFIG, SerializeUtils.serializeToString(kafkaConfig))
               .set(TIMESTAMP_EXTRACT_FUNC, extractFuncClass)
@@ -136,16 +122,6 @@ public final class KafkaSourceConfiguration extends ConfigurationModuleBuilder {
         e.printStackTrace();
         throw new RuntimeException(e);
       }
-    }
-
-    /**
-     * Set the group id.
-     * @param gid group id
-     * @return the configured SourceBuilder
-     */
-    public KafkaSourceConfigurationBuilder setGroupId(final String gid) {
-      groupId =  gid;
-      return this;
     }
 
     /**
