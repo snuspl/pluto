@@ -75,7 +75,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
   /**
    * This generates the logical and physical plan from the avro operator chain dag.
    * Note that the avro operator chain dag is already partitioned,
-   * so we need to rewind the partition to generate OperatorId the logical dag.
+   * so we need to rewind the partition to generate the logical dag.
    * @param queryIdAndAvroOperatorChainDag the tuple of queryId and avro operator chain dag
    * @return the logical and execution dag
    */
