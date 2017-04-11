@@ -17,7 +17,6 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.parameters.GroupId;
 import org.apache.reef.tang.annotations.Parameter;
-
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
