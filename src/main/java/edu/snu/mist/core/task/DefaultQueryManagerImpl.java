@@ -17,10 +17,14 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
+import org.apache.reef.tang.Injector;
+import org.apache.reef.tang.JavaConfigurationBuilder;
+import org.apache.reef.tang.Tang;
 
 import javax.inject.Inject;
 import java.util.concurrent.ConcurrentHashMap;
@@ -68,6 +72,11 @@ final class DefaultQueryManagerImpl implements QueryManager {
   private final QueryStarter queryStarter;
 
   /**
+   * A map which contains groups and their information.
+   */
+  private final GroupInfoMap groupInfoMap;
+
+  /**
    * Default query manager in MistTask.
    * @param dagGenerator the generator that generates the logical and execution dag from avro operator chain dag.
    * @param threadManager thread manager
@@ -77,6 +86,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
                                   final ThreadManager threadManager,
                                   final ScheduledExecutorServiceWrapper schedulerWrapper,
                                   final QueryStarter queryStarter,
+                                  final GroupInfoMap groupInfoMap,
                                   final QueryInfoStore planStore) {
     this.logicalDagMap = new ConcurrentHashMap<>();
     this.dagGenerator = dagGenerator;
@@ -84,6 +94,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.queryStarter = queryStarter;
+    this.groupInfoMap = groupInfoMap;
   }
 
   /**
@@ -103,8 +114,21 @@ final class DefaultQueryManagerImpl implements QueryManager {
       // converts the avro operator chain dag to the logical and execution dag
       planStore.saveAvroOpChainDag(tuple);
       final LogicalAndExecutionDag logicalAndExecutionDag = dagGenerator.generate(tuple);
+      final String queryId = tuple.getKey();
       // Store the logical dag in memory
-      logicalDagMap.putIfAbsent(tuple.getKey(), logicalAndExecutionDag.getLogicalDag());
+      logicalDagMap.putIfAbsent(queryId, logicalAndExecutionDag.getLogicalDag());
+      // Update group information
+      final String groupId = tuple.getValue().getGroupId();
+      if (groupInfoMap.get(groupId) == null) {
+        // Add new group id, if it doesn't exist
+        final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+        jcb.bindNamedParameter(GroupId.class, groupId);
+        final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+        groupInfoMap.putIfAbsent(groupId, injector.getInstance(GroupInfo.class));
+      }
+      // Add the query into the group
+      final GroupInfo groupInfo = groupInfoMap.get(groupId);
+      groupInfo.addQueryIdToGroup(queryId);
       // Start the submitted dag
       queryStarter.start(logicalAndExecutionDag.getExecutionDag());
       queryControlResult.setIsSuccess(true);
@@ -113,7 +137,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
     } catch (final Exception e) {
       // [MIST-345] We need to release all of the information that is required for the query when it fails.
       LOG.log(Level.SEVERE, "An exception occurred while starting {0} query: {1}",
-          new Object[] {tuple.getKey(), e.getMessage()});
+          new Object[] {tuple.getKey(), e.toString()});
       queryControlResult.setIsSuccess(false);
       queryControlResult.setMsg(e.getMessage());
       return queryControlResult;
