@@ -24,8 +24,6 @@ import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Tang;
 
 import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -73,7 +71,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
   /**
    * A map which contains groups and their information.
    */
-  private final Map<String, GroupInfo> groupInfoMap;
+  private final ConcurrentMap<String, GroupInfo> groupInfoMap;
 
   /**
    * Default query manager in MistTask.
@@ -92,7 +90,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.queryStarter = queryStarter;
-    this.groupInfoMap = new HashMap<>();
+    this.groupInfoMap = new ConcurrentHashMap<>();
   }
 
   /**
@@ -119,7 +117,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
       final String groupId = tuple.getValue().getGroupId();
       if (!groupInfoMap.containsKey(groupId)) {
         // Add new group id, if it doesn't exist
-        groupInfoMap.put(groupId, Tang.Factory.getTang().newInjector().getInstance(GroupInfo.class));
+        groupInfoMap.putIfAbsent(groupId, Tang.Factory.getTang().newInjector().getInstance(GroupInfo.class));
       }
       // Add the query into the group
       groupInfoMap.get(groupId).addQueryIdToGroup(queryId);
@@ -131,7 +129,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
     } catch (final Exception e) {
       // [MIST-345] We need to release all of the information that is required for the query when it fails.
       LOG.log(Level.SEVERE, "An exception occurred while starting {0} query: {1}",
-          new Object[] {tuple.getKey(), e.getMessage()});
+          new Object[] {tuple.getKey(), e.toString()});
       queryControlResult.setIsSuccess(false);
       queryControlResult.setMsg(e.getMessage());
       return queryControlResult;

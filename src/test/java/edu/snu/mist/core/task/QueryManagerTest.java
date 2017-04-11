@@ -134,7 +134,9 @@ public final class QueryManagerTest {
         null, new TestSink<Integer>(sink2Result, countDownAllOutputs));
 
     // Fake operator chain dag of QueryManager
-    final Tuple<String, AvroOperatorChainDag> tuple = new Tuple<>(queryId, new AvroOperatorChainDag());
+    final AvroOperatorChainDag fakeOperatorChainDag = new AvroOperatorChainDag();
+    fakeOperatorChainDag.setGroupId("testGroup");
+    final Tuple<String, AvroOperatorChainDag> tuple = new Tuple<>(queryId, fakeOperatorChainDag);
 
     // Construct logical and execution dag
     constructLogicalAndExecutionDag(tuple, dag, logicalDag, src, sink1, sink2);
