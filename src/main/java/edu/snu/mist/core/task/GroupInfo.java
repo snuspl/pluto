@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.core.task;
 
+import edu.snu.mist.common.parameters.GroupId;
+import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +24,12 @@ import java.util.List;
 /**
  * A class which contains query and metric information about query group.
  */
-public final class GroupInfo {
+final class GroupInfo {
+
+  /**
+   * Group id.
+   */
+  private final String groupId;
 
   /**
    * List of query ids belonging to this GroupInfo.
@@ -34,10 +41,15 @@ public final class GroupInfo {
    */
   private long numEvents;
 
+  private final ExecutionDags<String> executionDags;
+
   @Inject
-  private GroupInfo() {
-    queryIdList = new ArrayList<>();
-    numEvents = 0;
+  private GroupInfo(@Parameter(GroupId.class) final String groupId,
+                    final ExecutionDags executionDags) {
+    this.groupId = groupId;
+    this.queryIdList = new ArrayList<>();
+    this.numEvents = 0;
+    this.executionDags = executionDags;
   }
 
   public void addQueryIdToGroup(final String queryId) {
@@ -54,6 +66,14 @@ public final class GroupInfo {
 
   public long getNumEvents() {
     return numEvents;
+  }
+
+  /**
+   * Return the execution dags in the group.
+   * @return execution dags
+   */
+  public ExecutionDags<String> getExecutionDags() {
+    return executionDags;
   }
 
   @Override

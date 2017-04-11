@@ -17,10 +17,13 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
+import org.apache.reef.tang.Injector;
+import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 
 import javax.inject.Inject;
@@ -71,7 +74,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
   /**
    * A map which contains groups and their information.
    */
-  private final ConcurrentMap<String, GroupInfo> groupInfoMap;
+  private final GroupInfoMap groupInfoMap;
 
   /**
    * Default query manager in MistTask.
@@ -83,6 +86,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
                                   final ThreadManager threadManager,
                                   final ScheduledExecutorServiceWrapper schedulerWrapper,
                                   final QueryStarter queryStarter,
+                                  final GroupInfoMap groupInfoMap,
                                   final QueryInfoStore planStore) {
     this.logicalDagMap = new ConcurrentHashMap<>();
     this.dagGenerator = dagGenerator;
@@ -90,7 +94,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.queryStarter = queryStarter;
-    this.groupInfoMap = new ConcurrentHashMap<>();
+    this.groupInfoMap = groupInfoMap;
   }
 
   /**
@@ -115,12 +119,16 @@ final class DefaultQueryManagerImpl implements QueryManager {
       logicalDagMap.putIfAbsent(queryId, logicalAndExecutionDag.getLogicalDag());
       // Update group information
       final String groupId = tuple.getValue().getGroupId();
-      if (!groupInfoMap.containsKey(groupId)) {
+      if (groupInfoMap.get(groupId) == null) {
         // Add new group id, if it doesn't exist
-        groupInfoMap.putIfAbsent(groupId, Tang.Factory.getTang().newInjector().getInstance(GroupInfo.class));
+        final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+        jcb.bindNamedParameter(GroupId.class, groupId);
+        final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+        groupInfoMap.putIfAbsent(groupId, injector.getInstance(GroupInfo.class));
       }
       // Add the query into the group
-      groupInfoMap.get(groupId).addQueryIdToGroup(queryId);
+      final GroupInfo groupInfo = groupInfoMap.get(groupId);
+      groupInfo.addQueryIdToGroup(queryId);
       // Start the submitted dag
       queryStarter.start(logicalAndExecutionDag.getExecutionDag());
       queryControlResult.setIsSuccess(true);
