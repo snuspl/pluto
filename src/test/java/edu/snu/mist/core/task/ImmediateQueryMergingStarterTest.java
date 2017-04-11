@@ -174,7 +174,6 @@ public final class ImmediateQueryMergingStarterTest {
    * Case 6. Two queries have two sources, one same source, one different source
    * Case 7. Three queries - two execution Dags and one submitted Dag
    *  - The submitted query has two same sources with the two execution dags
-   *
    */
 
   /**

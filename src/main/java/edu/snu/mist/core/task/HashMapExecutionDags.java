@@ -29,7 +29,7 @@ final class HashMapExecutionDags implements ExecutionDags<String> {
   private final ConcurrentHashMap<String, DAG<ExecutionVertex, MISTEdge>> map;
 
   @Inject
-  public HashMapExecutionDags() {
+  private HashMapExecutionDags() {
     this.map = new ConcurrentHashMap<>();
   }
 
