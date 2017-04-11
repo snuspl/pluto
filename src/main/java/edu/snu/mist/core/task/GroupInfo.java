@@ -37,35 +37,45 @@ final class GroupInfo {
   private final List<String> queryIdList;
 
   /**
-   * The number of all events inside the group operator chain queues.
+   * Execution dags that are currently running in this group.
    */
-  private long numEvents;
-
   private final ExecutionDags<String> executionDags;
+
+  /**
+   * A group metric which will be updated periodically.
+   */
+  private final GroupMetric groupMetric;
 
   @Inject
   private GroupInfo(@Parameter(GroupId.class) final String groupId,
+                    final GroupMetric groupMetric,
                     final ExecutionDags executionDags) {
     this.groupId = groupId;
     this.queryIdList = new ArrayList<>();
-    this.numEvents = 0;
     this.executionDags = executionDags;
+    this.groupMetric = groupMetric;
   }
 
+  /**
+   * Add a query id into this group.
+   * @param queryId the query id to add
+   */
   public void addQueryIdToGroup(final String queryId) {
     queryIdList.add(queryId);
   }
 
+  /**
+   * @return the list of query id in this group
+   */
   public List<String> getQueryIdList() {
     return queryIdList;
   }
 
-  public void setNumEvents(final long numEventsParam) {
-    this.numEvents = numEventsParam;
-  }
-
-  public long getNumEvents() {
-    return numEvents;
+  /**
+   * @return the metric of this group
+   */
+  public GroupMetric getGroupMetric() {
+    return groupMetric;
   }
 
   /**
@@ -83,7 +93,7 @@ final class GroupInfo {
     }
     final GroupInfo groupInfo = (GroupInfo) o;
     return this.queryIdList.equals(groupInfo.queryIdList) &&
-        this.numEvents == groupInfo.numEvents;
+        this.groupMetric.equals(groupInfo.getGroupMetric());
   }
 
   @Override
