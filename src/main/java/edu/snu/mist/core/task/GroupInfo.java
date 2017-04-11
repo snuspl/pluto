@@ -36,8 +36,14 @@ final class GroupInfo {
    */
   private final List<String> queryIdList;
 
+  /**
+   * Execution dags that are currently running in this group.
+   */
   private final ExecutionDags<String> executionDags;
 
+  /**
+   * A group metric which will be updated periodically.
+   */
   private final GroupMetric groupMetric;
 
   @Inject
@@ -50,14 +56,24 @@ final class GroupInfo {
     this.groupMetric = groupMetric;
   }
 
+  /**
+   * Add a query id into this group.
+   * @param queryId the query id to add
+   */
   public void addQueryIdToGroup(final String queryId) {
     queryIdList.add(queryId);
   }
 
+  /**
+   * @return the list of query id in this group
+   */
   public List<String> getQueryIdList() {
     return queryIdList;
   }
 
+  /**
+   * @return the metric of this group
+   */
   public GroupMetric getGroupMetric() {
     return groupMetric;
   }
