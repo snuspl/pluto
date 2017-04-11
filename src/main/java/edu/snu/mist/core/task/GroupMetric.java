@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task;
 
-
 import javax.inject.Inject;
 
 /**
