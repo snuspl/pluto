@@ -15,38 +15,41 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
-
 import javax.inject.Inject;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * An implementation of ExecutionDags that uses concurrent hash map.
+ * An implementation of GroupInfoMap that uses concurrent hash map.
  */
-final class HashMapExecutionDags implements ExecutionDags<String> {
+final class HashMapGroupInfoMap implements GroupInfoMap {
 
-  private final ConcurrentHashMap<String, DAG<ExecutionVertex, MISTEdge>> map;
+  private final ConcurrentHashMap<String, GroupInfo> map;
 
   @Inject
-  public HashMapExecutionDags() {
+  public HashMapGroupInfoMap() {
     this.map = new ConcurrentHashMap<>();
   }
 
   @Override
-  public DAG<ExecutionVertex, MISTEdge> get(final String conf) {
+  public GroupInfo get(final String conf) {
     return map.get(conf);
   }
 
   @Override
-  public void put(final String conf, final DAG<ExecutionVertex, MISTEdge> dag) {
-    map.put(conf, dag);
+  public GroupInfo putIfAbsent(final String groupId, final GroupInfo groupInfo) {
+    return map.putIfAbsent(groupId, groupInfo);
   }
 
   @Override
-  public void replace(final String conf, final DAG<ExecutionVertex, MISTEdge> dag) {
-    map.replace(conf, dag);
+  public GroupInfo put(final String groupId, final GroupInfo groupInfo) {
+    return map.put(groupId, groupInfo);
   }
+
+  @Override
+  public GroupInfo remove(final String groupId) {
+    return map.remove(groupId);
+  }
+
 
   @Override
   public int size() {

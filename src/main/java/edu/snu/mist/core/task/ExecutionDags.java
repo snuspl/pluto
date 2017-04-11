@@ -20,7 +20,7 @@ import edu.snu.mist.common.graph.MISTEdge;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * This interface holds the execution dags that are currently running.
+ * This interface holds the execution dags that are currently running in a group.
  * <K> configuration type
  */
 @DefaultImplementation(HashMapExecutionDags.class)

@@ -39,10 +39,9 @@ final class DefaultQueryStarter implements QueryStarter {
   /**
    * Sets the OutputEmitters of the sources, operators and sinks
    * and starts to receive input data stream from the sources.
-   * @param submittedDag the dag of the submitted query
    */
   @Override
-  public void start(final DAG<ExecutionVertex, MISTEdge> submittedDag) {
+  public void start(final GroupInfo groupInfo, final DAG<ExecutionVertex, MISTEdge> submittedDag) {
     QueryStarterUtils.setUpOutputEmitters(operatorChainManager, submittedDag);
     // starts to receive input data stream from the sources
     for (final ExecutionVertex source : submittedDag.getRootVertices()) {
