@@ -39,27 +39,22 @@ final class ImmediateQueryMergingStarter implements QueryStarter {
    */
   private final CommonSubDagFinder commonSubDagFinder;
 
-  /**
-   * Execution dags.
-   */
-  private final ExecutionDags executionDags;
-
   @Inject
   private ImmediateQueryMergingStarter(final OperatorChainManager operatorChainManager,
-                                       final CommonSubDagFinder commonSubDagFinder,
-                                       final ExecutionDags executionDags) {
+                                       final CommonSubDagFinder commonSubDagFinder) {
     this.operatorChainManager = operatorChainManager;
     this.commonSubDagFinder = commonSubDagFinder;
-    this.executionDags = executionDags;
   }
 
   @Override
-  public synchronized void start(final DAG<ExecutionVertex, MISTEdge> submittedDag) {
+  public synchronized void start(final GroupInfo groupInfo, final DAG<ExecutionVertex, MISTEdge> submittedDag) {
+    ExecutionDags<String> executionDags = groupInfo.getExecutionDags();
+
     // Set up the output emitters of the submitted DAG
     QueryStarterUtils.setUpOutputEmitters(operatorChainManager, submittedDag);
 
     // Find mergeable DAGs from the execution dags
-    final Map<String, DAG<ExecutionVertex, MISTEdge>> mergeableDags = findMergeableDags(submittedDag);
+    final Map<String, DAG<ExecutionVertex, MISTEdge>> mergeableDags = findMergeableDags(submittedDag, executionDags);
 
     // Exit the merging process if there is no mergeable dag
     if (mergeableDags.size() == 0) {
@@ -192,7 +187,8 @@ final class ImmediateQueryMergingStarter implements QueryStarter {
    * @return mergeable dags
    */
   private Map<String, DAG<ExecutionVertex, MISTEdge>> findMergeableDags(
-      final DAG<ExecutionVertex, MISTEdge> submittedDag) {
+      final DAG<ExecutionVertex, MISTEdge> submittedDag,
+      final ExecutionDags<String> executionDags) {
     final Set<ExecutionVertex> sources = submittedDag.getRootVertices();
     final Map<String, DAG<ExecutionVertex, MISTEdge>> mergeableDags = new HashMap<>(sources.size());
     for (final ExecutionVertex source : sources) {

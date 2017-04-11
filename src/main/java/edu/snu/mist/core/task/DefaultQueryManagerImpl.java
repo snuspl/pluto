@@ -130,7 +130,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
       final GroupInfo groupInfo = groupInfoMap.get(groupId);
       groupInfo.addQueryIdToGroup(queryId);
       // Start the submitted dag
-      queryStarter.start(logicalAndExecutionDag.getExecutionDag());
+      queryStarter.start(groupInfo, logicalAndExecutionDag.getExecutionDag());
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
       return queryControlResult;

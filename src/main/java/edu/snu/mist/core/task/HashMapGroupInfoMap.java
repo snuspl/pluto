@@ -26,7 +26,7 @@ final class HashMapGroupInfoMap implements GroupInfoMap {
   private final ConcurrentHashMap<String, GroupInfo> map;
 
   @Inject
-  public HashMapGroupInfoMap() {
+  private HashMapGroupInfoMap() {
     this.map = new ConcurrentHashMap<>();
   }
 

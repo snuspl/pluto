@@ -27,7 +27,8 @@ interface QueryStarter {
 
   /**
    * Start to execute the submitted query.
+   * @param groupInfo the group info that will contain the query
    * @param submittedDag the submitted dag
    */
-  void start(DAG<ExecutionVertex, MISTEdge> submittedDag);
+  void start(GroupInfo groupInfo, DAG<ExecutionVertex, MISTEdge> submittedDag);
 }
