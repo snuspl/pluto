@@ -30,7 +30,7 @@ import java.io.IOException;
 @DefaultImplementation(DefaultDagGeneratorImpl.class)
 public interface DagGenerator {
   /**
-   * Generates the pair of the execution dag by deserializing the avro logical dag.
+   * Generates the execution dag by deserializing the avro logical dag.
    * @param queryIdAndAvroLogicalDag the tuple of queryId and avro logical dag
    * @return execution dag
    */
