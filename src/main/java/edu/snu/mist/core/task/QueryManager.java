@@ -25,7 +25,7 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
  * This interface manages queries that are submitted from clients.
  * It executes the queries when they are submitted, and deletes them if requested.
  */
-@DefaultImplementation(DefaultQueryManagerImpl.class)
+@DefaultImplementation(GroupAwareQueryManagerImpl.class)
 public interface QueryManager extends AutoCloseable {
   /**
    * Start to the query.

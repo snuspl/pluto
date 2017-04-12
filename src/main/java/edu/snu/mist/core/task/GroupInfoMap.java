@@ -17,6 +17,8 @@ package edu.snu.mist.core.task;
 
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
+import java.util.Collection;
+
 /**
  * This interface holds the group information.
  */
@@ -57,4 +59,10 @@ interface GroupInfoMap {
    * @return the number of groups
    */
   int size();
+
+  /**
+   * Get the collection of the GroupInfo.
+   * @return collection of the group info.
+   */
+  Collection<GroupInfo> values();
 }

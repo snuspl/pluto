@@ -18,6 +18,6 @@ package edu.snu.mist.core.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The number of mist threads", short_name = "num_threads")
+@NamedParameter(doc = "The number of mist threads", short_name = "num_threads", default_value = "5")
 public final class NumThreads implements Name<Integer> {
 }
