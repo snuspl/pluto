@@ -18,6 +18,7 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.core.parameters.NumThreads;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
@@ -25,6 +26,7 @@ import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.concurrent.ScheduledExecutorService;
@@ -32,17 +34,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Default implementation of QueryManager.
+ * This QueryManager is aware of the group and manages queries per group.
  */
 @SuppressWarnings("unchecked")
-final class DefaultQueryManagerImpl implements QueryManager {
+final class GroupAwareQueryManagerImpl implements QueryManager {
 
-  private static final Logger LOG = Logger.getLogger(DefaultQueryManagerImpl.class.getName());
-
-  /**
-   * A thread manager.
-   */
-  private final ThreadManager threadManager;
+  private static final Logger LOG = Logger.getLogger(GroupAwareQueryManagerImpl.class.getName());
 
   /**
    * Scheduler for periodic watermark emission.
@@ -59,10 +56,6 @@ final class DefaultQueryManagerImpl implements QueryManager {
    */
   private final DagGenerator dagGenerator;
 
-  /**
-   * A query starter.
-   */
-  private final QueryStarter queryStarter;
 
   /**
    * A map which contains groups and their information.
@@ -70,23 +63,24 @@ final class DefaultQueryManagerImpl implements QueryManager {
   private final GroupInfoMap groupInfoMap;
 
   /**
+   * The number of execution threads.
+   */
+  private final int numThreads;
+
+  /**
    * Default query manager in MistTask.
-   * @param dagGenerator the generator that generates the logical and execution dag from avro operator chain dag.
-   * @param threadManager thread manager
    */
   @Inject
-  private DefaultQueryManagerImpl(final DagGenerator dagGenerator,
-                                  final ThreadManager threadManager,
-                                  final ScheduledExecutorServiceWrapper schedulerWrapper,
-                                  final QueryStarter queryStarter,
-                                  final GroupInfoMap groupInfoMap,
-                                  final QueryInfoStore planStore) {
+  private GroupAwareQueryManagerImpl(final DagGenerator dagGenerator,
+                                     final ScheduledExecutorServiceWrapper schedulerWrapper,
+                                     final GroupInfoMap groupInfoMap,
+                                     @Parameter(NumThreads.class) final int numThreads,
+                                     final QueryInfoStore planStore) {
     this.dagGenerator = dagGenerator;
-    this.threadManager = threadManager;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
-    this.queryStarter = queryStarter;
     this.groupInfoMap = groupInfoMap;
+    this.numThreads = numThreads;
   }
 
   /**
@@ -113,6 +107,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
         // Add new group id, if it doesn't exist
         final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
         jcb.bindNamedParameter(GroupId.class, groupId);
+        jcb.bindNamedParameter(NumThreads.class, Integer.toString(numThreads));
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
         groupInfoMap.putIfAbsent(groupId, injector.getInstance(GroupInfo.class));
       }
@@ -120,7 +115,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
       final GroupInfo groupInfo = groupInfoMap.get(groupId);
       groupInfo.addQueryIdToGroup(queryId);
       // Start the submitted dag
-      queryStarter.start(groupInfo, executionDag);
+      groupInfo.getQueryStarter().start(groupInfo, executionDag);
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
       return queryControlResult;
@@ -137,7 +132,9 @@ final class DefaultQueryManagerImpl implements QueryManager {
   @Override
   public void close() throws Exception {
     scheduler.shutdown();
-    threadManager.close();
+    for (final GroupInfo groupInfo : groupInfoMap.values()) {
+      groupInfo.close();
+    }
   }
 
   /**

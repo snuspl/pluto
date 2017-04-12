@@ -24,7 +24,7 @@ import java.util.List;
 /**
  * A class which contains query and metric information about query group.
  */
-final class GroupInfo {
+final class GroupInfo implements AutoCloseable {
 
   /**
    * Group id.
@@ -46,14 +46,35 @@ final class GroupInfo {
    */
   private final GroupMetric groupMetric;
 
+  /**
+   * A thread manager.
+   */
+  private final ThreadManager threadManager;
+
+  /**
+   * A query starter.
+   */
+  private final QueryStarter queryStarter;
+
+  /**
+   * Operator chain manager.
+   */
+  private final OperatorChainManager operatorChainManager;
+
   @Inject
   private GroupInfo(@Parameter(GroupId.class) final String groupId,
                     final GroupMetric groupMetric,
-                    final ExecutionDags executionDags) {
+                    final ExecutionDags<String> executionDags,
+                    final ThreadManager threadManager,
+                    final QueryStarter queryStarter,
+                    final OperatorChainManager operatorChainManager) {
     this.groupId = groupId;
     this.queryIdList = new ArrayList<>();
     this.executionDags = executionDags;
     this.groupMetric = groupMetric;
+    this.threadManager = threadManager;
+    this.queryStarter = queryStarter;
+    this.operatorChainManager = operatorChainManager;
   }
 
   /**
@@ -62,6 +83,22 @@ final class GroupInfo {
    */
   public void addQueryIdToGroup(final String queryId) {
     queryIdList.add(queryId);
+  }
+
+  /**
+   * Get the query starter.
+   * @return query starter
+   */
+  public QueryStarter getQueryStarter() {
+    return queryStarter;
+  }
+
+  /**
+   * Get the thread manager.
+   * @return thread manager
+   */
+  public ThreadManager getThreadManager() {
+    return threadManager;
   }
 
   /**
@@ -99,5 +136,10 @@ final class GroupInfo {
   @Override
   public int hashCode() {
     return this.queryIdList.hashCode() * 31;
+  }
+
+  @Override
+  public void close() throws Exception {
+    threadManager.close();
   }
 }

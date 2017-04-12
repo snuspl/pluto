@@ -16,6 +16,7 @@
 package edu.snu.mist.core.task;
 
 import javax.inject.Inject;
+import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -54,5 +55,10 @@ final class HashMapGroupInfoMap implements GroupInfoMap {
   @Override
   public int size() {
     return map.size();
+  }
+
+  @Override
+  public Collection<GroupInfo> values() {
+    return map.values();
   }
 }
