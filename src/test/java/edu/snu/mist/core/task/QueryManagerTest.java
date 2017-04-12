@@ -117,7 +117,7 @@ public final class QueryManagerTest {
     final EventGenerator eventGenerator =
         new PunctuatedEventGenerator(null, input -> false, null);
     final PhysicalSource src = new PhysicalSourceImpl("testSource",
-        null, dataGenerator, eventGenerator);
+        "conf", dataGenerator, eventGenerator);
 
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(NumThreads.class, Integer.toString(4));

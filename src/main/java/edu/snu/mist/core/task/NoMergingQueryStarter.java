@@ -24,7 +24,7 @@ import javax.inject.Inject;
  * This query starter does not merge queries.
  * Instead, it executes them separately.
  */
-final class DefaultQueryStarter implements QueryStarter {
+final class NoMergingQueryStarter implements QueryStarter {
 
   /**
    * Operator chain manager that manages the operator chains.
@@ -32,7 +32,7 @@ final class DefaultQueryStarter implements QueryStarter {
   private final OperatorChainManager operatorChainManager;
 
   @Inject
-  private DefaultQueryStarter(final OperatorChainManager operatorChainManager) {
+  private NoMergingQueryStarter(final OperatorChainManager operatorChainManager) {
     this.operatorChainManager = operatorChainManager;
   }
 
@@ -41,7 +41,7 @@ final class DefaultQueryStarter implements QueryStarter {
    * and starts to receive input data stream from the sources.
    */
   @Override
-  public void start(final GroupInfo groupInfo, final DAG<ExecutionVertex, MISTEdge> submittedDag) {
+  public void start(final DAG<ExecutionVertex, MISTEdge> submittedDag) {
     QueryStarterUtils.setUpOutputEmitters(operatorChainManager, submittedDag);
     // starts to receive input data stream from the sources
     for (final ExecutionVertex source : submittedDag.getRootVertices()) {
