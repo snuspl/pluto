@@ -108,6 +108,7 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
         final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
         jcb.bindNamedParameter(GroupId.class, groupId);
         jcb.bindNamedParameter(NumThreads.class, Integer.toString(numThreads));
+        jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
         groupInfoMap.putIfAbsent(groupId, injector.getInstance(GroupInfo.class));
       }
@@ -115,11 +116,12 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
       final GroupInfo groupInfo = groupInfoMap.get(groupId);
       groupInfo.addQueryIdToGroup(queryId);
       // Start the submitted dag
-      groupInfo.getQueryStarter().start(groupInfo, executionDag);
+      groupInfo.getQueryStarter().start(executionDag);
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
       return queryControlResult;
     } catch (final Exception e) {
+      e.printStackTrace();
       // [MIST-345] We need to release all of the information that is required for the query when it fails.
       LOG.log(Level.SEVERE, "An exception occurred while starting {0} query: {1}",
           new Object[] {tuple.getKey(), e.toString()});

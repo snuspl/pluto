@@ -52,11 +52,6 @@ public final class ImmediateQueryMergingStarterTest {
   private DagGenerator dagGenerator;
 
   /**
-   * Immediate query merging starter.
-   */
-  private ImmediateQueryMergingStarter queryMerger;
-
-  /**
    * A variable for creating configurations.
    */
   private int confCount = 0;
@@ -70,7 +65,6 @@ public final class ImmediateQueryMergingStarterTest {
   public void setUp() throws InjectionException, IOException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     dagGenerator = Tang.Factory.getTang().newInjector().getInstance(DagGenerator.class);
-    queryMerger = injector.getInstance(ImmediateQueryMergingStarter.class);
   }
 
   @After
@@ -190,7 +184,7 @@ public final class ImmediateQueryMergingStarterTest {
     final DAG<ExecutionVertex, MISTEdge> query = generateSimpleQuery(source, operatorChain, sink);
     // Execute the query 1
     final GroupInfo groupInfo = generateGroupInfo(TestParameters.GROUP_ID);
-    queryMerger.start(groupInfo, query);
+    groupInfo.getQueryStarter().start(query);
     // Generate events for the query and check if the dag is executed correctly
     final String data1 = "Hello";
     source.send(data1);
@@ -224,8 +218,8 @@ public final class ImmediateQueryMergingStarterTest {
 
     // Execute two queries
     final GroupInfo groupInfo = generateGroupInfo(TestParameters.GROUP_ID);
-    queryMerger.start(groupInfo, query1);
-    queryMerger.start(groupInfo, query2);
+    groupInfo.getQueryStarter().start(query1);
+    groupInfo.getQueryStarter().start(query2);
 
     // Check
     final ExecutionDags<String> executionDags = groupInfo.getExecutionDags();
@@ -277,7 +271,7 @@ public final class ImmediateQueryMergingStarterTest {
 
     // Execute the query 1
     final GroupInfo groupInfo = generateGroupInfo(TestParameters.GROUP_ID);
-    queryMerger.start(groupInfo, query1);
+    groupInfo.getQueryStarter().start(query1);
 
     // The query 1 and 2 should be merged and the following dag should be created:
     // src1 -> oc1 -> sink1
@@ -288,7 +282,7 @@ public final class ImmediateQueryMergingStarterTest {
     expectedDag.addEdge(operatorChain1, sink2, query2.getEdges(operatorChain2).get(sink2));
 
     // Execute the query 2
-    queryMerger.start(groupInfo, query2);
+    groupInfo.getQueryStarter().start(query2);
 
     final ExecutionDags<String> executionDags = groupInfo.getExecutionDags();
     final DAG<ExecutionVertex, MISTEdge> mergedDag = executionDags.get(sourceConf);
@@ -335,10 +329,10 @@ public final class ImmediateQueryMergingStarterTest {
     // Execute the query 1
     final GroupInfo group1 = generateGroupInfo("g1");
     final GroupInfo group2 = generateGroupInfo("g2");
-    queryMerger.start(group1, query1);
+    group1.getQueryStarter().start(query1);
 
     // Execute the query 2
-    queryMerger.start(group2, query2);
+    group2.getQueryStarter().start(query2);
 
     final ExecutionDags<String> executionDags1 = group1.getExecutionDags();
     final ExecutionDags<String> executionDags2 = group2.getExecutionDags();
@@ -387,7 +381,7 @@ public final class ImmediateQueryMergingStarterTest {
 
     // Execute the query 1
     final GroupInfo groupInfo = generateGroupInfo(TestParameters.GROUP_ID);
-    queryMerger.start(groupInfo, query1);
+    groupInfo.getQueryStarter().start(query1);
 
     // The query 1 and 2 should be merged and the following dag should be created:
     // src1 -> oc1 -> sink1
@@ -401,7 +395,7 @@ public final class ImmediateQueryMergingStarterTest {
     expectedDag.addEdge(operatorChain2, sink2, query2.getEdges(operatorChain2).get(sink2));
 
     // Execute the query 2
-    queryMerger.start(groupInfo, query2);
+    groupInfo.getQueryStarter().start(query2);
 
     final ExecutionDags<String> executionDags = groupInfo.getExecutionDags();
     final DAG<ExecutionVertex, MISTEdge> mergedDag = executionDags.get(sourceConf);
