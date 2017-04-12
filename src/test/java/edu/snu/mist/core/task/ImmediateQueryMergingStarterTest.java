@@ -25,13 +25,13 @@ import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.FilterOperator;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.common.sinks.Sink;
+import edu.snu.mist.core.task.utils.IdAndConfGenerator;
 import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.utils.TestParameters;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,31 +46,11 @@ import java.util.List;
  */
 public final class ImmediateQueryMergingStarterTest {
 
-  /**
-   * Execution dag generator.
-   */
-  private DagGenerator dagGenerator;
-
-  /**
-   * A variable for creating configurations.
-   */
-  private int confCount = 0;
-
-  /**
-   * A variable for creating identifiers.
-   */
-  private int idCount = 0;
+  private IdAndConfGenerator idAndConfGenerator;
 
   @Before
   public void setUp() throws InjectionException, IOException {
-    final Injector injector = Tang.Factory.getTang().newInjector();
-    dagGenerator = Tang.Factory.getTang().newInjector().getInstance(DagGenerator.class);
-  }
-
-  @After
-  public void tearDown() throws IOException {
-    idCount = 0;
-    confCount = 0;
+    idAndConfGenerator = new IdAndConfGenerator();
   }
 
   /**
@@ -79,7 +59,7 @@ public final class ImmediateQueryMergingStarterTest {
    * @return test source
    */
   private TestSource generateSource(final String conf) {
-    return new TestSource(generateId(), conf);
+    return new TestSource(idAndConfGenerator.generateId(), conf);
   }
 
   /**
@@ -90,7 +70,7 @@ public final class ImmediateQueryMergingStarterTest {
   private OperatorChain generateFilterOperatorChain(final String conf,
                                                     final MISTPredicate<String> predicate) {
     final OperatorChain operatorChain = new DefaultOperatorChainImpl();
-    final PhysicalOperator filterOp = new DefaultPhysicalOperatorImpl(generateId(),
+    final PhysicalOperator filterOp = new DefaultPhysicalOperatorImpl(idAndConfGenerator.generateId(),
         conf, new FilterOperator<>(predicate), operatorChain);
     operatorChain.insertToHead(filterOp);
     return operatorChain;
@@ -104,7 +84,7 @@ public final class ImmediateQueryMergingStarterTest {
    */
   private PhysicalSink<String> generateSink(final String conf,
                                             final List<String> result) {
-    return new PhysicalSinkImpl<>(generateId(), conf, new TestSink<>(result));
+    return new PhysicalSinkImpl<>(idAndConfGenerator.generateId(), conf, new TestSink<>(result));
   }
 
   /**
@@ -125,24 +105,6 @@ public final class ImmediateQueryMergingStarterTest {
     dag.addEdge(source, operatorChain, new MISTEdge(Direction.LEFT));
     dag.addEdge(operatorChain, sink, new MISTEdge(Direction.LEFT));
     return dag;
-  }
-
-  /**
-   * Generate an identifier.
-   * @return identifier
-   */
-  private String generateId() {
-    idCount += 1;
-    return Integer.toString(idCount);
-  }
-
-  /**
-   * Generate a configuration for source, operator, and sink.
-   * @return configuration
-   */
-  private String generateConf() {
-    confCount += 1;
-    return Integer.toString(confCount);
   }
 
   /**
@@ -177,10 +139,10 @@ public final class ImmediateQueryMergingStarterTest {
   @Test
   public void singleQueryMergingTest() throws InjectionException {
     final List<String> result = new LinkedList<>();
-    final String sourceConf = generateConf();
+    final String sourceConf = idAndConfGenerator.generateConf();
     final TestSource source = generateSource(sourceConf);
-    final OperatorChain operatorChain = generateFilterOperatorChain(generateConf(), (s) -> true);
-    final PhysicalSink<String> sink = generateSink(generateConf(), result);
+    final OperatorChain operatorChain = generateFilterOperatorChain(idAndConfGenerator.generateConf(), (s) -> true);
+    final PhysicalSink<String> sink = generateSink(idAndConfGenerator.generateConf(), result);
     final DAG<ExecutionVertex, MISTEdge> query = generateSimpleQuery(source, operatorChain, sink);
     // Execute the query 1
     final GroupInfo groupInfo = generateGroupInfo(TestParameters.GROUP_ID);
@@ -203,17 +165,17 @@ public final class ImmediateQueryMergingStarterTest {
     // Create a query 1:
     // src1 -> oc1 -> sink1
     final List<String> result1 = new LinkedList<>();
-    final TestSource src1 = generateSource(generateConf());
-    final OperatorChain operatorChain1 = generateFilterOperatorChain(generateConf(), (s) -> true);
-    final PhysicalSink<String> sink1 = generateSink(generateConf(), result1);
+    final TestSource src1 = generateSource(idAndConfGenerator.generateConf());
+    final OperatorChain operatorChain1 = generateFilterOperatorChain(idAndConfGenerator.generateConf(), (s) -> true);
+    final PhysicalSink<String> sink1 = generateSink(idAndConfGenerator.generateConf(), result1);
     final DAG<ExecutionVertex, MISTEdge> query1 = generateSimpleQuery(src1, operatorChain1, sink1);
     // Create a query 2:
     // src2 -> oc2 -> sink2
     // The configuration of src2 is different from that of src1.
     final List<String> result2 = new LinkedList<>();
-    final TestSource src2 = generateSource(generateConf());
-    final OperatorChain operatorChain2 = generateFilterOperatorChain(generateConf(), (s) -> true);
-    final PhysicalSink<String> sink2 = generateSink(generateConf(), result2);
+    final TestSource src2 = generateSource(idAndConfGenerator.generateConf());
+    final OperatorChain operatorChain2 = generateFilterOperatorChain(idAndConfGenerator.generateConf(), (s) -> true);
+    final PhysicalSink<String> sink2 = generateSink(idAndConfGenerator.generateConf(), result2);
     final DAG<ExecutionVertex, MISTEdge> query2 = generateSimpleQuery(src2, operatorChain2, sink2);
 
     // Execute two queries
@@ -253,11 +215,11 @@ public final class ImmediateQueryMergingStarterTest {
     // Create a query 1:
     // src1 -> oc1 -> sink1
     final List<String> result1 = new LinkedList<>();
-    final String sourceConf = generateConf();
-    final String operatorConf = generateConf();
+    final String sourceConf = idAndConfGenerator.generateConf();
+    final String operatorConf = idAndConfGenerator.generateConf();
     final TestSource src1 = generateSource(sourceConf);
     final OperatorChain operatorChain1 = generateFilterOperatorChain(operatorConf, (s) -> true);
-    final PhysicalSink<String> sink1 = generateSink(generateConf(), result1);
+    final PhysicalSink<String> sink1 = generateSink(idAndConfGenerator.generateConf(), result1);
     final DAG<ExecutionVertex, MISTEdge> query1 = generateSimpleQuery(src1, operatorChain1, sink1);
 
     // Create a query 2:
@@ -266,7 +228,7 @@ public final class ImmediateQueryMergingStarterTest {
     final List<String> result2 = new LinkedList<>();
     final TestSource src2 = generateSource(sourceConf);
     final OperatorChain operatorChain2 = generateFilterOperatorChain(operatorConf, (s) -> true);
-    final PhysicalSink<String> sink2 = generateSink(generateConf(), result2);
+    final PhysicalSink<String> sink2 = generateSink(idAndConfGenerator.generateConf(), result2);
     final DAG<ExecutionVertex, MISTEdge> query2 = generateSimpleQuery(src2, operatorChain2, sink2);
 
     // Execute the query 1
@@ -310,11 +272,11 @@ public final class ImmediateQueryMergingStarterTest {
     // Create a query 1:
     // src1 -> oc1 -> sink1
     final List<String> result1 = new LinkedList<>();
-    final String sourceConf = generateConf();
-    final String operatorConf = generateConf();
+    final String sourceConf = idAndConfGenerator.generateConf();
+    final String operatorConf = idAndConfGenerator.generateConf();
     final TestSource src1 = generateSource(sourceConf);
     final OperatorChain operatorChain1 = generateFilterOperatorChain(operatorConf, (s) -> true);
-    final PhysicalSink<String> sink1 = generateSink(generateConf(), result1);
+    final PhysicalSink<String> sink1 = generateSink(idAndConfGenerator.generateConf(), result1);
     final DAG<ExecutionVertex, MISTEdge> query1 = generateSimpleQuery(src1, operatorChain1, sink1);
 
     // Create a query 2:
@@ -323,7 +285,7 @@ public final class ImmediateQueryMergingStarterTest {
     final List<String> result2 = new LinkedList<>();
     final TestSource src2 = generateSource(sourceConf);
     final OperatorChain operatorChain2 = generateFilterOperatorChain(operatorConf, (s) -> true);
-    final PhysicalSink<String> sink2 = generateSink(generateConf(), result2);
+    final PhysicalSink<String> sink2 = generateSink(idAndConfGenerator.generateConf(), result2);
     final DAG<ExecutionVertex, MISTEdge> query2 = generateSimpleQuery(src2, operatorChain2, sink2);
 
     // Execute the query 1
@@ -363,10 +325,11 @@ public final class ImmediateQueryMergingStarterTest {
     // Create a query 1:
     // src1 -> oc1 -> sink1
     final List<String> result1 = new LinkedList<>();
-    final String sourceConf = generateConf();
+    final String sourceConf = idAndConfGenerator.generateConf();
     final TestSource src1 = generateSource(sourceConf);
-    final OperatorChain operatorChain1 = generateFilterOperatorChain(generateConf(), (s) -> s.startsWith("Hello"));
-    final PhysicalSink<String> sink1 = generateSink(generateConf(), result1);
+    final OperatorChain operatorChain1 = generateFilterOperatorChain(
+        idAndConfGenerator.generateConf(), (s) -> s.startsWith("Hello"));
+    final PhysicalSink<String> sink1 = generateSink(idAndConfGenerator.generateConf(), result1);
     final DAG<ExecutionVertex, MISTEdge> query1 = generateSimpleQuery(src1, operatorChain1, sink1);
 
     // Create a query 2:
@@ -375,8 +338,9 @@ public final class ImmediateQueryMergingStarterTest {
     // but the configuration of oc2 is different from that of oc1.
     final List<String> result2 = new LinkedList<>();
     final TestSource src2 = generateSource(sourceConf);
-    final OperatorChain operatorChain2 = generateFilterOperatorChain(generateConf(), (s) -> s.startsWith("World"));
-    final PhysicalSink<String> sink2 = generateSink(generateConf(), result2);
+    final OperatorChain operatorChain2 = generateFilterOperatorChain(
+        idAndConfGenerator.generateConf(), (s) -> s.startsWith("World"));
+    final PhysicalSink<String> sink2 = generateSink(idAndConfGenerator.generateConf(), result2);
     final DAG<ExecutionVertex, MISTEdge> query2 = generateSimpleQuery(src2, operatorChain2, sink2);
 
     // Execute the query 1

@@ -19,6 +19,7 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 
 import javax.inject.Inject;
+import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -51,5 +52,10 @@ final class HashMapExecutionDags implements ExecutionDags<String> {
   @Override
   public int size() {
     return map.size();
+  }
+
+  @Override
+  public Collection<DAG<ExecutionVertex, MISTEdge>> values() {
+    return map.values();
   }
 }
