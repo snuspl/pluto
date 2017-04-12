@@ -25,7 +25,7 @@ import org.apache.reef.tang.exceptions.InjectionException;
 import java.io.IOException;
 
 /**
- * This interface is for generating a pair of the execution dag from avro operator chain dag.
+ * This interface is for generating the execution dag from avro operator chain dag.
  */
 @DefaultImplementation(DefaultDagGeneratorImpl.class)
 public interface DagGenerator {
