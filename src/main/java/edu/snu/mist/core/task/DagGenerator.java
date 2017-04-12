@@ -25,14 +25,14 @@ import org.apache.reef.tang.exceptions.InjectionException;
 import java.io.IOException;
 
 /**
- * This interface is for generating a pair of the logical and execution dag from avro operator chain dag.
+ * This interface is for generating a pair of the execution dag from avro operator chain dag.
  */
 @DefaultImplementation(DefaultDagGeneratorImpl.class)
 public interface DagGenerator {
   /**
-   * Generates the pair of the logical and execution dag by deserializing the avro logical dag.
+   * Generates the pair of the execution dag by deserializing the avro logical dag.
    * @param queryIdAndAvroLogicalDag the tuple of queryId and avro logical dag
-   * @return a pair of the logical and execution dag
+   * @return execution dag
    */
   DAG<ExecutionVertex, MISTEdge> generate(Tuple<String, AvroOperatorChainDag> queryIdAndAvroLogicalDag)
       throws IOException, ClassNotFoundException, InjectionException;
