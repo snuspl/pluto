@@ -99,10 +99,9 @@ public final class DefaultDagGeneratorImplTest {
 
     final DagGenerator dagGenerator = Tang.Factory.getTang().newInjector().getInstance(DagGenerator.class);
     final Tuple<String, AvroOperatorChainDag> tuple = new Tuple<>("query-test", avroChainedDag);
-    final LogicalAndExecutionDag plan = dagGenerator.generate(tuple);
+    final DAG<ExecutionVertex, MISTEdge> executionDag = dagGenerator.generate(tuple);
 
     // Test execution dag
-    final DAG<ExecutionVertex, MISTEdge> executionDag = plan.getExecutionDag();
     final Set<ExecutionVertex> sources = executionDag.getRootVertices();
     Assert.assertEquals(1, sources.size());
     Assert.assertTrue(sources.iterator().next() instanceof PhysicalSource);
@@ -123,34 +122,5 @@ public final class DefaultDagGeneratorImplTest {
     Assert.assertTrue(reduceByKeyOperator.getOperator() instanceof ReduceByKeyOperator);
     final PhysicalSink physicalSink = (PhysicalSink)sinks.entrySet().iterator().next().getKey();
     Assert.assertTrue(physicalSink.getSink() instanceof NettyTextSink);
-
-    // Test logical dag
-    final DAG<LogicalVertex, MISTEdge> logicalDag = plan.getLogicalDag();
-    final Set<LogicalVertex> logicalSources = logicalDag.getRootVertices();
-    Assert.assertEquals(1, logicalSources.size());
-    final LogicalVertex logicalSource = logicalSources.iterator().next();
-    Assert.assertEquals(source.getId(), logicalSource.getPhysicalVertexId());
-
-    final LogicalVertex flatMapLogicalVertex = getNextVertex(logicalSource, logicalDag);
-    Assert.assertEquals(mapOperator.getId(), flatMapLogicalVertex.getPhysicalVertexId());
-
-    final LogicalVertex filterLogicalVertex = getNextVertex(flatMapLogicalVertex, logicalDag);
-    Assert.assertEquals(filterOperator.getId(), filterLogicalVertex.getPhysicalVertexId());
-
-    final LogicalVertex mapLogicalVertex = getNextVertex(filterLogicalVertex, logicalDag);
-    Assert.assertEquals(mapOperator2.getId(), mapLogicalVertex.getPhysicalVertexId());
-
-    final LogicalVertex reduceByKeyVertex = getNextVertex(mapLogicalVertex, logicalDag);
-    Assert.assertEquals(reduceByKeyOperator.getId(), reduceByKeyVertex.getPhysicalVertexId());
-
-    final LogicalVertex sinkVertex = getNextVertex(reduceByKeyVertex, logicalDag);
-    Assert.assertEquals(physicalSink.getId(), sinkVertex.getPhysicalVertexId());
-  }
-
-  private LogicalVertex getNextVertex(final LogicalVertex vertex,
-                                      final DAG<LogicalVertex, MISTEdge> logicalPlan) {
-    final Map<LogicalVertex, MISTEdge> nextLogicalOps = logicalPlan.getEdges(vertex);
-    final LogicalVertex nextVertex = nextLogicalOps.entrySet().iterator().next().getKey();
-    return nextVertex;
   }
 }

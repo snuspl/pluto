@@ -27,8 +27,6 @@ import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 
 import javax.inject.Inject;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,11 +38,6 @@ import java.util.logging.Logger;
 final class DefaultQueryManagerImpl implements QueryManager {
 
   private static final Logger LOG = Logger.getLogger(DefaultQueryManagerImpl.class.getName());
-
-  /**
-   * Map of query id and logical dag.
-   */
-  private final ConcurrentMap<String, DAG<LogicalVertex, MISTEdge>> logicalDagMap;
 
   /**
    * A thread manager.
@@ -88,7 +81,6 @@ final class DefaultQueryManagerImpl implements QueryManager {
                                   final QueryStarter queryStarter,
                                   final GroupInfoMap groupInfoMap,
                                   final QueryInfoStore planStore) {
-    this.logicalDagMap = new ConcurrentHashMap<>();
     this.dagGenerator = dagGenerator;
     this.threadManager = threadManager;
     this.scheduler = schedulerWrapper.getScheduler();
@@ -113,10 +105,8 @@ final class DefaultQueryManagerImpl implements QueryManager {
       // 1) Saves the avro operator chain dag to the PlanStore and
       // converts the avro operator chain dag to the logical and execution dag
       planStore.saveAvroOpChainDag(tuple);
-      final LogicalAndExecutionDag logicalAndExecutionDag = dagGenerator.generate(tuple);
+      final DAG<ExecutionVertex, MISTEdge> executionDag = dagGenerator.generate(tuple);
       final String queryId = tuple.getKey();
-      // Store the logical dag in memory
-      logicalDagMap.putIfAbsent(queryId, logicalAndExecutionDag.getLogicalDag());
       // Update group information
       final String groupId = tuple.getValue().getGroupId();
       if (groupInfoMap.get(groupId) == null) {
@@ -130,7 +120,7 @@ final class DefaultQueryManagerImpl implements QueryManager {
       final GroupInfo groupInfo = groupInfoMap.get(groupId);
       groupInfo.addQueryIdToGroup(queryId);
       // Start the submitted dag
-      queryStarter.start(groupInfo, logicalAndExecutionDag.getExecutionDag());
+      queryStarter.start(groupInfo, executionDag);
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
       return queryControlResult;

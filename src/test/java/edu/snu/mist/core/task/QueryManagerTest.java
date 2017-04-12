@@ -111,8 +111,6 @@ public final class QueryManagerTest {
 
     // Create the execution DAG of the query
     final DAG<ExecutionVertex, MISTEdge> dag = new AdjacentListDAG<>();
-    // Create the logical DAG of the query
-    final DAG<LogicalVertex, MISTEdge> logicalDag = new AdjacentListDAG<>();
 
     // Create source
     final TestDataGenerator dataGenerator = new TestDataGenerator(inputs);
@@ -138,12 +136,12 @@ public final class QueryManagerTest {
     fakeOperatorChainDag.setGroupId("testGroup");
     final Tuple<String, AvroOperatorChainDag> tuple = new Tuple<>(queryId, fakeOperatorChainDag);
 
-    // Construct logical and execution dag
-    constructLogicalAndExecutionDag(tuple, dag, logicalDag, src, sink1, sink2);
+    // Construct execution dag
+    constructExecutionDag(tuple, dag, src, sink1, sink2);
 
-    // Create mock DagGenerator. It returns the above logical and execution dag
+    // Create mock DagGenerator. It returns the above  execution dag
     final DagGenerator dagGenerator = mock(DagGenerator.class);
-    when(dagGenerator.generate(tuple)).thenReturn(new DefaultLogicalAndExecutionDagImpl(logicalDag, dag));
+    when(dagGenerator.generate(tuple)).thenReturn(dag);
 
     // Build QueryManager
     final QueryManager queryManager = queryManagerBuild(tuple, dagGenerator, injector);
@@ -182,15 +180,14 @@ public final class QueryManagerTest {
   }
 
   /**
-   * Construct logical and execution dag.
+   * Construct execution dag.
    * Creates operators and adds source, dag vertices, edges and sinks to dag.
    */
-  private void constructLogicalAndExecutionDag(final Tuple<String, AvroOperatorChainDag> tuple,
-                                               final DAG<ExecutionVertex, MISTEdge> dag,
-                                               final DAG<LogicalVertex, MISTEdge> logicalDag,
-                                               final PhysicalSource src,
-                                               final PhysicalSink sink1,
-                                               final PhysicalSink sink2) {
+  private void constructExecutionDag(final Tuple<String, AvroOperatorChainDag> tuple,
+                                     final DAG<ExecutionVertex, MISTEdge> dag,
+                                     final PhysicalSource src,
+                                     final PhysicalSink sink1,
+                                     final PhysicalSink sink2) {
 
     // Create operators and operator chains
     //                     (chain1)                                  (chain2)
@@ -213,38 +210,6 @@ public final class QueryManagerTest {
         null, new MapOperator<>(toStringMapFunc), chain2);
     final PhysicalOperator totalCountMap = new DefaultPhysicalOperatorImpl("totalCountMap",
         null, new MapOperator<>(totalCountMapFunc), chain3);
-
-    // Build the logical dag
-    final LogicalVertex logicalSrc = new DefaultLogicalVertexImpl(src.getId());
-    final LogicalVertex logicalFlatMap = new DefaultLogicalVertexImpl(flatMap.getId());
-    final LogicalVertex logicalFilter = new DefaultLogicalVertexImpl(filter.getId());
-    final LogicalVertex logicalToTupleMap = new DefaultLogicalVertexImpl(toTupleMap.getId());
-    final LogicalVertex logicalReduceByKey = new DefaultLogicalVertexImpl(reduceByKey.getId());
-    final LogicalVertex logicalToStringMap = new DefaultLogicalVertexImpl(toStringMap.getId());
-    final LogicalVertex logicalTotalCntMap = new DefaultLogicalVertexImpl(totalCountMap.getId());
-    final LogicalVertex logicalSink1 = new DefaultLogicalVertexImpl(sink1.getId());
-    final LogicalVertex logicalSink2 = new DefaultLogicalVertexImpl(sink2.getId());
-
-    // Add logical vertices
-    logicalDag.addVertex(logicalSrc);
-    logicalDag.addVertex(logicalFlatMap);
-    logicalDag.addVertex(logicalFilter);
-    logicalDag.addVertex(logicalToTupleMap);
-    logicalDag.addVertex(logicalReduceByKey);
-    logicalDag.addVertex(logicalToStringMap);
-    logicalDag.addVertex(logicalTotalCntMap);
-    logicalDag.addVertex(logicalSink1);
-    logicalDag.addVertex(logicalSink2);
-
-    // Add logical edges
-    logicalDag.addEdge(logicalSrc, logicalFlatMap, new MISTEdge(Direction.LEFT));
-    logicalDag.addEdge(logicalFlatMap, logicalFilter, new MISTEdge(Direction.LEFT));
-    logicalDag.addEdge(logicalFilter, logicalToTupleMap, new MISTEdge(Direction.LEFT));
-    logicalDag.addEdge(logicalToTupleMap, logicalReduceByKey, new MISTEdge(Direction.LEFT));
-    logicalDag.addEdge(logicalReduceByKey, logicalToStringMap, new MISTEdge(Direction.LEFT));
-    logicalDag.addEdge(logicalReduceByKey, logicalTotalCntMap, new MISTEdge(Direction.LEFT));
-    logicalDag.addEdge(logicalToStringMap, logicalSink1, new MISTEdge(Direction.LEFT));
-    logicalDag.addEdge(logicalTotalCntMap, logicalSink2, new MISTEdge(Direction.LEFT));
 
     // Build the execution dag
     chain1.insertToTail(flatMap);
