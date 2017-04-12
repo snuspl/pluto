@@ -90,7 +90,6 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
     // For execution dag
     final List<ExecutionVertex> deserializedVertices = new ArrayList<>(avroOpChainDag.getAvroVertices().size());
     final DAG<ExecutionVertex, MISTEdge> executionDAG = new AdjacentListDAG<>();
-    // This is for logical dag
 
     // Get a class loader
     final URL[] urls = SerializeUtils.getJarFileURLs(avroOpChainDag.getJarFilePaths());
