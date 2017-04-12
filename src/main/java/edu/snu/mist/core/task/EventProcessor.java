@@ -33,7 +33,7 @@ public final class EventProcessor implements Runnable {
   private final OperatorChainManager operatorChainManager;
 
   public EventProcessor(final int pollingIntervalMillisecondParam,
-      final OperatorChainManager operatorChainManagerParam) {
+                        final OperatorChainManager operatorChainManagerParam) {
     this.pollingIntervalMillisecond = pollingIntervalMillisecondParam;
     this.operatorChainManager = operatorChainManagerParam;
   }
