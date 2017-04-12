@@ -15,20 +15,21 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
-import org.apache.reef.tang.annotations.DefaultImplementation;
+import javax.inject.Inject;
 
 /**
- * This interface represents a component that is responsible for starting and executing queries.
+ * This is a default implementation of GroupMetricHandler.
+ * TODO: [MIST-573] Implement GroupMetricHandler
  */
-@DefaultImplementation(ImmediateQueryMergingStarter.class)
-interface QueryStarter {
+final class DefaultGroupMetricHandlerImpl implements GroupMetricHandler {
 
-  /**
-   * Start to execute the submitted query.
-   * @param queryId query id
-   * @param submittedDag the submitted dag
-   */
-  void start(String queryId, DAG<ExecutionVertex, MISTEdge> submittedDag);
+  @Inject
+  private DefaultGroupMetricHandlerImpl() {
+    // do nothing
+  }
+
+  @Override
+  public void groupMetricUpdated() {
+    // do nothing
+  }
 }

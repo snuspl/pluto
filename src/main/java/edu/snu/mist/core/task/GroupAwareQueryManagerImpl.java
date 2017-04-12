@@ -68,6 +68,11 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
   private final int numThreads;
 
   /**
+   * A tracker that measures the metric of each group.
+   */
+  private final GroupMetricTracker groupTracker;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -75,12 +80,15 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
                                      final ScheduledExecutorServiceWrapper schedulerWrapper,
                                      final GroupInfoMap groupInfoMap,
                                      @Parameter(NumThreads.class) final int numThreads,
-                                     final QueryInfoStore planStore) {
+                                     final QueryInfoStore planStore,
+                                     final GroupMetricTracker groupTracker) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.groupInfoMap = groupInfoMap;
     this.numThreads = numThreads;
+    this.groupTracker = groupTracker;
+    groupTracker.start();
   }
 
   /**
@@ -116,7 +124,7 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
       final GroupInfo groupInfo = groupInfoMap.get(groupId);
       groupInfo.addQueryIdToGroup(queryId);
       // Start the submitted dag
-      groupInfo.getQueryStarter().start(executionDag);
+      groupInfo.getQueryStarter().start(queryId, executionDag);
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
       return queryControlResult;
@@ -137,6 +145,7 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
     for (final GroupInfo groupInfo : groupInfoMap.values()) {
       groupInfo.close();
     }
+    groupTracker.close();
   }
 
   /**

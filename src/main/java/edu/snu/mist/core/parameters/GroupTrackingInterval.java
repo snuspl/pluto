@@ -13,22 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.parameters;
 
-import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
-import org.apache.reef.tang.annotations.DefaultImplementation;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-/**
- * This interface represents a component that is responsible for starting and executing queries.
- */
-@DefaultImplementation(ImmediateQueryMergingStarter.class)
-interface QueryStarter {
-
-  /**
-   * Start to execute the submitted query.
-   * @param queryId query id
-   * @param submittedDag the submitted dag
-   */
-  void start(String queryId, DAG<ExecutionVertex, MISTEdge> submittedDag);
+@NamedParameter(doc = "The interval between periodic group metric tracking in milliseconds", default_value = "1000")
+public final class GroupTrackingInterval implements Name<Long> {
+  // empty
 }

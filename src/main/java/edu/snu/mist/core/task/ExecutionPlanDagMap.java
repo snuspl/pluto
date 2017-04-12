@@ -19,44 +19,29 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 
 import javax.inject.Inject;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+
 /**
- * An implementation of ExecutionDags that uses concurrent hash map.
+ * This contains a query id as a key and an execution dag as a value.
+ * The execution dag is not *physical* dag which can change while merging.
+ * The dag represents the execution plan of the query without merging.
+ * We should keep this execution dags for query deletion.
  */
-final class HashMapExecutionDags implements ExecutionDags<String> {
+final class ExecutionPlanDagMap {
 
   private final ConcurrentHashMap<String, DAG<ExecutionVertex, MISTEdge>> map;
 
   @Inject
-  private HashMapExecutionDags() {
+  private ExecutionPlanDagMap() {
     this.map = new ConcurrentHashMap<>();
   }
 
-  @Override
-  public DAG<ExecutionVertex, MISTEdge> get(final String conf) {
-    return map.get(conf);
+  public DAG<ExecutionVertex, MISTEdge> get(final String queryId) {
+    return map.get(queryId);
   }
 
-  @Override
-  public void put(final String conf, final DAG<ExecutionVertex, MISTEdge> dag) {
-    map.put(conf, dag);
-  }
-
-  @Override
-  public void replace(final String conf, final DAG<ExecutionVertex, MISTEdge> dag) {
-    map.replace(conf, dag);
-  }
-
-  @Override
-  public int size() {
-    return map.size();
-  }
-
-  @Override
-  public Set<DAG<ExecutionVertex, MISTEdge>> getUniqueValues() {
-    return new HashSet<>(map.values());
+  public void put(final String queryId, final DAG<ExecutionVertex, MISTEdge> dag) {
+    map.put(queryId, dag);
   }
 }

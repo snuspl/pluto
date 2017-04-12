@@ -15,20 +15,16 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * This interface represents a component that is responsible for starting and executing queries.
+ * This interface represents the group metric handler which handles the group metric update.
  */
-@DefaultImplementation(ImmediateQueryMergingStarter.class)
-interface QueryStarter {
+@DefaultImplementation(DefaultGroupMetricHandlerImpl.class)
+interface GroupMetricHandler {
 
   /**
-   * Start to execute the submitted query.
-   * @param queryId query id
-   * @param submittedDag the submitted dag
+   * This method is called by GroupMetricTracker when it updated the group metrics.
    */
-  void start(String queryId, DAG<ExecutionVertex, MISTEdge> submittedDag);
+  void groupMetricUpdated();
 }

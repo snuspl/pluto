@@ -13,22 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
-
-import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
-import org.apache.reef.tang.annotations.DefaultImplementation;
-
 /**
- * This interface represents a component that is responsible for starting and executing queries.
+ * Utility classes for task package.
  */
-@DefaultImplementation(ImmediateQueryMergingStarter.class)
-interface QueryStarter {
-
-  /**
-   * Start to execute the submitted query.
-   * @param queryId query id
-   * @param submittedDag the submitted dag
-   */
-  void start(String queryId, DAG<ExecutionVertex, MISTEdge> submittedDag);
-}
+package edu.snu.mist.core.task.utils;
