@@ -21,11 +21,14 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * This class manages a fixed number of threads.
  */
 public final class FixedThreadManager implements ThreadManager {
+
+  private static final Logger LOG = Logger.getLogger(FixedThreadManager.class.getName());
 
   /**
    * A set of threads.

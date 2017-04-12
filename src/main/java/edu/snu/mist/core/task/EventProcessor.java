@@ -22,25 +22,41 @@ package edu.snu.mist.core.task;
 public final class EventProcessor implements Runnable {
 
   /**
+   * The polling interval when the thread wakes up and polls whether there is an event
+   * or not.
+   */
+  private final int pollingIntervalMillisecond;
+
+  /**
    * The operator chain manager for picking up a chain for event processing.
    */
   private final OperatorChainManager operatorChainManager;
 
-  public EventProcessor(final OperatorChainManager operatorChainManager) {
-    this.operatorChainManager = operatorChainManager;
+  public EventProcessor(final int pollingIntervalMillisecondParam,
+                        final OperatorChainManager operatorChainManagerParam) {
+    this.pollingIntervalMillisecond = pollingIntervalMillisecondParam;
+    this.operatorChainManager = operatorChainManagerParam;
+  }
+
+  public EventProcessor(final OperatorChainManager operatorChainManagerParam) {
+    // Default is 100ms
+    this(100, operatorChainManagerParam);
   }
 
   @Override
   public void run() {
-    while (!Thread.currentThread().isInterrupted()) {
-      try {
+    try {
+      while (!Thread.currentThread().isInterrupted()) {
         final OperatorChain query = operatorChainManager.pickOperatorChain();
         if (query != null) {
           query.processNextEvent();
+        } else {
+          Thread.currentThread().sleep(pollingIntervalMillisecond);
         }
-      } catch (final Exception t) {
-        throw t;
       }
+    } catch (final InterruptedException e) {
+      // Interrupt occurs while sleeping, so just finishes the process...
+      return;
     }
   }
 }
