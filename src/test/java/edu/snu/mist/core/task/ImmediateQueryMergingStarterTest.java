@@ -23,11 +23,9 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.FilterOperator;
-import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.core.task.utils.IdAndConfGenerator;
 import edu.snu.mist.formats.avro.Direction;
-import edu.snu.mist.utils.TestParameters;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -108,19 +106,6 @@ public final class ImmediateQueryMergingStarterTest {
   }
 
   /**
-   * Generate a group info instance that has the group id.
-   * @param groupId group id
-   * @return group info
-   * @throws InjectionException
-   */
-  private GroupInfo generateGroupInfo(final String groupId) throws InjectionException {
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(GroupId.class, groupId);
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    return injector.getInstance(GroupInfo.class);
-  }
-
-  /**
    * Test cases
    * Case 1. Start a single query
    * Case 2. Two queries have one source but the sources are different.
@@ -145,8 +130,12 @@ public final class ImmediateQueryMergingStarterTest {
     final PhysicalSink<String> sink = generateSink(idAndConfGenerator.generateConf(), result);
     final DAG<ExecutionVertex, MISTEdge> query = generateSimpleQuery(source, operatorChain, sink);
     // Execute the query 1
-    final GroupInfo groupInfo = generateGroupInfo(TestParameters.GROUP_ID);
-    groupInfo.getQueryStarter().start(query);
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final ImmediateQueryMergingStarter starter = injector.getInstance(ImmediateQueryMergingStarter.class);
+    final ExecutionDags<String> executionDags = injector.getInstance(ExecutionDags.class);
+    starter.start(query);
+
     // Generate events for the query and check if the dag is executed correctly
     final String data1 = "Hello";
     source.send(data1);
@@ -154,7 +143,7 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(1, operatorChain.numberOfEvents());
     Assert.assertEquals(true, operatorChain.processNextEvent());
     Assert.assertEquals(Arrays.asList(data1), result);
-    Assert.assertEquals(query, groupInfo.getExecutionDags().get(sourceConf));
+    Assert.assertEquals(query, executionDags.get(sourceConf));
   }
 
   /**
@@ -179,12 +168,15 @@ public final class ImmediateQueryMergingStarterTest {
     final DAG<ExecutionVertex, MISTEdge> query2 = generateSimpleQuery(src2, operatorChain2, sink2);
 
     // Execute two queries
-    final GroupInfo groupInfo = generateGroupInfo(TestParameters.GROUP_ID);
-    groupInfo.getQueryStarter().start(query1);
-    groupInfo.getQueryStarter().start(query2);
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final ImmediateQueryMergingStarter starter = injector.getInstance(ImmediateQueryMergingStarter.class);
+    final ExecutionDags<String> executionDags = injector.getInstance(ExecutionDags.class);
+
+    starter.start(query1);
+    starter.start(query2);
 
     // Check
-    final ExecutionDags<String> executionDags = groupInfo.getExecutionDags();
     Assert.assertEquals(2, executionDags.size());
     Assert.assertEquals(query1, executionDags.get(src1.getConfiguration()));
     Assert.assertEquals(query2, executionDags.get(src2.getConfiguration()));
@@ -221,6 +213,8 @@ public final class ImmediateQueryMergingStarterTest {
     final OperatorChain operatorChain1 = generateFilterOperatorChain(operatorConf, (s) -> true);
     final PhysicalSink<String> sink1 = generateSink(idAndConfGenerator.generateConf(), result1);
     final DAG<ExecutionVertex, MISTEdge> query1 = generateSimpleQuery(src1, operatorChain1, sink1);
+    final DAG<ExecutionVertex, MISTEdge> query1Plan = new AdjacentListDAG<>();
+    GraphUtils.copy(query1, query1Plan);
 
     // Create a query 2:
     // src2 -> oc2 -> sink2
@@ -230,10 +224,15 @@ public final class ImmediateQueryMergingStarterTest {
     final OperatorChain operatorChain2 = generateFilterOperatorChain(operatorConf, (s) -> true);
     final PhysicalSink<String> sink2 = generateSink(idAndConfGenerator.generateConf(), result2);
     final DAG<ExecutionVertex, MISTEdge> query2 = generateSimpleQuery(src2, operatorChain2, sink2);
+    final DAG<ExecutionVertex, MISTEdge> query2Plan = new AdjacentListDAG<>();
+    GraphUtils.copy(query2, query2Plan);
 
     // Execute the query 1
-    final GroupInfo groupInfo = generateGroupInfo(TestParameters.GROUP_ID);
-    groupInfo.getQueryStarter().start(query1);
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final ImmediateQueryMergingStarter starter = injector.getInstance(ImmediateQueryMergingStarter.class);
+    final ExecutionDags<String> executionDags = injector.getInstance(ExecutionDags.class);
+    starter.start(query1);
 
     // The query 1 and 2 should be merged and the following dag should be created:
     // src1 -> oc1 -> sink1
@@ -244,9 +243,8 @@ public final class ImmediateQueryMergingStarterTest {
     expectedDag.addEdge(operatorChain1, sink2, query2.getEdges(operatorChain2).get(sink2));
 
     // Execute the query 2
-    groupInfo.getQueryStarter().start(query2);
+    starter.start(query2);
 
-    final ExecutionDags<String> executionDags = groupInfo.getExecutionDags();
     final DAG<ExecutionVertex, MISTEdge> mergedDag = executionDags.get(sourceConf);
     Assert.assertEquals(1, executionDags.size());
     Assert.assertEquals(expectedDag, mergedDag);
@@ -258,59 +256,6 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(0, operatorChain2.numberOfEvents());
     Assert.assertEquals(true, operatorChain1.processNextEvent());
     Assert.assertEquals(false, operatorChain2.processNextEvent());
-    Assert.assertEquals(Arrays.asList(data), result1);
-    Assert.assertEquals(Arrays.asList(data), result2);
-  }
-
-  /**
-   * Case 3-1: Execute two dags that have same source and operator chain in separate groups.
-   * @throws InjectionException
-   */
-  @Test
-  public void mergingSameSourceAndSameOperatorQueriesSeparateGroupTest()
-      throws InjectionException, IOException, ClassNotFoundException {
-    // Create a query 1:
-    // src1 -> oc1 -> sink1
-    final List<String> result1 = new LinkedList<>();
-    final String sourceConf = idAndConfGenerator.generateConf();
-    final String operatorConf = idAndConfGenerator.generateConf();
-    final TestSource src1 = generateSource(sourceConf);
-    final OperatorChain operatorChain1 = generateFilterOperatorChain(operatorConf, (s) -> true);
-    final PhysicalSink<String> sink1 = generateSink(idAndConfGenerator.generateConf(), result1);
-    final DAG<ExecutionVertex, MISTEdge> query1 = generateSimpleQuery(src1, operatorChain1, sink1);
-
-    // Create a query 2:
-    // src2 -> oc2 -> sink2
-    // The configuration of src2 and operatorChain2 is same as that of src1 and operatorChain2.
-    final List<String> result2 = new LinkedList<>();
-    final TestSource src2 = generateSource(sourceConf);
-    final OperatorChain operatorChain2 = generateFilterOperatorChain(operatorConf, (s) -> true);
-    final PhysicalSink<String> sink2 = generateSink(idAndConfGenerator.generateConf(), result2);
-    final DAG<ExecutionVertex, MISTEdge> query2 = generateSimpleQuery(src2, operatorChain2, sink2);
-
-    // Execute the query 1
-    final GroupInfo group1 = generateGroupInfo("g1");
-    final GroupInfo group2 = generateGroupInfo("g2");
-    group1.getQueryStarter().start(query1);
-
-    // Execute the query 2
-    group2.getQueryStarter().start(query2);
-
-    final ExecutionDags<String> executionDags1 = group1.getExecutionDags();
-    final ExecutionDags<String> executionDags2 = group2.getExecutionDags();
-    Assert.assertEquals(1, executionDags1.size());
-    Assert.assertEquals(1, executionDags2.size());
-    Assert.assertEquals(query1, executionDags1.get(sourceConf));
-    Assert.assertEquals(query2, executionDags2.get(sourceConf));
-
-    // Generate events for the merged query and check if the dag is executed correctly
-    final String data = "Hello";
-    src1.send(data);
-    src2.send(data);
-    Assert.assertEquals(1, operatorChain1.numberOfEvents());
-    Assert.assertEquals(1, operatorChain2.numberOfEvents());
-    Assert.assertEquals(true, operatorChain1.processNextEvent());
-    Assert.assertEquals(true, operatorChain2.processNextEvent());
     Assert.assertEquals(Arrays.asList(data), result1);
     Assert.assertEquals(Arrays.asList(data), result2);
   }
@@ -331,6 +276,8 @@ public final class ImmediateQueryMergingStarterTest {
         idAndConfGenerator.generateConf(), (s) -> s.startsWith("Hello"));
     final PhysicalSink<String> sink1 = generateSink(idAndConfGenerator.generateConf(), result1);
     final DAG<ExecutionVertex, MISTEdge> query1 = generateSimpleQuery(src1, operatorChain1, sink1);
+    final DAG<ExecutionVertex, MISTEdge> query1Plan = new AdjacentListDAG<>();
+    GraphUtils.copy(query1, query1Plan);
 
     // Create a query 2:
     // src2 -> oc2 -> sink2
@@ -342,10 +289,15 @@ public final class ImmediateQueryMergingStarterTest {
         idAndConfGenerator.generateConf(), (s) -> s.startsWith("World"));
     final PhysicalSink<String> sink2 = generateSink(idAndConfGenerator.generateConf(), result2);
     final DAG<ExecutionVertex, MISTEdge> query2 = generateSimpleQuery(src2, operatorChain2, sink2);
+    final DAG<ExecutionVertex, MISTEdge> query2Plan = new AdjacentListDAG<>();
+    GraphUtils.copy(query2, query2Plan);
 
     // Execute the query 1
-    final GroupInfo groupInfo = generateGroupInfo(TestParameters.GROUP_ID);
-    groupInfo.getQueryStarter().start(query1);
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final ImmediateQueryMergingStarter starter = injector.getInstance(ImmediateQueryMergingStarter.class);
+    final ExecutionDags<String> executionDags = injector.getInstance(ExecutionDags.class);
+    starter.start(query1);
 
     // The query 1 and 2 should be merged and the following dag should be created:
     // src1 -> oc1 -> sink1
@@ -359,9 +311,8 @@ public final class ImmediateQueryMergingStarterTest {
     expectedDag.addEdge(operatorChain2, sink2, query2.getEdges(operatorChain2).get(sink2));
 
     // Execute the query 2
-    groupInfo.getQueryStarter().start(query2);
+    starter.start(query2);
 
-    final ExecutionDags<String> executionDags = groupInfo.getExecutionDags();
     final DAG<ExecutionVertex, MISTEdge> mergedDag = executionDags.get(sourceConf);
     Assert.assertEquals(1, executionDags.size());
     Assert.assertEquals(expectedDag, mergedDag);
