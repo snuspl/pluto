@@ -19,7 +19,7 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
-import java.util.Collection;
+import java.util.Set;
 
 /**
  * This interface holds the execution dags that are currently running in a group.
@@ -56,8 +56,8 @@ interface ExecutionDags<K> {
   int size();
 
   /**
-   * Get the collection of the execution dag.
-   * @return collection of the execution dag.
+   * Get the set of the GroupInfo.
+   * @return set of the group info.
    */
-  Collection<DAG<ExecutionVertex, MISTEdge>> values();
+  Set<DAG<ExecutionVertex, MISTEdge>> getUniqueValues();
 }

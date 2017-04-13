@@ -46,12 +46,14 @@ public final class GroupMetricTrackerTest {
 
   private GroupMetricTracker tracker;
   private IdAndConfGenerator idAndConfGenerator;
+  private GroupInfoMap groupInfoMap;
   private static final long TRACKING_INTERVAL = 10L;
   private static final long TRACKING_WAITING_TIME = 100L;
 
   @Before
   public void setUp() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
+    groupInfoMap = injector.getInstance(GroupInfoMap.class);
     injector.bindVolatileParameter(GroupTrackingInterval.class, TRACKING_INTERVAL);
     tracker = injector.getInstance(GroupMetricTracker.class);
     idAndConfGenerator = new IdAndConfGenerator();
@@ -68,13 +70,11 @@ public final class GroupMetricTrackerTest {
   @Test(timeout = 1000L)
   public void testTwoGroupMetricTracking() throws InjectionException {
 
-    final GroupInfoMap groupInfoMap = Tang.Factory.getTang().newInjector().getInstance(GroupInfoMap.class);
-    final GroupInfo groupInfoA = generateGroupInfo(groupInfoMap, "GroupA");
-    final GroupInfo groupInfoB = generateGroupInfo(groupInfoMap, "GroupB");
+    final GroupInfo groupInfoA = generateGroupInfo("GroupA");
+    final GroupInfo groupInfoB = generateGroupInfo("GroupB");
     final ExecutionDags<String> executionDagsA = groupInfoA.getExecutionDags();
     final ExecutionDags<String> executionDagsB = groupInfoB.getExecutionDags();
-
-    tracker.start(groupInfoMap);
+    tracker.start();
 
     // two dags in group A:
     // srcA1 -> opA1 -> sinkA1
@@ -200,13 +200,11 @@ public final class GroupMetricTrackerTest {
   
   /**
    * Generate a group info instance that has the group id and put it into a group info map.
-   * @param groupInfoMap group info map
    * @param groupId group id
    * @return the generated group info
    * @throws InjectionException
    */
-  private GroupInfo generateGroupInfo(final GroupInfoMap groupInfoMap,
-                                      final String groupId) throws InjectionException {
+  private GroupInfo generateGroupInfo(final String groupId) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(GroupId.class, groupId);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());

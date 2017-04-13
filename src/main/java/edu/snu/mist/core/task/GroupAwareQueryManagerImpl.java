@@ -88,7 +88,7 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
     this.groupInfoMap = groupInfoMap;
     this.numThreads = numThreads;
     this.groupTracker = groupTracker;
-    groupTracker.start(groupInfoMap);
+    groupTracker.start();
   }
 
   /**

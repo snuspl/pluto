@@ -25,8 +25,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * This class represents the group tracker which measures the metric of each group such as number of events.
@@ -34,35 +32,46 @@ import java.util.logging.Logger;
  */
 final class GroupMetricTracker implements AutoCloseable {
 
-  private static final Logger LOG = Logger.getLogger(GroupMetricTracker.class.getName());
-
   /**
    * The executor service which provide the thread pool for metric tracking.
    */
-  private ScheduledExecutorService executorService;
+  private final ScheduledExecutorService executorService;
 
   /**
    * The interval of group metric tracking.
    */
-  private long groupTrackingInterval;
+  private final long groupTrackingInterval;
 
   /**
    * The future of group tracking service execution.
    */
   private ScheduledFuture result;
 
+  /**
+   * The map of group ids and group info to update.
+   */
+  private final GroupInfoMap groupInfoMap;
+
+  /**
+   * The callback function called every time when the tracking is done.
+   */
+  private final GroupTrackerCallback callback;
+
   @Inject
-  private GroupMetricTracker(final ScheduledExecutorServiceWrapper executorServiceWrapper,
-                             @Parameter(GroupTrackingInterval.class) final long groupTrackingInterval) {
+  private GroupMetricTracker(final GroupTrackerExecutorServiceWrapper executorServiceWrapper,
+                             @Parameter(GroupTrackingInterval.class) final long groupTrackingInterval,
+                             final GroupInfoMap groupInfoMap,
+                             final GroupTrackerCallback callback) {
     this.executorService = executorServiceWrapper.getScheduler();
     this.groupTrackingInterval = groupTrackingInterval;
+    this.groupInfoMap = groupInfoMap;
+    this.callback = callback;
   }
 
   /**
    * Start the group metric tracker.
-   * @param groupInfoMap the map of group ids and group info to update
    */
-  public void start(final GroupInfoMap groupInfoMap) {
+  public void start() {
     // Schedule a periodic group tracking job
     result = executorService.scheduleWithFixedDelay(new Runnable() {
       public void run() {
@@ -70,45 +79,39 @@ final class GroupMetricTracker implements AutoCloseable {
           for (final GroupInfo groupInfo : groupInfoMap.values()) {
             // Track the number of event per each group
             long numEvent = 0;
-            final Set<DAG<ExecutionVertex, MISTEdge>> calculatedDag
-                = new HashSet<>(groupInfo.getExecutionDags().size());
-            for (final DAG<ExecutionVertex, MISTEdge> dag : groupInfo.getExecutionDags().values()) {
-              if (!calculatedDag.contains(dag)) {
-                calculatedDag.add(dag);
-
-                // Traverse the DAG in DFS order and update the numEvent
-                final Set<ExecutionVertex> visited = new HashSet<>(dag.numberOfVertices());
-                for (final ExecutionVertex source : dag.getRootVertices()) {
-                  numEvent = dfsTrack(dag, visited, source, numEvent);
-                }
+            for (final DAG<ExecutionVertex, MISTEdge> dag : groupInfo.getExecutionDags().getUniqueValues()) {
+              // Traverse the DAG in DFS order and update the numEvent
+              final Set<ExecutionVertex> visited = new HashSet<>(dag.numberOfVertices());
+              for (final ExecutionVertex source : dag.getRootVertices()) {
+                numEvent += getNumEventUsingDfs(dag, visited, source);
               }
             }
             final GroupMetric metric = groupInfo.getGroupMetric();
             metric.setNumEvents(numEvent);
           }
+          callback.accept(true);
         } catch (final Exception e) {
-          LOG.log(Level.SEVERE, e.toString());
+          e.printStackTrace();
+          callback.accept(false);
         }
       }
     }, groupTrackingInterval, groupTrackingInterval, TimeUnit.MILLISECONDS);
   }
 
   /**
-   * This function sum up the total number of events in each operator chain's queue of a group in DFS order.
+   * This method sums up the total number of events in each operator chain's queue of a group in DFS order.
    * @param dag execution dag to calculate the number of events
    * @param visited a set that holds the visited vertices
    * @param currentVertex currently visited vertex
-   * @param numEvent the number of events calculate before visiting this vertex
    */
-  private long dfsTrack(final DAG<ExecutionVertex, MISTEdge> dag,
-                        final Set<ExecutionVertex> visited,
-                        final ExecutionVertex currentVertex,
-                        final long numEvent) {
+  private long getNumEventUsingDfs(final DAG<ExecutionVertex, MISTEdge> dag,
+                                   final Set<ExecutionVertex> visited,
+                                   final ExecutionVertex currentVertex) {
     // Add to the visited set
     visited.add(currentVertex);
 
     // The local event number value
-    long localNumEvent = numEvent;
+    long localNumEvent = 0;
 
     // Traverse in DFS order
     for (final Map.Entry<ExecutionVertex, MISTEdge> neighbor : dag.getEdges(currentVertex).entrySet()) {
@@ -116,7 +119,7 @@ final class GroupMetricTracker implements AutoCloseable {
       if (child.getType() == ExecutionVertex.Type.OPERATOR_CHIAN && !visited.contains(child)) {
         localNumEvent += ((OperatorChain) child).numberOfEvents();
         if (!dag.getEdges(child).isEmpty()) {
-          localNumEvent = dfsTrack(dag, visited, child, localNumEvent);
+          localNumEvent += getNumEventUsingDfs(dag, visited, child);
         }
       }
     }
