@@ -23,11 +23,9 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.FilterOperator;
-import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.core.task.utils.IdAndConfGenerator;
 import edu.snu.mist.formats.avro.Direction;
-import edu.snu.mist.utils.TestParameters;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -258,63 +256,6 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(0, operatorChain2.numberOfEvents());
     Assert.assertEquals(true, operatorChain1.processNextEvent());
     Assert.assertEquals(false, operatorChain2.processNextEvent());
-    Assert.assertEquals(Arrays.asList(data), result1);
-    Assert.assertEquals(Arrays.asList(data), result2);
-  }
-
-  /**
-   * Case 3-1: Execute two dags that have same source and operator chain in separate groups.
-   * @throws InjectionException
-   */
-  @Test
-  public void mergingSameSourceAndSameOperatorQueriesSeparateGroupTest()
-      throws InjectionException, IOException, ClassNotFoundException {
-    // Create a query 1:
-    // src1 -> oc1 -> sink1
-    final List<String> result1 = new LinkedList<>();
-    final String sourceConf = idAndConfGenerator.generateConf();
-    final String operatorConf = idAndConfGenerator.generateConf();
-    final TestSource src1 = generateSource(sourceConf);
-    final OperatorChain operatorChain1 = generateFilterOperatorChain(operatorConf, (s) -> true);
-    final PhysicalSink<String> sink1 = generateSink(idAndConfGenerator.generateConf(), result1);
-    final DAG<ExecutionVertex, MISTEdge> query1 = generateSimpleQuery(src1, operatorChain1, sink1);
-
-    // Create a query 2:
-    // src2 -> oc2 -> sink2
-    // The configuration of src2 and operatorChain2 is same as that of src1 and operatorChain2.
-    final List<String> result2 = new LinkedList<>();
-    final TestSource src2 = generateSource(sourceConf);
-    final OperatorChain operatorChain2 = generateFilterOperatorChain(operatorConf, (s) -> true);
-    final PhysicalSink<String> sink2 = generateSink(idAndConfGenerator.generateConf(), result2);
-    final DAG<ExecutionVertex, MISTEdge> query2 = generateSimpleQuery(src2, operatorChain2, sink2);
-
-    // Execute the query 1
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(GroupId.class, TestParameters.GROUP_ID);
-    final Injector injector1 = Tang.Factory.getTang().newInjector(jcb.build());
-    final ImmediateQueryMergingStarter starter1 = injector1.getInstance(ImmediateQueryMergingStarter.class);
-    final ExecutionDags<String> executionDags1 = injector1.getInstance(ExecutionDags.class);
-    starter1.start(query1);
-
-    // Execute the query 2
-    final Injector injector2 = Tang.Factory.getTang().newInjector(jcb.build());
-    final ImmediateQueryMergingStarter starter2 = injector2.getInstance(ImmediateQueryMergingStarter.class);
-    final ExecutionDags<String> executionDags2 = injector2.getInstance(ExecutionDags.class);
-    starter2.start(query2);
-
-    Assert.assertEquals(1, executionDags1.size());
-    Assert.assertEquals(1, executionDags2.size());
-    Assert.assertEquals(query1, executionDags1.get(sourceConf));
-    Assert.assertEquals(query2, executionDags2.get(sourceConf));
-
-    // Generate events for the merged query and check if the dag is executed correctly
-    final String data = "Hello";
-    src1.send(data);
-    src2.send(data);
-    Assert.assertEquals(1, operatorChain1.numberOfEvents());
-    Assert.assertEquals(1, operatorChain2.numberOfEvents());
-    Assert.assertEquals(true, operatorChain1.processNextEvent());
-    Assert.assertEquals(true, operatorChain2.processNextEvent());
     Assert.assertEquals(Arrays.asList(data), result1);
     Assert.assertEquals(Arrays.asList(data), result2);
   }
