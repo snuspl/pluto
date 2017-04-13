@@ -25,7 +25,7 @@ import java.util.concurrent.ScheduledExecutorService;
 /**
  * This is the wrapper class for injecting ScheduledExecutorService used in GroupMetricTracker.
  */
-public final class GroupTrackerExecutorServiceWrapper {
+final class GroupTrackerExecutorServiceWrapper {
   private final ScheduledExecutorService scheduler;
 
   @Inject

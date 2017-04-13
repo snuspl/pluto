@@ -47,16 +47,16 @@ public final class GroupMetricTrackerTest {
   private GroupMetricTracker tracker;
   private IdAndConfGenerator idAndConfGenerator;
   private GroupInfoMap groupInfoMap;
-  private GroupTrackerCallback callback;
+  private TestGroupMetricHandler callback;
   private static final long TRACKING_INTERVAL = 10L;
 
   @Before
   public void setUp() throws InjectionException {
-    callback = new GroupTrackerCallback();
+    callback = new TestGroupMetricHandler();
     final Injector injector = Tang.Factory.getTang().newInjector();
     groupInfoMap = injector.getInstance(GroupInfoMap.class);
     injector.bindVolatileParameter(GroupTrackingInterval.class, TRACKING_INTERVAL);
-    injector.bindVolatileInstance(GroupResourceOrchestrator.class, callback);
+    injector.bindVolatileInstance(GroupMetricHandler.class, callback);
     tracker = injector.getInstance(GroupMetricTracker.class);
     idAndConfGenerator = new IdAndConfGenerator();
   }
@@ -316,13 +316,13 @@ public final class GroupMetricTrackerTest {
   }
 
   /**
-   * This is a simple implementation of GroupResourceOrchestrator for callback.
+   * This is a simple implementation of GroupMetricHandler for callback.
    */
-  final class GroupTrackerCallback implements GroupResourceOrchestrator {
+  final class TestGroupMetricHandler implements GroupMetricHandler {
 
     private CountDownLatch doubleCheckLatch;
 
-    GroupTrackerCallback() {
+    TestGroupMetricHandler() {
       doubleCheckLatch = null;
       // do nothing
     }

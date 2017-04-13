@@ -53,15 +53,15 @@ final class GroupMetricTracker implements AutoCloseable {
   private final GroupInfoMap groupInfoMap;
 
   /**
-   * The group resource orchestrator which manages resources assigned to each group.
+   * The group metric handler which handles the updated metric.
    */
-  private final GroupResourceOrchestrator orchestrator;
+  private final GroupMetricHandler orchestrator;
 
   @Inject
   private GroupMetricTracker(final GroupTrackerExecutorServiceWrapper executorServiceWrapper,
                              @Parameter(GroupTrackingInterval.class) final long groupTrackingInterval,
                              final GroupInfoMap groupInfoMap,
-                             final GroupResourceOrchestrator orchestrator) {
+                             final GroupMetricHandler orchestrator) {
     this.executorService = executorServiceWrapper.getScheduler();
     this.groupTrackingInterval = groupTrackingInterval;
     this.groupInfoMap = groupInfoMap;

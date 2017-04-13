@@ -15,16 +15,21 @@
  */
 package edu.snu.mist.core.task;
 
-import org.apache.reef.tang.annotations.DefaultImplementation;
+import javax.inject.Inject;
 
 /**
- * This interface represents the group resource orchestrator which manages resources assigned to each group.
+ * This is a default implementation of GroupMetricHandler.
+ * TODO: [MIST-573] Implement GroupMetricHandler
  */
-@DefaultImplementation(DefaultGroupResourceOrchestratorImpl.class)
-interface GroupResourceOrchestrator {
+final class DefaultGroupMetricHandlerImpl implements GroupMetricHandler {
 
-  /**
-   * This method is called by GroupMetricTracker when it updated the group metrics.
-   */
-  void groupMetricUpdated();
+  @Inject
+  private DefaultGroupMetricHandlerImpl() {
+    // do nothing
+  }
+
+  @Override
+  public void groupMetricUpdated() {
+    // do nothing
+  }
 }
