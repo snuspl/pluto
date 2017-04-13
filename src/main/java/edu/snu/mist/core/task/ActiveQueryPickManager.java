@@ -31,10 +31,16 @@ public final class ActiveQueryPickManager implements OperatorChainManager {
    */
   private final Queue<OperatorChain> activeQueryQueue;
 
+  /**
+   * A conditional variable which is used when ConditionEventProcesor is used.
+   */
+  private final Object isNotEmptyCondition;
+
   @Inject
   private ActiveQueryPickManager() {
     // ConcurrentLinkedQueue is used to assure concurrency as well as maintain exactly-once query picking.
     this.activeQueryQueue = new ConcurrentLinkedQueue<>();
+    this.isNotEmptyCondition = new Object();
   }
 
   /**
@@ -45,7 +51,15 @@ public final class ActiveQueryPickManager implements OperatorChainManager {
    */
   @Override
   public void insert(final OperatorChain query) {
-    activeQueryQueue.add(query);
+    // This should be used only when
+    synchronized (isNotEmptyCondition) {
+      if (activeQueryQueue.isEmpty()) {
+        activeQueryQueue.add(query);
+        isNotEmptyCondition.notify();
+      } else {
+        activeQueryQueue.add(query);
+      }
+    }
   }
 
   /**
@@ -66,5 +80,18 @@ public final class ActiveQueryPickManager implements OperatorChainManager {
   @Override
   public OperatorChain pickOperatorChain() {
     return activeQueryQueue.poll();
+  }
+
+  /**
+   * @return conditional variable which notifies the queue becomes not empty
+   */
+  @Override
+  public Object getQueueIsNotEmptyCondition() {
+    return isNotEmptyCondition;
+  }
+
+  @Override
+  public boolean isQueueEmpty() {
+    return activeQueryQueue.isEmpty();
   }
 }

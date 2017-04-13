@@ -32,7 +32,7 @@ import org.junit.Test;
 import java.util.LinkedList;
 import java.util.List;
 
-public final class EventProcessorTest {
+public final class PollingEventProcessorTest {
 
   /**
    * Test whether the processor processes events from multiple queries correctly.
@@ -70,7 +70,7 @@ public final class EventProcessorTest {
     }
 
     // Create a processor
-    final Thread processor = new Thread(new EventProcessor(operatorChainManager));
+    final Thread processor = new Thread(new PollingEventProcessor(operatorChainManager));
     processor.start();
 
     while (!(list1.size() == numTasks && list2.size() == numTasks)) {
@@ -115,7 +115,7 @@ public final class EventProcessorTest {
     operatorChainManager.insert(chain2);
 
     // Create a processor
-    final Thread processor = new Thread(new EventProcessor(operatorChainManager));
+    final Thread processor = new Thread(new PollingEventProcessor(operatorChainManager));
     processor.start();
 
     while (!(list1.size() == numTasks && list2.size() == numTasks)) {
@@ -157,9 +157,9 @@ public final class EventProcessorTest {
     }
 
     // Create three processors
-    final Thread processor1 = new Thread(new EventProcessor(queryManager));
-    final Thread processor2 = new Thread(new EventProcessor(queryManager));
-    final Thread processor3 = new Thread(new EventProcessor(queryManager));
+    final Thread processor1 = new Thread(new PollingEventProcessor(queryManager));
+    final Thread processor2 = new Thread(new PollingEventProcessor(queryManager));
+    final Thread processor3 = new Thread(new PollingEventProcessor(queryManager));
     processor1.start();
     processor2.start();
     processor3.start();

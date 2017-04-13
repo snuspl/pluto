@@ -26,6 +26,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public final class RandomlyPickManager implements OperatorChainManager {
 
+  private Object dummyCondition;
   private final List<OperatorChain> queues;
   private final Random random;
 
@@ -35,6 +36,7 @@ public final class RandomlyPickManager implements OperatorChainManager {
     // This could be a performance bottleneck.
     this.queues = new CopyOnWriteArrayList<>();
     this.random = new Random(System.currentTimeMillis());
+    this.dummyCondition = new Object();
   }
 
   @Override
@@ -62,5 +64,16 @@ public final class RandomlyPickManager implements OperatorChainManager {
         return null;
       }
     }
+  }
+
+  @Override
+  public Object getQueueIsNotEmptyCondition() {
+    // Should not be called. This class does not use ConditionEventProcessor
+    return dummyCondition;
+  }
+
+  @Override
+  public boolean isQueueEmpty() {
+    return queues.isEmpty();
   }
 }

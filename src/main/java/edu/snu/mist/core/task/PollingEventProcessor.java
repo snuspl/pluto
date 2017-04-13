@@ -19,7 +19,7 @@ package edu.snu.mist.core.task;
  * This class processes events of queries
  * by picking up an operator chain from the OperatorChainManager.
  */
-public final class EventProcessor implements Runnable {
+public final class PollingEventProcessor implements Runnable {
 
   /**
    * The polling interval when the thread wakes up and polls whether there is an event
@@ -32,13 +32,13 @@ public final class EventProcessor implements Runnable {
    */
   private final OperatorChainManager operatorChainManager;
 
-  public EventProcessor(final int pollingIntervalMillisecondParam,
-                        final OperatorChainManager operatorChainManagerParam) {
+  public PollingEventProcessor(final int pollingIntervalMillisecondParam,
+                               final OperatorChainManager operatorChainManagerParam) {
     this.pollingIntervalMillisecond = pollingIntervalMillisecondParam;
     this.operatorChainManager = operatorChainManagerParam;
   }
 
-  public EventProcessor(final OperatorChainManager operatorChainManagerParam) {
+  public PollingEventProcessor(final OperatorChainManager operatorChainManagerParam) {
     // Default is 100ms
     this(100, operatorChainManagerParam);
   }

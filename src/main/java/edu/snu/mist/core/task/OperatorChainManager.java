@@ -39,4 +39,16 @@ public interface OperatorChainManager {
    * Returns null if there is no operator chain that is executable.
    */
   OperatorChain pickOperatorChain();
+
+  /**
+   * Gets an conditional variable which notifies the queue is not empty.
+   * @return the conditional variable
+   */
+  Object getQueueIsNotEmptyCondition();
+
+  /**
+   * Informs whether the working queue inside is empty or not.
+   * @return true if the working queue is empty, false if not
+   */
+  boolean isQueueEmpty();
 }
