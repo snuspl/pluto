@@ -58,7 +58,7 @@ final class VertexInfo {
    * Get and increase the reference count.
    * @return reference count before updated
    */
-  public int getAndIncreaseRefCount() {
+  public int getAndIncrementRefCount() {
     final int cnt = refCount;
     refCount += 1;
     return cnt;
@@ -68,7 +68,7 @@ final class VertexInfo {
    * Get and decrease the reference count.
    * @return reference count before updated
    */
-  public int getAndDecreaseRefCount() {
+  public int getAndDecrementRefCount() {
     final int cnt = refCount;
     refCount -= 1;
     return cnt;
