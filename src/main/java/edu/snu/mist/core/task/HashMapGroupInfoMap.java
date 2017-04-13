@@ -51,7 +51,6 @@ final class HashMapGroupInfoMap implements GroupInfoMap {
     return map.remove(groupId);
   }
 
-
   @Override
   public int size() {
     return map.size();
