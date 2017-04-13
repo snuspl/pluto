@@ -18,13 +18,13 @@ package edu.snu.mist.core.task;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * This interface represents the callback consumer called by GroupMetricTracker whenever it end it's tracking process.
+ * This interface represents the group resource orchestrator which manages resources assigned to each group.
  */
-@DefaultImplementation(DefaultGroupTrackerCallback.class)
-interface GroupTrackerCallback {
+@DefaultImplementation(DefaultGroupResourceOrchestratorImpl.class)
+interface GroupResourceOrchestrator {
 
   /**
-   * Consume the given boolean argument which represents whether the tracking process succeeds or not.
+   * This method is called by GroupMetricTracker when it updated the group metrics.
    */
-  void accept(Boolean success);
+  void groupMetricUpdated();
 }

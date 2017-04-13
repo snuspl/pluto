@@ -37,7 +37,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import static java.lang.Thread.sleep;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Test whether GroupMetricTracker tracks each group's metric properly or not.
@@ -47,14 +47,16 @@ public final class GroupMetricTrackerTest {
   private GroupMetricTracker tracker;
   private IdAndConfGenerator idAndConfGenerator;
   private GroupInfoMap groupInfoMap;
+  private GroupTrackerCallback callback;
   private static final long TRACKING_INTERVAL = 10L;
-  private static final long TRACKING_WAITING_TIME = 100L;
 
   @Before
   public void setUp() throws InjectionException {
+    callback = new GroupTrackerCallback();
     final Injector injector = Tang.Factory.getTang().newInjector();
     groupInfoMap = injector.getInstance(GroupInfoMap.class);
     injector.bindVolatileParameter(GroupTrackingInterval.class, TRACKING_INTERVAL);
+    injector.bindVolatileInstance(GroupResourceOrchestrator.class, callback);
     tracker = injector.getInstance(GroupMetricTracker.class);
     idAndConfGenerator = new IdAndConfGenerator();
   }
@@ -225,8 +227,10 @@ public final class GroupMetricTrackerTest {
    * Wait tracker to conduct the tracking.
    */
   private void waitForTracking() {
+    final CountDownLatch doubleCheckLatch = new CountDownLatch(2);
+    callback.setDoubleCheckLatch(doubleCheckLatch);
     try {
-      sleep(TRACKING_WAITING_TIME);
+      doubleCheckLatch.await();
     } catch (final InterruptedException e) {
       e.printStackTrace();
     }
@@ -310,4 +314,29 @@ public final class GroupMetricTrackerTest {
       return null;
     }
   }
+
+  /**
+   * This is a simple implementation of GroupResourceOrchestrator for callback.
+   */
+  final class GroupTrackerCallback implements GroupResourceOrchestrator {
+
+    private CountDownLatch doubleCheckLatch;
+
+    GroupTrackerCallback() {
+      doubleCheckLatch = null;
+      // do nothing
+    }
+
+    @Override
+    public void groupMetricUpdated() {
+      if (doubleCheckLatch != null) {
+        doubleCheckLatch.countDown();
+      }
+    }
+
+    void setDoubleCheckLatch(final CountDownLatch doubleCheckLatch) {
+      this.doubleCheckLatch = doubleCheckLatch;
+    }
+  }
+
 }

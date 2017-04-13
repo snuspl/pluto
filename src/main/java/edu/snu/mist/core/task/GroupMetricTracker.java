@@ -53,19 +53,19 @@ final class GroupMetricTracker implements AutoCloseable {
   private final GroupInfoMap groupInfoMap;
 
   /**
-   * The callback function called every time when the tracking is done.
+   * The group resource orchestrator which manages resources assigned to each group.
    */
-  private final GroupTrackerCallback callback;
+  private final GroupResourceOrchestrator orchestrator;
 
   @Inject
   private GroupMetricTracker(final GroupTrackerExecutorServiceWrapper executorServiceWrapper,
                              @Parameter(GroupTrackingInterval.class) final long groupTrackingInterval,
                              final GroupInfoMap groupInfoMap,
-                             final GroupTrackerCallback callback) {
+                             final GroupResourceOrchestrator orchestrator) {
     this.executorService = executorServiceWrapper.getScheduler();
     this.groupTrackingInterval = groupTrackingInterval;
     this.groupInfoMap = groupInfoMap;
-    this.callback = callback;
+    this.orchestrator = orchestrator;
   }
 
   /**
@@ -89,10 +89,9 @@ final class GroupMetricTracker implements AutoCloseable {
             final GroupMetric metric = groupInfo.getGroupMetric();
             metric.setNumEvents(numEvent);
           }
-          callback.accept(true);
+          orchestrator.groupMetricUpdated();
         } catch (final Exception e) {
           e.printStackTrace();
-          callback.accept(false);
         }
       }
     }, groupTrackingInterval, groupTrackingInterval, TimeUnit.MILLISECONDS);

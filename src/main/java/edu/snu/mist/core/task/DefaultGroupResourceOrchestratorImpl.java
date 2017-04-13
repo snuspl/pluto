@@ -16,26 +16,20 @@
 package edu.snu.mist.core.task;
 
 import javax.inject.Inject;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
- * This class represents the default class of GroupTrackerCallback.
+ * This is a default implementation of GroupResourceOrchestrator.
+ * TODO: [MIST-573] Implement GroupResourceOrchestrator
  */
-public final class DefaultGroupTrackerCallback implements GroupTrackerCallback {
-  private static final Logger LOG = Logger.getLogger(DefaultGroupTrackerCallback.class.getName());
+final class DefaultGroupResourceOrchestratorImpl implements GroupResourceOrchestrator {
 
   @Inject
-  private DefaultGroupTrackerCallback() {
+  private DefaultGroupResourceOrchestratorImpl() {
     // do nothing
   }
 
   @Override
-  public void accept(final Boolean success) {
-    if (success) {
-      LOG.log(Level.FINE, "Group tracking succeeded.");
-    } else {
-      LOG.log(Level.SEVERE, "Group tracking failed.");
-    }
+  public void groupMetricUpdated() {
+    // do nothing
   }
 }
