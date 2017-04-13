@@ -55,23 +55,11 @@ final class VertexInfo {
   }
 
   /**
-   * Get and increase the reference count.
-   * @return reference count before updated
+   * Set the reference count of the vertex.
+   * @param count reference count
    */
-  public int getAndIncrementRefCount() {
-    final int cnt = refCount;
-    refCount += 1;
-    return cnt;
-  }
-
-  /**
-   * Get and decrease the reference count.
-   * @return reference count before updated
-   */
-  public int getAndDecrementRefCount() {
-    final int cnt = refCount;
-    refCount -= 1;
-    return cnt;
+  public void setRefCount(final int count) {
+    refCount = count;
   }
 
   /**

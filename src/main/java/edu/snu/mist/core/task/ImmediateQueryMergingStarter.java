@@ -138,7 +138,7 @@ final class ImmediateQueryMergingStarter implements QueryStarter {
       final VertexInfo dstVertexInfo = vertexInfoMap.get(entry.getValue());
       // Increase the reference count of the merging vertex
       // and replace the vertex info of the src vertex that will be merged with the dest vertex
-      dstVertexInfo.getAndIncrementRefCount();
+      dstVertexInfo.setRefCount(dstVertexInfo.getRefCount()+1);
       vertexInfoMap.replace(entry.getKey(), srcVertexInfo, dstVertexInfo);
     }
 
