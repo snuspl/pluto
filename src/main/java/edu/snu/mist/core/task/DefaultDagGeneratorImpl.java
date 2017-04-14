@@ -15,15 +15,17 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.graph.AdjacentListDAG;
-import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;
 import edu.snu.mist.core.parameters.TempFolderPath;
-import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.formats.avro.AvroOperatorChainDag;
+import edu.snu.mist.formats.avro.AvroVertexChain;
+import edu.snu.mist.formats.avro.Edge;
+import edu.snu.mist.formats.avro.Vertex;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Configuration;
@@ -36,7 +38,6 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -47,7 +48,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
 
   private static final Logger LOG = Logger.getLogger(DefaultDagGeneratorImpl.class.getName());
 
-  private final OperatorIdGenerator operatorIdGenerator;
+  private final IdGenerator idGenerator;
   private final String tmpFolderPath;
   private final ClassLoaderProvider classLoaderProvider;
   private final PhysicalObjectGenerator physicalObjectGenerator;
@@ -56,14 +57,14 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
   private final PhysicalVertexMap physicalVertexMap;
 
   @Inject
-  private DefaultDagGeneratorImpl(final OperatorIdGenerator operatorIdGenerator,
+  private DefaultDagGeneratorImpl(final IdGenerator idGenerator,
                                   @Parameter(TempFolderPath.class) final String tmpFolderPath,
                                   final StringIdentifierFactory identifierFactory,
                                   final ClassLoaderProvider classLoaderProvider,
                                   final AvroConfigurationSerializer avroConfigurationSerializer,
                                   final PhysicalObjectGenerator physicalObjectGenerator,
                                   final PhysicalVertexMap physicalVertexMap) {
-    this.operatorIdGenerator = operatorIdGenerator;
+    this.idGenerator = idGenerator;
     this.tmpFolderPath = tmpFolderPath;
     this.classLoaderProvider = classLoaderProvider;
     this.identifierFactory = identifierFactory;
@@ -81,19 +82,16 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
    */
   @SuppressWarnings("unchecked")
   @Override
-  public LogicalAndExecutionDag generate(
+  public DAG<ExecutionVertex, MISTEdge> generate(
       final Tuple<String, AvroOperatorChainDag> queryIdAndAvroOperatorChainDag)
       throws IllegalArgumentException, IOException, ClassNotFoundException, InjectionException {
     final AvroOperatorChainDag avroOpChainDag = queryIdAndAvroOperatorChainDag.getValue();
     // For execution dag
     final List<ExecutionVertex> deserializedVertices = new ArrayList<>(avroOpChainDag.getAvroVertices().size());
     final DAG<ExecutionVertex, MISTEdge> executionDAG = new AdjacentListConcurrentMapDAG<>();
-    // This is for logical dag
-    final List<List<LogicalVertex>> logicalVertices = new ArrayList<>(avroOpChainDag.getAvroVertices().size());
-    final DAG<LogicalVertex, MISTEdge> logicalDAG = new AdjacentListDAG<>();
 
     // Get a class loader
-    final URL[] urls = SerializeUtils.getURLs(avroOpChainDag.getJarFilePaths());
+    final URL[] urls = SerializeUtils.getJarFileURLs(avroOpChainDag.getJarFilePaths());
     final ClassLoader classLoader = classLoaderProvider.newInstance(urls);
 
     // Deserialize vertices
@@ -108,78 +106,44 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
           // Create a data generator
           final DataGenerator dataGenerator = physicalObjectGenerator.newDataGenerator(conf, classLoader);
           // Create a source
-          final String id = operatorIdGenerator.generate();
+          final String id = idGenerator.generateSourceId();
           final PhysicalSource source = new PhysicalSourceImpl<>(id, vertex.getConfiguration(),
               dataGenerator, eventGenerator);
           deserializedVertices.add(source);
           executionDAG.addVertex(source);
           // Add the physical vertex to the physical map
           physicalVertexMap.getPhysicalVertexMap().put(id, source);
-
-          // Create a logical vertex
-          final LogicalVertex logicalVertex = new DefaultLogicalVertexImpl(id);
-          logicalVertices.add(Arrays.asList(logicalVertex));
-          logicalDAG.addVertex(logicalVertex);
           break;
         }
         case OPERATOR_CHAIN: {
           final OperatorChain operatorChain = new DefaultOperatorChainImpl();
-          LogicalVertex firstLogicalVertex = null;
-          LogicalVertex prevLogicalVertex = null;
-          final List<LogicalVertex> logicalVertexList = new ArrayList<>(avroVertexChain.getVertexChain().size());
           deserializedVertices.add(operatorChain);
           for (final Vertex vertex : avroVertexChain.getVertexChain()) {
             final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
                 new ClassHierarchyImpl(urls));
-            final String id = operatorIdGenerator.generate();
+            final String id = idGenerator.generateOperatorId();
             final Operator operator = physicalObjectGenerator.newOperator(conf, classLoader);
             final PhysicalOperator physicalOperator = new DefaultPhysicalOperatorImpl(id, vertex.getConfiguration(),
                 operator, operatorChain);
             operatorChain.insertToTail(physicalOperator);
-            // TODO: [MIST-417] if the operator is conditional branch operator, mark as branching partition.
 
             // Add the physical vertex to the physical map
             physicalVertexMap.getPhysicalVertexMap().put(id, physicalOperator);
-
-            // Create a logical vertex
-            final LogicalVertex logicalVertex = new DefaultLogicalVertexImpl(id);
-            if (firstLogicalVertex == null) {
-              firstLogicalVertex = logicalVertex;
-            }
-            logicalDAG.addVertex(logicalVertex);
-
-            // Connect logical vertices in the chain of operators
-            // This is for adding the vertices in a partition.
-            if (prevLogicalVertex == null) {
-              prevLogicalVertex = logicalVertex;
-            } else {
-              logicalDAG.addEdge(prevLogicalVertex, logicalVertex, new MISTEdge(Direction.LEFT));
-              prevLogicalVertex = logicalVertex;
-            }
-            logicalVertexList.add(logicalVertex);
           }
           executionDAG.addVertex(operatorChain);
-
-          // Add the logical partitioned vertex
-          logicalVertices.add(logicalVertexList);
           break;
         }
         case SINK: {
           final Vertex vertex = avroVertexChain.getVertexChain().get(0);
           final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
               new ClassHierarchyImpl(urls));
-          final String id = operatorIdGenerator.generate();
+          final String id = idGenerator.generateSinkId();
           final PhysicalSink sink = new PhysicalSinkImpl<>(id, vertex.getConfiguration(),
               physicalObjectGenerator.newSink(conf, classLoader));
           deserializedVertices.add(sink);
           executionDAG.addVertex(sink);
           // Add the physical vertex to the physical map
           physicalVertexMap.getPhysicalVertexMap().put(id, sink);
-
-          // Create a logical vertex
-          final LogicalVertex logicalVertex = new DefaultLogicalVertexImpl(id);
-          logicalDAG.addVertex(logicalVertex);
-          logicalVertices.add(Arrays.asList(logicalVertex));
           break;
         }
         default: {
@@ -198,15 +162,8 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
       final ExecutionVertex deserializedDstVertex = deserializedVertices.get(dstIndex);
       executionDAG.addEdge(deserializedSrcVertex, deserializedDstVertex,
           new MISTEdge(edge.getDirection(), edge.getBranchIndex()));
-
-      // Add edge to the logical dag
-      final List<LogicalVertex> srcLogicalVertices = logicalVertices.get(srcIndex);
-      final List<LogicalVertex> dstLogicalVertices = logicalVertices.get(dstIndex);
-      final LogicalVertex srcLogicalVertex = srcLogicalVertices.get(srcLogicalVertices.size() - 1);
-      final LogicalVertex dstLogicalVertex = dstLogicalVertices.get(0);
-      logicalDAG.addEdge(srcLogicalVertex, dstLogicalVertex, new MISTEdge(edge.getDirection()));
     }
 
-    return new DefaultLogicalAndExecutionDagImpl(logicalDAG, executionDAG);
+    return executionDAG;
   }
 }

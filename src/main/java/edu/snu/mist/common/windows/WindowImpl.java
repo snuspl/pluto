@@ -18,6 +18,7 @@ package edu.snu.mist.common.windows;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.LinkedList;
 
@@ -25,7 +26,7 @@ import java.util.LinkedList;
  * This class implements the window.
  * @param <T> the type of data collected in this window
  */
-public final class WindowImpl<T> implements Window<T> {
+public final class WindowImpl<T> implements Window<T>, Serializable {
 
   private long latestTimestamp;
   private MistWatermarkEvent latestWatermark;

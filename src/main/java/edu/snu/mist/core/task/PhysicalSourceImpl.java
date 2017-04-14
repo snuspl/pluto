@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
+import edu.snu.mist.common.OutputEmitter;
 import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;
 
@@ -22,7 +23,7 @@ import edu.snu.mist.common.sources.EventGenerator;
  * This class represents the implementation of Source interface.
  * @param <T> the type of input data
  */
-final class PhysicalSourceImpl<T> extends BasePhysicalVertex implements PhysicalSource<T> {
+final class PhysicalSourceImpl<T> extends BasePhysicalVertex implements PhysicalSource {
 
   /**
    * Data generator that generates data.
@@ -59,19 +60,14 @@ final class PhysicalSourceImpl<T> extends BasePhysicalVertex implements Physical
     dataGenerator.close();
     eventGenerator.close();
   }
-  
-  @Override
-  public DataGenerator<T> getDataGenerator() {
-    return dataGenerator;
-  }
-
-  @Override
-  public EventGenerator<T> getEventGenerator() {
-    return eventGenerator;
-  }
 
   @Override
   public Type getType() {
     return Type.SOURCE;
+  }
+
+  @Override
+  public void setOutputEmitter(final OutputEmitter emitter) {
+    eventGenerator.setOutputEmitter(emitter);
   }
 }

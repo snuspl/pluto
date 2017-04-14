@@ -13,19 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
 
-import org.apache.reef.tang.annotations.DefaultImplementation;
+package edu.snu.mist.examples.parameters;
+
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * This interface contains necessary methods for generating operator IDs.
+ * Parameter for MQTT source socket configuration.
  */
-@DefaultImplementation(DefaultOperatorIdGeneratorImpl.class)
-public interface OperatorIdGenerator {
-
-  /**
-   * Generates operator Id.
-   * @return generated operator Id
-   */
-  String generate();
+@NamedParameter(doc="MQTT broker URI for test", short_name = "bu", default_value = "tcp://127.0.0.1:1883")
+public final class TestMQTTBrokerURI implements Name<String> {
 }

@@ -19,14 +19,15 @@ import edu.snu.mist.common.graph.DAG;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * This implements adjacent list, which will be used to implement DAG.
  * This DAG supports concurrent read-write on edges.
- * The edge can be read from the execution thread, and written by the merging thread.
+ * The edge can be read from the execution thread, and written by the merging/deletion thread.
+ * Note: Currently, it just supports concurrent single read/write thread.
+ * It does not support concurrent writes yet.
  * @param <V> vertex type
  * @param <I> edge information type
  */
@@ -36,12 +37,22 @@ public final class AdjacentListConcurrentMapDAG<V, I> implements DAG<V, I> {
   /**
    * An adjacent list.
    */
-  private final Map<V, ConcurrentMap<V, I>> adjacent;
+  private final Map<V, Map<V, I>> adjacent;
 
   /**
    * A map for in-degree of vertices.
    */
   private final Map<V, Integer> inDegrees;
+
+  /**
+   * The number of edges.
+   */
+  private int numVertices;
+
+  /**
+   * The number of vertices.
+   */
+  private int numEdges;
 
   /**
    * A set of root vertices.
@@ -52,11 +63,28 @@ public final class AdjacentListConcurrentMapDAG<V, I> implements DAG<V, I> {
     this.adjacent = new ConcurrentHashMap<>();
     this.inDegrees = new HashMap<>();
     this.rootVertices = new HashSet<>();
+    this.numVertices = 0;
+    this.numEdges = 0;
+  }
+
+  @Override
+  public int numberOfVertices() {
+    return numVertices;
+  }
+
+  @Override
+  public int numberOfEdges() {
+    return numEdges;
   }
 
   @Override
   public Set<V> getRootVertices() {
     return rootVertices;
+  }
+
+  @Override
+  public Collection<V> getVertices() {
+    return adjacent.keySet();
   }
 
   @Override
@@ -80,6 +108,7 @@ public final class AdjacentListConcurrentMapDAG<V, I> implements DAG<V, I> {
       adjacent.put(v, new ConcurrentHashMap<V, I>());
       inDegrees.put(v, 0);
       rootVertices.add(v);
+      numVertices += 1;
       return true;
     } else {
       LOG.log(Level.WARNING, "The vertex {0} already exists", new Object[]{v});
@@ -91,7 +120,11 @@ public final class AdjacentListConcurrentMapDAG<V, I> implements DAG<V, I> {
   public boolean removeVertex(final V v) {
     final Map<V, I> edges = adjacent.remove(v);
     if (edges != null) {
+      numVertices -= 1;
       inDegrees.remove(v);
+      final int inDegreeEdges = inDegrees.remove(v);
+      numEdges -= inDegreeEdges;
+      numEdges -= edges.size();
       // update inDegrees of neighbor vertices
       // and update rootVertices
       for (final Map.Entry<V, I> edge : edges.entrySet()) {
@@ -106,7 +139,7 @@ public final class AdjacentListConcurrentMapDAG<V, I> implements DAG<V, I> {
 
       // We have to remove edge that destination vertex is v.
       // This operation is very expensive.
-      for (Map.Entry<V, ConcurrentMap<V, I>> entry : adjacent.entrySet()) {
+      for (Map.Entry<V, Map<V, I>> entry : adjacent.entrySet()) {
         entry.getValue().remove(v);
       }
       return true;
@@ -124,6 +157,7 @@ public final class AdjacentListConcurrentMapDAG<V, I> implements DAG<V, I> {
     }
 
     if (!adjEdges.containsKey(v2)) {
+      numEdges += 1;
       adjEdges.put(v2, i);
       final int inDegree = inDegrees.get(v2);
       inDegrees.put(v2, inDegree + 1);
@@ -145,6 +179,7 @@ public final class AdjacentListConcurrentMapDAG<V, I> implements DAG<V, I> {
     }
 
     if (adjEdges.remove(v2) != null) {
+      numEdges -= 1;
       final int inDegree = inDegrees.get(v2);
       inDegrees.put(v2, inDegree - 1);
       if (inDegree == 1) {
@@ -164,5 +199,45 @@ public final class AdjacentListConcurrentMapDAG<V, I> implements DAG<V, I> {
       throw new NoSuchElementException("No src vertex " + v);
     }
     return inDegree;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    final AdjacentListConcurrentMapDAG that = (AdjacentListConcurrentMapDAG) o;
+
+    if (numEdges != that.numEdges) {
+      return false;
+    }
+    if (numVertices != that.numVertices) {
+      return false;
+    }
+    if (adjacent != null ? !adjacent.equals(that.adjacent) : that.adjacent != null) {
+      return false;
+    }
+    if (inDegrees != null ? !inDegrees.equals(that.inDegrees) : that.inDegrees != null) {
+      return false;
+    }
+    if (rootVertices != null ? !rootVertices.equals(that.rootVertices) : that.rootVertices != null) {
+      return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = adjacent != null ? adjacent.hashCode() : 0;
+    result = 31 * result + (inDegrees != null ? inDegrees.hashCode() : 0);
+    result = 31 * result + numVertices;
+    result = 31 * result + numEdges;
+    result = 31 * result + (rootVertices != null ? rootVertices.hashCode() : 0);
+    return result;
   }
 }

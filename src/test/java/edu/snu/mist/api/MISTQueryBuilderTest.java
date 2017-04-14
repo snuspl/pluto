@@ -17,6 +17,7 @@ package edu.snu.mist.api;
 
 import edu.snu.mist.api.datastreams.ContinuousStream;
 import edu.snu.mist.api.datastreams.configurations.KafkaSourceConfiguration;
+import edu.snu.mist.api.datastreams.configurations.MQTTSourceConfiguration;
 import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTFunction;
@@ -29,6 +30,7 @@ import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -46,7 +48,7 @@ public class MISTQueryBuilderTest {
    */
   @Test
   public void testNettyTextSourceSerializationWithoutUdf() throws InjectionException {
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(TestParameters.GROUP_ID);
     final ContinuousStream<String> stream =
         queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
     // check
@@ -64,13 +66,13 @@ public class MISTQueryBuilderTest {
   public void testNettyTextSourceSerializationWithUdf()
       throws InjectionException, IOException, ClassNotFoundException {
     final MISTFunction<String, Tuple<String, Long>> timestampExtFunc = s -> new Tuple<>(s, 1L);
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(TestParameters.GROUP_ID);
     final ContinuousStream<String> stream =
         queryBuilder.socketTextStream(TextSocketSourceConfiguration.newBuilder()
-          .setHostAddress(TestParameters.HOST)
-          .setHostPort(TestParameters.SERVER_PORT)
-          .setTimestampExtractionFunction(timestampExtFunc)
-          .build());
+            .setHostAddress(TestParameters.HOST)
+            .setHostPort(TestParameters.SERVER_PORT)
+            .setTimestampExtractionFunction(timestampExtFunc)
+            .build());
     // check
     final Injector injector = Tang.Factory.getTang().newInjector(stream.getConfiguration());
     final String deHost = injector.getNamedInstance(SocketServerIp.class);
@@ -89,7 +91,7 @@ public class MISTQueryBuilderTest {
       throws InjectionException, IOException, ClassNotFoundException {
     final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
     final MISTFunction<String, Tuple<String, Long>> timestampExtFunc = s -> new Tuple<>(s, 1L);
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(TestParameters.GROUP_ID);
     final ContinuousStream<String> stream =
         queryBuilder.socketTextStream(TextSocketSourceConfiguration.newBuilder()
             .setHostAddress(TestParameters.HOST)
@@ -124,7 +126,7 @@ public class MISTQueryBuilderTest {
     consumerConfig.put(groupKey, groupValue);
     consumerConfig.put(valueDeserializerKey, valueDeserializer);
 
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(TestParameters.GROUP_ID);
     final ContinuousStream<ConsumerRecord<Integer, String>> kafkaSourceStream =
         queryBuilder.kafkaStream(KafkaSourceConfiguration.newBuilder()
             .setTopic(topic)
@@ -140,6 +142,33 @@ public class MISTQueryBuilderTest {
     Assert.assertEquals(consumerConfig, deConsumerConfig);
 
     // Check about watermark configuration
+    final long period = injector.getNamedInstance(PeriodicWatermarkPeriod.class);
+    final long delay = injector.getNamedInstance(PeriodicWatermarkDelay.class);
+    Assert.assertEquals(100, period);
+    Assert.assertEquals(0, delay);
+  }
+
+  @Test
+  public void testMQTTSourceSerialization()
+    throws InjectionException, IOException, ClassNotFoundException {
+    final String expectedBrokerURI = "tcp://192.168.0.1:3386";
+    final String expectedTopic = "region/system/subsystem/device/sensor";
+
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(TestParameters.GROUP_ID);
+    final ContinuousStream<MqttMessage> mqttSourceStream =
+        queryBuilder.mqttStream(MQTTSourceConfiguration.newBuilder()
+            .setBrokerURI(expectedBrokerURI)
+            .setTopic(expectedTopic)
+            .build());
+
+    // Check source configuration
+    final Injector injector = Tang.Factory.getTang().newInjector(mqttSourceStream.getConfiguration());
+    final String resultBrokerAddress = injector.getNamedInstance(MQTTBrokerURI.class);
+    final String resultTopic = injector.getNamedInstance(MQTTTopic.class);
+    Assert.assertEquals(expectedBrokerURI, resultBrokerAddress);
+    Assert.assertEquals(expectedTopic, resultTopic);
+
+    // Check watermark configuration
     final long period = injector.getNamedInstance(PeriodicWatermarkPeriod.class);
     final long delay = injector.getNamedInstance(PeriodicWatermarkDelay.class);
     Assert.assertEquals(100, period);

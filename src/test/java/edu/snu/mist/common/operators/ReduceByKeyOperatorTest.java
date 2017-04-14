@@ -107,6 +107,7 @@ public final class ReduceByKeyOperatorTest {
    * Test getting state of the ReduceByKeyOperator.
    */
   @Test
+  @SuppressWarnings("unchecked")
   public void testReduceByKeyOperatorGetState() throws InterruptedException {
     // Generate the current ReduceByKeyOperator state.
     final List<MistDataEvent> inputStream = ImmutableList.of(
@@ -134,8 +135,9 @@ public final class ReduceByKeyOperatorTest {
     inputStream.stream().forEach(wcOperator::processLeftData);
 
     // Get the current ReduceByKeyOperator's state.
+    final Map<String, Object> operatorStateMap = wcOperator.getOperatorState();
     final Map<String, Integer> operatorState =
-        (Map<String, Integer>)wcOperator.getOperatorState().get("reduceByKeyState");
+        (Map<String, Integer>)operatorStateMap.get("reduceByKeyState");
 
     // Compare the expected and original operator's state.
     Assert.assertEquals(expectedOperatorState, operatorState);
@@ -145,6 +147,7 @@ public final class ReduceByKeyOperatorTest {
    * Test setting state of the ReduceByKeyOperator.
    */
   @Test
+  @SuppressWarnings("unchecked")
   public void testReduceByKeyOperatorSetState() throws InterruptedException {
     // Generate a new state and set it to the state of a new ReduceByKeyWindowOperator.
     final Map<String, Integer> expectedOperatorState = new HashMap<>();

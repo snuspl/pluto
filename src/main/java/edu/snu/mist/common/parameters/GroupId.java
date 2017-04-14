@@ -13,19 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.common.parameters;
 
-/**
- * This interface represents logical vertices of the query.
- * A logical vertex references a physical vertex that corresponds to it.
- * By making the logical vertex reference the physical vertex,
- * we can decouple the query and the physical plan.
- */
-interface LogicalVertex {
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-  /**
-   * Returns a physical vertex id that is coupled with the logical vertex.
-   * @return a physical vertex id.
-   */
-  String getPhysicalVertexId();
+@NamedParameter(doc = "The group id of the source")
+public final class GroupId implements Name<String> {
+  // empty
 }

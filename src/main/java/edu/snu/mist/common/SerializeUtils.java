@@ -18,6 +18,7 @@ package edu.snu.mist.common;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.List;
 
@@ -86,11 +87,11 @@ public final class SerializeUtils {
    * @param paths list of string
    * @return url array
    **/
-  public static URL[] getURLs(final List<String> paths) throws MalformedURLException {
+  public static URL[] getJarFileURLs(final List<String> paths) throws MalformedURLException {
     final URL[] urls = new URL[paths.size()];
     for (int i = 0; i < paths.size(); i++) {
       final String jarFilePath = paths.get(i);
-      final URL url = new URL(jarFilePath);
+      final URL url = Paths.get(jarFilePath).toUri().toURL();
       urls[i] = url;
     }
     return urls;

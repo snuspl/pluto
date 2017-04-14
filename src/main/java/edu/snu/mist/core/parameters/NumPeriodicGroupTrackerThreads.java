@@ -13,24 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.parameters;
 
-/**
- * This is the default implementation of the LogicalVertex.
- **/
-final class DefaultLogicalVertexImpl implements LogicalVertex {
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-  /**
-   * The physical vertex id corresponding to the logical vertex.
-   */
-  private final String physicalVertexId;
-
-  public DefaultLogicalVertexImpl(final String physicalVertexId) {
-    this.physicalVertexId = physicalVertexId;
-  }
-
-  @Override
-  public String getPhysicalVertexId() {
-    return physicalVertexId;
-  }
+@NamedParameter(doc = "The number of threads used for periodic group metric tracking", default_value = "1")
+// TODO: [MIST-574] Distribute GroupMetricTracker.
+// If you want to set the value larger than 1, GroupMetricTracker should be distributed.
+public final class NumPeriodicGroupTrackerThreads implements Name<Integer> {
 }

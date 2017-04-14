@@ -27,6 +27,7 @@ import edu.snu.mist.common.graph.MISTEdge;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 /**
  * This class builds MIST query.
@@ -49,6 +50,11 @@ public final class MISTQueryBuilder {
   private static final int DEFAULT_EXPECTED_DELAY = 0;
 
   /**
+   * The group id of the query.
+   */
+  private final String groupId;
+
+  /**
    * The default watermark configuration.
    */
   private WatermarkConfiguration getDefaultWatermarkConf() {
@@ -58,8 +64,9 @@ public final class MISTQueryBuilder {
         .build();
   }
 
-  public MISTQueryBuilder() {
+  public MISTQueryBuilder(final String groupId) {
     this.dag = new AdjacentListDAG<>();
+    this.groupId = groupId;
   }
 
   /**
@@ -120,10 +127,31 @@ public final class MISTQueryBuilder {
   }
 
   /**
+   * Create a continuous stream that subscribes data from MQTT broker.
+   * @param srcConf mqtt configuration
+   * @return a new continuous stream
+   */
+  public ContinuousStream<MqttMessage> mqttStream(final SourceConfiguration srcConf) {
+    return mqttStream(srcConf, getDefaultWatermarkConf());
+  }
+
+  /**
+   * Create a continuous stream that subscribes data from MQTT broker.
+   * @param srcConf mqtt configuration
+   * @param watermarkConf a watermark configuration
+   * @return a new continuous stream
+   */
+  public ContinuousStream<MqttMessage> mqttStream(final SourceConfiguration srcConf,
+                                                  final WatermarkConfiguration watermarkConf) {
+    assert srcConf.getType() == SourceConfiguration.SourceType.MQTT;
+    return buildStream(srcConf.getConfiguration(), watermarkConf.getConfiguration());
+  }
+
+  /**
    * Build the query.
    * @return the query
    */
   public MISTQuery build() {
-    return new MISTQueryImpl(dag);
+    return new MISTQueryImpl(dag, groupId);
   }
 }

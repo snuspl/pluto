@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.graph;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,10 +27,28 @@ import java.util.Set;
 public interface DAG<V, I> {
 
   /**
+   * Get the number of vertices.
+   * @return the number of vertices
+   */
+  int numberOfVertices();
+
+  /**
+   * Get the number of edges.
+   * @return the number of edge
+   */
+  int numberOfEdges();
+
+  /**
    * Gets root vertices for graph traversal.
    * @return set of root vertices
    */
   Set<V> getRootVertices();
+
+  /**
+   * Gets the vertices of the graph.
+   * @return vertices
+   */
+  Collection<V> getVertices();
 
   /**
    * Checks whether there is an edge from the vertices v to w.

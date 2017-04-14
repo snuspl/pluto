@@ -59,7 +59,7 @@ public final class QueryDeletion {
 
     // Simple reduce function.
     final MISTBiFunction<Integer, Integer, Integer> reduceFunction = (v1, v2) -> { return v1 + v2; };
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group");
     queryBuilder.socketTextStream(localTextSocketSourceConf)
         .filter(s -> isAlpha(s))
         .map(s -> new Tuple2(s, 1))
@@ -95,7 +95,8 @@ public final class QueryDeletion {
 
     Thread.sleep(10000);
 
-    System.out.println(MISTQueryControl.delete(result.getQueryId(), result.getTaskAddress()).getMsg());
+    System.out.println(MISTQueryControl.delete("example-group",
+        result.getQueryId(), result.getTaskAddress()).getMsg());
 
   }
 

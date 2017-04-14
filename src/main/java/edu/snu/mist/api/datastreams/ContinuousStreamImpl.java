@@ -31,6 +31,7 @@ import edu.snu.mist.formats.avro.Direction;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
 import org.apache.reef.tang.formats.ConfigurationModule;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -351,6 +352,18 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
         .set(TextSocketSinkConfiguration.SOCKET_HOST_PORT, serverPort)
         .build();
     final MISTStream<String> sink = new MISTStreamImpl<>(dag, opConf);
+    dag.addVertex(sink);
+    dag.addEdge(this, sink, new MISTEdge(Direction.LEFT));
+    return sink;
+  }
+
+  @Override
+  public MISTStream<MqttMessage> mqttOutput(final String brokerURI, final String topic) {
+    final Configuration opConf = MqttSinkConfiguration.CONF
+        .set(MqttSinkConfiguration.MQTT_BROKER_URI, brokerURI)
+        .set(MqttSinkConfiguration.MQTT_TOPIC, topic)
+        .build();
+    final MISTStream<MqttMessage> sink = new MISTStreamImpl<>(dag, opConf);
     dag.addVertex(sink);
     dag.addEdge(this, sink, new MISTEdge(Direction.LEFT));
     return sink;

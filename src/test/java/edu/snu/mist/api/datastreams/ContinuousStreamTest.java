@@ -34,6 +34,7 @@ import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -61,7 +62,7 @@ public final class ContinuousStreamTest {
 
   @Before
   public void setUp() {
-    queryBuilder = new MISTQueryBuilder();
+    queryBuilder = new MISTQueryBuilder(TestParameters.GROUP_ID);
     sourceStream = queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
     filteredStream = sourceStream.filter(defaultFilter);
     filteredMappedStream = filteredStream.map(defaultMap);
@@ -395,7 +396,7 @@ public final class ContinuousStreamTest {
    * Test for SinkImpl.
    */
   @Test
-  public void testSinkImpl() throws InjectionException {
+  public void testTextSocketSinkImpl() throws InjectionException {
     final MISTStream<String> sink =
         filteredMappedStream.textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
     final Configuration conf = sink.getConfiguration();
@@ -404,6 +405,27 @@ public final class ContinuousStreamTest {
     final int desPort = injector.getNamedInstance(SocketServerPort.class);
     Assert.assertEquals(TestParameters.HOST, desHost);
     Assert.assertEquals(TestParameters.SINK_PORT, desPort);
+
+    // Check src -> sink
+    final DAG<MISTStream, MISTEdge> dag = queryBuilder.build().getDAG();
+    final Map<MISTStream, MISTEdge> neighbors = dag.getEdges(filteredMappedStream);
+    Assert.assertEquals(1, neighbors.size());
+    Assert.assertEquals(new MISTEdge(Direction.LEFT), neighbors.get(sink));
+  }
+
+  /**
+   * Test for Mqtt sink.
+   */
+  @Test
+  public void testMqttSink() throws InjectionException {
+    final MISTStream<MqttMessage> sink =
+        filteredMappedStream.mqttOutput(TestParameters.HOST, TestParameters.TOPIC);
+    final Configuration conf = sink.getConfiguration();
+    final Injector injector = Tang.Factory.getTang().newInjector(conf);
+    final String brokerAddr = injector.getNamedInstance(MQTTBrokerURI.class);
+    final String topic = injector.getNamedInstance(MQTTTopic.class);
+    Assert.assertEquals(TestParameters.HOST, brokerAddr);
+    Assert.assertEquals(TestParameters.TOPIC, topic);
 
     // Check src -> sink
     final DAG<MISTStream, MISTEdge> dag = queryBuilder.build().getDAG();

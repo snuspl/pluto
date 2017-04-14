@@ -280,6 +280,12 @@ public final class NettySourceTest {
     }
 
     @Override
+    public void emitData(final MistDataEvent data, final int index) {
+      // source test output emitter does not emit data according to the index
+      this.emitData(data);
+    }
+
+    @Override
     public void emitWatermark(final MistWatermarkEvent watermark) {
       watermarkList.add(watermark.getTimestamp());
       watermarkCountDownLatch.countDown();

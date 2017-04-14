@@ -63,11 +63,18 @@ final class DefaultOperatorChainImpl implements OperatorChain {
    */
   private final AtomicReference<Status> status;
 
+  /**
+   * The operator chain manager which would manage this operator chain.
+   */
+  private OperatorChainManager operatorChainManager;
+
   @Inject
   DefaultOperatorChainImpl() {
     this.operators = new LinkedList<>();
     this.queue = new ConcurrentLinkedQueue<>();
     this.status = new AtomicReference<>(Status.READY);
+    this.outputEmitter = null;
+    this.operatorChainManager = null;
   }
 
   @Override
@@ -121,9 +128,16 @@ final class DefaultOperatorChainImpl implements OperatorChain {
         status.set(Status.READY);
         return false;
       }
-      final Tuple<MistEvent, Direction> event = queue.poll();
+      final Tuple<MistEvent, Direction> event;
+      // Synchronization is necessary to prevent omitting events.
+      synchronized (this) {
+        event = queue.poll();
+      }
       process(event);
       status.set(Status.READY);
+      if (operatorChainManager != null && !queue.isEmpty()) {
+        operatorChainManager.insert(this);
+      }
       return true;
     } else {
       return false;
@@ -132,12 +146,33 @@ final class DefaultOperatorChainImpl implements OperatorChain {
 
   @Override
   public boolean addNextEvent(final MistEvent event, final Direction direction) {
-    return queue.add(new Tuple<>(event, direction));
+    final boolean isAdded;
+    // Insert this operator chain into the new operator chain manager when its queue becomes not empty.
+    // This operation is not performed concurrently with queue polling to prevent event omitting.
+    synchronized (this) {
+      if (operatorChainManager != null && queue.isEmpty()) {
+        isAdded = queue.add(new Tuple<>(event, direction));
+        operatorChainManager.insert(this);
+      } else {
+        isAdded = queue.add(new Tuple<>(event, direction));
+      }
+    }
+    return isAdded;
   }
 
   @Override
   public int size() {
     return operators.size();
+  }
+
+  @Override
+  public int numberOfEvents() {
+    return queue.size();
+  }
+
+  @Override
+  public PhysicalOperator get(final int index) {
+    return operators.get(index);
   }
 
   @Override
@@ -190,28 +225,17 @@ final class DefaultOperatorChainImpl implements OperatorChain {
   }
 
   @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final DefaultOperatorChainImpl that = (DefaultOperatorChainImpl) o;
-    if (!operators.equals(that.operators)) {
-      return false;
-    }
-    return true;
-  }
-
-  @Override
-  public int hashCode() {
-    return operators.hashCode();
+  public void setOperatorChainManager(final OperatorChainManager chainManager) {
+    this.operatorChainManager = chainManager;
   }
 
   @Override
   public String toString() {
-    return operators.toString();
+    final StringBuilder sb = new StringBuilder();
+    sb.append(this.hashCode());
+    sb.append("|");
+    sb.append(operators.toString());
+    return sb.toString();
   }
 
   /**
@@ -232,6 +256,12 @@ final class DefaultOperatorChainImpl implements OperatorChain {
     public void emitData(final MistDataEvent output) {
       op.processLeftData(output);
       nextPhysicalOp.setLatestDataTimestamp(output.getTimestamp());
+    }
+
+    @Override
+    public void emitData(final MistDataEvent output, final int index) {
+      // operator chain internal emitter does not emit data according to the index
+      this.emitData(output);
     }
 
     @Override

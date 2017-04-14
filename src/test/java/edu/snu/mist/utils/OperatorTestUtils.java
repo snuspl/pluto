@@ -22,6 +22,7 @@ import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.WindowData;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.reef.io.Tuple;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.junit.Assert;
 
 import javax.inject.Inject;
@@ -172,6 +173,18 @@ public final class OperatorTestUtils {
     @Override
     public Tuple<ConsumerRecord, Long> apply(final ConsumerRecord consumerRecord) {
       return new Tuple<>(consumerRecord, 1L);
+    }
+  }
+
+  public static final class TestMQTTTimestampExtractFunc
+      implements MISTFunction<MqttMessage, Tuple<MqttMessage, Long>> {
+    @Inject
+    private TestMQTTTimestampExtractFunc() {
+
+    }
+    @Override
+    public Tuple<MqttMessage, Long> apply(final MqttMessage message) {
+      return new Tuple<>(message, 1L);
     }
   }
 

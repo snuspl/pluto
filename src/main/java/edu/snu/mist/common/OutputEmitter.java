@@ -28,6 +28,14 @@ public interface OutputEmitter {
 
   /**
    * Emits an output as an input of next operators.
+   * The data will be passed toward edges having target index only.
+   * @param data data
+   * @param index index of the edge to pass the data selectively
+   */
+  void emitData(MistDataEvent data, int index);
+
+  /**
+   * Emits an output as an input of next operators.
    * @param watermark watermark
    */
   void emitWatermark(MistWatermarkEvent watermark);
