@@ -18,9 +18,9 @@ package edu.snu.mist.core.task;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * This interface manages operator chains.
+ * This interface manages operator chains without blocking.
  */
-@DefaultImplementation(ActiveQueryPickManager.class)
+@DefaultImplementation(BlockingActiveQueryPickManager.class)
 public interface OperatorChainManager {
 
   /**
@@ -35,15 +35,8 @@ public interface OperatorChainManager {
 
   /**
    * Pick an operator chain. This call simply returns empty when there is no event.
+   * This could block threads according to its inner implementation.
    * @return an operator chain.
-   * Returns null if there is no operator chain that is executable.
    */
-  OperatorChain pickOperatorChain();
-
-  /**
-   * Pick an operator chain. When there is no events, it sleeps until the new event comes in
-   * and wakes up again when new event arrives. It doesn't return null event.
-   * @return an operator chain
-   */
-  OperatorChain pickOperatorChainBlocking() throws InterruptedException;
+  OperatorChain pickOperatorChain() throws InterruptedException;
 }

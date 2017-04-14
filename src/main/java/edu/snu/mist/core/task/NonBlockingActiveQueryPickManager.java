@@ -22,25 +22,19 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 /**
  * This class picks a query, which has more than one events to be processed, from the active query set randomly.
  * This prevents picking queries which have no events, thus saving CPU cycles compared to RandomlyPickManager.
- * This class uses  queues to provide maximum concurrency and efficiency.
+ * This class uses queues to provide maximum concurrency and efficiency.
  */
-public final class ActiveQueryPickManager implements OperatorChainManager {
+public final class NonBlockingActiveQueryPickManager implements OperatorChainManager {
 
   /**
    * A working queue which contains queries that will be processed soon.
    */
   private final Queue<OperatorChain> activeQueryQueue;
 
-  /**
-   * A conditional variable which is used when ConditionEventProcesor is used.
-   */
-  private final Object isNotEmptyCondition;
-
   @Inject
-  private ActiveQueryPickManager() {
+  private NonBlockingActiveQueryPickManager() {
     // ConcurrentLinkedQueue is used to assure concurrency as well as maintain exactly-once query picking.
     this.activeQueryQueue = new ConcurrentLinkedQueue<>();
-    this.isNotEmptyCondition = new Object();
   }
 
   /**
@@ -51,15 +45,7 @@ public final class ActiveQueryPickManager implements OperatorChainManager {
    */
   @Override
   public void insert(final OperatorChain query) {
-    // This should be used only when
-    synchronized (isNotEmptyCondition) {
-      if (activeQueryQueue.isEmpty()) {
-        activeQueryQueue.add(query);
-        isNotEmptyCondition.notify();
-      } else {
-        activeQueryQueue.add(query);
-      }
-    }
+    activeQueryQueue.add(query);
   }
 
   /**
@@ -80,21 +66,5 @@ public final class ActiveQueryPickManager implements OperatorChainManager {
   @Override
   public OperatorChain pickOperatorChain() {
     return activeQueryQueue.poll();
-  }
-
-
-  @Override
-  public OperatorChain pickOperatorChainBlocking() throws InterruptedException {
-    synchronized (isNotEmptyCondition) {
-      OperatorChain query;
-      try {
-        while ((query = activeQueryQueue.poll()) == null) {
-          isNotEmptyCondition.wait();
-        }
-      } catch (final InterruptedException e) {
-        throw e;
-      }
-      return query;
-    }
   }
 }

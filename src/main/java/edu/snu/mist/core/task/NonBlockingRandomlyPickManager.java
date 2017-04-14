@@ -15,30 +15,26 @@
  */
 package edu.snu.mist.core.task;
 
-import org.apache.commons.lang.NotImplementedException;
-
 import javax.inject.Inject;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * This class picks a query randomly.
+ * This class picks a query randomly without blocking.
  * It uses Random class for picking up a query randomly.
  */
-public final class RandomlyPickManager implements OperatorChainManager {
+public final class NonBlockingRandomlyPickManager implements OperatorChainManager {
 
-  private Object dummyCondition;
   private final List<OperatorChain> queues;
   private final Random random;
 
   @Inject
-  private RandomlyPickManager() {
+  private NonBlockingRandomlyPickManager() {
     // [MIST-#]: For concurrency, it uses CopyOnWriteArrayList.
     // This could be a performance bottleneck.
     this.queues = new CopyOnWriteArrayList<>();
     this.random = new Random(System.currentTimeMillis());
-    this.dummyCondition = new Object();
   }
 
   @Override
@@ -66,11 +62,5 @@ public final class RandomlyPickManager implements OperatorChainManager {
         return null;
       }
     }
-  }
-
-  @Override
-  public OperatorChain pickOperatorChainBlocking() {
-    // Not implemented here
-    throw new NotImplementedException();
   }
 }

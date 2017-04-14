@@ -30,6 +30,7 @@ public class ConditionEventProcessor implements Runnable {
   private final OperatorChainManager operatorChainManager;
 
   public ConditionEventProcessor(final OperatorChainManager operatorChainManagerParam) {
+    // Assume that operator chain manager is blocking
     this.operatorChainManager = operatorChainManagerParam;
   }
 
@@ -38,7 +39,7 @@ public class ConditionEventProcessor implements Runnable {
     try {
       while (!Thread.currentThread().isInterrupted()) {
         // If the queue is empty, the thread is blocked until a new event arrives...
-        operatorChainManager.pickOperatorChainBlocking().processNextEvent();
+        operatorChainManager.pickOperatorChain().processNextEvent();
       }
     } catch (final InterruptedException e) {
       // Interrupt occurs while sleeping, so just finishes the process...
