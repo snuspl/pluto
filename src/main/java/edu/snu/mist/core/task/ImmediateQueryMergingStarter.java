@@ -79,7 +79,7 @@ final class ImmediateQueryMergingStarter implements QueryStarter {
 
     // Create vertex info map
     for (final ExecutionVertex ev : executionPlan.getVertices()) {
-      final VertexInfo vertexInfo = new VertexInfo(submittedDag);
+      final VertexInfo vertexInfo = new VertexInfo(submittedDag, ev);
       vertexInfoMap.put(ev, vertexInfo);
     }
 
