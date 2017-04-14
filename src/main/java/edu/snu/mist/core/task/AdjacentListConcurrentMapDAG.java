@@ -26,8 +26,8 @@ import java.util.logging.Logger;
  * This implements adjacent list, which will be used to implement DAG.
  * This DAG supports concurrent read-write on edges.
  * The edge can be read from the execution thread, and written by the merging/deletion thread.
- * Note: Currently, it just supports concurrent single read/write thread.
- * It does not support concurrent writes yet.
+ * TODO[Note]: Currently, it supports single writer and multiple readers.
+ * It does not support concurrent writers yet.
  * @param <V> vertex type
  * @param <I> edge information type
  */
