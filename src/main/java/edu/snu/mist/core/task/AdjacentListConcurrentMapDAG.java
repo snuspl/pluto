@@ -121,7 +121,6 @@ public final class AdjacentListConcurrentMapDAG<V, I> implements DAG<V, I> {
     final Map<V, I> edges = adjacent.remove(v);
     if (edges != null) {
       numVertices -= 1;
-      inDegrees.remove(v);
       final int inDegreeEdges = inDegrees.remove(v);
       numEdges -= inDegreeEdges;
       numEdges -= edges.size();
