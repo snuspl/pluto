@@ -54,15 +54,9 @@ public final class AdjacentListConcurrentMapDAG<V, I> implements DAG<V, I> {
    */
   private int numEdges;
 
-  /**
-   * A set of root vertices.
-   */
-  private final Set<V> rootVertices;
-
   public AdjacentListConcurrentMapDAG() {
     this.adjacent = new ConcurrentHashMap<>();
-    this.inDegrees = new HashMap<>();
-    this.rootVertices = new HashSet<>();
+    this.inDegrees = new ConcurrentHashMap<>();
     this.numVertices = 0;
     this.numEdges = 0;
   }
@@ -79,6 +73,12 @@ public final class AdjacentListConcurrentMapDAG<V, I> implements DAG<V, I> {
 
   @Override
   public Set<V> getRootVertices() {
+    final Set<V> rootVertices = new HashSet<>();
+    for (final Map.Entry<V, Integer> entry : inDegrees.entrySet()) {
+      if (entry.getValue() == 0) {
+        rootVertices.add(entry.getKey());
+      }
+    }
     return rootVertices;
   }
 
@@ -107,7 +107,6 @@ public final class AdjacentListConcurrentMapDAG<V, I> implements DAG<V, I> {
     if (!adjacent.containsKey(v)) {
       adjacent.put(v, new ConcurrentHashMap<V, I>());
       inDegrees.put(v, 0);
-      rootVertices.add(v);
       numVertices += 1;
       return true;
     } else {
@@ -130,11 +129,7 @@ public final class AdjacentListConcurrentMapDAG<V, I> implements DAG<V, I> {
         final V neighbor = edge.getKey();
         final int inDegree = inDegrees.get(neighbor) - 1;
         inDegrees.put(neighbor, inDegree);
-        if (inDegree == 0) {
-          rootVertices.add(neighbor);
-        }
       }
-      rootVertices.remove(v);
 
       // We have to remove edge that destination vertex is v.
       // This operation is very expensive.
@@ -160,9 +155,6 @@ public final class AdjacentListConcurrentMapDAG<V, I> implements DAG<V, I> {
       adjEdges.put(v2, i);
       final int inDegree = inDegrees.get(v2);
       inDegrees.put(v2, inDegree + 1);
-      if (inDegree == 0) {
-        rootVertices.remove(v2);
-      }
       return true;
     } else {
       LOG.log(Level.WARNING, "The edge from {0} to {1} already exists", new Object[]{v1, v2});
@@ -181,9 +173,6 @@ public final class AdjacentListConcurrentMapDAG<V, I> implements DAG<V, I> {
       numEdges -= 1;
       final int inDegree = inDegrees.get(v2);
       inDegrees.put(v2, inDegree - 1);
-      if (inDegree == 1) {
-        rootVertices.add(v2);
-      }
       return true;
     } else {
       LOG.log(Level.WARNING, "The edge from {0} to {1} does not exists", new Object[]{v1, v2});
@@ -223,9 +212,6 @@ public final class AdjacentListConcurrentMapDAG<V, I> implements DAG<V, I> {
     if (inDegrees != null ? !inDegrees.equals(that.inDegrees) : that.inDegrees != null) {
       return false;
     }
-    if (rootVertices != null ? !rootVertices.equals(that.rootVertices) : that.rootVertices != null) {
-      return false;
-    }
 
     return true;
   }
@@ -236,7 +222,6 @@ public final class AdjacentListConcurrentMapDAG<V, I> implements DAG<V, I> {
     result = 31 * result + (inDegrees != null ? inDegrees.hashCode() : 0);
     result = 31 * result + numVertices;
     result = 31 * result + numEdges;
-    result = 31 * result + (rootVertices != null ? rootVertices.hashCode() : 0);
     return result;
   }
 }
