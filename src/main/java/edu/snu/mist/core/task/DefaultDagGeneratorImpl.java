@@ -16,7 +16,6 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.SerializeUtils;
-import edu.snu.mist.common.graph.AdjacentListDAG;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.Operator;
@@ -89,7 +88,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
     final AvroOperatorChainDag avroOpChainDag = queryIdAndAvroOperatorChainDag.getValue();
     // For execution dag
     final List<ExecutionVertex> deserializedVertices = new ArrayList<>(avroOpChainDag.getAvroVertices().size());
-    final DAG<ExecutionVertex, MISTEdge> executionDAG = new AdjacentListDAG<>();
+    final DAG<ExecutionVertex, MISTEdge> executionDAG = new AdjacentListConcurrentMapDAG<>();
 
     // Get a class loader
     final URL[] urls = SerializeUtils.getJarFileURLs(avroOpChainDag.getJarFilePaths());
