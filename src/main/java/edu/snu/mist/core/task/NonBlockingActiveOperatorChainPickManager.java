@@ -22,9 +22,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 /**
  * This class picks a query, which has more than one events to be processed, from the active query set randomly.
  * This prevents picking queries which have no events, thus saving CPU cycles compared to RandomlyPickManager.
- * This class uses  queues to provide maximum concurrency and efficiency.
+ * This class uses queues to provide maximum concurrency and efficiency.
  */
-public final class ActiveQueryPickManager implements OperatorChainManager {
+public final class NonBlockingActiveOperatorChainPickManager implements OperatorChainManager {
 
   /**
    * A working queue which contains queries that will be processed soon.
@@ -32,31 +32,31 @@ public final class ActiveQueryPickManager implements OperatorChainManager {
   private final Queue<OperatorChain> activeQueryQueue;
 
   @Inject
-  private ActiveQueryPickManager() {
+  private NonBlockingActiveOperatorChainPickManager() {
     // ConcurrentLinkedQueue is used to assure concurrency as well as maintain exactly-once query picking.
     this.activeQueryQueue = new ConcurrentLinkedQueue<>();
   }
 
   /**
    * Insert a new operator chain into the manager. This method is called when the
-   * queue of a query just becomes not empty by getting an event, or the queue is still not empty
+   * queue of a operatorChain just becomes not empty by getting an event, or the queue is still not empty
    * after thread's processing an event.
-   * @param query a query to be inserted
+   * @param operatorChain a operatorChain to be inserted
    */
   @Override
-  public void insert(final OperatorChain query) {
-    activeQueryQueue.add(query);
+  public void insert(final OperatorChain operatorChain) {
+    activeQueryQueue.add(operatorChain);
   }
 
   /**
    * Delete an operator from the manager.
    * This method should be only called when the queue is permanently removed from the system,
    * because this method traverses along the whole queue, thus takes O(n) time to complete.
-   * @param query a query to be deleted.
+   * @param operatorChain a operatorChain to be deleted.
    */
   @Override
-  public void delete(final OperatorChain query) {
-    activeQueryQueue.remove(query);
+  public void delete(final OperatorChain operatorChain) {
+    activeQueryQueue.remove(operatorChain);
   }
 
   /**

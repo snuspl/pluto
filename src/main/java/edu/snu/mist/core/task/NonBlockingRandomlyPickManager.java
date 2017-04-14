@@ -21,16 +21,16 @@ import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * This class picks a query randomly.
+ * This class picks a query randomly without blocking.
  * It uses Random class for picking up a query randomly.
  */
-public final class RandomlyPickManager implements OperatorChainManager {
+public final class NonBlockingRandomlyPickManager implements OperatorChainManager {
 
   private final List<OperatorChain> queues;
   private final Random random;
 
   @Inject
-  private RandomlyPickManager() {
+  private NonBlockingRandomlyPickManager() {
     // [MIST-#]: For concurrency, it uses CopyOnWriteArrayList.
     // This could be a performance bottleneck.
     this.queues = new CopyOnWriteArrayList<>();
@@ -38,13 +38,13 @@ public final class RandomlyPickManager implements OperatorChainManager {
   }
 
   @Override
-  public void insert(final OperatorChain query) {
-    queues.add(query);
+  public void insert(final OperatorChain operatorChain) {
+    queues.add(operatorChain);
   }
 
   @Override
-  public void delete(final OperatorChain query) {
-    queues.remove(query);
+  public void delete(final OperatorChain operatorChain) {
+    queues.remove(operatorChain);
   }
 
   @Override
@@ -52,8 +52,8 @@ public final class RandomlyPickManager implements OperatorChainManager {
     while (true) {
       try {
         final int pick = random.nextInt(queues.size());
-        final OperatorChain query = queues.get(pick);
-        return query;
+        final OperatorChain operatorChain = queues.get(pick);
+        return operatorChain;
       } catch (final IllegalArgumentException e) {
         // This can occur when the size of queues is 0.
         // Return null.

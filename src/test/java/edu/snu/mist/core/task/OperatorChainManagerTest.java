@@ -29,7 +29,8 @@ public class OperatorChainManagerTest {
   @Test
   public void randomPickManagerTest() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
-    final RandomlyPickManager operatorChainManager = injector.getInstance(RandomlyPickManager.class);
+    final NonBlockingRandomlyPickManager operatorChainManager
+        = injector.getInstance(NonBlockingRandomlyPickManager.class);
 
     // Select a chain
     final OperatorChain chain = new DefaultOperatorChainImpl();
@@ -44,9 +45,10 @@ public class OperatorChainManagerTest {
   }
 
   @Test
-  public void activeQueryPickManagerTest() throws InjectionException {
+  public void nonBlockingActiveQueryPickManagerTest() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
-    final ActiveQueryPickManager operatorChainManager = injector.getInstance(ActiveQueryPickManager.class);
+    final NonBlockingActiveOperatorChainPickManager operatorChainManager
+        = injector.getInstance(NonBlockingActiveOperatorChainPickManager.class);
 
     // Select a chain
     final OperatorChain chain = new DefaultOperatorChainImpl();
@@ -58,5 +60,18 @@ public class OperatorChainManagerTest {
     operatorChainManager.delete(chain);
     final OperatorChain c = operatorChainManager.pickOperatorChain();
     Assert.assertEquals(null, c);
+  }
+
+  @Test
+  public void blockingActiveQueryPickManagerTest() throws InjectionException, InterruptedException {
+    final Injector injector = Tang.Factory.getTang().newInjector();
+    final BlockingActiveOperatorChainPickManager operatorChainManager
+        = injector.getInstance(BlockingActiveOperatorChainPickManager.class);
+
+    // Select a chain
+    final OperatorChain chain = new DefaultOperatorChainImpl();
+    operatorChainManager.insert(chain);
+    final OperatorChain selectedChain = operatorChainManager.pickOperatorChain();
+    Assert.assertEquals(chain, selectedChain);
   }
 }

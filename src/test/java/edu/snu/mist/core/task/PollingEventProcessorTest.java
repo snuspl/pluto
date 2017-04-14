@@ -31,8 +31,9 @@ import org.junit.Test;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
-public final class EventProcessorTest {
+public final class PollingEventProcessorTest {
 
   /**
    * Test whether the processor processes events from multiple queries correctly.
@@ -43,21 +44,24 @@ public final class EventProcessorTest {
   public void activePickProcessTest() throws InjectionException, InterruptedException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final OperatorChainManager operatorChainManager = injector.getInstance(ActiveQueryPickManager.class);
+    final OperatorChainManager operatorChainManager =
+        injector.getInstance(NonBlockingActiveOperatorChainPickManager.class);
     final StringIdentifierFactory idfac = injector.getInstance(StringIdentifierFactory.class);
 
     final int numTasks = 1000000;
+    final CountDownLatch countDownLatch1 = new CountDownLatch(numTasks);
+    final CountDownLatch countDownLatch2 = new CountDownLatch(numTasks);
     final List<MistEvent> list1 = new LinkedList<>();
     final List<MistEvent> list2 = new LinkedList<>();
     final List<MistEvent> result = new LinkedList<>();
 
     final OperatorChain chain1 = new DefaultOperatorChainImpl();
-    final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl("op1", null, new TestOperator(), chain1);
+    final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl("op1", null, new TestOperator(countDownLatch1), chain1);
     chain1.insertToHead(o1);
     chain1.setOutputEmitter(new OutputBufferEmitter(list1));
     chain1.setOperatorChainManager(operatorChainManager);
     final OperatorChain chain2 = new DefaultOperatorChainImpl();
-    final PhysicalOperator o2 = new DefaultPhysicalOperatorImpl("op2", null, new TestOperator(), chain2);
+    final PhysicalOperator o2 = new DefaultPhysicalOperatorImpl("op2", null, new TestOperator(countDownLatch2), chain2);
     chain2.insertToHead(o2);
     chain2.setOutputEmitter(new OutputBufferEmitter(list2));
     chain2.setOperatorChainManager(operatorChainManager);
@@ -70,14 +74,10 @@ public final class EventProcessorTest {
     }
 
     // Create a processor
-    final Thread processor = new Thread(new EventProcessor(operatorChainManager));
+    final Thread processor = new Thread(new PollingEventProcessor(operatorChainManager));
     processor.start();
-
-    while (!(list1.size() == numTasks && list2.size() == numTasks)) {
-      // do nothing until the processor consumes all of the events
-      Thread.sleep(1000);
-    }
-
+    countDownLatch1.await();
+    countDownLatch2.await();
     Assert.assertEquals(result, list1);
     Assert.assertEquals(result, list2);
     processor.interrupt();
@@ -87,20 +87,22 @@ public final class EventProcessorTest {
   public void randomPickProcessTest() throws InjectionException, InterruptedException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final OperatorChainManager operatorChainManager = injector.getInstance(RandomlyPickManager.class);
+    final OperatorChainManager operatorChainManager = injector.getInstance(NonBlockingRandomlyPickManager.class);
     final StringIdentifierFactory idfac = injector.getInstance(StringIdentifierFactory.class);
 
     final int numTasks = 1000000;
+    final CountDownLatch countDownLatch1 = new CountDownLatch(numTasks);
+    final CountDownLatch countDownLatch2 = new CountDownLatch(numTasks);
     final List<MistEvent> list1 = new LinkedList<>();
     final List<MistEvent> list2 = new LinkedList<>();
     final List<MistEvent> result = new LinkedList<>();
 
     final OperatorChain chain1 = new DefaultOperatorChainImpl();
-    final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl("op1", null, new TestOperator(), chain1);
+    final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl("op1", null, new TestOperator(countDownLatch1), chain1);
     chain1.insertToHead(o1);
     chain1.setOutputEmitter(new OutputBufferEmitter(list1));
     final OperatorChain chain2 = new DefaultOperatorChainImpl();
-    final PhysicalOperator o2 = new DefaultPhysicalOperatorImpl("op2", null, new TestOperator(), chain2);
+    final PhysicalOperator o2 = new DefaultPhysicalOperatorImpl("op2", null, new TestOperator(countDownLatch2), chain2);
     chain2.insertToHead(o2);
     chain2.setOutputEmitter(new OutputBufferEmitter(list2));
 
@@ -115,14 +117,11 @@ public final class EventProcessorTest {
     operatorChainManager.insert(chain2);
 
     // Create a processor
-    final Thread processor = new Thread(new EventProcessor(operatorChainManager));
+    final Thread processor = new Thread(new PollingEventProcessor(operatorChainManager));
     processor.start();
 
-    while (!(list1.size() == numTasks && list2.size() == numTasks)) {
-      // do nothing until the processor consumes all of the events
-      Thread.sleep(1000);
-    }
-
+    countDownLatch1.await();
+    countDownLatch2.await();
     Assert.assertEquals(result, list1);
     Assert.assertEquals(result, list2);
     processor.interrupt();
@@ -137,15 +136,16 @@ public final class EventProcessorTest {
   public void concurrentProcessTest() throws InjectionException, InterruptedException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final OperatorChainManager queryManager = injector.getInstance(OperatorChainManager.class);
+    final OperatorChainManager queryManager = injector.getInstance(NonBlockingActiveOperatorChainPickManager.class);
     final StringIdentifierFactory idfac = injector.getInstance(StringIdentifierFactory.class);
 
     final int numTasks = 1000000;
+    final CountDownLatch countDownLatch = new CountDownLatch(numTasks);
     final List<MistEvent> list1 = new LinkedList<>();
     final List<MistEvent> result = new LinkedList<>();
 
     final OperatorChain query = new DefaultOperatorChainImpl();
-    final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl("op1", null, new TestOperator(), query);
+    final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl("op1", null, new TestOperator(countDownLatch), query);
     query.insertToHead(o1);
     query.setOutputEmitter(new OutputBufferEmitter(list1));
     query.setOperatorChainManager(queryManager);
@@ -157,17 +157,14 @@ public final class EventProcessorTest {
     }
 
     // Create three processors
-    final Thread processor1 = new Thread(new EventProcessor(queryManager));
-    final Thread processor2 = new Thread(new EventProcessor(queryManager));
-    final Thread processor3 = new Thread(new EventProcessor(queryManager));
+    final Thread processor1 = new Thread(new PollingEventProcessor(queryManager));
+    final Thread processor2 = new Thread(new PollingEventProcessor(queryManager));
+    final Thread processor3 = new Thread(new PollingEventProcessor(queryManager));
     processor1.start();
     processor2.start();
     processor3.start();
 
-    while (!(list1.size() == numTasks)) {
-      // do nothing until consumer thread consumes all of the tasks
-      Thread.sleep(1000);
-    }
+    countDownLatch.await();
 
     Assert.assertEquals(result, list1);
     processor1.interrupt();
@@ -181,8 +178,16 @@ public final class EventProcessorTest {
    */
   class TestOperator extends OneStreamOperator {
 
+    private CountDownLatch countDownLatch;
+
+    public TestOperator(final CountDownLatch countDownLatchParam) {
+      super();
+      this.countDownLatch = countDownLatchParam;
+    }
+
     @Override
     public void processLeftData(final MistDataEvent data) {
+      countDownLatch.countDown();
       outputEmitter.emitData(data);
     }
 
