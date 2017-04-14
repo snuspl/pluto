@@ -20,7 +20,7 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
 /**
  * This interface manages operator chains without blocking.
  */
-@DefaultImplementation(BlockingActiveQueryPickManager.class)
+@DefaultImplementation(BlockingActiveOperatorChainPickManager.class)
 public interface OperatorChainManager {
 
   /**

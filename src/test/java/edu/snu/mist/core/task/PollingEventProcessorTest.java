@@ -44,7 +44,8 @@ public final class PollingEventProcessorTest {
   public void activePickProcessTest() throws InjectionException, InterruptedException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final OperatorChainManager operatorChainManager = injector.getInstance(NonBlockingActiveQueryPickManager.class);
+    final OperatorChainManager operatorChainManager =
+        injector.getInstance(NonBlockingActiveOperatorChainPickManager.class);
     final StringIdentifierFactory idfac = injector.getInstance(StringIdentifierFactory.class);
 
     final int numTasks = 1000000;
@@ -135,7 +136,7 @@ public final class PollingEventProcessorTest {
   public void concurrentProcessTest() throws InjectionException, InterruptedException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final OperatorChainManager queryManager = injector.getInstance(NonBlockingActiveQueryPickManager.class);
+    final OperatorChainManager queryManager = injector.getInstance(NonBlockingActiveOperatorChainPickManager.class);
     final StringIdentifierFactory idfac = injector.getInstance(StringIdentifierFactory.class);
 
     final int numTasks = 1000000;

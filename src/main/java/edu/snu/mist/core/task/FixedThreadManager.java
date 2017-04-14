@@ -40,7 +40,8 @@ public final class FixedThreadManager implements ThreadManager {
                              final OperatorChainManager queueManager) {
     this.threads = new HashSet<>();
     for (int i = 0; i < numThreads; i++) {
-      final Thread thread = new Thread(new ConditionEventProcessor(queueManager));
+      final Thread thread = new Thread(new ConditionEventProcessor(
+          (BlockingActiveOperatorChainPickManager) queueManager));
       threads.add(thread);
       thread.start();
     }

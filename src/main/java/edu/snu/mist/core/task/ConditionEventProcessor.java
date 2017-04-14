@@ -27,9 +27,9 @@ public class ConditionEventProcessor implements Runnable {
   /**
    * The operator chain manager for picking up a chain for event processing.
    */
-  private final OperatorChainManager operatorChainManager;
+  private final BlockingActiveOperatorChainPickManager operatorChainManager;
 
-  public ConditionEventProcessor(final OperatorChainManager operatorChainManagerParam) {
+  public ConditionEventProcessor(final BlockingActiveOperatorChainPickManager operatorChainManagerParam) {
     // Assume that operator chain manager is blocking
     this.operatorChainManager = operatorChainManagerParam;
   }

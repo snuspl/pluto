@@ -23,10 +23,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Blocking version of NonBlockingActiveQueryPickManager. When picking operator chain, it
+ * Blocking version of OperatorChainManager. When picking operator chain, it
  * goes sleep and wakes up again when a new event comes in.
  */
-public final class BlockingActiveQueryPickManager implements OperatorChainManager {
+public final class BlockingActiveOperatorChainPickManager implements OperatorChainManager {
 
   /**
    * A working queue which contains queries that will be processed soon.
@@ -44,7 +44,7 @@ public final class BlockingActiveQueryPickManager implements OperatorChainManage
   private final Condition isNotEmptyCondition;
 
   @Inject
-  private BlockingActiveQueryPickManager() {
+  private BlockingActiveOperatorChainPickManager() {
     this.activeQueryQueue = new LinkedList<>();
     this.queueLock = new ReentrantLock();
     this.isNotEmptyCondition = queueLock.newCondition();
@@ -52,18 +52,18 @@ public final class BlockingActiveQueryPickManager implements OperatorChainManage
 
   /**
    * Insert a new operator chain into the manager. This method is called when the
-   * queue of a query just becomes not empty by getting an event, or the queue is still not empty
+   * queue of a operatorChain just becomes not empty by getting an event, or the queue is still not empty
    * after thread's processing an event.
-   * @param query a query to be inserted
+   * @param operatorChain a operatorChain to be inserted
    */
   @Override
-  public void insert(final OperatorChain query) {
+  public void insert(final OperatorChain operatorChain) {
     queueLock.lock();
     if (activeQueryQueue.isEmpty()) {
-      activeQueryQueue.add(query);
+      activeQueryQueue.add(operatorChain);
       isNotEmptyCondition.signalAll();
     } else {
-      activeQueryQueue.add(query);
+      activeQueryQueue.add(operatorChain);
     }
     queueLock.unlock();
   }
@@ -72,12 +72,12 @@ public final class BlockingActiveQueryPickManager implements OperatorChainManage
    * Delete an operator from the manager.
    * This method should be only called when the queue is permanently removed from the system,
    * because this method traverses along the whole queue, thus takes O(n) time to complete.
-   * @param query a query to be deleted.
+   * @param operatorChain a operatorChain to be deleted.
    */
   @Override
-  public void delete(final OperatorChain query) {
+  public void delete(final OperatorChain operatorChain) {
     queueLock.lock();
-    activeQueryQueue.remove(query);
+    activeQueryQueue.remove(operatorChain);
     queueLock.unlock();
   }
 
@@ -90,14 +90,14 @@ public final class BlockingActiveQueryPickManager implements OperatorChainManage
   @Override
   public OperatorChain pickOperatorChain() throws InterruptedException {
     queueLock.lock();
-    OperatorChain query;
+    OperatorChain operatorChain;
     try {
-      while ((query = activeQueryQueue.poll()) == null) {
+      while ((operatorChain = activeQueryQueue.poll()) == null) {
         isNotEmptyCondition.await();
       }
     } finally {
       queueLock.unlock();
     }
-    return query;
+    return operatorChain;
   }
 }

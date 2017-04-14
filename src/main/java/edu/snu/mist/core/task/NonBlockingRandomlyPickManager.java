@@ -38,13 +38,13 @@ public final class NonBlockingRandomlyPickManager implements OperatorChainManage
   }
 
   @Override
-  public void insert(final OperatorChain query) {
-    queues.add(query);
+  public void insert(final OperatorChain operatorChain) {
+    queues.add(operatorChain);
   }
 
   @Override
-  public void delete(final OperatorChain query) {
-    queues.remove(query);
+  public void delete(final OperatorChain operatorChain) {
+    queues.remove(operatorChain);
   }
 
   @Override
@@ -52,8 +52,8 @@ public final class NonBlockingRandomlyPickManager implements OperatorChainManage
     while (true) {
       try {
         final int pick = random.nextInt(queues.size());
-        final OperatorChain query = queues.get(pick);
-        return query;
+        final OperatorChain operatorChain = queues.get(pick);
+        return operatorChain;
       } catch (final IllegalArgumentException e) {
         // This can occur when the size of queues is 0.
         // Return null.
