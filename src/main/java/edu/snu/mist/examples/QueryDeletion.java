@@ -95,7 +95,8 @@ public final class QueryDeletion {
 
     Thread.sleep(10000);
 
-    System.out.println(MISTQueryControl.delete(result.getQueryId(), result.getTaskAddress()).getMsg());
+    System.out.println(MISTQueryControl.delete("example-group",
+        result.getQueryId(), result.getTaskAddress()).getMsg());
 
   }
 

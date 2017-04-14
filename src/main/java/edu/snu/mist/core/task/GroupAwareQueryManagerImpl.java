@@ -150,10 +150,9 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
 
   /**
    * Deletes queries from MIST.
-   * TODO[MIST-431] To delete the queries, we need to implement reference counting mechanism.
    */
   @Override
-  public QueryControlResult delete(final String queryId) {
+  public QueryControlResult delete(final String groupId, final String queryId) {
     throw new RuntimeException("Deleting queries is not implemented yet. We need to address [MIST-431]");
   }
 }
