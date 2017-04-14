@@ -71,7 +71,7 @@ final class ImmediateQueryMergingStarter implements QueryStarter {
   @Override
   public synchronized void start(final String queryId, final DAG<ExecutionVertex, MISTEdge> submittedDag) {
     // Synchronize the execution dags to evade concurrent modifications
-    // We need to improve this code for concurrent modification
+    // TODO:[MIST-590] We need to improve this code for concurrent modification
     synchronized (executionDags) {
       // Merging two DAGs can change the original execution plan.
       // So, copy the submitted dag to keep the execution plan even though it is merged

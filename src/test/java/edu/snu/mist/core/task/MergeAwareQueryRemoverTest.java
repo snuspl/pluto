@@ -175,7 +175,6 @@ public final class MergeAwareQueryRemoverTest {
     }
   }
 
-
   /**
    * Case 2: Remove a query where there are two execution queries.
    */

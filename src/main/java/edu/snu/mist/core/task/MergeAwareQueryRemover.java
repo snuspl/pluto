@@ -60,7 +60,7 @@ final class MergeAwareQueryRemover implements QueryRemover {
   @Override
   public synchronized void deleteQuery(final String queryId) {
     // Synchronize the execution dags to evade concurrent modifications
-    // We need to improve this code for concurrent modification
+    // TODO:[MIST-590] We need to improve this code for concurrent modification
     synchronized (executionDags) {
       // Delete the query plan from ExecutionPlanDagMap
       final DAG<ExecutionVertex, MISTEdge> executionPlan = executionPlanDagMap.remove(queryId);
@@ -73,7 +73,7 @@ final class MergeAwareQueryRemover implements QueryRemover {
           // Delete it from the physical dag
           final DAG<ExecutionVertex, MISTEdge> targetDag = vertexInfo.getPhysicalExecutionDag();
           final ExecutionVertex deleteVertex = vertexInfo.getPhysicalExecutionVertex();
-          targetDag.removeVertex(vertexInfo.getPhysicalExecutionVertex());
+          targetDag.removeVertex(deleteVertex);
           // Stop if it is source
           if (deleteVertex.getType() == ExecutionVertex.Type.SOURCE) {
             final PhysicalSource src = (PhysicalSource)deleteVertex;
