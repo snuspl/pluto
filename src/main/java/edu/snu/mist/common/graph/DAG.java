@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.graph;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -42,6 +43,12 @@ public interface DAG<V, I> {
    * @return set of root vertices
    */
   Set<V> getRootVertices();
+
+  /**
+   * Gets the vertices of the graph.
+   * @return vertices
+   */
+  Collection<V> getVertices();
 
   /**
    * Checks whether there is an edge from the vertices v to w.
