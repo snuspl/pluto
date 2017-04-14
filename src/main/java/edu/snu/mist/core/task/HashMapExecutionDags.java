@@ -51,6 +51,11 @@ final class HashMapExecutionDags implements ExecutionDags<String> {
   }
 
   @Override
+  public DAG<ExecutionVertex, MISTEdge> remove(final String conf) {
+    return map.remove(conf);
+  }
+
+  @Override
   public int size() {
     return map.size();
   }
