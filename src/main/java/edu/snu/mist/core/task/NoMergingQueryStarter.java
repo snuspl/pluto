@@ -41,7 +41,7 @@ final class NoMergingQueryStarter implements QueryStarter {
    * and starts to receive input data stream from the sources.
    */
   @Override
-  public void start(final DAG<ExecutionVertex, MISTEdge> submittedDag) {
+  public void start(final String queryId, final DAG<ExecutionVertex, MISTEdge> submittedDag) {
     QueryStarterUtils.setUpOutputEmitters(operatorChainManager, submittedDag);
     // starts to receive input data stream from the sources
     for (final ExecutionVertex source : submittedDag.getRootVertices()) {

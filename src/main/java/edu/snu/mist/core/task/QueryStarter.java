@@ -27,7 +27,8 @@ interface QueryStarter {
 
   /**
    * Start to execute the submitted query.
+   * @param queryId query id
    * @param submittedDag the submitted dag
    */
-  void start(DAG<ExecutionVertex, MISTEdge> submittedDag);
+  void start(String queryId, DAG<ExecutionVertex, MISTEdge> submittedDag);
 }

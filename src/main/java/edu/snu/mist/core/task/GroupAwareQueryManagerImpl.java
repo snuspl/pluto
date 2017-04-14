@@ -124,7 +124,7 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
       final GroupInfo groupInfo = groupInfoMap.get(groupId);
       groupInfo.addQueryIdToGroup(queryId);
       // Start the submitted dag
-      groupInfo.getQueryStarter().start(executionDag);
+      groupInfo.getQueryStarter().start(queryId, executionDag);
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
       return queryControlResult;

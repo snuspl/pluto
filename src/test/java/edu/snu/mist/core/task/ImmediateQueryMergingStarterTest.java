@@ -106,6 +106,20 @@ public final class ImmediateQueryMergingStarterTest {
   }
 
   /**
+   * Check the reference count of the vertices of a DAG.
+   * @param dag dag
+   * @param vertexInfoMap vertex info map that contains the reference count
+   * @param refCount expected reference count
+   */
+  private void checkReferenceCountOfExecutionVertices(final DAG<ExecutionVertex, MISTEdge> dag,
+                                                      final VertexInfoMap vertexInfoMap,
+                                                      final int refCount) {
+    for (final ExecutionVertex ev : dag.getVertices()) {
+      Assert.assertEquals(refCount, vertexInfoMap.get(ev).getRefCount());
+    }
+  }
+
+  /**
    * Test cases
    * Case 1. Start a single query
    * Case 2. Two queries have one source but the sources are different.
@@ -134,7 +148,9 @@ public final class ImmediateQueryMergingStarterTest {
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final ImmediateQueryMergingStarter starter = injector.getInstance(ImmediateQueryMergingStarter.class);
     final ExecutionDags<String> executionDags = injector.getInstance(ExecutionDags.class);
-    starter.start(query);
+    final ExecutionPlanDagMap executionPlanDagMap = injector.getInstance(ExecutionPlanDagMap.class);
+    final VertexInfoMap vertexInfoMap = injector.getInstance(VertexInfoMap.class);
+    starter.start("q1", query);
 
     // Generate events for the query and check if the dag is executed correctly
     final String data1 = "Hello";
@@ -144,6 +160,10 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(true, operatorChain.processNextEvent());
     Assert.assertEquals(Arrays.asList(data1), result);
     Assert.assertEquals(query, executionDags.get(sourceConf));
+
+    // Check reference count of the execution vertices
+    Assert.assertEquals(query, executionPlanDagMap.get("q1"));
+    checkReferenceCountOfExecutionVertices(query, vertexInfoMap, 1);
   }
 
   /**
@@ -172,9 +192,10 @@ public final class ImmediateQueryMergingStarterTest {
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final ImmediateQueryMergingStarter starter = injector.getInstance(ImmediateQueryMergingStarter.class);
     final ExecutionDags<String> executionDags = injector.getInstance(ExecutionDags.class);
-
-    starter.start(query1);
-    starter.start(query2);
+    final ExecutionPlanDagMap executionPlanDagMap = injector.getInstance(ExecutionPlanDagMap.class);
+    final VertexInfoMap vertexInfoMap = injector.getInstance(VertexInfoMap.class);
+    starter.start("q1", query1);
+    starter.start("q2", query2);
 
     // Check
     Assert.assertEquals(2, executionDags.size());
@@ -195,6 +216,12 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(Arrays.asList(data2), result2);
     Assert.assertEquals(false, operatorChain1.processNextEvent());
     Assert.assertEquals(Arrays.asList(data1), result1);
+
+    // Check reference count of the execution vertices
+    Assert.assertEquals(query1, executionPlanDagMap.get("q1"));
+    Assert.assertEquals(query2, executionPlanDagMap.get("q2"));
+    checkReferenceCountOfExecutionVertices(query1, vertexInfoMap, 1);
+    checkReferenceCountOfExecutionVertices(query2, vertexInfoMap, 1);
   }
 
   /**
@@ -232,7 +259,9 @@ public final class ImmediateQueryMergingStarterTest {
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final ImmediateQueryMergingStarter starter = injector.getInstance(ImmediateQueryMergingStarter.class);
     final ExecutionDags<String> executionDags = injector.getInstance(ExecutionDags.class);
-    starter.start(query1);
+    final ExecutionPlanDagMap executionPlanDagMap = injector.getInstance(ExecutionPlanDagMap.class);
+    final VertexInfoMap vertexInfoMap = injector.getInstance(VertexInfoMap.class);
+    starter.start("q1", query1);
 
     // The query 1 and 2 should be merged and the following dag should be created:
     // src1 -> oc1 -> sink1
@@ -243,7 +272,7 @@ public final class ImmediateQueryMergingStarterTest {
     expectedDag.addEdge(operatorChain1, sink2, query2.getEdges(operatorChain2).get(sink2));
 
     // Execute the query 2
-    starter.start(query2);
+    starter.start("q2", query2);
 
     final DAG<ExecutionVertex, MISTEdge> mergedDag = executionDags.get(sourceConf);
     Assert.assertEquals(1, executionDags.size());
@@ -258,6 +287,16 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(false, operatorChain2.processNextEvent());
     Assert.assertEquals(Arrays.asList(data), result1);
     Assert.assertEquals(Arrays.asList(data), result2);
+
+    // Check reference count of the execution vertices
+    Assert.assertEquals(query1Plan, executionPlanDagMap.get("q1"));
+    Assert.assertEquals(query2Plan, executionPlanDagMap.get("q2"));
+    Assert.assertEquals(2, vertexInfoMap.get(src1).getRefCount());
+    Assert.assertEquals(2, vertexInfoMap.get(src2).getRefCount());
+    Assert.assertEquals(2, vertexInfoMap.get(operatorChain1).getRefCount());
+    Assert.assertEquals(2, vertexInfoMap.get(operatorChain2).getRefCount());
+    Assert.assertEquals(1, vertexInfoMap.get(sink1).getRefCount());
+    Assert.assertEquals(1, vertexInfoMap.get(sink2).getRefCount());
   }
 
   /**
@@ -297,7 +336,9 @@ public final class ImmediateQueryMergingStarterTest {
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final ImmediateQueryMergingStarter starter = injector.getInstance(ImmediateQueryMergingStarter.class);
     final ExecutionDags<String> executionDags = injector.getInstance(ExecutionDags.class);
-    starter.start(query1);
+    final ExecutionPlanDagMap executionPlanDagMap = injector.getInstance(ExecutionPlanDagMap.class);
+    final VertexInfoMap vertexInfoMap = injector.getInstance(VertexInfoMap.class);
+    starter.start("q1", query1);
 
     // The query 1 and 2 should be merged and the following dag should be created:
     // src1 -> oc1 -> sink1
@@ -311,7 +352,7 @@ public final class ImmediateQueryMergingStarterTest {
     expectedDag.addEdge(operatorChain2, sink2, query2.getEdges(operatorChain2).get(sink2));
 
     // Execute the query 2
-    starter.start(query2);
+    starter.start("q2", query2);
 
     final DAG<ExecutionVertex, MISTEdge> mergedDag = executionDags.get(sourceConf);
     Assert.assertEquals(1, executionDags.size());
@@ -335,6 +376,16 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(true, operatorChain2.processNextEvent());
     Assert.assertEquals(Arrays.asList(data1), result1);
     Assert.assertEquals(Arrays.asList(data2), result2);
+
+    // Check reference count of the execution vertices
+    Assert.assertEquals(query1Plan, executionPlanDagMap.get("q1"));
+    Assert.assertEquals(query2Plan, executionPlanDagMap.get("q2"));
+    Assert.assertEquals(2, vertexInfoMap.get(src1).getRefCount());
+    Assert.assertEquals(2, vertexInfoMap.get(src2).getRefCount());
+    Assert.assertEquals(1, vertexInfoMap.get(operatorChain1).getRefCount());
+    Assert.assertEquals(1, vertexInfoMap.get(operatorChain2).getRefCount());
+    Assert.assertEquals(1, vertexInfoMap.get(sink1).getRefCount());
+    Assert.assertEquals(1, vertexInfoMap.get(sink2).getRefCount());
   }
 
   /**
