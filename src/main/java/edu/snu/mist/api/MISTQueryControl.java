@@ -47,9 +47,11 @@ public final class MISTQueryControl {
    * @return It returns a result message of deletion.
    * @throws IOException
    */
-  public static APIQueryControlResult delete(final String queryId, final IPAddress taskAddress) throws IOException {
+  public static APIQueryControlResult delete(final String groupId,
+                                             final String queryId,
+                                             final IPAddress taskAddress) throws IOException {
     final ClientToTaskMessage proxy = getProxy(taskAddress);
-    final QueryControlResult queryControlResult =  proxy.deleteQueries(queryId);
+    final QueryControlResult queryControlResult =  proxy.deleteQueries(groupId, queryId);
     final APIQueryControlResult apiQueryControlResult =
         new APIQueryControlResultImpl(queryControlResult.getQueryId(), taskAddress,
             queryControlResult.getMsg(), queryControlResult.getIsSuccess());

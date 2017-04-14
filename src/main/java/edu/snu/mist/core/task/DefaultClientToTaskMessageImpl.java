@@ -90,7 +90,7 @@ public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage
   }
 
   @Override
-  public QueryControlResult deleteQueries(final String queryId) throws AvroRemoteException {
-    return queryManager.delete(queryId);
+  public QueryControlResult deleteQueries(final String groupId, final String queryId) throws AvroRemoteException {
+    return queryManager.delete(groupId, queryId);
   }
 }

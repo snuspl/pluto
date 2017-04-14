@@ -193,6 +193,10 @@
       "request":
       [
         {
+          "name": "groupId",
+          "type": "string"
+        },
+        {
           "name": "queryId",
           "type": "string"
         }
