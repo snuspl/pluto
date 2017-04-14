@@ -21,9 +21,7 @@ import edu.snu.mist.core.parameters.GroupTrackingInterval;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.Collection;
 import java.util.concurrent.*;
 
 /**
@@ -80,10 +78,11 @@ final class GroupMetricTracker implements AutoCloseable {
             // Track the number of event per each group
             long numEvent = 0;
             for (final DAG<ExecutionVertex, MISTEdge> dag : groupInfo.getExecutionDags().getUniqueValues()) {
-              // Traverse the DAG in DFS order and update the numEvent
-              final Set<ExecutionVertex> visited = new HashSet<>(dag.numberOfVertices());
-              for (final ExecutionVertex source : dag.getRootVertices()) {
-                numEvent += getNumEventUsingDfs(dag, visited, source);
+              final Collection<ExecutionVertex> vertices = dag.getVertices();
+              for (final ExecutionVertex ev : vertices) {
+                if (ev.getType() == ExecutionVertex.Type.OPERATOR_CHIAN) {
+                  numEvent += ((OperatorChain) ev).numberOfEvents();
+                }
               }
             }
             final GroupMetric metric = groupInfo.getGroupMetric();
@@ -95,35 +94,6 @@ final class GroupMetricTracker implements AutoCloseable {
         }
       }
     }, groupTrackingInterval, groupTrackingInterval, TimeUnit.MILLISECONDS);
-  }
-
-  /**
-   * This method sums up the total number of events in each operator chain's queue of a group in DFS order.
-   * @param dag execution dag to calculate the number of events
-   * @param visited a set that holds the visited vertices
-   * @param currentVertex currently visited vertex
-   */
-  private long getNumEventUsingDfs(final DAG<ExecutionVertex, MISTEdge> dag,
-                                   final Set<ExecutionVertex> visited,
-                                   final ExecutionVertex currentVertex) {
-    // Add to the visited set
-    visited.add(currentVertex);
-
-    // The local event number value
-    long localNumEvent = 0;
-
-    // Traverse in DFS order
-    for (final Map.Entry<ExecutionVertex, MISTEdge> neighbor : dag.getEdges(currentVertex).entrySet()) {
-      final ExecutionVertex child = neighbor.getKey();
-      if (child.getType() == ExecutionVertex.Type.OPERATOR_CHIAN && !visited.contains(child)) {
-        localNumEvent += ((OperatorChain) child).numberOfEvents();
-        if (!dag.getEdges(child).isEmpty()) {
-          localNumEvent += getNumEventUsingDfs(dag, visited, child);
-        }
-      }
-    }
-
-    return localNumEvent;
   }
 
   @Override
