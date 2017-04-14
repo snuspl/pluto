@@ -288,15 +288,21 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(Arrays.asList(data), result1);
     Assert.assertEquals(Arrays.asList(data), result2);
 
-    // Check reference count of the execution vertices
+    // Check reference count and physical vertex of the execution vertices
     Assert.assertEquals(query1Plan, executionPlanDagMap.get("q1"));
     Assert.assertEquals(query2Plan, executionPlanDagMap.get("q2"));
     Assert.assertEquals(2, vertexInfoMap.get(src1).getRefCount());
+    Assert.assertEquals(src1, vertexInfoMap.get(src1).getPhysicalExecutionVertex());
     Assert.assertEquals(2, vertexInfoMap.get(src2).getRefCount());
+    Assert.assertEquals(src1, vertexInfoMap.get(src2).getPhysicalExecutionVertex());
     Assert.assertEquals(2, vertexInfoMap.get(operatorChain1).getRefCount());
+    Assert.assertEquals(operatorChain1, vertexInfoMap.get(operatorChain1).getPhysicalExecutionVertex());
     Assert.assertEquals(2, vertexInfoMap.get(operatorChain2).getRefCount());
+    Assert.assertEquals(operatorChain1, vertexInfoMap.get(operatorChain2).getPhysicalExecutionVertex());
     Assert.assertEquals(1, vertexInfoMap.get(sink1).getRefCount());
+    Assert.assertEquals(sink1, vertexInfoMap.get(sink1).getPhysicalExecutionVertex());
     Assert.assertEquals(1, vertexInfoMap.get(sink2).getRefCount());
+    Assert.assertEquals(sink2, vertexInfoMap.get(sink2).getPhysicalExecutionVertex());
   }
 
   /**
@@ -377,15 +383,21 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(Arrays.asList(data1), result1);
     Assert.assertEquals(Arrays.asList(data2), result2);
 
-    // Check reference count of the execution vertices
+    // Check reference count and physical vertex of the execution vertices
     Assert.assertEquals(query1Plan, executionPlanDagMap.get("q1"));
     Assert.assertEquals(query2Plan, executionPlanDagMap.get("q2"));
     Assert.assertEquals(2, vertexInfoMap.get(src1).getRefCount());
+    Assert.assertEquals(src1, vertexInfoMap.get(src1).getPhysicalExecutionVertex());
     Assert.assertEquals(2, vertexInfoMap.get(src2).getRefCount());
+    Assert.assertEquals(src1, vertexInfoMap.get(src2).getPhysicalExecutionVertex());
     Assert.assertEquals(1, vertexInfoMap.get(operatorChain1).getRefCount());
+    Assert.assertEquals(operatorChain1, vertexInfoMap.get(operatorChain1).getPhysicalExecutionVertex());
     Assert.assertEquals(1, vertexInfoMap.get(operatorChain2).getRefCount());
+    Assert.assertEquals(operatorChain2, vertexInfoMap.get(operatorChain2).getPhysicalExecutionVertex());
     Assert.assertEquals(1, vertexInfoMap.get(sink1).getRefCount());
+    Assert.assertEquals(sink1, vertexInfoMap.get(sink1).getPhysicalExecutionVertex());
     Assert.assertEquals(1, vertexInfoMap.get(sink2).getRefCount());
+    Assert.assertEquals(sink2, vertexInfoMap.get(sink2).getPhysicalExecutionVertex());
   }
 
   /**

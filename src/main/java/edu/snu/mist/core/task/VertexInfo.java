@@ -31,18 +31,27 @@ final class VertexInfo {
   private int refCount;
 
   /**
+   * The physical execution vertex that is referenced by the vertex of the query plan.
+   */
+  private final ExecutionVertex physicalExecutionVertex;
+
+  /**
    * Physical execution DAG that holds the execution vertex.
    * This dag can be merged with other dags, so we need to update it when it is merged.
    */
   private DAG<ExecutionVertex, MISTEdge> physicalExecutionDag;
 
-  public VertexInfo(final DAG<ExecutionVertex, MISTEdge> physicalExecutionDag) {
-    this(1, physicalExecutionDag);
+  public VertexInfo(final DAG<ExecutionVertex, MISTEdge> physicalExecutionDag,
+                    final ExecutionVertex physicalExecutionVertex) {
+    this(1, physicalExecutionDag, physicalExecutionVertex);
   }
 
-  public VertexInfo(final int refCount, final DAG<ExecutionVertex, MISTEdge> physicalExecutionDag) {
+  public VertexInfo(final int refCount,
+                    final DAG<ExecutionVertex, MISTEdge> physicalExecutionDag,
+                    final ExecutionVertex physicalExecutionVertex) {
     this.refCount = refCount;
     this.physicalExecutionDag = physicalExecutionDag;
+    this.physicalExecutionVertex = physicalExecutionVertex;
   }
 
   /**
@@ -59,6 +68,14 @@ final class VertexInfo {
    */
   public void setRefCount(final int count) {
     refCount = count;
+  }
+
+  /**
+   * Get the physical execution vertex.
+   * @return physical execution vertex
+   */
+  public ExecutionVertex getPhysicalExecutionVertex() {
+    return physicalExecutionVertex;
   }
 
   /**
