@@ -34,21 +34,16 @@ public interface OperatorChainManager {
   void delete(OperatorChain operatorChain);
 
   /**
-   * Pick an operator chain.
+   * Pick an operator chain. This call simply returns empty when there is no event.
    * @return an operator chain.
    * Returns null if there is no operator chain that is executable.
    */
   OperatorChain pickOperatorChain();
 
   /**
-   * Gets an conditional variable which notifies the queue is not empty.
-   * @return the conditional variable
+   * Pick an operator chain. When there is no events, it sleeps until the new event comes in
+   * and wakes up again when new event arrives. It doesn't return null event.
+   * @return an operator chain
    */
-  Object getQueueIsNotEmptyCondition();
-
-  /**
-   * Informs whether the working queue inside is empty or not.
-   * @return true if the working queue is empty, false if not
-   */
-  boolean isQueueEmpty();
+  OperatorChain pickOperatorChainBlocking() throws InterruptedException;
 }

@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.core.task;
 
+import org.apache.commons.lang.NotImplementedException;
+
 import javax.inject.Inject;
 import java.util.List;
 import java.util.Random;
@@ -67,13 +69,8 @@ public final class RandomlyPickManager implements OperatorChainManager {
   }
 
   @Override
-  public Object getQueueIsNotEmptyCondition() {
-    // Should not be called. This class does not use ConditionEventProcessor
-    return dummyCondition;
-  }
-
-  @Override
-  public boolean isQueueEmpty() {
-    return queues.isEmpty();
+  public OperatorChain pickOperatorChainBlocking() {
+    // Not implemented here
+    throw new NotImplementedException();
   }
 }

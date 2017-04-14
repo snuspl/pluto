@@ -37,17 +37,8 @@ public class ConditionEventProcessor implements Runnable {
   public void run() {
     try {
       while (!Thread.currentThread().isInterrupted()) {
-        final Object queueIsNotEmpty = operatorChainManager.getQueueIsNotEmptyCondition();
-        synchronized (queueIsNotEmpty) {
-          final OperatorChain query = operatorChainManager.pickOperatorChain();
-          if (query != null) {
-            query.processNextEvent();
-          } else {
-            while (operatorChainManager.isQueueEmpty()) {
-              queueIsNotEmpty.wait();
-            }
-          }
-        }
+        // If the queue is empty, the thread is blocked until a new event arrives...
+        operatorChainManager.pickOperatorChainBlocking().processNextEvent();
       }
     } catch (final InterruptedException e) {
       // Interrupt occurs while sleeping, so just finishes the process...

@@ -82,16 +82,19 @@ public final class ActiveQueryPickManager implements OperatorChainManager {
     return activeQueryQueue.poll();
   }
 
-  /**
-   * @return conditional variable which notifies the queue becomes not empty
-   */
-  @Override
-  public Object getQueueIsNotEmptyCondition() {
-    return isNotEmptyCondition;
-  }
 
   @Override
-  public boolean isQueueEmpty() {
-    return activeQueryQueue.isEmpty();
+  public OperatorChain pickOperatorChainBlocking() throws InterruptedException {
+    synchronized (isNotEmptyCondition) {
+      OperatorChain query;
+      try {
+        while ((query = activeQueryQueue.poll()) == null) {
+          isNotEmptyCondition.wait();
+        }
+      } catch (final InterruptedException e) {
+        throw e;
+      }
+      return query;
+    }
   }
 }
