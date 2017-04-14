@@ -18,7 +18,6 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 
-
 /**
  * Vertex info that contains a reference count of the vertex
  * and the *physical* execution dag that contains the vertex.
