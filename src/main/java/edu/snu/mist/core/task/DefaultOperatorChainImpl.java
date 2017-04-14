@@ -224,6 +224,7 @@ final class DefaultOperatorChainImpl implements OperatorChain {
     }
   }
 
+  @Override
   public void setOperatorChainManager(final OperatorChainManager chainManager) {
     this.operatorChainManager = chainManager;
   }
