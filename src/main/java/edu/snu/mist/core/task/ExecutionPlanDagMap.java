@@ -21,7 +21,6 @@ import edu.snu.mist.common.graph.MISTEdge;
 import javax.inject.Inject;
 import java.util.concurrent.ConcurrentHashMap;
 
-
 /**
  * This contains a query id as a key and an execution dag as a value.
  * The execution dag is not *physical* dag which can change while merging.

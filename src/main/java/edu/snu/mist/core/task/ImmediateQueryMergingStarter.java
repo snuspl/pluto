@@ -78,11 +78,9 @@ final class ImmediateQueryMergingStarter implements QueryStarter {
     executionPlanDagMap.put(queryId, executionPlan);
 
     // Create vertex info map
-    final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(executionPlan);
-    while (iterator.hasNext()) {
-      final ExecutionVertex executionVertex = iterator.next();
+    for (final ExecutionVertex ev : executionPlan.getVertices()) {
       final VertexInfo vertexInfo = new VertexInfo(submittedDag);
-      vertexInfoMap.put(executionVertex, vertexInfo);
+      vertexInfoMap.put(ev, vertexInfo);
     }
 
     // Set up the output emitters of the submitted DAG
@@ -116,10 +114,8 @@ final class ImmediateQueryMergingStarter implements QueryStarter {
         }
 
         // Update physical execution dag of the vertex info
-        final Iterator<ExecutionVertex> it = GraphUtils.topologicalSort(sd);
-        while (it.hasNext()) {
-          final ExecutionVertex executionVertex = it.next();
-          final VertexInfo vertexInfo = vertexInfoMap.get(executionVertex);
+        for (final ExecutionVertex ev : sd.getVertices()) {
+          final VertexInfo vertexInfo = vertexInfoMap.get(ev);
           if (vertexInfo == null) {
             throw new RuntimeException("VertexInfo should not be null");
           }
@@ -132,6 +128,14 @@ final class ImmediateQueryMergingStarter implements QueryStarter {
     // After that, find the sub-dag between the sharableDAG and the submitted dag
     final Map<ExecutionVertex, ExecutionVertex> subDagMap = commonSubDagFinder.findSubDag(sharableDag, submittedDag);
 
+    // After that, we should merge the sharable dag with the submitted dag
+    // and update the output emitters of the sharable dag
+    final Set<ExecutionVertex> visited = new HashSet<>(submittedDag.numberOfVertices());
+    for (final ExecutionVertex source : submittedDag.getRootVertices()) {
+      // dfs search
+      dfsMerge(subDagMap, visited, source, sharableDag, submittedDag);
+    }
+
     // Update the vertex info reflecting the merging
     for (final Map.Entry<ExecutionVertex, ExecutionVertex> entry : subDagMap.entrySet()) {
       final VertexInfo srcVertexInfo = vertexInfoMap.get(entry.getKey());
@@ -140,14 +144,6 @@ final class ImmediateQueryMergingStarter implements QueryStarter {
       // and replace the vertex info of the src vertex that will be merged with the dest vertex
       dstVertexInfo.setRefCount(dstVertexInfo.getRefCount()+1);
       vertexInfoMap.replace(entry.getKey(), srcVertexInfo, dstVertexInfo);
-    }
-
-    // After that, we should merge the sharable dag with the submitted dag
-    // and update the output emitters of the sharable dag
-    final Set<ExecutionVertex> visited = new HashSet<>(submittedDag.numberOfVertices());
-    for (final ExecutionVertex source : submittedDag.getRootVertices()) {
-      // dfs search
-      dfsMerge(subDagMap, visited, source, sharableDag, submittedDag);
     }
 
     // If there are sources that are not shared, start them

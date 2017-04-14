@@ -18,7 +18,6 @@ package edu.snu.mist.core.task;
 import javax.inject.Inject;
 import java.util.concurrent.ConcurrentHashMap;
 
-
 /**
  * This is a map that has an execution vertex as a key and a vertex info as a value.
  */
@@ -40,8 +39,8 @@ final class VertexInfoMap {
   }
 
   public boolean replace(final ExecutionVertex executionVertex,
-                                 final VertexInfo prevInfo,
-                                 final VertexInfo newInfo) {
+                         final VertexInfo prevInfo,
+                         final VertexInfo newInfo) {
     return map.replace(executionVertex, prevInfo, newInfo);
   }
 }

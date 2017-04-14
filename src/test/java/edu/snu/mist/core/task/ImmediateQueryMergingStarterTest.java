@@ -36,7 +36,6 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -115,9 +114,7 @@ public final class ImmediateQueryMergingStarterTest {
   private void checkReferenceCountOfExecutionVertices(final DAG<ExecutionVertex, MISTEdge> dag,
                                                       final VertexInfoMap vertexInfoMap,
                                                       final int refCount) {
-    final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(dag);
-    while (iterator.hasNext()) {
-      final ExecutionVertex ev = iterator.next();
+    for (final ExecutionVertex ev : dag.getVertices()) {
       Assert.assertEquals(refCount, vertexInfoMap.get(ev).getRefCount());
     }
   }
