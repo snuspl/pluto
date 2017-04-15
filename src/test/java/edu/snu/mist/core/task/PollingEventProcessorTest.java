@@ -19,6 +19,7 @@ import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.operators.OneStreamOperator;
+import edu.snu.mist.core.task.utils.TestThreadManager;
 import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.utils.OutputBufferEmitter;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
@@ -27,6 +28,7 @@ import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.LinkedList;
@@ -35,12 +37,19 @@ import java.util.concurrent.CountDownLatch;
 
 public final class PollingEventProcessorTest {
 
+  private ThreadManager threadManager;
+
+  @Before
+  public void setUp() throws InjectionException {
+    threadManager = new TestThreadManager();
+  }
+
   /**
    * Test whether the processor processes events from multiple queries correctly.
    * This test adds 100 events to 2 queries in OperatorChainManager
    * and the event processor processes the events using active query picking mechanism.
    */
-  @Test
+  @Test(timeout = 5000L)
   public void activePickProcessTest() throws InjectionException, InterruptedException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
@@ -74,7 +83,7 @@ public final class PollingEventProcessorTest {
     }
 
     // Create a processor
-    final Thread processor = new Thread(new PollingEventProcessor(operatorChainManager));
+    final Thread processor = new Thread(new PollingEventProcessor(operatorChainManager, threadManager));
     processor.start();
     countDownLatch1.await();
     countDownLatch2.await();
@@ -83,7 +92,7 @@ public final class PollingEventProcessorTest {
     processor.interrupt();
   }
 
-  @Test
+  @Test(timeout = 5000L)
   public void randomPickProcessTest() throws InjectionException, InterruptedException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
@@ -117,7 +126,7 @@ public final class PollingEventProcessorTest {
     operatorChainManager.insert(chain2);
 
     // Create a processor
-    final Thread processor = new Thread(new PollingEventProcessor(operatorChainManager));
+    final Thread processor = new Thread(new PollingEventProcessor(operatorChainManager, threadManager));
     processor.start();
 
     countDownLatch1.await();
@@ -132,7 +141,7 @@ public final class PollingEventProcessorTest {
    * they should process events one by one and do not process multiple events at a time.
    * @throws org.apache.reef.tang.exceptions.InjectionException
    */
-  @Test
+  @Test(timeout = 5000L)
   public void concurrentProcessTest() throws InjectionException, InterruptedException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
@@ -157,9 +166,9 @@ public final class PollingEventProcessorTest {
     }
 
     // Create three processors
-    final Thread processor1 = new Thread(new PollingEventProcessor(queryManager));
-    final Thread processor2 = new Thread(new PollingEventProcessor(queryManager));
-    final Thread processor3 = new Thread(new PollingEventProcessor(queryManager));
+    final Thread processor1 = new Thread(new PollingEventProcessor(queryManager, threadManager));
+    final Thread processor2 = new Thread(new PollingEventProcessor(queryManager, threadManager));
+    final Thread processor3 = new Thread(new PollingEventProcessor(queryManager, threadManager));
     processor1.start();
     processor2.start();
     processor3.start();

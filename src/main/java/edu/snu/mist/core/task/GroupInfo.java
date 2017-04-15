@@ -124,21 +124,6 @@ final class GroupInfo implements AutoCloseable {
   }
 
   @Override
-  public boolean equals(final Object o) {
-    if (!(o instanceof GroupInfo)) {
-      return false;
-    }
-    final GroupInfo groupInfo = (GroupInfo) o;
-    return this.queryIdList.equals(groupInfo.queryIdList) &&
-        this.groupMetric.equals(groupInfo.getGroupMetric());
-  }
-
-  @Override
-  public int hashCode() {
-    return this.queryIdList.hashCode() * 31;
-  }
-
-  @Override
   public void close() throws Exception {
     threadManager.close();
   }
