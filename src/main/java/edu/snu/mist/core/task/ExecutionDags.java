@@ -50,6 +50,13 @@ interface ExecutionDags<K> {
   void replace(K conf, DAG<ExecutionVertex, MISTEdge> dag);
 
   /**
+   * Remove the value (dag) that has the source configuration.
+   * @param conf source configuration
+   * @return execution dag that contains the source
+   */
+  DAG<ExecutionVertex, MISTEdge> remove(K conf);
+
+  /**
    * Get the number of execution dags.
    * @return the number of execution dags
    */

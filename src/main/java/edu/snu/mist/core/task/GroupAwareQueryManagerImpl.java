@@ -153,6 +153,11 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
    */
   @Override
   public QueryControlResult delete(final String groupId, final String queryId) {
-    throw new RuntimeException("Deleting queries is not implemented yet. We need to address [MIST-431]");
+    groupInfoMap.get(groupId).getQueryRemover().deleteQuery(queryId);
+    final QueryControlResult queryControlResult = new QueryControlResult();
+    queryControlResult.setQueryId(queryId);
+    queryControlResult.setIsSuccess(true);
+    queryControlResult.setMsg(ResultMessage.deleteSuccess(queryId));
+    return queryControlResult;
   }
 }

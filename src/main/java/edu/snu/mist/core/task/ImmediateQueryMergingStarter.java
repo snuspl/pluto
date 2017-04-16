@@ -70,12 +70,15 @@ final class ImmediateQueryMergingStarter implements QueryStarter {
 
   @Override
   public synchronized void start(final String queryId, final DAG<ExecutionVertex, MISTEdge> submittedDag) {
-    // Merging two DAGs can change the original execution plan.
-    // So, copy the submitted dag to keep the execution plan even though it is merged
-    // We keep the execution plan to delete a query from the merged dag
-    final DAG<ExecutionVertex, MISTEdge> executionPlan = new AdjacentListDAG<>();
-    GraphUtils.copy(submittedDag, executionPlan);
-    executionPlanDagMap.put(queryId, executionPlan);
+    // Synchronize the execution dags to evade concurrent modifications
+    // TODO:[MIST-590] We need to improve this code for concurrent modification
+    synchronized (executionDags) {
+      // Merging two DAGs can change the original execution plan.
+      // So, copy the submitted dag to keep the execution plan even though it is merged
+      // We keep the execution plan to delete a query from the merged dag
+      final DAG<ExecutionVertex, MISTEdge> executionPlan = new AdjacentListDAG<>();
+      GraphUtils.copy(submittedDag, executionPlan);
+      executionPlanDagMap.put(queryId, executionPlan);
 
     // Create vertex info map
     for (final ExecutionVertex ev : executionPlan.getVertices()) {
@@ -83,75 +86,76 @@ final class ImmediateQueryMergingStarter implements QueryStarter {
       vertexInfoMap.put(ev, vertexInfo);
     }
 
-    // Set up the output emitters of the submitted DAG
-    QueryStarterUtils.setUpOutputEmitters(operatorChainManager, submittedDag);
+      // Set up the output emitters of the submitted DAG
+      QueryStarterUtils.setUpOutputEmitters(operatorChainManager, submittedDag);
 
-    // Find mergeable DAGs from the execution dags
-    final Map<String, DAG<ExecutionVertex, MISTEdge>> mergeableDags = findMergeableDags(submittedDag);
+      // Find mergeable DAGs from the execution dags
+      final Map<String, DAG<ExecutionVertex, MISTEdge>> mergeableDags = findMergeableDags(submittedDag);
 
-    // Exit the merging process if there is no mergeable dag
-    if (mergeableDags.size() == 0) {
-      for (final ExecutionVertex source : submittedDag.getRootVertices()) {
-        // Start the source
-        final PhysicalSource src = (PhysicalSource)source;
-        executionDags.put(src.getConfiguration(), submittedDag);
-        src.start();
-      }
-      return;
-    }
-
-    // If there exist mergeable execution dags,
-    // Select the DAG that has the largest number of vertices and merge all of the DAG to the largest DAG
-    final DAG<ExecutionVertex, MISTEdge> sharableDag = selectLargestDag(mergeableDags.values());
-    // Merge all dag into one execution dag
-    // We suppose that all of the dags has no same vertices
-    for (final DAG<ExecutionVertex, MISTEdge> sd : mergeableDags.values()) {
-      if (sd != sharableDag) {
-        GraphUtils.copy(sd, sharableDag);
-        // Update all of the sources in the execution Dag
-        for (final ExecutionVertex source : sd.getRootVertices()) {
-          executionDags.replace(((PhysicalSource)source).getConfiguration(), sharableDag);
+      // Exit the merging process if there is no mergeable dag
+      if (mergeableDags.size() == 0) {
+        for (final ExecutionVertex source : submittedDag.getRootVertices()) {
+          // Start the source
+          final PhysicalSource src = (PhysicalSource) source;
+          executionDags.put(src.getConfiguration(), submittedDag);
+          src.start();
         }
+        return;
+      }
 
-        // Update physical execution dag of the vertex info
-        for (final ExecutionVertex ev : sd.getVertices()) {
-          final VertexInfo vertexInfo = vertexInfoMap.get(ev);
-          if (vertexInfo == null) {
-            throw new RuntimeException("VertexInfo should not be null");
+      // If there exist mergeable execution dags,
+      // Select the DAG that has the largest number of vertices and merge all of the DAG to the largest DAG
+      final DAG<ExecutionVertex, MISTEdge> sharableDag = selectLargestDag(mergeableDags.values());
+      // Merge all dag into one execution dag
+      // We suppose that all of the dags has no same vertices
+      for (final DAG<ExecutionVertex, MISTEdge> sd : mergeableDags.values()) {
+        if (sd != sharableDag) {
+          GraphUtils.copy(sd, sharableDag);
+          // Update all of the sources in the execution Dag
+          for (final ExecutionVertex source : sd.getRootVertices()) {
+            executionDags.replace(((PhysicalSource) source).getConfiguration(), sharableDag);
           }
-          // Set it to the sharable dag
-          vertexInfo.setPhysicalExecutionDag(sharableDag);
+
+          // Update physical execution dag of the vertex info
+          for (final ExecutionVertex ev : sd.getVertices()) {
+            final VertexInfo vertexInfo = vertexInfoMap.get(ev);
+            if (vertexInfo == null) {
+              throw new RuntimeException("VertexInfo should not be null");
+            }
+            // Set it to the sharable dag
+            vertexInfo.setPhysicalExecutionDag(sharableDag);
+          }
         }
       }
-    }
 
-    // After that, find the sub-dag between the sharableDAG and the submitted dag
-    final Map<ExecutionVertex, ExecutionVertex> subDagMap = commonSubDagFinder.findSubDag(sharableDag, submittedDag);
+      // After that, find the sub-dag between the sharableDAG and the submitted dag
+      final Map<ExecutionVertex, ExecutionVertex> subDagMap = commonSubDagFinder.findSubDag(sharableDag, submittedDag);
 
-    // After that, we should merge the sharable dag with the submitted dag
-    // and update the output emitters of the sharable dag
-    final Set<ExecutionVertex> visited = new HashSet<>(submittedDag.numberOfVertices());
-    for (final ExecutionVertex source : submittedDag.getRootVertices()) {
-      // dfs search
-      dfsMerge(subDagMap, visited, source, sharableDag, submittedDag);
-    }
+      // After that, we should merge the sharable dag with the submitted dag
+      // and update the output emitters of the sharable dag
+      final Set<ExecutionVertex> visited = new HashSet<>(submittedDag.numberOfVertices());
+      for (final ExecutionVertex source : submittedDag.getRootVertices()) {
+        // dfs search
+        dfsMerge(subDagMap, visited, source, sharableDag, submittedDag);
+      }
 
-    // Update the vertex info reflecting the merging
-    for (final Map.Entry<ExecutionVertex, ExecutionVertex> entry : subDagMap.entrySet()) {
-      final VertexInfo srcVertexInfo = vertexInfoMap.get(entry.getKey());
-      final VertexInfo dstVertexInfo = vertexInfoMap.get(entry.getValue());
-      // Increase the reference count of the merging vertex
-      // and replace the vertex info of the src vertex that will be merged with the dest vertex
-      dstVertexInfo.setRefCount(dstVertexInfo.getRefCount()+1);
-      vertexInfoMap.replace(entry.getKey(), srcVertexInfo, dstVertexInfo);
-    }
+      // Update the vertex info reflecting the merging
+      for (final Map.Entry<ExecutionVertex, ExecutionVertex> entry : subDagMap.entrySet()) {
+        final VertexInfo srcVertexInfo = vertexInfoMap.get(entry.getKey());
+        final VertexInfo dstVertexInfo = vertexInfoMap.get(entry.getValue());
+        // Increase the reference count of the merging vertex
+        // and replace the vertex info of the src vertex that will be merged with the dest vertex
+        dstVertexInfo.setRefCount(dstVertexInfo.getRefCount() + 1);
+        vertexInfoMap.replace(entry.getKey(), srcVertexInfo, dstVertexInfo);
+      }
 
-    // If there are sources that are not shared, start them
-    for (final ExecutionVertex source : submittedDag.getRootVertices()) {
-      final PhysicalSource src = (PhysicalSource)source;
-      if (!subDagMap.containsKey(src)) {
-        executionDags.put(src.getConfiguration(), sharableDag);
-        src.start();
+      // If there are sources that are not shared, start them
+      for (final ExecutionVertex source : submittedDag.getRootVertices()) {
+        final PhysicalSource src = (PhysicalSource) source;
+        if (!subDagMap.containsKey(src)) {
+          executionDags.put(src.getConfiguration(), sharableDag);
+          src.start();
+        }
       }
     }
   }

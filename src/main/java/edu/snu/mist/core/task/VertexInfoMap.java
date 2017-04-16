@@ -43,4 +43,8 @@ final class VertexInfoMap {
                          final VertexInfo newInfo) {
     return map.replace(executionVertex, prevInfo, newInfo);
   }
+
+  public VertexInfo remove(final ExecutionVertex executionVertex) {
+    return map.remove(executionVertex);
+  }
 }

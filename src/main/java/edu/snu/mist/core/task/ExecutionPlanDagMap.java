@@ -43,4 +43,8 @@ final class ExecutionPlanDagMap {
   public void put(final String queryId, final DAG<ExecutionVertex, MISTEdge> dag) {
     map.put(queryId, dag);
   }
+
+  public DAG<ExecutionVertex, MISTEdge> remove(final String queryId) {
+    return map.remove(queryId);
+  }
 }
