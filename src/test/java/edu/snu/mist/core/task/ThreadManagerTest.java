@@ -66,7 +66,7 @@ public class ThreadManagerTest {
    */
   @Test
   public void testFixedNumberThreadGeneration() throws Exception {
-    final Set<Thread> threads = threadManager.getThreads();
+    final Set<EventProcessor> threads = threadManager.getEventProcessors();
     Assert.assertEquals(threads.size(), DEFAULT_NUM_THREADS);
   }
 
@@ -78,7 +78,7 @@ public class ThreadManagerTest {
     // The event processors will be generated synchronously.
     threadManager.setThreadNum(MAX_NUM_THREADS);
 
-    final Set<Thread> threads = threadManager.getThreads();
+    final Set<EventProcessor> threads = threadManager.getEventProcessors();
     Assert.assertEquals(MAX_NUM_THREADS, threads.size());
     threadManager.close();
   }
@@ -92,8 +92,8 @@ public class ThreadManagerTest {
     threadManager.setThreadNum(2);
 
     sleep(100);
-    final Set<Thread> threads = threadManager.getThreads();
-    Assert.assertEquals(2, threads.size());
+    final Set<EventProcessor> eventProcessors = threadManager.getEventProcessors();
+    Assert.assertEquals(2, eventProcessors.size());
     threadManager.close();
   }
 

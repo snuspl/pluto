@@ -24,10 +24,9 @@ package edu.snu.mist.core.task;
  */
 public class ConditionEventProcessor extends EventProcessor {
 
-  public ConditionEventProcessor(final BlockingActiveOperatorChainPickManager operatorChainManagerParam,
-                                 final ThreadManager threadManager) {
+  public ConditionEventProcessor(final BlockingActiveOperatorChainPickManager operatorChainManagerParam) {
     // Assume that operator chain manager is blocking
-    super(operatorChainManagerParam, threadManager);
+    super(operatorChainManagerParam);
   }
 
   @Override
@@ -36,7 +35,7 @@ public class ConditionEventProcessor extends EventProcessor {
       while (!Thread.currentThread().isInterrupted()) {
         // If the queue is empty, the thread is blocked until a new event arrives...
         operatorChainManager.pickOperatorChain().processNextEvent();
-        if (threadManager.reapCheck()) {
+        if (toBeReaped) {
           // This thread should be reaped
           return;
         }

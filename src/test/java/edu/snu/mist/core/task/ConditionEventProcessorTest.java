@@ -19,7 +19,6 @@ import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.operators.OneStreamOperator;
-import edu.snu.mist.core.task.utils.TestThreadManager;
 import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.utils.OutputBufferEmitter;
 import org.apache.reef.tang.Injector;
@@ -27,7 +26,6 @@ import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.LinkedList;
@@ -35,13 +33,6 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 public final class ConditionEventProcessorTest {
-
-  private ThreadManager threadManager;
-
-  @Before
-  public void setUp() throws InjectionException {
-    threadManager = new TestThreadManager();
-  }
 
   /**
    * Test whether the processor processes events from multiple queries correctly.
@@ -81,7 +72,7 @@ public final class ConditionEventProcessorTest {
     }
 
     // Create a processor
-    final Thread processor = new Thread(new ConditionEventProcessor(operatorChainManager, threadManager));
+    final Thread processor = new Thread(new ConditionEventProcessor(operatorChainManager));
     processor.start();
     countDownLatch1.await();
     countDownLatch2.await();
@@ -120,9 +111,9 @@ public final class ConditionEventProcessorTest {
     }
 
     // Create three processors
-    final Thread processor1 = new Thread(new ConditionEventProcessor(queryManager, threadManager));
-    final Thread processor2 = new Thread(new ConditionEventProcessor(queryManager, threadManager));
-    final Thread processor3 = new Thread(new ConditionEventProcessor(queryManager, threadManager));
+    final Thread processor1 = new Thread(new ConditionEventProcessor(queryManager));
+    final Thread processor2 = new Thread(new ConditionEventProcessor(queryManager));
+    final Thread processor3 = new Thread(new ConditionEventProcessor(queryManager));
     processor1.start();
     processor2.start();
     processor3.start();

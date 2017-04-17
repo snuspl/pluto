@@ -26,21 +26,16 @@ import java.util.Set;
 public interface ThreadManager extends AutoCloseable {
 
   /**
-   * Returns the threads which are managed by ThreadManager.
-   * @return a set of threads.
+   * Returns the EventProcessors which are managed by ThreadManager.
+   * @return a set of event processors.
    */
-  Set<Thread> getThreads();
+  Set<EventProcessor> getEventProcessors();
 
   /**
    * Set the number of threads.
    * If this call increase the number of event processors, the manager will synchronously generates threads.
-   * Else, it will just set the target thread number and reap the threads asynchronously.
+   * Else, it will just set the target thread number and threads will be reaped asynchronously.
    * @param threadNum the number of threads.
    */
   void setThreadNum(int threadNum);
-
-  /**
-   * Check whether the thread running this method should be reaped or not.
-   */
-  boolean reapCheck();
 }

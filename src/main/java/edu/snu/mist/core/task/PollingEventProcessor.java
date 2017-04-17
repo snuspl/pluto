@@ -28,16 +28,14 @@ public final class PollingEventProcessor extends EventProcessor {
   private final int pollingIntervalMillisecond;
 
   public PollingEventProcessor(final int pollingIntervalMillisecondParam,
-                               final OperatorChainManager operatorChainManagerParam,
-                               final ThreadManager threadManager) {
-    super(operatorChainManagerParam, threadManager);
+                               final OperatorChainManager operatorChainManagerParam) {
+    super(operatorChainManagerParam);
     this.pollingIntervalMillisecond = pollingIntervalMillisecondParam;
   }
 
-  public PollingEventProcessor(final OperatorChainManager operatorChainManagerParam,
-                               final ThreadManager threadManager) {
+  public PollingEventProcessor(final OperatorChainManager operatorChainManagerParam) {
     // Default is 100ms
-    this(100, operatorChainManagerParam, threadManager);
+    this(100, operatorChainManagerParam);
   }
 
   @Override
@@ -47,7 +45,7 @@ public final class PollingEventProcessor extends EventProcessor {
         final OperatorChain query = operatorChainManager.pickOperatorChain();
         if (query != null) {
           query.processNextEvent();
-          if (threadManager.reapCheck()) {
+          if (toBeReaped) {
             // This thread should be reaped
             return;
           }

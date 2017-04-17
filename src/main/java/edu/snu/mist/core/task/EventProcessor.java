@@ -18,7 +18,7 @@ package edu.snu.mist.core.task;
 /**
  * This abstract class represents the event processor which processes events of queries.
  */
-abstract class EventProcessor implements Runnable {
+abstract class EventProcessor extends Thread {
 
   /**
    * The operator chain manager for picking up a chain for event processing.
@@ -26,14 +26,20 @@ abstract class EventProcessor implements Runnable {
   protected final OperatorChainManager operatorChainManager;
 
   /**
-   * The thread manager.
+   * The boolean represents whether this processor should be reaped or not.
    */
-  protected final ThreadManager threadManager;
+  protected volatile boolean toBeReaped;
 
-  EventProcessor(final OperatorChainManager operatorChainManagerParam,
-                 final ThreadManager threadManager) {
+  EventProcessor(final OperatorChainManager operatorChainManagerParam) {
     // Assume that operator chain manager is blocking
     this.operatorChainManager = operatorChainManagerParam;
-    this.threadManager = threadManager;
+    this.toBeReaped = false;
+  }
+
+  /**
+   * Set this processor to be reaped.
+   */
+  void setToBeReaped() {
+    toBeReaped = true;
   }
 }
