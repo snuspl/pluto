@@ -20,7 +20,6 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -30,9 +29,8 @@ public final class DynamicThreadManager implements ThreadManager {
 
   /**
    * The operator chain manager.
-   * This manager should be a BlockingActiveOperatorChainManager because of the ConditionEventProcessor.
    */
-  private final BlockingActiveOperatorChainPickManager operatorChainManager;
+  private final OperatorChainManager operatorChainManager;
 
   /**
    * A set of EventProcessor.
@@ -41,7 +39,7 @@ public final class DynamicThreadManager implements ThreadManager {
 
   @Inject
   private DynamicThreadManager(@Parameter(NumThreads.class) final int numThreads,
-                               final BlockingActiveOperatorChainPickManager operatorChainManager) {
+                               final OperatorChainManager operatorChainManager) {
     this.operatorChainManager = operatorChainManager;
     this.eventProcessors = new HashSet<>();
     addNewThreadsToSet(numThreads);
@@ -53,31 +51,32 @@ public final class DynamicThreadManager implements ThreadManager {
    */
   private void addNewThreadsToSet(final int numToCreate) {
     for (int i = 0; i < numToCreate; i++) {
-      final EventProcessor eventProcessor = new ConditionEventProcessor(operatorChainManager);
+      final EventProcessor eventProcessor =
+          new ConditionEventProcessor((BlockingActiveOperatorChainPickManager) operatorChainManager);
       eventProcessors.add(eventProcessor);
       eventProcessor.start();
     }
   }
 
   @Override
-  public void setThreadNum(final int threadNum) {
+  public void adjustThreadNum(final int threadNum) {
     final int currentThreadNum = eventProcessors.size();
     if (currentThreadNum <= threadNum) {
       // if we need to make more event processor
       addNewThreadsToSet(threadNum - currentThreadNum);
     } else if (currentThreadNum > threadNum) {
-      // if we need to reap some processor
-      final Set<EventProcessor> processorsToBeReaped = new HashSet<>();
-      final Iterator<EventProcessor> iterator = eventProcessors.iterator();
-      for (int i = 0; i < currentThreadNum - threadNum && iterator.hasNext(); i++) {
-        // put this processor to the set of processors to be reaped
-        processorsToBeReaped.add(iterator.next());
+      // if we need to close some processor
+      final Set<EventProcessor> processorsToBeClosed = new HashSet<>();
+      for (final EventProcessor eventProcessor : eventProcessors) {
+        // put this processor to the set of processors to be closed
+        processorsToBeClosed.add(eventProcessor);
+        eventProcessor.close();
+        if (processorsToBeClosed.size() >= currentThreadNum - threadNum) {
+          break;
+        }
       }
-      // stop managing these processors and mark them to be reaped after their current execution
-      processorsToBeReaped.forEach((eventProcessor) -> {
-        eventProcessors.remove(eventProcessor);
-        eventProcessor.setToBeReaped();
-      });
+      // stop managing these processors and mark them as closed
+      processorsToBeClosed.forEach(eventProcessor -> eventProcessors.remove(eventProcessor));
     }
   }
 
@@ -88,8 +87,6 @@ public final class DynamicThreadManager implements ThreadManager {
 
   @Override
   public void close() throws Exception {
-    for (final EventProcessor eventProcessor : eventProcessors) {
-      eventProcessor.interrupt();
-    }
+    eventProcessors.forEach(eventProcessor -> eventProcessor.interrupt());
   }
 }

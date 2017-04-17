@@ -27,19 +27,21 @@ abstract class EventProcessor extends Thread {
 
   /**
    * The boolean represents whether this processor should be reaped or not.
+   * To announce the change right after it is marked, this variable is declared as volatile.
    */
-  protected volatile boolean toBeReaped;
+  protected volatile boolean closed;
 
   EventProcessor(final OperatorChainManager operatorChainManagerParam) {
     // Assume that operator chain manager is blocking
     this.operatorChainManager = operatorChainManagerParam;
-    this.toBeReaped = false;
+    this.closed = false;
   }
 
   /**
-   * Set this processor to be reaped.
+   * Close this event processor.
+   * If this method is called, this processor will be marked as closed and reaped after the current event processing.
    */
-  void setToBeReaped() {
-    toBeReaped = true;
+  void close() {
+    closed = true;
   }
 }

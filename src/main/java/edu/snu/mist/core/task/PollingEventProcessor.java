@@ -41,14 +41,10 @@ public final class PollingEventProcessor extends EventProcessor {
   @Override
   public void run() {
     try {
-      while (!Thread.currentThread().isInterrupted()) {
+      while (!Thread.currentThread().isInterrupted() && !closed) {
         final OperatorChain query = operatorChainManager.pickOperatorChain();
         if (query != null) {
           query.processNextEvent();
-          if (toBeReaped) {
-            // This thread should be reaped
-            return;
-          }
         } else {
           Thread.currentThread().sleep(pollingIntervalMillisecond);
         }

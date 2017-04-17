@@ -76,7 +76,7 @@ public class ThreadManagerTest {
   @Test
   public void testDynamicThreadGeneration() throws Exception {
     // The event processors will be generated synchronously.
-    threadManager.setThreadNum(MAX_NUM_THREADS);
+    threadManager.adjustThreadNum(MAX_NUM_THREADS);
 
     final Set<EventProcessor> threads = threadManager.getEventProcessors();
     Assert.assertEquals(MAX_NUM_THREADS, threads.size());
@@ -89,7 +89,7 @@ public class ThreadManagerTest {
   @Test
   public void testDynamicThreadReaping() throws Exception {
     // The event processors will be reaped asynchronously.
-    threadManager.setThreadNum(2);
+    threadManager.adjustThreadNum(2);
 
     sleep(100);
     final Set<EventProcessor> eventProcessors = threadManager.getEventProcessors();

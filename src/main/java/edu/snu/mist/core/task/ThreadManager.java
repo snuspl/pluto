@@ -32,10 +32,11 @@ public interface ThreadManager extends AutoCloseable {
   Set<EventProcessor> getEventProcessors();
 
   /**
-   * Set the number of threads.
+   * Adjust the number of threads.
    * If this call increase the number of event processors, the manager will synchronously generates threads.
-   * Else, it will just set the target thread number and threads will be reaped asynchronously.
+   * Else, it will just select the threads to be reaped and mark them as closed.
+   * These threads will be reaped after their current event processing.
    * @param threadNum the number of threads.
    */
-  void setThreadNum(int threadNum);
+  void adjustThreadNum(int threadNum);
 }

@@ -156,7 +156,7 @@ public final class MistLauncher {
    * @param numTasks the number of tasks
    * @param rpcServerPort the RPC Server Port
    * @param taskMemorySize the Memory size of the task
-   * @return a toBeReaped of the driver
+   * @return a status of the driver
    * @throws InjectionException on configuration errors
    */
   public LauncherStatus run(final int numTaskCores, final int numThreads, final int numTasks,
@@ -174,7 +174,7 @@ public final class MistLauncher {
   /**
    * Run the Mist Driver for the given Configuration.
    * @param driverConf The Configuration for the driver
-   * @return a toBeReaped of the driver
+   * @return a status of the driver
    * @throws InjectionException on configuration errors
    */
   public LauncherStatus runFromConf(final Configuration driverConf) throws InjectionException {
