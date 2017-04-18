@@ -16,32 +16,22 @@
 package edu.snu.mist.core.task;
 
 /**
- * This abstract class represents the event processor which processes events of queries.
+ * This is an interface of EventProcessor that processes events of queries.
  */
-abstract class EventProcessor extends Thread {
+interface EventProcessor {
 
   /**
-   * The operator chain manager for picking up a chain for event processing.
+   * Start to execute the events of queries.
    */
-  protected final OperatorChainManager operatorChainManager;
+  void start();
 
   /**
-   * The boolean represents whether this processor should be reaped or not.
-   * To announce the change right after it is marked, this variable is declared as volatile.
+   * Interrupt the event processing.
    */
-  protected volatile boolean closed;
-
-  EventProcessor(final OperatorChainManager operatorChainManagerParam) {
-    // Assume that operator chain manager is blocking
-    this.operatorChainManager = operatorChainManagerParam;
-    this.closed = false;
-  }
+  void interrupt();
 
   /**
-   * Close this event processor.
-   * If this method is called, this processor will be marked as closed and reaped after the current event processing.
+   * Stop the event processing and close the event processor.
    */
-  void close() {
-    closed = true;
-  }
+  void close();
 }

@@ -19,7 +19,7 @@ package edu.snu.mist.core.task;
  * This class processes events of queries
  * by picking up an operator chain from the OperatorChainManager.
  */
-public final class PollingEventProcessor extends EventProcessor {
+public final class PollingEventProcessor extends AbstractEventProcessor {
 
   /**
    * The polling interval when the thread wakes up and polls whether there is an event
