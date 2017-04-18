@@ -71,11 +71,7 @@ public final class DynamicThreadManager implements ThreadManager {
       final Iterator<EventProcessor> iterator = eventProcessors.iterator();
       while(iterator.hasNext()) {
         final EventProcessor eventProcessor = iterator.next();
-        try {
-          eventProcessor.close();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
+        eventProcessor.close();
         iterator.remove();
         closedProcessorNum++;
         if (closedProcessorNum >= currentThreadNum - threadNum) {
@@ -92,8 +88,6 @@ public final class DynamicThreadManager implements ThreadManager {
 
   @Override
   public void close() throws Exception {
-    for (final EventProcessor eventProcessor : eventProcessors) {
-      eventProcessor.close();
-    }
+    eventProcessors.forEach(eventProcessor -> eventProcessor.close());
   }
 }

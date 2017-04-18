@@ -18,7 +18,7 @@ package edu.snu.mist.core.task;
 /**
  * This is an interface of EventProcessor that processes events of queries.
  */
-interface EventProcessor extends AutoCloseable {
+interface EventProcessor {
 
   /**
    * Start to execute the events of queries.
@@ -29,4 +29,9 @@ interface EventProcessor extends AutoCloseable {
    * Interrupt the event processing.
    */
   void interrupt();
+
+  /**
+   * Stop the event processing and close the event processor.
+   */
+  void close();
 }
