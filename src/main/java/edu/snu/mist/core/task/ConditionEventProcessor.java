@@ -22,7 +22,7 @@ package edu.snu.mist.core.task;
  * To use this event processor, OperatorChainManager should provide a signal
  * when the operator chain queue just becomes non-empty by incoming event.
  */
-public final class ConditionEventProcessor extends EventProcessor {
+public final class ConditionEventProcessor extends AbstractEventProcessor {
 
   public ConditionEventProcessor(final BlockingActiveOperatorChainPickManager operatorChainManager) {
     // Assume that operator chain manager is blocking
