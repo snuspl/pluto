@@ -22,12 +22,21 @@ import java.util.Set;
 /**
  * This interface is for thread management.
  */
-@DefaultImplementation(FixedThreadManager.class)
+@DefaultImplementation(DynamicThreadManager.class)
 public interface ThreadManager extends AutoCloseable {
 
   /**
-   * Returns the threads which are managed by ThreadManager.
-   * @return a set of threads.
+   * Returns the EventProcessors which are managed by ThreadManager.
+   * @return a set of event processors.
    */
-  Set<Thread> getThreads();
+  Set<EventProcessor> getEventProcessors();
+
+  /**
+   * Adjust the number of threads.
+   * If this call increase the number of event processors, the manager will synchronously generates threads.
+   * Else, it will just select the threads to be reaped and mark them as closed.
+   * These threads will be reaped after their current event processing.
+   * @param threadNum the number of threads.
+   */
+  void adjustThreadNum(int threadNum);
 }

@@ -21,7 +21,6 @@ import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.operators.OneStreamOperator;
 import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.utils.OutputBufferEmitter;
-import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -40,13 +39,12 @@ public final class ConditionEventProcessorTest {
    * This test adds 100 events to 2 queries in OperatorChainManager
    * and the event processor processes the events using active query picking mechanism.
    */
-  @Test
+  @Test(timeout = 5000L)
   public void activePickProcessTest() throws InjectionException, InterruptedException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final BlockingActiveOperatorChainPickManager operatorChainManager =
         injector.getInstance(BlockingActiveOperatorChainPickManager.class);
-    final StringIdentifierFactory idfac = injector.getInstance(StringIdentifierFactory.class);
 
     final int numTasks = 1000000;
     final CountDownLatch countDownLatch1 = new CountDownLatch(numTasks);
@@ -88,13 +86,12 @@ public final class ConditionEventProcessorTest {
    * they should process events one by one and do not process multiple events at a time.
    * @throws org.apache.reef.tang.exceptions.InjectionException
    */
-  @Test
+  @Test(timeout = 5000L)
   public void concurrentProcessTest() throws InjectionException, InterruptedException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final BlockingActiveOperatorChainPickManager queryManager =
         injector.getInstance(BlockingActiveOperatorChainPickManager.class);
-    final StringIdentifierFactory idfac = injector.getInstance(StringIdentifierFactory.class);
 
     final int numTasks = 1000000;
     final CountDownLatch countDownLatch = new CountDownLatch(numTasks);

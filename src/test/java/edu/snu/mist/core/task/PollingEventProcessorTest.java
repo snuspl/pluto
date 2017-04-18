@@ -40,7 +40,7 @@ public final class PollingEventProcessorTest {
    * This test adds 100 events to 2 queries in OperatorChainManager
    * and the event processor processes the events using active query picking mechanism.
    */
-  @Test
+  @Test(timeout = 5000L)
   public void activePickProcessTest() throws InjectionException, InterruptedException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
@@ -83,7 +83,7 @@ public final class PollingEventProcessorTest {
     processor.interrupt();
   }
 
-  @Test
+  @Test(timeout = 5000L)
   public void randomPickProcessTest() throws InjectionException, InterruptedException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
@@ -132,7 +132,7 @@ public final class PollingEventProcessorTest {
    * they should process events one by one and do not process multiple events at a time.
    * @throws org.apache.reef.tang.exceptions.InjectionException
    */
-  @Test
+  @Test(timeout = 5000L)
   public void concurrentProcessTest() throws InjectionException, InterruptedException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());

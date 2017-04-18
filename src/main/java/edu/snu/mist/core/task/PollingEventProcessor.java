@@ -19,7 +19,7 @@ package edu.snu.mist.core.task;
  * This class processes events of queries
  * by picking up an operator chain from the OperatorChainManager.
  */
-public final class PollingEventProcessor implements Runnable {
+public final class PollingEventProcessor extends EventProcessor {
 
   /**
    * The polling interval when the thread wakes up and polls whether there is an event
@@ -27,15 +27,10 @@ public final class PollingEventProcessor implements Runnable {
    */
   private final int pollingIntervalMillisecond;
 
-  /**
-   * The operator chain manager for picking up a chain for event processing.
-   */
-  private final OperatorChainManager operatorChainManager;
-
   public PollingEventProcessor(final int pollingIntervalMillisecondParam,
                                final OperatorChainManager operatorChainManagerParam) {
+    super(operatorChainManagerParam);
     this.pollingIntervalMillisecond = pollingIntervalMillisecondParam;
-    this.operatorChainManager = operatorChainManagerParam;
   }
 
   public PollingEventProcessor(final OperatorChainManager operatorChainManagerParam) {
@@ -46,7 +41,7 @@ public final class PollingEventProcessor implements Runnable {
   @Override
   public void run() {
     try {
-      while (!Thread.currentThread().isInterrupted()) {
+      while (!Thread.currentThread().isInterrupted() && !closed) {
         final OperatorChain query = operatorChainManager.pickOperatorChain();
         if (query != null) {
           query.processNextEvent();

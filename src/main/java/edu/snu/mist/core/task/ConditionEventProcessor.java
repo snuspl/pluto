@@ -22,22 +22,17 @@ package edu.snu.mist.core.task;
  * To use this event processor, OperatorChainManager should provide a signal
  * when the operator chain queue just becomes non-empty by incoming event.
  */
-public class ConditionEventProcessor implements Runnable {
+public final class ConditionEventProcessor extends EventProcessor {
 
-  /**
-   * The operator chain manager for picking up a chain for event processing.
-   */
-  private final BlockingActiveOperatorChainPickManager operatorChainManager;
-
-  public ConditionEventProcessor(final BlockingActiveOperatorChainPickManager operatorChainManagerParam) {
+  public ConditionEventProcessor(final BlockingActiveOperatorChainPickManager operatorChainManager) {
     // Assume that operator chain manager is blocking
-    this.operatorChainManager = operatorChainManagerParam;
+    super(operatorChainManager);
   }
 
   @Override
   public void run() {
     try {
-      while (!Thread.currentThread().isInterrupted()) {
+      while (!Thread.currentThread().isInterrupted() && !closed) {
         // If the queue is empty, the thread is blocked until a new event arrives...
         operatorChainManager.pickOperatorChain().processNextEvent();
       }
