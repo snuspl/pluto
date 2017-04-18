@@ -20,6 +20,7 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -66,17 +67,17 @@ public final class DynamicThreadManager implements ThreadManager {
       addNewThreadsToSet(threadNum - currentThreadNum);
     } else if (currentThreadNum > threadNum) {
       // if we need to close some processor
-      final Set<EventProcessor> processorsToBeClosed = new HashSet<>();
-      for (final EventProcessor eventProcessor : eventProcessors) {
-        // put this processor to the set of processors to be closed
-        processorsToBeClosed.add(eventProcessor);
+      int closedProcessorNum = 0;
+      final Iterator<EventProcessor> iterator = eventProcessors.iterator();
+      while(iterator.hasNext()) {
+        final EventProcessor eventProcessor = iterator.next();
         eventProcessor.close();
-        if (processorsToBeClosed.size() >= currentThreadNum - threadNum) {
+        iterator.remove();
+        closedProcessorNum++;
+        if (closedProcessorNum >= currentThreadNum - threadNum) {
           break;
         }
       }
-      // stop managing these processors and mark them as closed
-      processorsToBeClosed.forEach(eventProcessor -> eventProcessors.remove(eventProcessor));
     }
   }
 
@@ -87,6 +88,6 @@ public final class DynamicThreadManager implements ThreadManager {
 
   @Override
   public void close() throws Exception {
-    eventProcessors.forEach(eventProcessor -> eventProcessor.interrupt());
+    eventProcessors.forEach(eventProcessor -> eventProcessor.close());
   }
 }
