@@ -13,25 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
-
 /**
- * This is an interface of EventProcessor that processes events of queries.
+ * A test package related to event processors.
  */
-interface EventProcessor {
-
-  /**
-   * Start to execute the events of queries.
-   */
-  void start();
-
-  /**
-   * Interrupt the event processing.
-   */
-  void interrupt();
-
-  /**
-   * Stop the event processing and close the event processor.
-   */
-  void close();
-}
+package edu.snu.mist.core.task.eventProcessors;

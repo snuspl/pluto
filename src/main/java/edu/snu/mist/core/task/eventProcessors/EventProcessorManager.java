@@ -13,30 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.eventProcessors;
 
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.Set;
 
 /**
- * This interface is for thread management.
+ * This interface is for event processor management.
  */
-@DefaultImplementation(DynamicThreadManager.class)
-public interface ThreadManager extends AutoCloseable {
+@DefaultImplementation(DefaultEventProcessorManager.class)
+public interface EventProcessorManager extends AutoCloseable {
 
   /**
-   * Returns the EventProcessors which are managed by ThreadManager.
+   * Returns the EventProcessors.
    * @return a set of event processors.
    */
   Set<EventProcessor> getEventProcessors();
 
   /**
-   * Adjust the number of threads.
-   * If this call increase the number of event processors, the manager will synchronously generates threads.
-   * Else, it will just select the threads to be reaped and mark them as closed.
-   * These threads will be reaped after their current event processing.
-   * @param threadNum the number of threads.
+   * Adjust the number of event processors.
+   * It will create new event processors if the current # of event processors < adjustNum.
+   * It will delete existing event processors if the current # of event processors > adjustNum.
+   * @param adjustNum the number of event processors to be adjusted.
    */
-  void adjustThreadNum(int threadNum);
+  void adjustEventProcessorNum(int adjustNum);
 }

@@ -20,7 +20,7 @@ import edu.snu.mist.common.operators.Operator;
 /**
  * This is the default implementation of PhysicalOperator.
  */
-final class DefaultPhysicalOperatorImpl extends BasePhysicalVertex implements PhysicalOperator {
+public final class DefaultPhysicalOperatorImpl extends BasePhysicalVertex implements PhysicalOperator {
 
   /**
    * The operator that processes events.

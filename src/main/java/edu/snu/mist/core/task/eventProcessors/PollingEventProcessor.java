@@ -13,13 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.eventProcessors;
+
+import edu.snu.mist.core.task.OperatorChain;
+import edu.snu.mist.core.task.OperatorChainManager;
 
 /**
  * This class processes events of queries
  * by picking up an operator chain from the OperatorChainManager.
  */
-public final class PollingEventProcessor extends AbstractEventProcessor {
+final class PollingEventProcessor extends AbstractEventProcessor {
 
   /**
    * The polling interval when the thread wakes up and polls whether there is an event
@@ -31,11 +34,6 @@ public final class PollingEventProcessor extends AbstractEventProcessor {
                                final OperatorChainManager operatorChainManagerParam) {
     super(operatorChainManagerParam);
     this.pollingIntervalMillisecond = pollingIntervalMillisecondParam;
-  }
-
-  public PollingEventProcessor(final OperatorChainManager operatorChainManagerParam) {
-    // Default is 100ms
-    this(100, operatorChainManagerParam);
   }
 
   @Override

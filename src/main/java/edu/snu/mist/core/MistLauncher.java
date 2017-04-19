@@ -23,7 +23,7 @@ import edu.snu.mist.core.parameters.DriverRuntimeType;
 import edu.snu.mist.core.parameters.NumTaskCores;
 import edu.snu.mist.core.parameters.NumTasks;
 import edu.snu.mist.core.parameters.TaskMemorySize;
-import edu.snu.mist.core.parameters.NumThreads;
+import edu.snu.mist.core.task.eventProcessors.parameters.NumEventProcessors;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.reef.client.DriverConfiguration;
@@ -163,7 +163,7 @@ public final class MistLauncher {
                             final int rpcServerPort, final int taskMemorySize) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(NumTaskCores.class, Integer.toString(numTaskCores));
-    jcb.bindNamedParameter(NumThreads.class, Integer.toString(numThreads));
+    jcb.bindNamedParameter(NumEventProcessors.class, Integer.toString(numThreads));
     jcb.bindNamedParameter(NumTasks.class, Integer.toString(numTasks));
     jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
     jcb.bindNamedParameter(TaskMemorySize.class, Integer.toString(taskMemorySize));

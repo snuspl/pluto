@@ -13,11 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.parameters;
+package edu.snu.mist.core.task.eventProcessors;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
-@NamedParameter(doc = "The number of executor threads per group", short_name = "num_threads", default_value = "5")
-public final class NumThreads implements Name<Integer> {
+/**
+ * This is a factory of event processor.
+ */
+@DefaultImplementation(ConditionEventProcessorFactory.class)
+public interface EventProcessorFactory {
+
+  /**
+   * Create a new event processor.
+   * @return event processor
+   */
+  EventProcessor newEventProcessor();
 }
