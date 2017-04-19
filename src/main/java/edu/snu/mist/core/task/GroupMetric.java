@@ -20,7 +20,7 @@ import javax.inject.Inject;
 /**
  * A class which contains group metrics such as the number of queries or events.
  */
-public final class GroupMetric {
+final class GroupMetric {
 
   /**
    * The number of all events inside the group operator chain queues.

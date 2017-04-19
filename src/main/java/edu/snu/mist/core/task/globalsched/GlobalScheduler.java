@@ -27,6 +27,8 @@ interface GlobalScheduler {
   /**
    * Select the next operator chain manager of a group,
    * in order to execute the events of queries within the group.
+   * This should return non-blocking operator chain manager
+   * in order to reselect another operator chain manager when there are no active operator chain managers.
    * @return operator chain manager
    */
   OperatorChainManager getNextOperatorChainManager();

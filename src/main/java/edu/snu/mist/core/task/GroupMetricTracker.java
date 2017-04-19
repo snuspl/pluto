@@ -28,7 +28,7 @@ import java.util.concurrent.*;
  * This class represents the group tracker which measures the metric of each group such as number of events.
  * It periodically check the metric and update the GroupInfo.
  */
-public final class GroupMetricTracker implements AutoCloseable {
+final class GroupMetricTracker implements AutoCloseable {
 
   /**
    * The executor service which provide the thread pool for metric tracking.
