@@ -16,6 +16,7 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -47,9 +48,9 @@ final class GroupInfo implements AutoCloseable {
   private final GroupMetric groupMetric;
 
   /**
-   * A thread manager.
+   * An event processor manager.
    */
-  private final ThreadManager threadManager;
+  private final EventProcessorManager eventProcessorManager;
 
   /**
    * A query starter.
@@ -70,7 +71,7 @@ final class GroupInfo implements AutoCloseable {
   private GroupInfo(@Parameter(GroupId.class) final String groupId,
                     final GroupMetric groupMetric,
                     final ExecutionDags<String> executionDags,
-                    final ThreadManager threadManager,
+                    final EventProcessorManager eventProcessorManager,
                     final QueryStarter queryStarter,
                     final OperatorChainManager operatorChainManager,
                     final QueryRemover queryRemover) {
@@ -78,7 +79,7 @@ final class GroupInfo implements AutoCloseable {
     this.queryIdList = new ArrayList<>();
     this.executionDags = executionDags;
     this.groupMetric = groupMetric;
-    this.threadManager = threadManager;
+    this.eventProcessorManager = eventProcessorManager;
     this.queryStarter = queryStarter;
     this.operatorChainManager = operatorChainManager;
     this.queryRemover = queryRemover;
@@ -101,11 +102,11 @@ final class GroupInfo implements AutoCloseable {
   }
 
   /**
-   * Get the thread manager.
-   * @return thread manager
+   * Get the event processor manager.
+   * @return event processor manager
    */
-  public ThreadManager getThreadManager() {
-    return threadManager;
+  public EventProcessorManager getEventProcessorManager() {
+    return eventProcessorManager;
   }
 
   /**
@@ -140,6 +141,6 @@ final class GroupInfo implements AutoCloseable {
 
   @Override
   public void close() throws Exception {
-    threadManager.close();
+    eventProcessorManager.close();
   }
 }

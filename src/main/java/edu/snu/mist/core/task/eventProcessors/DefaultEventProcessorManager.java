@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.eventProcessors;
 
-import edu.snu.mist.core.parameters.NumThreads;
+import edu.snu.mist.core.task.eventProcessors.parameters.NumEventProcessors;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -24,25 +24,26 @@ import java.util.Iterator;
 import java.util.Set;
 
 /**
- * This class manages a dynamic number of threads.
+ * This is a default implementation that can adjust the number of event processors.
+ * This will remove event processors randomly when it will decrease the number of event processors.
  */
-public final class DynamicThreadManager implements ThreadManager {
-
-  /**
-   * The operator chain manager.
-   */
-  private final OperatorChainManager operatorChainManager;
+public final class DefaultEventProcessorManager implements EventProcessorManager {
 
   /**
    * A set of EventProcessor.
    */
   private final Set<EventProcessor> eventProcessors;
 
+  /**
+   * Event processor factory.
+   */
+  private final EventProcessorFactory eventProcessorFactory;
+
   @Inject
-  private DynamicThreadManager(@Parameter(NumThreads.class) final int numThreads,
-                               final OperatorChainManager operatorChainManager) {
-    this.operatorChainManager = operatorChainManager;
+  private DefaultEventProcessorManager(@Parameter(NumEventProcessors.class) final int numThreads,
+                                       final EventProcessorFactory eventProcessorFactory) {
     this.eventProcessors = new HashSet<>();
+    this.eventProcessorFactory = eventProcessorFactory;
     addNewThreadsToSet(numThreads);
   }
 
@@ -52,15 +53,14 @@ public final class DynamicThreadManager implements ThreadManager {
    */
   private void addNewThreadsToSet(final int numToCreate) {
     for (int i = 0; i < numToCreate; i++) {
-      final EventProcessor eventProcessor =
-          new ConditionEventProcessor((BlockingActiveOperatorChainPickManager) operatorChainManager);
+      final EventProcessor eventProcessor = eventProcessorFactory.newEventProcessor();
       eventProcessors.add(eventProcessor);
       eventProcessor.start();
     }
   }
 
   @Override
-  public void adjustThreadNum(final int threadNum) {
+  public void adjustEventProcessorNum(final int threadNum) {
     final int currentThreadNum = eventProcessors.size();
     if (currentThreadNum <= threadNum) {
       // if we need to make more event processor

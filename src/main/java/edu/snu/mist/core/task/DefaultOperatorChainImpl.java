@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * TODO[MIST-70]: Consider concurrency issue in execution of OperatorChain
  */
 @SuppressWarnings("unchecked")
-final class DefaultOperatorChainImpl implements OperatorChain {
+public final class DefaultOperatorChainImpl implements OperatorChain {
 
   private enum Status {
     RUNNING, // When the query processes an event
@@ -69,7 +69,7 @@ final class DefaultOperatorChainImpl implements OperatorChain {
   private OperatorChainManager operatorChainManager;
 
   @Inject
-  DefaultOperatorChainImpl() {
+  public DefaultOperatorChainImpl() {
     this.operators = new LinkedList<>();
     this.queue = new ConcurrentLinkedQueue<>();
     this.status = new AtomicReference<>(Status.READY);

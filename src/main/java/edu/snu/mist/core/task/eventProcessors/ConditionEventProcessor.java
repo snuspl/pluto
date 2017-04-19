@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.eventProcessors;
+
+import edu.snu.mist.core.task.BlockingActiveOperatorChainPickManager;
 
 /**
  * ConditionEventProcessor processes events and sleeps when there is no data
@@ -22,7 +24,7 @@ package edu.snu.mist.core.task;
  * To use this event processor, OperatorChainManager should provide a signal
  * when the operator chain queue just becomes non-empty by incoming event.
  */
-public final class ConditionEventProcessor extends AbstractEventProcessor {
+final class ConditionEventProcessor extends AbstractEventProcessor {
 
   public ConditionEventProcessor(final BlockingActiveOperatorChainPickManager operatorChainManager) {
     // Assume that operator chain manager is blocking

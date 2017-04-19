@@ -18,7 +18,7 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
-import edu.snu.mist.core.parameters.NumThreads;
+import edu.snu.mist.core.task.eventProcessors.parameters.NumEventProcessors;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
@@ -63,9 +63,9 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
   private final GroupInfoMap groupInfoMap;
 
   /**
-   * The number of execution threads.
+   * The number of event processors per group.
    */
-  private final int numThreads;
+  private final int numEventProcessors;
 
   /**
    * A tracker that measures the metric of each group.
@@ -79,14 +79,14 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
   private GroupAwareQueryManagerImpl(final DagGenerator dagGenerator,
                                      final ScheduledExecutorServiceWrapper schedulerWrapper,
                                      final GroupInfoMap groupInfoMap,
-                                     @Parameter(NumThreads.class) final int numThreads,
+                                     @Parameter(NumEventProcessors.class) final int numEventProcessors,
                                      final QueryInfoStore planStore,
                                      final GroupMetricTracker groupTracker) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.groupInfoMap = groupInfoMap;
-    this.numThreads = numThreads;
+    this.numEventProcessors = numEventProcessors;
     this.groupTracker = groupTracker;
     groupTracker.start();
   }
@@ -115,7 +115,7 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
         // Add new group id, if it doesn't exist
         final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
         jcb.bindNamedParameter(GroupId.class, groupId);
-        jcb.bindNamedParameter(NumThreads.class, Integer.toString(numThreads));
+        jcb.bindNamedParameter(NumEventProcessors.class, Integer.toString(numEventProcessors));
         jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
         groupInfoMap.putIfAbsent(groupId, injector.getInstance(GroupInfo.class));

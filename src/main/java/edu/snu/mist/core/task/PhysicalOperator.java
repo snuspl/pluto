@@ -21,7 +21,7 @@ import edu.snu.mist.common.operators.Operator;
  * This interface represents a physical operator that contains the actual object of the operator.
  * It also holds the meta data of the operator.
  */
-interface PhysicalOperator extends PhysicalVertex {
+public interface PhysicalOperator extends PhysicalVertex {
 
   /**
    * Get the actual operator object.
