@@ -13,19 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.globalsched.parameters;
 
-import org.apache.reef.tang.annotations.DefaultImplementation;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-/**
- * This removes the query from MIST.
- */
-@DefaultImplementation(MergeAwareQueryRemover.class)
-public interface QueryRemover {
-
-  /**
-   * Delete the query from the group.
-   * @param queryId query id
-   */
-  void deleteQuery(String queryId);
+@NamedParameter(doc = "The scheduling period (ms)", short_name = "sched_period", default_value = "100")
+public final class SchedulingPeriod implements Name<Long> {
 }

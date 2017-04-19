@@ -13,19 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.globalsched;
 
-import org.apache.reef.tang.annotations.DefaultImplementation;
+
+import edu.snu.mist.core.task.OperatorChainManager;
 
 /**
- * This removes the query from MIST.
+ * This is an interface for GlobalScheduler that picks a next operator chain manager of a group.
+ * TODO[MIST-598]: Implement global scheduler that picks next group for event processing
  */
-@DefaultImplementation(MergeAwareQueryRemover.class)
-public interface QueryRemover {
+interface GlobalScheduler {
 
   /**
-   * Delete the query from the group.
-   * @param queryId query id
+   * Select the next operator chain manager of a group,
+   * in order to execute the events of queries within the group.
+   * @return operator chain manager
    */
-  void deleteQuery(String queryId);
+  OperatorChainManager getNextOperatorChainManager();
 }

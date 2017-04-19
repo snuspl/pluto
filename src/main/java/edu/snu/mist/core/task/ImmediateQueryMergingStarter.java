@@ -28,7 +28,7 @@ import java.util.*;
  * When a query is submitted, this starter first finds mergeable execution dags.
  * After that, it merges them with the submitted query.
  */
-final class ImmediateQueryMergingStarter implements QueryStarter {
+public final class ImmediateQueryMergingStarter implements QueryStarter {
 
   /**
    * Operator chain manager that manages the operator chains.

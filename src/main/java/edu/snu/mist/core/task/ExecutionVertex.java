@@ -20,7 +20,7 @@ package edu.snu.mist.core.task;
  * It is required to represent an execution dag, which consists of the execution vertices and edges.
  * The execution vertex is one of the source, operator chain, or sink.
  */
-interface ExecutionVertex {
+public interface ExecutionVertex {
 
   public static enum Type {
     SOURCE,

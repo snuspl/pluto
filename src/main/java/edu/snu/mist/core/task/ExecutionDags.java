@@ -26,7 +26,7 @@ import java.util.Set;
  * <K> configuration type
  */
 @DefaultImplementation(HashMapExecutionDags.class)
-interface ExecutionDags<K> {
+public interface ExecutionDags<K> {
 
   /**
    * Get the execution dag that has the source configuration.

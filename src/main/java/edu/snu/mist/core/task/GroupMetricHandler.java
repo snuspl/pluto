@@ -21,7 +21,7 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
  * This interface represents the group metric handler which handles the group metric update.
  */
 @DefaultImplementation(DefaultGroupMetricHandlerImpl.class)
-interface GroupMetricHandler {
+public interface GroupMetricHandler {
 
   /**
    * This method is called by GroupMetricTracker when it updated the group metrics.
