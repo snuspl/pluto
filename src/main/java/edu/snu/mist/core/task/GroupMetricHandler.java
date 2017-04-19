@@ -20,7 +20,7 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
 /**
  * This interface represents the group metric handler which handles the group metric update.
  */
-@DefaultImplementation(DefaultGroupMetricHandlerImpl.class)
+@DefaultImplementation(ProportionalGroupMetricHandler.class)
 interface GroupMetricHandler {
 
   /**

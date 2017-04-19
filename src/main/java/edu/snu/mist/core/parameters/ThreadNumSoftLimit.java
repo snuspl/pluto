@@ -13,23 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.parameters;
 
-import javax.inject.Inject;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-/**
- * This is a default implementation of GroupMetricHandler.
- * TODO: [MIST-573] Implement GroupMetricHandler
- */
-final class DefaultGroupMetricHandlerImpl implements GroupMetricHandler {
-
-  @Inject
-  private DefaultGroupMetricHandlerImpl() {
-    // do nothing
-  }
-
-  @Override
-  public void groupMetricUpdated() {
-    // do nothing
-  }
+@NamedParameter(doc = "The soft limit of the total number of event processing threads. " +
+    "If there are more groups than this number, " +
+    "event processors according to the number of groups will be created ignoring this value.",
+    short_name = "thread_num_soft_limit", default_value = "10000")
+public final class ThreadNumSoftLimit implements Name<Integer> {
 }

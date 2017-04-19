@@ -51,7 +51,7 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
    * Create new event processors and add them to event processor set.
    * @param numToCreate the number of processors to create
    */
-  private void addNewThreadsToSet(final int numToCreate) {
+  private void addNewThreadsToSet(final long numToCreate) {
     for (int i = 0; i < numToCreate; i++) {
       final EventProcessor eventProcessor = eventProcessorFactory.newEventProcessor();
       eventProcessors.add(eventProcessor);
@@ -60,7 +60,7 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
   }
 
   @Override
-  public void adjustEventProcessorNum(final int threadNum) {
+  public void adjustEventProcessorNum(final long threadNum) {
     final int currentThreadNum = eventProcessors.size();
     if (currentThreadNum <= threadNum) {
       // if we need to make more event processor

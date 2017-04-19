@@ -338,5 +338,4 @@ public final class GroupMetricTrackerTest {
       this.doubleCheckLatch = doubleCheckLatch;
     }
   }
-
 }
