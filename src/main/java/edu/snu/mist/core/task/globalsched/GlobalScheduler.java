@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task.globalsched;
 
-
 import edu.snu.mist.core.task.OperatorChainManager;
 
 /**
@@ -23,7 +22,6 @@ import edu.snu.mist.core.task.OperatorChainManager;
  * TODO[MIST-598]: Implement global scheduler that picks next group for event processing
  */
 interface GlobalScheduler {
-
   /**
    * Select the next operator chain manager of a group,
    * in order to execute the events of queries within the group.

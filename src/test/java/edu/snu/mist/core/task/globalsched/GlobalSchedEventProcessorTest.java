@@ -20,6 +20,7 @@ import edu.snu.mist.core.task.OperatorChainManager;
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorFactory;
 import edu.snu.mist.core.task.globalsched.parameters.SchedulingPeriod;
+import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -96,6 +97,8 @@ public final class GlobalSchedEventProcessorTest {
     eventProcessor.close();
 
     // Check
+    Assert.assertTrue(ocm1Count.get() > 1);
+    Assert.assertTrue(ocm3Count.get() > 1);
     verify(ocm1, times(ocm1Count.get())).pickOperatorChain();
     verify(ocm2, times(1)).pickOperatorChain();
     verify(ocm3, times(ocm3Count.get())).pickOperatorChain();
@@ -107,7 +110,7 @@ public final class GlobalSchedEventProcessorTest {
   static final class TestGlobalScheduler implements GlobalScheduler {
 
     private final List<OperatorChainManager> operatorChainManagers;
-    private Object notifier;
+    private final Object notifier;
     private int index;
 
     public TestGlobalScheduler(final List<OperatorChainManager> operatorChainManagers,
