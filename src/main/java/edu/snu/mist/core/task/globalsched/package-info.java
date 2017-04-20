@@ -13,19 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
-
-import org.apache.reef.tang.annotations.DefaultImplementation;
-
 /**
- * This removes the query from MIST.
+ * This package contains classes related to execution model of global scheduling.
  */
-@DefaultImplementation(MergeAwareQueryRemover.class)
-public interface QueryRemover {
-
-  /**
-   * Delete the query from the group.
-   * @param queryId query id
-   */
-  void deleteQuery(String queryId);
-}
+package edu.snu.mist.core.task.globalsched;

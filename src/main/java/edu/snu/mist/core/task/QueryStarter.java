@@ -23,7 +23,7 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
  * This interface represents a component that is responsible for starting and executing queries.
  */
 @DefaultImplementation(ImmediateQueryMergingStarter.class)
-interface QueryStarter {
+public interface QueryStarter {
 
   /**
    * Start to execute the submitted query.
