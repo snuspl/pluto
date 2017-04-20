@@ -18,9 +18,9 @@ package edu.snu.mist.core.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The soft limit of the total number of event processing threads. " +
+@NamedParameter(doc = "The (soft) limit of the total number of event processing threads. " +
     "If there are more groups than this number, " +
     "event processors according to the number of groups will be created ignoring this value.",
-    short_name = "thread_num_soft_limit", default_value = "10000")
-public final class ThreadNumSoftLimit implements Name<Integer> {
+    short_name = "thread_num_limit", default_value = "10000")
+public final class ThreadNumLimit implements Name<Integer> {
 }

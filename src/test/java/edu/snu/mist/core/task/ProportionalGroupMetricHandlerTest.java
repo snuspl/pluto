@@ -16,7 +16,7 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.parameters.GroupId;
-import edu.snu.mist.core.parameters.ThreadNumSoftLimit;
+import edu.snu.mist.core.parameters.ThreadNumLimit;
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import org.apache.reef.tang.Injector;
@@ -42,7 +42,7 @@ public final class ProportionalGroupMetricHandlerTest {
   public void setUp() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     groupInfoMap = injector.getInstance(GroupInfoMap.class);
-    injector.bindVolatileParameter(ThreadNumSoftLimit.class, THREAD_NUM_SOFT_LIMIT);
+    injector.bindVolatileParameter(ThreadNumLimit.class, THREAD_NUM_SOFT_LIMIT);
     handler = injector.getInstance(ProportionalGroupMetricHandler.class);
   }
 

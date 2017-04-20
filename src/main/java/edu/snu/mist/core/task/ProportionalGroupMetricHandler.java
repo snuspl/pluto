@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.core.parameters.ThreadNumSoftLimit;
+import edu.snu.mist.core.parameters.ThreadNumLimit;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -26,11 +26,11 @@ import javax.inject.Inject;
 final class ProportionalGroupMetricHandler implements GroupMetricHandler {
 
   /**
-   * The soft limit of the total number of executor threads.
+   * The (soft) limit of the total number of executor threads.
    * If there are more groups than this number,
    * event processors according to the number of groups will be created ignoring this value.
    */
-  final int threadNumSoftLimit;
+  final int threadNumLimit;
 
   /**
    * The map of group ids and group info to update.
@@ -38,9 +38,9 @@ final class ProportionalGroupMetricHandler implements GroupMetricHandler {
   private final GroupInfoMap groupInfoMap;
 
   @Inject
-  private ProportionalGroupMetricHandler(@Parameter(ThreadNumSoftLimit.class) final int threadNumSoftLimit,
+  private ProportionalGroupMetricHandler(@Parameter(ThreadNumLimit.class) final int threadNumLimit,
                                          final GroupInfoMap groupInfoMap) {
-    this.threadNumSoftLimit = threadNumSoftLimit;
+    this.threadNumLimit = threadNumLimit;
     this.groupInfoMap = groupInfoMap;
   }
 
@@ -58,7 +58,7 @@ final class ProportionalGroupMetricHandler implements GroupMetricHandler {
    */
   @Override
   public void groupMetricUpdated() {
-    if (groupInfoMap.size() >= threadNumSoftLimit) {
+    if (groupInfoMap.size() >= threadNumLimit) {
       // Every group should not totally blocked because of another group
       // Because of this, we assign at least one event processor number to each group
       assignSingleThread();
@@ -75,7 +75,7 @@ final class ProportionalGroupMetricHandler implements GroupMetricHandler {
         sum += numEvents;
       }
       // The number of event processors which are assignable additionally
-      final int remainderProcessorNum = threadNumSoftLimit - zeroCount;
+      final int remainderProcessorNum = threadNumLimit - zeroCount;
 
       if (sum == 0) {
         // If sum of events is zero, than we should assign one event procesosr number to each group
