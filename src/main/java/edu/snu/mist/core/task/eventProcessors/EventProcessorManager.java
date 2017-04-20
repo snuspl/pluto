@@ -37,5 +37,5 @@ public interface EventProcessorManager extends AutoCloseable {
    * It will delete existing event processors if the current # of event processors > adjustNum.
    * @param adjustNum the number of event processors to be adjusted.
    */
-  void adjustEventProcessorNum(int adjustNum);
+  void adjustEventProcessorNum(long adjustNum);
 }
