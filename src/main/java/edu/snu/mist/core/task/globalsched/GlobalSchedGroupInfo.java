@@ -66,4 +66,16 @@ interface GlobalSchedGroupInfo extends AutoCloseable {
    * @return query remover
    */
   QueryRemover getQueryRemover();
+
+  /**
+   * Get the weight of the group.
+   * @return weight
+   */
+  int getWeight();
+
+  /**
+   * Set the weight of the group.
+   * @param w weight
+   */
+  void setWeight(int w);
 }
