@@ -49,10 +49,10 @@ public final class TestMetricHandler implements MetricHandler {
    * Wait tracker to conduct the tracking.
    */
   public void waitForTracking() {
-    final CountDownLatch doubleCheckLatch = new CountDownLatch(2);
-    this.setLatch(doubleCheckLatch);
+    final CountDownLatch countDownLatch = new CountDownLatch(2);
+    this.setLatch(countDownLatch);
     try {
-      doubleCheckLatch.await();
+      countDownLatch.await();
     } catch (final InterruptedException e) {
       e.printStackTrace();
     }

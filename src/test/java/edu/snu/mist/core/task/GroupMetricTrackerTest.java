@@ -32,8 +32,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.concurrent.CountDownLatch;
-
 import static edu.snu.mist.core.task.utils.SimpleOperatorChainUtils.*;
 
 /**
@@ -141,7 +139,7 @@ public final class GroupMetricTrackerTest {
     opA2.addNextEvent(generateTestEvent(), Direction.LEFT);
 
     // wait the tracker for a while
-    waitForTracking();
+    callback.waitForTracking();
     Assert.assertEquals(3, groupInfoA.getGroupMetric().getNumEvents());
     Assert.assertEquals(0, groupInfoB.getGroupMetric().getNumEvents());
 
@@ -152,7 +150,7 @@ public final class GroupMetricTrackerTest {
     union.addNextEvent(generateTestEvent(), Direction.RIGHT);
 
     // wait the tracker for a while
-    waitForTracking();
+    callback.waitForTracking();
     Assert.assertEquals(3, groupInfoA.getGroupMetric().getNumEvents());
     Assert.assertEquals(4, groupInfoB.getGroupMetric().getNumEvents());
   }
@@ -170,18 +168,5 @@ public final class GroupMetricTrackerTest {
     final GroupInfo groupInfo = injector.getInstance(GroupInfo.class);
     groupInfoMap.put(groupId, groupInfo);
     return groupInfo;
-  }
-
-  /**
-   * Wait tracker to conduct the tracking.
-   */
-  private void waitForTracking() {
-    final CountDownLatch doubleCheckLatch = new CountDownLatch(2);
-    callback.setLatch(doubleCheckLatch);
-    try {
-      doubleCheckLatch.await();
-    } catch (final InterruptedException e) {
-      e.printStackTrace();
-    }
   }
 }

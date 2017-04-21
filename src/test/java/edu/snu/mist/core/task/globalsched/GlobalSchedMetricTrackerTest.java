@@ -33,6 +33,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import static edu.snu.mist.core.task.utils.SimpleOperatorChainUtils.*;
 
 /**
@@ -44,7 +47,7 @@ public final class GlobalSchedMetricTrackerTest {
   private IdAndConfGenerator idAndConfGenerator;
   private GlobalSchedGroupInfoMap groupInfoMap;
   private TestMetricHandler callback;
-  private static final long TRACKING_INTERVAL = 50L;
+  private static final long TRACKING_INTERVAL = 10L;
 
   @Before
   public void setUp() throws InjectionException {
@@ -144,12 +147,48 @@ public final class GlobalSchedMetricTrackerTest {
 
     tracker.start();
 
-    // wait the tracker for a while
-    callback.waitForTracking();
-    final double sysUtil1 = tracker.getMetric().getSystemCpuUtil();
-    final double procUtil1 = tracker.getMetric().getProcessCpuUtil();
-    Assert.assertTrue(sysUtil1 > 0);
-    Assert.assertTrue(procUtil1 > 0);
+    boolean sysUtilGetChecked = false;
+    boolean procUtilGetChecked = false;
+
+    // generate some busy-looping threads to increase the CPU utilization
+    final ExecutorService executorService = Executors.newFixedThreadPool(16);
+    createBusyLoopingThreads(executorService, 16);
+
+    // these metrics should be calculated a few times
+    for (int i = 0; i < 20 && (!sysUtilGetChecked || !procUtilGetChecked); i++) {
+      // wait the tracker for a while
+      callback.waitForTracking();
+      final double sysUtil = tracker.getMetric().getSystemCpuUtil();
+      final double procUtil = tracker.getMetric().getProcessCpuUtil();
+      if (!sysUtilGetChecked && sysUtil > 0) {
+        sysUtilGetChecked = true;
+      }
+      if (!procUtilGetChecked && procUtil > 0) {
+        procUtilGetChecked = true;
+      }
+    }
+
+    Assert.assertTrue(sysUtilGetChecked);
+    Assert.assertTrue(procUtilGetChecked);
+
+    executorService.shutdown();
+  }
+
+  /**
+   * Create some busy looping threads.
+   */
+  private void createBusyLoopingThreads(final ExecutorService executorService,
+                                        final int num) {
+    for (int i = 0; i < num; i++) {
+      executorService.execute(new Runnable() {
+        @Override
+        public void run() {
+          // busy loop
+          int i = 0;
+          i++;
+        }
+      });
+    }
   }
 
   /**
