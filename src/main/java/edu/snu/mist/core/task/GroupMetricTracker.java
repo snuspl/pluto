@@ -17,7 +17,7 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.core.parameters.GroupTrackingInterval;
+import edu.snu.mist.core.parameters.MetricTrackingInterval;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -53,13 +53,13 @@ final class GroupMetricTracker implements AutoCloseable {
   /**
    * The group metric handler which handles the updated metric.
    */
-  private final GroupMetricHandler handler;
+  private final MetricHandler handler;
 
   @Inject
-  private GroupMetricTracker(final GroupTrackerExecutorServiceWrapper executorServiceWrapper,
-                             @Parameter(GroupTrackingInterval.class) final long groupTrackingInterval,
+  private GroupMetricTracker(final MetricTrackerExecutorServiceWrapper executorServiceWrapper,
+                             @Parameter(MetricTrackingInterval.class) final long groupTrackingInterval,
                              final GroupInfoMap groupInfoMap,
-                             final GroupMetricHandler handler) {
+                             final MetricHandler handler) {
     this.executorService = executorServiceWrapper.getScheduler();
     this.groupTrackingInterval = groupTrackingInterval;
     this.groupInfoMap = groupInfoMap;
@@ -88,7 +88,7 @@ final class GroupMetricTracker implements AutoCloseable {
             final GroupMetric metric = groupInfo.getGroupMetric();
             metric.setNumEvents(numEvent);
           }
-          handler.groupMetricUpdated();
+          handler.metricUpdated();
         } catch (final Exception e) {
           e.printStackTrace();
         }

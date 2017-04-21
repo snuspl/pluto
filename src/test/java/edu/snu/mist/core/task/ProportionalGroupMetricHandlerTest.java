@@ -65,7 +65,7 @@ public final class ProportionalGroupMetricHandlerTest {
       generateGroupInfo(String.valueOf(i));
     }
 
-    handler.groupMetricUpdated();
+    handler.metricUpdated();
 
     // Only one thread should be assigned to each group
     groupInfoMap.values().forEach(groupInfo -> Assert.assertEquals(
@@ -84,7 +84,7 @@ public final class ProportionalGroupMetricHandlerTest {
       groupInfo.getGroupMetric().setNumEvents(i);
     }
 
-    handler.groupMetricUpdated();
+    handler.metricUpdated();
 
     // Only one thread should be assigned to each group
     groupInfoMap.values().forEach(groupInfo -> Assert.assertEquals(
@@ -109,7 +109,7 @@ public final class ProportionalGroupMetricHandlerTest {
       generateGroupInfo(String.valueOf(10 + i));
     }
 
-    handler.groupMetricUpdated();
+    handler.metricUpdated();
 
     // The number of assigned threads should be proportional to the event number metric of the group.
     for (final GroupInfo groupInfo : groupInfoMap.values()) {

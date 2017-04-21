@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.core.parameters.NumPeriodicGroupTrackerThreads;
+import edu.snu.mist.core.parameters.NumPeriodicMetricTrackerThreads;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -23,13 +23,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
- * This is the wrapper class for injecting ScheduledExecutorService used in GroupMetricTracker.
+ * This is the wrapper class for injecting ScheduledExecutorService used in metric tracker.
  */
-final class GroupTrackerExecutorServiceWrapper {
+public final class MetricTrackerExecutorServiceWrapper {
   private final ScheduledExecutorService scheduler;
 
   @Inject
-  private GroupTrackerExecutorServiceWrapper(@Parameter(NumPeriodicGroupTrackerThreads.class) final int numThreads) {
+  private MetricTrackerExecutorServiceWrapper(@Parameter(NumPeriodicMetricTrackerThreads.class) final int numThreads) {
     scheduler = Executors.newScheduledThreadPool(numThreads);
   }
 
