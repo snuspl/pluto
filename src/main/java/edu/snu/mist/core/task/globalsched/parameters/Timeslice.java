@@ -18,6 +18,6 @@ package edu.snu.mist.core.task.globalsched.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The scheduling period (ms)", short_name = "sched_period", default_value = "100")
-public final class SchedulingPeriod implements Name<Long> {
+@NamedParameter(doc = "The default timeslice (ms)", short_name = "time_slice", default_value = "100")
+public final class Timeslice implements Name<Long> {
 }

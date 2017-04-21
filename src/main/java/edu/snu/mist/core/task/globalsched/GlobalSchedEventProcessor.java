@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * This is an event processor that can change the operator chain manager.
- * Every scheduling period, it selects another operator chain manager
+ * Every time slice of the group, it selects another operator chain manager
  * to execute the events of queries within the group.
  * It also selects another operator chain manager when there are no active operator chain.
  */
@@ -35,19 +35,19 @@ final class GlobalSchedEventProcessor extends Thread implements EventProcessor {
   private volatile boolean closed;
 
   /**
-   * The scheduling period.
+   * The timeslice calculator.
    */
-  private final long schedulingPeriod;
+  private final GroupTimesliceCalculator timesliceCalculator;
 
   /**
    * Selector of the executable group.
    */
   private final NextGroupSelector nextGroupSelector;
 
-  public GlobalSchedEventProcessor(final long schedulingPeriod,
+  public GlobalSchedEventProcessor(final GroupTimesliceCalculator timesliceCalculator,
                                    final NextGroupSelector nextGroupSelector) {
     super();
-    this.schedulingPeriod = schedulingPeriod;
+    this.timesliceCalculator = timesliceCalculator;
     this.nextGroupSelector = nextGroupSelector;
   }
 
@@ -59,9 +59,10 @@ final class GlobalSchedEventProcessor extends Thread implements EventProcessor {
     try {
       while (!Thread.currentThread().isInterrupted() && !closed) {
         final long startTime = System.nanoTime();
-        final OperatorChainManager operatorChainManager =
-            nextGroupSelector.getNextExecutableGroup().getOperatorChainManager();
-        while (TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) < schedulingPeriod && !closed) {
+        final GlobalSchedGroupInfo groupInfo = nextGroupSelector.getNextExecutableGroup();
+        final OperatorChainManager operatorChainManager = groupInfo.getOperatorChainManager();
+        final long timeslice = timesliceCalculator.calculateTimeslice(groupInfo);
+        while (TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) < timeslice && !closed) {
           // This should be non-blocking operator chain manager
           // because we should select another group if the group has no events
           final OperatorChain operatorChain = operatorChainManager.pickOperatorChain();

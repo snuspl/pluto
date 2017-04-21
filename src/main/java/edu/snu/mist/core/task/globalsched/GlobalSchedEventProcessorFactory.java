@@ -17,8 +17,6 @@ package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorFactory;
-import edu.snu.mist.core.task.globalsched.parameters.SchedulingPeriod;
-import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 
@@ -28,9 +26,9 @@ import javax.inject.Inject;
 public final class GlobalSchedEventProcessorFactory implements EventProcessorFactory {
 
   /**
-   * The scheduling period.
+   * The timeslice calculator.
    */
-  private final long schedulingPeriod;
+  private final GroupTimesliceCalculator timesliceCalculator;
 
   /**
    * Selector of the executable group.
@@ -38,15 +36,15 @@ public final class GlobalSchedEventProcessorFactory implements EventProcessorFac
   private final NextGroupSelector nextGroupSelector;
 
   @Inject
-  private GlobalSchedEventProcessorFactory(@Parameter(SchedulingPeriod.class) final long schedulingPeriod,
+  private GlobalSchedEventProcessorFactory(final GroupTimesliceCalculator timesliceCalculator,
                                            final NextGroupSelector nextGroupSelector) {
     super();
-    this.schedulingPeriod = schedulingPeriod;
+    this.timesliceCalculator = timesliceCalculator;
     this.nextGroupSelector = nextGroupSelector;
   }
 
   @Override
   public EventProcessor newEventProcessor() {
-    return new GlobalSchedEventProcessor(schedulingPeriod, nextGroupSelector);
+    return new GlobalSchedEventProcessor(timesliceCalculator, nextGroupSelector);
   }
 }
