@@ -16,6 +16,7 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.core.parameters.DefaultGroupWeight;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
@@ -67,8 +68,14 @@ final class GroupInfo implements AutoCloseable {
    */
   private final QueryRemover queryRemover;
 
+  /**
+   * The weight of the group.
+   */
+  private int weight;
+
   @Inject
   private GroupInfo(@Parameter(GroupId.class) final String groupId,
+                    @Parameter(DefaultGroupWeight.class) final int weight,
                     final GroupMetric groupMetric,
                     final ExecutionDags<String> executionDags,
                     final EventProcessorManager eventProcessorManager,
@@ -76,6 +83,7 @@ final class GroupInfo implements AutoCloseable {
                     final OperatorChainManager operatorChainManager,
                     final QueryRemover queryRemover) {
     this.groupId = groupId;
+    this.weight = weight;
     this.queryIdList = new ArrayList<>();
     this.executionDags = executionDags;
     this.groupMetric = groupMetric;
@@ -137,6 +145,22 @@ final class GroupInfo implements AutoCloseable {
    */
   public QueryRemover getQueryRemover() {
     return queryRemover;
+  }
+
+  /**
+   * Get the weight of the group.
+   * @return weight
+   */
+  public int getWeight() {
+    return weight;
+  }
+
+  /**
+   * Set the weight of the group.
+   * @param w weight
+   */
+  public void setWeight(final int w) {
+    weight = w;
   }
 
   @Override

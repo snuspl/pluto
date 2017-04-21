@@ -16,6 +16,7 @@
 package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.core.parameters.DefaultGroupWeight;
 import edu.snu.mist.core.task.*;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -58,13 +59,20 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
    */
   private final QueryRemover queryRemover;
 
+  /**
+   * The weight of the group.
+   */
+  private int weight;
+
   @Inject
   private DefaultGlobalSchedGroupInfo(@Parameter(GroupId.class) final String groupId,
+                                      @Parameter(DefaultGroupWeight.class) final int weight,
                                       final ExecutionDags<String> executionDags,
                                       final QueryStarter queryStarter,
                                       final OperatorChainManager operatorChainManager,
                                       final QueryRemover queryRemover) {
     this.groupId = groupId;
+    this.weight = weight;
     this.queryIdList = new ArrayList<>();
     this.executionDags = executionDags;
     this.queryStarter = queryStarter;
@@ -123,6 +131,16 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   @Override
   public QueryRemover getQueryRemover() {
     return queryRemover;
+  }
+
+  @Override
+  public int getWeight() {
+    return weight;
+  }
+
+  @Override
+  public void setWeight(final int w) {
+    weight = w;
   }
 
   @Override
