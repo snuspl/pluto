@@ -109,7 +109,7 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
         jcb.bindNamedParameter(GroupId.class, groupId);
         jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-        groupInfoMap.putIfAbsent(groupId, injector.getInstance(GlobalSchedGroupInfo.class));
+        groupInfoMap.putIfAbsent(groupId, injector.getInstance(DefaultGlobalSchedGroupInfo.class));
       }
       // Add the query into the group
       final GlobalSchedGroupInfo groupInfo = groupInfoMap.get(groupId);

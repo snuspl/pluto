@@ -15,12 +15,12 @@
  */
 package edu.snu.mist.core.task.globalsched;
 
-import edu.snu.mist.common.parameters.GroupId;
-import edu.snu.mist.core.task.*;
-import org.apache.reef.tang.annotations.Parameter;
+import edu.snu.mist.core.task.ExecutionDags;
+import edu.snu.mist.core.task.OperatorChainManager;
+import edu.snu.mist.core.task.QueryRemover;
+import edu.snu.mist.core.task.QueryStarter;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
-import javax.inject.Inject;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -28,100 +28,42 @@ import java.util.List;
  * It is different from GroupInfo in that it does not have ThreadManager.
  * As we consider global scheduling, we do not have to have ThreadManger per group.
  */
-final class GlobalSchedGroupInfo implements AutoCloseable {
-
-  /**
-   * Group id.
-   */
-  private final String groupId;
-
-  /**
-   * List of query ids belonging to this GroupInfo.
-   */
-  private final List<String> queryIdList;
-
-  /**
-   * Execution dags that are currently running in this group.
-   */
-  private final ExecutionDags<String> executionDags;
-
-  /**
-   * A query starter.
-   */
-  private final QueryStarter queryStarter;
-
-  /**
-   * Operator chain manager.
-   */
-  private final OperatorChainManager operatorChainManager;
-
-  /**
-   * Query remover that deletes queries.
-   */
-  private final QueryRemover queryRemover;
-
-  @Inject
-  private GlobalSchedGroupInfo(@Parameter(GroupId.class) final String groupId,
-                               final ExecutionDags<String> executionDags,
-                               final QueryStarter queryStarter,
-                               final OperatorChainManager operatorChainManager,
-                               final QueryRemover queryRemover) {
-    this.groupId = groupId;
-    this.queryIdList = new ArrayList<>();
-    this.executionDags = executionDags;
-    this.queryStarter = queryStarter;
-    this.operatorChainManager = operatorChainManager;
-    this.queryRemover = queryRemover;
-  }
+@DefaultImplementation(DefaultGlobalSchedGroupInfo.class)
+interface GlobalSchedGroupInfo extends AutoCloseable {
 
   /**
    * Get the operator chain manager.
    * @return operator chain manager
    */
-  public OperatorChainManager getOperatorChainManager() {
-    return operatorChainManager;
-  }
+  OperatorChainManager getOperatorChainManager();
+
 
   /**
-   * Add a query id into this group.
-   * @param queryId the query id to add
+   * Add query id to the group.
+   * @param queryId query id
    */
-  public void addQueryIdToGroup(final String queryId) {
-    queryIdList.add(queryId);
-  }
+  void addQueryIdToGroup(String queryId);
 
   /**
    * Get the query starter.
    * @return query starter
    */
-  public QueryStarter getQueryStarter() {
-    return queryStarter;
-  }
+  QueryStarter getQueryStarter();
 
   /**
    * @return the list of query id in this group
    */
-  public List<String> getQueryIdList() {
-    return queryIdList;
-  }
+  List<String> getQueryIdList();
 
   /**
    * Return the execution dags in the group.
    * @return execution dags
    */
-  public ExecutionDags<String> getExecutionDags() {
-    return executionDags;
-  }
+  ExecutionDags<String> getExecutionDags();
 
   /**
    * Return the query remover.
    * @return query remover
    */
-  public QueryRemover getQueryRemover() {
-    return queryRemover;
-  }
-
-  @Override
-  public void close() throws Exception {
-  }
+  QueryRemover getQueryRemover();
 }

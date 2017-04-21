@@ -15,19 +15,16 @@
  */
 package edu.snu.mist.core.task.globalsched;
 
-import edu.snu.mist.core.task.OperatorChainManager;
-
 /**
- * This is an interface for GlobalScheduler that picks a next operator chain manager of a group.
- * TODO[MIST-598]: Implement global scheduler that picks next group for event processing
+ * This is an interface that picks a next group for processing queries.
  */
-interface GlobalScheduler {
+interface NextGroupSelector {
   /**
-   * Select the next operator chain manager of a group,
-   * in order to execute the events of queries within the group.
-   * This should return non-blocking operator chain manager
+   * Select the next group that will be processed.
+   * The events of queries within the group will be executed.
+   * The group info should have non-blocking operator chain manager
    * in order to reselect another operator chain manager when there are no active operator chain managers.
-   * @return operator chain manager
+   * @return group info that will be executed next
    */
-  OperatorChainManager getNextOperatorChainManager();
+  GlobalSchedGroupInfo getNextExecutableGroup();
 }
