@@ -40,15 +40,15 @@ final class GlobalSchedEventProcessor extends Thread implements EventProcessor {
   private final long schedulingPeriod;
 
   /**
-   * Scheduler of the operator chain manager.
+   * Selector of the executable group.
    */
-  private final GlobalScheduler scheduler;
+  private final NextGroupSelector nextGroupSelector;
 
   public GlobalSchedEventProcessor(final long schedulingPeriod,
-                                   final GlobalScheduler scheduler) {
+                                   final NextGroupSelector nextGroupSelector) {
     super();
     this.schedulingPeriod = schedulingPeriod;
-    this.scheduler = scheduler;
+    this.nextGroupSelector = nextGroupSelector;
   }
 
   /**
@@ -59,7 +59,8 @@ final class GlobalSchedEventProcessor extends Thread implements EventProcessor {
     try {
       while (!Thread.currentThread().isInterrupted() && !closed) {
         final long startTime = System.nanoTime();
-        final OperatorChainManager operatorChainManager = scheduler.getNextOperatorChainManager();
+        final OperatorChainManager operatorChainManager =
+            nextGroupSelector.getNextExecutableGroup().getOperatorChainManager();
         while (TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) < schedulingPeriod && !closed) {
           // This should be non-blocking operator chain manager
           // because we should select another group if the group has no events

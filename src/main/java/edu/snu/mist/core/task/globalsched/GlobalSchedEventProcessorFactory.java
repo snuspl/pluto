@@ -33,20 +33,20 @@ public final class GlobalSchedEventProcessorFactory implements EventProcessorFac
   private final long schedulingPeriod;
 
   /**
-   * Scheduler of the operator chain manager.
+   * Selector of the executable group.
    */
-  private final GlobalScheduler scheduler;
+  private final NextGroupSelector nextGroupSelector;
 
   @Inject
   private GlobalSchedEventProcessorFactory(@Parameter(SchedulingPeriod.class) final long schedulingPeriod,
-                                           final GlobalScheduler scheduler) {
+                                           final NextGroupSelector nextGroupSelector) {
     super();
     this.schedulingPeriod = schedulingPeriod;
-    this.scheduler = scheduler;
+    this.nextGroupSelector = nextGroupSelector;
   }
 
   @Override
   public EventProcessor newEventProcessor() {
-    return new GlobalSchedEventProcessor(schedulingPeriod, scheduler);
+    return new GlobalSchedEventProcessor(schedulingPeriod, nextGroupSelector);
   }
 }
