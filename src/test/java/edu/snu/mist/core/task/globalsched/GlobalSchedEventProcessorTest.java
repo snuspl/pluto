@@ -19,7 +19,7 @@ import edu.snu.mist.core.task.OperatorChain;
 import edu.snu.mist.core.task.OperatorChainManager;
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorFactory;
-import edu.snu.mist.core.task.globalsched.parameters.SchedulingPeriod;
+import edu.snu.mist.core.task.globalsched.parameters.Timeslice;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -90,7 +90,8 @@ public final class GlobalSchedEventProcessorTest {
     final NextGroupSelector nextGroupSelector = new TestNextGroupSelector(groups, notifier);
 
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(SchedulingPeriod.class, "100");
+    jcb.bindNamedParameter(Timeslice.class, "100");
+    jcb.bindImplementation(GroupTimesliceCalculator.class, FixedTimesliceCalculator.class);
 
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     injector.bindVolatileInstance(NextGroupSelector.class, nextGroupSelector);
