@@ -25,7 +25,7 @@ import edu.snu.mist.common.OutputEmittable;
  * or parse the punctuated watermark from input, and generate MistDataEvent from input that not means watermark.
  * After that, it sends the MistEvent to the OutputEmitter which forwards the inputs to next Operators.
  */
-interface PhysicalSource extends AutoCloseable, OutputEmittable, PhysicalVertex, ExecutionVertex {
+public interface PhysicalSource extends AutoCloseable, OutputEmittable, PhysicalVertex, ExecutionVertex {
 
   /**
    * Starts to receive source stream and forwards inputs to the OutputEmitter.

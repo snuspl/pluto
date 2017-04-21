@@ -21,9 +21,9 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 
 /**
- * This is a GroupMetricHandler assigns event processors to each group proportionally to it's metric.
+ * This is a MetricHandler assigns event processors to each group proportionally to it's metric.
  */
-final class ProportionalGroupMetricHandler implements GroupMetricHandler {
+final class ProportionalGroupMetricHandler implements MetricHandler {
 
   /**
    * The (soft) limit of the total number of executor threads.
@@ -57,7 +57,7 @@ final class ProportionalGroupMetricHandler implements GroupMetricHandler {
    * Other groups will have the portion of remainder proportionally to it's metric.
    */
   @Override
-  public void groupMetricUpdated() {
+  public void metricUpdated() {
     if (groupInfoMap.size() >= threadNumLimit) {
       // Every group should not totally blocked because of another group
       // Because of this, we assign at least one event processor number to each group

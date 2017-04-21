@@ -18,8 +18,8 @@ package edu.snu.mist.core.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The number of threads used for periodic group metric tracking", default_value = "1")
+@NamedParameter(doc = "The number of threads used for periodic metric tracking", default_value = "1")
 // TODO: [MIST-574] Distribute GroupMetricTracker.
 // If you want to set the value larger than 1, GroupMetricTracker should be distributed.
-public final class NumPeriodicGroupTrackerThreads implements Name<Integer> {
+public final class NumPeriodicMetricTrackerThreads implements Name<Integer> {
 }
