@@ -60,6 +60,16 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   private final QueryRemover queryRemover;
 
   /**
+   * The latest scheduled time of the group.
+   */
+  private long latestScheduledTime;
+
+  /**
+   * The vruntime of the group.
+   */
+  private long vruntime;
+
+  /**
    * The weight of the group.
    */
   private int weight;
@@ -78,6 +88,8 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
     this.queryStarter = queryStarter;
     this.operatorChainManager = operatorChainManager;
     this.queryRemover = queryRemover;
+    this.latestScheduledTime = 0;
+    this.vruntime = 0;
   }
 
   /**
@@ -134,6 +146,16 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   }
 
   @Override
+  public long getLatestScheduledTime() {
+    return latestScheduledTime;
+  }
+
+  @Override
+  public void setLatestScheduledTime(final long time) {
+    latestScheduledTime = time;
+  }
+
+  @Override
   public int getWeight() {
     return weight;
   }
@@ -141,6 +163,16 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   @Override
   public void setWeight(final int w) {
     weight = w;
+  }
+
+  @Override
+  public long getVRuntime() {
+    return vruntime;
+  }
+
+  @Override
+  public void setVRuntime(final long vrt) {
+    vruntime = vrt;
   }
 
   @Override

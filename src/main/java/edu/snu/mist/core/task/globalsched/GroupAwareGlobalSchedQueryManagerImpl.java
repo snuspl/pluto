@@ -36,6 +36,7 @@ import java.util.logging.Logger;
 /**
  * This QueryManager is aware of the group and manages queries per group.
  * This has a global ThreadManager that manages event processors.
+ * TODO[MIST-618]: Make GroupAwareGlobalSchedQueryManager use NextGroupSelector to schedule the group.
  */
 @SuppressWarnings("unchecked")
 final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {

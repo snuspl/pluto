@@ -73,6 +73,7 @@ final class GlobalSchedEventProcessor extends Thread implements EventProcessor {
             operatorChain.processNextEvent();
           }
         }
+        nextGroupSelector.reschedule(groupInfo);
       }
     } catch (final InterruptedException e) {
       // Interrupt occurs while sleeping, so just finishes the process...
