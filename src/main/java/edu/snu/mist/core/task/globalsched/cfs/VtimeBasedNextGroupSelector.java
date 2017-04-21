@@ -80,7 +80,7 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
       final Queue<GlobalSchedGroupInfo> queue = entry.getValue();
       final GlobalSchedGroupInfo groupInfo = queue.poll();
       if (queue.isEmpty()) {
-        rbTreeMap.remove(entry.getKey());
+        rbTreeMap.pollFirstEntry();
       }
       groupInfo.setLatestScheduledTime(System.nanoTime());
       return groupInfo;
