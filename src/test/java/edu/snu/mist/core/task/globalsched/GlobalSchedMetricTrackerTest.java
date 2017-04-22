@@ -142,7 +142,7 @@ public final class GlobalSchedMetricTrackerTest {
   /**
    * Test that a metric tracker can track the cpu utilization metric properly.
    */
-  @Test(timeout = 1000L)
+  @Test(timeout = 2000L)
   public void testCpuUtilMetricTracking() throws InjectionException {
 
     tracker.start();
@@ -151,11 +151,11 @@ public final class GlobalSchedMetricTrackerTest {
     boolean procUtilGetChecked = false;
 
     // generate some busy-looping threads to increase the CPU utilization
-    final ExecutorService executorService = Executors.newFixedThreadPool(16);
-    createBusyLoopingThreads(executorService, 16);
+    final ExecutorService executorService = Executors.newFixedThreadPool(32);
+    createBusyLoopingThreads(executorService, 32);
 
     // these metrics should be calculated a few times
-    for (int i = 0; i < 20 && (!sysUtilGetChecked || !procUtilGetChecked); i++) {
+    for (int i = 0; i < 100 && (!sysUtilGetChecked || !procUtilGetChecked); i++) {
       // wait the tracker for a while
       callback.waitForTracking();
       final double sysUtil = tracker.getMetric().getSystemCpuUtil();
