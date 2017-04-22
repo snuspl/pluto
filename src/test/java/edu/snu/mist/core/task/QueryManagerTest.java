@@ -30,7 +30,7 @@ import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;
 import edu.snu.mist.common.sources.PunctuatedEventGenerator;
 import edu.snu.mist.common.types.Tuple2;
-import edu.snu.mist.core.task.eventProcessors.parameters.NumEventProcessors;
+import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.parameters.PlanStorePath;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
@@ -120,7 +120,7 @@ public final class QueryManagerTest {
         "conf", dataGenerator, eventGenerator);
 
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(NumEventProcessors.class, Integer.toString(4));
+    jcb.bindNamedParameter(DefaultNumEventProcessors.class, Integer.toString(4));
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
 
     // Create sinks

@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
-import edu.snu.mist.core.task.eventProcessors.parameters.NumEventProcessors;
+import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -40,11 +40,11 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
   private final EventProcessorFactory eventProcessorFactory;
 
   @Inject
-  private DefaultEventProcessorManager(@Parameter(NumEventProcessors.class) final int numThreads,
+  private DefaultEventProcessorManager(@Parameter(DefaultNumEventProcessors.class) final int defaultNumEventProcessors,
                                        final EventProcessorFactory eventProcessorFactory) {
     this.eventProcessors = new HashSet<>();
     this.eventProcessorFactory = eventProcessorFactory;
-    addNewThreadsToSet(numThreads);
+    addNewThreadsToSet(defaultNumEventProcessors);
   }
 
   /**

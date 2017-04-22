@@ -19,7 +19,6 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.*;
-import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
@@ -64,11 +63,6 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
   private final GlobalSchedGroupInfoMap groupInfoMap;
 
   /**
-   * Event processor manager that manages event processors globally.
-   */
-  private final EventProcessorManager eventProcessorManager;
-
-  /**
    * A tracker measures global metrics such as total events number or cpu utilization.
    */
   private final GlobalSchedMetricTracker metricTracker;
@@ -80,14 +74,12 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
   private GroupAwareGlobalSchedQueryManagerImpl(final DagGenerator dagGenerator,
                                                 final ScheduledExecutorServiceWrapper schedulerWrapper,
                                                 final GlobalSchedGroupInfoMap groupInfoMap,
-                                                final EventProcessorManager eventProcessorManager,
                                                 final QueryInfoStore planStore,
                                                 final GlobalSchedMetricTracker metricTracker) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.groupInfoMap = groupInfoMap;
-    this.eventProcessorManager = eventProcessorManager;
     this.metricTracker = metricTracker;
     metricTracker.start();
   }

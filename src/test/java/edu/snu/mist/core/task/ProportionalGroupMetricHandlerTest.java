@@ -17,8 +17,8 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.parameters.ThreadNumLimit;
-import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
+import edu.snu.mist.core.task.utils.TestEventProcessorManager;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -26,8 +26,6 @@ import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.Set;
 
 /**
  * Test whether ProportionalGroupMetricHandler assigns proper event processor number to each group proportionally.
@@ -69,7 +67,7 @@ public final class ProportionalGroupMetricHandlerTest {
 
     // Only one thread should be assigned to each group
     groupInfoMap.values().forEach(groupInfo -> Assert.assertEquals(
-        1, ((TestEventProcessorManager) groupInfo.getEventProcessorManager()).getEventProcessorNum()));
+        1, groupInfo.getEventProcessorManager().getEventProcessors().size()));
   }
 
   /**
@@ -88,7 +86,7 @@ public final class ProportionalGroupMetricHandlerTest {
 
     // Only one thread should be assigned to each group
     groupInfoMap.values().forEach(groupInfo -> Assert.assertEquals(
-        1, ((TestEventProcessorManager) groupInfo.getEventProcessorManager()).getEventProcessorNum()));
+        1, groupInfo.getEventProcessorManager().getEventProcessors().size()));
   }
 
   /**
@@ -118,7 +116,7 @@ public final class ProportionalGroupMetricHandlerTest {
         expected = 1;
       }
       Assert.assertEquals(
-          expected, ((TestEventProcessorManager) groupInfo.getEventProcessorManager()).getEventProcessorNum());
+          expected, groupInfo.getEventProcessorManager().getEventProcessors().size());
     }
   }
 
@@ -137,37 +135,5 @@ public final class ProportionalGroupMetricHandlerTest {
     final GroupInfo groupInfo = injector.getInstance(GroupInfo.class);
     groupInfoMap.put(groupId, groupInfo);
     return groupInfo;
-  }
-
-  /**
-   * This class represents a simple EventProcessorManager for test.
-   * It just keep the processorNum value.
-   */
-  private final class TestEventProcessorManager implements EventProcessorManager {
-
-    private long processorNum;
-
-    TestEventProcessorManager() {
-      this.processorNum = 0;
-    }
-
-    @Override
-    public Set<EventProcessor> getEventProcessors() {
-      return null;
-    }
-
-    @Override
-    public void adjustEventProcessorNum(final long adjustNum) {
-      this.processorNum = adjustNum;
-    }
-
-    @Override
-    public void close() {
-      // do nothing
-    }
-
-    private long getEventProcessorNum() {
-      return processorNum;
-    }
   }
 }

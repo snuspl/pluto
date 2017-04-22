@@ -19,7 +19,7 @@ import edu.snu.mist.core.parameters.NumTaskCores;
 import edu.snu.mist.core.parameters.TaskMemorySize;
 import edu.snu.mist.core.parameters.DriverRuntimeType;
 import edu.snu.mist.core.MistLauncher;
-import edu.snu.mist.core.task.eventProcessors.parameters.NumEventProcessors;
+import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import org.apache.reef.client.LauncherStatus;
 import org.apache.reef.runtime.local.client.LocalRuntimeConfiguration;
 import org.apache.reef.tang.Configuration;
@@ -41,7 +41,7 @@ public final class MistDriverTest {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(DriverRuntimeType.class, "LOCAL");
     jcb.bindNamedParameter(NumTaskCores.class, "1");
-    jcb.bindNamedParameter(NumEventProcessors.class, "1");
+    jcb.bindNamedParameter(DefaultNumEventProcessors.class, "1");
     jcb.bindNamedParameter(TaskMemorySize.class, "256");
 
     final Configuration runtimeConf = LocalRuntimeConfiguration.CONF
