@@ -19,9 +19,7 @@ import edu.snu.mist.core.parameters.ThreadNumLimit;
 import edu.snu.mist.core.task.MetricHandler;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
-import edu.snu.mist.core.task.globalsched.parameters.CpuUtilLowThreshold;
-import edu.snu.mist.core.task.globalsched.parameters.EventNumHighThreshold;
-import edu.snu.mist.core.task.globalsched.parameters.EventNumLowThreshold;
+import edu.snu.mist.core.task.globalsched.parameters.*;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -32,38 +30,47 @@ import javax.inject.Inject;
  * then this handler will create event processors more.
  * Else if the total event number is quite low and the CPU load is also low,
  * then this handler will close some event processors.
+ * Also, it will do multiplicative increase/subtractive decrease similar to the AIMD of TCP.
  */
 final class GlobalSchedMetricHandler implements MetricHandler {
 
   /**
-   * The (soft) limit of the total number of executor threads.
-   * If there are more groups than this number,
-   * event processors according to the number of groups will be created ignoring this value.
+   * The limit of the total number of executor threads.
    */
-  final int threadNumLimit;
+  private final int threadNumLimit;
 
   /**
    * The default number of event processors.
    */
-  private int defaultNumEventProcessors;
+  private final int defaultNumEventProcessors;
 
   /**
    * The high threshold of the number of events.
    * If there are more events than this value, then the system will be regard as having many events.
    */
-  private long eventNumHighThreshold;
+  private final long eventNumHighThreshold;
 
   /**
    * The low threshold of the number of events.
    * If there are less events than this value, then the system will be regarded as having few events.
    */
-  private long eventNumLowThreshold;
+  private final long eventNumLowThreshold;
 
   /**
    * The low threshold of the CPU utilization.
    * If the CPU utilization is lower than than this value, then the system will be regarded as under utilized.
    */
-  private double cpuUtilLowThreshold;
+  private final double cpuUtilLowThreshold;
+
+  /**
+   * The increasing rate of event processors during the addition phase.
+   */
+  private final double increaseRate;
+
+  /**
+   * The number of decreasing event processors during the subtraction phase.
+   */
+  private final int decreaseNum;
 
   /**
    * A metric contains global information.
@@ -81,6 +88,8 @@ final class GlobalSchedMetricHandler implements MetricHandler {
                                    @Parameter(EventNumHighThreshold.class) final long eventNumHighThreshold,
                                    @Parameter(EventNumLowThreshold.class) final long eventNumLowThreshold,
                                    @Parameter(CpuUtilLowThreshold.class) final double cpuUtilLowThreshold,
+                                   @Parameter(EventProcessorIncreaseRate.class) final double increaseRate,
+                                   @Parameter(EventProcessorDecreaseNum.class) final int decreaseNum,
                                    final GlobalSchedMetric metric,
                                    final EventProcessorManager eventProcessorManager) {
     this.defaultNumEventProcessors = defaultNumEventProcessors;
@@ -88,6 +97,8 @@ final class GlobalSchedMetricHandler implements MetricHandler {
     this.eventNumHighThreshold = eventNumHighThreshold;
     this.eventNumLowThreshold = eventNumLowThreshold;
     this.cpuUtilLowThreshold = cpuUtilLowThreshold;
+    this.increaseRate = increaseRate;
+    this.decreaseNum = decreaseNum;
     this.metric = metric;
     this.eventProcessorManager = eventProcessorManager;
   }
@@ -102,19 +113,21 @@ final class GlobalSchedMetricHandler implements MetricHandler {
         // If the cpu utilization is low in spite of enough events,
         // the event processors could be blocked by some operations such as I/O.
         // In that case, we should increase the number of event processors.
+        // The increase will be multiplicative because we should react rapidly to the congestion state.
         final int currentEventProcessorsNum = eventProcessorManager.getEventProcessors().size();
-        if (currentEventProcessorsNum * 2 < threadNumLimit) {
-          eventProcessorManager.adjustEventProcessorNum(currentEventProcessorsNum * 2);
-        } else if (currentEventProcessorsNum * 2 > threadNumLimit) {
+        if (currentEventProcessorsNum * increaseRate < threadNumLimit) {
+          eventProcessorManager.adjustEventProcessorNum((int) (currentEventProcessorsNum * increaseRate));
+        } else if (currentEventProcessorsNum * increaseRate > threadNumLimit) {
           eventProcessorManager.adjustEventProcessorNum(threadNumLimit);
         }
       } else if (metric.getNumEvents() < eventNumLowThreshold) {
         // If the cpu utilization is low and there are few events,
         // then there might be too many event processors.
+        // The decrease will be subtractive because we do not have to react rapidly to the idle state.
         final int currentEventProcessorsNum = eventProcessorManager.getEventProcessors().size();
-        if (currentEventProcessorsNum / 2 > defaultNumEventProcessors) {
-          eventProcessorManager.adjustEventProcessorNum(currentEventProcessorsNum / 2);
-        } else if (currentEventProcessorsNum / 2 < defaultNumEventProcessors) {
+        if (currentEventProcessorsNum - decreaseNum > defaultNumEventProcessors) {
+          eventProcessorManager.adjustEventProcessorNum(currentEventProcessorsNum - decreaseNum);
+        } else if (currentEventProcessorsNum - decreaseNum < defaultNumEventProcessors) {
           eventProcessorManager.adjustEventProcessorNum(defaultNumEventProcessors);
         }
       }

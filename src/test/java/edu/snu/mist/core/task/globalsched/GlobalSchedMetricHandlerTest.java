@@ -18,9 +18,7 @@ package edu.snu.mist.core.task.globalsched;
 import edu.snu.mist.core.parameters.ThreadNumLimit;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
-import edu.snu.mist.core.task.globalsched.parameters.CpuUtilLowThreshold;
-import edu.snu.mist.core.task.globalsched.parameters.EventNumHighThreshold;
-import edu.snu.mist.core.task.globalsched.parameters.EventNumLowThreshold;
+import edu.snu.mist.core.task.globalsched.parameters.*;
 import edu.snu.mist.core.task.utils.TestEventProcessorManager;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -42,6 +40,8 @@ public final class GlobalSchedMetricHandlerTest {
   private static final long EVENT_NUM_HIGH_THRES = 100000;
   private static final long EVENT_NUM_LOW_THRES = 100;
   private static final double CPU_UTIL_LOW_THRES = 0.1;
+  private static final double INCREASE_RATE = 2;
+  private static final int DECREASE_NUM = 15;
 
   @Before
   public void setUp() throws InjectionException {
@@ -54,6 +54,8 @@ public final class GlobalSchedMetricHandlerTest {
     injector.bindVolatileParameter(EventNumLowThreshold.class, EVENT_NUM_LOW_THRES);
     injector.bindVolatileParameter(CpuUtilLowThreshold.class, CPU_UTIL_LOW_THRES);
     injector.bindVolatileInstance(EventProcessorManager.class, eventProcessorManager);
+    injector.bindVolatileParameter(EventProcessorIncreaseRate.class, INCREASE_RATE);
+    injector.bindVolatileParameter(EventProcessorDecreaseNum.class, DECREASE_NUM);
     handler = injector.getInstance(GlobalSchedMetricHandler.class);
     eventProcessorManager = injector.getInstance(EventProcessorManager.class);
   }
@@ -72,14 +74,14 @@ public final class GlobalSchedMetricHandlerTest {
 
     handler.metricUpdated();
     // The number of event processors should be doubled
-    Assert.assertEquals(DEFAULT_THREAD_NUM * 2, eventProcessorManager.getEventProcessors().size());
+    Assert.assertEquals(DEFAULT_THREAD_NUM * (int) INCREASE_RATE, eventProcessorManager.getEventProcessors().size());
 
     // Make the number of events to be not enough to increase the event processor number.
     metric.setNumEvents(EVENT_NUM_HIGH_THRES - 1);
 
     handler.metricUpdated();
     // The number of event processors should be not changed
-    Assert.assertEquals(DEFAULT_THREAD_NUM * 2, eventProcessorManager.getEventProcessors().size());
+    Assert.assertEquals(DEFAULT_THREAD_NUM * (int) INCREASE_RATE, eventProcessorManager.getEventProcessors().size());
 
     // Many events, low cpu utilization again
     metric.setNumEvents(EVENT_NUM_HIGH_THRES + 1);
@@ -93,7 +95,7 @@ public final class GlobalSchedMetricHandlerTest {
 
     handler.metricUpdated();
     // The number of event processors should be half
-    Assert.assertEquals(THREAD_NUM_LIMIT / 2, eventProcessorManager.getEventProcessors().size());
+    Assert.assertEquals(THREAD_NUM_LIMIT - DECREASE_NUM, eventProcessorManager.getEventProcessors().size());
 
     handler.metricUpdated();
     // The number of event processors should be half
