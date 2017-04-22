@@ -13,18 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.globalsched;
 
-import org.apache.reef.tang.annotations.DefaultImplementation;
+import edu.snu.mist.core.task.MetricHandler;
+
+import javax.inject.Inject;
 
 /**
- * This interface represents the group metric handler which handles the group metric update.
+ * This is a MetricHandler assigns global event processors.
+ * TODO: [MIST-605] Implement GlobalSchedMetricHandler
  */
-@DefaultImplementation(ProportionalGroupMetricHandler.class)
-interface GroupMetricHandler {
+final class GlobalSchedMetricHandler implements MetricHandler {
+
+  @Inject
+  private GlobalSchedMetricHandler() {
+  }
 
   /**
-   * This method is called by GroupMetricTracker when it updated the group metrics.
+   * Assign event processor number.
    */
-  void groupMetricUpdated();
+  @Override
+  public void metricUpdated() {
+    // do nothing
+  }
 }

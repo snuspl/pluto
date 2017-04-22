@@ -13,12 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.parameters;
+package edu.snu.mist.core.task;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
-@NamedParameter(doc = "The interval between periodic group metric tracking in milliseconds", default_value = "1000")
-public final class GroupTrackingInterval implements Name<Long> {
-  // empty
+/**
+ * This interface represents the group metric handler which handles the metric update.
+ */
+@DefaultImplementation(ProportionalGroupMetricHandler.class)
+public interface MetricHandler {
+
+  /**
+   * This method is called by metric tracker when it updated the metrics.
+   */
+  void metricUpdated();
 }

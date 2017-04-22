@@ -13,18 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.parameters;
 
-import edu.snu.mist.common.sinks.Sink;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-/**
- * This is a physical sink interface that is used in MistTask.
- */
-public interface PhysicalSink<I> extends PhysicalVertex, ExecutionVertex {
-
-  /**
-   * Get a sink instance.
-   * @return sink
-   */
-  Sink<I> getSink();
+@NamedParameter(doc = "The interval between periodic metric tracking in milliseconds", default_value = "1000")
+public final class MetricTrackingInterval implements Name<Long> {
+  // empty
 }

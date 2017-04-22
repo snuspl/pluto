@@ -69,6 +69,11 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
   private final EventProcessorManager eventProcessorManager;
 
   /**
+   * A tracker measures global metrics such as total events number or cpu utilization.
+   */
+  private final GlobalSchedMetricTracker metricTracker;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -76,12 +81,15 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
                                                 final ScheduledExecutorServiceWrapper schedulerWrapper,
                                                 final GlobalSchedGroupInfoMap groupInfoMap,
                                                 final EventProcessorManager eventProcessorManager,
-                                                final QueryInfoStore planStore) {
+                                                final QueryInfoStore planStore,
+                                                final GlobalSchedMetricTracker metricTracker) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.groupInfoMap = groupInfoMap;
     this.eventProcessorManager = eventProcessorManager;
+    this.metricTracker = metricTracker;
+    metricTracker.start();
   }
 
   /**
@@ -134,6 +142,7 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
   @Override
   public void close() throws Exception {
     scheduler.shutdown();
+    metricTracker.close();
     for (final GlobalSchedGroupInfo groupInfo : groupInfoMap.values()) {
       groupInfo.close();
     }
