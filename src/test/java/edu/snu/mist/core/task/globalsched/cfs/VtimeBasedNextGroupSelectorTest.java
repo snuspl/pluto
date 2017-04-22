@@ -23,8 +23,9 @@ import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Test;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static org.mockito.Mockito.*;
 
 public final class VtimeBasedNextGroupSelectorTest {
 
@@ -77,7 +78,14 @@ public final class VtimeBasedNextGroupSelectorTest {
     final GlobalSchedGroupInfo group3 = mock(GlobalSchedGroupInfo.class);
     final GlobalSchedGroupInfo group4 = mock(GlobalSchedGroupInfo.class);
 
-    when(group1.getVRuntime()).thenReturn(0L);
+    final AtomicLong group1AdjustVRuntime = new AtomicLong(0);
+    doAnswer((invocation) -> {
+        Object[] args = invocation.getArguments();
+        group1AdjustVRuntime.set((long)args[0]);
+        return null;
+    }).when(group1).setVRuntime(anyLong());
+
+    when(group1.getVRuntime()).thenAnswer((invocation) -> group1AdjustVRuntime.get());
     when(group1.getWeight()).thenReturn(1);
     when(group2.getVRuntime()).thenReturn(2L);
     when(group3.getVRuntime()).thenReturn(1L);

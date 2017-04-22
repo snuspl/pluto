@@ -93,18 +93,11 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
    */
   @Override
   public void reschedule(final GlobalSchedGroupInfo groupInfo) {
-    synchronized (rbTreeMap) {
-      final long endTime = System.nanoTime();
-      final long delta = calculateVRuntimeDelta(endTime - groupInfo.getLatestScheduledTime(), groupInfo);
-      final long adjustedVRuntime = groupInfo.getVRuntime() + delta;
-      groupInfo.setVRuntime(adjustedVRuntime);
-      Queue<GlobalSchedGroupInfo> queue = rbTreeMap.get(adjustedVRuntime);
-      if (queue == null) {
-        queue = new LinkedList<>();
-        rbTreeMap.put(adjustedVRuntime, queue);
-      }
-      queue.add(groupInfo);
-    }
+    final long endTime = System.nanoTime();
+    final long delta = calculateVRuntimeDelta(endTime - groupInfo.getLatestScheduledTime(), groupInfo);
+    final long adjustedVRuntime = groupInfo.getVRuntime() + delta;
+    groupInfo.setVRuntime(adjustedVRuntime);
+    addGroup(groupInfo);
   }
 
   /**
