@@ -29,7 +29,7 @@ import java.util.List;
  * As we consider global scheduling, we do not have to have ThreadManger per group.
  */
 @DefaultImplementation(DefaultGlobalSchedGroupInfo.class)
-interface GlobalSchedGroupInfo extends AutoCloseable {
+public interface GlobalSchedGroupInfo extends AutoCloseable {
 
   /**
    * Get the operator chain manager.
@@ -68,6 +68,18 @@ interface GlobalSchedGroupInfo extends AutoCloseable {
   QueryRemover getQueryRemover();
 
   /**
+   * Get the latest scheduled time of the group.
+   * @return the latest scheduled time
+   */
+  long getLatestScheduledTime();
+
+  /**
+   * Set the latest scheduled time of the group.
+   * @param time the latest scheduled time
+   */
+  void setLatestScheduledTime(long time);
+
+  /**
    * Get the weight of the group.
    * @return weight
    */
@@ -78,4 +90,16 @@ interface GlobalSchedGroupInfo extends AutoCloseable {
    * @param w weight
    */
   void setWeight(int w);
+
+  /**
+   * Get the vruntime of the group.
+   * @return vruntime
+   */
+  long getVRuntime();
+
+  /**
+   * Set the vruntime of the group.
+   * @param vruntime vruntime
+   */
+  void setVRuntime(long vruntime);
 }

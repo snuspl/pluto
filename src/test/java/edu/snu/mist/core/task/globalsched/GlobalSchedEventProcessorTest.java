@@ -129,6 +129,16 @@ public final class GlobalSchedEventProcessorTest {
     }
 
     @Override
+    public void addGroup(final GlobalSchedGroupInfo groupInfo) {
+      // do nothing
+    }
+
+    @Override
+    public void removeGroup(final GlobalSchedGroupInfo groupInfo) {
+      // do nothing
+    }
+
+    @Override
     public GlobalSchedGroupInfo getNextExecutableGroup() {
       if (groups.size() > index) {
         final GlobalSchedGroupInfo groupInfo = groups.get(index);
@@ -149,6 +159,11 @@ public final class GlobalSchedEventProcessorTest {
           throw new RuntimeException(e);
         }
       }
+    }
+
+    @Override
+    public void reschedule(final GlobalSchedGroupInfo groupInfo) {
+      // do nothing
     }
   }
 }

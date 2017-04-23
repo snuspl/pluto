@@ -18,7 +18,18 @@ package edu.snu.mist.core.task.globalsched;
 /**
  * This is an interface that picks a next group for processing queries.
  */
-interface NextGroupSelector {
+public interface NextGroupSelector {
+
+  /**
+   * Add a new group to the selector.
+   */
+  void addGroup(GlobalSchedGroupInfo groupInfo);
+
+  /**
+   * Remove the existing group from the selector.
+   */
+  void removeGroup(GlobalSchedGroupInfo groupInfo);
+
   /**
    * Select the next group that will be processed.
    * The events of queries within the group will be executed.
@@ -27,4 +38,9 @@ interface NextGroupSelector {
    * @return group info that will be executed next
    */
   GlobalSchedGroupInfo getNextExecutableGroup();
+
+  /**
+   * Re-schedule the group to the selector.
+   */
+  void reschedule(GlobalSchedGroupInfo groupInfo);
 }

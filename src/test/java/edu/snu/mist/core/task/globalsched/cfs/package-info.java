@@ -13,11 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.parameters;
-
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
-
-@NamedParameter(doc = "The default value of the weight of the group", default_value = "1")
-public final class DefaultGroupWeight implements Name<Integer> {
-}
+/**
+ * Test classes for cfs group scheduler.
+ */
+package edu.snu.mist.core.task.globalsched.cfs;

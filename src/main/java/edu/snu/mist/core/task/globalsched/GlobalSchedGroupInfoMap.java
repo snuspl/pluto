@@ -20,9 +20,9 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A map of global schedule gorup info.
+ * A map of global schedule group info.
  */
-final class GlobalSchedGroupInfoMap {
+public final class GlobalSchedGroupInfoMap {
 
   private final ConcurrentHashMap<String, GlobalSchedGroupInfo> map;
 
