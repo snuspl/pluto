@@ -18,6 +18,7 @@ package edu.snu.mist.core.task.eventProcessors.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The number of event processors (per group)", short_name = "num_threads", default_value = "5")
-public final class NumEventProcessors implements Name<Integer> {
+@NamedParameter(doc = "The default number of event processors (per group)",
+    short_name = "num_threads", default_value = "5")
+public final class DefaultNumEventProcessors implements Name<Integer> {
 }

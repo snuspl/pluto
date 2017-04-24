@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
-import edu.snu.mist.core.task.eventProcessors.parameters.NumEventProcessors;
+import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -40,7 +40,7 @@ public class EventProcessorManagerTest {
   @Before
   public void setUp() throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(NumEventProcessors.class, Integer.toString(DEFAULT_NUM_THREADS));
+    jcb.bindNamedParameter(DefaultNumEventProcessors.class, Integer.toString(DEFAULT_NUM_THREADS));
     jcb.bindImplementation(EventProcessorFactory.class, TestEventProcessorFactory.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     eventProcessorManager = injector.getInstance(DefaultEventProcessorManager.class);

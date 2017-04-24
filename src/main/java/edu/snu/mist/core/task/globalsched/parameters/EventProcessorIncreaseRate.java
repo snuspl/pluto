@@ -13,27 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched;
+package edu.snu.mist.core.task.globalsched.parameters;
 
-import edu.snu.mist.core.task.MetricHandler;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-import javax.inject.Inject;
-
-/**
- * This is a MetricHandler assigns global event processors.
- * TODO: [MIST-605] Implement GlobalSchedMetricHandler
- */
-final class GlobalSchedMetricHandler implements MetricHandler {
-
-  @Inject
-  private GlobalSchedMetricHandler() {
-  }
-
-  /**
-   * Assign event processor number.
-   */
-  @Override
-  public void metricUpdated() {
-    // do nothing
-  }
+@NamedParameter(doc = "The increasing rate of event processors during the addition phase. It should be greater than 1.",
+    short_name = "event_processor_increase_rate", default_value = "1.5")
+public final class EventProcessorIncreaseRate implements Name<Double> {
 }
