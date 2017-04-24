@@ -16,11 +16,14 @@
 package edu.snu.mist.core.task.globalsched.cfs;
 
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.GroupEvent;
+import edu.snu.mist.core.task.globalsched.MistPubSubEventHandler;
 import edu.snu.mist.core.task.globalsched.NextGroupSelector;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
+import org.apache.reef.wake.impl.PubSubEventHandler;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -51,10 +54,13 @@ public final class VtimeBasedNextGroupSelectorTest {
 
     final Injector injector = Tang.Factory.getTang().newInjector();
     final NextGroupSelector selector = injector.getInstance(VtimeBasedNextGroupSelector.class);
-    selector.addGroup(group1);
-    selector.addGroup(group2);
-    selector.addGroup(group3);
-    selector.addGroup(group4);
+    final MistPubSubEventHandler wrapper = injector.getInstance(MistPubSubEventHandler.class);
+    final PubSubEventHandler pubSubEventHandler = wrapper.getPubSubEventHandler();
+
+    pubSubEventHandler.onNext(new GroupEvent(group1, GroupEvent.GroupEventType.ADDITION));
+    pubSubEventHandler.onNext(new GroupEvent(group2, GroupEvent.GroupEventType.ADDITION));
+    pubSubEventHandler.onNext(new GroupEvent(group3, GroupEvent.GroupEventType.ADDITION));
+    pubSubEventHandler.onNext(new GroupEvent(group4, GroupEvent.GroupEventType.ADDITION));
 
     Assert.assertEquals(group1, selector.getNextExecutableGroup());
     Assert.assertEquals(group4, selector.getNextExecutableGroup());
@@ -93,10 +99,13 @@ public final class VtimeBasedNextGroupSelectorTest {
 
     final Injector injector = Tang.Factory.getTang().newInjector();
     final NextGroupSelector selector = injector.getInstance(VtimeBasedNextGroupSelector.class);
-    selector.addGroup(group1);
-    selector.addGroup(group2);
-    selector.addGroup(group3);
-    selector.addGroup(group4);
+    final MistPubSubEventHandler wrapper = injector.getInstance(MistPubSubEventHandler.class);
+    final PubSubEventHandler pubSubEventHandler = wrapper.getPubSubEventHandler();
+
+    pubSubEventHandler.onNext(new GroupEvent(group1, GroupEvent.GroupEventType.ADDITION));
+    pubSubEventHandler.onNext(new GroupEvent(group2, GroupEvent.GroupEventType.ADDITION));
+    pubSubEventHandler.onNext(new GroupEvent(group3, GroupEvent.GroupEventType.ADDITION));
+    pubSubEventHandler.onNext(new GroupEvent(group4, GroupEvent.GroupEventType.ADDITION));
 
     final GlobalSchedGroupInfo rescheduleGroup = selector.getNextExecutableGroup();
     Thread.sleep(1000);

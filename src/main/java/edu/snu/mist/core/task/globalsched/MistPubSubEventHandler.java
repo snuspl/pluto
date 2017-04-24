@@ -14,24 +14,26 @@
  * limitations under the License.
  */
 package edu.snu.mist.core.task.globalsched;
-import org.apache.reef.wake.EventHandler;
 
+import org.apache.reef.wake.impl.PubSubEventHandler;
+
+import javax.inject.Inject;
 /**
- * This is an interface that picks a next group for processing queries.
+ * This is a wrapper class that has a pub/sub event handler.
  */
-public interface NextGroupSelector extends EventHandler<GroupEvent> {
+public final class MistPubSubEventHandler {
+
+  private final PubSubEventHandler pubSubEventHandler;
+
+  @Inject
+  private MistPubSubEventHandler() {
+    this.pubSubEventHandler = new PubSubEventHandler();
+  }
 
   /**
-   * Select the next group that will be processed.
-   * The events of queries within the group will be executed.
-   * The group info should have non-blocking operator chain manager
-   * in order to reselect another operator chain manager when there are no active operator chain managers.
-   * @return group info that will be executed next
+   * Return the pub/sub event handler.
    */
-  GlobalSchedGroupInfo getNextExecutableGroup();
-
-  /**
-   * Re-schedule the group to the selector.
-   */
-  void reschedule(GlobalSchedGroupInfo groupInfo);
+  public PubSubEventHandler getPubSubEventHandler() {
+    return pubSubEventHandler;
+  }
 }

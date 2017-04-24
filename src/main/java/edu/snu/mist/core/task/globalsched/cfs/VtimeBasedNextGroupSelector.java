@@ -17,6 +17,8 @@ package edu.snu.mist.core.task.globalsched.cfs;
 
 import edu.snu.mist.core.parameters.DefaultGroupWeight;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.GroupEvent;
+import edu.snu.mist.core.task.globalsched.MistPubSubEventHandler;
 import edu.snu.mist.core.task.globalsched.NextGroupSelector;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -44,13 +46,18 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
   private final int defaultWeight;
   
   @Inject
-  private VtimeBasedNextGroupSelector(@Parameter(DefaultGroupWeight.class) final int defaultWeight) {
+  private VtimeBasedNextGroupSelector(@Parameter(DefaultGroupWeight.class) final int defaultWeight,
+                                      final MistPubSubEventHandler pubSubEventHandler) {
     this.rbTreeMap = new TreeMap<>();
+    pubSubEventHandler.getPubSubEventHandler().subscribe(GroupEvent.class, this);
     this.defaultWeight = defaultWeight;
   }
 
-  @Override
-  public void addGroup(final GlobalSchedGroupInfo groupInfo) {
+  /**
+   * Add the group's vtime to the rb-tree.
+   * @param groupInfo group info
+   */
+  private void addGroup(final GlobalSchedGroupInfo groupInfo) {
     synchronized (rbTreeMap) {
       final long vruntime = groupInfo.getVRuntime();
       Queue<GlobalSchedGroupInfo> queue = rbTreeMap.get(vruntime);
@@ -62,8 +69,11 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
     }
   }
 
-  @Override
-  public void removeGroup(final GlobalSchedGroupInfo groupInfo) {
+  /**
+   * Remove the group's vtime from the rb-tree.
+   * @param groupInfo group info
+   */
+  private void removeGroup(final GlobalSchedGroupInfo groupInfo) {
     synchronized (rbTreeMap) {
       final Queue<GlobalSchedGroupInfo> queue = rbTreeMap.get(groupInfo.getVRuntime());
       queue.remove(groupInfo);
@@ -108,5 +118,19 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
    */
   private long calculateVRuntimeDelta(final long delta, final GlobalSchedGroupInfo groupInfo) {
     return TimeUnit.NANOSECONDS.toMillis(delta) * defaultWeight / groupInfo.getWeight();
+  }
+
+  @Override
+  public void onNext(final GroupEvent groupEvent) {
+    switch (groupEvent.getGroupEventType()) {
+      case ADDITION:
+        addGroup(groupEvent.getGroupInfo());
+        break;
+      case DELETION:
+        removeGroup(groupEvent.getGroupInfo());
+        break;
+      default:
+        throw new RuntimeException("Invalid group event type: " + groupEvent.getGroupEventType());
+    }
   }
 }
