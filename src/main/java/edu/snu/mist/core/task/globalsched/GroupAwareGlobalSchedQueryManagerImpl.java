@@ -74,6 +74,11 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
   private final GlobalSchedMetricTracker metricTracker;
 
   /**
+   * The pub/sub event handler for control flow.
+   */
+  private final MistPubSubEventHandler pubSubEventHandler;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -82,13 +87,15 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
                                                 final GlobalSchedGroupInfoMap groupInfoMap,
                                                 final EventProcessorManager eventProcessorManager,
                                                 final QueryInfoStore planStore,
-                                                final GlobalSchedMetricTracker metricTracker) {
+                                                final GlobalSchedMetricTracker metricTracker,
+                                                final MistPubSubEventHandler pubSubEventHandler) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.groupInfoMap = groupInfoMap;
     this.eventProcessorManager = eventProcessorManager;
     this.metricTracker = metricTracker;
+    this.pubSubEventHandler = pubSubEventHandler;
     metricTracker.start();
   }
 
@@ -118,7 +125,10 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
         jcb.bindNamedParameter(GroupId.class, groupId);
         jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-        groupInfoMap.putIfAbsent(groupId, injector.getInstance(GlobalSchedGroupInfo.class));
+        final GlobalSchedGroupInfo groupInfo = injector.getInstance(GlobalSchedGroupInfo.class);
+        groupInfoMap.putIfAbsent(groupId, groupInfo);
+        pubSubEventHandler.getPubSubEventHandler().onNext(new GroupEvent(groupInfo,
+            GroupEvent.GroupEventType.ADDITION));
       }
       // Add the query into the group
       final GlobalSchedGroupInfo groupInfo = groupInfoMap.get(groupId);
