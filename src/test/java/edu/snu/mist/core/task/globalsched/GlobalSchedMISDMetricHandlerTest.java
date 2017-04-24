@@ -28,11 +28,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Test whether GlobalSchedMetricHandler assigns proper event processor number according to the metric.
+ * Test whether GlobalSchedMISDMetricHandler assigns proper event processor number according to the metric.
  */
-public final class GlobalSchedMetricHandlerTest {
+public final class GlobalSchedMISDMetricHandlerTest {
 
-  private GlobalSchedMetricHandler handler;
+  private GlobalSchedMISDMetricHandler handler;
   private GlobalSchedMetric metric;
   private EventProcessorManager eventProcessorManager;
   private static final int THREAD_NUM_LIMIT = 30;
@@ -56,12 +56,11 @@ public final class GlobalSchedMetricHandlerTest {
     injector.bindVolatileInstance(EventProcessorManager.class, eventProcessorManager);
     injector.bindVolatileParameter(EventProcessorIncreaseRate.class, INCREASE_RATE);
     injector.bindVolatileParameter(EventProcessorDecreaseNum.class, DECREASE_NUM);
-    handler = injector.getInstance(GlobalSchedMetricHandler.class);
-    eventProcessorManager = injector.getInstance(EventProcessorManager.class);
+    handler = injector.getInstance(GlobalSchedMISDMetricHandler.class);
   }
 
   /**
-   * Test whether the GlobalSchedMetricHandler increase and decrease the event processor numbers properly.
+   * Test whether the GlobalSchedMISDMetricHandler increase and decrease the event processor numbers properly.
    */
   @Test(timeout = 1000L)
   public void testProcessorNumManaged() throws InjectionException {

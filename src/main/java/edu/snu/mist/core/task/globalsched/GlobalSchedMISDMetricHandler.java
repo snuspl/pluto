@@ -32,7 +32,7 @@ import javax.inject.Inject;
  * then this handler will close some event processors.
  * Also, it will do multiplicative increase/subtractive decrease similar to the AIMD of TCP.
  */
-final class GlobalSchedMetricHandler implements MetricHandler {
+final class GlobalSchedMISDMetricHandler implements MetricHandler {
 
   /**
    * The limit of the total number of executor threads.
@@ -74,6 +74,7 @@ final class GlobalSchedMetricHandler implements MetricHandler {
 
   /**
    * A metric contains global information.
+   * The number of events and the cpu utilization of the whole system in this metric will be used.
    */
   private final GlobalSchedMetric metric;
 
@@ -83,15 +84,15 @@ final class GlobalSchedMetricHandler implements MetricHandler {
   private final EventProcessorManager eventProcessorManager;
 
   @Inject
-  private GlobalSchedMetricHandler(@Parameter(DefaultNumEventProcessors.class) final int defaultNumEventProcessors,
-                                   @Parameter(ThreadNumLimit.class) final int threadNumLimit,
-                                   @Parameter(EventNumHighThreshold.class) final long eventNumHighThreshold,
-                                   @Parameter(EventNumLowThreshold.class) final long eventNumLowThreshold,
-                                   @Parameter(CpuUtilLowThreshold.class) final double cpuUtilLowThreshold,
-                                   @Parameter(EventProcessorIncreaseRate.class) final double increaseRate,
-                                   @Parameter(EventProcessorDecreaseNum.class) final int decreaseNum,
-                                   final GlobalSchedMetric metric,
-                                   final EventProcessorManager eventProcessorManager) {
+  private GlobalSchedMISDMetricHandler(@Parameter(DefaultNumEventProcessors.class) final int defaultNumEventProcessors,
+                                       @Parameter(ThreadNumLimit.class) final int threadNumLimit,
+                                       @Parameter(EventNumHighThreshold.class) final long eventNumHighThreshold,
+                                       @Parameter(EventNumLowThreshold.class) final long eventNumLowThreshold,
+                                       @Parameter(CpuUtilLowThreshold.class) final double cpuUtilLowThreshold,
+                                       @Parameter(EventProcessorIncreaseRate.class) final double increaseRate,
+                                       @Parameter(EventProcessorDecreaseNum.class) final int decreaseNum,
+                                       final GlobalSchedMetric metric,
+                                       final EventProcessorManager eventProcessorManager) {
     this.defaultNumEventProcessors = defaultNumEventProcessors;
     this.threadNumLimit = threadNumLimit;
     this.eventNumHighThreshold = eventNumHighThreshold;

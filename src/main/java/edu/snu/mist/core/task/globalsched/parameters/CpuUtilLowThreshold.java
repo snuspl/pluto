@@ -20,6 +20,6 @@ import org.apache.reef.tang.annotations.NamedParameter;
 
 @NamedParameter(doc = "The low threshold of the CPU utilization. " +
     "If the CPU utilization is lower than than this value, then the system will be regarded as under utilized.",
-    short_name = "cpu_util_low_threshold", default_value = "0.1")
+    short_name = "cpu_util_low_threshold", default_value = "0.5")
 public final class CpuUtilLowThreshold implements Name<Double> {
 }
