@@ -67,7 +67,7 @@ final class ProportionalGroupMetricHandler implements MetricHandler {
       long sum = 0;
       int zeroCount = 0;
       for (final GroupInfo groupInfo : groupInfoMap.values()) {
-        final long numEvents = groupInfo.getGroupMetric().getNumEvents();
+        final long numEvents = (long) groupInfo.getGroupMetric().getEwmaNumEvents();
         if (numEvents == 0) {
           zeroCount++;
           continue;
@@ -82,7 +82,7 @@ final class ProportionalGroupMetricHandler implements MetricHandler {
         assignSingleThread();
       } else {
         for (final GroupInfo groupInfo : groupInfoMap.values()) {
-          final long numEvents = groupInfo.getGroupMetric().getNumEvents();
+          final long numEvents = (long) groupInfo.getGroupMetric().getEwmaNumEvents();
           // Assign processor number proportionally to the number of events
           long processorNumToAssign = remainderProcessorNum * numEvents / sum;
           if (processorNumToAssign == 0) {

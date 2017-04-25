@@ -68,29 +68,29 @@ public final class GlobalSchedMISDMetricHandlerTest {
     eventProcessorManager.adjustEventProcessorNum(DEFAULT_THREAD_NUM);
 
     // Many events, low cpu utilization
-    metric.setNumEvents(EVENT_NUM_HIGH_THRES + 1);
-    metric.setSystemCpuUtil(CPU_UTIL_LOW_THRES - 0.01);
+    metric.updateNumEvents(EVENT_NUM_HIGH_THRES + 1);
+    metric.updateSystemCpuUtil(CPU_UTIL_LOW_THRES - 0.01);
 
     handler.metricUpdated();
     // The number of event processors should be doubled
     Assert.assertEquals(DEFAULT_THREAD_NUM * (int) INCREASE_RATE, eventProcessorManager.getEventProcessors().size());
 
     // Make the number of events to be not enough to increase the event processor number.
-    metric.setNumEvents(EVENT_NUM_HIGH_THRES - 1);
+    metric.updateNumEvents(EVENT_NUM_HIGH_THRES - 1);
 
     handler.metricUpdated();
     // The number of event processors should be not changed
     Assert.assertEquals(DEFAULT_THREAD_NUM * (int) INCREASE_RATE, eventProcessorManager.getEventProcessors().size());
 
     // Many events, low cpu utilization again
-    metric.setNumEvents(EVENT_NUM_HIGH_THRES + 1);
+    metric.updateNumEvents(EVENT_NUM_HIGH_THRES + 1);
 
     handler.metricUpdated();
     // The number of event processors should be the limit
     Assert.assertEquals(THREAD_NUM_LIMIT, eventProcessorManager.getEventProcessors().size());
 
     // Few events, low cpu utilization
-    metric.setNumEvents(EVENT_NUM_LOW_THRES - 1);
+    metric.updateNumEvents(EVENT_NUM_LOW_THRES - 1);
 
     handler.metricUpdated();
     // The number of event processors should be half
