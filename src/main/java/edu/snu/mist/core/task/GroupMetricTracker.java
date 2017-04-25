@@ -86,7 +86,7 @@ final class GroupMetricTracker implements AutoCloseable {
               }
             }
             final GroupMetric metric = groupInfo.getGroupMetric();
-            metric.setNumEvents(numEvent);
+            metric.updateNumEvents(numEvent);
           }
           handler.metricUpdated();
         } catch (final Exception e) {

@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.core.task;
 
+import edu.snu.mist.common.MetricUtil;
+
 import javax.inject.Inject;
 
 /**
@@ -27,17 +29,28 @@ final class GroupMetric {
    */
   private long numEvents;
 
+  /**
+   * The exponential weighted moving average for number of events.
+   */
+  private double ewmaNumEvents;
+
   @Inject
   private GroupMetric() {
     this.numEvents = 0;
+    this.ewmaNumEvents = 0.0;
   }
 
-  public void setNumEvents(final long numEventsParam) {
+  public void updateNumEvents(final long numEventsParam) {
     this.numEvents = numEventsParam;
+    this.ewmaNumEvents = MetricUtil.calculateEwma(numEventsParam, this.ewmaNumEvents);
   }
 
   public long getNumEvents() {
     return numEvents;
+  }
+
+  public double getEwmaNumEvents() {
+    return ewmaNumEvents;
   }
 
   @Override
@@ -46,7 +59,8 @@ final class GroupMetric {
       return false;
     }
     final GroupMetric groupMetric = (GroupMetric) o;
-    return this.numEvents == groupMetric.getNumEvents();
+    return this.numEvents == groupMetric.getNumEvents()
+        && this.ewmaNumEvents == groupMetric.getEwmaNumEvents();
   }
 
   @Override

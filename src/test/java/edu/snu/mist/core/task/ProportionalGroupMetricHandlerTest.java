@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
+import edu.snu.mist.common.MetricUtil;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.parameters.ThreadNumLimit;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
@@ -79,7 +80,7 @@ public final class ProportionalGroupMetricHandlerTest {
     // Create the GroupInfo to be managed
     for (int i = 0; i < THREAD_NUM_SOFT_LIMIT; i++) {
       final GroupInfo groupInfo = generateGroupInfo(String.valueOf(i));
-      groupInfo.getGroupMetric().setNumEvents(i);
+      groupInfo.getGroupMetric().updateNumEvents(i);
     }
 
     handler.metricUpdated();
@@ -99,8 +100,8 @@ public final class ProportionalGroupMetricHandlerTest {
     int sum = 0;
     for (int i = 0; i < 10; i++) {
       final GroupInfo groupInfo = generateGroupInfo(String.valueOf(i));
-      groupInfo.getGroupMetric().setNumEvents(10 * (i + 1));
-      sum += 10 * (i + 1);
+      groupInfo.getGroupMetric().updateNumEvents(10 * (i + 1));
+      sum += (long) MetricUtil.calculateEwma(10 * (i + 1), 0.0);
     }
     // Create a few empty groups
     for (int i = 0; i < 10; i++) {
@@ -111,7 +112,7 @@ public final class ProportionalGroupMetricHandlerTest {
 
     // The number of assigned threads should be proportional to the event number metric of the group.
     for (final GroupInfo groupInfo : groupInfoMap.values()) {
-      long expected = (THREAD_NUM_SOFT_LIMIT - 10) * groupInfo.getGroupMetric().getNumEvents() / sum;
+      long expected = (THREAD_NUM_SOFT_LIMIT - 10) * (long) (groupInfo.getGroupMetric().getEwmaNumEvents()) / sum;
       if (expected == 0) {
         expected = 1;
       }

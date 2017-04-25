@@ -104,7 +104,7 @@ final class GlobalSchedMetricTracker implements AutoCloseable {
               }
             }
           }
-          metric.setNumEvents(numEvent);
+          metric.updateNumEvents(numEvent);
 
           // Track the current cpu utilization
           final ObjectName name = ObjectName.getInstance("java.lang:type=OperatingSystem");
@@ -116,11 +116,11 @@ final class GlobalSchedMetricTracker implements AutoCloseable {
 
             if (systemUtil != -1.0) {
               // If the monitoring was successful
-              metric.setSystemCpuUtil(systemUtil);
+              metric.updateSystemCpuUtil(systemUtil);
             }
             if (processUtil != -1.0) {
               // If the monitoring was successful
-              metric.setProcessCpuUtil(processUtil);
+              metric.updateProcessCpuUtil(processUtil);
             }
           }
 

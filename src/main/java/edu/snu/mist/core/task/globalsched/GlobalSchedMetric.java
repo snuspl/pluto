@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.core.task.globalsched;
 
+import edu.snu.mist.common.MetricUtil;
+
 import javax.inject.Inject;
 
 /**
@@ -28,14 +30,29 @@ final class GlobalSchedMetric {
   private long numEvents;
 
   /**
+   * The exponential weighted moving average for number of events.
+   */
+  private double ewmaNumEvents;
+
+  /**
    * The cpu utilization of the whole system provided by a low-level system monitor.
    */
   private double systemCpuUtil;
 
   /**
+   * The EWMA value of cpu utilization.
+   */
+  private double ewmaSystemCpuUtil;
+
+  /**
    * The cpu utilization of the JVM process provided by a low-level system monitor.
    */
   private double processCpuUtil;
+
+  /**
+   * The EWMA value of process cpu utilization.
+   */
+  private double ewmaProcessCpuUtil;
 
   /**
    * The total weight of all groups.
@@ -45,8 +62,11 @@ final class GlobalSchedMetric {
   @Inject
   private GlobalSchedMetric(final GlobalSchedGroupInfoMap groupInfoMap) {
     this.numEvents = 0;
-    this.systemCpuUtil = 0;
-    this.processCpuUtil = 0;
+    this.ewmaNumEvents = 0.0;
+    this.systemCpuUtil = 0.0;
+    this.ewmaSystemCpuUtil = 0.0;
+    this.processCpuUtil = 0.0;
+    this.ewmaProcessCpuUtil = 0.0;
     this.totalWeight = calculateTotalWeight(groupInfoMap);
   }
 
@@ -79,28 +99,43 @@ final class GlobalSchedMetric {
     totalWeight = weight;
   }
 
-  public void setNumEvents(final long numEventsToSet) {
+  public void updateNumEvents(final long numEventsToSet) {
     this.numEvents = numEventsToSet;
+    this.ewmaNumEvents = MetricUtil.calculateEwma(numEventsToSet, this.ewmaNumEvents);
   }
 
   public long getNumEvents() {
     return numEvents;
   }
 
+  public double getEwmaNumEvents() {
+    return ewmaNumEvents;
+  }
+
   public double getSystemCpuUtil() {
     return systemCpuUtil;
   }
 
-  public void setSystemCpuUtil(final double cpuUtil) {
+  public double getEwmaSystemCpuUtil() {
+    return ewmaSystemCpuUtil;
+  }
+
+  public void updateSystemCpuUtil(final double cpuUtil) {
     this.systemCpuUtil = cpuUtil;
+    this.ewmaSystemCpuUtil = MetricUtil.calculateEwma(cpuUtil, this.ewmaSystemCpuUtil);
   }
 
   public double getProcessCpuUtil() {
     return processCpuUtil;
   }
 
-  public void setProcessCpuUtil(final double processCpuUtil) {
-    this.processCpuUtil = processCpuUtil;
+  public double getEwmaProcessCpuUtil() {
+    return ewmaProcessCpuUtil;
+  }
+
+  public void updateProcessCpuUtil(final double processCpuUtilParam) {
+    this.processCpuUtil = processCpuUtilParam;
+    this.ewmaProcessCpuUtil = MetricUtil.calculateEwma(processCpuUtilParam, this.ewmaProcessCpuUtil);
   }
 
   @Override
@@ -109,8 +144,12 @@ final class GlobalSchedMetric {
       return false;
     }
     final GlobalSchedMetric groupMetric = (GlobalSchedMetric) o;
-    return this.numEvents == groupMetric.getNumEvents() && systemCpuUtil == groupMetric.getSystemCpuUtil()
-        && processCpuUtil == groupMetric.processCpuUtil;
+    return this.numEvents == groupMetric.getNumEvents()
+        && this.systemCpuUtil == groupMetric.getSystemCpuUtil()
+        && this.processCpuUtil == groupMetric.getProcessCpuUtil()
+        && this.ewmaNumEvents == groupMetric.getEwmaNumEvents()
+        && this.ewmaProcessCpuUtil == groupMetric.getProcessCpuUtil()
+        && this.ewmaSystemCpuUtil == groupMetric.getSystemCpuUtil();
   }
 
   @Override
