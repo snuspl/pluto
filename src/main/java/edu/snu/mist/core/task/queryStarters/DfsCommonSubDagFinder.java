@@ -13,10 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.queryStarters;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.core.task.ExecutionVertex;
+import edu.snu.mist.core.task.OperatorChain;
+import edu.snu.mist.core.task.PhysicalSource;
 
 import javax.inject.Inject;
 import java.util.*;

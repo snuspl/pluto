@@ -13,10 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.queryStarters;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.core.task.ExecutionVertex;
+import edu.snu.mist.core.task.OperatorChainManager;
+import edu.snu.mist.core.task.PhysicalSource;
 
 import javax.inject.Inject;
 
@@ -24,7 +27,7 @@ import javax.inject.Inject;
  * This query starter does not merge queries.
  * Instead, it executes them separately.
  */
-final class NoMergingQueryStarter implements QueryStarter {
+public final class NoMergingQueryStarter implements QueryStarter {
 
   /**
    * Operator chain manager that manages the operator chains.

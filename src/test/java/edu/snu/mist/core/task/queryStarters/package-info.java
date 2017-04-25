@@ -13,30 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
-
-import edu.snu.mist.common.sinks.Sink;
-
 /**
- * This is an implementation of PhysicalSink.
+ * A test package of query starters.
  */
-public final class PhysicalSinkImpl<I> extends BasePhysicalVertex implements PhysicalSink<I> {
-
-  private final Sink<I> sink;
-
-  public PhysicalSinkImpl(final String sinkId,
-                          final String configuration,
-                          final Sink<I> sink) {
-    super(sinkId, configuration);
-    this.sink = sink;
-  }
-
-  public Sink<I> getSink() {
-    return sink;
-  }
-
-  @Override
-  public Type getType() {
-    return Type.SINK;
-  }
-}
+package edu.snu.mist.core.task.queryStarters;
