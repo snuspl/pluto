@@ -17,6 +17,7 @@ package edu.snu.mist.core.task.queryStarters;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.core.task.ExecutionPlanDagMap;
 import edu.snu.mist.core.task.ExecutionVertex;
 import edu.snu.mist.core.task.OperatorChainManager;
 import edu.snu.mist.core.task.PhysicalSource;
@@ -34,9 +35,16 @@ public final class NoMergingQueryStarter implements QueryStarter {
    */
   private final OperatorChainManager operatorChainManager;
 
+  /**
+   * The map that has a query id as a key and an execution dag as a value.
+   */
+  private final ExecutionPlanDagMap executionPlanDagMap;
+
   @Inject
-  private NoMergingQueryStarter(final OperatorChainManager operatorChainManager) {
+  private NoMergingQueryStarter(final OperatorChainManager operatorChainManager,
+                                final ExecutionPlanDagMap executionPlanDagMap) {
     this.operatorChainManager = operatorChainManager;
+    this.executionPlanDagMap = executionPlanDagMap;
   }
 
   /**
@@ -45,6 +53,7 @@ public final class NoMergingQueryStarter implements QueryStarter {
    */
   @Override
   public void start(final String queryId, final DAG<ExecutionVertex, MISTEdge> submittedDag) {
+    executionPlanDagMap.put(queryId, submittedDag);
     QueryStarterUtils.setUpOutputEmitters(operatorChainManager, submittedDag);
     // starts to receive input data stream from the sources
     for (final ExecutionVertex source : submittedDag.getRootVertices()) {
