@@ -37,11 +37,46 @@ final class GlobalSchedMetric {
    */
   private double processCpuUtil;
 
+  /**
+   * The total weight of all groups.
+   */
+  private volatile long totalWeight;
+
   @Inject
-  private GlobalSchedMetric() {
+  private GlobalSchedMetric(final GlobalSchedGroupInfoMap groupInfoMap) {
     this.numEvents = 0;
     this.systemCpuUtil = 0;
     this.processCpuUtil = 0;
+    this.totalWeight = calculateTotalWeight(groupInfoMap);
+  }
+
+  /**
+   * Calculate the total weight of all groups.
+   * @param groupInfoMap group info map
+   * @return total weight
+   */
+  private long calculateTotalWeight(final GlobalSchedGroupInfoMap groupInfoMap) {
+    long sum = 0;
+    for (final GlobalSchedGroupInfo groupInfo : groupInfoMap.values()) {
+      sum += groupInfo.getWeight();
+    }
+    return sum;
+  }
+
+  /**
+   * Get the total weight of all groups.
+   * @return total weight
+   */
+  public long getTotalWeight() {
+    return totalWeight;
+  }
+
+  /**
+   * Set the total weight of all groups.
+   * @param weight total weight
+   */
+  public void setTotalWeight(final long weight) {
+    totalWeight = weight;
   }
 
   public void setNumEvents(final long numEventsToSet) {
