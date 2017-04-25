@@ -25,8 +25,8 @@ public final class MetricUtil {
   }
 
   public static double calculateEwma(final double newValue,
-                         final double oldEwma,
-                         final double alpha) {
+                                     final double oldEwma,
+                                     final double alpha) {
     return alpha * newValue + (1 - alpha) * oldEwma;
   }
 }
