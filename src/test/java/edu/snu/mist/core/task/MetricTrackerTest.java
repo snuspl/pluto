@@ -21,7 +21,7 @@ import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.parameters.MetricTrackingInterval;
 import edu.snu.mist.core.task.utils.IdAndConfGenerator;
-import edu.snu.mist.core.task.utils.TestMetricHandler;
+import edu.snu.mist.core.task.utils.TestEventProcessorNumAssigner;
 import edu.snu.mist.formats.avro.Direction;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -35,24 +35,24 @@ import org.junit.Test;
 import static edu.snu.mist.core.task.utils.SimpleOperatorChainUtils.*;
 
 /**
- * Test whether GroupMetricTracker tracks each group's metric properly or not.
+ * Test whether MetricTracker tracks each group's metric properly or not.
  */
-public final class GroupMetricTrackerTest {
+public final class MetricTrackerTest {
 
-  private GroupMetricTracker tracker;
+  private MetricTracker tracker;
   private IdAndConfGenerator idAndConfGenerator;
   private GroupInfoMap groupInfoMap;
-  private TestMetricHandler callback;
+  private TestEventProcessorNumAssigner callback;
   private static final long TRACKING_INTERVAL = 10L;
 
   @Before
   public void setUp() throws InjectionException {
-    callback = new TestMetricHandler();
+    callback = new TestEventProcessorNumAssigner();
     final Injector injector = Tang.Factory.getTang().newInjector();
     groupInfoMap = injector.getInstance(GroupInfoMap.class);
     injector.bindVolatileParameter(MetricTrackingInterval.class, TRACKING_INTERVAL);
-    injector.bindVolatileInstance(MetricHandler.class, callback);
-    tracker = injector.getInstance(GroupMetricTracker.class);
+    injector.bindVolatileInstance(EventProcessorNumAssigner.class, callback);
+    tracker = injector.getInstance(MetricTracker.class);
     idAndConfGenerator = new IdAndConfGenerator();
   }
 
@@ -130,8 +130,8 @@ public final class GroupMetricTrackerTest {
     executionDagsB.put(srcB2.getConfiguration(), dagB);
 
     // the event number should be zero in each group
-    Assert.assertEquals(0, groupInfoA.getGroupMetric().getNumEvents());
-    Assert.assertEquals(0, groupInfoB.getGroupMetric().getNumEvents());
+    Assert.assertEquals(0, groupInfoA.getEventNumMetric().getNumEvents());
+    Assert.assertEquals(0, groupInfoB.getEventNumMetric().getNumEvents());
 
     // add a few events to the operator chains in group A
     opA1.addNextEvent(generateTestEvent(), Direction.LEFT);
@@ -140,8 +140,8 @@ public final class GroupMetricTrackerTest {
 
     // wait the tracker for a while
     callback.waitForTracking();
-    Assert.assertEquals(3, groupInfoA.getGroupMetric().getNumEvents());
-    Assert.assertEquals(0, groupInfoB.getGroupMetric().getNumEvents());
+    Assert.assertEquals(3, groupInfoA.getEventNumMetric().getNumEvents());
+    Assert.assertEquals(0, groupInfoB.getEventNumMetric().getNumEvents());
 
     // add a few events to the operator chains in group B
     opB1.addNextEvent(generateTestEvent(), Direction.LEFT);
@@ -151,8 +151,8 @@ public final class GroupMetricTrackerTest {
 
     // wait the tracker for a while
     callback.waitForTracking();
-    Assert.assertEquals(3, groupInfoA.getGroupMetric().getNumEvents());
-    Assert.assertEquals(4, groupInfoB.getGroupMetric().getNumEvents());
+    Assert.assertEquals(3, groupInfoA.getEventNumMetric().getNumEvents());
+    Assert.assertEquals(4, groupInfoB.getEventNumMetric().getNumEvents());
   }
 
   /**

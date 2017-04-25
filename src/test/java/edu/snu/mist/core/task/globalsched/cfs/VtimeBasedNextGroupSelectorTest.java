@@ -15,10 +15,7 @@
  */
 package edu.snu.mist.core.task.globalsched.cfs;
 
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
-import edu.snu.mist.core.task.globalsched.GroupEvent;
-import edu.snu.mist.core.task.globalsched.MistPubSubEventHandler;
-import edu.snu.mist.core.task.globalsched.NextGroupSelector;
+import edu.snu.mist.core.task.globalsched.*;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -54,7 +51,7 @@ public final class VtimeBasedNextGroupSelectorTest {
 
     final Injector injector = Tang.Factory.getTang().newInjector();
     final NextGroupSelector selector = injector.getInstance(VtimeBasedNextGroupSelector.class);
-    final MistPubSubEventHandler wrapper = injector.getInstance(MistPubSubEventHandler.class);
+    final GroupEventPubSubEventHandler wrapper = injector.getInstance(GroupEventPubSubEventHandler.class);
     final PubSubEventHandler pubSubEventHandler = wrapper.getPubSubEventHandler();
 
     pubSubEventHandler.onNext(new GroupEvent(group1, GroupEvent.GroupEventType.ADDITION));
@@ -83,6 +80,8 @@ public final class VtimeBasedNextGroupSelectorTest {
     final GlobalSchedGroupInfo group2 = mock(GlobalSchedGroupInfo.class);
     final GlobalSchedGroupInfo group3 = mock(GlobalSchedGroupInfo.class);
     final GlobalSchedGroupInfo group4 = mock(GlobalSchedGroupInfo.class);
+    final EventNumAndWeightMetric metric =
+        Tang.Factory.getTang().newInjector().getInstance(EventNumAndWeightMetric.class);
 
     final AtomicLong group1AdjustVRuntime = new AtomicLong(0);
     doAnswer((invocation) -> {
@@ -90,16 +89,16 @@ public final class VtimeBasedNextGroupSelectorTest {
         group1AdjustVRuntime.set((long)args[0]);
         return null;
     }).when(group1).setVRuntime(anyLong());
-
+    
     when(group1.getVRuntime()).thenAnswer((invocation) -> group1AdjustVRuntime.get());
-    when(group1.getWeight()).thenReturn(1);
+    when(group1.getEventNumAndWeightMetric()).thenReturn(metric);
     when(group2.getVRuntime()).thenReturn(2L);
     when(group3.getVRuntime()).thenReturn(1L);
     when(group4.getVRuntime()).thenReturn(0L);
 
     final Injector injector = Tang.Factory.getTang().newInjector();
     final NextGroupSelector selector = injector.getInstance(VtimeBasedNextGroupSelector.class);
-    final MistPubSubEventHandler wrapper = injector.getInstance(MistPubSubEventHandler.class);
+    final GroupEventPubSubEventHandler wrapper = injector.getInstance(GroupEventPubSubEventHandler.class);
     final PubSubEventHandler pubSubEventHandler = wrapper.getPubSubEventHandler();
 
     pubSubEventHandler.onNext(new GroupEvent(group1, GroupEvent.GroupEventType.ADDITION));

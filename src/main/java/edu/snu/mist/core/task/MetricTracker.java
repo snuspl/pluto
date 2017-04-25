@@ -15,20 +15,17 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.parameters.MetricTrackingInterval;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.Collection;
 import java.util.concurrent.*;
 
 /**
  * This class represents the group tracker which measures the metric of each group such as number of events.
  * It periodically check the metric and update the GroupInfo.
  */
-final class GroupMetricTracker implements AutoCloseable {
+final class MetricTracker implements AutoCloseable {
 
   /**
    * The executor service which provide the thread pool for metric tracking.
@@ -51,19 +48,33 @@ final class GroupMetricTracker implements AutoCloseable {
   private final GroupInfoMap groupInfoMap;
 
   /**
-   * The group metric handler which handles the updated metric.
+   * The event processor number assigner.
    */
-  private final MetricHandler handler;
+  private final EventProcessorNumAssigner assigner;
+
+  /**
+   * The metric pub/sub event handler.
+   */
+  private final MetricPubSubEventHandler metricPubSubEventHandler;
+
+  /**
+   * A metric event handler that updates the num event metric.
+   */
+  private final EventNumMetricEventHandler metricEventHandler;
 
   @Inject
-  private GroupMetricTracker(final MetricTrackerExecutorServiceWrapper executorServiceWrapper,
-                             @Parameter(MetricTrackingInterval.class) final long groupTrackingInterval,
-                             final GroupInfoMap groupInfoMap,
-                             final MetricHandler handler) {
+  private MetricTracker(final MetricTrackerExecutorServiceWrapper executorServiceWrapper,
+                        @Parameter(MetricTrackingInterval.class) final long groupTrackingInterval,
+                        final GroupInfoMap groupInfoMap,
+                        final EventProcessorNumAssigner assigner,
+                        final MetricPubSubEventHandler metricPubSubEventHandler,
+                        final EventNumMetricEventHandler metricEventHandler) {
     this.executorService = executorServiceWrapper.getScheduler();
     this.groupTrackingInterval = groupTrackingInterval;
     this.groupInfoMap = groupInfoMap;
-    this.handler = handler;
+    this.assigner = assigner;
+    this.metricPubSubEventHandler = metricPubSubEventHandler;
+    this.metricEventHandler = metricEventHandler;
   }
 
   /**
@@ -74,6 +85,7 @@ final class GroupMetricTracker implements AutoCloseable {
     result = executorService.scheduleWithFixedDelay(new Runnable() {
       public void run() {
         try {
+<<<<<<< HEAD:src/main/java/edu/snu/mist/core/task/GroupMetricTracker.java
           for (final GroupInfo groupInfo : groupInfoMap.values()) {
             // Track the number of event per each group
             long numEvent = 0;
@@ -89,6 +101,12 @@ final class GroupMetricTracker implements AutoCloseable {
             metric.updateNumEvents(numEvent);
           }
           handler.metricUpdated();
+=======
+          // Publish the metric update events to subscriber
+          metricPubSubEventHandler.getPubSubEventHandler().onNext(new MetricEvent());
+          // Notify the metric update to event processor number assigner
+          assigner.metricUpdated();
+>>>>>>> [MIST-628] Refactor metric code:src/main/java/edu/snu/mist/core/task/MetricTracker.java
         } catch (final Exception e) {
           e.printStackTrace();
         }

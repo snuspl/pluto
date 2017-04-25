@@ -15,16 +15,11 @@
  */
 package edu.snu.mist.core.task.globalsched;
 
-import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.parameters.MetricTrackingInterval;
 import edu.snu.mist.core.task.*;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import javax.management.*;
-import java.lang.management.ManagementFactory;
-import java.util.Collection;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -51,37 +46,38 @@ final class GlobalSchedMetricTracker implements AutoCloseable {
   private ScheduledFuture result;
 
   /**
-   * The group metric handler which handles the updated metric.
+   * The event processor number assigner.
    */
-  private final MetricHandler handler;
+  private final EventProcessorNumAssigner assigner;
 
   /**
-   * The map of group ids and group info to update.
+   * The metric pub/sub event handler.
    */
-  private final GlobalSchedGroupInfoMap groupInfoMap;
+  private final MetricPubSubEventHandler metricPubSubEventHandler;
 
   /**
-   * A metric contains global information.
+   * A metric event handler that updates the num event metric.
    */
-  private final GlobalSchedMetric metric;
+  private final GlobalSchedEventNumMetricEventHandler eventNumMetricEventHandler;
 
   /**
-   * A MBean server for monitoring.
+   * A metric event handler that updates the cpu utilization.
    */
-  private final MBeanServer mbs;
+  private final CpuUtilMetricEventHandler cpuUtilMetricEventHandler;
 
   @Inject
   private GlobalSchedMetricTracker(final MetricTrackerExecutorServiceWrapper executorServiceWrapper,
                                    @Parameter(MetricTrackingInterval.class) final long metricTrackingInterval,
-                                   final MetricHandler handler,
-                                   final GlobalSchedGroupInfoMap groupInfoMap,
-                                   final GlobalSchedMetric metric) {
+                                   final EventProcessorNumAssigner assigner,
+                                   final MetricPubSubEventHandler metricPubSubEventHandler,
+                                   final GlobalSchedEventNumMetricEventHandler eventNumMetricEventHandler,
+                                   final CpuUtilMetricEventHandler cpuUtilMetricEventHandler) {
     this.executorService = executorServiceWrapper.getScheduler();
     this.groupTrackingInterval = metricTrackingInterval;
-    this.handler = handler;
-    this.groupInfoMap = groupInfoMap;
-    this.metric = metric;
-    this.mbs = ManagementFactory.getPlatformMBeanServer();
+    this.assigner = assigner;
+    this.metricPubSubEventHandler = metricPubSubEventHandler;
+    this.eventNumMetricEventHandler = eventNumMetricEventHandler;
+    this.cpuUtilMetricEventHandler = cpuUtilMetricEventHandler;
   }
 
   /**
@@ -92,52 +88,15 @@ final class GlobalSchedMetricTracker implements AutoCloseable {
     result = executorService.scheduleWithFixedDelay(new Runnable() {
       public void run() {
         try {
-          // Track the total number of events
-          long numEvent = 0;
-          for (final GlobalSchedGroupInfo groupInfo : groupInfoMap.values()) {
-            for (final DAG<ExecutionVertex, MISTEdge> dag : groupInfo.getExecutionDags().getUniqueValues()) {
-              final Collection<ExecutionVertex> vertices = dag.getVertices();
-              for (final ExecutionVertex ev : vertices) {
-                if (ev.getType() == ExecutionVertex.Type.OPERATOR_CHIAN) {
-                  numEvent += ((OperatorChain) ev).numberOfEvents();
-                }
-              }
-            }
-          }
-          metric.updateNumEvents(numEvent);
-
-          // Track the current cpu utilization
-          final ObjectName name = ObjectName.getInstance("java.lang:type=OperatingSystem");
-          final AttributeList list = mbs.getAttributes(name, new String[]{"SystemCpuLoad", "ProcessCpuLoad"});
-
-          if (!list.isEmpty()) {
-            final Double systemUtil = (Double)((Attribute)list.get(0)).getValue();
-            final Double processUtil = (Double)((Attribute)list.get(1)).getValue();
-
-            if (systemUtil != -1.0) {
-              // If the monitoring was successful
-              metric.updateSystemCpuUtil(systemUtil);
-            }
-            if (processUtil != -1.0) {
-              // If the monitoring was successful
-              metric.updateProcessCpuUtil(processUtil);
-            }
-          }
-
-          // Let the handler know that metrics are updated
-          handler.metricUpdated();
+          // Publish the metric update events to subscriber
+          metricPubSubEventHandler.getPubSubEventHandler().onNext(new MetricEvent());
+          // Notify the metric update to event processor number assigner
+          assigner.metricUpdated();
         } catch (final Exception e) {
           e.printStackTrace();
         }
       }
     }, groupTrackingInterval, groupTrackingInterval, TimeUnit.MILLISECONDS);
-  }
-
-  /**
-   * @return the global metric
-   */
-  public GlobalSchedMetric getMetric() {
-    return metric;
   }
 
   @Override

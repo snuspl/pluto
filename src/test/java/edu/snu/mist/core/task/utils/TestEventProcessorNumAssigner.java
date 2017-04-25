@@ -15,18 +15,18 @@
  */
 package edu.snu.mist.core.task.utils;
 
-import edu.snu.mist.core.task.MetricHandler;
+import edu.snu.mist.core.task.EventProcessorNumAssigner;
 
 import java.util.concurrent.CountDownLatch;
 
 /**
- * This is a simple implementation of MetricHandler for callback.
+ * This is a simple implementation of EventProcessorNumAssigner for callback.
  */
-public final class TestMetricHandler implements MetricHandler {
+public final class TestEventProcessorNumAssigner implements EventProcessorNumAssigner {
 
   private CountDownLatch latch;
 
-  public TestMetricHandler() {
+  public TestEventProcessorNumAssigner() {
     latch = null;
     // do nothing
   }

@@ -16,7 +16,6 @@
 package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.common.parameters.GroupId;
-import edu.snu.mist.core.parameters.DefaultGroupWeight;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.queryRemovers.QueryRemover;
 import edu.snu.mist.core.task.queryStarters.QueryStarter;
@@ -52,6 +51,11 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   private final QueryStarter queryStarter;
 
   /**
+   * A metric that represents the number of events and weight in the group, which will be updated periodically.
+   */
+  private final EventNumAndWeightMetric eventNumAndWeightMetric;
+
+  /**
    * Operator chain manager.
    */
   private final OperatorChainManager operatorChainManager;
@@ -71,22 +75,17 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
    */
   private long vruntime;
 
-  /**
-   * The weight of the group.
-   */
-  private volatile int weight;
-
   @Inject
   private DefaultGlobalSchedGroupInfo(@Parameter(GroupId.class) final String groupId,
-                                      @Parameter(DefaultGroupWeight.class) final int weight,
                                       final ExecutionDags<String> executionDags,
+                                      final EventNumAndWeightMetric eventNumAndWeightMetric,
                                       final QueryStarter queryStarter,
                                       final OperatorChainManager operatorChainManager,
                                       final QueryRemover queryRemover) {
     this.groupId = groupId;
-    this.weight = weight;
     this.queryIdList = new ArrayList<>();
     this.executionDags = executionDags;
+    this.eventNumAndWeightMetric = eventNumAndWeightMetric;
     this.queryStarter = queryStarter;
     this.operatorChainManager = operatorChainManager;
     this.queryRemover = queryRemover;
@@ -158,13 +157,8 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   }
 
   @Override
-  public int getWeight() {
-    return weight;
-  }
-
-  @Override
-  public void setWeight(final int w) {
-    weight = w;
+  public EventNumAndWeightMetric getEventNumAndWeightMetric() {
+    return eventNumAndWeightMetric;
   }
 
   @Override

@@ -106,7 +106,7 @@ public final class GlobalSchedMetric {
   private long calculateTotalWeight(final GlobalSchedGroupInfoMap groupInfoMap) {
     long sum = 0;
     for (final GlobalSchedGroupInfo groupInfo : groupInfoMap.values()) {
-      sum += groupInfo.getWeight();
+      sum += groupInfo.getEventNumAndWeightMetric().getWeight();
     }
     return sum;
   }

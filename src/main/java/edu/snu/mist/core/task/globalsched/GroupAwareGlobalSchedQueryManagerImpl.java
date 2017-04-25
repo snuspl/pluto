@@ -72,7 +72,7 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
   /**
    * The pub/sub event handler for control flow.
    */
-  private final MistPubSubEventHandler pubSubEventHandler;
+  private final GroupEventPubSubEventHandler pubSubEventHandler;
 
   /**
    * Default query manager in MistTask.
@@ -83,7 +83,7 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
                                                 final GlobalSchedGroupInfoMap groupInfoMap,
                                                 final QueryInfoStore planStore,
                                                 final GlobalSchedMetricTracker metricTracker,
-                                                final MistPubSubEventHandler pubSubEventHandler) {
+                                                final GroupEventPubSubEventHandler pubSubEventHandler) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;

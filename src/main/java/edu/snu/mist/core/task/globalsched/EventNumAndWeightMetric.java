@@ -13,33 +13,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.common.stats.EWMA;
-import edu.snu.mist.core.parameters.GroupNumEventAlpha;
+import edu.snu.mist.core.parameters.DefaultGroupWeight;
+import edu.snu.mist.core.parameters.GlobalNumEventAlpha;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 
 /**
- * A class which contains group metrics such as the number of queries or events.
+ * A class which contains metric of the number of events.
  */
-final class GroupMetric {
+public final class EventNumAndWeightMetric {
 
   /**
-   * The number of all events inside the group operator chain queues.
+   * The number of all events inside the operator chain queues.
    */
   private long numEvents;
 
   /**
-   * EWMA of number of events.
+   * The exponential weighted moving average for number of events.
    */
   private EWMA ewmaNumEvents;
 
+  /**
+   * The weight used for scheduling.
+   */
+  private int weight;
+
   @Inject
-  private GroupMetric(@Parameter(GroupNumEventAlpha.class) final double numEventAlpha) {
+  private EventNumAndWeightMetric(@Parameter(DefaultGroupWeight.class) final int weight,
+                                  @Parameter(GlobalNumEventAlpha.class) final double numEventAlpha) {
     this.numEvents = 0;
     this.ewmaNumEvents = new EWMA(numEventAlpha);
+    this.weight = weight;
+  }
+
+  public void setNumEvents(final long numEventsParam) {
+    this.numEvents = numEventsParam;
   }
 
   public void updateNumEvents(final long numEventsParam) {
@@ -55,18 +67,27 @@ final class GroupMetric {
     return ewmaNumEvents.getCurrentEwma();
   }
 
+  public int getWeight() {
+    return weight;
+  }
+
+  public void setWeight(final int weight) {
+    this.weight = weight;
+  }
+
   @Override
   public boolean equals(final Object o) {
-    if (!(o instanceof GroupMetric)) {
+    if (!(o instanceof EventNumAndWeightMetric)) {
       return false;
     }
-    final GroupMetric groupMetric = (GroupMetric) o;
-    return this.numEvents == groupMetric.getNumEvents()
-        && this.ewmaNumEvents.equals(groupMetric.getEwmaNumEvents());
+    final EventNumAndWeightMetric eventNumMetric = (EventNumAndWeightMetric) o;
+    return this.numEvents == eventNumMetric.getNumEvents() &&
+        this.ewmaNumEvents.equals(eventNumMetric.getEwmaNumEvents()) &&
+        this.weight == eventNumMetric.getWeight();
   }
 
   @Override
   public int hashCode() {
-    return ((Long) this.numEvents).hashCode() * 32;
+    return ((Long) this.numEvents).hashCode() * 32 + ((Integer) this.weight).hashCode() * 22;
   }
 }

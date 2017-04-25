@@ -37,7 +37,6 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
    */
   OperatorChainManager getOperatorChainManager();
 
-
   /**
    * Add query id to the group.
    * @param queryId query id
@@ -80,16 +79,10 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
   void setLatestScheduledTime(long time);
 
   /**
-   * Get the weight of the group.
-   * @return weight
+   * Get the number of events and weight metric of this group.
+   * @return the number of events and weight metric of this group
    */
-  int getWeight();
-
-  /**
-   * Set the weight of the group.
-   * @param w weight
-   */
-  void setWeight(int w);
+  EventNumAndWeightMetric getEventNumAndWeightMetric();
 
   /**
    * Get the vruntime of the group.

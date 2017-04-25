@@ -18,10 +18,10 @@ package edu.snu.mist.core.task;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * This interface represents the group metric handler which handles the metric update.
+ * This interface represents the thread num assigner.
  */
-@DefaultImplementation(ProportionalGroupMetricHandler.class)
-public interface MetricHandler {
+@DefaultImplementation(ProportionalEventProcessorNumAssigner.class)
+public interface EventProcessorNumAssigner {
 
   /**
    * This method is called by metric tracker when it updated the metrics.

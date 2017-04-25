@@ -22,7 +22,7 @@ import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.parameters.MetricTrackingInterval;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.utils.IdAndConfGenerator;
-import edu.snu.mist.core.task.utils.TestMetricHandler;
+import edu.snu.mist.core.task.utils.TestEventProcessorNumAssigner;
 import edu.snu.mist.formats.avro.Direction;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -47,16 +47,18 @@ public final class GlobalSchedMetricTrackerTest {
   private GlobalSchedMetricTracker tracker;
   private IdAndConfGenerator idAndConfGenerator;
   private GlobalSchedGroupInfoMap groupInfoMap;
-  private TestMetricHandler callback;
+  private TestEventProcessorNumAssigner callback;
+  private GlobalSchedGlobalMetrics metric;
   private static final long TRACKING_INTERVAL = 10L;
 
   @Before
   public void setUp() throws InjectionException {
-    callback = new TestMetricHandler();
+    callback = new TestEventProcessorNumAssigner();
     final Injector injector = Tang.Factory.getTang().newInjector();
+    metric = injector.getInstance(GlobalSchedGlobalMetrics.class);
     groupInfoMap = injector.getInstance(GlobalSchedGroupInfoMap.class);
     injector.bindVolatileParameter(MetricTrackingInterval.class, TRACKING_INTERVAL);
-    injector.bindVolatileInstance(MetricHandler.class, callback);
+    injector.bindVolatileInstance(EventProcessorNumAssigner.class, callback);
     tracker = injector.getInstance(GlobalSchedMetricTracker.class);
     idAndConfGenerator = new IdAndConfGenerator();
   }
@@ -116,14 +118,14 @@ public final class GlobalSchedMetricTrackerTest {
     executionDagsB.put(srcB2.getConfiguration(), dagB2);
 
     // the event number should be zero in each group
-    Assert.assertEquals(0, tracker.getMetric().getNumEvents());
+    Assert.assertEquals(0, metric.getNumEventAndWeightMetric().getNumEvents());
 
     // add a few events to the operator chains in group A
     opA.addNextEvent(generateTestEvent(), Direction.LEFT);
 
     // wait the tracker for a while
     callback.waitForTracking();
-    Assert.assertEquals(1, tracker.getMetric().getNumEvents());
+    Assert.assertEquals(1, metric.getNumEventAndWeightMetric().getNumEvents());
 
     // add a few events to the operator chains in group B
     opB1.addNextEvent(generateTestEvent(), Direction.LEFT);
@@ -132,7 +134,7 @@ public final class GlobalSchedMetricTrackerTest {
 
     // wait the tracker for a while
     callback.waitForTracking();
-    Assert.assertEquals(4, tracker.getMetric().getNumEvents());
+    Assert.assertEquals(4, metric.getNumEventAndWeightMetric().getNumEvents());
 
     tracker.close();
   }

@@ -70,9 +70,9 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
   private final int numEventProcessors;
 
   /**
-   * A tracker that measures the metric of each group.
+   * A tracker that measures the metric.
    */
-  private final GroupMetricTracker groupTracker;
+  private final MetricTracker metricTracker;
 
   /**
    * Default query manager in MistTask.
@@ -83,14 +83,14 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
                                      final GroupInfoMap groupInfoMap,
                                      @Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
                                      final QueryInfoStore planStore,
-                                     final GroupMetricTracker groupTracker) {
+                                     final MetricTracker metricTracker) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.groupInfoMap = groupInfoMap;
     this.numEventProcessors = numEventProcessors;
-    this.groupTracker = groupTracker;
-    groupTracker.start();
+    this.metricTracker = metricTracker;
+    metricTracker.start();
   }
 
   /**
@@ -147,7 +147,7 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
     for (final GroupInfo groupInfo : groupInfoMap.values()) {
       groupInfo.close();
     }
-    groupTracker.close();
+    metricTracker.close();
   }
 
   /**

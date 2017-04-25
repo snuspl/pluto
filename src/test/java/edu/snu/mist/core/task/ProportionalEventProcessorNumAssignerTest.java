@@ -28,20 +28,22 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Test whether ProportionalGroupMetricHandler assigns proper event processor number to each group proportionally.
+ * Test that ProportionalEventProcessorNumAssigner assigns proper event processor number to each group proportionally.
  */
-public final class ProportionalGroupMetricHandlerTest {
+public final class ProportionalEventProcessorNumAssignerTest {
 
-  private ProportionalGroupMetricHandler handler;
+  private ProportionalEventProcessorNumAssigner handler;
   private GroupInfoMap groupInfoMap;
   private static final int THREAD_NUM_SOFT_LIMIT = 100;
+  private GlobalMetrics globalMetrics;
 
   @Before
   public void setUp() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     groupInfoMap = injector.getInstance(GroupInfoMap.class);
+    globalMetrics = injector.getInstance(GlobalMetrics.class);
     injector.bindVolatileParameter(ThreadNumLimit.class, THREAD_NUM_SOFT_LIMIT);
-    handler = injector.getInstance(ProportionalGroupMetricHandler.class);
+    handler = injector.getInstance(ProportionalEventProcessorNumAssigner.class);
   }
 
   /**
@@ -79,7 +81,7 @@ public final class ProportionalGroupMetricHandlerTest {
     // Create the GroupInfo to be managed
     for (int i = 0; i < THREAD_NUM_SOFT_LIMIT; i++) {
       final GroupInfo groupInfo = generateGroupInfo(String.valueOf(i));
-      groupInfo.getGroupMetric().updateNumEvents(i);
+      groupInfo.getEventNumMetric().updateNumEvents(i);
     }
 
     handler.metricUpdated();
@@ -99,19 +101,20 @@ public final class ProportionalGroupMetricHandlerTest {
     int sum = 0;
     for (int i = 0; i < 10; i++) {
       final GroupInfo groupInfo = generateGroupInfo(String.valueOf(i));
-      groupInfo.getGroupMetric().updateNumEvents(10 * (i + 1));
+      groupInfo.getEventNumMetric().updateNumEvents(10 * (i + 1));
       sum += (long) MetricUtil.calculateEwma(10 * (i + 1), 0.0, 0.7);
     }
     // Create a few empty groups
     for (int i = 0; i < 10; i++) {
       generateGroupInfo(String.valueOf(10 + i));
     }
-
+    globalMetrics.getNumEventMetric().updateNumEvents(sum);
+    
     handler.metricUpdated();
 
     // The number of assigned threads should be proportional to the event number metric of the group.
     for (final GroupInfo groupInfo : groupInfoMap.values()) {
-      long expected = (THREAD_NUM_SOFT_LIMIT - 10) * (long) (groupInfo.getGroupMetric().getEwmaNumEvents()) / sum;
+      long expected = (THREAD_NUM_SOFT_LIMIT - 10) * (long) (groupInfo.getEventNumMetric().getEwmaNumEvents()) / sum;
       if (expected == 0) {
         expected = 1;
       }

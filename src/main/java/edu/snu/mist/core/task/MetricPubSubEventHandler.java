@@ -13,20 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched;
+package edu.snu.mist.core.task;
 
 import org.apache.reef.wake.impl.PubSubEventHandler;
 
 import javax.inject.Inject;
+
 /**
- * This is a wrapper class that has a pub/sub event handler.
+ * This is a wrapper class that has a pub/sub event handler used for metric tracking.
  */
-public final class MistPubSubEventHandler {
+public final class MetricPubSubEventHandler {
 
   private final PubSubEventHandler pubSubEventHandler;
 
   @Inject
-  private MistPubSubEventHandler() {
+  private MetricPubSubEventHandler() {
     this.pubSubEventHandler = new PubSubEventHandler();
   }
 
