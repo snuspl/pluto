@@ -18,6 +18,8 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.parameters.DefaultGroupWeight;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
+import edu.snu.mist.core.task.queryRemovers.QueryRemover;
+import edu.snu.mist.core.task.queryStarters.QueryStarter;
 import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.util.ArrayList;

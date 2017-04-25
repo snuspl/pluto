@@ -26,14 +26,14 @@ import java.util.Map;
 /**
  * This emitter forwards current OperatorChain's outputs as next OperatorChains' inputs.
  */
-final class OperatorOutputEmitter implements OutputEmitter {
+public final class OperatorOutputEmitter implements OutputEmitter {
 
   /**
    * Next OperatorChains.
    */
   private final Map<ExecutionVertex, MISTEdge> nextOperatorChains;
 
-  OperatorOutputEmitter(final Map<ExecutionVertex, MISTEdge> nextOperatorChains) {
+  public OperatorOutputEmitter(final Map<ExecutionVertex, MISTEdge> nextOperatorChains) {
     this.nextOperatorChains = nextOperatorChains;
   }
 

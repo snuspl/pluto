@@ -28,7 +28,7 @@ import java.util.Map;
  * It always submits jobs to MistExecutors.
  *  @param <I>
  */
-final class SourceOutputEmitter<I> implements OutputEmitter {
+public final class SourceOutputEmitter<I> implements OutputEmitter {
 
   /**
    * Next OperatorChains.

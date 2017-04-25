@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * The dag represents the execution plan of the query without merging.
  * We should keep this execution dags for query deletion.
  */
-final class ExecutionPlanDagMap {
+public final class ExecutionPlanDagMap {
 
   private final ConcurrentHashMap<String, DAG<ExecutionVertex, MISTEdge>> map;
 

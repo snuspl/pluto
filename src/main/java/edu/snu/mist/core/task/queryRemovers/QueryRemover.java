@@ -13,22 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.queryRemovers;
 
-import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * This interface represents a component that is responsible for starting and executing queries.
+ * This removes the query from MIST.
  */
-@DefaultImplementation(ImmediateQueryMergingStarter.class)
-public interface QueryStarter {
+@DefaultImplementation(MergeAwareQueryRemover.class)
+public interface QueryRemover {
 
   /**
-   * Start to execute the submitted query.
+   * Delete the query from the group.
    * @param queryId query id
-   * @param submittedDag the submitted dag
    */
-  void start(String queryId, DAG<ExecutionVertex, MISTEdge> submittedDag);
+  void deleteQuery(String queryId);
 }
