@@ -85,28 +85,10 @@ final class MetricTracker implements AutoCloseable {
     result = executorService.scheduleWithFixedDelay(new Runnable() {
       public void run() {
         try {
-<<<<<<< HEAD:src/main/java/edu/snu/mist/core/task/GroupMetricTracker.java
-          for (final GroupInfo groupInfo : groupInfoMap.values()) {
-            // Track the number of event per each group
-            long numEvent = 0;
-            for (final DAG<ExecutionVertex, MISTEdge> dag : groupInfo.getExecutionDags().getUniqueValues()) {
-              final Collection<ExecutionVertex> vertices = dag.getVertices();
-              for (final ExecutionVertex ev : vertices) {
-                if (ev.getType() == ExecutionVertex.Type.OPERATOR_CHIAN) {
-                  numEvent += ((OperatorChain) ev).numberOfEvents();
-                }
-              }
-            }
-            final GroupMetric metric = groupInfo.getGroupMetric();
-            metric.updateNumEvents(numEvent);
-          }
-          handler.metricUpdated();
-=======
           // Publish the metric update events to subscriber
           metricPubSubEventHandler.getPubSubEventHandler().onNext(new MetricEvent());
           // Notify the metric update to event processor number assigner
           assigner.metricUpdated();
->>>>>>> [MIST-628] Refactor metric code:src/main/java/edu/snu/mist/core/task/MetricTracker.java
         } catch (final Exception e) {
           e.printStackTrace();
         }

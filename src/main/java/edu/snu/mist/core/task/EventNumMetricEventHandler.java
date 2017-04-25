@@ -61,9 +61,9 @@ public final class EventNumMetricEventHandler implements EventHandler<MetricEven
         }
       }
       final EventNumMetric metric = groupInfo.getEventNumMetric();
-      metric.setNumEvents(groupNumEvent);
+      metric.updateNumEvents(groupNumEvent);
       totalNumEvent += groupNumEvent;
     }
-    globalMetrics.getNumEventMetric().setNumEvents(totalNumEvent);
+    globalMetrics.getNumEventMetric().updateNumEvents(totalNumEvent);
   }
 }

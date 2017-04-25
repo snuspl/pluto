@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.globalsched;
 
-import edu.snu.mist.core.parameters.GroupNumEventAlpha;
+import edu.snu.mist.core.parameters.GlobalNumEventAlpha;
+import edu.snu.mist.core.task.MetricUtil;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -26,32 +27,32 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * A test class for group metric test handler.
+ * Tests on EventNumAndWeightMetric class.
  */
-public class GroupMetricTest {
+public class EventNumAndWeightMetricTest {
 
   /**
    * A test for calculating number of events.
    * @throws InjectionException
    */
   @Test
-  public void testNumEventsMetric() throws InjectionException {
+  public void testEventNumMetric() throws InjectionException {
 
     final double alpha = 0.7;
     final Configuration configuration = Tang.Factory.getTang().newConfigurationBuilder()
-        .bindNamedParameter(GroupNumEventAlpha.class, String.valueOf(alpha))
+        .bindNamedParameter(GlobalNumEventAlpha.class, String.valueOf(alpha))
         .build();
 
-    final EventNumMetric groupMetric =
-        Tang.Factory.getTang().newInjector(configuration).getInstance(EventNumMetric.class);
+    final EventNumAndWeightMetric globalSchedMetric =
+        Tang.Factory.getTang().newInjector().getInstance(EventNumAndWeightMetric.class);
 
-    final List<Integer> numberOfEventsList = Arrays.asList(10, 9, 8);
-    groupMetric.updateNumEvents(numberOfEventsList.get(0));
+    final List<Integer> numberOfEventsList = Arrays.asList(10, 9);
+    globalSchedMetric.updateNumEvents(numberOfEventsList.get(0));
     final double firstExpectedEWMA = MetricUtil.calculateEwma(numberOfEventsList.get(0), 0.0, alpha);
-    Assert.assertEquals(firstExpectedEWMA, groupMetric.getEwmaNumEvents(), 0.0001);
-    groupMetric.updateNumEvents(numberOfEventsList.get(1));
+    Assert.assertEquals(firstExpectedEWMA, globalSchedMetric.getEwmaNumEvents(), 0.0001);
+    globalSchedMetric.updateNumEvents(numberOfEventsList.get(1));
     final double secondExpectedEWMA = MetricUtil.calculateEwma(numberOfEventsList.get(1),
         firstExpectedEWMA, alpha);
-    Assert.assertEquals(secondExpectedEWMA, groupMetric.getEwmaNumEvents(), 0.0001);
+    Assert.assertEquals(secondExpectedEWMA, globalSchedMetric.getEwmaNumEvents(), 0.0001);
   }
 }

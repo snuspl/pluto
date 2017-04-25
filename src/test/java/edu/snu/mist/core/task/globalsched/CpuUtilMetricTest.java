@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task.globalsched;
 
-import edu.snu.mist.core.parameters.GlobalNumEventAlpha;
 import edu.snu.mist.core.parameters.GlobalProcCpuUtilAlpha;
 import edu.snu.mist.core.parameters.GlobalSysCpuUtilAlpha;
 import edu.snu.mist.core.task.MetricUtil;
@@ -29,34 +28,9 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Tests on GlobalSchedMetric class.
+ * Tests on CpuUtilMetric class.
  */
-public class GlobalSchedMectricTest {
-
-  /**
-   * A test for calculating number of events.
-   * @throws InjectionException
-   */
-  @Test
-  public void testGlobalSchedMetricNumEvents() throws InjectionException {
-
-    final double alpha = 0.7;
-    final Configuration configuration = Tang.Factory.getTang().newConfigurationBuilder()
-        .bindNamedParameter(GlobalNumEventAlpha.class, String.valueOf(alpha))
-        .build();
-
-    final GlobalSchedMetric globalSchedMetric =
-        Tang.Factory.getTang().newInjector().getInstance(GlobalSchedMetric.class);
-
-    final List<Integer> numberOfEventsList = Arrays.asList(10, 9);
-    globalSchedMetric.updateNumEvents(numberOfEventsList.get(0));
-    final double firstExpectedEWMA = MetricUtil.calculateEwma(numberOfEventsList.get(0), 0.0, alpha);
-    Assert.assertEquals(firstExpectedEWMA, globalSchedMetric.getEwmaNumEvents(), 0.0001);
-    globalSchedMetric.updateNumEvents(numberOfEventsList.get(1));
-    final double secondExpectedEWMA = MetricUtil.calculateEwma(numberOfEventsList.get(1),
-        firstExpectedEWMA, alpha);
-    Assert.assertEquals(secondExpectedEWMA, globalSchedMetric.getEwmaNumEvents(), 0.0001);
-  }
+public class CpuUtilMetricTest {
 
   /**
    * A test for calculating system cpu utilization.
@@ -70,8 +44,8 @@ public class GlobalSchedMectricTest {
         .bindNamedParameter(GlobalSysCpuUtilAlpha.class, String.valueOf(alpha))
         .build();
 
-    final GlobalSchedMetric globalSchedMetric =
-        Tang.Factory.getTang().newInjector().getInstance(GlobalSchedMetric.class);
+    final CpuUtilMetric globalSchedMetric =
+        Tang.Factory.getTang().newInjector().getInstance(CpuUtilMetric.class);
 
     final List<Double> systemCpuUtilList = Arrays.asList(0.9, 0.1);
     globalSchedMetric.updateSystemCpuUtil(systemCpuUtilList.get(0));
@@ -95,8 +69,8 @@ public class GlobalSchedMectricTest {
         .bindNamedParameter(GlobalProcCpuUtilAlpha.class, String.valueOf(alpha))
         .build();
 
-    final GlobalSchedMetric globalSchedMetric =
-        Tang.Factory.getTang().newInjector().getInstance(GlobalSchedMetric.class);
+    final CpuUtilMetric globalSchedMetric =
+        Tang.Factory.getTang().newInjector().getInstance(CpuUtilMetric.class);
 
     final List<Double> processCpuUtilList = Arrays.asList(0.9, 0.4);
     globalSchedMetric.updateProcessCpuUtil(processCpuUtilList.get(0));
