@@ -15,7 +15,9 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.MetricUtil;
+import edu.snu.mist.common.stat.EWMA;
+import edu.snu.mist.core.parameters.GroupNumEventAlpha;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 
@@ -30,19 +32,19 @@ final class GroupMetric {
   private long numEvents;
 
   /**
-   * The exponential weighted moving average for number of events.
+   * EWMA of number of events.
    */
-  private double ewmaNumEvents;
+  private EWMA ewmaNumEvents;
 
   @Inject
-  private GroupMetric() {
+  private GroupMetric(@Parameter(GroupNumEventAlpha.class) final double numEventAlpha) {
     this.numEvents = 0;
-    this.ewmaNumEvents = 0.0;
+    this.ewmaNumEvents = new EWMA(numEventAlpha);
   }
 
   public void updateNumEvents(final long numEventsParam) {
     this.numEvents = numEventsParam;
-    this.ewmaNumEvents = MetricUtil.calculateEwma(numEventsParam, this.ewmaNumEvents);
+    this.ewmaNumEvents.updateAndTick(numEventsParam);
   }
 
   public long getNumEvents() {
@@ -50,7 +52,7 @@ final class GroupMetric {
   }
 
   public double getEwmaNumEvents() {
-    return ewmaNumEvents;
+    return ewmaNumEvents.getCurrentEwma();
   }
 
   @Override
@@ -60,7 +62,7 @@ final class GroupMetric {
     }
     final GroupMetric groupMetric = (GroupMetric) o;
     return this.numEvents == groupMetric.getNumEvents()
-        && this.ewmaNumEvents == groupMetric.getEwmaNumEvents();
+        && this.ewmaNumEvents.equals(groupMetric.getEwmaNumEvents());
   }
 
   @Override

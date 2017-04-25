@@ -15,7 +15,11 @@
  */
 package edu.snu.mist.core.task.globalsched;
 
-import edu.snu.mist.common.MetricUtil;
+import edu.snu.mist.common.stat.EWMA;
+import edu.snu.mist.core.parameters.GlobalNumEventAlpha;
+import edu.snu.mist.core.parameters.GlobalProcCpuUtilAlpha;
+import edu.snu.mist.core.parameters.GlobalSysCpuUtilAlpha;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 
@@ -32,7 +36,7 @@ final class GlobalSchedMetric {
   /**
    * The exponential weighted moving average for number of events.
    */
-  private double ewmaNumEvents;
+  private EWMA ewmaNumEvents;
 
   /**
    * The cpu utilization of the whole system provided by a low-level system monitor.
@@ -42,7 +46,7 @@ final class GlobalSchedMetric {
   /**
    * The EWMA value of cpu utilization.
    */
-  private double ewmaSystemCpuUtil;
+  private EWMA ewmaSystemCpuUtil;
 
   /**
    * The cpu utilization of the JVM process provided by a low-level system monitor.
@@ -52,7 +56,7 @@ final class GlobalSchedMetric {
   /**
    * The EWMA value of process cpu utilization.
    */
-  private double ewmaProcessCpuUtil;
+  private EWMA ewmaProcessCpuUtil;
 
   /**
    * The total weight of all groups.
@@ -60,13 +64,16 @@ final class GlobalSchedMetric {
   private volatile long totalWeight;
 
   @Inject
-  private GlobalSchedMetric(final GlobalSchedGroupInfoMap groupInfoMap) {
+  private GlobalSchedMetric(final GlobalSchedGroupInfoMap groupInfoMap,
+                            @Parameter(GlobalNumEventAlpha.class) final double numEventAlpha,
+                            @Parameter(GlobalSysCpuUtilAlpha.class) final double sysCpuUtilAlpha,
+                            @Parameter(GlobalProcCpuUtilAlpha.class) final double procCpuUtilAlpha) {
     this.numEvents = 0;
-    this.ewmaNumEvents = 0.0;
+    this.ewmaNumEvents = new EWMA(numEventAlpha);
     this.systemCpuUtil = 0.0;
-    this.ewmaSystemCpuUtil = 0.0;
+    this.ewmaSystemCpuUtil = new EWMA(sysCpuUtilAlpha);
     this.processCpuUtil = 0.0;
-    this.ewmaProcessCpuUtil = 0.0;
+    this.ewmaProcessCpuUtil = new EWMA(procCpuUtilAlpha);
     this.totalWeight = calculateTotalWeight(groupInfoMap);
   }
 
@@ -99,9 +106,9 @@ final class GlobalSchedMetric {
     totalWeight = weight;
   }
 
-  public void updateNumEvents(final long numEventsToSet) {
-    this.numEvents = numEventsToSet;
-    this.ewmaNumEvents = MetricUtil.calculateEwma(numEventsToSet, this.ewmaNumEvents);
+  public void updateNumEvents(final long numEventsParam) {
+    this.numEvents = numEventsParam;
+    this.ewmaNumEvents.updateAndTick(numEventsParam);
   }
 
   public long getNumEvents() {
@@ -109,7 +116,7 @@ final class GlobalSchedMetric {
   }
 
   public double getEwmaNumEvents() {
-    return ewmaNumEvents;
+    return ewmaNumEvents.getCurrentEwma();
   }
 
   public double getSystemCpuUtil() {
@@ -117,12 +124,12 @@ final class GlobalSchedMetric {
   }
 
   public double getEwmaSystemCpuUtil() {
-    return ewmaSystemCpuUtil;
+    return ewmaSystemCpuUtil.getCurrentEwma();
   }
 
   public void updateSystemCpuUtil(final double cpuUtil) {
     this.systemCpuUtil = cpuUtil;
-    this.ewmaSystemCpuUtil = MetricUtil.calculateEwma(cpuUtil, this.ewmaSystemCpuUtil);
+    this.ewmaSystemCpuUtil.updateAndTick(cpuUtil);
   }
 
   public double getProcessCpuUtil() {
@@ -130,12 +137,12 @@ final class GlobalSchedMetric {
   }
 
   public double getEwmaProcessCpuUtil() {
-    return ewmaProcessCpuUtil;
+    return ewmaProcessCpuUtil.getCurrentEwma();
   }
 
   public void updateProcessCpuUtil(final double processCpuUtilParam) {
     this.processCpuUtil = processCpuUtilParam;
-    this.ewmaProcessCpuUtil = MetricUtil.calculateEwma(processCpuUtilParam, this.ewmaProcessCpuUtil);
+    this.ewmaProcessCpuUtil.updateAndTick(processCpuUtilParam);
   }
 
   @Override
@@ -147,9 +154,9 @@ final class GlobalSchedMetric {
     return this.numEvents == groupMetric.getNumEvents()
         && this.systemCpuUtil == groupMetric.getSystemCpuUtil()
         && this.processCpuUtil == groupMetric.getProcessCpuUtil()
-        && this.ewmaNumEvents == groupMetric.getEwmaNumEvents()
-        && this.ewmaProcessCpuUtil == groupMetric.getProcessCpuUtil()
-        && this.ewmaSystemCpuUtil == groupMetric.getSystemCpuUtil();
+        && this.ewmaNumEvents.equals(groupMetric.getEwmaNumEvents())
+        && this.ewmaProcessCpuUtil.equals(groupMetric.getEwmaProcessCpuUtil())
+        && this.ewmaSystemCpuUtil.equals(groupMetric.getEwmaSystemCpuUtil());
   }
 
   @Override

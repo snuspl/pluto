@@ -13,30 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common;
+package edu.snu.mist.core.task;
 
 /**
- * A class which contains helper methods for metrics.
+ * Util class for metric test.
  */
 public final class MetricUtil {
 
-  /**
-   * The default decaying rate for calculating EWMA.
-   */
-  private static double defaultDecayingRate = 0.3;
-
   private MetricUtil() {
-    // should not be called.
+    // Should not be called.
   }
 
   public static double calculateEwma(final double newValue,
-                                     final double oldEWMA,
-                                     final double decayingRate) {
-    return (1.0 - decayingRate) * newValue + decayingRate * oldEWMA;
-  }
-
-  public static double calculateEwma(final double newValue,
-                                     final double oldEWMA) {
-    return calculateEwma(newValue, oldEWMA, defaultDecayingRate);
+                         final double oldEwma,
+                         final double alpha) {
+    return alpha * newValue + (1 - alpha) * oldEwma;
   }
 }

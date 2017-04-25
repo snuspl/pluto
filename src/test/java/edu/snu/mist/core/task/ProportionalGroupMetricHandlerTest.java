@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.MetricUtil;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.parameters.ThreadNumLimit;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
@@ -101,7 +100,7 @@ public final class ProportionalGroupMetricHandlerTest {
     for (int i = 0; i < 10; i++) {
       final GroupInfo groupInfo = generateGroupInfo(String.valueOf(i));
       groupInfo.getGroupMetric().updateNumEvents(10 * (i + 1));
-      sum += (long) MetricUtil.calculateEwma(10 * (i + 1), 0.0);
+      sum += (long) MetricUtil.calculateEwma(10 * (i + 1), 0.0, 0.7);
     }
     // Create a few empty groups
     for (int i = 0; i < 10; i++) {

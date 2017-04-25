@@ -15,7 +15,11 @@
  */
 package edu.snu.mist.core.task.globalsched;
 
-import edu.snu.mist.common.MetricUtil;
+import edu.snu.mist.core.parameters.GlobalNumEventAlpha;
+import edu.snu.mist.core.parameters.GlobalProcCpuUtilAlpha;
+import edu.snu.mist.core.parameters.GlobalSysCpuUtilAlpha;
+import edu.snu.mist.core.task.MetricUtil;
+import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
@@ -29,51 +33,78 @@ import java.util.List;
  */
 public class GlobalSchedMectricTest {
 
+  /**
+   * A test for calculating number of events.
+   * @throws InjectionException
+   */
   @Test
-  public void globalSchedMetricNumEventsTest() throws InjectionException {
+  public void testGlobalSchedMetricNumEvents() throws InjectionException {
+
+    final double alpha = 0.7;
+    final Configuration configuration = Tang.Factory.getTang().newConfigurationBuilder()
+        .bindNamedParameter(GlobalNumEventAlpha.class, String.valueOf(alpha))
+        .build();
 
     final GlobalSchedMetric globalSchedMetric =
         Tang.Factory.getTang().newInjector().getInstance(GlobalSchedMetric.class);
 
     final List<Integer> numberOfEventsList = Arrays.asList(10, 9);
     globalSchedMetric.updateNumEvents(numberOfEventsList.get(0));
-    final double firstExpectedEWMA = MetricUtil.calculateEwma(numberOfEventsList.get(0), 0.0);
+    final double firstExpectedEWMA = MetricUtil.calculateEwma(numberOfEventsList.get(0), 0.0, alpha);
     Assert.assertEquals(firstExpectedEWMA, globalSchedMetric.getEwmaNumEvents(), 0.0001);
     globalSchedMetric.updateNumEvents(numberOfEventsList.get(1));
     final double secondExpectedEWMA = MetricUtil.calculateEwma(numberOfEventsList.get(1),
-        firstExpectedEWMA);
+        firstExpectedEWMA, alpha);
     Assert.assertEquals(secondExpectedEWMA, globalSchedMetric.getEwmaNumEvents(), 0.0001);
   }
 
+  /**
+   * A test for calculating system cpu utilization.
+   * @throws InjectionException
+   */
   @Test
-  public void globalSchedMetricSystemCpuUtilTest() throws InjectionException {
+  public void testGlobalSchedMetricSystemCpuUtil() throws InjectionException {
+
+    final double alpha = 0.7;
+    final Configuration configuration = Tang.Factory.getTang().newConfigurationBuilder()
+        .bindNamedParameter(GlobalSysCpuUtilAlpha.class, String.valueOf(alpha))
+        .build();
 
     final GlobalSchedMetric globalSchedMetric =
         Tang.Factory.getTang().newInjector().getInstance(GlobalSchedMetric.class);
 
     final List<Double> systemCpuUtilList = Arrays.asList(0.9, 0.1);
     globalSchedMetric.updateSystemCpuUtil(systemCpuUtilList.get(0));
-    final double firstExpectedEWMA = MetricUtil.calculateEwma(systemCpuUtilList.get(0), 0.0);
+    final double firstExpectedEWMA = MetricUtil.calculateEwma(systemCpuUtilList.get(0), 0.0, alpha);
     Assert.assertEquals(firstExpectedEWMA, globalSchedMetric.getEwmaSystemCpuUtil(), 0.0001);
     globalSchedMetric.updateSystemCpuUtil(systemCpuUtilList.get(1));
     final double secondExpectedEWMA = MetricUtil.calculateEwma(systemCpuUtilList.get(1),
-        firstExpectedEWMA);
+        firstExpectedEWMA, alpha);
     Assert.assertEquals(secondExpectedEWMA, globalSchedMetric.getEwmaSystemCpuUtil(), 0.0001);
   }
 
+  /**
+   * A test for calculating process cpu utilization.
+   * @throws InjectionException
+   */
   @Test
-  public void globalSchedMetricProcessCpuUtilTest() throws InjectionException {
+  public void testGlobalSchedMetricProcessCpuUtil() throws InjectionException {
+
+    final double alpha = 0.7;
+    final Configuration configuration = Tang.Factory.getTang().newConfigurationBuilder()
+        .bindNamedParameter(GlobalProcCpuUtilAlpha.class, String.valueOf(alpha))
+        .build();
 
     final GlobalSchedMetric globalSchedMetric =
         Tang.Factory.getTang().newInjector().getInstance(GlobalSchedMetric.class);
 
     final List<Double> processCpuUtilList = Arrays.asList(0.9, 0.4);
     globalSchedMetric.updateProcessCpuUtil(processCpuUtilList.get(0));
-    final double firstExpectedEWMA = MetricUtil.calculateEwma(processCpuUtilList.get(0), 0.0);
+    final double firstExpectedEWMA = MetricUtil.calculateEwma(processCpuUtilList.get(0), 0.0, alpha);
     Assert.assertEquals(firstExpectedEWMA, globalSchedMetric.getEwmaProcessCpuUtil(), 0.0001);
     globalSchedMetric.updateProcessCpuUtil(processCpuUtilList.get(1));
     final double secondExpectedEWMA = MetricUtil.calculateEwma(processCpuUtilList.get(1),
-        firstExpectedEWMA);
+        firstExpectedEWMA, alpha);
     Assert.assertEquals(secondExpectedEWMA, globalSchedMetric.getEwmaProcessCpuUtil(), 0.0001);
   }
 }
