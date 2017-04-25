@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.stat;
+package edu.snu.mist.common.stats;
 
 /**
  * A class for calculating EWMA.
  */
-public class EWMA {
+public final class EWMA {
 
   /**
    * A decaying rate for EWMA.

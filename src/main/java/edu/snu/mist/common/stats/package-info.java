@@ -16,4 +16,4 @@
 /**
  * A package contains classes related to MIST statistics.
  */
-package edu.snu.mist.common.stat;
+package edu.snu.mist.common.stats;

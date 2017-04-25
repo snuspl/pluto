@@ -16,4 +16,4 @@
 /**
  * A test package for stats.
  */
-package edu.snu.mist.common.stat;
+package edu.snu.mist.common.stats;

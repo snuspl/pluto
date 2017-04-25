@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.globalsched;
 
-import edu.snu.mist.common.stat.EWMA;
+import edu.snu.mist.common.stats.EWMA;
 import edu.snu.mist.core.parameters.GlobalNumEventAlpha;
 import edu.snu.mist.core.parameters.GlobalProcCpuUtilAlpha;
 import edu.snu.mist.core.parameters.GlobalSysCpuUtilAlpha;
