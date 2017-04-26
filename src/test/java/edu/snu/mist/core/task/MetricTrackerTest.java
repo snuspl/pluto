@@ -15,45 +15,45 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.graph.AdjacentListDAG;
-import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.parameters.MetricTrackingInterval;
-import edu.snu.mist.core.task.utils.IdAndConfGenerator;
-import edu.snu.mist.core.task.utils.TestEventProcessorNumAssigner;
-import edu.snu.mist.formats.avro.Direction;
+import edu.snu.mist.core.task.metrics.*;
 import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import static edu.snu.mist.core.task.utils.SimpleOperatorChainUtils.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.concurrent.CountDownLatch;
+import java.util.function.Consumer;
 
 /**
- * Test whether MetricTracker tracks each group's metric properly or not.
+ * Test whether MetricTracker publish events properly or not.
  */
 public final class MetricTrackerTest {
 
+  private MistEventPubSubEventHandler metricPubSubEventHandler;
   private MetricTracker tracker;
-  private IdAndConfGenerator idAndConfGenerator;
-  private GroupInfoMap groupInfoMap;
-  private TestEventProcessorNumAssigner callback;
+  private TestEventProcessorNumAssigner assigner;
+  private TestMetricTrackEventHandlerCollection handlerCollection;
   private static final long TRACKING_INTERVAL = 10L;
 
   @Before
   public void setUp() throws InjectionException {
-    callback = new TestEventProcessorNumAssigner();
+    assigner = new TestEventProcessorNumAssigner();
+    final TestMetricTrackEventHandler handler1 = new TestMetricTrackEventHandler();
+    final TestMetricTrackEventHandler handler2 = new TestMetricTrackEventHandler();
+    handlerCollection = new TestMetricTrackEventHandlerCollection(handler1, handler2);
     final Injector injector = Tang.Factory.getTang().newInjector();
-    groupInfoMap = injector.getInstance(GroupInfoMap.class);
     injector.bindVolatileParameter(MetricTrackingInterval.class, TRACKING_INTERVAL);
-    injector.bindVolatileInstance(EventProcessorNumAssigner.class, callback);
+    injector.bindVolatileInstance(EventProcessorNumAssigner.class, assigner);
+    injector.bindVolatileInstance(MetricTrackEventHandlerCollection.class, handlerCollection);
+    metricPubSubEventHandler = injector.getInstance(MistEventPubSubEventHandler.class);
     tracker = injector.getInstance(MetricTracker.class);
-    idAndConfGenerator = new IdAndConfGenerator();
+    metricPubSubEventHandler.getPubSubEventHandler().subscribe(ProcessorAssignEvent.class, assigner);
   }
 
   @After
@@ -66,107 +66,110 @@ public final class MetricTrackerTest {
    */
   @Test(timeout = 1000L)
   public void testTwoGroupMetricTracking() throws InjectionException {
-
-    final GroupInfo groupInfoA = generateGroupInfo("GroupA");
-    final GroupInfo groupInfoB = generateGroupInfo("GroupB");
-    final ExecutionDags<String> executionDagsA = groupInfoA.getExecutionDags();
-    final ExecutionDags<String> executionDagsB = groupInfoB.getExecutionDags();
     tracker.start();
 
-    // two dags in group A:
-    // srcA1 -> opA1 -> sinkA1
-    // srcA2 -> opA2 -> sinkA2
-    final PhysicalSource srcA1 = generateTestSource(idAndConfGenerator);
-    final PhysicalSource srcA2 = generateTestSource(idAndConfGenerator);
-    final OperatorChain opA1 = generateFilterOperatorChain(idAndConfGenerator);
-    final OperatorChain opA2 = generateFilterOperatorChain(idAndConfGenerator);
-    final PhysicalSink sinkA1 = generateTestSink(idAndConfGenerator);
-    final PhysicalSink sinkA2 = generateTestSink(idAndConfGenerator);
-
-    final DAG<ExecutionVertex, MISTEdge> dagA1 = new AdjacentListDAG<>();
-    dagA1.addVertex(srcA1);
-    dagA1.addVertex(opA1);
-    dagA1.addVertex(sinkA1);
-    dagA1.addEdge(srcA1, opA1, new MISTEdge(Direction.LEFT));
-    dagA1.addEdge(opA1, sinkA1, new MISTEdge(Direction.LEFT));
-
-    final DAG<ExecutionVertex, MISTEdge> dagA2 = new AdjacentListDAG<>();
-    dagA2.addVertex(srcA2);
-    dagA2.addVertex(opA2);
-    dagA2.addVertex(sinkA2);
-    dagA2.addEdge(srcA2, opA2, new MISTEdge(Direction.LEFT));
-    dagA2.addEdge(opA2, sinkA2, new MISTEdge(Direction.LEFT));
-
-    executionDagsA.put(srcA1.getConfiguration(), dagA1);
-    executionDagsA.put(srcA2.getConfiguration(), dagA2);
-
-    // one dag in group B:
-    // srcB1 -> opB1 -> union -> sinkB1
-    // srcB2 -> opB2 ->       -> sinkB2
-    final PhysicalSource srcB1 = generateTestSource(idAndConfGenerator);
-    final PhysicalSource srcB2 = generateTestSource(idAndConfGenerator);
-    final OperatorChain opB1 = generateFilterOperatorChain(idAndConfGenerator);
-    final OperatorChain opB2 = generateFilterOperatorChain(idAndConfGenerator);
-    final OperatorChain union = generateUnionOperatorChain(idAndConfGenerator);
-    final PhysicalSink sinkB1 = generateTestSink(idAndConfGenerator);
-    final PhysicalSink sinkB2 = generateTestSink(idAndConfGenerator);
-
-    final DAG<ExecutionVertex, MISTEdge> dagB = new AdjacentListDAG<>();
-    dagB.addVertex(srcB1);
-    dagB.addVertex(srcB2);
-    dagB.addVertex(opB1);
-    dagB.addVertex(opB2);
-    dagB.addVertex(union);
-    dagB.addVertex(sinkB1);
-    dagB.addVertex(sinkB2);
-    dagB.addEdge(srcB1, opB1, new MISTEdge(Direction.LEFT));
-    dagB.addEdge(srcB2, opB2, new MISTEdge(Direction.LEFT));
-    dagB.addEdge(opB1, union, new MISTEdge(Direction.LEFT));
-    dagB.addEdge(opB2, union, new MISTEdge(Direction.RIGHT));
-    dagB.addEdge(union, sinkB1, new MISTEdge(Direction.LEFT));
-    dagB.addEdge(union, sinkB2, new MISTEdge(Direction.LEFT));
-
-    executionDagsB.put(srcB1.getConfiguration(), dagB);
-    executionDagsB.put(srcB2.getConfiguration(), dagB);
-
-    // the event number should be zero in each group
-    Assert.assertEquals(0, groupInfoA.getEventNumMetric().getNumEvents());
-    Assert.assertEquals(0, groupInfoB.getEventNumMetric().getNumEvents());
-
-    // add a few events to the operator chains in group A
-    opA1.addNextEvent(generateTestEvent(), Direction.LEFT);
-    opA2.addNextEvent(generateTestEvent(), Direction.LEFT);
-    opA2.addNextEvent(generateTestEvent(), Direction.LEFT);
-
-    // wait the tracker for a while
-    callback.waitForTracking();
-    Assert.assertEquals(3, groupInfoA.getEventNumMetric().getNumEvents());
-    Assert.assertEquals(0, groupInfoB.getEventNumMetric().getNumEvents());
-
-    // add a few events to the operator chains in group B
-    opB1.addNextEvent(generateTestEvent(), Direction.LEFT);
-    opB2.addNextEvent(generateTestEvent(), Direction.LEFT);
-    union.addNextEvent(generateTestEvent(), Direction.LEFT);
-    union.addNextEvent(generateTestEvent(), Direction.RIGHT);
-
-    // wait the tracker for a while
-    callback.waitForTracking();
-    Assert.assertEquals(3, groupInfoA.getEventNumMetric().getNumEvents());
-    Assert.assertEquals(4, groupInfoB.getEventNumMetric().getNumEvents());
+    // Wait tracker to publish MetricTrackEvent
+    handlerCollection.waitForTracking();
+    // Wait tracker to publish ProcessorAssignEvent
+    assigner.waitForTracking();
   }
 
   /**
-   * Generate a group info instance that has the group id and put it into a group info map.
-   * @param groupId group id
-   * @return the generated group info
-   * @throws InjectionException
+   * This is a simple implementation of EventProcessorNumAssigner for callback.
    */
-  private GroupInfo generateGroupInfo(final String groupId) throws InjectionException {
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(GroupId.class, groupId);
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final GroupInfo groupInfo = injector.getInstance(GroupInfo.class);
-    groupInfoMap.put(groupId, groupInfo);
-    return groupInfo;
+  private final class TestEventProcessorNumAssigner implements EventProcessorNumAssigner {
+
+    private CountDownLatch latch;
+
+    private TestEventProcessorNumAssigner() {
+      latch = null;
+    }
+
+    @Override
+    public void onNext(final ProcessorAssignEvent event) {
+      if (latch != null) {
+        latch.countDown();
+      }
+    }
+
+    /**
+     * Set the latch.
+     */
+    private void setLatch(final CountDownLatch latch) {
+      this.latch = latch;
+    }
+
+    /**
+     * Wait tracker to conduct the tracking.
+     */
+    private void waitForTracking() {
+      final CountDownLatch countDownLatch = new CountDownLatch(2);
+      this.setLatch(countDownLatch);
+      try {
+        countDownLatch.await();
+      } catch (final InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
+  }
+
+  /**
+   * This is an implementation of MetricTrackEventHandlerCollection for testing.
+   */
+  private final class TestMetricTrackEventHandlerCollection implements MetricTrackEventHandlerCollection {
+
+    private final Collection<TestMetricTrackEventHandler> handlerCollection;
+
+    private TestMetricTrackEventHandlerCollection(final TestMetricTrackEventHandler metricEventHandler1,
+                                                  final TestMetricTrackEventHandler metricEventHandler2) {
+      this.handlerCollection = new LinkedList<>();
+      handlerCollection.add(metricEventHandler1);
+      handlerCollection.add(metricEventHandler2);
+    }
+
+    @Override
+    public void forEach(final Consumer<? super MetricTrackEventHandler> action) {
+      handlerCollection.forEach(action);
+    }
+
+    private void waitForTracking() {
+      final CountDownLatch countDownLatch1 = new CountDownLatch(2);
+      final CountDownLatch countDownLatch2 = new CountDownLatch(2);
+      final Iterator<TestMetricTrackEventHandler> itr = handlerCollection.iterator();
+      itr.next().setLatch(countDownLatch1);
+      itr.next().setLatch(countDownLatch2);
+      try {
+        countDownLatch1.await();
+        countDownLatch2.await();
+      } catch (final InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
+  }
+
+  /**
+   * A simple MetricTrackEventHandler for testing.
+   */
+  public final class TestMetricTrackEventHandler implements MetricTrackEventHandler {
+
+    private CountDownLatch latch;
+
+    private TestMetricTrackEventHandler() {
+      latch = null;
+    }
+
+    /**
+     * Set the latch.
+     */
+    private void setLatch(final CountDownLatch latch) {
+      this.latch = latch;
+    }
+
+    @Override
+    public void onNext(final MetricTrackEvent metricTrackEvent) {
+      if (latch != null) {
+        latch.countDown();
+      }
+    }
   }
 }

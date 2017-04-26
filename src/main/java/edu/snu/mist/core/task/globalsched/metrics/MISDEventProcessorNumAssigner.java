@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched;
+package edu.snu.mist.core.task.globalsched.metrics;
 
 import edu.snu.mist.core.parameters.ThreadNumLimit;
-import edu.snu.mist.core.task.EventProcessorNumAssigner;
+import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
+import edu.snu.mist.core.task.metrics.ProcessorAssignEvent;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.globalsched.parameters.*;
@@ -32,7 +33,7 @@ import javax.inject.Inject;
  * then this handler will close some event processors.
  * Also, it will do multiplicative increase/subtractive decrease similar to the AIMD of TCP.
  */
-final class MISDEventProcessorNumAssigner implements EventProcessorNumAssigner {
+public final class MISDEventProcessorNumAssigner implements EventProcessorNumAssigner {
 
   /**
    * The limit of the total number of executor threads.
@@ -109,7 +110,7 @@ final class MISDEventProcessorNumAssigner implements EventProcessorNumAssigner {
    * Assign event processor number.
    */
   @Override
-  public void metricUpdated() {
+  public void onNext(final ProcessorAssignEvent processorAssignEvent) {
     if (metrics.getCpuUtilMetric().getSystemCpuUtil() < cpuUtilLowThreshold) {
       if (metrics.getNumEventAndWeightMetric().getNumEvents() > eventNumHighThreshold) {
         // If the cpu utilization is low in spite of enough events,

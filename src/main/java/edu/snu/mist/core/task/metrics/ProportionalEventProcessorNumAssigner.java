@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.metrics;
 
 import edu.snu.mist.core.parameters.ThreadNumLimit;
+import edu.snu.mist.core.task.GroupInfo;
+import edu.snu.mist.core.task.GroupInfoMap;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -23,7 +25,7 @@ import javax.inject.Inject;
 /**
  * This is a EventProcessorNumAssigner assigns event processors to each group proportionally to it's metric.
  */
-final class ProportionalEventProcessorNumAssigner implements EventProcessorNumAssigner {
+public final class ProportionalEventProcessorNumAssigner implements EventProcessorNumAssigner {
 
   /**
    * The (soft) limit of the total number of executor threads.
@@ -64,7 +66,7 @@ final class ProportionalEventProcessorNumAssigner implements EventProcessorNumAs
    * Other groups will have the portion of remainder proportionally to it's metric.
    */
   @Override
-  public void metricUpdated() {
+  public void onNext(final ProcessorAssignEvent processorAssignEvent) {
     if (groupInfoMap.size() >= threadNumLimit) {
       // Every group should not totally blocked because of another group
       // Because of this, we assign at least one event processor number to each group

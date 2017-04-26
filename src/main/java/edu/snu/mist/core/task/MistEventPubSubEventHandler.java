@@ -13,20 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched;
+package edu.snu.mist.core.task;
 
 import org.apache.reef.wake.impl.PubSubEventHandler;
 
 import javax.inject.Inject;
+
 /**
- * This is a wrapper class that has a pub/sub event handler used for group event.
+ * This is a wrapper class that has a pub/sub event handler used.
  */
-public final class GroupEventPubSubEventHandler {
+public final class MistEventPubSubEventHandler {
 
   private final PubSubEventHandler pubSubEventHandler;
 
   @Inject
-  private GroupEventPubSubEventHandler() {
+  private MistEventPubSubEventHandler() {
     this.pubSubEventHandler = new PubSubEventHandler();
   }
 

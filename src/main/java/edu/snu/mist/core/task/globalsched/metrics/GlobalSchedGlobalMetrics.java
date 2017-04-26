@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched;
+package edu.snu.mist.core.task.globalsched.metrics;
 
 import javax.inject.Inject;
 
 /**
  * A class holds the metrics such as the total number of events.
  */
-final class GlobalSchedGlobalMetrics {
+public final class GlobalSchedGlobalMetrics {
 
   /**
    * The metric represents the number of all events inside the operator chain queues and the sum of weights.

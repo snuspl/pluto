@@ -18,6 +18,9 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.parameters.ThreadNumLimit;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
+import edu.snu.mist.core.task.metrics.GlobalMetrics;
+import edu.snu.mist.core.task.metrics.ProcessorAssignEvent;
+import edu.snu.mist.core.task.metrics.ProportionalEventProcessorNumAssigner;
 import edu.snu.mist.core.task.utils.TestEventProcessorManager;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -32,7 +35,8 @@ import org.junit.Test;
  */
 public final class ProportionalEventProcessorNumAssignerTest {
 
-  private ProportionalEventProcessorNumAssigner handler;
+  private ProportionalEventProcessorNumAssigner assigner;
+  private MistEventPubSubEventHandler handler;
   private GroupInfoMap groupInfoMap;
   private static final int THREAD_NUM_SOFT_LIMIT = 100;
   private GlobalMetrics globalMetrics;
@@ -42,8 +46,10 @@ public final class ProportionalEventProcessorNumAssignerTest {
     final Injector injector = Tang.Factory.getTang().newInjector();
     groupInfoMap = injector.getInstance(GroupInfoMap.class);
     globalMetrics = injector.getInstance(GlobalMetrics.class);
+    handler = injector.getInstance(MistEventPubSubEventHandler.class);
     injector.bindVolatileParameter(ThreadNumLimit.class, THREAD_NUM_SOFT_LIMIT);
-    handler = injector.getInstance(ProportionalEventProcessorNumAssigner.class);
+    assigner = injector.getInstance(ProportionalEventProcessorNumAssigner.class);
+    handler.getPubSubEventHandler().subscribe(ProcessorAssignEvent.class, assigner);
   }
 
   /**
@@ -65,7 +71,7 @@ public final class ProportionalEventProcessorNumAssignerTest {
       generateGroupInfo(String.valueOf(i));
     }
 
-    handler.metricUpdated();
+    handler.getPubSubEventHandler().onNext(new ProcessorAssignEvent());
 
     // Only one thread should be assigned to each group
     groupInfoMap.values().forEach(groupInfo -> Assert.assertEquals(
@@ -84,7 +90,7 @@ public final class ProportionalEventProcessorNumAssignerTest {
       groupInfo.getEventNumMetric().updateNumEvents(i);
     }
 
-    handler.metricUpdated();
+    handler.getPubSubEventHandler().onNext(new ProcessorAssignEvent());
 
     // Only one thread should be assigned to each group
     groupInfoMap.values().forEach(groupInfo -> Assert.assertEquals(
@@ -109,8 +115,8 @@ public final class ProportionalEventProcessorNumAssignerTest {
       generateGroupInfo(String.valueOf(10 + i));
     }
     globalMetrics.getNumEventMetric().updateNumEvents(sum);
-    
-    handler.metricUpdated();
+
+    handler.getPubSubEventHandler().onNext(new ProcessorAssignEvent());
 
     // The number of assigned threads should be proportional to the event number metric of the group.
     for (final GroupInfo groupInfo : groupInfoMap.values()) {

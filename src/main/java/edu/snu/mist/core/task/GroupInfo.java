@@ -17,6 +17,7 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
+import edu.snu.mist.core.task.metrics.EventNumMetric;
 import edu.snu.mist.core.task.queryRemovers.QueryRemover;
 import edu.snu.mist.core.task.queryStarters.QueryStarter;
 import org.apache.reef.tang.annotations.Parameter;
@@ -27,7 +28,7 @@ import java.util.List;
 /**
  * A class which contains query and metric information about query group.
  */
-final class GroupInfo implements AutoCloseable {
+public final class GroupInfo implements AutoCloseable {
 
   /**
    * Group id.

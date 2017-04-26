@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.metrics;
 
 import edu.snu.mist.common.stats.EWMA;
 import edu.snu.mist.core.parameters.GroupNumEventAlpha;
@@ -29,7 +29,7 @@ public final class EventNumMetric {
   /**
    * The number of all events inside the operator chain queues.
    */
-  private long numEvents;
+  private volatile long numEvents;
 
   /**
    * EWMA of number of events.

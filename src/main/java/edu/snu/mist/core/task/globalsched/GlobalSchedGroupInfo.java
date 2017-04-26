@@ -17,6 +17,7 @@ package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.core.task.ExecutionDags;
 import edu.snu.mist.core.task.OperatorChainManager;
+import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetric;
 import edu.snu.mist.core.task.queryRemovers.QueryRemover;
 import edu.snu.mist.core.task.queryStarters.QueryStarter;
 import org.apache.reef.tang.annotations.DefaultImplementation;

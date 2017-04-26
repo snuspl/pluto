@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched;
+package edu.snu.mist.core.task.globalsched.metrics;
 
 import edu.snu.mist.common.stats.EWMA;
 import edu.snu.mist.core.parameters.DefaultGroupWeight;
@@ -30,7 +30,7 @@ public final class EventNumAndWeightMetric {
   /**
    * The number of all events inside the operator chain queues.
    */
-  private long numEvents;
+  private volatile long numEvents;
 
   /**
    * The exponential weighted moving average for number of events.
@@ -40,7 +40,7 @@ public final class EventNumAndWeightMetric {
   /**
    * The weight used for scheduling.
    */
-  private int weight;
+  private volatile int weight;
 
   @Inject
   private EventNumAndWeightMetric(@Parameter(DefaultGroupWeight.class) final int weight,

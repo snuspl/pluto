@@ -19,6 +19,7 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.metrics.MetricTracker;
 import edu.snu.mist.core.task.queryStarters.ImmediateQueryMergingStarter;
 import edu.snu.mist.core.task.queryStarters.QueryStarter;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
@@ -67,12 +68,12 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
   /**
    * A tracker measures global metrics such as total events number or cpu utilization.
    */
-  private final GlobalSchedMetricTracker metricTracker;
+  private final MetricTracker metricTracker;
 
   /**
    * The pub/sub event handler for control flow.
    */
-  private final GroupEventPubSubEventHandler pubSubEventHandler;
+  private final MistEventPubSubEventHandler pubSubEventHandler;
 
   /**
    * Default query manager in MistTask.
@@ -82,8 +83,8 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
                                                 final ScheduledExecutorServiceWrapper schedulerWrapper,
                                                 final GlobalSchedGroupInfoMap groupInfoMap,
                                                 final QueryInfoStore planStore,
-                                                final GlobalSchedMetricTracker metricTracker,
-                                                final GroupEventPubSubEventHandler pubSubEventHandler) {
+                                                final MetricTracker metricTracker,
+                                                final MistEventPubSubEventHandler pubSubEventHandler) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;

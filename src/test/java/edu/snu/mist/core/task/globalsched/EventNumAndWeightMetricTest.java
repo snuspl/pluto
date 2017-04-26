@@ -17,6 +17,7 @@ package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.core.parameters.GlobalNumEventAlpha;
 import edu.snu.mist.core.task.MetricUtil;
+import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetric;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;

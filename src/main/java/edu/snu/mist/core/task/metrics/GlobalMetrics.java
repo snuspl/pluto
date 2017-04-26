@@ -13,28 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
-
-import org.apache.reef.wake.impl.PubSubEventHandler;
+package edu.snu.mist.core.task.metrics;
 
 import javax.inject.Inject;
 
 /**
- * This is a wrapper class that has a pub/sub event handler used for metric tracking.
+ * A class holds the metrics such as the total number of events.
  */
-public final class MetricPubSubEventHandler {
+public final class GlobalMetrics {
 
-  private final PubSubEventHandler pubSubEventHandler;
+  /**
+   * The metric of the number of all events inside the group operator chain queues.
+   */
+  private final EventNumMetric eventNumMetric;
 
   @Inject
-  private MetricPubSubEventHandler() {
-    this.pubSubEventHandler = new PubSubEventHandler();
+  private GlobalMetrics(final EventNumMetric eventNumMetric) {
+    this.eventNumMetric = eventNumMetric;
   }
 
   /**
-   * Return the pub/sub event handler.
+   * @return the metric of the number of all events
    */
-  public PubSubEventHandler getPubSubEventHandler() {
-    return pubSubEventHandler;
+  public EventNumMetric getNumEventMetric() {
+    return eventNumMetric;
   }
 }

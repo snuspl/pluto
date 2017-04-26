@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched;
+package edu.snu.mist.core.task.globalsched.metrics;
 
 import edu.snu.mist.common.stats.EWMA;
 import edu.snu.mist.core.parameters.GlobalProcCpuUtilAlpha;
@@ -30,7 +30,7 @@ public final class CpuUtilMetric {
   /**
    * The cpu utilization of the whole system provided by a low-level system monitor.
    */
-  private double systemCpuUtil;
+  private volatile double systemCpuUtil;
 
   /**
    * The EWMA value of cpu utilization.
@@ -40,7 +40,7 @@ public final class CpuUtilMetric {
   /**
    * The cpu utilization of the JVM process provided by a low-level system monitor.
    */
-  private double processCpuUtil;
+  private volatile double processCpuUtil;
 
   /**
    * The EWMA value of process cpu utilization.

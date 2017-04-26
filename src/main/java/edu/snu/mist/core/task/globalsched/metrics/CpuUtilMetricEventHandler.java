@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched;
+package edu.snu.mist.core.task.globalsched.metrics;
 
-import edu.snu.mist.core.task.*;
-import org.apache.reef.wake.EventHandler;
+import edu.snu.mist.core.task.metrics.MetricTrackEvent;
+import edu.snu.mist.core.task.metrics.MetricTrackEventHandler;
 
 import javax.inject.Inject;
 import javax.management.Attribute;
@@ -28,7 +28,7 @@ import java.lang.management.ManagementFactory;
 /**
  * A class handles the metric event about CpuUtilMetric.
  */
-public final class CpuUtilMetricEventHandler implements EventHandler<MetricEvent> {
+public final class CpuUtilMetricEventHandler implements MetricTrackEventHandler {
 
   /**
    * The global metrics.
@@ -41,15 +41,13 @@ public final class CpuUtilMetricEventHandler implements EventHandler<MetricEvent
   private final MBeanServer mbs;
 
   @Inject
-  private CpuUtilMetricEventHandler(final MetricPubSubEventHandler metricPubSubEventHandler,
-                                    final GlobalSchedGlobalMetrics globalMetrics) {
+  private CpuUtilMetricEventHandler(final GlobalSchedGlobalMetrics globalMetrics) {
     this.globalMetrics = globalMetrics;
     this.mbs = ManagementFactory.getPlatformMBeanServer();
-    metricPubSubEventHandler.getPubSubEventHandler().subscribe(MetricEvent.class, this);
   }
 
   @Override
-  public void onNext(final MetricEvent metricEvent) {
+  public void onNext(final MetricTrackEvent metricTrackEvent) {
     // Track the current cpu utilization
     final AttributeList list;
     try {

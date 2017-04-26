@@ -13,18 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
-
-import org.apache.reef.tang.annotations.DefaultImplementation;
-
 /**
- * This interface represents the thread num assigner.
+ * A package related to metric tracking in global scheduling environment.
  */
-@DefaultImplementation(ProportionalEventProcessorNumAssigner.class)
-public interface EventProcessorNumAssigner {
-
-  /**
-   * This method is called by metric tracker when it updated the metrics.
-   */
-  void metricUpdated();
-}
+package edu.snu.mist.core.task.globalsched.metrics;

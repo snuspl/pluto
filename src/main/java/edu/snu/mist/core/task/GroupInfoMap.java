@@ -23,7 +23,7 @@ import java.util.Collection;
  * This interface holds the group information.
  */
 @DefaultImplementation(HashMapGroupInfoMap.class)
-interface GroupInfoMap {
+public interface GroupInfoMap {
 
   /**
    * Get the group info corresponding to the group id.

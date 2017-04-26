@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.metrics;
 
 /**
- * This is an event for metric updating triggering.
+ * This is an event for triggering metric tracking.
  */
-public final class MetricEvent {
+public final class MetricTrackEvent {
 
-  public MetricEvent() {
+  public MetricTrackEvent() {
     // do nothing
   }
 }

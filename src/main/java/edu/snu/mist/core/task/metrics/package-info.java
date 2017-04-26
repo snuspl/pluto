@@ -13,29 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
-
-import javax.inject.Inject;
-
 /**
- * A class holds the metrics such as the total number of events.
+ * A package related to metric tracking.
  */
-final class GlobalMetrics {
-
-  /**
-   * The metric of the number of all events inside the group operator chain queues.
-   */
-  private EventNumMetric eventNumMetric;
-
-  @Inject
-  private GlobalMetrics(final EventNumMetric eventNumMetric) {
-    this.eventNumMetric = eventNumMetric;
-  }
-
-  /**
-   * @return the metric of the number of all events
-   */
-  public EventNumMetric getNumEventMetric() {
-    return eventNumMetric;
-  }
-}
+package edu.snu.mist.core.task.metrics;

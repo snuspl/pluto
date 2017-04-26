@@ -17,6 +17,7 @@ package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetric;
 import edu.snu.mist.core.task.queryRemovers.QueryRemover;
 import edu.snu.mist.core.task.queryStarters.QueryStarter;
 import org.apache.reef.tang.annotations.Parameter;

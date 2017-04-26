@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched;
+package edu.snu.mist.core.task.metrics;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.core.task.*;
-import org.apache.reef.wake.EventHandler;
+import edu.snu.mist.core.task.ExecutionVertex;
+import edu.snu.mist.core.task.GroupInfo;
+import edu.snu.mist.core.task.GroupInfoMap;
+import edu.snu.mist.core.task.OperatorChain;
 
 import javax.inject.Inject;
 import java.util.Collection;
@@ -26,34 +28,29 @@ import java.util.Collection;
 /**
  * A class handles the metric event about EventNumMetric.
  */
-public final class GlobalSchedEventNumMetricEventHandler implements EventHandler<MetricEvent> {
+public final class EventNumMetricEventHandler implements MetricTrackEventHandler {
 
   /**
    * The map of group ids and group info to update.
    */
-  private final GlobalSchedGroupInfoMap groupInfoMap;
+  private final GroupInfoMap groupInfoMap;
 
   /**
    * The global metrics.
    */
-  private final GlobalSchedGlobalMetrics globalMetrics;
+  private final GlobalMetrics globalMetrics;
 
   @Inject
-  private GlobalSchedEventNumMetricEventHandler(final MetricPubSubEventHandler metricPubSubEventHandler,
-                                                final GlobalSchedGroupInfoMap groupInfoMap,
-                                                final GlobalSchedGlobalMetrics globalMetrics) {
+  private EventNumMetricEventHandler(final GroupInfoMap groupInfoMap,
+                                     final GlobalMetrics globalMetrics) {
     this.groupInfoMap = groupInfoMap;
     this.globalMetrics = globalMetrics;
-    metricPubSubEventHandler.getPubSubEventHandler().subscribe(MetricEvent.class, this);
-    // Initialize
-    this.onNext(new MetricEvent());
   }
 
   @Override
-  public void onNext(final MetricEvent metricEvent) {
+  public void onNext(final MetricTrackEvent metricTrackEvent) {
     long totalNumEvent = 0;
-    int totalWeight = 0;
-    for (final GlobalSchedGroupInfo groupInfo : groupInfoMap.values()) {
+    for (final GroupInfo groupInfo : groupInfoMap.values()) {
       // Track the number of event per each group
       long groupNumEvent = 0;
       for (final DAG<ExecutionVertex, MISTEdge> dag : groupInfo.getExecutionDags().getUniqueValues()) {
@@ -64,16 +61,10 @@ public final class GlobalSchedEventNumMetricEventHandler implements EventHandler
           }
         }
       }
-      final EventNumAndWeightMetric metric = groupInfo.getEventNumAndWeightMetric();
-      metric.setNumEvents(groupNumEvent);
+      final EventNumMetric metric = groupInfo.getEventNumMetric();
+      metric.updateNumEvents(groupNumEvent);
       totalNumEvent += groupNumEvent;
-
-      // TODO: [MIST-617] Add group weight adding process into GlobalSchedMetricTracker
-      final int weightToSet = 1;
-      metric.setWeight(weightToSet);
-      totalWeight += weightToSet;
     }
-    globalMetrics.getNumEventAndWeightMetric().setNumEvents(totalNumEvent);
-    globalMetrics.getNumEventAndWeightMetric().setWeight(totalWeight);
+    globalMetrics.getNumEventMetric().updateNumEvents(totalNumEvent);
   }
 }
