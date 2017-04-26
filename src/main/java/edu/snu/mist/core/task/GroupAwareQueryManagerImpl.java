@@ -18,9 +18,14 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.task.queryRemovers.MergeAwareQueryRemover;
+import edu.snu.mist.core.task.queryRemovers.NoMergingAwareQueryRemover;
+import edu.snu.mist.core.task.queryRemovers.QueryRemover;
 import edu.snu.mist.core.task.metrics.*;
 import edu.snu.mist.core.task.queryStarters.ImmediateQueryMergingStarter;
+import edu.snu.mist.core.task.queryStarters.NoMergingQueryStarter;
 import edu.snu.mist.core.task.queryStarters.QueryStarter;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
@@ -40,7 +45,7 @@ import java.util.logging.Logger;
  * This QueryManager is aware of the group and manages queries per group.
  */
 @SuppressWarnings("unchecked")
-final class GroupAwareQueryManagerImpl implements QueryManager {
+public final class GroupAwareQueryManagerImpl implements QueryManager {
 
   private static final Logger LOG = Logger.getLogger(GroupAwareQueryManagerImpl.class.getName());
 
@@ -86,6 +91,11 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
   private final EventNumMetricEventHandler eventNumHandler;
 
   /**
+   * Enabled the query merging or not.
+   */
+  private final boolean mergingEnabled;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -94,6 +104,7 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
                                      final GroupInfoMap groupInfoMap,
                                      @Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
                                      final QueryInfoStore planStore,
+                                     @Parameter(MergingEnabled.class) final boolean mergingEnabled,
                                      final MetricTracker metricTracker,
                                      final EventProcessorNumAssigner assigner,
                                      final EventNumMetricEventHandler eventNumHandler) {
@@ -102,6 +113,7 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
     this.planStore = planStore;
     this.groupInfoMap = groupInfoMap;
     this.numEventProcessors = numEventProcessors;
+    this.mergingEnabled = mergingEnabled;
     this.metricTracker = metricTracker;
     this.assigner = assigner;
     this.eventNumHandler = eventNumHandler;
@@ -133,7 +145,13 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
         final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
         jcb.bindNamedParameter(GroupId.class, groupId);
         jcb.bindNamedParameter(DefaultNumEventProcessors.class, Integer.toString(numEventProcessors));
-        jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
+        if (mergingEnabled) {
+          jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
+          jcb.bindImplementation(QueryRemover.class, MergeAwareQueryRemover.class);
+        } else {
+          jcb.bindImplementation(QueryStarter.class, NoMergingQueryStarter.class);
+          jcb.bindImplementation(QueryRemover.class, NoMergingAwareQueryRemover.class);
+        }
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
         groupInfoMap.putIfAbsent(groupId, injector.getInstance(GroupInfo.class));
       }

@@ -27,7 +27,7 @@ import javax.inject.Inject;
  * This removes the query from MIST.
  * It does not think the queries are merged.
  */
-final class NoMergingAwareQueryRemover implements QueryRemover {
+public final class NoMergingAwareQueryRemover implements QueryRemover {
 
   /**
    * The map that has the query id as a key and its execution dag as a value.

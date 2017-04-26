@@ -25,18 +25,22 @@ import edu.snu.mist.common.operators.FilterOperator;
 import edu.snu.mist.common.operators.FlatMapOperator;
 import edu.snu.mist.common.operators.MapOperator;
 import edu.snu.mist.common.operators.ReduceByKeyOperator;
+import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;
 import edu.snu.mist.common.sources.PunctuatedEventGenerator;
 import edu.snu.mist.common.types.Tuple2;
-import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.driver.MistTaskConfigs;
+import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
 import edu.snu.mist.core.parameters.PlanStorePath;
+import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.Direction;
 import junit.framework.Assert;
 import org.apache.reef.io.Tuple;
+import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -87,9 +91,31 @@ public final class QueryManagerTest {
   private final MISTFunction<Map<String, Integer>, Integer> totalCountMapFunc =
       (input) -> input.values().stream().reduce(0, (x, y) -> x + y);
 
-  @SuppressWarnings("unchecked")
+
   @Test(timeout = 5000)
-  public void testSubmitComplexQuery() throws Exception {
+  public void testSubmitComplexQueryInOption1() throws Exception {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(RPCServerPort.class, "20332");
+    jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "1");
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final MistTaskConfigs taskConfigs = injector.getInstance(MistTaskConfigs.class);
+    testSubmitComplexQueryHelper(taskConfigs.getConfiguration());
+  }
+
+  @Test()
+  public void testSubmitComplexQueryInOption2() throws Exception {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(RPCServerPort.class, "20332");
+    jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "2");
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final MistTaskConfigs taskConfigs = injector.getInstance(MistTaskConfigs.class);
+    testSubmitComplexQueryHelper(taskConfigs.getConfiguration());
+  }
+
+  @SuppressWarnings("unchecked")
+  private void testSubmitComplexQueryHelper(final Configuration conf) throws Exception {
     final String queryId = "testQuery";
     final List<String> inputs = Arrays.asList(
         "mist is a cloud of tiny water droplets suspended in the atmosphere",
@@ -119,9 +145,7 @@ public final class QueryManagerTest {
     final PhysicalSource src = new PhysicalSourceImpl("testSource",
         "conf", dataGenerator, eventGenerator);
 
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(DefaultNumEventProcessors.class, Integer.toString(4));
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final Injector injector = Tang.Factory.getTang().newInjector(conf);
 
     // Create sinks
     final List<String> sink1Result = new LinkedList<>();

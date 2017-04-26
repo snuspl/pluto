@@ -16,13 +16,10 @@
 
 package edu.snu.mist;
 
-import edu.snu.mist.common.rpc.RPCServerPort;
-import edu.snu.mist.core.parameters.NumTaskCores;
-import edu.snu.mist.core.parameters.NumTasks;
-import edu.snu.mist.core.parameters.TaskMemorySize;
-import edu.snu.mist.core.parameters.DriverRuntimeType;
 import edu.snu.mist.core.MistLauncher;
-import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.driver.MistDriverConfigs;
+import edu.snu.mist.core.driver.MistTaskConfigs;
+import edu.snu.mist.core.parameters.DriverRuntimeType;
 import org.apache.reef.client.LauncherStatus;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -43,14 +40,11 @@ public final class Mist {
    */
   private static Configuration getCommandLineConf(final String[] args) throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    final CommandLine commandLine = new CommandLine(jcb)
-        .registerShortNameOfClass(DriverRuntimeType.class)
-        .registerShortNameOfClass(NumTaskCores.class)
-        .registerShortNameOfClass(DefaultNumEventProcessors.class)
-        .registerShortNameOfClass(NumTasks.class)
-        .registerShortNameOfClass(RPCServerPort.class)
-        .registerShortNameOfClass(TaskMemorySize.class)
-        .processCommandLine(args);
+    CommandLine commandLine = new CommandLine(jcb)
+        .registerShortNameOfClass(DriverRuntimeType.class);
+    commandLine = MistDriverConfigs.addCommandLineConf(commandLine);
+    commandLine = MistTaskConfigs.addCommandLineConf(commandLine);
+    commandLine = commandLine.processCommandLine(args);
     if (commandLine == null) { // Option '?' was entered and processCommandLine printed the help.
       return null;
     }

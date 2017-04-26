@@ -32,7 +32,7 @@ import javax.inject.Inject;
  * So, if cfs_timeslice / # of groups < minimum_timeslice, then
  * it will change the cfs timeslice to minimum_timeslice * #_of_groups.
  */
-final class CfsTimesliceCalculator implements GroupTimesliceCalculator {
+public final class CfsTimesliceCalculator implements GroupTimesliceCalculator {
 
   /**
    * Cfs timeslice.
@@ -62,7 +62,7 @@ final class CfsTimesliceCalculator implements GroupTimesliceCalculator {
   public long calculateTimeslice(final GlobalSchedGroupInfo groupInfo) {
     final long totalWeight = metric.getNumEventAndWeightMetric().getWeight();
     final int groupWeight = groupInfo.getEventNumAndWeightMetric().getWeight();
-    final int numGroups = metric.getNumGroups();
+    final int numGroups = Math.max(1, metric.getNumGroups());
     long adjustCfsTimeslice = cfsTimeslice;
     if (cfsTimeslice / numGroups < minTimeslice) {
       adjustCfsTimeslice = minTimeslice * numGroups;

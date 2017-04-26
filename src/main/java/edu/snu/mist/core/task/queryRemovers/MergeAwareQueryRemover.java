@@ -28,7 +28,7 @@ import java.util.Collection;
  * So, this remover will decrease the reference count of the physical vertices
  * and delete them when it becomes zero.
  */
-final class MergeAwareQueryRemover implements QueryRemover {
+public final class MergeAwareQueryRemover implements QueryRemover {
 
   /**
    * Execution dags that are currently running.

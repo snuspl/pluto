@@ -95,7 +95,12 @@ public final class MistDriver {
   private final TaskSelector taskSelector;
 
   /**
-   * Configurations for MistTask.
+   * Configurations necessary for the driver.
+   */
+  private final MistDriverConfigs mistDriverConfigs;
+
+  /**
+   * Configurations for mist task.
    */
   private final MistTaskConfigs mistTaskConfigs;
 
@@ -105,12 +110,14 @@ public final class MistDriver {
                      final LocalAddressProvider localAddressProvider,
                      final TaskSelector taskSelector,
                      final Server server,
+                     final MistDriverConfigs mistDriverConfigs,
                      final MistTaskConfigs mistTaskConfigs) {
     this.nameServer = nameServer;
     this.localAddressProvider = localAddressProvider;
     this.requestor = requestor;
     this.taskIndex = new AtomicInteger(0);
     this.taskSelector = taskSelector;
+    this.mistDriverConfigs = mistDriverConfigs;
     this.mistTaskConfigs = mistTaskConfigs;
   }
 
@@ -118,9 +125,9 @@ public final class MistDriver {
     @Override
     public void onNext(final StartTime startTime) {
       requestor.submit(EvaluatorRequest.newBuilder()
-          .setNumber(mistTaskConfigs.getNumTasks())
-          .setMemory(mistTaskConfigs.getTaskMemSize())
-          .setNumberOfCores(mistTaskConfigs.getNumTaskCores())
+          .setNumber(mistDriverConfigs.getNumTasks())
+          .setMemory(mistDriverConfigs.getTaskMemSize())
+          .setNumberOfCores(mistDriverConfigs.getNumTaskCores())
           .build());
       LOG.log(Level.INFO, "Requested Evaluator.");
     }
