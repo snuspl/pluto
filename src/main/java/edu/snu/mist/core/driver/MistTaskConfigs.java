@@ -156,6 +156,9 @@ public final class MistTaskConfigs {
    */
   public static CommandLine addCommandLineConf(final CommandLine commandLine) {
     return commandLine
+        .registerShortNameOfClass(DefaultNumEventProcessors.class)
+        .registerShortNameOfClass(TempFolderPath.class)
+        .registerShortNameOfClass(NumPeriodicSchedulerThreads.class)
         .registerShortNameOfClass(MergingEnabled.class)
         .registerShortNameOfClass(ExecutionModelOption.class);
   }
