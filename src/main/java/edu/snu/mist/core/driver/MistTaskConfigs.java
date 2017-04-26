@@ -129,6 +129,7 @@ public final class MistTaskConfigs {
     jcb.bindImplementation(EventProcessorManager.class, DefaultEventProcessorManager.class);
     return jcb.build();
   }
+
   /**
    * Get the task configuration.
    * @return configuration

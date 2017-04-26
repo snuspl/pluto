@@ -53,7 +53,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
 
   private static final Logger LOG = Logger.getLogger(GroupAwareGlobalSchedQueryManagerImpl.class.getName());
 
-   /**
+  /**
    * Scheduler for periodic watermark emission.
    */
   private final ScheduledExecutorService scheduler;
