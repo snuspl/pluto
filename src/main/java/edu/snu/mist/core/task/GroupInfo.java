@@ -18,9 +18,8 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.metrics.EventNumMetric;
-import edu.snu.mist.core.task.queryRemovers.QueryRemover;
-import edu.snu.mist.core.task.queryStarters.QueryStarter;
 import org.apache.reef.tang.annotations.Parameter;
+
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +42,7 @@ public final class GroupInfo implements AutoCloseable {
   /**
    * Execution dags that are currently running in this group.
    */
-  private final ExecutionDags<String> executionDags;
+  private final ExecutionDags executionDags;
 
   /**
    * A metric that represents the number of events in the group, which will be updated periodically.
@@ -73,7 +72,7 @@ public final class GroupInfo implements AutoCloseable {
   @Inject
   private GroupInfo(@Parameter(GroupId.class) final String groupId,
                     final EventNumMetric eventNumMetric,
-                    final ExecutionDags<String> executionDags,
+                    final ExecutionDags executionDags,
                     final EventProcessorManager eventProcessorManager,
                     final QueryStarter queryStarter,
                     final OperatorChainManager operatorChainManager,
@@ -130,7 +129,7 @@ public final class GroupInfo implements AutoCloseable {
    * Return the execution dags in the group.
    * @return execution dags
    */
-  public ExecutionDags<String> getExecutionDags() {
+  public ExecutionDags getExecutionDags() {
     return executionDags;
   }
 

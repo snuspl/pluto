@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.queryStarters;
+package edu.snu.mist.core.task.merging;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.OutputEmitter;
@@ -36,9 +36,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Test whether ImmediateQueryMergingStarter merges and starts the submitted queries correctly.
@@ -146,10 +144,12 @@ public final class ImmediateQueryMergingStarterTest {
     final DAG<ExecutionVertex, MISTEdge> query = generateSimpleQuery(source, operatorChain, sink);
     // Execute the query 1
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final ImmediateQueryMergingStarter starter = injector.getInstance(ImmediateQueryMergingStarter.class);
-    final ExecutionDags<String> executionDags = injector.getInstance(ExecutionDags.class);
+    final SrcAndDagMap<String> srcAndDagMap = injector.getInstance(SrcAndDagMap.class);
     final ExecutionPlanDagMap executionPlanDagMap = injector.getInstance(ExecutionPlanDagMap.class);
+    final ExecutionDags executionDags = injector.getInstance(ExecutionDags.class);
     final VertexInfoMap vertexInfoMap = injector.getInstance(VertexInfoMap.class);
     starter.start("q1", query);
 
@@ -160,8 +160,12 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(1, operatorChain.numberOfEvents());
     Assert.assertEquals(true, operatorChain.processNextEvent());
     Assert.assertEquals(Arrays.asList(data1), result);
-    Assert.assertEquals(query, executionDags.get(sourceConf));
+    Assert.assertEquals(query, srcAndDagMap.get(sourceConf));
 
+    // Check execution dags
+    final Collection<DAG<ExecutionVertex, MISTEdge>> expectedDags = new HashSet<>();
+    expectedDags.add(query);
+    Assert.assertEquals(expectedDags, executionDags.values());
     // Check reference count of the execution vertices
     Assert.assertEquals(query, executionPlanDagMap.get("q1"));
     checkReferenceCountOfExecutionVertices(query, vertexInfoMap, 1);
@@ -190,18 +194,20 @@ public final class ImmediateQueryMergingStarterTest {
 
     // Execute two queries
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final ImmediateQueryMergingStarter starter = injector.getInstance(ImmediateQueryMergingStarter.class);
-    final ExecutionDags<String> executionDags = injector.getInstance(ExecutionDags.class);
+    final SrcAndDagMap<String> srcAndDagMap = injector.getInstance(SrcAndDagMap.class);
+    final ExecutionDags executionDags = injector.getInstance(ExecutionDags.class);
     final ExecutionPlanDagMap executionPlanDagMap = injector.getInstance(ExecutionPlanDagMap.class);
     final VertexInfoMap vertexInfoMap = injector.getInstance(VertexInfoMap.class);
     starter.start("q1", query1);
     starter.start("q2", query2);
 
     // Check
-    Assert.assertEquals(2, executionDags.size());
-    Assert.assertEquals(query1, executionDags.get(src1.getConfiguration()));
-    Assert.assertEquals(query2, executionDags.get(src2.getConfiguration()));
+    Assert.assertEquals(2, srcAndDagMap.size());
+    Assert.assertEquals(query1, srcAndDagMap.get(src1.getConfiguration()));
+    Assert.assertEquals(query2, srcAndDagMap.get(src2.getConfiguration()));
 
     // The query 1 and 2 have different sources, so they should be executed separately
     final String data1 = "Hello";
@@ -217,6 +223,12 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(Arrays.asList(data2), result2);
     Assert.assertEquals(false, operatorChain1.processNextEvent());
     Assert.assertEquals(Arrays.asList(data1), result1);
+
+    // Check execution dags
+    final Collection<DAG<ExecutionVertex, MISTEdge>> expectedDags = new HashSet<>();
+    expectedDags.add(query1);
+    expectedDags.add(query2);
+    Assert.assertEquals(expectedDags, executionDags.values());
 
     // Check reference count of the execution vertices
     Assert.assertEquals(query1, executionPlanDagMap.get("q1"));
@@ -257,9 +269,11 @@ public final class ImmediateQueryMergingStarterTest {
 
     // Execute the query 1
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final ImmediateQueryMergingStarter starter = injector.getInstance(ImmediateQueryMergingStarter.class);
-    final ExecutionDags<String> executionDags = injector.getInstance(ExecutionDags.class);
+    final SrcAndDagMap<String> srcAndDagMap = injector.getInstance(SrcAndDagMap.class);
+    final ExecutionDags executionDags = injector.getInstance(ExecutionDags.class);
     final ExecutionPlanDagMap executionPlanDagMap = injector.getInstance(ExecutionPlanDagMap.class);
     final VertexInfoMap vertexInfoMap = injector.getInstance(VertexInfoMap.class);
     starter.start("q1", query1);
@@ -275,9 +289,14 @@ public final class ImmediateQueryMergingStarterTest {
     // Execute the query 2
     starter.start("q2", query2);
 
-    final DAG<ExecutionVertex, MISTEdge> mergedDag = executionDags.get(sourceConf);
-    Assert.assertEquals(1, executionDags.size());
+    final DAG<ExecutionVertex, MISTEdge> mergedDag = srcAndDagMap.get(sourceConf);
+    Assert.assertEquals(1, srcAndDagMap.size());
     Assert.assertEquals(expectedDag, mergedDag);
+
+    // Check execution dags
+    final Collection<DAG<ExecutionVertex, MISTEdge>> expectedDags = new HashSet<>();
+    expectedDags.add(expectedDag);
+    Assert.assertEquals(expectedDags, executionDags.values());
 
     // Generate events for the merged query and check if the dag is executed correctly
     final String data = "Hello";
@@ -340,9 +359,11 @@ public final class ImmediateQueryMergingStarterTest {
 
     // Execute the query 1
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final ImmediateQueryMergingStarter starter = injector.getInstance(ImmediateQueryMergingStarter.class);
-    final ExecutionDags<String> executionDags = injector.getInstance(ExecutionDags.class);
+    final SrcAndDagMap<String> srcAndDagMap = injector.getInstance(SrcAndDagMap.class);
+    final ExecutionDags executionDags = injector.getInstance(ExecutionDags.class);
     final ExecutionPlanDagMap executionPlanDagMap = injector.getInstance(ExecutionPlanDagMap.class);
     final VertexInfoMap vertexInfoMap = injector.getInstance(VertexInfoMap.class);
     starter.start("q1", query1);
@@ -361,9 +382,14 @@ public final class ImmediateQueryMergingStarterTest {
     // Execute the query 2
     starter.start("q2", query2);
 
-    final DAG<ExecutionVertex, MISTEdge> mergedDag = executionDags.get(sourceConf);
-    Assert.assertEquals(1, executionDags.size());
+    final DAG<ExecutionVertex, MISTEdge> mergedDag = srcAndDagMap.get(sourceConf);
+    Assert.assertEquals(1, srcAndDagMap.size());
     Assert.assertEquals(expectedDag, mergedDag);
+
+    // Check execution dags
+    final Collection<DAG<ExecutionVertex, MISTEdge>> expectedDags = new HashSet<>();
+    expectedDags.add(expectedDag);
+    Assert.assertEquals(expectedDags, executionDags.values());
 
     // Generate events for the merged query and check if the dag is executed correctly
     final String data1 = "Hello";

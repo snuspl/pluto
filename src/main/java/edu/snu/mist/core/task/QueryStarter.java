@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.queryStarters;
+package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.core.task.ExecutionVertex;
+import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
