@@ -19,8 +19,8 @@ import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * An alpha value of num events in GlobalSchedMetric.
+ * An alpha value of num events in EventNumMetric.
  */
-@NamedParameter(doc="An alpha value of num events in GlobalSchedMetric.", default_value = "0.7")
+@NamedParameter(doc="An alpha value of num events in EventNumMetric.", default_value = "0.7")
 public final class GlobalNumEventAlpha implements Name<Double> {
 }

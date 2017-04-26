@@ -19,9 +19,9 @@ package edu.snu.mist.core.task.metrics;
 /**
  * This is an event for triggering processor number assigning.
  */
-public final class ProcessorAssignEvent {
+public final class MetricUpdateEvent {
 
-  public ProcessorAssignEvent() {
+  public MetricUpdateEvent() {
     // do nothing
   }
 }

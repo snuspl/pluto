@@ -16,7 +16,7 @@
 package edu.snu.mist.core.task.metrics;
 
 import edu.snu.mist.core.parameters.MetricTrackingInterval;
-import edu.snu.mist.core.task.MistEventPubSubEventHandler;
+import edu.snu.mist.core.task.MistPubSubEventHandler;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -46,21 +46,15 @@ public final class MetricTracker implements AutoCloseable {
   /**
    * The metric pub/sub event handler.
    */
-  private final MistEventPubSubEventHandler metricPubSubEventHandler;
+  private final MistPubSubEventHandler metricPubSubEventHandler;
 
   @Inject
   private MetricTracker(final MetricTrackerExecutorServiceWrapper executorServiceWrapper,
                         @Parameter(MetricTrackingInterval.class) final long groupTrackingInterval,
-                        final EventProcessorNumAssigner assigner,
-                        final MistEventPubSubEventHandler metricPubSubEventHandler,
-                        final MetricTrackEventHandlerCollection metricHandlerCollection) {
+                        final MistPubSubEventHandler metricPubSubEventHandler) {
     this.executorService = executorServiceWrapper.getScheduler();
     this.groupTrackingInterval = groupTrackingInterval;
     this.metricPubSubEventHandler = metricPubSubEventHandler;
-
-    metricHandlerCollection.forEach((handler) ->
-        metricPubSubEventHandler.getPubSubEventHandler().subscribe(MetricTrackEvent.class, handler));
-    metricPubSubEventHandler.getPubSubEventHandler().subscribe(ProcessorAssignEvent.class, assigner);
   }
 
   /**
@@ -74,7 +68,7 @@ public final class MetricTracker implements AutoCloseable {
           // Publish the metric track events to subscriber
           metricPubSubEventHandler.getPubSubEventHandler().onNext(new MetricTrackEvent());
           // Notify the metric update to event processor number assigner
-          metricPubSubEventHandler.getPubSubEventHandler().onNext(new ProcessorAssignEvent());
+          metricPubSubEventHandler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
         } catch (final Exception e) {
           e.printStackTrace();
         }

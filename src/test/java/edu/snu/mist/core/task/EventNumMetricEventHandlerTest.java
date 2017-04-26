@@ -38,7 +38,7 @@ import static edu.snu.mist.core.task.utils.SimpleOperatorChainUtils.*;
  */
 public final class EventNumMetricEventHandlerTest {
 
-  private MistEventPubSubEventHandler metricPubSubEventHandler;
+  private MistPubSubEventHandler metricPubSubEventHandler;
   private IdAndConfGenerator idAndConfGenerator;
   private GroupInfoMap groupInfoMap;
   private EventNumMetricEventHandler handler;
@@ -47,7 +47,7 @@ public final class EventNumMetricEventHandlerTest {
   public void setUp() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     groupInfoMap = injector.getInstance(GroupInfoMap.class);
-    metricPubSubEventHandler = injector.getInstance(MistEventPubSubEventHandler.class);
+    metricPubSubEventHandler = injector.getInstance(MistPubSubEventHandler.class);
     handler = injector.getInstance(EventNumMetricEventHandler.class);
     idAndConfGenerator = new IdAndConfGenerator();
     metricPubSubEventHandler.getPubSubEventHandler().subscribe(MetricTrackEvent.class, handler);

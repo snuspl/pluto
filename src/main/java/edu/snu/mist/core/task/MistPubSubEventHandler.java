@@ -22,12 +22,12 @@ import javax.inject.Inject;
 /**
  * This is a wrapper class that has a pub/sub event handler used.
  */
-public final class MistEventPubSubEventHandler {
+public final class MistPubSubEventHandler {
 
   private final PubSubEventHandler pubSubEventHandler;
 
   @Inject
-  private MistEventPubSubEventHandler() {
+  private MistPubSubEventHandler() {
     this.pubSubEventHandler = new PubSubEventHandler();
   }
 

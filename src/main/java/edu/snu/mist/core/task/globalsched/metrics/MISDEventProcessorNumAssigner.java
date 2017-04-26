@@ -17,7 +17,7 @@ package edu.snu.mist.core.task.globalsched.metrics;
 
 import edu.snu.mist.core.parameters.ThreadNumLimit;
 import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
-import edu.snu.mist.core.task.metrics.ProcessorAssignEvent;
+import edu.snu.mist.core.task.metrics.MetricUpdateEvent;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.globalsched.parameters.*;
@@ -110,7 +110,7 @@ public final class MISDEventProcessorNumAssigner implements EventProcessorNumAss
    * Assign event processor number.
    */
   @Override
-  public void onNext(final ProcessorAssignEvent processorAssignEvent) {
+  public void onNext(final MetricUpdateEvent metricUpdateEvent) {
     if (metrics.getCpuUtilMetric().getSystemCpuUtil() < cpuUtilLowThreshold) {
       if (metrics.getNumEventAndWeightMetric().getNumEvents() > eventNumHighThreshold) {
         // If the cpu utilization is low in spite of enough events,

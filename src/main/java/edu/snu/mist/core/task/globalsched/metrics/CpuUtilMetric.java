@@ -35,7 +35,7 @@ public final class CpuUtilMetric {
   /**
    * The EWMA value of cpu utilization.
    */
-  private EWMA ewmaSystemCpuUtil;
+  private final EWMA ewmaSystemCpuUtil;
 
   /**
    * The cpu utilization of the JVM process provided by a low-level system monitor.
@@ -45,7 +45,7 @@ public final class CpuUtilMetric {
   /**
    * The EWMA value of process cpu utilization.
    */
-  private EWMA ewmaProcessCpuUtil;
+  private final EWMA ewmaProcessCpuUtil;
 
 
   @Inject

@@ -16,10 +16,11 @@
 package edu.snu.mist.core.task.globalsched.cfs;
 
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
-import edu.snu.mist.core.task.globalsched.GlobalSchedMetric;
 import edu.snu.mist.core.task.globalsched.GroupTimesliceCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsTimeslice;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.MinTimeslice;
+import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetric;
+import edu.snu.mist.core.task.globalsched.metrics.GlobalSchedGlobalMetrics;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -43,12 +44,15 @@ public final class CfsTimesliceCalculatorTest {
     jcb.bindNamedParameter(MinTimeslice.class, "100");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final GroupTimesliceCalculator timesliceCalculator = injector.getInstance(CfsTimesliceCalculator.class);
-    final GlobalSchedMetric globalSchedMetric = injector.getInstance(GlobalSchedMetric.class);
+    final GlobalSchedGlobalMetrics globalSchedMetric = injector.getInstance(GlobalSchedGlobalMetrics.class);
+    final EventNumAndWeightMetric metric =
+        Tang.Factory.getTang().newInjector().getInstance(EventNumAndWeightMetric.class);
+    metric.setWeight(10);
 
     final GlobalSchedGroupInfo groupInfo = mock(GlobalSchedGroupInfo.class);
-    when(groupInfo.getWeight()).thenReturn(10);
+    when(groupInfo.getEventNumAndWeightMetric()).thenReturn(metric);
     globalSchedMetric.setNumGroups(5);
-    globalSchedMetric.setTotalWeight(20);
+    globalSchedMetric.getNumEventAndWeightMetric().setWeight(20);
     final long slice = timesliceCalculator.calculateTimeslice(groupInfo);
     Assert.assertEquals(500, slice);
   }
@@ -64,17 +68,23 @@ public final class CfsTimesliceCalculatorTest {
     jcb.bindNamedParameter(MinTimeslice.class, "100");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final GroupTimesliceCalculator timesliceCalculator = injector.getInstance(CfsTimesliceCalculator.class);
-    final GlobalSchedMetric globalSchedMetric = injector.getInstance(GlobalSchedMetric.class);
+    final GlobalSchedGlobalMetrics globalSchedMetric = injector.getInstance(GlobalSchedGlobalMetrics.class);
+    final EventNumAndWeightMetric metric1 =
+        Tang.Factory.getTang().newInjector().getInstance(EventNumAndWeightMetric.class);
+    final EventNumAndWeightMetric metric2 =
+        Tang.Factory.getTang().newInjector().getInstance(EventNumAndWeightMetric.class);
+    metric1.setWeight(10);
+    metric2.setWeight(1);
 
     final GlobalSchedGroupInfo groupInfo = mock(GlobalSchedGroupInfo.class);
-    when(groupInfo.getWeight()).thenReturn(10);
+    when(groupInfo.getEventNumAndWeightMetric()).thenReturn(metric1);
     globalSchedMetric.setNumGroups(20);
-    globalSchedMetric.setTotalWeight(40);
+    globalSchedMetric.getNumEventAndWeightMetric().setWeight(40);
     final long slice = timesliceCalculator.calculateTimeslice(groupInfo);
     Assert.assertEquals(500, slice);
 
     final GlobalSchedGroupInfo groupInfo2 = mock(GlobalSchedGroupInfo.class);
-    when(groupInfo2.getWeight()).thenReturn(1);
+    when(groupInfo2.getEventNumAndWeightMetric()).thenReturn(metric2);
     final long slice2 = timesliceCalculator.calculateTimeslice(groupInfo2);
     Assert.assertEquals(100, slice2); // min slice
   }

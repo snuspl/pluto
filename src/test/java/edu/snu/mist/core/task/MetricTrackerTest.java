@@ -24,36 +24,29 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
-import java.util.function.Consumer;
 
 /**
  * Test whether MetricTracker publish events properly or not.
  */
 public final class MetricTrackerTest {
 
-  private MistEventPubSubEventHandler metricPubSubEventHandler;
+  private MistPubSubEventHandler metricPubSubEventHandler;
   private MetricTracker tracker;
   private TestEventProcessorNumAssigner assigner;
-  private TestMetricTrackEventHandlerCollection handlerCollection;
+  private TestMetricTrackEventHandler handler;
   private static final long TRACKING_INTERVAL = 10L;
 
   @Before
   public void setUp() throws InjectionException {
     assigner = new TestEventProcessorNumAssigner();
-    final TestMetricTrackEventHandler handler1 = new TestMetricTrackEventHandler();
-    final TestMetricTrackEventHandler handler2 = new TestMetricTrackEventHandler();
-    handlerCollection = new TestMetricTrackEventHandlerCollection(handler1, handler2);
+    handler = new TestMetricTrackEventHandler();
     final Injector injector = Tang.Factory.getTang().newInjector();
     injector.bindVolatileParameter(MetricTrackingInterval.class, TRACKING_INTERVAL);
-    injector.bindVolatileInstance(EventProcessorNumAssigner.class, assigner);
-    injector.bindVolatileInstance(MetricTrackEventHandlerCollection.class, handlerCollection);
-    metricPubSubEventHandler = injector.getInstance(MistEventPubSubEventHandler.class);
+    metricPubSubEventHandler = injector.getInstance(MistPubSubEventHandler.class);
     tracker = injector.getInstance(MetricTracker.class);
-    metricPubSubEventHandler.getPubSubEventHandler().subscribe(ProcessorAssignEvent.class, assigner);
+    metricPubSubEventHandler.getPubSubEventHandler().subscribe(MetricUpdateEvent.class, assigner);
+    metricPubSubEventHandler.getPubSubEventHandler().subscribe(MetricTrackEvent.class, handler);
   }
 
   @After
@@ -69,8 +62,8 @@ public final class MetricTrackerTest {
     tracker.start();
 
     // Wait tracker to publish MetricTrackEvent
-    handlerCollection.waitForTracking();
-    // Wait tracker to publish ProcessorAssignEvent
+    handler.waitForTracking();
+    // Wait tracker to publish MetricUpdateEvent
     assigner.waitForTracking();
   }
 
@@ -86,7 +79,7 @@ public final class MetricTrackerTest {
     }
 
     @Override
-    public void onNext(final ProcessorAssignEvent event) {
+    public void onNext(final MetricUpdateEvent event) {
       if (latch != null) {
         latch.countDown();
       }
@@ -114,40 +107,6 @@ public final class MetricTrackerTest {
   }
 
   /**
-   * This is an implementation of MetricTrackEventHandlerCollection for testing.
-   */
-  private final class TestMetricTrackEventHandlerCollection implements MetricTrackEventHandlerCollection {
-
-    private final Collection<TestMetricTrackEventHandler> handlerCollection;
-
-    private TestMetricTrackEventHandlerCollection(final TestMetricTrackEventHandler metricEventHandler1,
-                                                  final TestMetricTrackEventHandler metricEventHandler2) {
-      this.handlerCollection = new LinkedList<>();
-      handlerCollection.add(metricEventHandler1);
-      handlerCollection.add(metricEventHandler2);
-    }
-
-    @Override
-    public void forEach(final Consumer<? super MetricTrackEventHandler> action) {
-      handlerCollection.forEach(action);
-    }
-
-    private void waitForTracking() {
-      final CountDownLatch countDownLatch1 = new CountDownLatch(2);
-      final CountDownLatch countDownLatch2 = new CountDownLatch(2);
-      final Iterator<TestMetricTrackEventHandler> itr = handlerCollection.iterator();
-      itr.next().setLatch(countDownLatch1);
-      itr.next().setLatch(countDownLatch2);
-      try {
-        countDownLatch1.await();
-        countDownLatch2.await();
-      } catch (final InterruptedException e) {
-        e.printStackTrace();
-      }
-    }
-  }
-
-  /**
    * A simple MetricTrackEventHandler for testing.
    */
   public final class TestMetricTrackEventHandler implements MetricTrackEventHandler {
@@ -163,6 +122,16 @@ public final class MetricTrackerTest {
      */
     private void setLatch(final CountDownLatch latch) {
       this.latch = latch;
+    }
+
+    private void waitForTracking() {
+      final CountDownLatch countDownLatch = new CountDownLatch(2);
+      this.setLatch(countDownLatch);
+      try {
+        countDownLatch.await();
+      } catch (final InterruptedException e) {
+        e.printStackTrace();
+      }
     }
 
     @Override

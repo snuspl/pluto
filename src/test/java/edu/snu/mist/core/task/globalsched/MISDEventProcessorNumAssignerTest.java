@@ -16,10 +16,10 @@
 package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.core.parameters.ThreadNumLimit;
-import edu.snu.mist.core.task.MistEventPubSubEventHandler;
+import edu.snu.mist.core.task.MistPubSubEventHandler;
 import edu.snu.mist.core.task.globalsched.metrics.GlobalSchedGlobalMetrics;
 import edu.snu.mist.core.task.globalsched.metrics.MISDEventProcessorNumAssigner;
-import edu.snu.mist.core.task.metrics.ProcessorAssignEvent;
+import edu.snu.mist.core.task.metrics.MetricUpdateEvent;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.globalsched.parameters.*;
@@ -37,7 +37,7 @@ import org.junit.Test;
 public final class MISDEventProcessorNumAssignerTest {
 
   private MISDEventProcessorNumAssigner assigner;
-  private MistEventPubSubEventHandler handler;
+  private MistPubSubEventHandler handler;
   private GlobalSchedGlobalMetrics metric;
   private EventProcessorManager eventProcessorManager;
   private static final int THREAD_NUM_LIMIT = 30;
@@ -53,7 +53,7 @@ public final class MISDEventProcessorNumAssignerTest {
     eventProcessorManager = new TestEventProcessorManager();
     final Injector injector = Tang.Factory.getTang().newInjector();
     metric = injector.getInstance(GlobalSchedGlobalMetrics.class);
-    handler = injector.getInstance(MistEventPubSubEventHandler.class);
+    handler = injector.getInstance(MistPubSubEventHandler.class);
     injector.bindVolatileParameter(ThreadNumLimit.class, THREAD_NUM_LIMIT);
     injector.bindVolatileParameter(DefaultNumEventProcessors.class, DEFAULT_THREAD_NUM);
     injector.bindVolatileParameter(EventNumHighThreshold.class, EVENT_NUM_HIGH_THRES);
@@ -63,7 +63,7 @@ public final class MISDEventProcessorNumAssignerTest {
     injector.bindVolatileParameter(EventProcessorIncreaseRate.class, INCREASE_RATE);
     injector.bindVolatileParameter(EventProcessorDecreaseNum.class, DECREASE_NUM);
     assigner = injector.getInstance(MISDEventProcessorNumAssigner.class);
-    handler.getPubSubEventHandler().subscribe(ProcessorAssignEvent.class, assigner);
+    handler.getPubSubEventHandler().subscribe(MetricUpdateEvent.class, assigner);
   }
 
   /**
@@ -78,7 +78,7 @@ public final class MISDEventProcessorNumAssignerTest {
     metric.getNumEventAndWeightMetric().updateNumEvents(EVENT_NUM_HIGH_THRES + 1);
     metric.getCpuUtilMetric().updateSystemCpuUtil(CPU_UTIL_LOW_THRES - 0.01);
 
-    handler.getPubSubEventHandler().onNext(new ProcessorAssignEvent());
+    handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
     // The number of event processors should be doubled
     Assert.assertEquals(
         DEFAULT_THREAD_NUM * (int) INCREASE_RATE, eventProcessorManager.getEventProcessors().size());
@@ -86,7 +86,7 @@ public final class MISDEventProcessorNumAssignerTest {
     // Make the number of events to be not enough to increase the event processor number.
     metric.getNumEventAndWeightMetric().updateNumEvents(EVENT_NUM_HIGH_THRES - 1);
 
-    handler.getPubSubEventHandler().onNext(new ProcessorAssignEvent());
+    handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
     // The number of event processors should be not changed
     Assert.assertEquals(
         DEFAULT_THREAD_NUM * (int) INCREASE_RATE, eventProcessorManager.getEventProcessors().size());
@@ -94,19 +94,19 @@ public final class MISDEventProcessorNumAssignerTest {
     // Many events, low cpu utilization again
     metric.getNumEventAndWeightMetric().updateNumEvents(EVENT_NUM_HIGH_THRES + 1);
 
-    handler.getPubSubEventHandler().onNext(new ProcessorAssignEvent());
+    handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
     // The number of event processors should be the limit
     Assert.assertEquals(THREAD_NUM_LIMIT, eventProcessorManager.getEventProcessors().size());
 
     // Few events, low cpu utilization
     metric.getNumEventAndWeightMetric().updateNumEvents(EVENT_NUM_LOW_THRES - 1);
 
-    handler.getPubSubEventHandler().onNext(new ProcessorAssignEvent());
+    handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
     // The number of event processors should be half
     Assert.assertEquals(
         THREAD_NUM_LIMIT - DECREASE_NUM, eventProcessorManager.getEventProcessors().size());
 
-    handler.getPubSubEventHandler().onNext(new ProcessorAssignEvent());
+    handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
     // The number of event processors should be half
     Assert.assertEquals(DEFAULT_THREAD_NUM, eventProcessorManager.getEventProcessors().size());
   }

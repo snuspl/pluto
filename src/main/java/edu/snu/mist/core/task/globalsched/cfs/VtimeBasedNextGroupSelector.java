@@ -16,7 +16,7 @@
 package edu.snu.mist.core.task.globalsched.cfs;
 
 import edu.snu.mist.core.parameters.DefaultGroupWeight;
-import edu.snu.mist.core.task.MistEventPubSubEventHandler;
+import edu.snu.mist.core.task.MistPubSubEventHandler;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.GroupEvent;
 import edu.snu.mist.core.task.globalsched.NextGroupSelector;
@@ -54,7 +54,7 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
   @Inject
   private VtimeBasedNextGroupSelector(@Parameter(DefaultGroupWeight.class) final int defaultWeight,
                                       @Parameter(MinTimeslice.class) final long minTimeslice,
-                                      final MistEventPubSubEventHandler pubSubEventHandler) {
+                                      final MistPubSubEventHandler pubSubEventHandler) {
     this.rbTreeMap = new TreeMap<>();
     this.defaultWeight = defaultWeight;
     this.minTimeslice = minTimeslice;

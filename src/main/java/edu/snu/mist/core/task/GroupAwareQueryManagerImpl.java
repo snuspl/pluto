@@ -19,7 +19,7 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
-import edu.snu.mist.core.task.metrics.MetricTracker;
+import edu.snu.mist.core.task.metrics.*;
 import edu.snu.mist.core.task.queryStarters.ImmediateQueryMergingStarter;
 import edu.snu.mist.core.task.queryStarters.QueryStarter;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
@@ -30,6 +30,7 @@ import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
+import org.apache.reef.wake.impl.PubSubEventHandler;
 
 import javax.inject.Inject;
 import java.util.concurrent.ScheduledExecutorService;
@@ -84,13 +85,19 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
                                      final GroupInfoMap groupInfoMap,
                                      @Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
                                      final QueryInfoStore planStore,
-                                     final MetricTracker metricTracker) {
+                                     final MistPubSubEventHandler mistPubSubEventHandler,
+                                     final MetricTracker metricTracker,
+                                     final EventProcessorNumAssigner assigner,
+                                     final EventNumMetricEventHandler eventNumHandler) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.groupInfoMap = groupInfoMap;
     this.numEventProcessors = numEventProcessors;
     this.metricTracker = metricTracker;
+    final PubSubEventHandler pubSubEventHandler = mistPubSubEventHandler.getPubSubEventHandler();
+    pubSubEventHandler.subscribe(MetricTrackEvent.class, eventNumHandler);
+    pubSubEventHandler.subscribe(MetricUpdateEvent.class, assigner);
     metricTracker.start();
   }
 

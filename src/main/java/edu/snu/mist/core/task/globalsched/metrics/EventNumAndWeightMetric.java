@@ -35,7 +35,7 @@ public final class EventNumAndWeightMetric {
   /**
    * The exponential weighted moving average for number of events.
    */
-  private EWMA ewmaNumEvents;
+  private final EWMA ewmaNumEvents;
 
   /**
    * The weight used for scheduling.

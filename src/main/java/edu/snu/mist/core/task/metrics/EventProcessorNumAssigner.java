@@ -22,5 +22,5 @@ import org.apache.reef.wake.EventHandler;
  * This interface represents the thread num assigner.
  */
 @DefaultImplementation(ProportionalEventProcessorNumAssigner.class)
-public interface EventProcessorNumAssigner extends EventHandler<ProcessorAssignEvent> {
+public interface EventProcessorNumAssigner extends EventHandler<MetricUpdateEvent> {
 }

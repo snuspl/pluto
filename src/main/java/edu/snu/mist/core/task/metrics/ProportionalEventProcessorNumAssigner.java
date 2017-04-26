@@ -66,7 +66,7 @@ public final class ProportionalEventProcessorNumAssigner implements EventProcess
    * Other groups will have the portion of remainder proportionally to it's metric.
    */
   @Override
-  public void onNext(final ProcessorAssignEvent processorAssignEvent) {
+  public void onNext(final MetricUpdateEvent metricUpdateEvent) {
     if (groupInfoMap.size() >= threadNumLimit) {
       // Every group should not totally blocked because of another group
       // Because of this, we assign at least one event processor number to each group
