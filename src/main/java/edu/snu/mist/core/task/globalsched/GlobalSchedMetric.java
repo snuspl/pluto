@@ -26,7 +26,7 @@ import javax.inject.Inject;
 /**
  * A class which contains global metrics such as the number of events or cpu utilization.
  */
-final class GlobalSchedMetric {
+public final class GlobalSchedMetric {
 
   /**
    * The number of all events inside the operator chain queues.
@@ -63,6 +63,11 @@ final class GlobalSchedMetric {
    */
   private volatile long totalWeight;
 
+  /**
+   * The number of groups.
+   */
+  private volatile int numGroups;
+
   @Inject
   private GlobalSchedMetric(final GlobalSchedGroupInfoMap groupInfoMap,
                             @Parameter(GlobalNumEventAlpha.class) final double numEventAlpha,
@@ -75,6 +80,22 @@ final class GlobalSchedMetric {
     this.processCpuUtil = 0.0;
     this.ewmaProcessCpuUtil = new EWMA(procCpuUtilAlpha);
     this.totalWeight = calculateTotalWeight(groupInfoMap);
+    this.numGroups = groupInfoMap.size();
+  }
+
+  /**
+   * Get the number of groups.
+   */
+  public int getNumGroups() {
+    return numGroups;
+  }
+
+  /**
+   * Set the number of groups.
+   * @param groups
+   */
+  public void setNumGroups(final int groups) {
+    numGroups = groups;
   }
 
   /**

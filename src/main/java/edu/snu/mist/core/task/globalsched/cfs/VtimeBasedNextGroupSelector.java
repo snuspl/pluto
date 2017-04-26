@@ -20,6 +20,7 @@ import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.GroupEvent;
 import edu.snu.mist.core.task.globalsched.MistPubSubEventHandler;
 import edu.snu.mist.core.task.globalsched.NextGroupSelector;
+import edu.snu.mist.core.task.globalsched.cfs.parameters.MinTimeslice;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -44,13 +45,20 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
    * Default weight of the group.
    */
   private final int defaultWeight;
-  
+
+  /**
+   * The minimum timeslice per group.
+   */
+  private final long minTimeslice;
+
   @Inject
   private VtimeBasedNextGroupSelector(@Parameter(DefaultGroupWeight.class) final int defaultWeight,
-                                      final MistPubSubEventHandler pubSubEventHandler) {
+                                      final MistPubSubEventHandler pubSubEventHandler,
+                                      @Parameter(MinTimeslice.class) final long minTimeslice) {
     this.rbTreeMap = new TreeMap<>();
     pubSubEventHandler.getPubSubEventHandler().subscribe(GroupEvent.class, this);
     this.defaultWeight = defaultWeight;
+    this.minTimeslice = minTimeslice;
   }
 
   /**
@@ -117,7 +125,8 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
    * @return delta vruntime
    */
   private long calculateVRuntimeDelta(final long delta, final GlobalSchedGroupInfo groupInfo) {
-    return TimeUnit.NANOSECONDS.toMillis(delta) * defaultWeight / groupInfo.getWeight();
+    return Math.max(minTimeslice * defaultWeight / groupInfo.getWeight(),
+    TimeUnit.NANOSECONDS.toMillis(delta) * defaultWeight / groupInfo.getWeight());
   }
 
   @Override
