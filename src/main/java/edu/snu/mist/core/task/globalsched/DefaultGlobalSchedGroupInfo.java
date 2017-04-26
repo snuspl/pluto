@@ -18,6 +18,8 @@ package edu.snu.mist.core.task.globalsched;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.parameters.DefaultGroupWeight;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.queryRemovers.QueryRemover;
+import edu.snu.mist.core.task.queryStarters.QueryStarter;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -72,7 +74,7 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   /**
    * The weight of the group.
    */
-  private int weight;
+  private volatile int weight;
 
   @Inject
   private DefaultGlobalSchedGroupInfo(@Parameter(GroupId.class) final String groupId,

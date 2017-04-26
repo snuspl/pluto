@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.queryRemovers;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.OutputEmitter;
@@ -24,6 +24,7 @@ import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.FilterOperator;
 import edu.snu.mist.common.sinks.Sink;
+import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.utils.IdAndConfGenerator;
 import edu.snu.mist.formats.avro.Direction;
 import org.apache.reef.tang.Injector;

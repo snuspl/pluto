@@ -13,10 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.queryStarters;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.core.task.ExecutionPlanDagMap;
+import edu.snu.mist.core.task.ExecutionVertex;
+import edu.snu.mist.core.task.OperatorChainManager;
+import edu.snu.mist.core.task.PhysicalSource;
 
 import javax.inject.Inject;
 
@@ -24,16 +28,23 @@ import javax.inject.Inject;
  * This query starter does not merge queries.
  * Instead, it executes them separately.
  */
-final class NoMergingQueryStarter implements QueryStarter {
+public final class NoMergingQueryStarter implements QueryStarter {
 
   /**
    * Operator chain manager that manages the operator chains.
    */
   private final OperatorChainManager operatorChainManager;
 
+  /**
+   * The map that has a query id as a key and an execution dag as a value.
+   */
+  private final ExecutionPlanDagMap executionPlanDagMap;
+
   @Inject
-  private NoMergingQueryStarter(final OperatorChainManager operatorChainManager) {
+  private NoMergingQueryStarter(final OperatorChainManager operatorChainManager,
+                                final ExecutionPlanDagMap executionPlanDagMap) {
     this.operatorChainManager = operatorChainManager;
+    this.executionPlanDagMap = executionPlanDagMap;
   }
 
   /**
@@ -42,6 +53,7 @@ final class NoMergingQueryStarter implements QueryStarter {
    */
   @Override
   public void start(final String queryId, final DAG<ExecutionVertex, MISTEdge> submittedDag) {
+    executionPlanDagMap.put(queryId, submittedDag);
     QueryStarterUtils.setUpOutputEmitters(operatorChainManager, submittedDag);
     // starts to receive input data stream from the sources
     for (final ExecutionVertex source : submittedDag.getRootVertices()) {

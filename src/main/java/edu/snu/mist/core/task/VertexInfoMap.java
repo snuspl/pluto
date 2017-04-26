@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * This is a map that has an execution vertex as a key and a vertex info as a value.
  */
-final class VertexInfoMap {
+public final class VertexInfoMap {
 
   private final ConcurrentHashMap<ExecutionVertex, VertexInfo> map;
 

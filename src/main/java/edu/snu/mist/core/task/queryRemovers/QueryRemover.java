@@ -13,30 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.queryRemovers;
 
-import edu.snu.mist.common.sinks.Sink;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * This is an implementation of PhysicalSink.
+ * This removes the query from MIST.
  */
-public final class PhysicalSinkImpl<I> extends BasePhysicalVertex implements PhysicalSink<I> {
+@DefaultImplementation(MergeAwareQueryRemover.class)
+public interface QueryRemover {
 
-  private final Sink<I> sink;
-
-  public PhysicalSinkImpl(final String sinkId,
-                          final String configuration,
-                          final Sink<I> sink) {
-    super(sinkId, configuration);
-    this.sink = sink;
-  }
-
-  public Sink<I> getSink() {
-    return sink;
-  }
-
-  @Override
-  public Type getType() {
-    return Type.SINK;
-  }
+  /**
+   * Delete the query from the group.
+   * @param queryId query id
+   */
+  void deleteQuery(String queryId);
 }

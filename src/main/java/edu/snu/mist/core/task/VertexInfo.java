@@ -23,7 +23,7 @@ import edu.snu.mist.common.graph.MISTEdge;
  * and the *physical* execution dag that contains the vertex.
  * The physical execution dag can be merged with other dags.
  */
-final class VertexInfo {
+public final class VertexInfo {
 
   /**
    * Reference count of the execution vertex.
