@@ -54,7 +54,7 @@ public final class MqttSink implements Sink<MqttMessage> {
     this.topic = topic;
     this.mqttPublisherMap = sharedResource.getMqttPublisherMap();
     if (mqttPublisherMap.get(brokerURI) == null) {
-      synchronized (this) {
+      synchronized (sharedResource.getMqttPublisherMap()) {
         // Still MQTT Client is not created.
         if (mqttPublisherMap.get(brokerURI) == null) {
           // TODO:[MIST-495] Improve Mqtt sink parallelism
