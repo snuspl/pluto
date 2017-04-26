@@ -30,7 +30,6 @@ import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
-import org.apache.reef.wake.impl.PubSubEventHandler;
 
 import javax.inject.Inject;
 import java.util.concurrent.ScheduledExecutorService;
@@ -77,6 +76,16 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
   private final MetricTracker metricTracker;
 
   /**
+   * A event processor number assigner.
+   */
+  private final EventProcessorNumAssigner assigner;
+
+  /**
+   * A event number metric handler.
+   */
+  private final EventNumMetricEventHandler eventNumHandler;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -85,7 +94,6 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
                                      final GroupInfoMap groupInfoMap,
                                      @Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
                                      final QueryInfoStore planStore,
-                                     final MistPubSubEventHandler mistPubSubEventHandler,
                                      final MetricTracker metricTracker,
                                      final EventProcessorNumAssigner assigner,
                                      final EventNumMetricEventHandler eventNumHandler) {
@@ -95,9 +103,8 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
     this.groupInfoMap = groupInfoMap;
     this.numEventProcessors = numEventProcessors;
     this.metricTracker = metricTracker;
-    final PubSubEventHandler pubSubEventHandler = mistPubSubEventHandler.getPubSubEventHandler();
-    pubSubEventHandler.subscribe(MetricTrackEvent.class, eventNumHandler);
-    pubSubEventHandler.subscribe(MetricUpdateEvent.class, assigner);
+    this.assigner = assigner;
+    this.eventNumHandler = eventNumHandler;
     metricTracker.start();
   }
 

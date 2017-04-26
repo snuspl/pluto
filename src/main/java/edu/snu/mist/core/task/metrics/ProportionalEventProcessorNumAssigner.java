@@ -18,6 +18,7 @@ package edu.snu.mist.core.task.metrics;
 import edu.snu.mist.core.parameters.ThreadNumLimit;
 import edu.snu.mist.core.task.GroupInfo;
 import edu.snu.mist.core.task.GroupInfoMap;
+import edu.snu.mist.core.task.MistPubSubEventHandler;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -47,10 +48,12 @@ public final class ProportionalEventProcessorNumAssigner implements EventProcess
   @Inject
   private ProportionalEventProcessorNumAssigner(@Parameter(ThreadNumLimit.class) final int threadNumLimit,
                                                 final GroupInfoMap groupInfoMap,
-                                                final GlobalMetrics globalMetrics) {
+                                                final GlobalMetrics globalMetrics,
+                                                final MistPubSubEventHandler pubSubEventHandler) {
     this.threadNumLimit = threadNumLimit;
     this.groupInfoMap = groupInfoMap;
     this.globalMetrics = globalMetrics;
+    pubSubEventHandler.getPubSubEventHandler().subscribe(MetricUpdateEvent.class, this);
   }
 
   /**

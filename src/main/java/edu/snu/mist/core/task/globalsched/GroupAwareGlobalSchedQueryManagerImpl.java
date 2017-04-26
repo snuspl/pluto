@@ -22,9 +22,7 @@ import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.globalsched.metrics.CpuUtilMetricEventHandler;
 import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetricEventHandler;
 import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
-import edu.snu.mist.core.task.metrics.MetricTrackEvent;
 import edu.snu.mist.core.task.metrics.MetricTracker;
-import edu.snu.mist.core.task.metrics.MetricUpdateEvent;
 import edu.snu.mist.core.task.queryStarters.ImmediateQueryMergingStarter;
 import edu.snu.mist.core.task.queryStarters.QueryStarter;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
@@ -34,7 +32,6 @@ import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
-import org.apache.reef.wake.impl.PubSubEventHandler;
 
 import javax.inject.Inject;
 import java.util.concurrent.ScheduledExecutorService;
@@ -82,6 +79,21 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
   private final MistPubSubEventHandler mistPubSubEventHandler;
 
   /**
+   * A event processor number assigner.
+   */
+  private final EventProcessorNumAssigner assigner;
+
+  /**
+   * A event number and weight metric handler.
+   */
+  private final EventNumAndWeightMetricEventHandler eventNumHandler;
+
+  /**
+   * A cpu utilization metric handler.
+   */
+  private final CpuUtilMetricEventHandler cpuUtilHandler;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -92,18 +104,17 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
                                                 final MetricTracker metricTracker,
                                                 final MistPubSubEventHandler mistPubSubEventHandler,
                                                 final EventNumAndWeightMetricEventHandler eventNumHandler,
-                                                final EventProcessorNumAssigner assigner,
-                                                final CpuUtilMetricEventHandler cpuUtilHandler) {
+                                                final CpuUtilMetricEventHandler cpuUtilHandler,
+                                                final EventProcessorNumAssigner assigner) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.groupInfoMap = groupInfoMap;
     this.metricTracker = metricTracker;
     this.mistPubSubEventHandler = mistPubSubEventHandler;
-    final PubSubEventHandler pubSubEventHandler = mistPubSubEventHandler.getPubSubEventHandler();
-    pubSubEventHandler.subscribe(MetricTrackEvent.class, eventNumHandler);
-    pubSubEventHandler.subscribe(MetricTrackEvent.class, cpuUtilHandler);
-    pubSubEventHandler.subscribe(MetricUpdateEvent.class, assigner);
+    this.eventNumHandler = eventNumHandler;
+    this.cpuUtilHandler = cpuUtilHandler;
+    this.assigner = assigner;
     metricTracker.start();
   }
 

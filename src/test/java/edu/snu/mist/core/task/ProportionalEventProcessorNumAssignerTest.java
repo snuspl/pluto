@@ -49,7 +49,6 @@ public final class ProportionalEventProcessorNumAssignerTest {
     handler = injector.getInstance(MistPubSubEventHandler.class);
     injector.bindVolatileParameter(ThreadNumLimit.class, THREAD_NUM_SOFT_LIMIT);
     assigner = injector.getInstance(ProportionalEventProcessorNumAssigner.class);
-    handler.getPubSubEventHandler().subscribe(MetricUpdateEvent.class, assigner);
   }
 
   /**

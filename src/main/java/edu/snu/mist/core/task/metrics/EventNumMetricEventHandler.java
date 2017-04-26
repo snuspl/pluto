@@ -17,10 +17,7 @@ package edu.snu.mist.core.task.metrics;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.core.task.ExecutionVertex;
-import edu.snu.mist.core.task.GroupInfo;
-import edu.snu.mist.core.task.GroupInfoMap;
-import edu.snu.mist.core.task.OperatorChain;
+import edu.snu.mist.core.task.*;
 
 import javax.inject.Inject;
 import java.util.Collection;
@@ -42,9 +39,11 @@ public final class EventNumMetricEventHandler implements MetricTrackEventHandler
 
   @Inject
   private EventNumMetricEventHandler(final GroupInfoMap groupInfoMap,
-                                     final GlobalMetrics globalMetrics) {
+                                     final GlobalMetrics globalMetrics,
+                                     final MistPubSubEventHandler pubSubEventHandler) {
     this.groupInfoMap = groupInfoMap;
     this.globalMetrics = globalMetrics;
+    pubSubEventHandler.getPubSubEventHandler().subscribe(MetricTrackEvent.class, this);
   }
 
   @Override

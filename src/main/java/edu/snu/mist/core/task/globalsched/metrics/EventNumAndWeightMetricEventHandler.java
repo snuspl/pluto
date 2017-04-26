@@ -43,11 +43,13 @@ public final class EventNumAndWeightMetricEventHandler implements MetricTrackEve
 
   @Inject
   private EventNumAndWeightMetricEventHandler(final GlobalSchedGroupInfoMap groupInfoMap,
-                                              final GlobalSchedGlobalMetrics globalMetrics) {
+                                              final GlobalSchedGlobalMetrics globalMetrics,
+                                              final MistPubSubEventHandler pubSubEventHandler) {
     this.groupInfoMap = groupInfoMap;
     this.globalMetrics = globalMetrics;
     // Initialize
     this.onNext(new MetricTrackEvent());
+    pubSubEventHandler.getPubSubEventHandler().subscribe(MetricTrackEvent.class, this);
   }
 
   @Override

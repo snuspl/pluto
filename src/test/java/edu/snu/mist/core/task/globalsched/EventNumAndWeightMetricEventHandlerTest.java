@@ -54,7 +54,6 @@ public final class EventNumAndWeightMetricEventHandlerTest {
     metricPubSubEventHandler = injector.getInstance(MistPubSubEventHandler.class);
     idAndConfGenerator = new IdAndConfGenerator();
     handler = injector.getInstance(EventNumAndWeightMetricEventHandler.class);
-    metricPubSubEventHandler.getPubSubEventHandler().subscribe(MetricTrackEvent.class, handler);
   }
 
   /**

@@ -16,6 +16,7 @@
 package edu.snu.mist.core.task.globalsched.metrics;
 
 import edu.snu.mist.core.parameters.ThreadNumLimit;
+import edu.snu.mist.core.task.MistPubSubEventHandler;
 import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
 import edu.snu.mist.core.task.metrics.MetricUpdateEvent;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
@@ -94,7 +95,8 @@ public final class MISDEventProcessorNumAssigner implements EventProcessorNumAss
       @Parameter(EventProcessorIncreaseRate.class) final double increaseRate,
       @Parameter(EventProcessorDecreaseNum.class) final int decreaseNum,
       final EventProcessorManager eventProcessorManager,
-      final GlobalSchedGlobalMetrics globalMetrics) {
+      final GlobalSchedGlobalMetrics globalMetrics,
+      final MistPubSubEventHandler pubSubEventHandler) {
     this.defaultNumEventProcessors = defaultNumEventProcessors;
     this.threadNumLimit = threadNumLimit;
     this.eventNumHighThreshold = eventNumHighThreshold;
@@ -104,6 +106,7 @@ public final class MISDEventProcessorNumAssigner implements EventProcessorNumAss
     this.decreaseNum = decreaseNum;
     this.eventProcessorManager = eventProcessorManager;
     this.metrics = globalMetrics;
+    pubSubEventHandler.getPubSubEventHandler().subscribe(MetricUpdateEvent.class, this);
   }
 
   /**

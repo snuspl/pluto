@@ -63,7 +63,6 @@ public final class MISDEventProcessorNumAssignerTest {
     injector.bindVolatileParameter(EventProcessorIncreaseRate.class, INCREASE_RATE);
     injector.bindVolatileParameter(EventProcessorDecreaseNum.class, DECREASE_NUM);
     assigner = injector.getInstance(MISDEventProcessorNumAssigner.class);
-    handler.getPubSubEventHandler().subscribe(MetricUpdateEvent.class, assigner);
   }
 
   /**

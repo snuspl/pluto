@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task.globalsched.metrics;
 
+import edu.snu.mist.core.task.MistPubSubEventHandler;
 import edu.snu.mist.core.task.metrics.MetricTrackEvent;
 import edu.snu.mist.core.task.metrics.MetricTrackEventHandler;
 
@@ -41,9 +42,11 @@ public final class CpuUtilMetricEventHandler implements MetricTrackEventHandler 
   private final MBeanServer mbs;
 
   @Inject
-  private CpuUtilMetricEventHandler(final GlobalSchedGlobalMetrics globalMetrics) {
+  private CpuUtilMetricEventHandler(final GlobalSchedGlobalMetrics globalMetrics,
+                                    final MistPubSubEventHandler pubSubEventHandler) {
     this.globalMetrics = globalMetrics;
     this.mbs = ManagementFactory.getPlatformMBeanServer();
+    pubSubEventHandler.getPubSubEventHandler().subscribe(MetricTrackEvent.class, this);
   }
 
   @Override
