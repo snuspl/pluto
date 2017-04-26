@@ -16,7 +16,6 @@
 package edu.snu.mist.core.driver;
 
 import edu.snu.mist.common.rpc.RPCServerPort;
-import edu.snu.mist.core.parameters.DriverRuntimeType;
 import edu.snu.mist.core.parameters.NumTaskCores;
 import edu.snu.mist.core.parameters.NumTasks;
 import edu.snu.mist.core.parameters.TaskMemorySize;
@@ -86,7 +85,6 @@ public final class MistDriverConfigs {
    */
   public static CommandLine addCommandLineConf(final CommandLine commandLine) {
     return commandLine.registerShortNameOfClass(NumTaskCores.class)
-        .registerShortNameOfClass(DriverRuntimeType.class)
         .registerShortNameOfClass(NumTasks.class)
         .registerShortNameOfClass(RPCServerPort.class)
         .registerShortNameOfClass(TaskMemorySize.class);
