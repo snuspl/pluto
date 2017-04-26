@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.queryRemovers;
+package edu.snu.mist.core.task.merging;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.QueryRemover;
 
 import javax.inject.Inject;
 import java.util.Collection;
@@ -31,9 +32,9 @@ import java.util.Collection;
 public final class MergeAwareQueryRemover implements QueryRemover {
 
   /**
-   * Execution dags that are currently running.
+   * Map that has the source conf as a key and the physical execution dag as a value.
    */
-  private final ExecutionDags<String> executionDags;
+  private final SrcAndDagMap<String> srcAndDagMap;
 
   /**
    * The map that has the query id as a key and its execution dag as a value.
@@ -45,13 +46,20 @@ public final class MergeAwareQueryRemover implements QueryRemover {
    */
   private final VertexInfoMap vertexInfoMap;
 
+  /**
+   * The physical execution dags.
+   */
+  private final ExecutionDags executionDags;
+
   @Inject
   private MergeAwareQueryRemover(final ExecutionPlanDagMap executionPlanDagMap,
-                                 final ExecutionDags<String> executionDags,
+                                 final SrcAndDagMap<String> srcAndDagMap,
+                                 final ExecutionDags executionDags,
                                  final VertexInfoMap vertexInfoMap) {
-    this.executionDags = executionDags;
+    this.srcAndDagMap = srcAndDagMap;
     this.executionPlanDagMap = executionPlanDagMap;
     this.vertexInfoMap = vertexInfoMap;
+    this.executionDags = executionDags;
   }
 
   /**
@@ -62,7 +70,7 @@ public final class MergeAwareQueryRemover implements QueryRemover {
   public synchronized void deleteQuery(final String queryId) {
     // Synchronize the execution dags to evade concurrent modifications
     // TODO:[MIST-590] We need to improve this code for concurrent modification
-    synchronized (executionDags) {
+    synchronized (srcAndDagMap) {
       // Delete the query plan from ExecutionPlanDagMap
       final DAG<ExecutionVertex, MISTEdge> executionPlan = executionPlanDagMap.remove(queryId);
       // Delete vertices from vertex info map
@@ -78,12 +86,17 @@ public final class MergeAwareQueryRemover implements QueryRemover {
           // Stop if it is source
           if (deleteVertex.getType() == ExecutionVertex.Type.SOURCE) {
             final PhysicalSource src = (PhysicalSource)deleteVertex;
-            executionDags.remove(src.getConfiguration());
+            srcAndDagMap.remove(src.getConfiguration());
             try {
               src.close();
             } catch (Exception e) {
               e.printStackTrace();
             }
+          }
+
+          // Remove the target dag if the size is 0
+          if (targetDag.numberOfVertices() == 0) {
+            executionDags.remove(targetDag);
           }
         }
       }

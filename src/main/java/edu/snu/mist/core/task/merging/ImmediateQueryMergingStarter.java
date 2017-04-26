@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.queryStarters;
+package edu.snu.mist.core.task.merging;
 
 import edu.snu.mist.common.graph.AdjacentListDAG;
 import edu.snu.mist.common.graph.DAG;
@@ -42,9 +42,9 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
   private final CommonSubDagFinder commonSubDagFinder;
 
   /**
-   * Execution dags that are currently running.
+   * Map that has the source conf as a key and the physical execution dag as a value.
    */
-  private final ExecutionDags<String> executionDags;
+  private final SrcAndDagMap<String> srcAndDagMap;
 
   /**
    * The map that has the query id as a key and its execution dag as a value.
@@ -56,24 +56,31 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
    */
   private final VertexInfoMap vertexInfoMap;
 
+  /**
+   * Physical execution dags.
+   */
+  private final ExecutionDags executionDags;
+
   @Inject
   private ImmediateQueryMergingStarter(final OperatorChainManager operatorChainManager,
                                        final CommonSubDagFinder commonSubDagFinder,
-                                       final ExecutionDags<String> executionDags,
+                                       final SrcAndDagMap<String> srcAndDagMap,
                                        final ExecutionPlanDagMap executionPlanDagMap,
+                                       final ExecutionDags executionDags,
                                        final VertexInfoMap vertexInfoMap) {
     this.operatorChainManager = operatorChainManager;
     this.commonSubDagFinder = commonSubDagFinder;
-    this.executionDags = executionDags;
+    this.srcAndDagMap = srcAndDagMap;
     this.executionPlanDagMap = executionPlanDagMap;
     this.vertexInfoMap = vertexInfoMap;
+    this.executionDags = executionDags;
   }
 
   @Override
   public synchronized void start(final String queryId, final DAG<ExecutionVertex, MISTEdge> submittedDag) {
     // Synchronize the execution dags to evade concurrent modifications
     // TODO:[MIST-590] We need to improve this code for concurrent modification
-    synchronized (executionDags) {
+    synchronized (srcAndDagMap) {
       // Merging two DAGs can change the original execution plan.
       // So, copy the submitted dag to keep the execution plan even though it is merged
       // We keep the execution plan to delete a query from the merged dag
@@ -81,11 +88,11 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
       GraphUtils.copy(submittedDag, executionPlan);
       executionPlanDagMap.put(queryId, executionPlan);
 
-    // Create vertex info map
-    for (final ExecutionVertex ev : executionPlan.getVertices()) {
-      final VertexInfo vertexInfo = new VertexInfo(submittedDag, ev);
-      vertexInfoMap.put(ev, vertexInfo);
-    }
+      // Create vertex info map
+      for (final ExecutionVertex ev : executionPlan.getVertices()) {
+        final VertexInfo vertexInfo = new VertexInfo(submittedDag, ev);
+        vertexInfoMap.put(ev, vertexInfo);
+      }
 
       // Set up the output emitters of the submitted DAG
       QueryStarterUtils.setUpOutputEmitters(operatorChainManager, submittedDag);
@@ -98,9 +105,10 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
         for (final ExecutionVertex source : submittedDag.getRootVertices()) {
           // Start the source
           final PhysicalSource src = (PhysicalSource) source;
-          executionDags.put(src.getConfiguration(), submittedDag);
+          srcAndDagMap.put(src.getConfiguration(), submittedDag);
           src.start();
         }
+        executionDags.add(submittedDag);
         return;
       }
 
@@ -112,9 +120,12 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
       for (final DAG<ExecutionVertex, MISTEdge> sd : mergeableDags.values()) {
         if (sd != sharableDag) {
           GraphUtils.copy(sd, sharableDag);
+          // Remove the execution dag
+          executionDags.remove(sd);
+
           // Update all of the sources in the execution Dag
           for (final ExecutionVertex source : sd.getRootVertices()) {
-            executionDags.replace(((PhysicalSource) source).getConfiguration(), sharableDag);
+            srcAndDagMap.replace(((PhysicalSource) source).getConfiguration(), sharableDag);
           }
 
           // Update physical execution dag of the vertex info
@@ -154,7 +165,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
       for (final ExecutionVertex source : submittedDag.getRootVertices()) {
         final PhysicalSource src = (PhysicalSource) source;
         if (!subDagMap.containsKey(src)) {
-          executionDags.put(src.getConfiguration(), sharableDag);
+          srcAndDagMap.put(src.getConfiguration(), sharableDag);
           src.start();
         }
       }
@@ -250,7 +261,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
     final Map<String, DAG<ExecutionVertex, MISTEdge>> mergeableDags = new HashMap<>(sources.size());
     for (final ExecutionVertex source : sources) {
       final PhysicalSource src = (PhysicalSource) source;
-      final DAG<ExecutionVertex, MISTEdge> dag = executionDags.get(src.getConfiguration());
+      final DAG<ExecutionVertex, MISTEdge> dag = srcAndDagMap.get(src.getConfiguration());
       if (dag != null) {
         // Mergeable source
         mergeableDags.put(src.getConfiguration(), dag);

@@ -19,6 +19,7 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 
 import javax.inject.Inject;
+import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -46,5 +47,9 @@ public final class ExecutionPlanDagMap {
 
   public DAG<ExecutionVertex, MISTEdge> remove(final String queryId) {
     return map.remove(queryId);
+  }
+
+  public Collection<DAG<ExecutionVertex, MISTEdge>> getExecutionDags() {
+    return map.values();
   }
 }

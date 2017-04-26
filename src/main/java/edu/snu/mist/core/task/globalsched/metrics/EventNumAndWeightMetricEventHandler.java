@@ -59,7 +59,7 @@ public final class EventNumAndWeightMetricEventHandler implements MetricTrackEve
     for (final GlobalSchedGroupInfo groupInfo : groupInfoMap.values()) {
       // Track the number of event per each group
       long groupNumEvent = 0;
-      for (final DAG<ExecutionVertex, MISTEdge> dag : groupInfo.getExecutionDags().getUniqueValues()) {
+      for (final DAG<ExecutionVertex, MISTEdge> dag : groupInfo.getExecutionDags().values()) {
         final Collection<ExecutionVertex> vertices = dag.getVertices();
         for (final ExecutionVertex ev : vertices) {
           if (ev.getType() == ExecutionVertex.Type.OPERATOR_CHIAN) {

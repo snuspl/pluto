@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.queryRemovers;
+package edu.snu.mist.core.task.merging;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.OutputEmitter;
@@ -28,6 +28,7 @@ import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.utils.IdAndConfGenerator;
 import edu.snu.mist.formats.avro.Direction;
 import org.apache.reef.tang.Injector;
+import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
@@ -35,10 +36,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Test whether MergeAwareQueryRemover removes queries correctly.
@@ -56,9 +54,14 @@ public final class MergeAwareQueryRemoverTest {
   private MergeAwareQueryRemover queryRemover;
 
   /**
-   * Physical execution dags.
+   * The map that has the query id as a key and its execution dag as a value.
    */
-  private ExecutionDags<String> executionDags;
+  private SrcAndDagMap<String> srcAndDagMap;
+
+  /**
+   * The physical execution dags.
+   */
+  private ExecutionDags executionDags;
 
   /**
    * The map that holds execution plans of queries.
@@ -72,10 +75,13 @@ public final class MergeAwareQueryRemoverTest {
 
   @Before
   public void setUp() throws InjectionException, IOException {
-    final Injector injector = Tang.Factory.getTang().newInjector();
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     queryRemover = injector.getInstance(MergeAwareQueryRemover.class);
-    executionDags = injector.getInstance(ExecutionDags.class);
+    srcAndDagMap = injector.getInstance(SrcAndDagMap.class);
     executionPlanDagMap = injector.getInstance(ExecutionPlanDagMap.class);
+    executionDags = injector.getInstance(ExecutionDags.class);
     vertexInfoMap = injector.getInstance(VertexInfoMap.class);
     idAndConfGenerator = new IdAndConfGenerator();
   }
@@ -147,10 +153,10 @@ public final class MergeAwareQueryRemoverTest {
     final DAG<ExecutionVertex, MISTEdge> executionDag = generateSimpleQuery(source, operatorChain, sink);
     final String queryId = "test-query";
 
-    // Add query info to executionDags, executionPlanMap, and vertexInfoMap
+    // Add query info to srcAndDagMap, executionPlanMap, and vertexInfoMap
     final DAG<ExecutionVertex, MISTEdge> plan = new AdjacentListDAG<>();
     GraphUtils.copy(executionDag, plan);
-    executionDags.put(sourceConf, executionDag);
+    srcAndDagMap.put(sourceConf, executionDag);
     executionPlanDagMap.put(queryId, plan);
     final Collection<ExecutionVertex> vertices = plan.getVertices();
     for (final ExecutionVertex ev : vertices) {
@@ -161,7 +167,8 @@ public final class MergeAwareQueryRemoverTest {
     queryRemover.deleteQuery(queryId);
 
     // Check
-    Assert.assertEquals(0, executionDags.size());
+    Assert.assertEquals(0, srcAndDagMap.size());
+    Assert.assertEquals(0, executionDags.values().size());
     Assert.assertNull(executionPlanDagMap.get(queryId));
     Assert.assertNull(vertexInfoMap.get(source));
     Assert.assertNull(vertexInfoMap.get(operatorChain));
@@ -190,10 +197,11 @@ public final class MergeAwareQueryRemoverTest {
     final DAG<ExecutionVertex, MISTEdge> query1 = generateSimpleQuery(src1, operatorChain1, sink1);
     final String query1Id = "test-query1";
 
-    // Add query info to executionDags, executionPlanMap, and vertexInfoMap
+    // Add query info to srcAndDagMap, executionPlanMap, and vertexInfoMap
     final DAG<ExecutionVertex, MISTEdge> plan1 = new AdjacentListDAG<>();
     GraphUtils.copy(query1, plan1);
-    executionDags.put(src1.getConfiguration(), query1);
+    srcAndDagMap.put(src1.getConfiguration(), query1);
+    executionDags.add(query1);
     executionPlanDagMap.put(query1Id, plan1);
     final Collection<ExecutionVertex> vertices1 = plan1.getVertices();
     for (final ExecutionVertex ev : vertices1) {
@@ -210,10 +218,10 @@ public final class MergeAwareQueryRemoverTest {
     final DAG<ExecutionVertex, MISTEdge> query2 = generateSimpleQuery(src2, operatorChain2, sink2);
     final String query2Id = "test-query2";
 
-    // Add query info to executionDags, executionPlanMap, and vertexInfoMap
+    // Add query info to srcAndDagMap, executionPlanMap, and vertexInfoMap
     final DAG<ExecutionVertex, MISTEdge> plan2 = new AdjacentListDAG<>();
     GraphUtils.copy(query2, plan2);
-    executionDags.put(src2.getConfiguration(), query2);
+    srcAndDagMap.put(src2.getConfiguration(), query2);
     executionPlanDagMap.put(query2Id, plan2);
     final Collection<ExecutionVertex> vertices2 = plan2.getVertices();
     for (final ExecutionVertex ev : vertices2) {
@@ -224,12 +232,17 @@ public final class MergeAwareQueryRemoverTest {
     queryRemover.deleteQuery(query2Id);
 
     // Check
-    Assert.assertEquals(1, executionDags.size());
-    Assert.assertEquals(query1, executionDags.get(src1.getConfiguration()));
+    Assert.assertEquals(1, srcAndDagMap.size());
+    Assert.assertEquals(query1, srcAndDagMap.get(src1.getConfiguration()));
     Assert.assertEquals(plan1, executionPlanDagMap.get(query1Id));
     Assert.assertEquals(src1, vertexInfoMap.get(src1).getPhysicalExecutionVertex());
     Assert.assertEquals(operatorChain1, vertexInfoMap.get(operatorChain1).getPhysicalExecutionVertex());
     Assert.assertEquals(sink1, vertexInfoMap.get(sink1).getPhysicalExecutionVertex());
+
+    // Check execution dags
+    final Collection<DAG<ExecutionVertex, MISTEdge>> expectedDags = new HashSet<>();
+    expectedDags.add(query1);
+    Assert.assertEquals(expectedDags, executionDags.values());
 
     Assert.assertNull(executionPlanDagMap.get(query2Id));
     Assert.assertNull(vertexInfoMap.get(src2));
@@ -271,9 +284,10 @@ public final class MergeAwareQueryRemoverTest {
     final String query1Id = "test-query1";
     GraphUtils.copy(query1, query1Plan);
 
-    // Add query info to executionDags, executionPlanMap, and vertexInfoMap
-    executionDags.put(src1.getConfiguration(), query1);
+    // Add query info to srcAndDagMap, executionPlanMap, and vertexInfoMap
+    srcAndDagMap.put(src1.getConfiguration(), query1);
     executionPlanDagMap.put(query1Id, query1Plan);
+    executionDags.add(query1);
     final VertexInfo src1VertexInfo = new VertexInfo(query1, src1);
     final VertexInfo oc1VertexInfo = new VertexInfo(query1, operatorChain1);
     final VertexInfo sink1VertexInfo = new VertexInfo(query1, sink1);
@@ -296,8 +310,8 @@ public final class MergeAwareQueryRemoverTest {
     query1.addVertex(sink2);
     query1.addEdge(operatorChain1, sink2, query2.getEdges(operatorChain2).get(sink2));
 
-    // Add query info to executionDags, executionPlanMap, and vertexInfoMap
-    executionDags.put(src2.getConfiguration(), query1);
+    // Add query info to srcAndDagMap, executionPlanMap, and vertexInfoMap
+    srcAndDagMap.put(src2.getConfiguration(), query1);
     executionPlanDagMap.put(query2Id, query2Plan);
     vertexInfoMap.put(src2, src1VertexInfo);
     src1VertexInfo.setRefCount(src1VertexInfo.getRefCount() + 1);
@@ -313,12 +327,17 @@ public final class MergeAwareQueryRemoverTest {
     Assert.assertEquals(1, oc1VertexInfo.getRefCount());
     Assert.assertEquals(1, sink1VertexInfo.getRefCount());
 
-    Assert.assertEquals(1, executionDags.size());
-    Assert.assertEquals(query1, executionDags.get(src1.getConfiguration()));
+    Assert.assertEquals(1, srcAndDagMap.size());
+    Assert.assertEquals(query1, srcAndDagMap.get(src1.getConfiguration()));
     Assert.assertEquals(query1Plan, executionPlanDagMap.get(query1Id));
     Assert.assertEquals(src1, vertexInfoMap.get(src1).getPhysicalExecutionVertex());
     Assert.assertEquals(operatorChain1, vertexInfoMap.get(operatorChain1).getPhysicalExecutionVertex());
     Assert.assertEquals(sink1, vertexInfoMap.get(sink1).getPhysicalExecutionVertex());
+
+    // Check execution dags
+    final Collection<DAG<ExecutionVertex, MISTEdge>> expectedDags = new HashSet<>();
+    expectedDags.add(query1);
+    Assert.assertEquals(expectedDags, executionDags.values());
 
     Assert.assertNull(executionPlanDagMap.get(query2Id));
     Assert.assertNull(vertexInfoMap.get(src2));

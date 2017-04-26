@@ -13,25 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.merging;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.core.task.ExecutionVertex;
 
 import javax.inject.Inject;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * An implementation of ExecutionDags that uses concurrent hash map.
+ * An implementation of ExecutionDagsForMerge that uses concurrent hash map.
  */
-final class HashMapExecutionDags implements ExecutionDags<String> {
+final class SrcAndDagHashMap implements SrcAndDagMap<String> {
 
   private final ConcurrentHashMap<String, DAG<ExecutionVertex, MISTEdge>> map;
 
   @Inject
-  private HashMapExecutionDags() {
+  private SrcAndDagHashMap() {
     this.map = new ConcurrentHashMap<>();
   }
 
@@ -58,10 +57,5 @@ final class HashMapExecutionDags implements ExecutionDags<String> {
   @Override
   public int size() {
     return map.size();
-  }
-
-  @Override
-  public Set<DAG<ExecutionVertex, MISTEdge>> getUniqueValues() {
-    return new HashSet<>(map.values());
   }
 }

@@ -22,6 +22,7 @@ import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetricEventHandler;
 import edu.snu.mist.core.task.globalsched.metrics.GlobalSchedGlobalMetrics;
+import edu.snu.mist.core.task.merging.MergingExecutionDags;
 import edu.snu.mist.core.task.metrics.MetricTrackEvent;
 import edu.snu.mist.core.task.utils.IdAndConfGenerator;
 import edu.snu.mist.formats.avro.Direction;
@@ -64,8 +65,8 @@ public final class EventNumAndWeightMetricEventHandlerTest {
 
     final GlobalSchedGroupInfo groupInfoA = generateGroupInfo("GroupA");
     final GlobalSchedGroupInfo groupInfoB = generateGroupInfo("GroupB");
-    final ExecutionDags<String> executionDagsA = groupInfoA.getExecutionDags();
-    final ExecutionDags<String> executionDagsB = groupInfoB.getExecutionDags();
+    final ExecutionDags executionDagsA = groupInfoA.getExecutionDags();
+    final ExecutionDags executionDagsB = groupInfoB.getExecutionDags();
 
     // two dags in group A:
     // srcA1 -> opA1 -> sinkA1
@@ -80,7 +81,7 @@ public final class EventNumAndWeightMetricEventHandlerTest {
     dagA.addEdge(srcA, opA, new MISTEdge(Direction.LEFT));
     dagA.addEdge(opA, sinkA, new MISTEdge(Direction.LEFT));
 
-    executionDagsA.put(srcA.getConfiguration(), dagA);
+    executionDagsA.add(dagA);
 
     // one dag in group B:
     // srcB1 -> opB1 -> sinkB1
@@ -106,8 +107,8 @@ public final class EventNumAndWeightMetricEventHandlerTest {
     dagB2.addEdge(srcB2, opB2, new MISTEdge(Direction.LEFT));
     dagB2.addEdge(opB2, sinkB2, new MISTEdge(Direction.RIGHT));
 
-    executionDagsB.put(srcB1.getConfiguration(), dagB1);
-    executionDagsB.put(srcB2.getConfiguration(), dagB2);
+    executionDagsB.add(dagB1);
+    executionDagsB.add(dagB2);
 
     // the total and per-group event number should be zero
     Assert.assertEquals(0, metric.getNumEventAndWeightMetric().getNumEvents());
@@ -159,6 +160,7 @@ public final class EventNumAndWeightMetricEventHandlerTest {
   private GlobalSchedGroupInfo generateGroupInfo(final String groupId) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(GroupId.class, groupId);
+    jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final GlobalSchedGroupInfo groupInfo = injector.getInstance(GlobalSchedGroupInfo.class);
     groupInfoMap.put(groupId, groupInfo);

@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 /**
- * A test package of query starters.
+ * A test package of query merging.
  */
-package edu.snu.mist.core.task.queryStarters;
+package edu.snu.mist.core.task.merging;

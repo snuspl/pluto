@@ -19,52 +19,30 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
-import java.util.Set;
+import java.util.Collection;
 
 /**
- * This interface holds the execution dags that are currently running in a group.
- * <K> configuration type
+ * This class holds the physical execution dags.
  */
-@DefaultImplementation(HashMapExecutionDags.class)
-public interface ExecutionDags<K> {
+@DefaultImplementation(NoMergingExecutionDags.class)
+public interface ExecutionDags {
 
   /**
-   * Get the execution dag that has the source configuration.
-   * @param conf source configuration
-   * @return execution dag that contains the source of corresponding configuration
+   * Add the physical execution dag.
+   * @param executionDag physical execution dag
    */
-  DAG<ExecutionVertex, MISTEdge> get(K conf);
+  void add(DAG<ExecutionVertex, MISTEdge> executionDag);
 
   /**
-   * Put the execution dag that has the source configuration.
-   * @param conf source configuration
-   * @param dag execution dag
+   * Remove the physical execution dag.
+   * @param executionDag physical execution dag
+   * @return true if it is removed
    */
-  void put(K conf, DAG<ExecutionVertex, MISTEdge> dag);
+  boolean remove(DAG<ExecutionVertex, MISTEdge> executionDag);
 
   /**
-   * Replace the dag that has the source configuration.
-   * @param conf source configuration
-   * @param dag execution dag to be updated
+   * Get all of the physical execution dags that are currently running.
+   * @return physical execution dags.
    */
-  void replace(K conf, DAG<ExecutionVertex, MISTEdge> dag);
-
-  /**
-   * Remove the value (dag) that has the source configuration.
-   * @param conf source configuration
-   * @return execution dag that contains the source
-   */
-  DAG<ExecutionVertex, MISTEdge> remove(K conf);
-
-  /**
-   * Get the number of execution dags.
-   * @return the number of execution dags
-   */
-  int size();
-
-  /**
-   * Get the set of the GroupInfo.
-   * @return set of the group info.
-   */
-  Set<DAG<ExecutionVertex, MISTEdge>> getUniqueValues();
+  Collection<DAG<ExecutionVertex, MISTEdge>> values();
 }

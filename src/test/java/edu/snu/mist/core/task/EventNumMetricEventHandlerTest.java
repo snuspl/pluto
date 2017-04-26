@@ -19,6 +19,7 @@ import edu.snu.mist.common.graph.AdjacentListDAG;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.core.task.merging.MergingExecutionDags;
 import edu.snu.mist.core.task.metrics.EventNumMetricEventHandler;
 import edu.snu.mist.core.task.metrics.MetricTrackEvent;
 import edu.snu.mist.core.task.utils.IdAndConfGenerator;
@@ -60,8 +61,8 @@ public final class EventNumMetricEventHandlerTest {
 
     final GroupInfo groupInfoA = generateGroupInfo("GroupA");
     final GroupInfo groupInfoB = generateGroupInfo("GroupB");
-    final ExecutionDags<String> executionDagsA = groupInfoA.getExecutionDags();
-    final ExecutionDags<String> executionDagsB = groupInfoB.getExecutionDags();
+    final ExecutionDags executionDagsA = groupInfoA.getExecutionDags();
+    final ExecutionDags executionDagsB = groupInfoB.getExecutionDags();
 
     // two dags in group A:
     // srcA1 -> opA1 -> sinkA1
@@ -87,8 +88,8 @@ public final class EventNumMetricEventHandlerTest {
     dagA2.addEdge(srcA2, opA2, new MISTEdge(Direction.LEFT));
     dagA2.addEdge(opA2, sinkA2, new MISTEdge(Direction.LEFT));
 
-    executionDagsA.put(srcA1.getConfiguration(), dagA1);
-    executionDagsA.put(srcA2.getConfiguration(), dagA2);
+    executionDagsA.add(dagA1);
+    executionDagsA.add(dagA2);
 
     // one dag in group B:
     // srcB1 -> opB1 -> union -> sinkB1
@@ -116,8 +117,8 @@ public final class EventNumMetricEventHandlerTest {
     dagB.addEdge(union, sinkB1, new MISTEdge(Direction.LEFT));
     dagB.addEdge(union, sinkB2, new MISTEdge(Direction.LEFT));
 
-    executionDagsB.put(srcB1.getConfiguration(), dagB);
-    executionDagsB.put(srcB2.getConfiguration(), dagB);
+    executionDagsB.add(dagB);
+    executionDagsB.add(dagB);
 
     // the event number should be zero in each group
     Assert.assertEquals(0, groupInfoA.getEventNumMetric().getNumEvents());
@@ -154,6 +155,7 @@ public final class EventNumMetricEventHandlerTest {
   private GroupInfo generateGroupInfo(final String groupId) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(GroupId.class, groupId);
+    jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final GroupInfo groupInfo = injector.getInstance(GroupInfo.class);
     groupInfoMap.put(groupId, groupInfo);

@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 /**
- * A test package of query removers.
+ * A package related to query merging.
  */
-package edu.snu.mist.core.task.queryRemovers;
+package edu.snu.mist.core.task.merging;
