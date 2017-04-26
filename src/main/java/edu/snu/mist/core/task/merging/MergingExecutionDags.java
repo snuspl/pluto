@@ -25,12 +25,12 @@ import java.util.Collection;
 import java.util.HashSet;
 
 /**
- * When we do not perform query merging, the logical and physical execution dags are the same.
+ * This class holds the physical execution dags that are merged.
  */
 public final class MergingExecutionDags implements ExecutionDags {
 
   /**
-   * This holds the logical execution dags of all queries.
+   * A collection for physical execution dags.
    */
   private final Collection<DAG<ExecutionVertex, MISTEdge>> dagCollection;
 
