@@ -17,9 +17,12 @@ package edu.snu.mist.common.shared;
 
 import edu.snu.mist.common.sources.MQTTDataGenerator;
 import edu.snu.mist.common.sources.MQTTSubscribeClient;
+import edu.snu.mist.core.parameters.NumMqttSinkPerClient;
+import org.apache.reef.tang.annotations.Parameter;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 
 import javax.inject.Inject;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
@@ -41,22 +44,50 @@ public final class MQTTSharedResource implements AutoCloseable {
   private final ConcurrentMap<String, MQTTSubscribeClient> mqttSubscribeClientMap;
 
   /**
-   * The map that has broker URI as a key and mqtt client as a value.
+   * The map that has broker URI as a key and list of mqtt clients as a value.
    */
-  private final ConcurrentMap<String, MqttClient> mqttPublisherMap;
+  private final ConcurrentMap<String, List<MqttClient>> mqttPublisherMap;
+
+  /**
+   * The map that has the number of sinks each mqtt clients support.
+   */
+  private final ConcurrentMap<MqttClient, Integer> clientSinkNumMap;
+
+  /**
+   * The maximum number of mqtt sinks which one mqtt client supports.
+   */
+  private final int numMqttSinkPerClient;
 
   @Inject
-  private MQTTSharedResource() {
+  private MQTTSharedResource(@Parameter(NumMqttSinkPerClient.class) final int numMqttSinkPerClientParam) {
+    this.numMqttSinkPerClient = numMqttSinkPerClientParam;
     this.mqttSubscribeClientMap = new ConcurrentHashMap<>();
     this.mqttPublisherMap = new ConcurrentHashMap<>();
+    this.clientSinkNumMap = new ConcurrentHashMap<>();
   }
 
   /**
    * Get the MQTT publisher client map.
    * @return MQTT publisher client map
    */
-  public ConcurrentMap<String, MqttClient> getMqttPublisherMap() {
+  public ConcurrentMap<String, List<MqttClient>> getMqttPublisherMap() {
     return mqttPublisherMap;
+  }
+
+  /**
+   * Get the mqtt client sink num map.
+   * @return mqtt client sink num map
+   */
+  public ConcurrentMap<MqttClient, Integer> getClientSinkNumMap() {
+    return clientSinkNumMap;
+  }
+
+  /**
+   * Get the maximum number of mqtt sinks per client.
+   * @return maximum number of mqtt sinks per client
+   */
+  public int getMaxNumMqttSinkPerClient() {
+    return this.numMqttSinkPerClient;
   }
 
   /**
@@ -83,13 +114,14 @@ public final class MQTTSharedResource implements AutoCloseable {
       subClient.disconnect();
     }
 
-    for (final MqttClient mqttClient : mqttPublisherMap.values()) {
-      try {
-        mqttClient.disconnect();
-      } catch (final Exception e) {
-        // do nothing
-      }
-    }
+    mqttPublisherMap.forEach((address, mqttClientList) -> mqttClientList.forEach(mqttClient -> {
+          try {
+            mqttClient.disconnect();
+          } catch (final Exception e) {
+            // do nothing
+          }
+        }
+      ));
     mqttPublisherMap.clear();
   }
 }

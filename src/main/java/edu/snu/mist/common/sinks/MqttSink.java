@@ -20,21 +20,20 @@ import edu.snu.mist.common.parameters.MQTTTopic;
 import edu.snu.mist.common.shared.MQTTSharedResource;
 import org.apache.reef.tang.annotations.Parameter;
 import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 
 /**
  * This class publishes MQTT messages to MQTT broker.
  */
 public final class MqttSink implements Sink<MqttMessage> {
-  /**
-   * MQTT publisher map that has broker URI as a key and MQTT client as a value.
-   */
-  private final ConcurrentMap<String, MqttClient> mqttPublisherMap;
 
   /**
    * MQTT publisher client.
@@ -46,27 +45,56 @@ public final class MqttSink implements Sink<MqttMessage> {
    */
   private final String topic;
 
+  /**
+   * The maximum inflight event number for MQTT client.
+   */
+  private final int maxInflightNumber = 1000;
+
   @Inject
   public MqttSink(
       @Parameter(MQTTBrokerURI.class) final String brokerURI,
       @Parameter(MQTTTopic.class) final String topic,
       final MQTTSharedResource sharedResource) throws IOException, MqttException {
-    this.topic = topic;
-    this.mqttPublisherMap = sharedResource.getMqttPublisherMap();
-    if (mqttPublisherMap.get(brokerURI) == null) {
-      synchronized (sharedResource.getMqttPublisherMap()) {
-        // Still MQTT Client is not created.
-        if (mqttPublisherMap.get(brokerURI) == null) {
-          // TODO:[MIST-495] Improve Mqtt sink parallelism
-          // As we create a single client for each broker,
-          // the client could be a bottleneck when there are lots of topics.
-          final MqttClient client = new MqttClient(brokerURI, MQTTSharedResource.MQTT_PUBLISHER_ID + brokerURI);
-          client.connect();
-          mqttPublisherMap.putIfAbsent(brokerURI, client);
+
+
+    final ConcurrentMap<String, List<MqttClient>> mqttPublisherMap = sharedResource.getMqttPublisherMap();
+    final ConcurrentMap<MqttClient, Integer> clientSinkNumMap = sharedResource.getClientSinkNumMap();
+    synchronized (mqttPublisherMap) {
+      this.topic = topic;
+      final List<MqttClient> mqttClientList = mqttPublisherMap.get(brokerURI);
+      if (mqttClientList == null) {
+        mqttPublisherMap.putIfAbsent(brokerURI, new ArrayList<>());
+        final MqttClient client = new MqttClient(brokerURI, MQTTSharedResource.MQTT_PUBLISHER_ID
+            + brokerURI + "_0");
+        final MqttConnectOptions connectOptions = new MqttConnectOptions();
+        // This code is ad-hoc. We need to use named parameter.
+        connectOptions.setMaxInflight(maxInflightNumber);
+        client.connect(connectOptions);
+        mqttPublisherMap.get(brokerURI).add(client);
+        clientSinkNumMap.put(client, 1);
+        this.mqttClient = client;
+      } else {
+        // Pick the last client for the candidate.
+        final MqttClient clientCandidate = mqttClientList.get(mqttClientList.size() - 1);
+        final int sinkNum = clientSinkNumMap.get(clientCandidate);
+        if (sinkNum < sharedResource.getMaxNumMqttSinkPerClient()) {
+          // It is okay to share already created mqtt client.
+          clientSinkNumMap.replace(clientCandidate, sinkNum + 1);
+          this.mqttClient = clientCandidate;
+        } else {
+          // We need to make a new mqtt client.
+          final MqttClient newClientCandidate = new MqttClient(brokerURI, MQTTSharedResource.MQTT_PUBLISHER_ID +
+              brokerURI + "_" + mqttClientList.size());
+          final MqttConnectOptions connectOptions = new MqttConnectOptions();
+          // This code is ad-hoc. We need to use named parameter.
+          connectOptions.setMaxInflight(maxInflightNumber);
+          newClientCandidate.connect(connectOptions);
+          mqttClientList.add(newClientCandidate);
+          clientSinkNumMap.put(newClientCandidate, 1);
+          this.mqttClient = clientCandidate;
         }
       }
     }
-    this.mqttClient = mqttPublisherMap.get(brokerURI);
   }
 
   @Override
