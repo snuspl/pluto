@@ -28,7 +28,7 @@ public final class EWMA {
   /**
    * Current ewma value.
    */
-  private double currentEwma;
+  private volatile double currentEwma;
 
   public EWMA(final double alphaParam) {
     this.alpha = alphaParam;

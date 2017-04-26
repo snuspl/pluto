@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.metrics;
 
 import edu.snu.mist.common.stats.EWMA;
 import edu.snu.mist.core.parameters.GroupNumEventAlpha;
@@ -22,14 +22,14 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 
 /**
- * A class which contains group metrics such as the number of queries or events.
+ * A class which contains metric of the number of events.
  */
-final class GroupMetric {
+public final class EventNumMetric {
 
   /**
-   * The number of all events inside the group operator chain queues.
+   * The number of all events inside the operator chain queues.
    */
-  private long numEvents;
+  private volatile long numEvents;
 
   /**
    * EWMA of number of events.
@@ -37,7 +37,7 @@ final class GroupMetric {
   private EWMA ewmaNumEvents;
 
   @Inject
-  private GroupMetric(@Parameter(GroupNumEventAlpha.class) final double numEventAlpha) {
+  private EventNumMetric(@Parameter(GroupNumEventAlpha.class) final double numEventAlpha) {
     this.numEvents = 0;
     this.ewmaNumEvents = new EWMA(numEventAlpha);
   }
@@ -57,12 +57,13 @@ final class GroupMetric {
 
   @Override
   public boolean equals(final Object o) {
-    if (!(o instanceof GroupMetric)) {
+    if (!(o instanceof EventNumMetric)) {
       return false;
     }
-    final GroupMetric groupMetric = (GroupMetric) o;
-    return this.numEvents == groupMetric.getNumEvents()
-        && this.ewmaNumEvents.equals(groupMetric.getEwmaNumEvents());
+
+    final EventNumMetric eventNumMetric = (EventNumMetric) o;
+    return this.numEvents == eventNumMetric.getNumEvents() &&
+        this.ewmaNumEvents.getCurrentEwma() == eventNumMetric.getEwmaNumEvents();
   }
 
   @Override

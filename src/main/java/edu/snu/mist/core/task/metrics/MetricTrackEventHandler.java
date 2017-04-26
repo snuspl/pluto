@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.parameters;
+package edu.snu.mist.core.task.metrics;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import org.apache.reef.tang.annotations.DefaultImplementation;
+import org.apache.reef.wake.EventHandler;
 
 /**
- * An alpha value of num events in EventNumMetric.
+ * This interface wrap a Wake EventHandler handling MetricTrackEvent.
  */
-@NamedParameter(doc="An alpha value of num events in EventNumMetric.", default_value = "0.7")
-public final class GlobalNumEventAlpha implements Name<Double> {
+@DefaultImplementation(EventNumMetricEventHandler.class)
+public interface MetricTrackEventHandler extends EventHandler<MetricTrackEvent> {
 }

@@ -16,10 +16,10 @@
 package edu.snu.mist.core.task.globalsched.cfs;
 
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
-import edu.snu.mist.core.task.globalsched.GlobalSchedMetric;
 import edu.snu.mist.core.task.globalsched.GroupTimesliceCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsTimeslice;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.MinTimeslice;
+import edu.snu.mist.core.task.globalsched.metrics.GlobalSchedGlobalMetrics;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -47,12 +47,12 @@ public final class CfsTimesliceCalculator implements GroupTimesliceCalculator {
   /**
    * Global metric.
    */
-  private final GlobalSchedMetric metric;
+  private final GlobalSchedGlobalMetrics metric;
 
   @Inject
   private CfsTimesliceCalculator(@Parameter(CfsTimeslice.class) final long cfsTimeslice,
                                  @Parameter(MinTimeslice.class) final long minTimeslice,
-                                 final GlobalSchedMetric metric) {
+                                 final GlobalSchedGlobalMetrics metric) {
     this.cfsTimeslice = cfsTimeslice;
     this.minTimeslice = minTimeslice;
     this.metric = metric;
@@ -60,8 +60,8 @@ public final class CfsTimesliceCalculator implements GroupTimesliceCalculator {
 
   @Override
   public long calculateTimeslice(final GlobalSchedGroupInfo groupInfo) {
-    final long totalWeight = metric.getTotalWeight();
-    final int groupWeight = groupInfo.getWeight();
+    final long totalWeight = metric.getNumEventAndWeightMetric().getWeight();
+    final int groupWeight = groupInfo.getEventNumAndWeightMetric().getWeight();
     final int numGroups = Math.max(1, metric.getNumGroups());
     long adjustCfsTimeslice = cfsTimeslice;
     if (cfsTimeslice / numGroups < minTimeslice) {

@@ -26,6 +26,10 @@ import edu.snu.mist.core.task.globalsched.cfs.VtimeBasedNextGroupSelector;
 import edu.snu.mist.core.task.queryRemovers.MergeAwareQueryRemover;
 import edu.snu.mist.core.task.queryRemovers.NoMergingAwareQueryRemover;
 import edu.snu.mist.core.task.queryRemovers.QueryRemover;
+import edu.snu.mist.core.task.globalsched.metrics.CpuUtilMetricEventHandler;
+import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetricEventHandler;
+import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
+import edu.snu.mist.core.task.metrics.MetricTracker;
 import edu.snu.mist.core.task.queryStarters.ImmediateQueryMergingStarter;
 import edu.snu.mist.core.task.queryStarters.NoMergingQueryStarter;
 import edu.snu.mist.core.task.queryStarters.QueryStarter;
@@ -76,12 +80,27 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   /**
    * A tracker measures global metrics such as total events number or cpu utilization.
    */
-  private final GlobalSchedMetricTracker metricTracker;
+  private final MetricTracker metricTracker;
 
   /**
    * The pub/sub event handler for control flow.
    */
   private final MistPubSubEventHandler pubSubEventHandler;
+
+  /**
+   * A event processor number assigner.
+   */
+  private final EventProcessorNumAssigner assigner;
+
+  /**
+   * A event number and weight metric handler.
+   */
+  private final EventNumAndWeightMetricEventHandler eventNumHandler;
+
+  /**
+   * A cpu utilization metric handler.
+   */
+  private final CpuUtilMetricEventHandler cpuUtilHandler;
 
   /**
    * Merging enabled or not.
@@ -101,10 +120,13 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 final ScheduledExecutorServiceWrapper schedulerWrapper,
                                                 final GlobalSchedGroupInfoMap groupInfoMap,
                                                 final QueryInfoStore planStore,
-                                                final GlobalSchedMetricTracker metricTracker,
                                                 final MistPubSubEventHandler pubSubEventHandler,
                                                 final EventProcessorManager eventProcessorManager,
-                                                @Parameter(MergingEnabled.class) final boolean mergingEnabled) {
+                                                @Parameter(MergingEnabled.class) final boolean mergingEnabled,
+                                                final MetricTracker metricTracker,
+                                                final EventNumAndWeightMetricEventHandler eventNumHandler,
+                                                final CpuUtilMetricEventHandler cpuUtilHandler,
+                                                final EventProcessorNumAssigner assigner) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
@@ -113,6 +135,9 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     this.pubSubEventHandler = pubSubEventHandler;
     this.mergingEnabled = mergingEnabled;
     this.eventProcessorManager = eventProcessorManager;
+    this.eventNumHandler = eventNumHandler;
+    this.cpuUtilHandler = cpuUtilHandler;
+    this.assigner = assigner;
     metricTracker.start();
   }
 

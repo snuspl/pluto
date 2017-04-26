@@ -23,6 +23,7 @@ import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcesso
 import edu.snu.mist.core.task.queryRemovers.MergeAwareQueryRemover;
 import edu.snu.mist.core.task.queryRemovers.NoMergingAwareQueryRemover;
 import edu.snu.mist.core.task.queryRemovers.QueryRemover;
+import edu.snu.mist.core.task.metrics.*;
 import edu.snu.mist.core.task.queryStarters.ImmediateQueryMergingStarter;
 import edu.snu.mist.core.task.queryStarters.NoMergingQueryStarter;
 import edu.snu.mist.core.task.queryStarters.QueryStarter;
@@ -75,9 +76,19 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
   private final int numEventProcessors;
 
   /**
-   * A tracker that measures the metric of each group.
+   * A tracker that measures the metric.
    */
-  private final GroupMetricTracker groupTracker;
+  private final MetricTracker metricTracker;
+
+  /**
+   * A event processor number assigner.
+   */
+  private final EventProcessorNumAssigner assigner;
+
+  /**
+   * A event number metric handler.
+   */
+  private final EventNumMetricEventHandler eventNumHandler;
 
   /**
    * Enabled the query merging or not.
@@ -93,16 +104,20 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
                                      final GroupInfoMap groupInfoMap,
                                      @Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
                                      final QueryInfoStore planStore,
-                                     final GroupMetricTracker groupTracker,
-                                     @Parameter(MergingEnabled.class) final boolean mergingEnabled) {
+                                     @Parameter(MergingEnabled.class) final boolean mergingEnabled,
+                                     final MetricTracker metricTracker,
+                                     final EventProcessorNumAssigner assigner,
+                                     final EventNumMetricEventHandler eventNumHandler) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.groupInfoMap = groupInfoMap;
     this.numEventProcessors = numEventProcessors;
-    this.groupTracker = groupTracker;
     this.mergingEnabled = mergingEnabled;
-    groupTracker.start();
+    this.metricTracker = metricTracker;
+    this.assigner = assigner;
+    this.eventNumHandler = eventNumHandler;
+    metricTracker.start();
   }
 
   /**
@@ -165,7 +180,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     for (final GroupInfo groupInfo : groupInfoMap.values()) {
       groupInfo.close();
     }
-    groupTracker.close();
+    metricTracker.close();
   }
 
   /**
