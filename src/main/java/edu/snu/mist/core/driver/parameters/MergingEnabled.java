@@ -18,7 +18,7 @@ package edu.snu.mist.core.driver.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "Enabling the merging of queries", default_value = "true")
+@NamedParameter(doc = "Enabling the merging of queries", short_name = "merging", default_value = "true")
 public final class  MergingEnabled implements Name<Boolean> {
   // empty
 }
