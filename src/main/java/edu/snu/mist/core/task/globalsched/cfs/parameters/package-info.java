@@ -13,18 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched;
-
-import edu.snu.mist.core.task.globalsched.cfs.CfsTimesliceCalculator;
-import org.apache.reef.tang.annotations.DefaultImplementation;
-
 /**
- * This is an interface that calculates the time slice of a group.
+ * This package contains classes related to parameters of CFS scheduler.
  */
-@DefaultImplementation(CfsTimesliceCalculator.class)
-public interface GroupTimesliceCalculator {
-  /**
-   * Calculate the time slice of the group.
-   */
-  long calculateTimeslice(GlobalSchedGroupInfo groupInfo);
-}
+package edu.snu.mist.core.task.globalsched.cfs.parameters;

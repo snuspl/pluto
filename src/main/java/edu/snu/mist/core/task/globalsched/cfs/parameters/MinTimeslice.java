@@ -13,18 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched;
+package edu.snu.mist.core.task.globalsched.cfs.parameters;
 
-import edu.snu.mist.core.task.globalsched.cfs.CfsTimesliceCalculator;
-import org.apache.reef.tang.annotations.DefaultImplementation;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-/**
- * This is an interface that calculates the time slice of a group.
- */
-@DefaultImplementation(CfsTimesliceCalculator.class)
-public interface GroupTimesliceCalculator {
-  /**
-   * Calculate the time slice of the group.
-   */
-  long calculateTimeslice(GlobalSchedGroupInfo groupInfo);
+@NamedParameter(doc = "The minimum timeslice per group (ms)", short_name = "min_time_slice", default_value = "100")
+public final class MinTimeslice implements Name<Long> {
 }

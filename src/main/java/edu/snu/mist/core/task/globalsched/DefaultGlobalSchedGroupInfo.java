@@ -74,7 +74,7 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   /**
    * The weight of the group.
    */
-  private int weight;
+  private volatile int weight;
 
   @Inject
   private DefaultGlobalSchedGroupInfo(@Parameter(GroupId.class) final String groupId,
