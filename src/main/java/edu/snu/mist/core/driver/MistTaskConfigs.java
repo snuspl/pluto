@@ -110,7 +110,7 @@ public final class MistTaskConfigs {
   }
 
   /**
-   * Get the configuration for execution model 1.
+   * Get the configuration for execution model 1 that creates separate thread pools per group.
    */
   private Configuration getOption1Configuration() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
@@ -119,7 +119,8 @@ public final class MistTaskConfigs {
   }
 
   /**
-   * Get the configuration for execution model 2.
+   * Get the configuration for execution model 2 that creates a shared thread pool
+   * where each thread executes multiple groups.
    */
   private Configuration getOption2Configuration() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
