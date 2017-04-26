@@ -66,6 +66,7 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
         queue = rbTreeMap.get(vruntime);
       }
       queue.add(groupInfo);
+      rbTreeMap.notify();
     }
   }
 
@@ -86,6 +87,13 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
   @Override
   public GlobalSchedGroupInfo getNextExecutableGroup() {
     synchronized (rbTreeMap) {
+      while (rbTreeMap.isEmpty()) {
+        try {
+          rbTreeMap.wait();
+        } catch (final InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
       final Map.Entry<Long, Queue<GlobalSchedGroupInfo>> entry = rbTreeMap.firstEntry();
       final Queue<GlobalSchedGroupInfo> queue = entry.getValue();
       final GlobalSchedGroupInfo groupInfo = queue.poll();

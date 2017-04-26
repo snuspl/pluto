@@ -18,8 +18,15 @@ package edu.snu.mist.core.task.globalsched;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
+import edu.snu.mist.core.task.globalsched.cfs.VtimeBasedNextGroupSelector;
+import edu.snu.mist.core.task.queryRemovers.MergeAwareQueryRemover;
+import edu.snu.mist.core.task.queryRemovers.NoMergingAwareQueryRemover;
+import edu.snu.mist.core.task.queryRemovers.QueryRemover;
 import edu.snu.mist.core.task.queryStarters.ImmediateQueryMergingStarter;
+import edu.snu.mist.core.task.queryStarters.NoMergingQueryStarter;
 import edu.snu.mist.core.task.queryStarters.QueryStarter;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
@@ -28,6 +35,7 @@ import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.concurrent.ScheduledExecutorService;
@@ -40,11 +48,11 @@ import java.util.logging.Logger;
  * TODO[MIST-618]: Make GroupAwareGlobalSchedQueryManager use NextGroupSelector to schedule the group.
  */
 @SuppressWarnings("unchecked")
-final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
+public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
 
   private static final Logger LOG = Logger.getLogger(GroupAwareGlobalSchedQueryManagerImpl.class.getName());
 
-  /**
+   /**
    * Scheduler for periodic watermark emission.
    */
   private final ScheduledExecutorService scheduler;
@@ -75,6 +83,16 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
   private final MistPubSubEventHandler pubSubEventHandler;
 
   /**
+   * Merging enabled or not.
+   */
+  private final boolean mergingEnabled;
+
+  /**
+   * Event processor manager.
+   */
+  private final EventProcessorManager eventProcessorManager;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -83,13 +101,17 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
                                                 final GlobalSchedGroupInfoMap groupInfoMap,
                                                 final QueryInfoStore planStore,
                                                 final GlobalSchedMetricTracker metricTracker,
-                                                final MistPubSubEventHandler pubSubEventHandler) {
+                                                final MistPubSubEventHandler pubSubEventHandler,
+                                                final EventProcessorManager eventProcessorManager,
+                                                @Parameter(MergingEnabled.class) final boolean mergingEnabled) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.groupInfoMap = groupInfoMap;
     this.metricTracker = metricTracker;
     this.pubSubEventHandler = pubSubEventHandler;
+    this.mergingEnabled = mergingEnabled;
+    this.eventProcessorManager = eventProcessorManager;
     metricTracker.start();
   }
 
@@ -117,8 +139,17 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
         // Add new group id, if it doesn't exist
         final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
         jcb.bindNamedParameter(GroupId.class, groupId);
-        jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
+        if (mergingEnabled) {
+          jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
+          jcb.bindImplementation(QueryRemover.class, MergeAwareQueryRemover.class);
+        } else {
+          jcb.bindImplementation(QueryStarter.class, NoMergingQueryStarter.class);
+          jcb.bindImplementation(QueryRemover.class, NoMergingAwareQueryRemover.class);
+        }
+        jcb.bindImplementation(OperatorChainManager.class, NonBlockingActiveOperatorChainPickManager.class);
+        jcb.bindImplementation(NextGroupSelector.class, VtimeBasedNextGroupSelector.class);
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+        injector.bindVolatileInstance(MistPubSubEventHandler.class, pubSubEventHandler);
         final GlobalSchedGroupInfo groupInfo = injector.getInstance(GlobalSchedGroupInfo.class);
         groupInfoMap.putIfAbsent(groupId, groupInfo);
         pubSubEventHandler.getPubSubEventHandler().onNext(new GroupEvent(groupInfo,
@@ -150,6 +181,7 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
     for (final GlobalSchedGroupInfo groupInfo : groupInfoMap.values()) {
       groupInfo.close();
     }
+    eventProcessorManager.close();
   }
 
   /**

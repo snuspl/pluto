@@ -82,6 +82,7 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
                                       final ExecutionDags<String> executionDags,
                                       final QueryStarter queryStarter,
                                       final OperatorChainManager operatorChainManager,
+                                      final NextGroupSelector nextGroupSelector,
                                       final QueryRemover queryRemover) {
     this.groupId = groupId;
     this.weight = weight;

@@ -17,55 +17,49 @@ package edu.snu.mist.core.driver;
 
 import edu.snu.mist.common.rpc.AvroRPCNettyServerWrapper;
 import edu.snu.mist.common.rpc.RPCServerPort;
-import edu.snu.mist.core.parameters.NumTaskCores;
-import edu.snu.mist.core.parameters.NumTasks;
-import edu.snu.mist.core.parameters.TaskMemorySize;
-import edu.snu.mist.core.parameters.TempFolderPath;
-import edu.snu.mist.formats.avro.ClientToTaskMessage;
-import edu.snu.mist.core.task.DefaultClientToTaskMessageImpl;
-import edu.snu.mist.core.task.TaskSpecificResponderWrapper;
+import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
+import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.parameters.NumPeriodicSchedulerThreads;
+import edu.snu.mist.core.parameters.TempFolderPath;
+import edu.snu.mist.core.task.DefaultClientToTaskMessageImpl;
+import edu.snu.mist.core.task.GroupAwareQueryManagerImpl;
+import edu.snu.mist.core.task.QueryManager;
+import edu.snu.mist.core.task.TaskSpecificResponderWrapper;
+import edu.snu.mist.core.task.eventProcessors.DefaultEventProcessorManager;
+import edu.snu.mist.core.task.eventProcessors.EventProcessorFactory;
+import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.task.globalsched.GlobalSchedEventProcessorFactory;
+import edu.snu.mist.core.task.globalsched.GroupAwareGlobalSchedQueryManagerImpl;
+import edu.snu.mist.core.task.queryRemovers.MergeAwareQueryRemover;
+import edu.snu.mist.core.task.queryRemovers.NoMergingAwareQueryRemover;
+import edu.snu.mist.core.task.queryRemovers.QueryRemover;
+import edu.snu.mist.core.task.queryStarters.ImmediateQueryMergingStarter;
+import edu.snu.mist.core.task.queryStarters.NoMergingQueryStarter;
+import edu.snu.mist.core.task.queryStarters.QueryStarter;
+import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.reef.tang.Configuration;
+import org.apache.reef.tang.Configurations;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
+import org.apache.reef.tang.formats.CommandLine;
 
 import javax.inject.Inject;
 
 /**
- * This class contains information for setting MistTasks.
+ * Configuration of the mist task.
  */
-final class MistTaskConfigs {
+public final class MistTaskConfigs {
 
   private static final int MAX_PORT_NUM = 65535;
-
-  /**
-   * The number of MistTasks.
-   */
-  private final int numTasks;
-
-  /**
-   * The memory size of a MistTask.
-   */
-  private final int taskMemSize;
 
   /**
    * The number of event processors of a MistTask.
    */
   private final int numEventProcessors;
-
-  /**
-   * The number of cores of a MistTask.
-   */
-  private final int numTaskCores;
-
-  /**
-   * The port number of rpc server of a MistTask.
-   */
-  private final int rpcServerPort;
 
   /**
    * Temporary folder path for storing temporay jar files.
@@ -77,68 +71,106 @@ final class MistTaskConfigs {
    */
   private final int numSchedulerThreads;
 
+  /**
+   * The port number of rpc server of a MistTask.
+   */
+  private final int rpcServerPort;
+
+  /**
+   * Enabling the merging of queries in Mist task.
+   */
+  private final boolean mergingEnabled;
+
+  /**
+   * The execution model of Mist.
+   */
+  private final int executionModelOption;
+
   @Inject
-  private MistTaskConfigs(@Parameter(NumTasks.class) final int numTasks,
-                          @Parameter(TaskMemorySize.class) final int taskMemSize,
-                          @Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
-                          @Parameter(NumTaskCores.class) final int numTaskCores,
+  private MistTaskConfigs(@Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
                           @Parameter(RPCServerPort.class) final int rpcServerPort,
                           @Parameter(TempFolderPath.class) final String tempFolderPath,
-                          @Parameter(NumPeriodicSchedulerThreads.class) final int numSchedulerThreads) {
-    this.numTasks = numTasks;
+                          @Parameter(NumPeriodicSchedulerThreads.class) final int numSchedulerThreads,
+                          @Parameter(MergingEnabled.class) final boolean mergingEnabled,
+                          @Parameter(ExecutionModelOption.class) final int executionModelOption) {
     this.numEventProcessors = numEventProcessors;
-    this.taskMemSize = taskMemSize;
-    this.numTaskCores = numTaskCores;
     this.tempFolderPath = tempFolderPath;
     this.rpcServerPort = rpcServerPort + 10 > MAX_PORT_NUM ? rpcServerPort - 10 : rpcServerPort + 10;
     this.numSchedulerThreads = numSchedulerThreads;
+    this.mergingEnabled = mergingEnabled;
+    this.executionModelOption = executionModelOption;
   }
 
-  public int getNumTasks() {
-   return numTasks;
+  /**
+   * Get the configuration for the execution model.
+   */
+  private Configuration getConfigurationForExecutionModel() {
+    switch (executionModelOption) {
+      case 1:
+        return getOption1Configuration();
+      case 2:
+        return getOption2Configuration();
+      default:
+        throw new RuntimeException("Undefined execution model: " + executionModelOption);
+    }
   }
 
-  public int getTaskMemSize() {
-    return taskMemSize;
+  /**
+   * Get the configuration for execution model 1.
+   */
+  private Configuration getOption1Configuration() {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindImplementation(QueryManager.class, GroupAwareQueryManagerImpl.class);
+    return jcb.build();
   }
 
-  public int getNumEventProcessors() {
-    return numEventProcessors;
+  /**
+   * Get the configuration for execution model 2.
+   */
+  private Configuration getOption2Configuration() {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindImplementation(QueryManager.class, GroupAwareGlobalSchedQueryManagerImpl.class);
+    jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedEventProcessorFactory.class);
+    jcb.bindImplementation(EventProcessorManager.class, DefaultEventProcessorManager.class);
+    return jcb.build();
   }
-
-  public int getNumTaskCores() {
-    return numTaskCores;
-  }
-
-  public int getRpcServerPort() {
-    return rpcServerPort;
-  }
-
-  public String getTempFolderPath() {
-    return tempFolderPath;
-  }
-
-  public int getNumSchedulerThreads() {
-    return numSchedulerThreads;
-  }
-
+  /**
+   * Get the task configuration.
+   * @return configuration
+   */
   public Configuration getConfiguration() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
 
     // Parameter
-    jcb.bindNamedParameter(NumTasks.class, Integer.toString(numTasks));
-    jcb.bindNamedParameter(TaskMemorySize.class, Integer.toString(taskMemSize));
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, Integer.toString(numEventProcessors));
-    jcb.bindNamedParameter(NumTaskCores.class, Integer.toString(numTaskCores));
-    jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
     jcb.bindNamedParameter(TempFolderPath.class, tempFolderPath);
     jcb.bindNamedParameter(NumPeriodicSchedulerThreads.class, Integer.toString(numSchedulerThreads));
-
+    jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
+    jcb.bindNamedParameter(MergingEnabled.class, Boolean.toString(mergingEnabled));
 
     // Implementation
     jcb.bindImplementation(ClientToTaskMessage.class, DefaultClientToTaskMessageImpl.class);
     jcb.bindConstructor(Server.class, AvroRPCNettyServerWrapper.class);
     jcb.bindConstructor(SpecificResponder.class, TaskSpecificResponderWrapper.class);
-    return jcb.build();
+
+    if (mergingEnabled) {
+      jcb.bindImplementation(QueryRemover.class, MergeAwareQueryRemover.class);
+      jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
+    } else {
+      jcb.bindImplementation(QueryRemover.class, NoMergingAwareQueryRemover.class);
+      jcb.bindImplementation(QueryStarter.class, NoMergingQueryStarter.class);
+    }
+    return Configurations.merge(jcb.build(), getConfigurationForExecutionModel());
+  }
+
+  /**
+   * Add parameters to the command line.
+   * @param commandLine command line
+   * @return command line where parameters are added
+   */
+  public static CommandLine addCommandLineConf(final CommandLine commandLine) {
+    return commandLine
+        .registerShortNameOfClass(MergingEnabled.class)
+        .registerShortNameOfClass(ExecutionModelOption.class);
   }
 }

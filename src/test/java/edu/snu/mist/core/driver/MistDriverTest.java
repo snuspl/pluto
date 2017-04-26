@@ -15,10 +15,12 @@
  */
 package edu.snu.mist.core.driver;
 
+import edu.snu.mist.common.rpc.RPCServerPort;
+import edu.snu.mist.core.MistLauncher;
+import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
+import edu.snu.mist.core.parameters.DriverRuntimeType;
 import edu.snu.mist.core.parameters.NumTaskCores;
 import edu.snu.mist.core.parameters.TaskMemorySize;
-import edu.snu.mist.core.parameters.DriverRuntimeType;
-import edu.snu.mist.core.MistLauncher;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import org.apache.reef.client.LauncherStatus;
 import org.apache.reef.runtime.local.client.LocalRuntimeConfiguration;
@@ -33,16 +35,36 @@ import org.junit.Test;
 public final class MistDriverTest {
 
   /**
-   * Test whether MistDriver runs successfully.
+   * Test whether MistDriver runs the task of option1 successfully.
    * @throws InjectionException
    */
   @Test
-  public void launchDriverTest() throws InjectionException {
+  public void testLaunchDriverOption1() throws InjectionException {
+    launchDriverTestHelper(1, 20332);
+  }
+
+  /**
+   * Test whether MistDriver runs the task of option1 successfully.
+   * @throws InjectionException
+   */
+  @Test
+  public void testLaunchDriverOption2() throws InjectionException {
+    launchDriverTestHelper(2, 20333);
+  }
+
+  /**
+   * Test whether MistDriver runs MistTaks successfully.
+   * @throws InjectionException
+   */
+  public void launchDriverTestHelper(final int executionModelOption,
+                                     final int rpcServerPort) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(DriverRuntimeType.class, "LOCAL");
     jcb.bindNamedParameter(NumTaskCores.class, "1");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "1");
     jcb.bindNamedParameter(TaskMemorySize.class, "256");
+    jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
+    jcb.bindNamedParameter(ExecutionModelOption.class, Integer.toString(executionModelOption));
 
     final Configuration runtimeConf = LocalRuntimeConfiguration.CONF
         .build();

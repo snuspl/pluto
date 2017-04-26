@@ -67,12 +67,12 @@ final class DefaultTaskSelectorImpl implements TaskSelector {
                                   final StringIdentifierFactory idFactory,
                                   final DriverTaskMessageCodec messageCodec,
                                   final DriverTaskMessageHandler messageHandler,
-                                  final MistTaskConfigs mistTaskConfigs) {
+                                  final MistDriverConfigs mistDriverConfigs) {
     this.taskAddrAndConnMap = new ConcurrentHashMap<>();
     this.idFactory = idFactory;
     this.connFactory = ncs.registerConnectionFactory(idFactory.getNewInstance(MistDriver.MIST_CONN_FACTORY_ID),
         messageCodec, messageHandler, null, idFactory.getNewInstance(MistDriver.MIST_DRIVER_ID));
-    this.rpcServerPort = mistTaskConfigs.getRpcServerPort();
+    this.rpcServerPort = mistDriverConfigs.getRpcServerPort();
   }
 
   @Override
