@@ -19,10 +19,11 @@ import edu.snu.mist.common.graph.AdjacentListDAG;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
-import edu.snu.mist.core.parameters.MetricTrackingInterval;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetricEventHandler;
+import edu.snu.mist.core.task.globalsched.metrics.GlobalSchedGlobalMetrics;
+import edu.snu.mist.core.task.metrics.MetricTrackEvent;
 import edu.snu.mist.core.task.utils.IdAndConfGenerator;
-import edu.snu.mist.core.task.utils.TestMetricHandler;
 import edu.snu.mist.formats.avro.Direction;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -32,37 +33,31 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.management.AttributeList;
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-import java.lang.management.ManagementFactory;
-
 import static edu.snu.mist.core.task.utils.SimpleOperatorChainUtils.*;
 
 /**
- * Test whether GlobalSchedMetricTracker tracks the GlobalSchedMetric properly or not.
+ * Test whether EventNumAndWeightMetricEventHandler tracks the metrics properly or not.
  */
-public final class GlobalSchedMetricTrackerTest {
+public final class EventNumAndWeightMetricEventHandlerTest {
 
-  private GlobalSchedMetricTracker tracker;
+  private MistPubSubEventHandler metricPubSubEventHandler;
   private IdAndConfGenerator idAndConfGenerator;
   private GlobalSchedGroupInfoMap groupInfoMap;
-  private TestMetricHandler callback;
-  private static final long TRACKING_INTERVAL = 10L;
+  private GlobalSchedGlobalMetrics metric;
+  private EventNumAndWeightMetricEventHandler handler;
 
   @Before
   public void setUp() throws InjectionException {
-    callback = new TestMetricHandler();
     final Injector injector = Tang.Factory.getTang().newInjector();
+    metric = injector.getInstance(GlobalSchedGlobalMetrics.class);
     groupInfoMap = injector.getInstance(GlobalSchedGroupInfoMap.class);
-    injector.bindVolatileParameter(MetricTrackingInterval.class, TRACKING_INTERVAL);
-    injector.bindVolatileInstance(MetricHandler.class, callback);
-    tracker = injector.getInstance(GlobalSchedMetricTracker.class);
+    metricPubSubEventHandler = injector.getInstance(MistPubSubEventHandler.class);
     idAndConfGenerator = new IdAndConfGenerator();
+    handler = injector.getInstance(EventNumAndWeightMetricEventHandler.class);
   }
 
   /**
-   * Test that a metric tracker can track the total event number metric properly.
+   * Test that a metric track event handler can track the total event number metric properly.
    */
   @Test(timeout = 1000L)
   public void testEventNumMetricTracking() throws Exception {
@@ -71,7 +66,6 @@ public final class GlobalSchedMetricTrackerTest {
     final GlobalSchedGroupInfo groupInfoB = generateGroupInfo("GroupB");
     final ExecutionDags<String> executionDagsA = groupInfoA.getExecutionDags();
     final ExecutionDags<String> executionDagsB = groupInfoB.getExecutionDags();
-    tracker.start();
 
     // two dags in group A:
     // srcA1 -> opA1 -> sinkA1
@@ -115,15 +109,19 @@ public final class GlobalSchedMetricTrackerTest {
     executionDagsB.put(srcB1.getConfiguration(), dagB1);
     executionDagsB.put(srcB2.getConfiguration(), dagB2);
 
-    // the event number should be zero in each group
-    Assert.assertEquals(0, tracker.getMetric().getNumEvents());
+    // the total and per-group event number should be zero
+    Assert.assertEquals(0, metric.getNumEventAndWeightMetric().getNumEvents());
+    Assert.assertEquals(0, groupInfoA.getEventNumAndWeightMetric().getNumEvents());
+    Assert.assertEquals(0, groupInfoB.getEventNumAndWeightMetric().getNumEvents());
 
     // add a few events to the operator chains in group A
     opA.addNextEvent(generateTestEvent(), Direction.LEFT);
 
     // wait the tracker for a while
-    callback.waitForTracking();
-    Assert.assertEquals(1, tracker.getMetric().getNumEvents());
+    metricPubSubEventHandler.getPubSubEventHandler().onNext(new MetricTrackEvent());
+    Assert.assertEquals(1, metric.getNumEventAndWeightMetric().getNumEvents());
+    Assert.assertEquals(1, groupInfoA.getEventNumAndWeightMetric().getNumEvents());
+    Assert.assertEquals(0, groupInfoB.getEventNumAndWeightMetric().getNumEvents());
 
     // add a few events to the operator chains in group B
     opB1.addNextEvent(generateTestEvent(), Direction.LEFT);
@@ -131,21 +129,25 @@ public final class GlobalSchedMetricTrackerTest {
     opB2.addNextEvent(generateTestEvent(), Direction.LEFT);
 
     // wait the tracker for a while
-    callback.waitForTracking();
-    Assert.assertEquals(4, tracker.getMetric().getNumEvents());
-
-    tracker.close();
+    metricPubSubEventHandler.getPubSubEventHandler().onNext(new MetricTrackEvent());
+    Assert.assertEquals(4, metric.getNumEventAndWeightMetric().getNumEvents());
+    Assert.assertEquals(1, groupInfoA.getEventNumAndWeightMetric().getNumEvents());
+    Assert.assertEquals(3, groupInfoB.getEventNumAndWeightMetric().getNumEvents());
   }
 
   /**
-   * Test that MBean cpu tracking is supported by current JVM.
+   * Test that a metric track event handler can track the weight metric properly.
    */
-  @Test(timeout = 2000L)
-  public void testCpuUtilMetricTracking() throws Exception {
+  @Test(timeout = 1000L)
+  public void testWeightMetricTracking() throws Exception {
+    // TODO: [MIST-617] Add group weight adding process into GlobalSchedMetricTracker
+    final GlobalSchedGroupInfo groupInfoA = generateGroupInfo("GroupA");
+    final GlobalSchedGroupInfo groupInfoB = generateGroupInfo("GroupB");
 
-    final MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-    final ObjectName name = ObjectName.getInstance("java.lang:type=OperatingSystem");
-    final AttributeList list = mbs.getAttributes(name, new String[]{"SystemCpuLoad", "ProcessCpuLoad"});
+    metricPubSubEventHandler.getPubSubEventHandler().onNext(new MetricTrackEvent());
+    Assert.assertEquals(2, metric.getNumEventAndWeightMetric().getWeight());
+    Assert.assertEquals(1, groupInfoA.getEventNumAndWeightMetric().getWeight());
+    Assert.assertEquals(1, groupInfoB.getEventNumAndWeightMetric().getWeight());
   }
 
   /**

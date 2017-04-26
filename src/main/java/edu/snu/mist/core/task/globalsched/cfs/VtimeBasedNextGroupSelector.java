@@ -16,9 +16,9 @@
 package edu.snu.mist.core.task.globalsched.cfs;
 
 import edu.snu.mist.core.parameters.DefaultGroupWeight;
+import edu.snu.mist.core.task.MistPubSubEventHandler;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.GroupEvent;
-import edu.snu.mist.core.task.globalsched.MistPubSubEventHandler;
 import edu.snu.mist.core.task.globalsched.NextGroupSelector;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.MinTimeslice;
 import org.apache.reef.tang.annotations.Parameter;
@@ -53,12 +53,12 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
 
   @Inject
   private VtimeBasedNextGroupSelector(@Parameter(DefaultGroupWeight.class) final int defaultWeight,
-                                      final MistPubSubEventHandler pubSubEventHandler,
-                                      @Parameter(MinTimeslice.class) final long minTimeslice) {
+                                      @Parameter(MinTimeslice.class) final long minTimeslice,
+                                      final MistPubSubEventHandler pubSubEventHandler) {
     this.rbTreeMap = new TreeMap<>();
-    pubSubEventHandler.getPubSubEventHandler().subscribe(GroupEvent.class, this);
     this.defaultWeight = defaultWeight;
     this.minTimeslice = minTimeslice;
+    pubSubEventHandler.getPubSubEventHandler().subscribe(GroupEvent.class, this);
   }
 
   /**
@@ -125,8 +125,8 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
    * @return delta vruntime
    */
   private long calculateVRuntimeDelta(final long delta, final GlobalSchedGroupInfo groupInfo) {
-    return Math.max(minTimeslice * defaultWeight / groupInfo.getWeight(),
-    TimeUnit.NANOSECONDS.toMillis(delta) * defaultWeight / groupInfo.getWeight());
+    return Math.max(minTimeslice * defaultWeight / groupInfo.getEventNumAndWeightMetric().getWeight(),
+    TimeUnit.NANOSECONDS.toMillis(delta) * defaultWeight / groupInfo.getEventNumAndWeightMetric().getWeight());
   }
 
   @Override

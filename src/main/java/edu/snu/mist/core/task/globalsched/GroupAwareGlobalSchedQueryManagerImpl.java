@@ -19,6 +19,10 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.globalsched.metrics.CpuUtilMetricEventHandler;
+import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetricEventHandler;
+import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
+import edu.snu.mist.core.task.metrics.MetricTracker;
 import edu.snu.mist.core.task.queryStarters.ImmediateQueryMergingStarter;
 import edu.snu.mist.core.task.queryStarters.QueryStarter;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
@@ -67,12 +71,27 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
   /**
    * A tracker measures global metrics such as total events number or cpu utilization.
    */
-  private final GlobalSchedMetricTracker metricTracker;
+  private final MetricTracker metricTracker;
 
   /**
    * The pub/sub event handler for control flow.
    */
-  private final MistPubSubEventHandler pubSubEventHandler;
+  private final MistPubSubEventHandler mistPubSubEventHandler;
+
+  /**
+   * A event processor number assigner.
+   */
+  private final EventProcessorNumAssigner assigner;
+
+  /**
+   * A event number and weight metric handler.
+   */
+  private final EventNumAndWeightMetricEventHandler eventNumHandler;
+
+  /**
+   * A cpu utilization metric handler.
+   */
+  private final CpuUtilMetricEventHandler cpuUtilHandler;
 
   /**
    * Default query manager in MistTask.
@@ -82,14 +101,20 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
                                                 final ScheduledExecutorServiceWrapper schedulerWrapper,
                                                 final GlobalSchedGroupInfoMap groupInfoMap,
                                                 final QueryInfoStore planStore,
-                                                final GlobalSchedMetricTracker metricTracker,
-                                                final MistPubSubEventHandler pubSubEventHandler) {
+                                                final MetricTracker metricTracker,
+                                                final MistPubSubEventHandler mistPubSubEventHandler,
+                                                final EventNumAndWeightMetricEventHandler eventNumHandler,
+                                                final CpuUtilMetricEventHandler cpuUtilHandler,
+                                                final EventProcessorNumAssigner assigner) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.groupInfoMap = groupInfoMap;
     this.metricTracker = metricTracker;
-    this.pubSubEventHandler = pubSubEventHandler;
+    this.mistPubSubEventHandler = mistPubSubEventHandler;
+    this.eventNumHandler = eventNumHandler;
+    this.cpuUtilHandler = cpuUtilHandler;
+    this.assigner = assigner;
     metricTracker.start();
   }
 
@@ -121,7 +146,7 @@ final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager {
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
         final GlobalSchedGroupInfo groupInfo = injector.getInstance(GlobalSchedGroupInfo.class);
         groupInfoMap.putIfAbsent(groupId, groupInfo);
-        pubSubEventHandler.getPubSubEventHandler().onNext(new GroupEvent(groupInfo,
+        mistPubSubEventHandler.getPubSubEventHandler().onNext(new GroupEvent(groupInfo,
             GroupEvent.GroupEventType.ADDITION));
       }
       // Add the query into the group

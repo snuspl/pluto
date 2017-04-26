@@ -13,17 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.metrics;
 
 import edu.snu.mist.core.parameters.ThreadNumLimit;
+import edu.snu.mist.core.task.GroupInfo;
+import edu.snu.mist.core.task.GroupInfoMap;
+import edu.snu.mist.core.task.MistPubSubEventHandler;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 
 /**
- * This is a MetricHandler assigns event processors to each group proportionally to it's metric.
+ * This is a EventProcessorNumAssigner assigns event processors to each group proportionally to it's metric.
  */
-final class ProportionalGroupMetricHandler implements MetricHandler {
+public final class ProportionalEventProcessorNumAssigner implements EventProcessorNumAssigner {
 
   /**
    * The (soft) limit of the total number of executor threads.
@@ -37,11 +40,20 @@ final class ProportionalGroupMetricHandler implements MetricHandler {
    */
   private final GroupInfoMap groupInfoMap;
 
+  /**
+   * The global metrics.
+   */
+  private final GlobalMetrics globalMetrics;
+
   @Inject
-  private ProportionalGroupMetricHandler(@Parameter(ThreadNumLimit.class) final int threadNumLimit,
-                                         final GroupInfoMap groupInfoMap) {
+  private ProportionalEventProcessorNumAssigner(@Parameter(ThreadNumLimit.class) final int threadNumLimit,
+                                                final GroupInfoMap groupInfoMap,
+                                                final GlobalMetrics globalMetrics,
+                                                final MistPubSubEventHandler pubSubEventHandler) {
     this.threadNumLimit = threadNumLimit;
     this.groupInfoMap = groupInfoMap;
+    this.globalMetrics = globalMetrics;
+    pubSubEventHandler.getPubSubEventHandler().subscribe(MetricUpdateEvent.class, this);
   }
 
   /**
@@ -57,32 +69,32 @@ final class ProportionalGroupMetricHandler implements MetricHandler {
    * Other groups will have the portion of remainder proportionally to it's metric.
    */
   @Override
-  public void metricUpdated() {
+  public void onNext(final MetricUpdateEvent metricUpdateEvent) {
     if (groupInfoMap.size() >= threadNumLimit) {
       // Every group should not totally blocked because of another group
       // Because of this, we assign at least one event processor number to each group
       assignSingleThread();
     } else {
-      // Calculate the sum of the number of events
-      long sum = 0;
+      // Check the number of empty groups
       int zeroCount = 0;
       for (final GroupInfo groupInfo : groupInfoMap.values()) {
-        final long numEvents = (long) groupInfo.getGroupMetric().getEwmaNumEvents();
+        final long numEvents = (long) groupInfo.getEventNumMetric().getEwmaNumEvents();
         if (numEvents == 0) {
           zeroCount++;
           continue;
         }
-        sum += numEvents;
       }
       // The number of event processors which are assignable additionally
       final int remainderProcessorNum = threadNumLimit - zeroCount;
+      // The total number of events in the operator queues
+      final long sum = globalMetrics.getNumEventMetric().getNumEvents();
 
       if (sum == 0) {
         // If sum of events is zero, than we should assign one event procesosr number to each group
         assignSingleThread();
       } else {
         for (final GroupInfo groupInfo : groupInfoMap.values()) {
-          final long numEvents = (long) groupInfo.getGroupMetric().getEwmaNumEvents();
+          final long numEvents = (long) groupInfo.getEventNumMetric().getEwmaNumEvents();
           // Assign processor number proportionally to the number of events
           long processorNumToAssign = remainderProcessorNum * numEvents / sum;
           if (processorNumToAssign == 0) {

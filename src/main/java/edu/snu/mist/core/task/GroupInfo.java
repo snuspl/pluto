@@ -16,8 +16,8 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.parameters.GroupId;
-import edu.snu.mist.core.parameters.DefaultGroupWeight;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
+import edu.snu.mist.core.task.metrics.EventNumMetric;
 import edu.snu.mist.core.task.queryRemovers.QueryRemover;
 import edu.snu.mist.core.task.queryStarters.QueryStarter;
 import org.apache.reef.tang.annotations.Parameter;
@@ -28,7 +28,7 @@ import java.util.List;
 /**
  * A class which contains query and metric information about query group.
  */
-final class GroupInfo implements AutoCloseable {
+public final class GroupInfo implements AutoCloseable {
 
   /**
    * Group id.
@@ -46,9 +46,9 @@ final class GroupInfo implements AutoCloseable {
   private final ExecutionDags<String> executionDags;
 
   /**
-   * A group metric which will be updated periodically.
+   * A metric that represents the number of events in the group, which will be updated periodically.
    */
-  private final GroupMetric groupMetric;
+  private final EventNumMetric eventNumMetric;
 
   /**
    * An event processor manager.
@@ -70,25 +70,18 @@ final class GroupInfo implements AutoCloseable {
    */
   private final QueryRemover queryRemover;
 
-  /**
-   * The weight of the group.
-   */
-  private int weight;
-
   @Inject
   private GroupInfo(@Parameter(GroupId.class) final String groupId,
-                    @Parameter(DefaultGroupWeight.class) final int weight,
-                    final GroupMetric groupMetric,
+                    final EventNumMetric eventNumMetric,
                     final ExecutionDags<String> executionDags,
                     final EventProcessorManager eventProcessorManager,
                     final QueryStarter queryStarter,
                     final OperatorChainManager operatorChainManager,
                     final QueryRemover queryRemover) {
     this.groupId = groupId;
-    this.weight = weight;
     this.queryIdList = new ArrayList<>();
     this.executionDags = executionDags;
-    this.groupMetric = groupMetric;
+    this.eventNumMetric = eventNumMetric;
     this.eventProcessorManager = eventProcessorManager;
     this.queryStarter = queryStarter;
     this.operatorChainManager = operatorChainManager;
@@ -127,10 +120,10 @@ final class GroupInfo implements AutoCloseable {
   }
 
   /**
-   * @return the metric of this group
+   * @return the number of events metric of this group
    */
-  public GroupMetric getGroupMetric() {
-    return groupMetric;
+  public EventNumMetric getEventNumMetric() {
+    return eventNumMetric;
   }
 
   /**
@@ -147,22 +140,6 @@ final class GroupInfo implements AutoCloseable {
    */
   public QueryRemover getQueryRemover() {
     return queryRemover;
-  }
-
-  /**
-   * Get the weight of the group.
-   * @return weight
-   */
-  public int getWeight() {
-    return weight;
-  }
-
-  /**
-   * Set the weight of the group.
-   * @param w weight
-   */
-  public void setWeight(final int w) {
-    weight = w;
   }
 
   @Override

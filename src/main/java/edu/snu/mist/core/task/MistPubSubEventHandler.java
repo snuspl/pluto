@@ -15,25 +15,26 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.core.parameters.NumPeriodicMetricTrackerThreads;
-import org.apache.reef.tang.annotations.Parameter;
+import org.apache.reef.wake.impl.PubSubEventHandler;
 
 import javax.inject.Inject;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
 /**
- * This is the wrapper class for injecting ScheduledExecutorService used in metric tracker.
+ * This is a wrapper class that has a pub/sub event handler used.
  */
-public final class MetricTrackerExecutorServiceWrapper {
-  private final ScheduledExecutorService scheduler;
+public final class MistPubSubEventHandler {
+
+  private final PubSubEventHandler pubSubEventHandler;
 
   @Inject
-  private MetricTrackerExecutorServiceWrapper(@Parameter(NumPeriodicMetricTrackerThreads.class) final int numThreads) {
-    scheduler = Executors.newScheduledThreadPool(numThreads);
+  private MistPubSubEventHandler() {
+    this.pubSubEventHandler = new PubSubEventHandler();
   }
 
-  public ScheduledExecutorService getScheduler() {
-    return scheduler;
+  /**
+   * Return the pub/sub event handler.
+   */
+  public PubSubEventHandler getPubSubEventHandler() {
+    return pubSubEventHandler;
   }
 }

@@ -13,14 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.parameters;
-
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
-
 /**
- * An alpha value of num events in EventNumMetric.
+ * A package related to metric tracking.
  */
-@NamedParameter(doc="An alpha value of num events in EventNumMetric.", default_value = "0.7")
-public final class GlobalNumEventAlpha implements Name<Double> {
-}
+package edu.snu.mist.core.task.metrics;

@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.metrics;
 
-import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.parameters.MetricTrackingInterval;
+import edu.snu.mist.core.task.MistPubSubEventHandler;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.Collection;
 import java.util.concurrent.*;
 
 /**
  * This class represents the group tracker which measures the metric of each group such as number of events.
  * It periodically check the metric and update the GroupInfo.
  */
-final class GroupMetricTracker implements AutoCloseable {
+public final class MetricTracker implements AutoCloseable {
 
   /**
    * The executor service which provide the thread pool for metric tracking.
@@ -46,24 +44,17 @@ final class GroupMetricTracker implements AutoCloseable {
   private ScheduledFuture result;
 
   /**
-   * The map of group ids and group info to update.
+   * The metric pub/sub event handler.
    */
-  private final GroupInfoMap groupInfoMap;
-
-  /**
-   * The group metric handler which handles the updated metric.
-   */
-  private final MetricHandler handler;
+  private final MistPubSubEventHandler metricPubSubEventHandler;
 
   @Inject
-  private GroupMetricTracker(final MetricTrackerExecutorServiceWrapper executorServiceWrapper,
-                             @Parameter(MetricTrackingInterval.class) final long groupTrackingInterval,
-                             final GroupInfoMap groupInfoMap,
-                             final MetricHandler handler) {
+  private MetricTracker(final MetricTrackerExecutorServiceWrapper executorServiceWrapper,
+                        @Parameter(MetricTrackingInterval.class) final long groupTrackingInterval,
+                        final MistPubSubEventHandler metricPubSubEventHandler) {
     this.executorService = executorServiceWrapper.getScheduler();
     this.groupTrackingInterval = groupTrackingInterval;
-    this.groupInfoMap = groupInfoMap;
-    this.handler = handler;
+    this.metricPubSubEventHandler = metricPubSubEventHandler;
   }
 
   /**
@@ -74,21 +65,10 @@ final class GroupMetricTracker implements AutoCloseable {
     result = executorService.scheduleWithFixedDelay(new Runnable() {
       public void run() {
         try {
-          for (final GroupInfo groupInfo : groupInfoMap.values()) {
-            // Track the number of event per each group
-            long numEvent = 0;
-            for (final DAG<ExecutionVertex, MISTEdge> dag : groupInfo.getExecutionDags().getUniqueValues()) {
-              final Collection<ExecutionVertex> vertices = dag.getVertices();
-              for (final ExecutionVertex ev : vertices) {
-                if (ev.getType() == ExecutionVertex.Type.OPERATOR_CHIAN) {
-                  numEvent += ((OperatorChain) ev).numberOfEvents();
-                }
-              }
-            }
-            final GroupMetric metric = groupInfo.getGroupMetric();
-            metric.updateNumEvents(numEvent);
-          }
-          handler.metricUpdated();
+          // Publish the metric track events to subscriber
+          metricPubSubEventHandler.getPubSubEventHandler().onNext(new MetricTrackEvent());
+          // Notify the metric update to event processor number assigner
+          metricPubSubEventHandler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
         } catch (final Exception e) {
           e.printStackTrace();
         }

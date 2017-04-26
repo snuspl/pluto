@@ -17,6 +17,7 @@ package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.core.task.ExecutionDags;
 import edu.snu.mist.core.task.OperatorChainManager;
+import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetric;
 import edu.snu.mist.core.task.queryRemovers.QueryRemover;
 import edu.snu.mist.core.task.queryStarters.QueryStarter;
 import org.apache.reef.tang.annotations.DefaultImplementation;
@@ -36,7 +37,6 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
    * @return operator chain manager
    */
   OperatorChainManager getOperatorChainManager();
-
 
   /**
    * Add query id to the group.
@@ -80,16 +80,10 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
   void setLatestScheduledTime(long time);
 
   /**
-   * Get the weight of the group.
-   * @return weight
+   * Get the number of events and weight metric of this group.
+   * @return the number of events and weight metric of this group
    */
-  int getWeight();
-
-  /**
-   * Set the weight of the group.
-   * @param w weight
-   */
-  void setWeight(int w);
+  EventNumAndWeightMetric getEventNumAndWeightMetric();
 
   /**
    * Get the vruntime of the group.

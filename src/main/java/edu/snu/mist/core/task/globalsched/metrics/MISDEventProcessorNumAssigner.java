@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched;
+package edu.snu.mist.core.task.globalsched.metrics;
 
 import edu.snu.mist.core.parameters.ThreadNumLimit;
-import edu.snu.mist.core.task.MetricHandler;
+import edu.snu.mist.core.task.MistPubSubEventHandler;
+import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
+import edu.snu.mist.core.task.metrics.MetricUpdateEvent;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.globalsched.parameters.*;
@@ -25,14 +27,14 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 
 /**
- * This is a MetricHandler assigns global event processors.
+ * This is a EventProcessorNumAssigner assigns global event processors.
  * If the total event number is enough but the CPU load is quite low,
  * then this handler will create event processors more.
  * Else if the total event number is quite low and the CPU load is also low,
  * then this handler will close some event processors.
  * Also, it will do multiplicative increase/subtractive decrease similar to the AIMD of TCP.
  */
-final class GlobalSchedMISDMetricHandler implements MetricHandler {
+public final class MISDEventProcessorNumAssigner implements EventProcessorNumAssigner {
 
   /**
    * The limit of the total number of executor threads.
@@ -73,26 +75,28 @@ final class GlobalSchedMISDMetricHandler implements MetricHandler {
   private final int decreaseNum;
 
   /**
-   * A metric contains global information.
-   * The number of events and the cpu utilization of the whole system in this metric will be used.
-   */
-  private final GlobalSchedMetric metric;
-
-  /**
    * Event processor manager that manages event processors globally.
    */
   private final EventProcessorManager eventProcessorManager;
 
+  /**
+   * A metric contains global information.
+   * The number of events and the cpu utilization of the whole system in this metric will be used.
+   */
+  private final GlobalSchedGlobalMetrics metrics;
+
   @Inject
-  private GlobalSchedMISDMetricHandler(@Parameter(DefaultNumEventProcessors.class) final int defaultNumEventProcessors,
-                                       @Parameter(ThreadNumLimit.class) final int threadNumLimit,
-                                       @Parameter(EventNumHighThreshold.class) final long eventNumHighThreshold,
-                                       @Parameter(EventNumLowThreshold.class) final long eventNumLowThreshold,
-                                       @Parameter(CpuUtilLowThreshold.class) final double cpuUtilLowThreshold,
-                                       @Parameter(EventProcessorIncreaseRate.class) final double increaseRate,
-                                       @Parameter(EventProcessorDecreaseNum.class) final int decreaseNum,
-                                       final GlobalSchedMetric metric,
-                                       final EventProcessorManager eventProcessorManager) {
+  private MISDEventProcessorNumAssigner(
+      @Parameter(DefaultNumEventProcessors.class) final int defaultNumEventProcessors,
+      @Parameter(ThreadNumLimit.class) final int threadNumLimit,
+      @Parameter(EventNumHighThreshold.class) final long eventNumHighThreshold,
+      @Parameter(EventNumLowThreshold.class) final long eventNumLowThreshold,
+      @Parameter(CpuUtilLowThreshold.class) final double cpuUtilLowThreshold,
+      @Parameter(EventProcessorIncreaseRate.class) final double increaseRate,
+      @Parameter(EventProcessorDecreaseNum.class) final int decreaseNum,
+      final EventProcessorManager eventProcessorManager,
+      final GlobalSchedGlobalMetrics globalMetrics,
+      final MistPubSubEventHandler pubSubEventHandler) {
     this.defaultNumEventProcessors = defaultNumEventProcessors;
     this.threadNumLimit = threadNumLimit;
     this.eventNumHighThreshold = eventNumHighThreshold;
@@ -100,17 +104,18 @@ final class GlobalSchedMISDMetricHandler implements MetricHandler {
     this.cpuUtilLowThreshold = cpuUtilLowThreshold;
     this.increaseRate = increaseRate;
     this.decreaseNum = decreaseNum;
-    this.metric = metric;
     this.eventProcessorManager = eventProcessorManager;
+    this.metrics = globalMetrics;
+    pubSubEventHandler.getPubSubEventHandler().subscribe(MetricUpdateEvent.class, this);
   }
 
   /**
    * Assign event processor number.
    */
   @Override
-  public void metricUpdated() {
-    if (metric.getSystemCpuUtil() < cpuUtilLowThreshold) {
-      if (metric.getNumEvents() > eventNumHighThreshold) {
+  public void onNext(final MetricUpdateEvent metricUpdateEvent) {
+    if (metrics.getCpuUtilMetric().getSystemCpuUtil() < cpuUtilLowThreshold) {
+      if (metrics.getNumEventAndWeightMetric().getNumEvents() > eventNumHighThreshold) {
         // If the cpu utilization is low in spite of enough events,
         // the event processors could be blocked by some operations such as I/O.
         // In that case, we should increase the number of event processors.
@@ -121,7 +126,7 @@ final class GlobalSchedMISDMetricHandler implements MetricHandler {
         } else if (currentEventProcessorsNum * increaseRate > threadNumLimit) {
           eventProcessorManager.adjustEventProcessorNum(threadNumLimit);
         }
-      } else if (metric.getNumEvents() < eventNumLowThreshold) {
+      } else if (metrics.getNumEventAndWeightMetric().getNumEvents() < eventNumLowThreshold) {
         // If the cpu utilization is low and there are few events,
         // then there might be too many event processors.
         // The decrease will be subtractive because we do not have to react rapidly to the idle state.

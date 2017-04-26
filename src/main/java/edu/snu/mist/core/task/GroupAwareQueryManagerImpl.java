@@ -19,6 +19,7 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.task.metrics.*;
 import edu.snu.mist.core.task.queryStarters.ImmediateQueryMergingStarter;
 import edu.snu.mist.core.task.queryStarters.QueryStarter;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
@@ -70,9 +71,19 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
   private final int numEventProcessors;
 
   /**
-   * A tracker that measures the metric of each group.
+   * A tracker that measures the metric.
    */
-  private final GroupMetricTracker groupTracker;
+  private final MetricTracker metricTracker;
+
+  /**
+   * A event processor number assigner.
+   */
+  private final EventProcessorNumAssigner assigner;
+
+  /**
+   * A event number metric handler.
+   */
+  private final EventNumMetricEventHandler eventNumHandler;
 
   /**
    * Default query manager in MistTask.
@@ -83,14 +94,18 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
                                      final GroupInfoMap groupInfoMap,
                                      @Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
                                      final QueryInfoStore planStore,
-                                     final GroupMetricTracker groupTracker) {
+                                     final MetricTracker metricTracker,
+                                     final EventProcessorNumAssigner assigner,
+                                     final EventNumMetricEventHandler eventNumHandler) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.groupInfoMap = groupInfoMap;
     this.numEventProcessors = numEventProcessors;
-    this.groupTracker = groupTracker;
-    groupTracker.start();
+    this.metricTracker = metricTracker;
+    this.assigner = assigner;
+    this.eventNumHandler = eventNumHandler;
+    metricTracker.start();
   }
 
   /**
@@ -147,7 +162,7 @@ final class GroupAwareQueryManagerImpl implements QueryManager {
     for (final GroupInfo groupInfo : groupInfoMap.values()) {
       groupInfo.close();
     }
-    groupTracker.close();
+    metricTracker.close();
   }
 
   /**

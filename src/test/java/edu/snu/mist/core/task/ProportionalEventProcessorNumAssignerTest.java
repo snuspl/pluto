@@ -18,6 +18,9 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.parameters.ThreadNumLimit;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
+import edu.snu.mist.core.task.metrics.GlobalMetrics;
+import edu.snu.mist.core.task.metrics.MetricUpdateEvent;
+import edu.snu.mist.core.task.metrics.ProportionalEventProcessorNumAssigner;
 import edu.snu.mist.core.task.utils.TestEventProcessorManager;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -28,20 +31,24 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Test whether ProportionalGroupMetricHandler assigns proper event processor number to each group proportionally.
+ * Test that ProportionalEventProcessorNumAssigner assigns proper event processor number to each group proportionally.
  */
-public final class ProportionalGroupMetricHandlerTest {
+public final class ProportionalEventProcessorNumAssignerTest {
 
-  private ProportionalGroupMetricHandler handler;
+  private ProportionalEventProcessorNumAssigner assigner;
+  private MistPubSubEventHandler handler;
   private GroupInfoMap groupInfoMap;
   private static final int THREAD_NUM_SOFT_LIMIT = 100;
+  private GlobalMetrics globalMetrics;
 
   @Before
   public void setUp() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     groupInfoMap = injector.getInstance(GroupInfoMap.class);
+    globalMetrics = injector.getInstance(GlobalMetrics.class);
+    handler = injector.getInstance(MistPubSubEventHandler.class);
     injector.bindVolatileParameter(ThreadNumLimit.class, THREAD_NUM_SOFT_LIMIT);
-    handler = injector.getInstance(ProportionalGroupMetricHandler.class);
+    assigner = injector.getInstance(ProportionalEventProcessorNumAssigner.class);
   }
 
   /**
@@ -63,7 +70,7 @@ public final class ProportionalGroupMetricHandlerTest {
       generateGroupInfo(String.valueOf(i));
     }
 
-    handler.metricUpdated();
+    handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
 
     // Only one thread should be assigned to each group
     groupInfoMap.values().forEach(groupInfo -> Assert.assertEquals(
@@ -79,10 +86,10 @@ public final class ProportionalGroupMetricHandlerTest {
     // Create the GroupInfo to be managed
     for (int i = 0; i < THREAD_NUM_SOFT_LIMIT; i++) {
       final GroupInfo groupInfo = generateGroupInfo(String.valueOf(i));
-      groupInfo.getGroupMetric().updateNumEvents(i);
+      groupInfo.getEventNumMetric().updateNumEvents(i);
     }
 
-    handler.metricUpdated();
+    handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
 
     // Only one thread should be assigned to each group
     groupInfoMap.values().forEach(groupInfo -> Assert.assertEquals(
@@ -99,19 +106,20 @@ public final class ProportionalGroupMetricHandlerTest {
     int sum = 0;
     for (int i = 0; i < 10; i++) {
       final GroupInfo groupInfo = generateGroupInfo(String.valueOf(i));
-      groupInfo.getGroupMetric().updateNumEvents(10 * (i + 1));
+      groupInfo.getEventNumMetric().updateNumEvents(10 * (i + 1));
       sum += (long) MetricUtil.calculateEwma(10 * (i + 1), 0.0, 0.7);
     }
     // Create a few empty groups
     for (int i = 0; i < 10; i++) {
       generateGroupInfo(String.valueOf(10 + i));
     }
+    globalMetrics.getNumEventMetric().updateNumEvents(sum);
 
-    handler.metricUpdated();
+    handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
 
     // The number of assigned threads should be proportional to the event number metric of the group.
     for (final GroupInfo groupInfo : groupInfoMap.values()) {
-      long expected = (THREAD_NUM_SOFT_LIMIT - 10) * (long) (groupInfo.getGroupMetric().getEwmaNumEvents()) / sum;
+      long expected = (THREAD_NUM_SOFT_LIMIT - 10) * (long) (groupInfo.getEventNumMetric().getEwmaNumEvents()) / sum;
       if (expected == 0) {
         expected = 1;
       }
