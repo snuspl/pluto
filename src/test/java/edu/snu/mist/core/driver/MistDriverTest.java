@@ -44,7 +44,7 @@ public final class MistDriverTest {
   }
 
   /**
-   * Test whether MistDriver runs the task of option1 successfully.
+   * Test whether MistDriver runs the task of option2 successfully.
    * @throws InjectionException
    */
   @Test

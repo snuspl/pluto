@@ -31,12 +31,6 @@ import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.globalsched.GlobalSchedEventProcessorFactory;
 import edu.snu.mist.core.task.globalsched.GroupAwareGlobalSchedQueryManagerImpl;
-import edu.snu.mist.core.task.queryRemovers.MergeAwareQueryRemover;
-import edu.snu.mist.core.task.queryRemovers.NoMergingAwareQueryRemover;
-import edu.snu.mist.core.task.queryRemovers.QueryRemover;
-import edu.snu.mist.core.task.queryStarters.ImmediateQueryMergingStarter;
-import edu.snu.mist.core.task.queryStarters.NoMergingQueryStarter;
-import edu.snu.mist.core.task.queryStarters.QueryStarter;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
@@ -152,14 +146,6 @@ public final class MistTaskConfigs {
     jcb.bindImplementation(ClientToTaskMessage.class, DefaultClientToTaskMessageImpl.class);
     jcb.bindConstructor(Server.class, AvroRPCNettyServerWrapper.class);
     jcb.bindConstructor(SpecificResponder.class, TaskSpecificResponderWrapper.class);
-
-    if (mergingEnabled) {
-      jcb.bindImplementation(QueryRemover.class, MergeAwareQueryRemover.class);
-      jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
-    } else {
-      jcb.bindImplementation(QueryRemover.class, NoMergingAwareQueryRemover.class);
-      jcb.bindImplementation(QueryStarter.class, NoMergingQueryStarter.class);
-    }
     return Configurations.merge(jcb.build(), getConfigurationForExecutionModel());
   }
 
