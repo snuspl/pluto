@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.merging;
+
+import edu.snu.mist.core.task.ExecutionVertex;
 
 import javax.inject.Inject;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * This is a map that has an execution vertex as a key and a vertex info as a value.
  */
-public final class VertexInfoMap {
+final class VertexInfoMap {
 
   private final ConcurrentHashMap<ExecutionVertex, VertexInfo> map;
 

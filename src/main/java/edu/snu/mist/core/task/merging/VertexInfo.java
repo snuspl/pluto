@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.merging;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.core.task.ExecutionVertex;
 
 /**
  * Vertex info that contains a reference count of the vertex
  * and the *physical* execution dag that contains the vertex.
  * The physical execution dag can be merged with other dags.
  */
-public final class VertexInfo {
+final class VertexInfo {
 
   /**
    * Reference count of the execution vertex.
