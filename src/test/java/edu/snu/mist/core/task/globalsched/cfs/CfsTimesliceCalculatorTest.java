@@ -51,7 +51,7 @@ public final class CfsTimesliceCalculatorTest {
 
     final GlobalSchedGroupInfo groupInfo = mock(GlobalSchedGroupInfo.class);
     when(groupInfo.getEventNumAndWeightMetric()).thenReturn(metric);
-    globalSchedMetric.setNumGroups(5);
+    globalSchedMetric.getNumGroupsMetric().setNumGroups(5);
     globalSchedMetric.getNumEventAndWeightMetric().setWeight(20);
     final long slice = timesliceCalculator.calculateTimeslice(groupInfo);
     Assert.assertEquals(500, slice);
@@ -78,7 +78,7 @@ public final class CfsTimesliceCalculatorTest {
 
     final GlobalSchedGroupInfo groupInfo = mock(GlobalSchedGroupInfo.class);
     when(groupInfo.getEventNumAndWeightMetric()).thenReturn(metric1);
-    globalSchedMetric.setNumGroups(20);
+    globalSchedMetric.getNumGroupsMetric().setNumGroups(20);
     globalSchedMetric.getNumEventAndWeightMetric().setWeight(40);
     final long slice = timesliceCalculator.calculateTimeslice(groupInfo);
     Assert.assertEquals(500, slice);

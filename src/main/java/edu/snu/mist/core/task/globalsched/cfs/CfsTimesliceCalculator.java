@@ -62,7 +62,7 @@ public final class CfsTimesliceCalculator implements GroupTimesliceCalculator {
   public long calculateTimeslice(final GlobalSchedGroupInfo groupInfo) {
     final double totalWeight = metric.getNumEventAndWeightMetric().getWeight();
     final double groupWeight = groupInfo.getEventNumAndWeightMetric().getWeight();
-    final int numGroups = Math.max(1, metric.getNumGroups());
+    final long numGroups = Math.max(1, metric.getNumGroupsMetric().getNumGroups());
     long adjustCfsTimeslice = cfsTimeslice;
     if (cfsTimeslice / numGroups < minTimeslice) {
       adjustCfsTimeslice = minTimeslice * numGroups;

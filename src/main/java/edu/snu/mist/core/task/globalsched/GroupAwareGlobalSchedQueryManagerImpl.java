@@ -23,6 +23,7 @@ import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.globalsched.cfs.CfsTimesliceCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.VtimeBasedNextGroupSelector;
+import edu.snu.mist.core.task.globalsched.metrics.NumGroupsMetricEventHandler;
 import edu.snu.mist.core.task.merging.MergeAwareQueryRemover;
 import edu.snu.mist.core.task.NoMergingAwareQueryRemover;
 import edu.snu.mist.core.task.QueryRemover;
@@ -89,21 +90,6 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   private final MistPubSubEventHandler pubSubEventHandler;
 
   /**
-   * A event processor number assigner.
-   */
-  private final EventProcessorNumAssigner assigner;
-
-  /**
-   * A event number and weight metric handler.
-   */
-  private final EventNumAndWeightMetricEventHandler eventNumHandler;
-
-  /**
-   * A cpu utilization metric handler.
-   */
-  private final CpuUtilMetricEventHandler cpuUtilHandler;
-
-  /**
    * Merging enabled or not.
    */
   private final boolean mergingEnabled;
@@ -127,6 +113,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 final MetricTracker metricTracker,
                                                 final EventNumAndWeightMetricEventHandler eventNumHandler,
                                                 final CpuUtilMetricEventHandler cpuUtilHandler,
+                                                final NumGroupsMetricEventHandler numGroupsHandler,
                                                 final EventProcessorNumAssigner assigner) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
@@ -136,9 +123,6 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     this.pubSubEventHandler = pubSubEventHandler;
     this.mergingEnabled = mergingEnabled;
     this.eventProcessorManager = eventProcessorManager;
-    this.eventNumHandler = eventNumHandler;
-    this.cpuUtilHandler = cpuUtilHandler;
-    this.assigner = assigner;
     metricTracker.start();
   }
 
