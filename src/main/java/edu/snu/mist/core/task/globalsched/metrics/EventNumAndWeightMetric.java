@@ -40,18 +40,14 @@ public final class EventNumAndWeightMetric {
   /**
    * The weight used for scheduling.
    */
-  private volatile int weight;
+  private volatile double weight;
 
   @Inject
-  private EventNumAndWeightMetric(@Parameter(DefaultGroupWeight.class) final int weight,
+  private EventNumAndWeightMetric(@Parameter(DefaultGroupWeight.class) final double weight,
                                   @Parameter(GlobalNumEventAlpha.class) final double numEventAlpha) {
     this.numEvents = 0;
     this.ewmaNumEvents = new EWMA(numEventAlpha);
     this.weight = weight;
-  }
-
-  public void setNumEvents(final long numEventsParam) {
-    this.numEvents = numEventsParam;
   }
 
   public void updateNumEvents(final long numEventsParam) {
@@ -67,27 +63,46 @@ public final class EventNumAndWeightMetric {
     return ewmaNumEvents.getCurrentEwma();
   }
 
-  public int getWeight() {
+  public double getWeight() {
     return weight;
   }
 
-  public void setWeight(final int weight) {
+  public void setWeight(final double weight) {
     this.weight = weight;
   }
 
   @Override
   public boolean equals(final Object o) {
-    if (!(o instanceof EventNumAndWeightMetric)) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final EventNumAndWeightMetric eventNumMetric = (EventNumAndWeightMetric) o;
-    return this.numEvents == eventNumMetric.getNumEvents() &&
-        this.ewmaNumEvents.equals(eventNumMetric.getEwmaNumEvents()) &&
-        this.weight == eventNumMetric.getWeight();
+
+    final EventNumAndWeightMetric that = (EventNumAndWeightMetric) o;
+
+    if (numEvents != that.numEvents) {
+      return false;
+    }
+    if (Double.compare(that.weight, weight) != 0) {
+      return false;
+    }
+    if (ewmaNumEvents != null ? !ewmaNumEvents.equals(that.ewmaNumEvents) : that.ewmaNumEvents != null) {
+      return false;
+    }
+
+    return true;
   }
 
   @Override
   public int hashCode() {
-    return ((Long) this.numEvents).hashCode() * 32 + ((Integer) this.weight).hashCode() * 22;
+    int result;
+    long temp;
+    result = (int) (numEvents ^ (numEvents >>> 32));
+    result = 31 * result + (ewmaNumEvents != null ? ewmaNumEvents.hashCode() : 0);
+    temp = Double.doubleToLongBits(weight);
+    result = 31 * result + (int) (temp ^ (temp >>> 32));
+    return result;
   }
 }

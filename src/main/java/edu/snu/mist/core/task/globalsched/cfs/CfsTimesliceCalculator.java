@@ -60,13 +60,13 @@ public final class CfsTimesliceCalculator implements GroupTimesliceCalculator {
 
   @Override
   public long calculateTimeslice(final GlobalSchedGroupInfo groupInfo) {
-    final long totalWeight = metric.getNumEventAndWeightMetric().getWeight();
-    final int groupWeight = groupInfo.getEventNumAndWeightMetric().getWeight();
+    final double totalWeight = metric.getNumEventAndWeightMetric().getWeight();
+    final double groupWeight = groupInfo.getEventNumAndWeightMetric().getWeight();
     final int numGroups = Math.max(1, metric.getNumGroups());
     long adjustCfsTimeslice = cfsTimeslice;
     if (cfsTimeslice / numGroups < minTimeslice) {
       adjustCfsTimeslice = minTimeslice * numGroups;
     }
-    return Math.max(minTimeslice, (long)(adjustCfsTimeslice * (groupWeight * 1.0 /totalWeight)));
+    return Math.max(minTimeslice, (long)(adjustCfsTimeslice * (groupWeight /totalWeight)));
   }
 }

@@ -18,6 +18,6 @@ package edu.snu.mist.core.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The default value of the weight of the group", default_value = "1")
-public final class DefaultGroupWeight implements Name<Integer> {
+@NamedParameter(doc = "The default value of the weight of the group", default_value = "1.0")
+public final class DefaultGroupWeight implements Name<Double> {
 }
