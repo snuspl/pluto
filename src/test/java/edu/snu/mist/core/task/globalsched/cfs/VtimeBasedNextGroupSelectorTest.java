@@ -15,8 +15,11 @@
  */
 package edu.snu.mist.core.task.globalsched.cfs;
 
+import com.google.common.util.concurrent.AtomicDouble;
 import edu.snu.mist.core.task.MistPubSubEventHandler;
-import edu.snu.mist.core.task.globalsched.*;
+import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.GroupEvent;
+import edu.snu.mist.core.task.globalsched.NextGroupSelector;
 import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetric;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
@@ -24,8 +27,6 @@ import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.wake.impl.PubSubEventHandler;
 import org.junit.Test;
-
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.mockito.Mockito.*;
 
@@ -46,10 +47,10 @@ public final class VtimeBasedNextGroupSelectorTest {
     final GlobalSchedGroupInfo group3 = mock(GlobalSchedGroupInfo.class);
     final GlobalSchedGroupInfo group4 = mock(GlobalSchedGroupInfo.class);
 
-    when(group1.getVRuntime()).thenReturn(0L);
-    when(group2.getVRuntime()).thenReturn(2L);
-    when(group3.getVRuntime()).thenReturn(1L);
-    when(group4.getVRuntime()).thenReturn(0L);
+    when(group1.getVRuntime()).thenReturn(0.0);
+    when(group2.getVRuntime()).thenReturn(2.0);
+    when(group3.getVRuntime()).thenReturn(1.0);
+    when(group4.getVRuntime()).thenReturn(0.0);
 
     final Injector injector = Tang.Factory.getTang().newInjector();
     final NextGroupSelector selector = injector.getInstance(VtimeBasedNextGroupSelector.class);
@@ -85,18 +86,18 @@ public final class VtimeBasedNextGroupSelectorTest {
     final EventNumAndWeightMetric metric =
         Tang.Factory.getTang().newInjector().getInstance(EventNumAndWeightMetric.class);
 
-    final AtomicLong group1AdjustVRuntime = new AtomicLong(0);
+    final AtomicDouble group1AdjustVRuntime = new AtomicDouble(0);
     doAnswer((invocation) -> {
         Object[] args = invocation.getArguments();
-        group1AdjustVRuntime.set((long)args[0]);
+        group1AdjustVRuntime.set((double)args[0]);
         return null;
     }).when(group1).setVRuntime(anyLong());
     
     when(group1.getVRuntime()).thenAnswer((invocation) -> group1AdjustVRuntime.get());
     when(group1.getEventNumAndWeightMetric()).thenReturn(metric);
-    when(group2.getVRuntime()).thenReturn(2L);
-    when(group3.getVRuntime()).thenReturn(1L);
-    when(group4.getVRuntime()).thenReturn(0L);
+    when(group2.getVRuntime()).thenReturn(2.0);
+    when(group3.getVRuntime()).thenReturn(1.0);
+    when(group4.getVRuntime()).thenReturn(0.0);
 
     final Injector injector = Tang.Factory.getTang().newInjector();
     final NextGroupSelector selector = injector.getInstance(VtimeBasedNextGroupSelector.class);

@@ -89,11 +89,11 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
    * Get the vruntime of the group.
    * @return vruntime
    */
-  long getVRuntime();
+  double getVRuntime();
 
   /**
    * Set the vruntime of the group.
    * @param vruntime vruntime
    */
-  void setVRuntime(long vruntime);
+  void setVRuntime(double vruntime);
 }

@@ -65,10 +65,6 @@ public final class CpuUtilMetric {
     return ewmaSystemCpuUtil.getCurrentEwma();
   }
 
-  public void setSystemCpuUtil(final double cpuUtil) {
-    this.systemCpuUtil = cpuUtil;
-  }
-
   public void updateSystemCpuUtil(final double cpuUtil) {
     this.systemCpuUtil = cpuUtil;
     this.ewmaSystemCpuUtil.updateAndTick(cpuUtil);
@@ -80,10 +76,6 @@ public final class CpuUtilMetric {
 
   public double getEwmaProcessCpuUtil() {
     return ewmaProcessCpuUtil.getCurrentEwma();
-  }
-
-  public void setProcessCpuUtil(final double processCpuUtil) {
-    this.processCpuUtil = processCpuUtil;
   }
 
   public void updateProcessCpuUtil(final double processCpuUtilParam) {

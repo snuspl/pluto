@@ -76,5 +76,4 @@ public final class GlobalSchedGlobalMetrics {
   public void setNumGroups(final int groups) {
     numGroups = groups;
   }
-
 }

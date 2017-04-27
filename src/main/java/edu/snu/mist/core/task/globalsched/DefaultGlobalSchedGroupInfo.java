@@ -75,7 +75,7 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   /**
    * The vruntime of the group.
    */
-  private long vruntime;
+  private double vruntime;
 
   @Inject
   private DefaultGlobalSchedGroupInfo(@Parameter(GroupId.class) final String groupId,
@@ -164,12 +164,12 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   }
 
   @Override
-  public long getVRuntime() {
+  public double getVRuntime() {
     return vruntime;
   }
 
   @Override
-  public void setVRuntime(final long vrt) {
+  public void setVRuntime(final double vrt) {
     vruntime = vrt;
   }
 
