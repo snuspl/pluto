@@ -90,26 +90,6 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   private final MistPubSubEventHandler pubSubEventHandler;
 
   /**
-   * A event processor number assigner.
-   */
-  private final EventProcessorNumAssigner assigner;
-
-  /**
-   * A event number and weight metric handler.
-   */
-  private final EventNumAndWeightMetricEventHandler eventNumHandler;
-
-  /**
-   * A cpu utilization metric handler.
-   */
-  private final CpuUtilMetricEventHandler cpuUtilHandler;
-
-  /**
-   * A group number metric handler.
-   */
-  private final NumGroupsMetricEventHandler numGroupsHandler;
-
-  /**
    * Merging enabled or not.
    */
   private final boolean mergingEnabled;
@@ -143,10 +123,6 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     this.pubSubEventHandler = pubSubEventHandler;
     this.mergingEnabled = mergingEnabled;
     this.eventProcessorManager = eventProcessorManager;
-    this.eventNumHandler = eventNumHandler;
-    this.cpuUtilHandler = cpuUtilHandler;
-    this.numGroupsHandler = numGroupsHandler;
-    this.assigner = assigner;
     metricTracker.start();
   }
 
