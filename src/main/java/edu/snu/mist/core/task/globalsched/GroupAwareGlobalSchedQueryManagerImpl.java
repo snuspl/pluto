@@ -23,6 +23,7 @@ import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.globalsched.cfs.CfsTimesliceCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.VtimeBasedNextGroupSelector;
+import edu.snu.mist.core.task.globalsched.metrics.NumGroupsMetricEventHandler;
 import edu.snu.mist.core.task.merging.MergeAwareQueryRemover;
 import edu.snu.mist.core.task.NoMergingAwareQueryRemover;
 import edu.snu.mist.core.task.QueryRemover;
@@ -104,6 +105,11 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   private final CpuUtilMetricEventHandler cpuUtilHandler;
 
   /**
+   * A group number metric handler.
+   */
+  private final NumGroupsMetricEventHandler numGroupsHandler;
+
+  /**
    * Merging enabled or not.
    */
   private final boolean mergingEnabled;
@@ -127,6 +133,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 final MetricTracker metricTracker,
                                                 final EventNumAndWeightMetricEventHandler eventNumHandler,
                                                 final CpuUtilMetricEventHandler cpuUtilHandler,
+                                                final NumGroupsMetricEventHandler numGroupsHandler,
                                                 final EventProcessorNumAssigner assigner) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
@@ -138,6 +145,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     this.eventProcessorManager = eventProcessorManager;
     this.eventNumHandler = eventNumHandler;
     this.cpuUtilHandler = cpuUtilHandler;
+    this.numGroupsHandler = numGroupsHandler;
     this.assigner = assigner;
     metricTracker.start();
   }
