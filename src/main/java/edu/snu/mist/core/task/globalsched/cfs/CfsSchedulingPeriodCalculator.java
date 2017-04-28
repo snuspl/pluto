@@ -62,7 +62,7 @@ public final class CfsSchedulingPeriodCalculator implements SchedulingPeriodCalc
   public long calculateSchedulingPeriod(final GlobalSchedGroupInfo groupInfo) {
     final double totalWeight = metric.getNumEventAndWeightMetric().getWeight();
     final double groupWeight = groupInfo.getEventNumAndWeightMetric().getWeight();
-    final int numGroups = Math.max(1, metric.getNumGroups());
+    final long numGroups = Math.max(1, metric.getNumGroupsMetric().getNumGroups());
     long adjustCfsSchedPeriod = csfSchedPeriod;
     if (csfSchedPeriod / numGroups < minSchedPeriod) {
       adjustCfsSchedPeriod = minSchedPeriod * numGroups;
