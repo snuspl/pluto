@@ -21,7 +21,7 @@ import edu.snu.mist.core.task.OperatorChainFactory;
 import javax.inject.Inject;
 
 /**
- * This is a default implementation of operator chain factory.
+ * This is an implementation of operator chain factory for thread-based model.
  */
 public final class ThreadBasedOperatorChainFactory implements OperatorChainFactory {
 
