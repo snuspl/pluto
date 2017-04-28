@@ -20,10 +20,7 @@ import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.core.parameters.TempFolderPath;
-import edu.snu.mist.formats.avro.AvroOperatorChainDag;
-import edu.snu.mist.formats.avro.AvroVertexChain;
-import edu.snu.mist.formats.avro.Edge;
-import edu.snu.mist.formats.avro.Vertex;
+import edu.snu.mist.formats.avro.*;
 import edu.snu.mist.utils.TestParameters;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
@@ -91,6 +88,7 @@ public class QueryInfoStoreTest {
         .setJarFilePaths(paths)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
+        .setSubmissionType(SubmissionTypeEnum.SINGLE)
         .build();
 
     // Store the chained dag

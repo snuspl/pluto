@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api;
+package edu.snu.mist.api.batchsub;
 
+import edu.snu.mist.api.*;
 import edu.snu.mist.formats.avro.*;
 import org.apache.avro.ipc.NettyTransceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.reef.io.Tuple;
 
 import java.io.IOException;
@@ -29,14 +31,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * The default implementation class for MISTExecutionEnvironment.
+ * A execution environment that submit query in a batch.
  * It uses avro RPC for communication with the Driver and the Task.
  * First, it communicates with MIST Driver to get a list of MIST Tasks.
  * After retrieving Tasks, it chooses a Task, and uploads its jar files to the MIST Task.
  * Then, the Task returns the paths of the stored jar files.
  * If the upload succeeds, it converts the query into AvroLogicalPlan, and submits the logical plan to the task.
  */
-public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionEnvironment {
+public final class BatchSubExecutionEnvironment {
   /**
    * A proxy that communicates with MIST Driver.
    */
@@ -54,14 +56,15 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
   /**
    * Default constructor for MISTDefaultExecutionEnvironmentImpl.
    * A list of the Task is retrieved from the MIST Driver.
-   * @param serverAddr MIST Driver server address.
-   * @param serverPort MIST Driver server port.
+   * @param driverServerAddr MIST Driver server address.
+   * @param driverServerPort MIST Driver server port.
    * @throws IOException
    */
-  public MISTDefaultExecutionEnvironmentImpl(final String serverAddr,
-                                             final int serverPort) throws IOException {
+  public BatchSubExecutionEnvironment(final String driverServerAddr,
+                                      final int driverServerPort) throws IOException {
     // Step 1: Get a task list from Driver
-    final NettyTransceiver clientToDriver = new NettyTransceiver(new InetSocketAddress(serverAddr, serverPort));
+    final NettyTransceiver clientToDriver =
+        new NettyTransceiver(new InetSocketAddress(driverServerAddr, driverServerPort));
     this.proxyToDriver = SpecificRequestor.getClient(MistTaskProvider.class, clientToDriver);
     final TaskList taskList = proxyToDriver.getTasks(new QueryInfo());
     this.tasks = taskList.getTasks();
@@ -69,18 +72,19 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
   }
 
   /**
-   * Submit the query to the MIST Task.
-   * It serializes the jar files, and uploads the files, and sends the query to the Task.
-   * @param queryToSubmit the query to be submitted.
-   * @param jarFilePaths paths of the jar files that are required for instantiating the query.
-   * @return the result of the submitted query.
+   * Submit the query and its corresponding jar files to MIST in a batch form.
+   * Submitted query will be duplicated in task side.
+   * @param queryToSubmit a query to be submitted.
+   * @param batchSubConfig a batch submission configuration representing how the query will be duplicated.
+   * @param jarFilePaths paths of jar files that are required for the query.
+   * @return the result of the query submission.
+   * @throws IOException an exception occurs when connecting with MIST and serializing the jar files.
    */
-  @Override
-  public APIQueryControlResult submit(final MISTQuery queryToSubmit,
-                                      final String[] jarFilePaths) throws IOException {
+  public APIQueryControlResult batchSubmit(final MISTQuery queryToSubmit,
+                                           final BatchSubmissionConfiguration batchSubConfig,
+                                           final String... jarFilePaths) throws IOException {
     // Choose a task
     final IPAddress task = tasks.get(0);
-
     ClientToTaskMessage proxyToTask = taskProxyMap.get(task);
     if (proxyToTask == null) {
       final NettyTransceiver clientToTask = new NettyTransceiver(
@@ -113,7 +117,14 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .setGroupId(queryToSubmit.getGroupId())
-        .setSubmissionType(SubmissionTypeEnum.SINGLE)
+        .setSubmissionType(SubmissionTypeEnum.BATCH)
+        .setPubTopicGenerateFunc(
+            ByteBuffer.wrap(SerializationUtils.serialize(batchSubConfig.getPubTopicGenerateFunc())))
+        .setSubTopicGenerateFunc(
+            ByteBuffer.wrap(SerializationUtils.serialize(batchSubConfig.getSubTopicGenerateFunc())))
+        .setQueryGroupList(batchSubConfig.getQueryGroupList())
+        .setStartQueryNum(batchSubConfig.getStartQueryNum())
+        .setBatchSize(batchSubConfig.getBatchSize())
         .build();
     final QueryControlResult queryControlResult = proxyToTask.sendQueries(operatorChainDag);
 
