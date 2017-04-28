@@ -56,14 +56,15 @@ public final class BatchSubExecutionEnvironment {
   /**
    * Default constructor for MISTDefaultExecutionEnvironmentImpl.
    * A list of the Task is retrieved from the MIST Driver.
-   * @param serverAddr MIST Driver server address.
-   * @param serverPort MIST Driver server port.
+   * @param driverServerAddr MIST Driver server address.
+   * @param driverServerPort MIST Driver server port.
    * @throws IOException
    */
-  public BatchSubExecutionEnvironment(final String serverAddr,
-                                      final int serverPort) throws IOException {
+  public BatchSubExecutionEnvironment(final String driverServerAddr,
+                                      final int driverServerPort) throws IOException {
     // Step 1: Get a task list from Driver
-    final NettyTransceiver clientToDriver = new NettyTransceiver(new InetSocketAddress(serverAddr, serverPort));
+    final NettyTransceiver clientToDriver =
+        new NettyTransceiver(new InetSocketAddress(driverServerAddr, driverServerPort));
     this.proxyToDriver = SpecificRequestor.getClient(MistTaskProvider.class, clientToDriver);
     final TaskList taskList = proxyToDriver.getTasks(new QueryInfo());
     this.tasks = taskList.getTasks();

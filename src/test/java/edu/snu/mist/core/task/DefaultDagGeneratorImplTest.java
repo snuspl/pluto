@@ -96,7 +96,7 @@ public final class DefaultDagGeneratorImplTest {
         .setJarFilePaths(new LinkedList<>())
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
-        .setSubmissionType(SubmissionTypeEnum.UNIT)
+        .setSubmissionType(SubmissionTypeEnum.SINGLE)
         .build();
 
     final DagGenerator dagGenerator = Tang.Factory.getTang().newInjector().getInstance(DagGenerator.class);

@@ -32,7 +32,7 @@
           {
             "name": "SubmissionTypeEnum",
             "type": "enum",
-            "symbols": ["UNIT", "BATCH"]
+            "symbols": ["SINGLE", "BATCH"]
           }
         },
         {
