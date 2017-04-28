@@ -34,11 +34,11 @@ import static org.mockito.Mockito.when;
 public final class CfsSchedulingPeriodCalculatorTest {
 
   /**
-   * Test the cfs timeslice calculator when the number of groups is 5.
+   * Test the cfs scheduling period calculator when the number of groups is 5.
    * @throws InjectionException
    */
   @Test
-  public void testCfsTimesliceCalculationSmallGroup() throws InjectionException {
+  public void testCfsSchedulingPeriodCalculationSmallGroup() throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(CfsSchedulingPeriod.class, "1000");
     jcb.bindNamedParameter(MinSchedulingPeriod.class, "100");
@@ -58,11 +58,11 @@ public final class CfsSchedulingPeriodCalculatorTest {
   }
 
   /**
-   * Test the cfs timeslice calculator when the number of groups is 20.
+   * Test the cfs scheduling period calculator when the number of groups is 20.
    * @throws InjectionException
    */
   @Test
-  public void testCfsTimesliceCalculationLargeGroup() throws InjectionException {
+  public void testCfsSchedulingPeriodCalculationLargeGroup() throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(CfsSchedulingPeriod.class, "1000");
     jcb.bindNamedParameter(MinSchedulingPeriod.class, "100");
