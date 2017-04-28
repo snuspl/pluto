@@ -16,9 +16,9 @@
 package edu.snu.mist.core.task.globalsched.cfs;
 
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
-import edu.snu.mist.core.task.globalsched.GroupTimesliceCalculator;
-import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsTimeslice;
-import edu.snu.mist.core.task.globalsched.cfs.parameters.MinTimeslice;
+import edu.snu.mist.core.task.globalsched.SchedulingPeriodCalculator;
+import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsSchedulingPeriod;
+import edu.snu.mist.core.task.globalsched.cfs.parameters.MinSchedulingPeriod;
 import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetric;
 import edu.snu.mist.core.task.globalsched.metrics.GlobalSchedGlobalMetrics;
 import junit.framework.Assert;
@@ -31,19 +31,19 @@ import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public final class CfsTimesliceCalculatorTest {
+public final class CfsSchedulingPeriodCalculatorTest {
 
   /**
-   * Test the cfs timeslice calculator when the number of groups is 5.
+   * Test the cfs scheduling period calculator when the number of groups is 5.
    * @throws InjectionException
    */
   @Test
-  public void testCfsTimesliceCalculationSmallGroup() throws InjectionException {
+  public void testCfsSchedulingPeriodCalculationSmallGroup() throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(CfsTimeslice.class, "1000");
-    jcb.bindNamedParameter(MinTimeslice.class, "100");
+    jcb.bindNamedParameter(CfsSchedulingPeriod.class, "1000");
+    jcb.bindNamedParameter(MinSchedulingPeriod.class, "100");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final GroupTimesliceCalculator timesliceCalculator = injector.getInstance(CfsTimesliceCalculator.class);
+    final SchedulingPeriodCalculator schePeriodCalculator = injector.getInstance(CfsSchedulingPeriodCalculator.class);
     final GlobalSchedGlobalMetrics globalSchedMetric = injector.getInstance(GlobalSchedGlobalMetrics.class);
     final EventNumAndWeightMetric metric =
         Tang.Factory.getTang().newInjector().getInstance(EventNumAndWeightMetric.class);
@@ -53,21 +53,21 @@ public final class CfsTimesliceCalculatorTest {
     when(groupInfo.getEventNumAndWeightMetric()).thenReturn(metric);
     globalSchedMetric.getNumGroupsMetric().setNumGroups(5);
     globalSchedMetric.getNumEventAndWeightMetric().setWeight(20);
-    final long slice = timesliceCalculator.calculateTimeslice(groupInfo);
-    Assert.assertEquals(500, slice);
+    final long period = schePeriodCalculator.calculateSchedulingPeriod(groupInfo);
+    Assert.assertEquals(500, period);
   }
 
   /**
-   * Test the cfs timeslice calculator when the number of groups is 20.
+   * Test the cfs scheduling period calculator when the number of groups is 20.
    * @throws InjectionException
    */
   @Test
-  public void testCfsTimesliceCalculationLargeGroup() throws InjectionException {
+  public void testCfsSchedulingPeriodCalculationLargeGroup() throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(CfsTimeslice.class, "1000");
-    jcb.bindNamedParameter(MinTimeslice.class, "100");
+    jcb.bindNamedParameter(CfsSchedulingPeriod.class, "1000");
+    jcb.bindNamedParameter(MinSchedulingPeriod.class, "100");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final GroupTimesliceCalculator timesliceCalculator = injector.getInstance(CfsTimesliceCalculator.class);
+    final SchedulingPeriodCalculator schedPeriodCalculator = injector.getInstance(CfsSchedulingPeriodCalculator.class);
     final GlobalSchedGlobalMetrics globalSchedMetric = injector.getInstance(GlobalSchedGlobalMetrics.class);
     final EventNumAndWeightMetric metric1 =
         Tang.Factory.getTang().newInjector().getInstance(EventNumAndWeightMetric.class);
@@ -80,12 +80,12 @@ public final class CfsTimesliceCalculatorTest {
     when(groupInfo.getEventNumAndWeightMetric()).thenReturn(metric1);
     globalSchedMetric.getNumGroupsMetric().setNumGroups(20);
     globalSchedMetric.getNumEventAndWeightMetric().setWeight(40);
-    final long slice = timesliceCalculator.calculateTimeslice(groupInfo);
-    Assert.assertEquals(500, slice);
+    final long period1 = schedPeriodCalculator.calculateSchedulingPeriod(groupInfo);
+    Assert.assertEquals(500, period1);
 
     final GlobalSchedGroupInfo groupInfo2 = mock(GlobalSchedGroupInfo.class);
     when(groupInfo2.getEventNumAndWeightMetric()).thenReturn(metric2);
-    final long slice2 = timesliceCalculator.calculateTimeslice(groupInfo2);
-    Assert.assertEquals(100, slice2); // min slice
+    final long period2 = schedPeriodCalculator.calculateSchedulingPeriod(groupInfo2);
+    Assert.assertEquals(100, period2); // min slice
   }
 }

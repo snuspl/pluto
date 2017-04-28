@@ -13,12 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched.cfs.parameters;
+package edu.snu.mist.core.task.globalsched;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import edu.snu.mist.core.task.globalsched.cfs.CfsSchedulingPeriodCalculator;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
-@NamedParameter(doc = "The cfs timeslice that will be allocated to groups (ms)",
-    short_name = "cfs_time_slice", default_value = "1000")
-public final class CfsTimeslice implements Name<Long> {
+/**
+ * This is an interface that calculates the scheduling period of a group.
+ */
+@DefaultImplementation(CfsSchedulingPeriodCalculator.class)
+public interface SchedulingPeriodCalculator {
+  /**
+   * Calculate the scheduling period of the group.
+   */
+  long calculateSchedulingPeriod(GlobalSchedGroupInfo groupInfo);
 }

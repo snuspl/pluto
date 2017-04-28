@@ -15,28 +15,28 @@
  */
 package edu.snu.mist.core.task.globalsched;
 
-import edu.snu.mist.core.task.globalsched.parameters.Timeslice;
+import edu.snu.mist.core.task.globalsched.parameters.SchedulingPeriod;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 
 /**
- * This provides a fixed time slice for group.
+ * This provides a fixed scheduling period for group.
  */
-final class FixedTimesliceCalculator implements GroupTimesliceCalculator {
+final class FixedSchedulingPeriodCalculator implements SchedulingPeriodCalculator {
 
   /**
-   * Fixed timeslice.
+   * Fixed period.
    */
-  private final long timeslice;
+  private final long period;
 
   @Inject
-  FixedTimesliceCalculator(@Parameter(Timeslice.class) final long timeslice) {
-    this.timeslice = timeslice;
+  FixedSchedulingPeriodCalculator(@Parameter(SchedulingPeriod.class) final long period) {
+    this.period = period;
   }
 
   @Override
-  public long calculateTimeslice(final GlobalSchedGroupInfo groupInfo) {
-    return timeslice;
+  public long calculateSchedulingPeriod(final GlobalSchedGroupInfo groupInfo) {
+    return period;
   }
 }
