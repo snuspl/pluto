@@ -106,9 +106,20 @@ public final class QueryManagerTest {
   @Test()
   public void testSubmitComplexQueryInOption2() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(RPCServerPort.class, "20332");
+    jcb.bindNamedParameter(RPCServerPort.class, "20333");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
     jcb.bindNamedParameter(ExecutionModelOption.class, "2");
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final MistTaskConfigs taskConfigs = injector.getInstance(MistTaskConfigs.class);
+    testSubmitComplexQueryHelper(taskConfigs.getConfiguration());
+  }
+
+  @Test()
+  public void testSubmitComplexQueryInOption3() throws Exception {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(RPCServerPort.class, "20334");
+    jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "3");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final MistTaskConfigs taskConfigs = injector.getInstance(MistTaskConfigs.class);
     testSubmitComplexQueryHelper(taskConfigs.getConfiguration());

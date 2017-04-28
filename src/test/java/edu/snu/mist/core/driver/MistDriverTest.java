@@ -53,6 +53,15 @@ public final class MistDriverTest {
   }
 
   /**
+   * Test whether MistDriver runs the task of option3 (thread-based model) successfully.
+   * @throws InjectionException
+   */
+  @Test
+  public void testLaunchDriverOption3() throws InjectionException {
+    launchDriverTestHelper(3, 20334);
+  }
+
+  /**
    * Test whether MistDriver runs MistTaks successfully.
    * @throws InjectionException
    */
