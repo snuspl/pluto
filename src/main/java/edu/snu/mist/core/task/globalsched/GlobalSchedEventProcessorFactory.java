@@ -28,7 +28,7 @@ public final class GlobalSchedEventProcessorFactory implements EventProcessorFac
   /**
    * The timeslice calculator.
    */
-  private final GroupTimesliceCalculator timesliceCalculator;
+  private final SchedulingPeriodCalculator timesliceCalculator;
 
   /**
    * Selector of the executable group.
@@ -36,7 +36,7 @@ public final class GlobalSchedEventProcessorFactory implements EventProcessorFac
   private final NextGroupSelector nextGroupSelector;
 
   @Inject
-  private GlobalSchedEventProcessorFactory(final GroupTimesliceCalculator timesliceCalculator,
+  private GlobalSchedEventProcessorFactory(final SchedulingPeriodCalculator timesliceCalculator,
                                            final NextGroupSelector nextGroupSelector) {
     super();
     this.timesliceCalculator = timesliceCalculator;

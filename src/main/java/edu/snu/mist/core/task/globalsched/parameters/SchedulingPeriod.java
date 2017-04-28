@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched.cfs.parameters;
+package edu.snu.mist.core.task.globalsched.parameters;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The minimum timeslice per group (ms)", short_name = "min_time_slice", default_value = "100")
-public final class MinTimeslice implements Name<Long> {
+@NamedParameter(doc = "The default scheduling period (ms)", short_name = "sched_period", default_value = "100")
+public final class SchedulingPeriod implements Name<Long> {
 }
