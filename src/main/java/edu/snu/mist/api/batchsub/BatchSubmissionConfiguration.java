@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api;
+package edu.snu.mist.api.batchsub;
 
 import edu.snu.mist.common.functions.MISTFunction;
-import org.apache.reef.tang.formats.*;
 
 import java.util.List;
 
@@ -24,7 +23,7 @@ import java.util.List;
  * Configuration class for setting batch query submission.
  * Submitted query will be duplicated according to this configuration.
  */
-public final class BatchSubmissionConfiguration extends ConfigurationModuleBuilder {
+public final class BatchSubmissionConfiguration {
 
   /**
    * A function generates publish topic from a group name.

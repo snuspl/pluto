@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api;
+package edu.snu.mist.api.batchsub;
 
+import edu.snu.mist.api.*;
 import edu.snu.mist.api.utils.MockDriverServer;
 import edu.snu.mist.api.utils.MockTaskServer;
+import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.formats.avro.*;
 import edu.snu.mist.utils.TestParameters;
@@ -31,11 +33,13 @@ import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
- * The test class for MISTDefaultExecutionEnvironmentImpl.
+ * The test class for BatchSubExecutionEnvironment.
  */
-public class MISTDefaultExecutionEnvironmentImplTest {
+public class BatchSubExecutionEnvironmentTest {
   private final String driverHost = "localhost";
   private final int driverPortNum = 65111;
   private final int taskPortNum = 65110;
@@ -72,11 +76,22 @@ public class MISTDefaultExecutionEnvironmentImplTest {
     System.err.println(mockJarOutPrefix);
     System.err.println(mockJarOutSuffix);
     final Path tempJarFile = Files.createTempFile(mockJarOutPrefix, mockJarOutSuffix);
-    // Step 3: Send a query and check whether the query comes to the task correctly
-    final MISTExecutionEnvironment executionEnvironment = new MISTDefaultExecutionEnvironmentImpl(
+    // Step 3: Send a query in batch manner and check whether the query comes to the task correctly
+    final BatchSubExecutionEnvironment executionEnvironment = new BatchSubExecutionEnvironment(
         driverHost, driverPortNum);
-    final APIQueryControlResult result = executionEnvironment.submit(query, tempJarFile.toString());
-    Assert.assertEquals(result.getQueryId(), testQueryResult);
+    final MISTFunction<String, String> pubTopicGenerateFunc = (str) -> "/device" + str + "/pub";
+    final MISTFunction<String, String> subTopicGenerateFunc = (str) -> "/device" + str + "/sub";
+    final List<Integer> queryGroupList = new LinkedList<>();
+    queryGroupList.add(10);
+    queryGroupList.add(20);
+    final int startQueryNum = 2;
+    final int batchSize = 27;
+
+    final BatchSubmissionConfiguration batchConf = new BatchSubmissionConfiguration(
+        pubTopicGenerateFunc, subTopicGenerateFunc, queryGroupList, startQueryNum, batchSize);
+    final APIQueryControlResult batchResult =
+        executionEnvironment.batchSubmit(query, batchConf, tempJarFile.toString());
+    Assert.assertEquals(batchResult.getQueryId(), testQueryResult);
     driverServer.close();
     taskServer.close();
     Files.delete(tempJarFile);

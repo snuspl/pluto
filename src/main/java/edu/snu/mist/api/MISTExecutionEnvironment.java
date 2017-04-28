@@ -31,17 +31,4 @@ public interface MISTExecutionEnvironment {
    */
   APIQueryControlResult submit(MISTQuery queryToSubmit,
                                String... jarFilePaths) throws IOException;
-
-  /**
-   * Submit the query and its corresponding jar files to MIST in a batch form.
-   * Submitted query will be duplicated in task side.
-   * @param queryToSubmit a query to be submitted.
-   * @param batchSubConfig a batch submission configuration representing how the query will be duplicated.
-   * @param jarFilePaths paths of jar files that are required for the query.
-   * @return the result of the query submission.
-   * @throws IOException an exception occurs when connecting with MIST and serializing the jar files.
-   */
-  APIQueryControlResult batchSubmit(MISTQuery queryToSubmit,
-                                    BatchSubmissionConfiguration batchSubConfig,
-                                    String... jarFilePaths) throws IOException;
 }
