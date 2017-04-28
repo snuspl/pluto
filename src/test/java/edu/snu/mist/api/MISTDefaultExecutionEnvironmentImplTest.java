@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.api;
 
+import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.formats.avro.*;
 import edu.snu.mist.utils.TestParameters;
@@ -94,12 +95,27 @@ public class MISTDefaultExecutionEnvironmentImplTest {
 
     System.err.println(mockJarOutPrefix);
     System.err.println(mockJarOutSuffix);
-    Path tempJarFile = Files.createTempFile(mockJarOutPrefix, mockJarOutSuffix);
+    final Path tempJarFile = Files.createTempFile(mockJarOutPrefix, mockJarOutSuffix);
     // Step 3: Send a query and check whether the query comes to the task correctly
     final MISTExecutionEnvironment executionEnvironment = new MISTDefaultExecutionEnvironmentImpl(
         driverHost, driverPortNum);
     final APIQueryControlResult result = executionEnvironment.submit(query, tempJarFile.toString());
     Assert.assertEquals(result.getQueryId(), testQueryResult);
+
+    // Step 3: Send a query in batch manner and check whether the query comes to the task correctly
+    final MISTFunction<String, String> pubTopicGenerateFunc = (str) -> "/device" + str + "/pub";
+    final MISTFunction<String, String> subTopicGenerateFunc = (str) -> "/device" + str + "/sub";
+    final List<Integer> queryGroupList = new LinkedList<>();
+    queryGroupList.add(10);
+    queryGroupList.add(20);
+    final int startQueryNum = 2;
+    final int batchSize = 27;
+
+    final BatchSubmissionConfiguration batchConf = new BatchSubmissionConfiguration(
+        pubTopicGenerateFunc, subTopicGenerateFunc, queryGroupList, startQueryNum, batchSize);
+    final APIQueryControlResult batchResult =
+        executionEnvironment.batchSubmit(query, batchConf, tempJarFile.toString());
+    Assert.assertEquals(batchResult.getQueryId(), testQueryResult);
     driverServer.close();
     taskServer.close();
     Files.delete(tempJarFile);

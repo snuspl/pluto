@@ -27,6 +27,43 @@
       "fields":
       [
         {
+          "name": "SubmissionType",
+          "type":
+          {
+            "name": "SubmissionTypeEnum",
+            "type": "enum",
+            "symbols": ["UNIT", "BATCH"]
+          }
+        },
+        {
+          "name": "PubTopicGenerateFunc",
+          "type": "bytes",
+          "default": "null"
+        },
+        {
+          "name": "SubTopicGenerateFunc",
+          "type": "bytes",
+          "default": "null"
+        },
+        {
+          "name": "QueryGroupList",
+          "type": {
+            "type": "array",
+            "items": "int"
+          },
+          "default": "null"
+        },
+        {
+          "name": "StartQueryNum",
+          "type": "int",
+          "default": 0
+        },
+        {
+          "name": "BatchSize",
+          "type": "int",
+          "default": 0
+        },
+        {
           "name": "GroupId",
           "type": "string"
         },

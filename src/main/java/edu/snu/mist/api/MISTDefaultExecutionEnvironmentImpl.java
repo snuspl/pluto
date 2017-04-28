@@ -18,6 +18,7 @@ package edu.snu.mist.api;
 import edu.snu.mist.formats.avro.*;
 import org.apache.avro.ipc.NettyTransceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.reef.io.Tuple;
 
 import java.io.IOException;
@@ -69,18 +70,14 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
   }
 
   /**
-   * Submit the query to the MIST Task.
-   * It serializes the jar files, and uploads the files, and sends the query to the Task.
-   * @param queryToSubmit the query to be submitted.
-   * @param jarFilePaths paths of the jar files that are required for instantiating the query.
-   * @return the result of the submitted query.
+   * Upload jar files through proxy.
+   * @param jarFilePaths paths of the jar files that are required for instantiating the query
+   * @param task IPAddress of the target task
+   * @return the proxy message and jar uploading result
    */
-  @Override
-  public APIQueryControlResult submit(final MISTQuery queryToSubmit,
-                                      final String[] jarFilePaths) throws IOException {
-    // Choose a task
-    final IPAddress task = tasks.get(0);
-
+  private Tuple<ClientToTaskMessage, JarUploadResult> uploadJars(final String[] jarFilePaths,
+                                                                 final IPAddress task)
+      throws IOException{
     ClientToTaskMessage proxyToTask = taskProxyMap.get(task);
     if (proxyToTask == null) {
       final NettyTransceiver clientToTask = new NettyTransceiver(
@@ -105,6 +102,39 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
       throw new RuntimeException(jarUploadResult.getMsg().toString());
     }
 
+    return new Tuple<>(proxyToTask, jarUploadResult);
+  }
+
+  /**
+   * Transform QueryControlResult to APIQueryControlResult.
+   * @param queryControlResult the query control result
+   * @param task IPAddress of the target task
+   * @return the result of the query submission
+   */
+  private APIQueryControlResult getAPIQueryControlResult(final QueryControlResult queryControlResult,
+                                                         final IPAddress task) {
+    final APIQueryControlResult apiQueryControlResult =
+        new APIQueryControlResultImpl(queryControlResult.getQueryId(), task,
+            queryControlResult.getMsg(), queryControlResult.getIsSuccess());
+    return apiQueryControlResult;
+  }
+
+  /**
+   * Submit the query to the MIST Task.
+   * It serializes the jar files, and uploads the files, and sends the query to the Task.
+   * @param queryToSubmit the query to be submitted.
+   * @param jarFilePaths paths of the jar files that are required for instantiating the query.
+   * @return the result of the submitted query.
+   */
+  @Override
+  public APIQueryControlResult submit(final MISTQuery queryToSubmit,
+                                      final String[] jarFilePaths) throws IOException {
+    // Choose a task
+    final IPAddress task = tasks.get(0);
+    final Tuple<ClientToTaskMessage, JarUploadResult> uploadResult = uploadJars(jarFilePaths, task);
+    final ClientToTaskMessage proxyToTask = uploadResult.getKey();
+    final JarUploadResult jarUploadResult = uploadResult.getValue();
+
     // Build logical plan using serialized vertices and edges.
     final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = queryToSubmit.getAvroOperatorChainDag();
     final AvroOperatorChainDag.Builder operatorChainDagBuilder = AvroOperatorChainDag.newBuilder();
@@ -113,13 +143,52 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .setGroupId(queryToSubmit.getGroupId())
+        .setSubmissionType(SubmissionTypeEnum.UNIT)
         .build();
     final QueryControlResult queryControlResult = proxyToTask.sendQueries(operatorChainDag);
 
     // Transform QueryControlResult to APIQueryControlResult
-    final APIQueryControlResult apiQueryControlResult =
-        new APIQueryControlResultImpl(queryControlResult.getQueryId(), task,
-                  queryControlResult.getMsg(), queryControlResult.getIsSuccess());
-    return apiQueryControlResult;
+    return getAPIQueryControlResult(queryControlResult, task);
+  }
+
+  /**
+   * Submit the query and its corresponding jar files to MIST in a batch form.
+   * Submitted query will be duplicated in task side.
+   * @param queryToSubmit a query to be submitted.
+   * @param batchSubConfig a batch submission configuration representing how the query will be duplicated.
+   * @param jarFilePaths paths of jar files that are required for the query.
+   * @return the result of the query submission.
+   * @throws IOException an exception occurs when connecting with MIST and serializing the jar files.
+   */
+  public APIQueryControlResult batchSubmit(final MISTQuery queryToSubmit,
+                                           final BatchSubmissionConfiguration batchSubConfig,
+                                           final String... jarFilePaths) throws IOException {
+    // Choose a task
+    final IPAddress task = tasks.get(0);
+    final Tuple<ClientToTaskMessage, JarUploadResult> uploadResult = uploadJars(jarFilePaths, task);
+    final ClientToTaskMessage proxyToTask = uploadResult.getKey();
+    final JarUploadResult jarUploadResult = uploadResult.getValue();
+
+    // Build logical plan using serialized vertices and edges.
+    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = queryToSubmit.getAvroOperatorChainDag();
+    final AvroOperatorChainDag.Builder operatorChainDagBuilder = AvroOperatorChainDag.newBuilder();
+    final AvroOperatorChainDag operatorChainDag = operatorChainDagBuilder
+        .setJarFilePaths(jarUploadResult.getPaths())
+        .setAvroVertices(serializedDag.getKey())
+        .setEdges(serializedDag.getValue())
+        .setGroupId(queryToSubmit.getGroupId())
+        .setSubmissionType(SubmissionTypeEnum.BATCH)
+        .setPubTopicGenerateFunc(
+            ByteBuffer.wrap(SerializationUtils.serialize(batchSubConfig.getPubTopicGenerateFunc())))
+        .setSubTopicGenerateFunc(
+            ByteBuffer.wrap(SerializationUtils.serialize(batchSubConfig.getSubTopicGenerateFunc())))
+        .setQueryGroupList(batchSubConfig.getQueryGroupList())
+        .setStartQueryNum(batchSubConfig.getStartQueryNum())
+        .setBatchSize(batchSubConfig.getBatchSize())
+        .build();
+    final QueryControlResult queryControlResult = proxyToTask.sendQueries(operatorChainDag);
+
+    // Transform QueryControlResult to APIQueryControlResult
+    return getAPIQueryControlResult(queryControlResult, task);
   }
 }
