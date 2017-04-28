@@ -36,10 +36,10 @@ public final class GlobalSchedEventProcessorFactory implements EventProcessorFac
   private final NextGroupSelector nextGroupSelector;
 
   @Inject
-  private GlobalSchedEventProcessorFactory(final SchedulingPeriodCalculator timesliceCalculator,
+  private GlobalSchedEventProcessorFactory(final SchedulingPeriodCalculator schedPeriodCalculator,
                                            final NextGroupSelector nextGroupSelector) {
     super();
-    this.schedPeriodCalculator = timesliceCalculator;
+    this.schedPeriodCalculator = schedPeriodCalculator;
     this.nextGroupSelector = nextGroupSelector;
   }
 
