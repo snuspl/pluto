@@ -23,7 +23,6 @@ import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.formats.avro.Direction;
 import org.apache.reef.io.Tuple;
 
-import javax.inject.Inject;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -68,7 +67,6 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
    */
   private OperatorChainManager operatorChainManager;
 
-  @Inject
   public DefaultOperatorChainImpl() {
     this.operators = new LinkedList<>();
     this.queue = new ConcurrentLinkedQueue<>();
