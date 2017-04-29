@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
  * This is a helper class that creates physical objects (sources, operators, sinks)
  * from serialized configurations.
  */
-final class PhysicalObjectGenerator implements AutoCloseable {
+public final class PhysicalObjectGenerator implements AutoCloseable {
 
   /**
    * Scheduled executor for event generators.

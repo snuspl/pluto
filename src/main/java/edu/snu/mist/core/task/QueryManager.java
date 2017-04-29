@@ -20,6 +20,8 @@ import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
+import java.util.List;
+
 
 /**
  * This interface manages queries that are submitted from clients.
@@ -32,6 +34,13 @@ public interface QueryManager extends AutoCloseable {
    * @param tuple the query id and the operator chain dag
    */
   QueryControlResult create(Tuple<String, AvroOperatorChainDag> tuple);
+
+  /**
+   * Start submitted queries in batch manner.
+   * The operator chain dag will be duplicated for test.
+   * @param tuple the query id list and the operator chain dag
+   */
+  QueryControlResult batchCreate(Tuple<List<String>, AvroOperatorChainDag> tuple);
 
   /**
    * Deletes the query corresponding to the queryId submitted by client.

@@ -15,9 +15,15 @@
  */
 package edu.snu.mist.core.task;
 
+import edu.snu.mist.api.datastreams.configurations.MQTTSourceConfiguration;
+import edu.snu.mist.api.datastreams.configurations.MqttSinkConfiguration;
+import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.common.parameters.MQTTBrokerURI;
+import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.merging.MergeAwareQueryRemover;
@@ -26,14 +32,24 @@ import edu.snu.mist.core.task.metrics.*;
 import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
+import edu.snu.mist.formats.avro.AvroVertexChain;
 import edu.snu.mist.formats.avro.QueryControlResult;
+import edu.snu.mist.formats.avro.Vertex;
 import org.apache.reef.io.Tuple;
+import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
+import org.apache.reef.tang.exceptions.InjectionException;
+import org.apache.reef.tang.formats.AvroConfigurationSerializer;
+import org.apache.reef.tang.implementation.java.ClassHierarchyImpl;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import javax.inject.Inject;
+import java.net.URL;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -93,6 +109,16 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
   private final boolean mergingEnabled;
 
   /**
+   * A configuration serializer.
+   */
+  private final AvroConfigurationSerializer avroConfigurationSerializer;
+
+  /**
+   * A classloader provider.
+   */
+  private final ClassLoaderProvider classLoaderProvider;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -104,7 +130,9 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
                                      @Parameter(MergingEnabled.class) final boolean mergingEnabled,
                                      final MetricTracker metricTracker,
                                      final EventProcessorNumAssigner assigner,
-                                     final EventNumMetricEventHandler eventNumHandler) {
+                                     final EventNumMetricEventHandler eventNumHandler,
+                                     final AvroConfigurationSerializer avroConfigurationSerializer,
+                                     final ClassLoaderProvider classLoaderProvider) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
@@ -114,6 +142,8 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     this.metricTracker = metricTracker;
     this.assigner = assigner;
     this.eventNumHandler = eventNumHandler;
+    this.avroConfigurationSerializer = avroConfigurationSerializer;
+    this.classLoaderProvider = classLoaderProvider;
     metricTracker.start();
   }
 
@@ -123,6 +153,42 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
    * Before the queries are executed, it stores the avro operator chain dag into disk.
    * We can regenerate the queries from the stored avro operator chain dag.
    * @param tuple a pair of the query id and the avro operator chain dag
+   */
+  private void createSingleQuery(final Tuple<String, AvroOperatorChainDag> tuple) throws Exception {
+    // 1) Saves the avro operator chain dag to the PlanStore and
+    // converts the avro operator chain dag to the logical and execution dag
+    planStore.saveAvroOpChainDag(tuple);
+    final DAG<ExecutionVertex, MISTEdge> executionDag = dagGenerator.generate(tuple);
+    final String queryId = tuple.getKey();
+    // Update group information
+    final String groupId = tuple.getValue().getGroupId();
+    if (groupInfoMap.get(groupId) == null) {
+      // Add new group id, if it doesn't exist
+      final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+      jcb.bindNamedParameter(GroupId.class, groupId);
+      jcb.bindNamedParameter(DefaultNumEventProcessors.class, Integer.toString(numEventProcessors));
+      if (mergingEnabled) {
+        jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
+        jcb.bindImplementation(QueryRemover.class, MergeAwareQueryRemover.class);
+        jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
+      } else {
+        jcb.bindImplementation(QueryStarter.class, NoMergingQueryStarter.class);
+        jcb.bindImplementation(QueryRemover.class, NoMergingAwareQueryRemover.class);
+        jcb.bindImplementation(ExecutionDags.class, NoMergingExecutionDags.class);
+      }
+      final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+      groupInfoMap.putIfAbsent(groupId, injector.getInstance(GroupInfo.class));
+    }
+    // Add the query into the group
+    final GroupInfo groupInfo = groupInfoMap.get(groupId);
+    groupInfo.addQueryIdToGroup(queryId);
+    // Start the submitted dag
+    groupInfo.getQueryStarter().start(queryId, executionDag);
+  }
+
+  /**
+   * Start a submitted query.
+   * @param tuple the query id and the operator chain dag
    * @return submission result
    */
   @Override
@@ -130,35 +196,9 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(tuple.getKey());
     try {
-      // 1) Saves the avro operator chain dag to the PlanStore and
-      // converts the avro operator chain dag to the logical and execution dag
-      planStore.saveAvroOpChainDag(tuple);
-      final DAG<ExecutionVertex, MISTEdge> executionDag = dagGenerator.generate(tuple);
-      final String queryId = tuple.getKey();
-      // Update group information
-      final String groupId = tuple.getValue().getGroupId();
-      if (groupInfoMap.get(groupId) == null) {
-        // Add new group id, if it doesn't exist
-        final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-        jcb.bindNamedParameter(GroupId.class, groupId);
-        jcb.bindNamedParameter(DefaultNumEventProcessors.class, Integer.toString(numEventProcessors));
-        if (mergingEnabled) {
-          jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
-          jcb.bindImplementation(QueryRemover.class, MergeAwareQueryRemover.class);
-          jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
-        } else {
-          jcb.bindImplementation(QueryStarter.class, NoMergingQueryStarter.class);
-          jcb.bindImplementation(QueryRemover.class, NoMergingAwareQueryRemover.class);
-          jcb.bindImplementation(ExecutionDags.class, NoMergingExecutionDags.class);
-        }
-        final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-        groupInfoMap.putIfAbsent(groupId, injector.getInstance(GroupInfo.class));
-      }
-      // Add the query into the group
-      final GroupInfo groupInfo = groupInfoMap.get(groupId);
-      groupInfo.addQueryIdToGroup(queryId);
-      // Start the submitted dag
-      groupInfo.getQueryStarter().start(queryId, executionDag);
+      // Create the submitted query
+      createSingleQuery(tuple);
+
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
       return queryControlResult;
@@ -167,6 +207,142 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
       // [MIST-345] We need to release all of the information that is required for the query when it fails.
       LOG.log(Level.SEVERE, "An exception occurred while starting {0} query: {1}",
           new Object[] {tuple.getKey(), e.toString()});
+      queryControlResult.setIsSuccess(false);
+      queryControlResult.setMsg(e.getMessage());
+      return queryControlResult;
+    }
+  }
+
+  /**
+   * Start submitted queries in batch manner.
+   * The operator chain dag will be duplicated for test.
+   * @param tuple a pair of query id list and the operator chain dag
+   * @return submission result
+   */
+  @Override
+  public QueryControlResult batchCreate(final Tuple<List<String>, AvroOperatorChainDag> tuple) {
+    final List<String> queryIdList = tuple.getKey();
+    final AvroOperatorChainDag operatorChainDag = tuple.getValue();
+    final QueryControlResult queryControlResult = new QueryControlResult();
+    queryControlResult.setQueryId(queryIdList.get(0));
+    try {
+      // Get classloader
+      final URL[] urls = SerializeUtils.getJarFileURLs(operatorChainDag.getJarFilePaths());
+      final ClassLoader classLoader = classLoaderProvider.newInstance(urls);
+
+      // Load the batch submission configuration
+      final MISTFunction<String, String> pubTopicFunc = SerializeUtils.deserializeFromString(
+          new String(operatorChainDag.getPubTopicGenerateFunc().array()), classLoader);
+      final MISTFunction<String, String> subTopicFunc = SerializeUtils.deserializeFromString(
+          new String(operatorChainDag.getSubTopicGenerateFunc().array()), classLoader);
+      final List<Integer> queryGroupList = operatorChainDag.getQueryGroupList();
+      final int startQueryNum = operatorChainDag.getStartQueryNum();
+
+      // Calculate the starting point
+      int group = -1;
+      int sum = 0;
+      final Iterator<Integer> itr = queryGroupList.iterator();
+      while(itr.hasNext() && sum <= startQueryNum) {
+        final int groupQuery = itr.next();
+        sum += groupQuery;
+        group++;
+      }
+      int remain = sum - startQueryNum;
+      String newGroupId = String.valueOf(group);
+      String pubTopic = pubTopicFunc.apply(newGroupId);
+      String subTopic = subTopicFunc.apply(newGroupId);
+
+      for (int i = 0; i < queryIdList.size(); i++) {
+        // Insert the topic information to a copied AvroOperatorChainDag
+        for (final AvroVertexChain avroVertexChain : operatorChainDag.getAvroVertices()) {
+          switch (avroVertexChain.getAvroVertexChainType()) {
+            case SOURCE: {
+              // It have to be MQTT source at now
+              final Vertex vertex = avroVertexChain.getVertexChain().get(0);
+              final Configuration originConf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
+                  new ClassHierarchyImpl(urls));
+
+              // Restore the original configuration and inject the overriding topic
+              final Injector injector = Tang.Factory.getTang().newInjector(originConf);
+              final String mqttBrokerURI = injector.getNamedInstance(MQTTBrokerURI.class);
+              final String serializedFunction = injector.getNamedInstance(SerializedTimestampExtractUdf.class);
+
+              try {
+                final MISTFunction extractFuncClass = injector.getInstance(MISTFunction.class);
+                if (extractFuncClass != null) {
+                  throw new RuntimeException("Class-based source config in batch submission is not allowed at now.");
+                }
+              } catch (final InjectionException e) {
+                // Function class is not defined
+              }
+
+              final Configuration modifiedConf;
+              if (serializedFunction == null) {
+                modifiedConf = MQTTSourceConfiguration.newBuilder()
+                    .setBrokerURI(mqttBrokerURI)
+                    .setTopic(pubTopic)
+                    .build().getConfiguration();
+              } else {
+                final MISTFunction<MqttMessage, Tuple<MqttMessage, Long>> extractFunc =
+                    SerializeUtils.deserializeFromString(
+                        injector.getNamedInstance(SerializedTimestampExtractUdf.class), classLoader);
+                modifiedConf = MQTTSourceConfiguration.newBuilder()
+                    .setBrokerURI(mqttBrokerURI)
+                    .setTopic(subTopic)
+                    .build().getConfiguration();
+              }
+              vertex.setConfiguration(avroConfigurationSerializer.toString(modifiedConf));
+              break;
+            }
+            case OPERATOR_CHAIN: {
+              // Do nothing
+              break;
+            }
+            case SINK: {
+              final Vertex vertex = avroVertexChain.getVertexChain().get(0);
+              final Configuration originConf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
+                  new ClassHierarchyImpl(urls));
+
+              // Restore the original configuration and inject the overriding topic
+              final Injector injector = Tang.Factory.getTang().newInjector(originConf);
+              final String mqttBrokerURI = injector.getNamedInstance(MQTTBrokerURI.class);
+              final Configuration modifiedConf = MqttSinkConfiguration.CONF
+                  .set(MqttSinkConfiguration.MQTT_BROKER_URI, mqttBrokerURI)
+                  .set(MqttSinkConfiguration.MQTT_TOPIC, pubTopic)
+                  .build();
+              vertex.setConfiguration(avroConfigurationSerializer.toString(modifiedConf));
+              break;
+            }
+            default: {
+              throw new IllegalArgumentException("MISTTask: Invalid vertex detected in AvroLogicalPlan!");
+            }
+          }
+        }
+
+        final Tuple<String, AvroOperatorChainDag> newTuple = new Tuple<>(queryIdList.get(i), operatorChainDag);
+        createSingleQuery(newTuple);
+
+        remain--;
+        if (remain <= 0) {
+          if (itr.hasNext()) {
+            remain = itr.next();
+            newGroupId = String.valueOf(group);
+            pubTopic = pubTopicFunc.apply(newGroupId);
+            subTopic = subTopicFunc.apply(newGroupId);
+          } else {
+            throw new RuntimeException("The query group list does not have enough queries");
+          }
+        }
+      }
+
+      queryControlResult.setIsSuccess(true);
+      queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey().get(0)));
+      return queryControlResult;
+    } catch (final Exception e) {
+      e.printStackTrace();
+      // [MIST-345] We need to release all of the information that is required for the query when it fails.
+      LOG.log(Level.SEVERE, "An exception occurred while starting from {0} to {1} batch query: {1}",
+          new Object[] {queryIdList.get(0), queryIdList.get(queryIdList.size() - 1), e.toString()});
       queryControlResult.setIsSuccess(false);
       queryControlResult.setMsg(e.getMessage());
       return queryControlResult;

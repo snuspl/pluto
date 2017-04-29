@@ -21,15 +21,12 @@ import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;
-import edu.snu.mist.core.parameters.TempFolderPath;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.AvroVertexChain;
 import edu.snu.mist.formats.avro.Edge;
 import edu.snu.mist.formats.avro.Vertex;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.Configuration;
-import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
 import org.apache.reef.tang.implementation.java.ClassHierarchyImpl;
@@ -49,25 +46,19 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
   private static final Logger LOG = Logger.getLogger(DefaultDagGeneratorImpl.class.getName());
 
   private final IdGenerator idGenerator;
-  private final String tmpFolderPath;
   private final ClassLoaderProvider classLoaderProvider;
   private final PhysicalObjectGenerator physicalObjectGenerator;
-  private final StringIdentifierFactory identifierFactory;
   private final AvroConfigurationSerializer avroConfigurationSerializer;
   private final OperatorChainFactory operatorChainFactory;
 
   @Inject
   private DefaultDagGeneratorImpl(final IdGenerator idGenerator,
-                                  @Parameter(TempFolderPath.class) final String tmpFolderPath,
-                                  final StringIdentifierFactory identifierFactory,
                                   final ClassLoaderProvider classLoaderProvider,
                                   final AvroConfigurationSerializer avroConfigurationSerializer,
                                   final PhysicalObjectGenerator physicalObjectGenerator,
                                   final OperatorChainFactory operatorChainFactory) {
     this.idGenerator = idGenerator;
-    this.tmpFolderPath = tmpFolderPath;
     this.classLoaderProvider = classLoaderProvider;
-    this.identifierFactory = identifierFactory;
     this.avroConfigurationSerializer = avroConfigurationSerializer;
     this.physicalObjectGenerator = physicalObjectGenerator;
     this.operatorChainFactory = operatorChainFactory;

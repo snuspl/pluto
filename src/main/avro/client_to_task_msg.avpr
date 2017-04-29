@@ -27,15 +27,6 @@
       "fields":
       [
         {
-          "name": "SubmissionType",
-          "type":
-          {
-            "name": "SubmissionTypeEnum",
-            "type": "enum",
-            "symbols": ["SINGLE", "BATCH"]
-          }
-        },
-        {
           "name": "PubTopicGenerateFunc",
           "type": "bytes",
           "default": "null"
@@ -55,11 +46,6 @@
         },
         {
           "name": "StartQueryNum",
-          "type": "int",
-          "default": 0
-        },
-        {
-          "name": "BatchSize",
           "type": "int",
           "default": 0
         },
@@ -221,6 +207,21 @@
         {
           "name": "operatorChainDag",
           "type": "AvroOperatorChainDag"
+        }
+      ],
+      "response": "QueryControlResult"
+    },
+    "sendBatchQueries":
+    {
+      "request":
+      [
+        {
+          "name": "operatorChainDag",
+          "type": "AvroOperatorChainDag"
+        },
+        {
+          "name": "batchSize",
+          "type": "int"
         }
       ],
       "response": "QueryControlResult"

@@ -23,7 +23,7 @@ import edu.snu.mist.common.sources.EventGenerator;
  * This class represents the implementation of Source interface.
  * @param <T> the type of input data
  */
-final class PhysicalSourceImpl<T> extends BasePhysicalVertex implements PhysicalSource {
+public final class PhysicalSourceImpl<T> extends BasePhysicalVertex implements PhysicalSource {
 
   /**
    * Data generator that generates data.

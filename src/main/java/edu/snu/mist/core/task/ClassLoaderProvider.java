@@ -25,7 +25,7 @@ import java.util.List;
  * An interface for providing class loaders.
  */
 @DefaultImplementation(URLClassLoaderProvider.class)
-interface ClassLoaderProvider {
+public interface ClassLoaderProvider {
 
   /**
    * Create a class loader with urls.

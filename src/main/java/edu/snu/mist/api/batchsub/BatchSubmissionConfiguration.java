@@ -26,12 +26,12 @@ import java.util.List;
 public final class BatchSubmissionConfiguration {
 
   /**
-   * A function generates publish topic from a group name.
+   * A function generates MQTT sink topic to publish from a group name.
    */
   private final MISTFunction<String, String> pubTopicGenerateFunc;
 
   /**
-   * A function generates subscribe topic name from a group name.
+   * A function generates MQTT source topic to subscribe from a group name.
    */
   private final MISTFunction<String, String> subTopicGenerateFunc;
 
@@ -42,6 +42,7 @@ public final class BatchSubmissionConfiguration {
 
   /**
    * A query number represents the starting point of query group list.
+   *
    */
   private final int startQueryNum;
 

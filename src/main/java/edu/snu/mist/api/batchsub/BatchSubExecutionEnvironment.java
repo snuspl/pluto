@@ -117,16 +117,15 @@ public final class BatchSubExecutionEnvironment {
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .setGroupId(queryToSubmit.getGroupId())
-        .setSubmissionType(SubmissionTypeEnum.BATCH)
         .setPubTopicGenerateFunc(
             ByteBuffer.wrap(SerializationUtils.serialize(batchSubConfig.getPubTopicGenerateFunc())))
         .setSubTopicGenerateFunc(
             ByteBuffer.wrap(SerializationUtils.serialize(batchSubConfig.getSubTopicGenerateFunc())))
         .setQueryGroupList(batchSubConfig.getQueryGroupList())
         .setStartQueryNum(batchSubConfig.getStartQueryNum())
-        .setBatchSize(batchSubConfig.getBatchSize())
         .build();
-    final QueryControlResult queryControlResult = proxyToTask.sendQueries(operatorChainDag);
+    final QueryControlResult queryControlResult =
+        proxyToTask.sendBatchQueries(operatorChainDag, batchSubConfig.getBatchSize());
 
     // Transform QueryControlResult to APIQueryControlResult
     final APIQueryControlResult apiQueryControlResult =
