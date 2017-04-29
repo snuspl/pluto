@@ -103,7 +103,7 @@ public final class QueryManagerTest {
     testSubmitComplexQueryHelper(taskConfigs.getConfiguration());
   }
 
-  @Test()
+  @Test(timeout = 5000)
   public void testSubmitComplexQueryInOption2() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(RPCServerPort.class, "20333");
@@ -114,7 +114,7 @@ public final class QueryManagerTest {
     testSubmitComplexQueryHelper(taskConfigs.getConfiguration());
   }
 
-  @Test()
+  @Test(timeout = 5000)
   public void testSubmitComplexQueryInOption3() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(RPCServerPort.class, "20334");
