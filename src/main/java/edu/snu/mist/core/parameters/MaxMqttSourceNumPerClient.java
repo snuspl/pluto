@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package edu.snu.mist.core.parameters;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * The maximum number of mqtt inflight events.
+ * The number of maximum Mqtt Sinks per Client.
  */
-@NamedParameter(doc="The maximum number of inflight mqtt events per client", default_value = "100000")
-public final class MaxInflightMqttEventNum implements Name<Integer>{
+@NamedParameter(doc = "The maximum number of Mqtt sources per Client", default_value = "200")
+public final class MaxMqttSourceNumPerClient implements Name<Integer> {
 }

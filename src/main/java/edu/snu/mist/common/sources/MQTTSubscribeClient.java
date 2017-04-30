@@ -46,10 +46,6 @@ public final class MQTTSubscribeClient implements MqttCallback {
    */
   private final ConcurrentMap<String, MQTTDataGenerator> dataGeneratorMap;
   /**
-   * The map coupling MQTT broker URI and MQTTSubscribeClient.
-   */
-  private final ConcurrentMap<String, MQTTSubscribeClient> mqttSubscribeClientMap;
-  /**
    * The lock used when a DataGenerator want to start subscription.
    */
   private final Object subscribeLock;
@@ -59,13 +55,11 @@ public final class MQTTSubscribeClient implements MqttCallback {
    * @param brokerURI the URI of broker to connect
    */
   public MQTTSubscribeClient(final String brokerURI,
-                             final String clientId,
-                             final ConcurrentMap<String, MQTTSubscribeClient> mqttSubscribeClientMap) {
+                             final String clientId) {
     this.started = false;
     this.brokerURI = brokerURI;
     this.clientId = clientId;
     this.dataGeneratorMap = new ConcurrentHashMap<>();
-    this.mqttSubscribeClientMap = mqttSubscribeClientMap;
     this.subscribeLock = new Object();
   }
 
