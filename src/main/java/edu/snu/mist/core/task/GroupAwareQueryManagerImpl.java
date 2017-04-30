@@ -186,7 +186,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
    * @return submission result
    */
   @Override
-  public QueryControlResult batchCreate(final Tuple<List<String>, AvroOperatorChainDag> tuple) {
+  public QueryControlResult createBatch(final Tuple<List<String>, AvroOperatorChainDag> tuple) {
     final List<String> queryIdList = tuple.getKey();
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(queryIdList.get(0));

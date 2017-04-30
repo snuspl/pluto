@@ -39,7 +39,7 @@ public interface QueryManager extends AutoCloseable {
    * The operator chain dag will be duplicated for test.
    * @param tuple the query id list and the operator chain dag
    */
-  QueryControlResult batchCreate(Tuple<List<String>, AvroOperatorChainDag> tuple);
+  QueryControlResult createBatch(Tuple<List<String>, AvroOperatorChainDag> tuple);
 
   /**
    * Deletes the query corresponding to the queryId submitted by client.

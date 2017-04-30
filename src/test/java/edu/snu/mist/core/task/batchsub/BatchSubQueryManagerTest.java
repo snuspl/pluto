@@ -201,7 +201,7 @@ public final class BatchSubQueryManagerTest {
 
     // Build QueryManager and create queries in batch manner
     manager = queryManagerBuild(tuple, dagGenerator);
-    manager.batchCreate(tuple);
+    manager.createBatch(tuple);
     final AvroOperatorChainDag opChainDag = tuple.getValue();
 
     // Test whether the group id is overwritten well
