@@ -141,7 +141,7 @@ public final class MQTTSourceConfiguration extends ConfigurationModuleBuilder {
      * @param function the function given by users which they want to set
      * @return the configured SourceBuilder
      */
-    public MQTTSourceConfigurationBuilder setTimestapExtractionFunction(
+    public MQTTSourceConfigurationBuilder setTimestampExtractionFunction(
         final MISTFunction<MqttMessage, Tuple<MqttMessage, Long>> function) {
       this.extractFunc = function;
       return this;

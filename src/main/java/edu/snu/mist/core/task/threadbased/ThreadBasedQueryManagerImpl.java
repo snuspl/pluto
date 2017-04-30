@@ -19,6 +19,7 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
@@ -63,19 +64,27 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
   private final Map<OperatorChain, Thread> threads;
 
   /**
+   * A batch query submission helper.
+   */
+  private final BatchQueryCreator batchQueryCreator;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
   private ThreadBasedQueryManagerImpl(final DagGenerator dagGenerator,
                                       final ScheduledExecutorServiceWrapper schedulerWrapper,
-                                      final QueryInfoStore planStore) {
+                                      final QueryInfoStore planStore,
+                                      final BatchQueryCreator batchQueryCreator) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.threads = new ConcurrentHashMap<>();
+    this.batchQueryCreator = batchQueryCreator;
   }
 
   /**
+   * Create a submitted query.
    * It converts the avro operator chain dag (query) to the execution dag,
    * and executes the sources in order to receives data streams.
    * Before the queries are executed, it stores the avro operator chain dag into disk.
@@ -88,12 +97,14 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(tuple.getKey());
     try {
+      // Create the submitted query
       // 1) Saves the avro operator chain dag to the PlanStore and
       // converts the avro operator chain dag to the logical and execution dag
       planStore.saveAvroOpChainDag(tuple);
       final DAG<ExecutionVertex, MISTEdge> executionDag = dagGenerator.generate(tuple);
       // Execute the execution dag
       start(executionDag);
+
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
       return queryControlResult;
@@ -101,6 +112,34 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
       // [MIST-345] We need to release all of the information that is required for the query when it fails.
       LOG.log(Level.SEVERE, "An exception occurred while starting {0} query: {1}",
           new Object[] {tuple.getKey(), e.getMessage()});
+      queryControlResult.setIsSuccess(false);
+      queryControlResult.setMsg(e.getMessage());
+      return queryControlResult;
+    }
+  }
+
+  /**
+   * Start submitted queries in batch manner.
+   * The operator chain dag will be duplicated for test.
+   * @param tuple a pair of the query id and the avro operator chain dag
+   * @return submission result
+   */
+  @Override
+  public QueryControlResult createBatch(final Tuple<List<String>, AvroOperatorChainDag> tuple) {
+    final List<String> queryIdList = tuple.getKey();
+    final QueryControlResult queryControlResult = new QueryControlResult();
+    queryControlResult.setQueryId(queryIdList.get(0));
+    try {
+      batchQueryCreator.duplicate(tuple, this);
+
+      queryControlResult.setIsSuccess(true);
+      queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey().get(0)));
+      return queryControlResult;
+    } catch (final Exception e) {
+      e.printStackTrace();
+      // [MIST-345] We need to release all of the information that is required for the query when it fails.
+      LOG.log(Level.SEVERE, "An exception occurred while starting from {0} to {1} batch query: {2}",
+          new Object[] {queryIdList.get(0), queryIdList.get(queryIdList.size() - 1), e.toString()});
       queryControlResult.setIsSuccess(false);
       queryControlResult.setMsg(e.getMessage());
       return queryControlResult;

@@ -88,7 +88,6 @@ public class QueryInfoStoreTest {
         .setJarFilePaths(paths)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
-        .setSubmissionType(SubmissionTypeEnum.SINGLE)
         .build();
 
     // Store the chained dag

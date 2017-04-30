@@ -16,10 +16,10 @@
 package edu.snu.mist.api.batchsub;
 
 import edu.snu.mist.api.*;
+import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.formats.avro.*;
 import org.apache.avro.ipc.NettyTransceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
-import org.apache.commons.lang.SerializationUtils;
 import org.apache.reef.io.Tuple;
 
 import java.io.IOException;
@@ -117,16 +117,15 @@ public final class BatchSubExecutionEnvironment {
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .setGroupId(queryToSubmit.getGroupId())
-        .setSubmissionType(SubmissionTypeEnum.BATCH)
         .setPubTopicGenerateFunc(
-            ByteBuffer.wrap(SerializationUtils.serialize(batchSubConfig.getPubTopicGenerateFunc())))
+            SerializeUtils.serializeToString(batchSubConfig.getPubTopicGenerateFunc()))
         .setSubTopicGenerateFunc(
-            ByteBuffer.wrap(SerializationUtils.serialize(batchSubConfig.getSubTopicGenerateFunc())))
+            SerializeUtils.serializeToString(batchSubConfig.getSubTopicGenerateFunc()))
         .setQueryGroupList(batchSubConfig.getQueryGroupList())
         .setStartQueryNum(batchSubConfig.getStartQueryNum())
-        .setBatchSize(batchSubConfig.getBatchSize())
         .build();
-    final QueryControlResult queryControlResult = proxyToTask.sendQueries(operatorChainDag);
+    final QueryControlResult queryControlResult =
+        proxyToTask.sendBatchQueries(operatorChainDag, batchSubConfig.getBatchSize());
 
     // Transform QueryControlResult to APIQueryControlResult
     final APIQueryControlResult apiQueryControlResult =

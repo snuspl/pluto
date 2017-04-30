@@ -20,6 +20,7 @@ import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.globalsched.cfs.CfsSchedulingPeriodCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.VtimeBasedNextGroupSelector;
@@ -45,6 +46,7 @@ import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -100,6 +102,11 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   private final EventProcessorManager eventProcessorManager;
 
   /**
+   * A batch query submission helper.
+   */
+  private final BatchQueryCreator batchQueryCreator;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -114,7 +121,8 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 final EventNumAndWeightMetricEventHandler eventNumHandler,
                                                 final CpuUtilMetricEventHandler cpuUtilHandler,
                                                 final NumGroupsMetricEventHandler numGroupsHandler,
-                                                final EventProcessorNumAssigner assigner) {
+                                                final EventProcessorNumAssigner assigner,
+                                                final BatchQueryCreator batchQueryCreator) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
@@ -123,10 +131,12 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     this.pubSubEventHandler = pubSubEventHandler;
     this.mergingEnabled = mergingEnabled;
     this.eventProcessorManager = eventProcessorManager;
+    this.batchQueryCreator = batchQueryCreator;
     metricTracker.start();
   }
 
   /**
+   * Start a submitted query.
    * It converts the avro operator chain dag (query) to the execution dag,
    * and executes the sources in order to receives data streams.
    * Before the queries are executed, it stores the avro operator chain dag into disk.
@@ -139,6 +149,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(tuple.getKey());
     try {
+      // Create the submitted query
       // 1) Saves the avro operator chain dag to the PlanStore and
       // converts the avro operator chain dag to the logical and execution dag
       planStore.saveAvroOpChainDag(tuple);
@@ -174,6 +185,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
       groupInfo.addQueryIdToGroup(queryId);
       // Start the submitted dag
       groupInfo.getQueryStarter().start(queryId, executionDag);
+
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
       return queryControlResult;
@@ -182,6 +194,34 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
       // [MIST-345] We need to release all of the information that is required for the query when it fails.
       LOG.log(Level.SEVERE, "An exception occurred while starting {0} query: {1}",
           new Object[] {tuple.getKey(), e.toString()});
+      queryControlResult.setIsSuccess(false);
+      queryControlResult.setMsg(e.getMessage());
+      return queryControlResult;
+    }
+  }
+
+  /**
+   * Start submitted queries in batch manner.
+   * The operator chain dag will be duplicated for test.
+   * @param tuple a pair of the query id and the avro operator chain dag
+   * @return submission result
+   */
+  @Override
+  public QueryControlResult createBatch(final Tuple<List<String>, AvroOperatorChainDag> tuple) {
+    final List<String> queryIdList = tuple.getKey();
+    final QueryControlResult queryControlResult = new QueryControlResult();
+    queryControlResult.setQueryId(queryIdList.get(0));
+    try {
+      batchQueryCreator.duplicate(tuple, this);
+
+      queryControlResult.setIsSuccess(true);
+      queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey().get(0)));
+      return queryControlResult;
+    } catch (final Exception e) {
+      e.printStackTrace();
+      // [MIST-345] We need to release all of the information that is required for the query when it fails.
+      LOG.log(Level.SEVERE, "An exception occurred while starting from {0} to {1} batch query: {2}",
+          new Object[] {queryIdList.get(0), queryIdList.get(queryIdList.size() - 1), e.toString()});
       queryControlResult.setIsSuccess(false);
       queryControlResult.setMsg(e.getMessage());
       return queryControlResult;

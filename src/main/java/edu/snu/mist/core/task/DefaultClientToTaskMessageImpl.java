@@ -26,6 +26,7 @@ import org.apache.reef.io.Tuple;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -87,6 +88,16 @@ public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage
   public QueryControlResult sendQueries(final AvroOperatorChainDag chainDag) throws AvroRemoteException {
     final String queryId = queryIdGenerator.generate(chainDag);
     return queryManager.create(new Tuple<>(queryId, chainDag));
+  }
+
+  @Override
+  public QueryControlResult sendBatchQueries(final AvroOperatorChainDag chainDag,
+                                             final int batchSize) throws AvroRemoteException {
+    final List<String> queryIdList = new ArrayList<>();
+    for (int i = 0; i < batchSize; i++) {
+      queryIdList.add(queryIdGenerator.generate(chainDag));
+    }
+    return queryManager.createBatch(new Tuple<>(queryIdList, chainDag));
   }
 
   @Override
