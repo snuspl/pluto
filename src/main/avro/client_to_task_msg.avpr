@@ -27,25 +27,25 @@
       "fields":
       [
         {
-          "name": "PubTopicGenerateFunc",
+          "name": "PubTopicGenerateFunc", /* TODO[DELETE] this code is for test */
           "type": "string",
           "default": "null"
         },
         {
-          "name": "SubTopicGenerateFunc",
+          "name": "SubTopicGenerateFunc", /* TODO[DELETE] this code is for test */
           "type": "string",
           "default": "null"
         },
         {
-          "name": "QueryGroupList",
+          "name": "QueryGroupList", /* TODO[DELETE] this code is for test */
           "type": {
             "type": "array",
             "items": "int"
           },
-          "default": "null"
+          "default": []
         },
         {
-          "name": "StartQueryNum",
+          "name": "StartQueryNum", /* TODO[DELETE] this code is for test */
           "type": "int",
           "default": 0
         },
@@ -220,7 +220,7 @@
           "type": "AvroOperatorChainDag"
         },
         {
-          "name": "batchSize",
+          "name": "batchSize", /* TODO[DELETE] this code is for test */
           "type": "int"
         }
       ],

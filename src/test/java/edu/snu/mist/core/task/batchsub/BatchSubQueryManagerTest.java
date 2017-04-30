@@ -56,6 +56,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
+ * TODO[DELETE] this code is for test.
  * Test batch submission in the query managers of option 1, 2, and 3.
  */
 public final class BatchSubQueryManagerTest {

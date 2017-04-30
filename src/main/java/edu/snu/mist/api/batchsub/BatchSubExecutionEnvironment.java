@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
+ * TODO[DELETE] this code is for test.
  * A execution environment that submit query in a batch.
  * It uses avro RPC for communication with the Driver and the Task.
  * First, it communicates with MIST Driver to get a list of MIST Tasks.
