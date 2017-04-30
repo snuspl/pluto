@@ -42,6 +42,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
+ * TODO[DELETE] this code is for test.
  * A batch query creator class for supporting test.
  */
 public final class BatchQueryCreator {

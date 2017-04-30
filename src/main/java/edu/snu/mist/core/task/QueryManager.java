@@ -35,6 +35,7 @@ public interface QueryManager extends AutoCloseable {
   QueryControlResult create(Tuple<String, AvroOperatorChainDag> tuple);
 
   /**
+   * TODO[DELETE] this code is for test.
    * Start submitted queries in batch manner.
    * The operator chain dag will be duplicated for test.
    * @param tuple the query id list and the operator chain dag

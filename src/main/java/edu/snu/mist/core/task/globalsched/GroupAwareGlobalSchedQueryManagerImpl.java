@@ -201,6 +201,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   }
 
   /**
+   * TODO[DELETE] this code is for test.
    * Start submitted queries in batch manner.
    * The operator chain dag will be duplicated for test.
    * @param tuple a pair of the query id and the avro operator chain dag

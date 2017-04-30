@@ -20,6 +20,7 @@ import edu.snu.mist.common.functions.MISTFunction;
 import java.util.List;
 
 /**
+ * TODO[DELETE] this code is for test.
  * Configuration class for setting batch query submission.
  * Submitted query will be duplicated according to this configuration.
  */

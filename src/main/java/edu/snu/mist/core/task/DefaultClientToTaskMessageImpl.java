@@ -90,6 +90,9 @@ public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage
     return queryManager.create(new Tuple<>(queryId, chainDag));
   }
 
+  /**
+   *  TODO[DELETE] this code is for test.
+   */
   @Override
   public QueryControlResult sendBatchQueries(final AvroOperatorChainDag chainDag,
                                              final int batchSize) throws AvroRemoteException {
