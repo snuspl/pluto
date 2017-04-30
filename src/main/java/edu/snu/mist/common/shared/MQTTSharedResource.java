@@ -28,9 +28,9 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
@@ -89,10 +89,10 @@ public final class MQTTSharedResource implements AutoCloseable {
       @Parameter(MaxMqttSourceNumPerClient.class) final int maxMqttSourceNumPerClientParam,
       @Parameter(MaxMqttSinkNumPerClient.class) final int maxMqttSinkNumPerClientParam,
       @Parameter(MaxInflightMqttEventNum.class) final int maxInflightMqttEventNumParam) {
-    this.mqttSubscriberMap = new ConcurrentHashMap<>();
-    this.subscriberSinkNumMap = new ConcurrentHashMap<>();
-    this.mqttPublisherMap = new ConcurrentHashMap<>();
-    this.publisherSinkNumMap = new ConcurrentHashMap<>();
+    this.mqttSubscriberMap = new HashMap<>();
+    this.subscriberSinkNumMap = new HashMap<>();
+    this.mqttPublisherMap = new HashMap<>();
+    this.publisherSinkNumMap = new HashMap<>();
     this.maxMqttSourceNumPerClient = maxMqttSourceNumPerClientParam;
     this.maxMqttSinkNumPerClient = maxMqttSinkNumPerClientParam;
     this.maxInflightMqttEventNum = maxInflightMqttEventNumParam;
