@@ -66,7 +66,6 @@ public final class MqttSink implements Sink<MqttMessage> {
         final MqttClient client = new MqttClient(brokerURI, MQTTSharedResource.MQTT_PUBLISHER_ID_PREFIX
             + brokerURI + "_0");
         final MqttConnectOptions connectOptions = new MqttConnectOptions();
-        // This code is ad-hoc. We need to use named parameter.
         connectOptions.setMaxInflight(maxInflightMqttEventNum);
         client.connect(connectOptions);
         mqttPublisherMap.get(brokerURI).add(client);
@@ -85,7 +84,6 @@ public final class MqttSink implements Sink<MqttMessage> {
           final MqttClient newClientCandidate = new MqttClient(brokerURI, MQTTSharedResource.MQTT_PUBLISHER_ID_PREFIX +
               brokerURI + "_" + mqttClientList.size());
           final MqttConnectOptions connectOptions = new MqttConnectOptions();
-          // This code is ad-hoc. We need to use named parameter.
           connectOptions.setMaxInflight(maxInflightMqttEventNum);
           newClientCandidate.connect(connectOptions);
           mqttClientList.add(newClientCandidate);
