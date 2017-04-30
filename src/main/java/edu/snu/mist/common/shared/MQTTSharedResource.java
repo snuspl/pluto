@@ -17,8 +17,6 @@ package edu.snu.mist.common.shared;
 
 import edu.snu.mist.common.sources.MQTTDataGenerator;
 import edu.snu.mist.common.sources.MQTTSubscribeClient;
-import edu.snu.mist.core.parameters.NumMqttSinkPerClient;
-import org.apache.reef.tang.annotations.Parameter;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 
 import javax.inject.Inject;
@@ -36,7 +34,7 @@ public final class MQTTSharedResource implements AutoCloseable {
   /**
    * MQTT publisher id.
    */
-  public static final String MQTT_PUBLISHER_ID = "MIST_MQTT_PUBLISHER";
+  public static final String MQTT_PUBLISHER_ID_PREFIX = "MIST_MQTT_PUBLISHER_";
 
   /**
    * The map coupling MQTT broker URI and MQTTSubscribeClient.
@@ -53,14 +51,8 @@ public final class MQTTSharedResource implements AutoCloseable {
    */
   private final ConcurrentMap<MqttClient, Integer> clientSinkNumMap;
 
-  /**
-   * The maximum number of mqtt sinks which one mqtt client supports.
-   */
-  private final int numMqttSinkPerClient;
-
   @Inject
-  private MQTTSharedResource(@Parameter(NumMqttSinkPerClient.class) final int numMqttSinkPerClientParam) {
-    this.numMqttSinkPerClient = numMqttSinkPerClientParam;
+  private MQTTSharedResource() {
     this.mqttSubscribeClientMap = new ConcurrentHashMap<>();
     this.mqttPublisherMap = new ConcurrentHashMap<>();
     this.clientSinkNumMap = new ConcurrentHashMap<>();
@@ -80,14 +72,6 @@ public final class MQTTSharedResource implements AutoCloseable {
    */
   public ConcurrentMap<MqttClient, Integer> getClientSinkNumMap() {
     return clientSinkNumMap;
-  }
-
-  /**
-   * Get the maximum number of mqtt sinks per client.
-   * @return maximum number of mqtt sinks per client
-   */
-  public int getMaxNumMqttSinkPerClient() {
-    return this.numMqttSinkPerClient;
   }
 
   /**
