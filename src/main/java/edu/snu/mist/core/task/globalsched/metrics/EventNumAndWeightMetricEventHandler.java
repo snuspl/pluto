@@ -55,11 +55,12 @@ public final class EventNumAndWeightMetricEventHandler implements MetricTrackEve
   @Override
   public void onNext(final MetricTrackEvent metricTrackEvent) {
     long totalNumEvent = 0;
-    int totalWeight = 0;
-    for (final GlobalSchedGroupInfo groupInfo : groupInfoMap.values()) {
+    double totalWeight = 0;
+    final Collection<GlobalSchedGroupInfo> groupInfos = groupInfoMap.values();
+    for (final GlobalSchedGroupInfo groupInfo : groupInfos) {
       // Track the number of event per each group
       long groupNumEvent = 0;
-      for (final DAG<ExecutionVertex, MISTEdge> dag : groupInfo.getExecutionDags().getUniqueValues()) {
+      for (final DAG<ExecutionVertex, MISTEdge> dag : groupInfo.getExecutionDags().values()) {
         final Collection<ExecutionVertex> vertices = dag.getVertices();
         for (final ExecutionVertex ev : vertices) {
           if (ev.getType() == ExecutionVertex.Type.OPERATOR_CHIAN) {
@@ -68,15 +69,15 @@ public final class EventNumAndWeightMetricEventHandler implements MetricTrackEve
         }
       }
       final EventNumAndWeightMetric metric = groupInfo.getEventNumAndWeightMetric();
-      metric.setNumEvents(groupNumEvent);
+      metric.updateNumEvents(groupNumEvent);
       totalNumEvent += groupNumEvent;
 
-      // TODO: [MIST-617] Add group weight adding process into GlobalSchedMetricTracker
-      final int weightToSet = 1;
-      metric.setWeight(weightToSet);
-      totalWeight += weightToSet;
+      // Set the weight per group
+      final double weight = metric.getEwmaNumEvents();
+      metric.setWeight(weight);
+      totalWeight += weight;
     }
-    globalMetrics.getNumEventAndWeightMetric().setNumEvents(totalNumEvent);
+    globalMetrics.getNumEventAndWeightMetric().updateNumEvents(totalNumEvent);
     globalMetrics.getNumEventAndWeightMetric().setWeight(totalWeight);
   }
 }

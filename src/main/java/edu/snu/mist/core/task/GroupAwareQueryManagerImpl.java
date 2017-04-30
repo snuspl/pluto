@@ -20,13 +20,10 @@ import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
-import edu.snu.mist.core.task.queryRemovers.MergeAwareQueryRemover;
-import edu.snu.mist.core.task.queryRemovers.NoMergingAwareQueryRemover;
-import edu.snu.mist.core.task.queryRemovers.QueryRemover;
+import edu.snu.mist.core.task.merging.MergeAwareQueryRemover;
+import edu.snu.mist.core.task.merging.MergingExecutionDags;
 import edu.snu.mist.core.task.metrics.*;
-import edu.snu.mist.core.task.queryStarters.ImmediateQueryMergingStarter;
-import edu.snu.mist.core.task.queryStarters.NoMergingQueryStarter;
-import edu.snu.mist.core.task.queryStarters.QueryStarter;
+import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
@@ -148,9 +145,11 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
         if (mergingEnabled) {
           jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
           jcb.bindImplementation(QueryRemover.class, MergeAwareQueryRemover.class);
+          jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
         } else {
           jcb.bindImplementation(QueryStarter.class, NoMergingQueryStarter.class);
           jcb.bindImplementation(QueryRemover.class, NoMergingAwareQueryRemover.class);
+          jcb.bindImplementation(ExecutionDags.class, NoMergingExecutionDags.class);
         }
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
         groupInfoMap.putIfAbsent(groupId, injector.getInstance(GroupInfo.class));

@@ -54,7 +54,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
   private final PhysicalObjectGenerator physicalObjectGenerator;
   private final StringIdentifierFactory identifierFactory;
   private final AvroConfigurationSerializer avroConfigurationSerializer;
-  private final PhysicalVertexMap physicalVertexMap;
+  private final OperatorChainFactory operatorChainFactory;
 
   @Inject
   private DefaultDagGeneratorImpl(final IdGenerator idGenerator,
@@ -63,14 +63,14 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
                                   final ClassLoaderProvider classLoaderProvider,
                                   final AvroConfigurationSerializer avroConfigurationSerializer,
                                   final PhysicalObjectGenerator physicalObjectGenerator,
-                                  final PhysicalVertexMap physicalVertexMap) {
+                                  final OperatorChainFactory operatorChainFactory) {
     this.idGenerator = idGenerator;
     this.tmpFolderPath = tmpFolderPath;
     this.classLoaderProvider = classLoaderProvider;
     this.identifierFactory = identifierFactory;
     this.avroConfigurationSerializer = avroConfigurationSerializer;
     this.physicalObjectGenerator = physicalObjectGenerator;
-    this.physicalVertexMap = physicalVertexMap;
+    this.operatorChainFactory = operatorChainFactory;
   }
 
   /**
@@ -111,12 +111,10 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
               dataGenerator, eventGenerator);
           deserializedVertices.add(source);
           executionDAG.addVertex(source);
-          // Add the physical vertex to the physical map
-          physicalVertexMap.getPhysicalVertexMap().put(id, source);
           break;
         }
         case OPERATOR_CHAIN: {
-          final OperatorChain operatorChain = new DefaultOperatorChainImpl();
+          final OperatorChain operatorChain = operatorChainFactory.newInstance();
           deserializedVertices.add(operatorChain);
           for (final Vertex vertex : avroVertexChain.getVertexChain()) {
             final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
@@ -126,9 +124,6 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
             final PhysicalOperator physicalOperator = new DefaultPhysicalOperatorImpl(id, vertex.getConfiguration(),
                 operator, operatorChain);
             operatorChain.insertToTail(physicalOperator);
-
-            // Add the physical vertex to the physical map
-            physicalVertexMap.getPhysicalVertexMap().put(id, physicalOperator);
           }
           executionDAG.addVertex(operatorChain);
           break;
@@ -142,8 +137,6 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
               physicalObjectGenerator.newSink(conf, classLoader));
           deserializedVertices.add(sink);
           executionDAG.addVertex(sink);
-          // Add the physical vertex to the physical map
-          physicalVertexMap.getPhysicalVertexMap().put(id, sink);
           break;
         }
         default: {

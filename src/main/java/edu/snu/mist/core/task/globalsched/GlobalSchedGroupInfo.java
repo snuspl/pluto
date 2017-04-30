@@ -17,9 +17,9 @@ package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.core.task.ExecutionDags;
 import edu.snu.mist.core.task.OperatorChainManager;
+import edu.snu.mist.core.task.QueryRemover;
+import edu.snu.mist.core.task.QueryStarter;
 import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetric;
-import edu.snu.mist.core.task.queryRemovers.QueryRemover;
-import edu.snu.mist.core.task.queryStarters.QueryStarter;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.List;
@@ -59,7 +59,7 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
    * Return the execution dags in the group.
    * @return execution dags
    */
-  ExecutionDags<String> getExecutionDags();
+  ExecutionDags getExecutionDags();
 
   /**
    * Return the query remover.
@@ -89,11 +89,11 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
    * Get the vruntime of the group.
    * @return vruntime
    */
-  long getVRuntime();
+  double getVRuntime();
 
   /**
    * Set the vruntime of the group.
    * @param vruntime vruntime
    */
-  void setVRuntime(long vruntime);
+  void setVRuntime(double vruntime);
 }

@@ -21,18 +21,20 @@ import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
-import edu.snu.mist.core.task.globalsched.cfs.CfsTimesliceCalculator;
+import edu.snu.mist.core.task.globalsched.cfs.CfsSchedulingPeriodCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.VtimeBasedNextGroupSelector;
-import edu.snu.mist.core.task.queryRemovers.MergeAwareQueryRemover;
-import edu.snu.mist.core.task.queryRemovers.NoMergingAwareQueryRemover;
-import edu.snu.mist.core.task.queryRemovers.QueryRemover;
+import edu.snu.mist.core.task.globalsched.metrics.NumGroupsMetricEventHandler;
+import edu.snu.mist.core.task.merging.MergeAwareQueryRemover;
+import edu.snu.mist.core.task.NoMergingAwareQueryRemover;
+import edu.snu.mist.core.task.QueryRemover;
 import edu.snu.mist.core.task.globalsched.metrics.CpuUtilMetricEventHandler;
 import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetricEventHandler;
+import edu.snu.mist.core.task.merging.MergingExecutionDags;
 import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
 import edu.snu.mist.core.task.metrics.MetricTracker;
-import edu.snu.mist.core.task.queryStarters.ImmediateQueryMergingStarter;
-import edu.snu.mist.core.task.queryStarters.NoMergingQueryStarter;
-import edu.snu.mist.core.task.queryStarters.QueryStarter;
+import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
+import edu.snu.mist.core.task.NoMergingQueryStarter;
+import edu.snu.mist.core.task.QueryStarter;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
@@ -88,21 +90,6 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   private final MistPubSubEventHandler pubSubEventHandler;
 
   /**
-   * A event processor number assigner.
-   */
-  private final EventProcessorNumAssigner assigner;
-
-  /**
-   * A event number and weight metric handler.
-   */
-  private final EventNumAndWeightMetricEventHandler eventNumHandler;
-
-  /**
-   * A cpu utilization metric handler.
-   */
-  private final CpuUtilMetricEventHandler cpuUtilHandler;
-
-  /**
    * Merging enabled or not.
    */
   private final boolean mergingEnabled;
@@ -126,6 +113,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 final MetricTracker metricTracker,
                                                 final EventNumAndWeightMetricEventHandler eventNumHandler,
                                                 final CpuUtilMetricEventHandler cpuUtilHandler,
+                                                final NumGroupsMetricEventHandler numGroupsHandler,
                                                 final EventProcessorNumAssigner assigner) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
@@ -135,9 +123,6 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     this.pubSubEventHandler = pubSubEventHandler;
     this.mergingEnabled = mergingEnabled;
     this.eventProcessorManager = eventProcessorManager;
-    this.eventNumHandler = eventNumHandler;
-    this.cpuUtilHandler = cpuUtilHandler;
-    this.assigner = assigner;
     metricTracker.start();
   }
 
@@ -168,13 +153,15 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
         if (mergingEnabled) {
           jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
           jcb.bindImplementation(QueryRemover.class, MergeAwareQueryRemover.class);
+          jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
         } else {
           jcb.bindImplementation(QueryStarter.class, NoMergingQueryStarter.class);
           jcb.bindImplementation(QueryRemover.class, NoMergingAwareQueryRemover.class);
+          jcb.bindImplementation(ExecutionDags.class, NoMergingExecutionDags.class);
         }
         jcb.bindImplementation(OperatorChainManager.class, NonBlockingActiveOperatorChainPickManager.class);
         jcb.bindImplementation(NextGroupSelector.class, VtimeBasedNextGroupSelector.class);
-        jcb.bindImplementation(GroupTimesliceCalculator.class, CfsTimesliceCalculator.class);
+        jcb.bindImplementation(SchedulingPeriodCalculator.class, CfsSchedulingPeriodCalculator.class);
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
         injector.bindVolatileInstance(MistPubSubEventHandler.class, pubSubEventHandler);
         final GlobalSchedGroupInfo groupInfo = injector.getInstance(GlobalSchedGroupInfo.class);

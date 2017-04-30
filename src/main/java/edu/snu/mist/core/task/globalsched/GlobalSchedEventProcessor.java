@@ -35,19 +35,19 @@ final class GlobalSchedEventProcessor extends Thread implements EventProcessor {
   private volatile boolean closed;
 
   /**
-   * The timeslice calculator.
+   * The scheduling period calculator.
    */
-  private final GroupTimesliceCalculator timesliceCalculator;
+  private final SchedulingPeriodCalculator schedPeriodCalculator;
 
   /**
    * Selector of the executable group.
    */
   private final NextGroupSelector nextGroupSelector;
 
-  public GlobalSchedEventProcessor(final GroupTimesliceCalculator timesliceCalculator,
+  public GlobalSchedEventProcessor(final SchedulingPeriodCalculator schedPeriodCalculator,
                                    final NextGroupSelector nextGroupSelector) {
     super();
-    this.timesliceCalculator = timesliceCalculator;
+    this.schedPeriodCalculator = schedPeriodCalculator;
     this.nextGroupSelector = nextGroupSelector;
   }
 
@@ -61,8 +61,8 @@ final class GlobalSchedEventProcessor extends Thread implements EventProcessor {
         final long startTime = System.nanoTime();
         final GlobalSchedGroupInfo groupInfo = nextGroupSelector.getNextExecutableGroup();
         final OperatorChainManager operatorChainManager = groupInfo.getOperatorChainManager();
-        final long timeslice = timesliceCalculator.calculateTimeslice(groupInfo);
-        while (TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) < timeslice && !closed) {
+        final long schedulingPeriod = schedPeriodCalculator.calculateSchedulingPeriod(groupInfo);
+        while (TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) < schedulingPeriod && !closed) {
           // This should be non-blocking operator chain manager
           // because we should select another group if the group has no events
           final OperatorChain operatorChain = operatorChainManager.pickOperatorChain();

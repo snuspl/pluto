@@ -29,6 +29,7 @@ import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.AvroVertexChain;
 import edu.snu.mist.formats.avro.Edge;
+import edu.snu.mist.formats.avro.SubmissionTypeEnum;
 import edu.snu.mist.utils.TestParameters;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Tang;
@@ -95,6 +96,7 @@ public final class DefaultDagGeneratorImplTest {
         .setJarFilePaths(new LinkedList<>())
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
+        .setSubmissionType(SubmissionTypeEnum.SINGLE)
         .build();
 
     final DagGenerator dagGenerator = Tang.Factory.getTang().newInjector().getInstance(DagGenerator.class);

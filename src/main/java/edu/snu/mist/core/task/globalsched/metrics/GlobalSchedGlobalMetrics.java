@@ -15,8 +15,6 @@
  */
 package edu.snu.mist.core.task.globalsched.metrics;
 
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfoMap;
-
 import javax.inject.Inject;
 
 /**
@@ -27,25 +25,25 @@ public final class GlobalSchedGlobalMetrics {
   /**
    * The metric represents the number of all events inside the operator chain queues and the sum of weights.
    */
-  private EventNumAndWeightMetric eventNumAndWeightMetric;
+  private final EventNumAndWeightMetric eventNumAndWeightMetric;
 
   /**
    * The metric represents the cpu utilization.
    */
-  private CpuUtilMetric cpuUtilMetric;
+  private final CpuUtilMetric cpuUtilMetric;
 
   /**
    * The number of groups.
    */
-  private volatile int numGroups;
+  private final NumGroupsMetric numGroupsMetric;
 
   @Inject
-  private GlobalSchedGlobalMetrics(final GlobalSchedGroupInfoMap groupInfoMap,
-                                   final EventNumAndWeightMetric eventNumAndWeightMetric,
-                                   final CpuUtilMetric cpuUtilMetric) {
+  private GlobalSchedGlobalMetrics(final EventNumAndWeightMetric eventNumAndWeightMetric,
+                                   final CpuUtilMetric cpuUtilMetric,
+                                   final NumGroupsMetric numGroupsMetric) {
     this.eventNumAndWeightMetric = eventNumAndWeightMetric;
     this.cpuUtilMetric = cpuUtilMetric;
-    this.numGroups = groupInfoMap.size();
+    this.numGroupsMetric = numGroupsMetric;
   }
 
   /**
@@ -63,18 +61,9 @@ public final class GlobalSchedGlobalMetrics {
   }
 
   /**
-   * Get the number of groups.
+   * @return the metric of the number of groups.
    */
-  public int getNumGroups() {
-    return numGroups;
+  public NumGroupsMetric getNumGroupsMetric() {
+    return numGroupsMetric;
   }
-
-  /**
-   * Set the number of groups.
-   * @param groups
-   */
-  public void setNumGroups(final int groups) {
-    numGroups = groups;
-  }
-
 }

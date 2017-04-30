@@ -32,7 +32,7 @@ import javax.inject.Inject;
  * then this handler will create event processors more.
  * Else if the total event number is quite low and the CPU load is also low,
  * then this handler will close some event processors.
- * Also, it will do multiplicative increase/subtractive decrease similar to the AIMD of TCP.
+ * Also, it will do multiplicative increase/additive decrease similar to the AIMD of TCP.
  */
 public final class MISDEventProcessorNumAssigner implements EventProcessorNumAssigner {
 
@@ -129,7 +129,7 @@ public final class MISDEventProcessorNumAssigner implements EventProcessorNumAss
       } else if (metrics.getNumEventAndWeightMetric().getNumEvents() < eventNumLowThreshold) {
         // If the cpu utilization is low and there are few events,
         // then there might be too many event processors.
-        // The decrease will be subtractive because we do not have to react rapidly to the idle state.
+        // The decrease will be additive because we do not have to react rapidly to the idle state.
         final int currentEventProcessorsNum = eventProcessorManager.getEventProcessors().size();
         if (currentEventProcessorsNum - decreaseNum > defaultNumEventProcessors) {
           eventProcessorManager.adjustEventProcessorNum(currentEventProcessorsNum - decreaseNum);

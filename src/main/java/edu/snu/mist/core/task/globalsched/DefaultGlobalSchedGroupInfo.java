@@ -16,10 +16,11 @@
 package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.common.parameters.GroupId;
-import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.ExecutionDags;
+import edu.snu.mist.core.task.OperatorChainManager;
+import edu.snu.mist.core.task.QueryRemover;
+import edu.snu.mist.core.task.QueryStarter;
 import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetric;
-import edu.snu.mist.core.task.queryRemovers.QueryRemover;
-import edu.snu.mist.core.task.queryStarters.QueryStarter;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -44,7 +45,7 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   /**
    * Execution dags that are currently running in this group.
    */
-  private final ExecutionDags<String> executionDags;
+  private final ExecutionDags executionDags;
 
   /**
    * A query starter.
@@ -74,11 +75,11 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   /**
    * The vruntime of the group.
    */
-  private long vruntime;
+  private double vruntime;
 
   @Inject
   private DefaultGlobalSchedGroupInfo(@Parameter(GroupId.class) final String groupId,
-                                      final ExecutionDags<String> executionDags,
+                                      final ExecutionDags executionDags,
                                       final EventNumAndWeightMetric eventNumAndWeightMetric,
                                       final QueryStarter queryStarter,
                                       final OperatorChainManager operatorChainManager,
@@ -134,7 +135,7 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
    * @return execution dags
    */
   @Override
-  public ExecutionDags<String> getExecutionDags() {
+  public ExecutionDags getExecutionDags() {
     return executionDags;
   }
 
@@ -163,12 +164,12 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   }
 
   @Override
-  public long getVRuntime() {
+  public double getVRuntime() {
     return vruntime;
   }
 
   @Override
-  public void setVRuntime(final long vrt) {
+  public void setVRuntime(final double vrt) {
     vruntime = vrt;
   }
 

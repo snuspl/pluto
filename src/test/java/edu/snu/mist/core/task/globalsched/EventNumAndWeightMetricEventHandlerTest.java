@@ -20,8 +20,10 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetric;
 import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetricEventHandler;
 import edu.snu.mist.core.task.globalsched.metrics.GlobalSchedGlobalMetrics;
+import edu.snu.mist.core.task.merging.MergingExecutionDags;
 import edu.snu.mist.core.task.metrics.MetricTrackEvent;
 import edu.snu.mist.core.task.utils.IdAndConfGenerator;
 import edu.snu.mist.formats.avro.Direction;
@@ -57,15 +59,22 @@ public final class EventNumAndWeightMetricEventHandlerTest {
   }
 
   /**
-   * Test that a metric track event handler can track the total event number metric properly.
+   * Test that a metric track event handler can track the total event number and weight metric properly.
    */
-  @Test(timeout = 1000L)
-  public void testEventNumMetricTracking() throws Exception {
+  @Test
+  public void testEventNumAndWeightMetricTracking() throws Exception {
 
     final GlobalSchedGroupInfo groupInfoA = generateGroupInfo("GroupA");
     final GlobalSchedGroupInfo groupInfoB = generateGroupInfo("GroupB");
-    final ExecutionDags<String> executionDagsA = groupInfoA.getExecutionDags();
-    final ExecutionDags<String> executionDagsB = groupInfoB.getExecutionDags();
+    final ExecutionDags executionDagsA = groupInfoA.getExecutionDags();
+    final ExecutionDags executionDagsB = groupInfoB.getExecutionDags();
+
+    final Injector injector1 = Tang.Factory.getTang().newInjector();
+    final EventNumAndWeightMetric expectedA = injector1.getInstance(EventNumAndWeightMetric.class);
+    final Injector injector2 = Tang.Factory.getTang().newInjector();
+    final EventNumAndWeightMetric expectedB = injector2.getInstance(EventNumAndWeightMetric.class);
+    final Injector injector3 = Tang.Factory.getTang().newInjector();
+    final EventNumAndWeightMetric expectedTotal = injector3.getInstance(EventNumAndWeightMetric.class);
 
     // two dags in group A:
     // srcA1 -> opA1 -> sinkA1
@@ -80,7 +89,7 @@ public final class EventNumAndWeightMetricEventHandlerTest {
     dagA.addEdge(srcA, opA, new MISTEdge(Direction.LEFT));
     dagA.addEdge(opA, sinkA, new MISTEdge(Direction.LEFT));
 
-    executionDagsA.put(srcA.getConfiguration(), dagA);
+    executionDagsA.add(dagA);
 
     // one dag in group B:
     // srcB1 -> opB1 -> sinkB1
@@ -106,8 +115,8 @@ public final class EventNumAndWeightMetricEventHandlerTest {
     dagB2.addEdge(srcB2, opB2, new MISTEdge(Direction.LEFT));
     dagB2.addEdge(opB2, sinkB2, new MISTEdge(Direction.RIGHT));
 
-    executionDagsB.put(srcB1.getConfiguration(), dagB1);
-    executionDagsB.put(srcB2.getConfiguration(), dagB2);
+    executionDagsB.add(dagB1);
+    executionDagsB.add(dagB2);
 
     // the total and per-group event number should be zero
     Assert.assertEquals(0, metric.getNumEventAndWeightMetric().getNumEvents());
@@ -118,10 +127,17 @@ public final class EventNumAndWeightMetricEventHandlerTest {
     opA.addNextEvent(generateTestEvent(), Direction.LEFT);
 
     // wait the tracker for a while
+    expectedA.updateNumEvents(1);
+    expectedB.updateNumEvents(0);
+    expectedTotal.updateNumEvents(1);
+    expectedA.setWeight(expectedA.getEwmaNumEvents());
+    expectedB.setWeight(expectedB.getEwmaNumEvents());
+    expectedTotal.setWeight(expectedA.getEwmaNumEvents() + expectedB.getEwmaNumEvents());
+
     metricPubSubEventHandler.getPubSubEventHandler().onNext(new MetricTrackEvent());
-    Assert.assertEquals(1, metric.getNumEventAndWeightMetric().getNumEvents());
-    Assert.assertEquals(1, groupInfoA.getEventNumAndWeightMetric().getNumEvents());
-    Assert.assertEquals(0, groupInfoB.getEventNumAndWeightMetric().getNumEvents());
+    Assert.assertEquals(expectedTotal, metric.getNumEventAndWeightMetric());
+    Assert.assertEquals(expectedA, groupInfoA.getEventNumAndWeightMetric());
+    Assert.assertEquals(expectedB, groupInfoB.getEventNumAndWeightMetric());
 
     // add a few events to the operator chains in group B
     opB1.addNextEvent(generateTestEvent(), Direction.LEFT);
@@ -129,25 +145,17 @@ public final class EventNumAndWeightMetricEventHandlerTest {
     opB2.addNextEvent(generateTestEvent(), Direction.LEFT);
 
     // wait the tracker for a while
-    metricPubSubEventHandler.getPubSubEventHandler().onNext(new MetricTrackEvent());
-    Assert.assertEquals(4, metric.getNumEventAndWeightMetric().getNumEvents());
-    Assert.assertEquals(1, groupInfoA.getEventNumAndWeightMetric().getNumEvents());
-    Assert.assertEquals(3, groupInfoB.getEventNumAndWeightMetric().getNumEvents());
-  }
-
-  /**
-   * Test that a metric track event handler can track the weight metric properly.
-   */
-  @Test(timeout = 1000L)
-  public void testWeightMetricTracking() throws Exception {
-    // TODO: [MIST-617] Add group weight adding process into GlobalSchedMetricTracker
-    final GlobalSchedGroupInfo groupInfoA = generateGroupInfo("GroupA");
-    final GlobalSchedGroupInfo groupInfoB = generateGroupInfo("GroupB");
+    expectedA.updateNumEvents(1);
+    expectedB.updateNumEvents(3);
+    expectedTotal.updateNumEvents(4);
+    expectedA.setWeight(expectedA.getEwmaNumEvents());
+    expectedB.setWeight(expectedB.getEwmaNumEvents());
+    expectedTotal.setWeight(expectedA.getEwmaNumEvents() + expectedB.getEwmaNumEvents());
 
     metricPubSubEventHandler.getPubSubEventHandler().onNext(new MetricTrackEvent());
-    Assert.assertEquals(2, metric.getNumEventAndWeightMetric().getWeight());
-    Assert.assertEquals(1, groupInfoA.getEventNumAndWeightMetric().getWeight());
-    Assert.assertEquals(1, groupInfoB.getEventNumAndWeightMetric().getWeight());
+    Assert.assertEquals(expectedTotal, metric.getNumEventAndWeightMetric());
+    Assert.assertEquals(expectedA, groupInfoA.getEventNumAndWeightMetric());
+    Assert.assertEquals(expectedB, groupInfoB.getEventNumAndWeightMetric());
   }
 
   /**
@@ -159,6 +167,7 @@ public final class EventNumAndWeightMetricEventHandlerTest {
   private GlobalSchedGroupInfo generateGroupInfo(final String groupId) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(GroupId.class, groupId);
+    jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final GlobalSchedGroupInfo groupInfo = injector.getInstance(GlobalSchedGroupInfo.class);
     groupInfoMap.put(groupId, groupInfo);

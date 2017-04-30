@@ -20,7 +20,7 @@ import edu.snu.mist.core.task.MistPubSubEventHandler;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.GroupEvent;
 import edu.snu.mist.core.task.globalsched.NextGroupSelector;
-import edu.snu.mist.core.task.globalsched.cfs.parameters.MinTimeslice;
+import edu.snu.mist.core.task.globalsched.cfs.parameters.MinSchedulingPeriod;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -39,25 +39,25 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
   /**
    * A Red-Black tree based map to pick a group that has the lowest virtual time.
    */
-  private final TreeMap<Long, Queue<GlobalSchedGroupInfo>> rbTreeMap;
+  private final TreeMap<Double, Queue<GlobalSchedGroupInfo>> rbTreeMap;
 
   /**
    * Default weight of the group.
    */
-  private final int defaultWeight;
+  private final double defaultWeight;
 
   /**
-   * The minimum timeslice per group.
+   * The minimum scheduling period per group.
    */
-  private final long minTimeslice;
+  private final long minSchedPeriod;
 
   @Inject
-  private VtimeBasedNextGroupSelector(@Parameter(DefaultGroupWeight.class) final int defaultWeight,
-                                      @Parameter(MinTimeslice.class) final long minTimeslice,
+  private VtimeBasedNextGroupSelector(@Parameter(DefaultGroupWeight.class) final double defaultWeight,
+                                      @Parameter(MinSchedulingPeriod.class) final long minSchedPeriod,
                                       final MistPubSubEventHandler pubSubEventHandler) {
     this.rbTreeMap = new TreeMap<>();
     this.defaultWeight = defaultWeight;
-    this.minTimeslice = minTimeslice;
+    this.minSchedPeriod = minSchedPeriod;
     pubSubEventHandler.getPubSubEventHandler().subscribe(GroupEvent.class, this);
   }
 
@@ -67,7 +67,7 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
    */
   private void addGroup(final GlobalSchedGroupInfo groupInfo) {
     synchronized (rbTreeMap) {
-      final long vruntime = groupInfo.getVRuntime();
+      final double vruntime = groupInfo.getVRuntime();
       Queue<GlobalSchedGroupInfo> queue = rbTreeMap.get(vruntime);
       if (queue == null) {
         rbTreeMap.put(vruntime, new LinkedList<>());
@@ -102,7 +102,7 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
           e.printStackTrace();
         }
       }
-      final Map.Entry<Long, Queue<GlobalSchedGroupInfo>> entry = rbTreeMap.firstEntry();
+      final Map.Entry<Double, Queue<GlobalSchedGroupInfo>> entry = rbTreeMap.firstEntry();
       final Queue<GlobalSchedGroupInfo> queue = entry.getValue();
       final GlobalSchedGroupInfo groupInfo = queue.poll();
       if (queue.isEmpty()) {
@@ -120,8 +120,8 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
   @Override
   public void reschedule(final GlobalSchedGroupInfo groupInfo) {
     final long endTime = System.nanoTime();
-    final long delta = calculateVRuntimeDelta(endTime - groupInfo.getLatestScheduledTime(), groupInfo);
-    final long adjustedVRuntime = groupInfo.getVRuntime() + delta;
+    final double delta = calculateVRuntimeDelta(endTime - groupInfo.getLatestScheduledTime(), groupInfo);
+    final double adjustedVRuntime = groupInfo.getVRuntime() + delta;
     groupInfo.setVRuntime(adjustedVRuntime);
     addGroup(groupInfo);
   }
@@ -132,8 +132,8 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
    * @param groupInfo group info
    * @return delta vruntime
    */
-  private long calculateVRuntimeDelta(final long delta, final GlobalSchedGroupInfo groupInfo) {
-    return Math.max(minTimeslice * defaultWeight / groupInfo.getEventNumAndWeightMetric().getWeight(),
+  private double calculateVRuntimeDelta(final long delta, final GlobalSchedGroupInfo groupInfo) {
+    return Math.max(minSchedPeriod * defaultWeight / groupInfo.getEventNumAndWeightMetric().getWeight(),
     TimeUnit.NANOSECONDS.toMillis(delta) * defaultWeight / groupInfo.getEventNumAndWeightMetric().getWeight());
   }
 

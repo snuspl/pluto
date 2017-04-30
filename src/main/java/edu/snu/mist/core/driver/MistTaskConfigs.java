@@ -21,16 +21,15 @@ import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.parameters.NumPeriodicSchedulerThreads;
 import edu.snu.mist.core.parameters.TempFolderPath;
-import edu.snu.mist.core.task.DefaultClientToTaskMessageImpl;
-import edu.snu.mist.core.task.GroupAwareQueryManagerImpl;
-import edu.snu.mist.core.task.QueryManager;
-import edu.snu.mist.core.task.TaskSpecificResponderWrapper;
+import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.eventProcessors.DefaultEventProcessorManager;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorFactory;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.globalsched.GlobalSchedEventProcessorFactory;
 import edu.snu.mist.core.task.globalsched.GroupAwareGlobalSchedQueryManagerImpl;
+import edu.snu.mist.core.task.threadbased.ThreadBasedOperatorChainFactory;
+import edu.snu.mist.core.task.threadbased.ThreadBasedQueryManagerImpl;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
@@ -104,6 +103,8 @@ public final class MistTaskConfigs {
         return getOption1Configuration();
       case 2:
         return getOption2Configuration();
+      case 3:
+        return getOption3Configuration();
       default:
         throw new RuntimeException("Undefined execution model: " + executionModelOption);
     }
@@ -127,6 +128,17 @@ public final class MistTaskConfigs {
     jcb.bindImplementation(QueryManager.class, GroupAwareGlobalSchedQueryManagerImpl.class);
     jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedEventProcessorFactory.class);
     jcb.bindImplementation(EventProcessorManager.class, DefaultEventProcessorManager.class);
+    return jcb.build();
+  }
+
+  /**
+   * Get the configuration for thread-based execution model
+   * that creates a new thread per operator chain.
+   */
+  private Configuration getOption3Configuration() {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindImplementation(QueryManager.class, ThreadBasedQueryManagerImpl.class);
+    jcb.bindImplementation(OperatorChainFactory.class, ThreadBasedOperatorChainFactory.class);
     return jcb.build();
   }
 
