@@ -42,7 +42,6 @@ public final class BatchSubmissionConfiguration {
 
   /**
    * A query number represents the starting point of query group list.
-   *
    */
   private final int startQueryNum;
 

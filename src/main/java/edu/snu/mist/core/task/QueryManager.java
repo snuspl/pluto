@@ -22,7 +22,6 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.List;
 
-
 /**
  * This interface manages queries that are submitted from clients.
  * It executes the queries when they are submitted, and deletes them if requested.

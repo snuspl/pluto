@@ -28,12 +28,12 @@
       [
         {
           "name": "PubTopicGenerateFunc",
-          "type": "bytes",
+          "type": "string",
           "default": "null"
         },
         {
           "name": "SubTopicGenerateFunc",
-          "type": "bytes",
+          "type": "string",
           "default": "null"
         },
         {

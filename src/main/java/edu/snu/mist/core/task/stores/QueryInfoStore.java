@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task.stores;
 
-
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
