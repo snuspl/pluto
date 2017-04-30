@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
 /**
@@ -84,6 +86,9 @@ public final class MQTTSharedResource implements AutoCloseable {
    */
   private final int maxInflightMqttEventNum;
 
+  private final Lock subscriberLock;
+  private final Lock publisherLock;
+
   @Inject
   private MQTTSharedResource(
       @Parameter(MaxMqttSourceNumPerClient.class) final int maxMqttSourceNumPerClientParam,
@@ -96,6 +101,8 @@ public final class MQTTSharedResource implements AutoCloseable {
     this.maxMqttSourceNumPerClient = maxMqttSourceNumPerClientParam;
     this.maxMqttSinkNumPerClient = maxMqttSinkNumPerClientParam;
     this.maxInflightMqttEventNum = maxInflightMqttEventNumParam;
+    this.subscriberLock = new ReentrantLock();
+    this.publisherLock = new ReentrantLock();
   }
 
   /**
@@ -106,36 +113,38 @@ public final class MQTTSharedResource implements AutoCloseable {
    * @throws IOException
    */
   public MqttClient getMqttSinkClient(final String brokerURI) throws MqttException, IOException {
-    synchronized (this) {
-      final List<MqttClient> mqttClientList = mqttPublisherMap.get(brokerURI);
-      if (mqttClientList == null) {
-        mqttPublisherMap.putIfAbsent(brokerURI, new ArrayList<>());
-        final MqttClient client = new MqttClient(brokerURI, MQTT_PUBLISHER_ID_PREFIX + brokerURI + "_0");
+    this.publisherLock.lock();
+    final List<MqttClient> mqttClientList = mqttPublisherMap.get(brokerURI);
+    if (mqttClientList == null) {
+      mqttPublisherMap.putIfAbsent(brokerURI, new ArrayList<>());
+      final MqttClient client = new MqttClient(brokerURI, MQTT_PUBLISHER_ID_PREFIX + brokerURI + "_0");
+      final MqttConnectOptions connectOptions = new MqttConnectOptions();
+      connectOptions.setMaxInflight(maxInflightMqttEventNum);
+      client.connect(connectOptions);
+      mqttPublisherMap.get(brokerURI).add(client);
+      publisherSinkNumMap.put(client, 1);
+      this.publisherLock.unlock();
+      return client;
+    } else {
+      // Pick the last client for the candidate.
+      final MqttClient clientCandidate = mqttClientList.get(mqttClientList.size() - 1);
+      final int sinkNum = publisherSinkNumMap.get(clientCandidate);
+      if (sinkNum < maxMqttSinkNumPerClient) {
+        // It is okay to share already created mqtt client.
+        publisherSinkNumMap.replace(clientCandidate, sinkNum + 1);
+        this.publisherLock.unlock();
+        return clientCandidate;
+      } else {
+        // We need to make a new mqtt client.
+        final MqttClient newClientCandidate = new MqttClient(brokerURI, MQTTSharedResource.MQTT_PUBLISHER_ID_PREFIX +
+            brokerURI + "_" + mqttClientList.size());
         final MqttConnectOptions connectOptions = new MqttConnectOptions();
         connectOptions.setMaxInflight(maxInflightMqttEventNum);
-        client.connect(connectOptions);
-        mqttPublisherMap.get(brokerURI).add(client);
-        publisherSinkNumMap.put(client, 1);
-        return client;
-      } else {
-        // Pick the last client for the candidate.
-        final MqttClient clientCandidate = mqttClientList.get(mqttClientList.size() - 1);
-        final int sinkNum = publisherSinkNumMap.get(clientCandidate);
-        if (sinkNum < maxMqttSinkNumPerClient) {
-          // It is okay to share already created mqtt client.
-          publisherSinkNumMap.replace(clientCandidate, sinkNum + 1);
-          return clientCandidate;
-        } else {
-          // We need to make a new mqtt client.
-          final MqttClient newClientCandidate = new MqttClient(brokerURI, MQTTSharedResource.MQTT_PUBLISHER_ID_PREFIX +
-              brokerURI + "_" + mqttClientList.size());
-          final MqttConnectOptions connectOptions = new MqttConnectOptions();
-          connectOptions.setMaxInflight(maxInflightMqttEventNum);
-          newClientCandidate.connect(connectOptions);
-          mqttClientList.add(newClientCandidate);
-          publisherSinkNumMap.put(newClientCandidate, 1);
-          return newClientCandidate;
-        }
+        newClientCandidate.connect(connectOptions);
+        mqttClientList.add(newClientCandidate);
+        publisherSinkNumMap.put(newClientCandidate, 1);
+        this.publisherLock.unlock();
+        return newClientCandidate;
       }
     }
   }
@@ -148,30 +157,32 @@ public final class MQTTSharedResource implements AutoCloseable {
    */
   public MQTTDataGenerator getDataGenerator(final String brokerURI,
                                             final String topic) {
-    synchronized(this) {
-      final List<MQTTSubscribeClient> subscribeClientList = mqttSubscriberMap.get(brokerURI);
-      if (subscribeClientList == null) {
-        mqttSubscriberMap.put(brokerURI, new ArrayList<>());
-        final MQTTSubscribeClient subscribeClient = new MQTTSubscribeClient(brokerURI, MQTT_SUBSCRIBER_ID_PREFIX +
-            brokerURI + "_0");
-        mqttSubscriberMap.get(brokerURI).add(subscribeClient);
-        subscriberSinkNumMap.put(subscribeClient, 1);
-        return subscribeClient.connectToTopic(topic);
+    this.subscriberLock.lock();
+    final List<MQTTSubscribeClient> subscribeClientList = mqttSubscriberMap.get(brokerURI);
+    if (subscribeClientList == null) {
+      mqttSubscriberMap.put(brokerURI, new ArrayList<>());
+      final MQTTSubscribeClient subscribeClient = new MQTTSubscribeClient(brokerURI, MQTT_SUBSCRIBER_ID_PREFIX +
+          brokerURI + "_0");
+      mqttSubscriberMap.get(brokerURI).add(subscribeClient);
+      subscriberSinkNumMap.put(subscribeClient, 1);
+      this.subscriberLock.unlock();
+      return subscribeClient.connectToTopic(topic);
+    } else {
+      // Pick the last client for the candidate.
+      final MQTTSubscribeClient subscribeClientCandidate = subscribeClientList.get(subscribeClientList.size() - 1);
+      final int sourceNum = subscriberSinkNumMap.get(subscribeClientCandidate);
+      if (sourceNum < maxMqttSourceNumPerClient) {
+        // Let's reuse already existing one.
+        subscriberSinkNumMap.replace(subscribeClientCandidate, sourceNum + 1);
+        this.subscriberLock.unlock();
+        return subscribeClientCandidate.connectToTopic(topic);
       } else {
-        // Pick the last client for the candidate.
-        final MQTTSubscribeClient subscribeClientCandidate = subscribeClientList.get(subscribeClientList.size() - 1);
-        final int sourceNum = subscriberSinkNumMap.get(subscribeClientCandidate);
-        if (sourceNum < maxMqttSourceNumPerClient) {
-          // Let's reuse already existing one.
-          subscriberSinkNumMap.replace(subscribeClientCandidate, sourceNum + 1);
-          return subscribeClientCandidate.connectToTopic(topic);
-        } else {
-          final MQTTSubscribeClient newSubscribeClientCandidate = new MQTTSubscribeClient(brokerURI,
-              MQTT_SUBSCRIBER_ID_PREFIX + brokerURI + "_" + subscribeClientList.size());
-          subscribeClientList.add(newSubscribeClientCandidate);
-          subscriberSinkNumMap.put(newSubscribeClientCandidate, 1);
-          return subscribeClientCandidate.connectToTopic(topic);
-        }
+        final MQTTSubscribeClient newSubscribeClientCandidate = new MQTTSubscribeClient(brokerURI,
+            MQTT_SUBSCRIBER_ID_PREFIX + brokerURI + "_" + subscribeClientList.size());
+        subscribeClientList.add(newSubscribeClientCandidate);
+        subscriberSinkNumMap.put(newSubscribeClientCandidate, 1);
+        this.subscriberLock.unlock();
+        return subscribeClientCandidate.connectToTopic(topic);
       }
     }
   }
