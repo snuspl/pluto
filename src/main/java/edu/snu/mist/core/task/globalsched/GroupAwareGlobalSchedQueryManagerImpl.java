@@ -30,6 +30,7 @@ import edu.snu.mist.core.task.globalsched.metrics.NumGroupsMetricEventHandler;
 import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
 import edu.snu.mist.core.task.merging.MergeAwareQueryRemover;
 import edu.snu.mist.core.task.merging.MergingExecutionDags;
+import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
 import edu.snu.mist.core.task.metrics.MetricTracker;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
@@ -116,7 +117,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 final EventNumAndWeightMetricEventHandler eventNumHandler,
                                                 final CpuUtilMetricEventHandler cpuUtilHandler,
                                                 final NumGroupsMetricEventHandler numGroupsHandler,
-                                                //final EventProcessorNumAssigner assigner,
+                                                final EventProcessorNumAssigner assigner,
                                                 final BatchQueryCreator batchQueryCreator) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
