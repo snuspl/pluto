@@ -19,6 +19,6 @@ import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 @NamedParameter(doc = "The default number of event processors (per group)",
-    short_name = "num_threads", default_value = "5")
+    short_name = "num_threads", default_value = "50")
 public final class DefaultNumEventProcessors implements Name<Integer> {
 }

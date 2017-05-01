@@ -24,18 +24,13 @@ import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.globalsched.cfs.CfsSchedulingPeriodCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.VtimeBasedNextGroupSelector;
-import edu.snu.mist.core.task.globalsched.metrics.NumGroupsMetricEventHandler;
-import edu.snu.mist.core.task.merging.MergeAwareQueryRemover;
-import edu.snu.mist.core.task.NoMergingAwareQueryRemover;
-import edu.snu.mist.core.task.QueryRemover;
 import edu.snu.mist.core.task.globalsched.metrics.CpuUtilMetricEventHandler;
 import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetricEventHandler;
-import edu.snu.mist.core.task.merging.MergingExecutionDags;
-import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
-import edu.snu.mist.core.task.metrics.MetricTracker;
+import edu.snu.mist.core.task.globalsched.metrics.NumGroupsMetricEventHandler;
 import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
-import edu.snu.mist.core.task.NoMergingQueryStarter;
-import edu.snu.mist.core.task.QueryStarter;
+import edu.snu.mist.core.task.merging.MergeAwareQueryRemover;
+import edu.snu.mist.core.task.merging.MergingExecutionDags;
+import edu.snu.mist.core.task.metrics.MetricTracker;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
@@ -121,7 +116,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 final EventNumAndWeightMetricEventHandler eventNumHandler,
                                                 final CpuUtilMetricEventHandler cpuUtilHandler,
                                                 final NumGroupsMetricEventHandler numGroupsHandler,
-                                                final EventProcessorNumAssigner assigner,
+                                                //final EventProcessorNumAssigner assigner,
                                                 final BatchQueryCreator batchQueryCreator) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();

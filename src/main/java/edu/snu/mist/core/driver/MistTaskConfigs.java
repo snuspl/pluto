@@ -28,6 +28,8 @@ import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.globalsched.GlobalSchedEventProcessorFactory;
 import edu.snu.mist.core.task.globalsched.GroupAwareGlobalSchedQueryManagerImpl;
+import edu.snu.mist.core.task.globalsched.metrics.MISDEventProcessorNumAssigner;
+import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
 import edu.snu.mist.core.task.threadbased.ThreadBasedOperatorChainFactory;
 import edu.snu.mist.core.task.threadbased.ThreadBasedQueryManagerImpl;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
@@ -127,6 +129,7 @@ public final class MistTaskConfigs {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindImplementation(QueryManager.class, GroupAwareGlobalSchedQueryManagerImpl.class);
     jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedEventProcessorFactory.class);
+    jcb.bindImplementation(EventProcessorNumAssigner.class, MISDEventProcessorNumAssigner.class);
     jcb.bindImplementation(EventProcessorManager.class, DefaultEventProcessorManager.class);
     return jcb.build();
   }
