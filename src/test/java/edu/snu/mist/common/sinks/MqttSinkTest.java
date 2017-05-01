@@ -89,8 +89,7 @@ public final class MqttSinkTest {
     // Create sinks
     final List<Sink<MqttMessage>> sinks = new LinkedList<>();
     for (int i = 0; i < numSinks; i++) {
-      final Sink<MqttMessage> publisher = new MqttSink(MqttUtils.BROKER_URI, topic+i, 200, 10000,
-          mqttSharedResource);
+      final Sink<MqttMessage> publisher = new MqttSink(MqttUtils.BROKER_URI, topic+i, mqttSharedResource);
       topicListMap.put(topic+i, new LinkedList<>());
       sinks.add(publisher);
       subscriber.subscribe(topic+i);
