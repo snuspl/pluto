@@ -179,10 +179,11 @@ public final class EventProcessorTest {
 
     countDownLatch.await();
 
-    Assert.assertEquals(result, list1);
     processor1.interrupt();
     processor2.interrupt();
     processor3.interrupt();
+
+    Assert.assertEquals(result, list1);
   }
 
   /**
