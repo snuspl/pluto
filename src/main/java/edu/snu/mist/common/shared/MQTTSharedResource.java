@@ -82,11 +82,18 @@ public final class MQTTSharedResource implements AutoCloseable {
   private final int maxMqttSinkNumPerClient;
 
   /**
-   * The maximum inflight events in each mqtt client queue.
+   * The maximum number of mqtt inflight events, which is waiting inside the mqtt client queue.
    */
   private final int maxInflightMqttEventNum;
 
+  /**
+   * The lock used to synchronize subscriber creation.
+   */
   private final Lock subscriberLock;
+
+  /**
+   * The lock used to sychronize publisher creation.
+   */
   private final Lock publisherLock;
 
   @Inject
@@ -116,7 +123,7 @@ public final class MQTTSharedResource implements AutoCloseable {
     this.publisherLock.lock();
     final List<MqttClient> mqttClientList = mqttPublisherMap.get(brokerURI);
     if (mqttClientList == null) {
-      mqttPublisherMap.putIfAbsent(brokerURI, new ArrayList<>());
+      mqttPublisherMap.put(brokerURI, new ArrayList<>());
       final MqttClient client = new MqttClient(brokerURI, MQTT_PUBLISHER_ID_PREFIX + brokerURI + "_0");
       final MqttConnectOptions connectOptions = new MqttConnectOptions();
       connectOptions.setMaxInflight(maxInflightMqttEventNum);

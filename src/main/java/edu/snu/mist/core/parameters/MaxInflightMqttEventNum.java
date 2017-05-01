@@ -20,7 +20,7 @@ import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * The maximum number of mqtt inflight events.
+ * The maximum number of mqtt inflight events, which is waiting inside the mqtt client queue.
  */
 @NamedParameter(doc="The maximum number of inflight mqtt events per client", default_value = "10000")
 public final class MaxInflightMqttEventNum implements Name<Integer>{
