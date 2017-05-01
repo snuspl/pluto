@@ -124,12 +124,7 @@ public final class MQTTSharedResource implements AutoCloseable {
     final List<MqttClient> mqttClientList = mqttPublisherMap.get(brokerURI);
     if (mqttClientList == null) {
       mqttPublisherMap.put(brokerURI, new ArrayList<>());
-      final MqttClient client = new MqttClient(brokerURI, MQTT_PUBLISHER_ID_PREFIX + brokerURI + "_0");
-      final MqttConnectOptions connectOptions = new MqttConnectOptions();
-      connectOptions.setMaxInflight(maxInflightMqttEventNum);
-      client.connect(connectOptions);
-      mqttPublisherMap.get(brokerURI).add(client);
-      publisherSinkNumMap.put(client, 1);
+      final MqttClient client = createSinkClient(brokerURI, mqttPublisherMap.get(brokerURI));
       this.publisherLock.unlock();
       return client;
     } else {
@@ -143,17 +138,30 @@ public final class MQTTSharedResource implements AutoCloseable {
         return clientCandidate;
       } else {
         // We need to make a new mqtt client.
-        final MqttClient newClientCandidate = new MqttClient(brokerURI, MQTTSharedResource.MQTT_PUBLISHER_ID_PREFIX +
-            brokerURI + "_" + mqttClientList.size());
-        final MqttConnectOptions connectOptions = new MqttConnectOptions();
-        connectOptions.setMaxInflight(maxInflightMqttEventNum);
-        newClientCandidate.connect(connectOptions);
-        mqttClientList.add(newClientCandidate);
-        publisherSinkNumMap.put(newClientCandidate, 1);
+        final MqttClient newClientCandidate = createSinkClient(brokerURI, mqttClientList);
         this.publisherLock.unlock();
         return newClientCandidate;
       }
     }
+  }
+
+  /**
+   * A helper function which creates create sink client. Should be called with publisherLock acquired.
+   * @param brokerURI broker URI
+   * @param mqttClientList the client list which broker URI belongs to
+   * @return newly created sink client
+   * @throws MqttException
+   * @throws IOException
+   */
+  private MqttClient createSinkClient(final String brokerURI, final List<MqttClient> mqttClientList)
+      throws MqttException, IOException {
+    final MqttClient client = new MqttClient(brokerURI, MQTT_PUBLISHER_ID_PREFIX + brokerURI + mqttClientList.size());
+    final MqttConnectOptions connectOptions = new MqttConnectOptions();
+    connectOptions.setMaxInflight(maxInflightMqttEventNum);
+    client.connect(connectOptions);
+    mqttClientList.add(client);
+    publisherSinkNumMap.put(client, 1);
+    return client;
   }
 
   /**
