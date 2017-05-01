@@ -13,12 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.eventProcessors.parameters;
+package edu.snu.mist.core.task.globalsched.metrics;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
+import edu.snu.mist.core.task.metrics.MetricUpdateEvent;
 
-@NamedParameter(doc = "The default number of event processors (per group)",
-    short_name = "num_threads", default_value = "50")
-public final class DefaultNumEventProcessors implements Name<Integer> {
+import javax.inject.Inject;
+
+/**
+ * This is a EventProcessorNumAssigner assigns that does not change the number of event processors.
+ */
+public final class DefaultEventProcessorNumAssigner implements EventProcessorNumAssigner {
+
+
+  @Inject
+  private DefaultEventProcessorNumAssigner() {
+    // empty
+  }
+
+  @Override
+  public void onNext(final MetricUpdateEvent metricUpdateEvent) {
+    // do nothing
+  }
 }
