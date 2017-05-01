@@ -118,27 +118,27 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
   // Return false if the queue is empty or the previously event processing is not finished.
   @Override
   public boolean processNextEvent() {
-    // synchronization is necessary because queue is in critical section.
-    synchronized(this) {
-      if (queue.isEmpty() || status.get() == Status.RUNNING) {
-        return false;
-      }
-      if (status.compareAndSet(Status.READY, Status.RUNNING)) {
-        if (queue.isEmpty()) {
-          status.set(Status.READY);
-          return false;
-        }
-        final Tuple<MistEvent, Direction> event;
-        event = queue.poll();
-        process(event);
+    if (queue.isEmpty() || status.get() == Status.RUNNING) {
+      return false;
+    }
+    if (status.compareAndSet(Status.READY, Status.RUNNING)) {
+      if (queue.isEmpty()) {
         status.set(Status.READY);
-        if (operatorChainManager != null && !queue.isEmpty()) {
-          operatorChainManager.insert(this);
-        }
-        return true;
-      } else {
         return false;
       }
+      final Tuple<MistEvent, Direction> event;
+      // Synchronization is necessary to prevent omitting events.
+      synchronized (this) {
+        event = queue.poll();
+      }
+      process(event);
+      status.set(Status.READY);
+      if (operatorChainManager != null && !queue.isEmpty()) {
+        operatorChainManager.insert(this);
+      }
+      return true;
+    } else {
+      return false;
     }
   }
 
