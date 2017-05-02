@@ -78,13 +78,29 @@ public class BatchSubExecutionEnvironmentTest {
     // Step 3: Send a query in batch manner and check whether the query comes to the task correctly
     final BatchSubExecutionEnvironment executionEnvironment = new BatchSubExecutionEnvironment(
         driverHost, driverPortNum);
-    final MISTBiFunction<String, Integer, String> pubTopicGenerateFunc =
-        (groupId, queryNum) -> "/group" + groupId + "/device" + (queryNum + 2) + "/pub";
-    final MISTBiFunction<String, Integer, Set<String>> subTopicGenerateFunc =
-        (groupId, queryNum) -> {
+    final MISTBiFunction<String, Integer, String> pubTopicGenerateFunc = (groupId, queryNum) ->
+        new StringBuilder("/group")
+            .append(groupId)
+            .append("/device")
+            .append(queryNum + 2)
+            .append("/pub")
+            .toString();
+    final MISTBiFunction<String, Integer, Set<String>> subTopicGenerateFunc = (groupId, queryNum) -> {
       final Set<String> topicList = new HashSet<>();
-      topicList.add("/group" + groupId + "/device" + (queryNum + 3) + "/sub");
-      topicList.add("/group" + groupId + "/device" + (queryNum + 4) + "/sub");
+      topicList.add(
+          new StringBuilder("/group")
+              .append(groupId)
+              .append("/device")
+              .append(queryNum + 3)
+              .append("/sub")
+              .toString());
+      topicList.add(
+          new StringBuilder("/group")
+              .append(groupId)
+              .append("/device")
+              .append(queryNum + 4)
+              .append("/sub")
+              .toString());
       return topicList;
     };
     final List<Integer> queryGroupList = new LinkedList<>();

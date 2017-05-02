@@ -79,13 +79,27 @@ public final class BatchSubQueryManagerTest {
       = (msg) -> new Tuple<>(msg, 10L);
   private static final MISTFunction<MqttMessage, MqttMessage> MAP_FUNC =
       (msg) -> new MqttMessage("TestData".getBytes());
-  private static final MISTBiFunction<String, Integer, String> PUB_TOPIC_FUNCTION =
-      (groupId, queryNum) -> "/group" + groupId + "/device" + (queryNum * 3) + "/pub";
-  private static final MISTBiFunction<String, Integer, Set<String>> SUB_TOPIC_FUNCTION =
-      (groupId, queryNum) -> {
+  private static final MISTBiFunction<String, Integer, String> PUB_TOPIC_FUNCTION = (groupId, queryNum) ->
+      new StringBuilder("/group")
+          .append(groupId)
+          .append("/device")
+          .append(queryNum * 3)
+          .append("/pub")
+          .toString();
+  private static final MISTBiFunction<String, Integer, Set<String>> SUB_TOPIC_FUNCTION = (groupId, queryNum) -> {
         final Set<String> topicList = new HashSet<>();
-        topicList.add("/group" + groupId + "/device" + (queryNum * 3 + 1) + "/sub");
-        topicList.add("/group" + groupId + "/device" + (queryNum * 3 + 2) + "/sub");
+        topicList.add(new StringBuilder("/group")
+            .append(groupId)
+            .append("/device")
+            .append(queryNum * 3 + 1)
+            .append("/sub")
+            .toString());
+        topicList.add(new StringBuilder("/group")
+            .append(groupId)
+            .append("/device")
+            .append(queryNum * 3 + 2)
+            .append("/sub")
+            .toString());
         return topicList;
       };
 
