@@ -20,6 +20,7 @@ import edu.snu.mist.core.task.MistPubSubEventHandler;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.GroupEvent;
 import edu.snu.mist.core.task.globalsched.NextGroupSelector;
+import edu.snu.mist.core.task.globalsched.NextGroupSelectorFactory;
 import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetric;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
@@ -53,7 +54,8 @@ public final class VtimeBasedNextGroupSelectorTest {
     when(group4.getVRuntime()).thenReturn(0.0);
 
     final Injector injector = Tang.Factory.getTang().newInjector();
-    final NextGroupSelector selector = injector.getInstance(VtimeBasedNextGroupSelector.class);
+    final NextGroupSelectorFactory selectorFactory = injector.getInstance(VtimeBasedNextGroupSelectorFactory.class);
+    final NextGroupSelector selector = selectorFactory.newInstance();
     final MistPubSubEventHandler wrapper = injector.getInstance(MistPubSubEventHandler.class);
     final PubSubEventHandler pubSubEventHandler = wrapper.getPubSubEventHandler();
 
@@ -100,7 +102,8 @@ public final class VtimeBasedNextGroupSelectorTest {
     when(group4.getVRuntime()).thenReturn(0.0);
 
     final Injector injector = Tang.Factory.getTang().newInjector();
-    final NextGroupSelector selector = injector.getInstance(VtimeBasedNextGroupSelector.class);
+    final NextGroupSelectorFactory selectorFactory = injector.getInstance(VtimeBasedNextGroupSelectorFactory.class);
+    final NextGroupSelector selector = selectorFactory.newInstance();
     final MistPubSubEventHandler wrapper = injector.getInstance(MistPubSubEventHandler.class);
     final PubSubEventHandler pubSubEventHandler = wrapper.getPubSubEventHandler();
 
