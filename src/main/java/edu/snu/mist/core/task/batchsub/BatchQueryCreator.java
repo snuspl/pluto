@@ -29,6 +29,7 @@ import edu.snu.mist.formats.avro.QueryControlResult;
 import edu.snu.mist.formats.avro.Vertex;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Configuration;
+import org.apache.reef.tang.Configurations;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -121,9 +122,15 @@ public final class BatchQueryCreator {
             final MQTTSourceConfiguration.MQTTSourceConfigurationBuilder builder =
                 MQTTSourceConfiguration.newBuilder();
 
+            // At now, this default watermark configuration is only supported in batch submission.
+            final WatermarkConfiguration defaultWatermarkConfig = PeriodicWatermarkConfiguration.newBuilder()
+                .setWatermarkPeriod(100)
+                .setExpectedDelay(0)
+                .build();
+
             try {
               final MISTFunction extractFuncClass = injector.getInstance(MISTFunction.class);
-              //
+              // Class-based timestamp extract function config in batch submission is not allowed at now
               throw new RuntimeException(
                   "Class-based timestamp extract function config in batch submission is not allowed at now.");
             } catch (final InjectionException e) {
@@ -142,11 +149,13 @@ public final class BatchQueryCreator {
               // Timestamp function was not set
             }
 
-            final Configuration modifiedConf;
-            modifiedConf = builder
+            final Configuration modifiedDataGeneratorConf = builder
                 .setBrokerURI(mqttBrokerURI)
                 .setTopic(subTopic)
                 .build().getConfiguration();
+            final Configuration modifiedConf =
+                Configurations.merge(modifiedDataGeneratorConf, defaultWatermarkConfig.getConfiguration());
+            
             vertex.setConfiguration(avroConfigurationSerializer.toString(modifiedConf));
             break;
           }
