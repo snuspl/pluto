@@ -101,10 +101,16 @@ public final class BatchQueryCreator {
     // The remaining query to start in the starting group
     int remain = sum - startQueryNum + 1;
     String newGroupId = String.valueOf(group);
-    String pubTopic = pubTopicFunc.apply(newGroupId);
-    String subTopic = subTopicFunc.apply(newGroupId);
+    String queryNum;
+    String pubTopic;
+    String subTopic;
 
     for (int i = 0; i < queryIdList.size(); i++) {
+      // Set the topic according to the query number
+      queryNum = String.valueOf(startQueryNum + i);
+      pubTopic = pubTopicFunc.apply(queryNum);
+      subTopic = subTopicFunc.apply(queryNum);
+
       // Overwrite the group id
       operatorChainDag.setGroupId(newGroupId);
       // Insert the topic information to a copied AvroOperatorChainDag
@@ -196,8 +202,6 @@ public final class BatchQueryCreator {
           remain = itr.next();
           group++;
           newGroupId = String.valueOf(group);
-          pubTopic = pubTopicFunc.apply(newGroupId);
-          subTopic = subTopicFunc.apply(newGroupId);
         } else {
           throw new RuntimeException("The query group list does not have enough queries");
         }

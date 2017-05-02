@@ -27,12 +27,12 @@ import java.util.List;
 public final class BatchSubmissionConfiguration {
 
   /**
-   * A function generates MQTT sink topic to publish from a group name.
+   * A function generates MQTT sink topic to publish from a query number.
    */
   private final MISTFunction<String, String> pubTopicGenerateFunc;
 
   /**
-   * A function generates MQTT source topic to subscribe from a group name.
+   * A function generates MQTT source topic to subscribe from a query number.
    */
   private final MISTFunction<String, String> subTopicGenerateFunc;
 
@@ -51,13 +51,13 @@ public final class BatchSubmissionConfiguration {
    */
   private final int batchSize;
 
-  public BatchSubmissionConfiguration(final MISTFunction<String, String> pubTopicGenerateFunc,
-                                      final MISTFunction<String, String> subTopicGenerateFunc,
+  public BatchSubmissionConfiguration(final MISTFunction<String, String> subTopicGenerateFunc,
+                                      final MISTFunction<String, String> pubTopicGenerateFunc,
                                       final List<Integer> queryGroupList,
                                       final int startQueryNum,
                                       final int batchSize) {
-    this.pubTopicGenerateFunc = pubTopicGenerateFunc;
     this.subTopicGenerateFunc = subTopicGenerateFunc;
+    this.pubTopicGenerateFunc = pubTopicGenerateFunc;
     this.queryGroupList = queryGroupList;
     this.startQueryNum = startQueryNum;
     this.batchSize = batchSize;
