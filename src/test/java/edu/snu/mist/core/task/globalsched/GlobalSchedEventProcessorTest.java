@@ -88,13 +88,15 @@ public final class GlobalSchedEventProcessorTest {
 
     final Object notifier = new Object();
     final NextGroupSelector nextGroupSelector = new TestNextGroupSelector(groups, notifier);
+    final NextGroupSelectorFactory testNextGroupSelectorFactory = mock(NextGroupSelectorFactory.class);
+    when(testNextGroupSelectorFactory.newInstance()).thenReturn(nextGroupSelector);
 
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(SchedulingPeriod.class, "100");
     jcb.bindImplementation(SchedulingPeriodCalculator.class, FixedSchedulingPeriodCalculator.class);
 
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    injector.bindVolatileInstance(NextGroupSelector.class, nextGroupSelector);
+    injector.bindVolatileInstance(NextGroupSelectorFactory.class, testNextGroupSelectorFactory);
     final EventProcessorFactory epFactory = injector.getInstance(GlobalSchedEventProcessorFactory.class);
     final EventProcessor eventProcessor = epFactory.newEventProcessor();
 

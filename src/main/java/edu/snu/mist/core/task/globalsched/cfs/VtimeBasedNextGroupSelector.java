@@ -15,15 +15,11 @@
  */
 package edu.snu.mist.core.task.globalsched.cfs;
 
-import edu.snu.mist.core.parameters.DefaultGroupWeight;
 import edu.snu.mist.core.task.MistPubSubEventHandler;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.GroupEvent;
 import edu.snu.mist.core.task.globalsched.NextGroupSelector;
-import edu.snu.mist.core.task.globalsched.cfs.parameters.MinSchedulingPeriod;
-import org.apache.reef.tang.annotations.Parameter;
 
-import javax.inject.Inject;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
@@ -51,10 +47,9 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
    */
   private final long minSchedPeriod;
 
-  @Inject
-  private VtimeBasedNextGroupSelector(@Parameter(DefaultGroupWeight.class) final double defaultWeight,
-                                      @Parameter(MinSchedulingPeriod.class) final long minSchedPeriod,
-                                      final MistPubSubEventHandler pubSubEventHandler) {
+  VtimeBasedNextGroupSelector(final double defaultWeight,
+                              final long minSchedPeriod,
+                              final MistPubSubEventHandler pubSubEventHandler) {
     this.rbTreeMap = new TreeMap<>();
     this.defaultWeight = defaultWeight;
     this.minSchedPeriod = minSchedPeriod;

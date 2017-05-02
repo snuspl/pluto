@@ -26,25 +26,25 @@ import javax.inject.Inject;
 public final class GlobalSchedEventProcessorFactory implements EventProcessorFactory {
 
   /**
-   * The scheduling period calculator.
+   * Next group selector factory.
    */
-  private final SchedulingPeriodCalculator schedPeriodCalculator;
+  private final NextGroupSelectorFactory nextGroupSelectorFactory;
 
   /**
-   * Selector of the executable group.
+   * Scheduling period calculator.
    */
-  private final NextGroupSelector nextGroupSelector;
+  private final SchedulingPeriodCalculator schedulingPeriodCalculator;
 
   @Inject
-  private GlobalSchedEventProcessorFactory(final SchedulingPeriodCalculator schedPeriodCalculator,
-                                           final NextGroupSelector nextGroupSelector) {
-    super();
-    this.schedPeriodCalculator = schedPeriodCalculator;
-    this.nextGroupSelector = nextGroupSelector;
+  private GlobalSchedEventProcessorFactory(final NextGroupSelectorFactory nextGroupSelectorFactory,
+                                           final SchedulingPeriodCalculator schedulingPeriodCalculator) {
+    this.nextGroupSelectorFactory = nextGroupSelectorFactory;
+    this.schedulingPeriodCalculator = schedulingPeriodCalculator;
   }
 
   @Override
   public EventProcessor newEventProcessor() {
-    return new GlobalSchedEventProcessor(schedPeriodCalculator, nextGroupSelector);
+    final NextGroupSelector nextGroupSelector = nextGroupSelectorFactory.newInstance();
+    return new GlobalSchedEventProcessor(schedulingPeriodCalculator, nextGroupSelector);
   }
 }

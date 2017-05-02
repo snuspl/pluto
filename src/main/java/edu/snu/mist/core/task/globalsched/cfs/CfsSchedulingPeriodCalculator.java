@@ -37,7 +37,7 @@ public final class CfsSchedulingPeriodCalculator implements SchedulingPeriodCalc
   /**
    * Cfs scheduling period.
    */
-  private final long csfSchedPeriod;
+  private final long cfsSchedPeriod;
 
   /**
    * The minimum scheduling period per group.
@@ -50,10 +50,10 @@ public final class CfsSchedulingPeriodCalculator implements SchedulingPeriodCalc
   private final GlobalSchedGlobalMetrics metric;
 
   @Inject
-  private CfsSchedulingPeriodCalculator(@Parameter(CfsSchedulingPeriod.class) final long csfSchedPeriod,
+  private CfsSchedulingPeriodCalculator(@Parameter(CfsSchedulingPeriod.class) final long cfsSchedPeriod,
                                         @Parameter(MinSchedulingPeriod.class) final long minSchedPeriod,
                                         final GlobalSchedGlobalMetrics metric) {
-    this.csfSchedPeriod = csfSchedPeriod;
+    this.cfsSchedPeriod = cfsSchedPeriod;
     this.minSchedPeriod = minSchedPeriod;
     this.metric = metric;
   }
@@ -63,8 +63,8 @@ public final class CfsSchedulingPeriodCalculator implements SchedulingPeriodCalc
     final double totalWeight = metric.getNumEventAndWeightMetric().getWeight();
     final double groupWeight = groupInfo.getEventNumAndWeightMetric().getWeight();
     final long numGroups = Math.max(1, metric.getNumGroupsMetric().getNumGroups());
-    long adjustCfsSchedPeriod = csfSchedPeriod;
-    if (csfSchedPeriod / numGroups < minSchedPeriod) {
+    long adjustCfsSchedPeriod = cfsSchedPeriod;
+    if (cfsSchedPeriod / numGroups < minSchedPeriod) {
       adjustCfsSchedPeriod = minSchedPeriod * numGroups;
     }
     return Math.max(minSchedPeriod, (long)(adjustCfsSchedPeriod * (groupWeight /totalWeight)));

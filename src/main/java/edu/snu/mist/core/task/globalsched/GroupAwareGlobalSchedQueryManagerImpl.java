@@ -22,8 +22,6 @@ import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
-import edu.snu.mist.core.task.globalsched.cfs.CfsSchedulingPeriodCalculator;
-import edu.snu.mist.core.task.globalsched.cfs.VtimeBasedNextGroupSelector;
 import edu.snu.mist.core.task.globalsched.metrics.CpuUtilMetricEventHandler;
 import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetricEventHandler;
 import edu.snu.mist.core.task.globalsched.metrics.NumGroupsMetricEventHandler;
@@ -167,8 +165,6 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
           jcb.bindImplementation(ExecutionDags.class, NoMergingExecutionDags.class);
         }
         jcb.bindImplementation(OperatorChainManager.class, NonBlockingActiveOperatorChainPickManager.class);
-        jcb.bindImplementation(NextGroupSelector.class, VtimeBasedNextGroupSelector.class);
-        jcb.bindImplementation(SchedulingPeriodCalculator.class, CfsSchedulingPeriodCalculator.class);
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
         injector.bindVolatileInstance(MistPubSubEventHandler.class, pubSubEventHandler);
         final GlobalSchedGroupInfo groupInfo = injector.getInstance(GlobalSchedGroupInfo.class);
