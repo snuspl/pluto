@@ -76,8 +76,8 @@ public final class BatchSubQueryManagerTest {
   private static final MISTFunction<MqttMessage, Tuple<MqttMessage, Long>> EXTRACT_FUNC
       = (msg) -> new Tuple<>(msg, 10L);
   private static final MISTFunction<MqttMessage, String> MAP_FUNC = (msg) -> "TestData";
-  private static final MISTFunction<String, String> PUB_TOPIC_FUNCTION = (groupId) -> "/group" + groupId + "/pub";
-  private static final MISTFunction<String, String> SUB_TOPIC_FUNCTION = (groupId) -> "/group" + groupId + "/sub";
+  private static final MISTFunction<String, String> PUB_TOPIC_FUNCTION = (queryNum) -> "/group" + queryNum + "/pub";
+  private static final MISTFunction<String, String> SUB_TOPIC_FUNCTION = (queryNum) -> "/group" + queryNum + "/sub";
   private static final Logger LOG = Logger.getLogger(BatchSubQueryManagerTest.class.getName());
 
   /**
@@ -95,7 +95,7 @@ public final class BatchSubQueryManagerTest {
     queryGroupList.add(2);
     queryGroupList.add(2);
     final BatchSubmissionConfiguration batchSubConfig = new BatchSubmissionConfiguration(
-        PUB_TOPIC_FUNCTION, SUB_TOPIC_FUNCTION, queryGroupList, START_QUERY_NUM, BATCH_SIZE);
+        SUB_TOPIC_FUNCTION, PUB_TOPIC_FUNCTION, queryGroupList, START_QUERY_NUM, BATCH_SIZE);
 
     // Create MQTT query having original configuration
     final SourceConfiguration sourceConfiguration = MQTTSourceConfiguration.newBuilder()
@@ -227,7 +227,8 @@ public final class BatchSubQueryManagerTest {
           // The broker URI should not be overwritten
           Assert.assertEquals(BROKER_URI, mqttBrokerURI);
           // The topic should be overwritten
-          Assert.assertEquals(SUB_TOPIC_FUNCTION.apply(EXPECTED_GROUP_ID), mqttSubTopic);
+          Assert.assertEquals(
+              SUB_TOPIC_FUNCTION.apply(String.valueOf(START_QUERY_NUM + BATCH_SIZE - 1)), mqttSubTopic);
           // The timestamp extract function should not be modified
           final MqttMessage tmpMsg = new MqttMessage();
           final Tuple<MqttMessage, Long> expectedTuple = EXTRACT_FUNC.apply(tmpMsg);
@@ -252,7 +253,8 @@ public final class BatchSubQueryManagerTest {
           // The broker URI should not be overwritten
           Assert.assertEquals(BROKER_URI, mqttBrokerURI);
           // The topic should be overwritten
-          Assert.assertEquals(PUB_TOPIC_FUNCTION.apply(EXPECTED_GROUP_ID), mqttPubTopic);
+          Assert.assertEquals(
+              PUB_TOPIC_FUNCTION.apply(String.valueOf(START_QUERY_NUM + BATCH_SIZE - 1)), mqttPubTopic);
           break;
 
         }

@@ -89,7 +89,7 @@ public class BatchSubExecutionEnvironmentTest {
     final int batchSize = 27;
 
     final BatchSubmissionConfiguration batchConf = new BatchSubmissionConfiguration(
-        pubTopicGenerateFunc, subTopicGenerateFunc, queryGroupList, startQueryNum, batchSize);
+        subTopicGenerateFunc, pubTopicGenerateFunc, queryGroupList, startQueryNum, batchSize);
     final APIQueryControlResult batchResult =
         executionEnvironment.batchSubmit(query, batchConf, tempJarFile.toString());
     Assert.assertEquals(batchResult.getQueryId(), testQueryResult);
