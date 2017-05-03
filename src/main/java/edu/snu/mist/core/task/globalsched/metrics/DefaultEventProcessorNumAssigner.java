@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task.globalsched.metrics;
 
+import edu.snu.mist.core.task.MistPubSubEventHandler;
 import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
 import edu.snu.mist.core.task.metrics.MetricUpdateEvent;
 
@@ -27,8 +28,8 @@ public final class DefaultEventProcessorNumAssigner implements EventProcessorNum
 
 
   @Inject
-  private DefaultEventProcessorNumAssigner() {
-    // empty
+  private DefaultEventProcessorNumAssigner(final MistPubSubEventHandler pubSubEventHandler) {
+    pubSubEventHandler.getPubSubEventHandler().subscribe(MetricUpdateEvent.class, this);
   }
 
   @Override
