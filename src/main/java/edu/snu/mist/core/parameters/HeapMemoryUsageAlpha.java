@@ -20,7 +20,7 @@ import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
  * An alpha value of heap memory usage metric.
- * It would be used as a decaing rate in EWMA.
+ * It would be used as a decaing rate in EWMA.\
  */
 @NamedParameter(doc="An alpha value of heap memory usage metric.", default_value = "0.7")
 public final class HeapMemoryUsageAlpha implements Name<Double> {
