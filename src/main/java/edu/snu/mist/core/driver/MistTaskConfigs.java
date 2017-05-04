@@ -22,18 +22,7 @@ import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.parameters.NumPeriodicSchedulerThreads;
 import edu.snu.mist.core.parameters.TempFolderPath;
 import edu.snu.mist.core.task.*;
-import edu.snu.mist.core.task.eventProcessors.DefaultEventProcessorManager;
-import edu.snu.mist.core.task.eventProcessors.EventProcessorFactory;
-import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
-import edu.snu.mist.core.task.globalsched.GlobalSchedEventProcessorFactory;
-import edu.snu.mist.core.task.globalsched.GroupAwareGlobalSchedQueryManagerImpl;
-import edu.snu.mist.core.task.globalsched.metrics.DefaultEventProcessorNumAssigner;
-import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
-import edu.snu.mist.core.task.globalsched.NextGroupSelectorFactory;
-import edu.snu.mist.core.task.globalsched.SchedulingPeriodCalculator;
-import edu.snu.mist.core.task.globalsched.cfs.CfsSchedulingPeriodCalculator;
-import edu.snu.mist.core.task.globalsched.cfs.VtimeBasedNextGroupSelectorFactory;
 import edu.snu.mist.core.task.threadbased.ThreadBasedOperatorChainFactory;
 import edu.snu.mist.core.task.threadbased.ThreadBasedQueryManagerImpl;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
@@ -85,19 +74,26 @@ public final class MistTaskConfigs {
    */
   private final int executionModelOption;
 
+  /**
+   * Configuration for execution model 2 (global scheduling).
+   */
+  private final MistOption2TaskConfigs option2TaskConfigs;
+
   @Inject
   private MistTaskConfigs(@Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
                           @Parameter(RPCServerPort.class) final int rpcServerPort,
                           @Parameter(TempFolderPath.class) final String tempFolderPath,
                           @Parameter(NumPeriodicSchedulerThreads.class) final int numSchedulerThreads,
                           @Parameter(MergingEnabled.class) final boolean mergingEnabled,
-                          @Parameter(ExecutionModelOption.class) final int executionModelOption) {
+                          @Parameter(ExecutionModelOption.class) final int executionModelOption,
+                          final MistOption2TaskConfigs option2TaskConfigs) {
     this.numEventProcessors = numEventProcessors;
     this.tempFolderPath = tempFolderPath;
     this.rpcServerPort = rpcServerPort + 10 > MAX_PORT_NUM ? rpcServerPort - 10 : rpcServerPort + 10;
     this.numSchedulerThreads = numSchedulerThreads;
     this.mergingEnabled = mergingEnabled;
     this.executionModelOption = executionModelOption;
+    this.option2TaskConfigs = option2TaskConfigs;
   }
 
   /**
@@ -108,7 +104,7 @@ public final class MistTaskConfigs {
       case 1:
         return getOption1Configuration();
       case 2:
-        return getOption2Configuration();
+        return option2TaskConfigs.getConfiguration();
       case 3:
         return getOption3Configuration();
       default:
@@ -122,21 +118,6 @@ public final class MistTaskConfigs {
   private Configuration getOption1Configuration() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindImplementation(QueryManager.class, GroupAwareQueryManagerImpl.class);
-    return jcb.build();
-  }
-
-  /**
-   * Get the configuration for execution model 2 that creates a shared thread pool
-   * where each thread executes multiple groups.
-   */
-  private Configuration getOption2Configuration() {
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindImplementation(QueryManager.class, GroupAwareGlobalSchedQueryManagerImpl.class);
-    jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedEventProcessorFactory.class);
-    jcb.bindImplementation(EventProcessorNumAssigner.class, DefaultEventProcessorNumAssigner.class);
-    jcb.bindImplementation(EventProcessorManager.class, DefaultEventProcessorManager.class);
-    jcb.bindImplementation(SchedulingPeriodCalculator.class, CfsSchedulingPeriodCalculator.class);
-    jcb.bindImplementation(NextGroupSelectorFactory.class, VtimeBasedNextGroupSelectorFactory.class);
     return jcb.build();
   }
 
@@ -178,11 +159,12 @@ public final class MistTaskConfigs {
    * @return command line where parameters are added
    */
   public static CommandLine addCommandLineConf(final CommandLine commandLine) {
-    return commandLine
+    final CommandLine cmd = commandLine
         .registerShortNameOfClass(DefaultNumEventProcessors.class)
         .registerShortNameOfClass(TempFolderPath.class)
         .registerShortNameOfClass(NumPeriodicSchedulerThreads.class)
         .registerShortNameOfClass(MergingEnabled.class)
         .registerShortNameOfClass(ExecutionModelOption.class);
+    return MistOption2TaskConfigs.addCommandLineConf(cmd);
   }
 }
