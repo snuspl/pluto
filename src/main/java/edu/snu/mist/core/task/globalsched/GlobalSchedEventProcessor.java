@@ -71,6 +71,7 @@ final class GlobalSchedEventProcessor extends Thread implements EventProcessor {
           // So it should not be null
           final OperatorChain operatorChain = operatorChainManager.pickOperatorChain();
           operatorChain.processNextEvent();
+          LOG.fine("Process: " + operatorChain);
         }
         nextGroupSelector.reschedule(groupInfo);
       }

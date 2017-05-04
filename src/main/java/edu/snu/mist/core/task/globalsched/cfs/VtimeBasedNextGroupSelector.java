@@ -135,7 +135,8 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
   @Override
   public void reschedule(final GlobalSchedGroupInfo groupInfo) {
     final long endTime = System.nanoTime();
-    final double delta = calculateVRuntimeDelta(endTime - groupInfo.getLatestScheduledTime(), groupInfo);
+    final double weight = Math.max(defaultWeight, groupInfo.getEventNumAndWeightMetric().getWeight());
+    final double delta = calculateVRuntimeDelta(endTime - groupInfo.getLatestScheduledTime(), weight);
     final double adjustedVRuntime = groupInfo.getVRuntime() + delta;
     groupInfo.setVRuntime(adjustedVRuntime);
     LOG.fine("group " + groupInfo + ", missed: false, " + "vtime: " + adjustedVRuntime);
@@ -145,12 +146,12 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
   /**
    * Calculate the delta vruntime of the elapsed time.
    * @param delta elapsed time (ns)
-   * @param groupInfo group info
+   * @param weight the weight of the group info
    * @return delta vruntime
    */
-  private double calculateVRuntimeDelta(final long delta, final GlobalSchedGroupInfo groupInfo) {
-    return Math.max(minSchedPeriod * defaultWeight / groupInfo.getEventNumAndWeightMetric().getWeight(),
-    TimeUnit.NANOSECONDS.toMillis(delta) * defaultWeight / groupInfo.getEventNumAndWeightMetric().getWeight());
+  private double calculateVRuntimeDelta(final long delta, final double weight) {
+    return Math.max(minSchedPeriod * defaultWeight / weight,
+        TimeUnit.NANOSECONDS.toMillis(delta) * defaultWeight / weight);
   }
 
   @Override
