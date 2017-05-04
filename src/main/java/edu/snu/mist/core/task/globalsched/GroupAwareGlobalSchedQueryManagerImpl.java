@@ -164,7 +164,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
           jcb.bindImplementation(QueryRemover.class, NoMergingAwareQueryRemover.class);
           jcb.bindImplementation(ExecutionDags.class, NoMergingExecutionDags.class);
         }
-        jcb.bindImplementation(OperatorChainManager.class, NonBlockingActiveOperatorChainPickManager.class);
+        jcb.bindImplementation(OperatorChainManager.class, BlockingActiveOperatorChainPickManager.class);
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
         injector.bindVolatileInstance(MistPubSubEventHandler.class, pubSubEventHandler);
         final GlobalSchedGroupInfo groupInfo = injector.getInstance(GlobalSchedGroupInfo.class);

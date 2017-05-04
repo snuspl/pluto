@@ -20,6 +20,7 @@ import edu.snu.mist.core.task.OperatorChainManager;
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 /**
  * This is an event processor that can change the operator chain manager.
@@ -28,6 +29,8 @@ import java.util.concurrent.TimeUnit;
  * It also selects another operator chain manager when there are no active operator chain.
  */
 final class GlobalSchedEventProcessor extends Thread implements EventProcessor {
+
+  private static final Logger LOG = Logger.getLogger(GlobalSchedEventProcessor.class.getName());
 
   /**
    * Variable for checking close or not.
@@ -62,16 +65,12 @@ final class GlobalSchedEventProcessor extends Thread implements EventProcessor {
         final GlobalSchedGroupInfo groupInfo = nextGroupSelector.getNextExecutableGroup();
         final OperatorChainManager operatorChainManager = groupInfo.getOperatorChainManager();
         final long schedulingPeriod = schedPeriodCalculator.calculateSchedulingPeriod(groupInfo);
+        LOG.fine("group " + groupInfo + ", period: " + schedulingPeriod);
         while (TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) < schedulingPeriod && !closed) {
-          // This should be non-blocking operator chain manager
-          // because we should select another group if the group has no events
+          // This is a blocking operator chain manager
+          // So it should not be null
           final OperatorChain operatorChain = operatorChainManager.pickOperatorChain();
-          // If it has no active operator chain, choose another group
-          if (operatorChain == null) {
-            break;
-          } else {
-            operatorChain.processNextEvent();
-          }
+          operatorChain.processNextEvent();
         }
         nextGroupSelector.reschedule(groupInfo);
       }
