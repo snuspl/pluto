@@ -151,6 +151,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
       final String queryId = tuple.getKey();
       // Update group information
       final String groupId = tuple.getValue().getGroupId();
+      LOG.fine("Create query: " + groupId + ", " + queryId);
       if (groupInfoMap.get(groupId) == null) {
         // Add new group id, if it doesn't exist
         final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
@@ -164,13 +165,15 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
           jcb.bindImplementation(QueryRemover.class, NoMergingAwareQueryRemover.class);
           jcb.bindImplementation(ExecutionDags.class, NoMergingExecutionDags.class);
         }
-        jcb.bindImplementation(OperatorChainManager.class, NonBlockingActiveOperatorChainPickManager.class);
+        jcb.bindImplementation(OperatorChainManager.class, BlockingActiveOperatorChainPickManager.class);
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
         injector.bindVolatileInstance(MistPubSubEventHandler.class, pubSubEventHandler);
         final GlobalSchedGroupInfo groupInfo = injector.getInstance(GlobalSchedGroupInfo.class);
-        groupInfoMap.putIfAbsent(groupId, groupInfo);
-        pubSubEventHandler.getPubSubEventHandler().onNext(new GroupEvent(groupInfo,
-            GroupEvent.GroupEventType.ADDITION));
+        if (groupInfoMap.putIfAbsent(groupId, groupInfo) == null) {
+          LOG.fine("Create group: " + groupId);
+          pubSubEventHandler.getPubSubEventHandler().onNext(new GroupEvent(groupInfo,
+              GroupEvent.GroupEventType.ADDITION));
+        }
       }
       // Add the query into the group
       final GlobalSchedGroupInfo groupInfo = groupInfoMap.get(groupId);

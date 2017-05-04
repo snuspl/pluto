@@ -17,6 +17,7 @@ package edu.snu.mist.core.task.globalsched.cfs;
 
 import edu.snu.mist.core.task.MistPubSubEventHandler;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfoMap;
 import edu.snu.mist.core.task.globalsched.GroupEvent;
 import edu.snu.mist.core.task.globalsched.NextGroupSelector;
 
@@ -25,12 +26,15 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 /**
  * This calculates a vruntime similar to CFS scheduler.
  * It uses RB-tree with vruntime as a key, and picks a group that has the lowest vruntime.
  */
 public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
+
+  private static final Logger LOG = Logger.getLogger(VtimeBasedNextGroupSelector.class.getName());
 
   /**
    * A Red-Black tree based map to pick a group that has the lowest virtual time.
@@ -49,11 +53,25 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
 
   VtimeBasedNextGroupSelector(final double defaultWeight,
                               final long minSchedPeriod,
-                              final MistPubSubEventHandler pubSubEventHandler) {
+                              final MistPubSubEventHandler pubSubEventHandler,
+                              final GlobalSchedGroupInfoMap globalSchedGroupInfoMap) {
     this.rbTreeMap = new TreeMap<>();
     this.defaultWeight = defaultWeight;
     this.minSchedPeriod = minSchedPeriod;
+    initialize(globalSchedGroupInfoMap);
     pubSubEventHandler.getPubSubEventHandler().subscribe(GroupEvent.class, this);
+  }
+
+  /**
+   * Initialize the rb tree.
+   * @param globalSchedGroupInfoMap
+   */
+  private void initialize(final GlobalSchedGroupInfoMap globalSchedGroupInfoMap) {
+    synchronized (rbTreeMap) {
+      for (final GlobalSchedGroupInfo groupInfo : globalSchedGroupInfoMap.values()) {
+        addGroup(groupInfo);
+      }
+    }
   }
 
   /**
@@ -110,26 +128,30 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
 
   /**
    * Adjust the vruntime of the group and reinsert it to the RBTree.
+   * If the miss value is true, then it will put the group to the last element of the RB-tree.
+   * This can prevent the inactive group from being selected frequently.
    * @param groupInfo groupInfo
    */
   @Override
   public void reschedule(final GlobalSchedGroupInfo groupInfo) {
     final long endTime = System.nanoTime();
-    final double delta = calculateVRuntimeDelta(endTime - groupInfo.getLatestScheduledTime(), groupInfo);
+    final double weight = Math.max(defaultWeight, groupInfo.getEventNumAndWeightMetric().getWeight());
+    final double delta = calculateVRuntimeDelta(endTime - groupInfo.getLatestScheduledTime(), weight);
     final double adjustedVRuntime = groupInfo.getVRuntime() + delta;
     groupInfo.setVRuntime(adjustedVRuntime);
+    LOG.fine("group " + groupInfo + ", missed: false, " + "vtime: " + adjustedVRuntime);
     addGroup(groupInfo);
   }
 
   /**
    * Calculate the delta vruntime of the elapsed time.
    * @param delta elapsed time (ns)
-   * @param groupInfo group info
+   * @param weight the weight of the group info
    * @return delta vruntime
    */
-  private double calculateVRuntimeDelta(final long delta, final GlobalSchedGroupInfo groupInfo) {
-    return Math.max(minSchedPeriod * defaultWeight / groupInfo.getEventNumAndWeightMetric().getWeight(),
-    TimeUnit.NANOSECONDS.toMillis(delta) * defaultWeight / groupInfo.getEventNumAndWeightMetric().getWeight());
+  private double calculateVRuntimeDelta(final long delta, final double weight) {
+    return Math.max(minSchedPeriod * defaultWeight / weight,
+        TimeUnit.NANOSECONDS.toMillis(delta) * defaultWeight / weight);
   }
 
   @Override
