@@ -142,7 +142,7 @@ public final class MQTTSharedResource implements AutoCloseable {
     // Pick the last client until I'm allowed to in.
     int sinkNum;
     do {
-      MqttClient clientCandidate = mqttClientDeque.pollLast();
+      MqttClient clientCandidate = mqttClientDeque.peekLast();
       sinkNum = publisherSinkNumMap.get(clientCandidate).getAndIncrement();
       if (sinkNum <= maxMqttSinkNumPerClient) {
         // I'm allowed to enter. Reuse existing client.
@@ -151,11 +151,11 @@ public final class MQTTSharedResource implements AutoCloseable {
         // I'm not allowed to enter and we should make a new client.
         synchronized (mqttClientDeque) {
           // Am I the first one to get in? Then make a new client. If not, others already have made it.
-          if (mqttClientDeque.pollLast() == clientCandidate) {
+          if (mqttClientDeque.peekLast() == clientCandidate) {
             createSinkClient(brokerURI, mqttClientDeque);
           }
           // Try again to avoid starvation.
-          clientCandidate = mqttClientDeque.pollLast();
+          clientCandidate = mqttClientDeque.peekLast();
           sinkNum = publisherSinkNumMap.get(clientCandidate).getAndIncrement();
           if (sinkNum <= maxMqttSinkNumPerClient) {
             return clientCandidate;
@@ -216,7 +216,7 @@ public final class MQTTSharedResource implements AutoCloseable {
     int srcNum;
     do {
       // Pick the last client for the candidate.
-      MQTTSubscribeClient subClientCandidate = subClientDeque.pollLast();
+      MQTTSubscribeClient subClientCandidate = subClientDeque.peekLast();
       srcNum = subscriberSrcNumMap.get(subClientCandidate).getAndIncrement();
       if (srcNum <= maxMqttSourceNumPerClient) {
         // I'm allowed to enter.
@@ -225,11 +225,11 @@ public final class MQTTSharedResource implements AutoCloseable {
         // I'm not allowed to enter.
         synchronized(subClientDeque) {
           // Am I first to enter?
-          if (subClientDeque.pollLast() == subClientCandidate) {
+          if (subClientDeque.peekLast() == subClientCandidate) {
             createSubClient(brokerURI, subClientDeque);
           }
           // Try again to prevent starvation.
-          subClientCandidate = subClientDeque.pollLast();
+          subClientCandidate = subClientDeque.peekLast();
           srcNum = subscriberSrcNumMap.get(subClientCandidate).getAndIncrement();
           if (srcNum <= maxMqttSourceNumPerClient) {
             // I'm allowed to enter.
