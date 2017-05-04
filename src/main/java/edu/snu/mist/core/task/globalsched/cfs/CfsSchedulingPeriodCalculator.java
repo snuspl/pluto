@@ -23,6 +23,7 @@ import edu.snu.mist.core.task.globalsched.metrics.GlobalSchedGlobalMetrics;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.util.logging.Logger;
 
 /**
  * This provides a proportional scheduling period in CFS scheduler.
@@ -33,6 +34,8 @@ import javax.inject.Inject;
  * it will change the cfs scheduling period to min_sched_period * #_of_groups.
  */
 public final class CfsSchedulingPeriodCalculator implements SchedulingPeriodCalculator {
+
+  private static final Logger LOG = Logger.getLogger(CfsSchedulingPeriodCalculator.class.getName());
 
   /**
    * Cfs scheduling period.
@@ -60,13 +63,16 @@ public final class CfsSchedulingPeriodCalculator implements SchedulingPeriodCalc
 
   @Override
   public long calculateSchedulingPeriod(final GlobalSchedGroupInfo groupInfo) {
-    final double totalWeight = metric.getNumEventAndWeightMetric().getWeight();
     final double groupWeight = groupInfo.getEventNumAndWeightMetric().getWeight();
+    final double totalWeight = Math.max(groupWeight, metric.getNumEventAndWeightMetric().getWeight());
     final long numGroups = Math.max(1, metric.getNumGroupsMetric().getNumGroups());
     long adjustCfsSchedPeriod = cfsSchedPeriod;
     if (cfsSchedPeriod / numGroups < minSchedPeriod) {
       adjustCfsSchedPeriod = minSchedPeriod * numGroups;
     }
+    LOG.fine("numGroups: " + numGroups + ", totalWeight: "
+        + totalWeight + ", groupWeight: " + groupWeight + "adjPeriod: "
+        + adjustCfsSchedPeriod + ", period: " + (long) (adjustCfsSchedPeriod * (groupWeight / totalWeight)));
     return Math.max(minSchedPeriod, (long)(adjustCfsSchedPeriod * (groupWeight /totalWeight)));
   }
 }

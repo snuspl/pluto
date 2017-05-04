@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 package edu.snu.mist.core.task.globalsched.cfs;
+
 import edu.snu.mist.core.parameters.DefaultGroupWeight;
 import edu.snu.mist.core.task.MistPubSubEventHandler;
+import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfoMap;
 import edu.snu.mist.core.task.globalsched.NextGroupSelector;
 import edu.snu.mist.core.task.globalsched.NextGroupSelectorFactory;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.MinSchedulingPeriod;
@@ -43,17 +45,25 @@ public final class VtimeBasedNextGroupSelectorFactory implements NextGroupSelect
    */
   private final long minSchedPeriod;
 
+  /**
+   * Group info map.
+   */
+  private final GlobalSchedGroupInfoMap globalSchedGroupInfoMap;
+
   @Inject
   private VtimeBasedNextGroupSelectorFactory(@Parameter(DefaultGroupWeight.class) final double defaultWeight,
                                              @Parameter(MinSchedulingPeriod.class) final long minSchedPeriod,
-                                             final MistPubSubEventHandler mistPubSubEventHandler) {
+                                             final MistPubSubEventHandler mistPubSubEventHandler,
+                                             final GlobalSchedGroupInfoMap globalSchedGroupInfoMap) {
     this.defaultWeight = defaultWeight;
     this.minSchedPeriod = minSchedPeriod;
     this.mistPubSubEventHandler = mistPubSubEventHandler;
+    this.globalSchedGroupInfoMap = globalSchedGroupInfoMap;
   }
 
   @Override
   public NextGroupSelector newInstance() {
-    return new VtimeBasedNextGroupSelector(defaultWeight, minSchedPeriod, mistPubSubEventHandler);
+    return new VtimeBasedNextGroupSelector(
+        defaultWeight, minSchedPeriod, mistPubSubEventHandler, globalSchedGroupInfoMap);
   }
 }

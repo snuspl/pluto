@@ -37,14 +37,9 @@ public final class GlobalSchedEventProcessorTest {
 
   /**
    * Test whether the global sched event processor reselects next group.
-   * In this test, the next group picker will create 3 groups that have the following operator chain:
-   *  - group1: has an operator chain manager that returns operator chain every time
-   *  - group2: has an operator chain manager that returns null
-   *  when the event processor tries to retrieve an operator chain
-   *  - group3: has an operator chain manager that returns operator chain every time
+   * In this test, the next group picker will create 3 groups that returns an operator chain manager
    * EventProcessor first selects group1 from the next group selector, and executes events from the group1.
-   * After scheduling period, the event processor selects group2, but the processor wil pick another group
-   * because the operator chain manager of the group2 returns null when calling .pickOperatorChain()
+   * After scheduling period, the event processor selects group2, and will pick group3 after that.
    * This test verifies if the event processor retrieves
    * the next group correctly from the next group selector.
    */
@@ -65,10 +60,15 @@ public final class GlobalSchedEventProcessorTest {
     });
 
     // This is a group that returns an operator chain manager that returns null
+    final AtomicInteger ocm2Count = new AtomicInteger(0);
     final GlobalSchedGroupInfo group2 = mock(GlobalSchedGroupInfo.class);
     final OperatorChainManager ocm2 = mock(OperatorChainManager.class);
+    final OperatorChain operatorChain2 = mock(OperatorChain.class);
     when(group2.getOperatorChainManager()).thenReturn(ocm2);
-    when(ocm2.pickOperatorChain()).thenReturn(null);
+    when(ocm2.pickOperatorChain()).thenAnswer((iom) -> {
+      ocm2Count.incrementAndGet();
+      return operatorChain1;
+    });
 
     // This is a group that returns an operator chain manager that returns an operator chain
     final AtomicInteger ocm3Count = new AtomicInteger(0);
@@ -108,9 +108,10 @@ public final class GlobalSchedEventProcessorTest {
 
     // Check
     Assert.assertTrue(ocm1Count.get() > 1);
+    Assert.assertTrue(ocm2Count.get() > 1);
     Assert.assertTrue(ocm3Count.get() > 1);
     verify(ocm1, times(ocm1Count.get())).pickOperatorChain();
-    verify(ocm2, times(1)).pickOperatorChain();
+    verify(ocm2, times(ocm2Count.get())).pickOperatorChain();
     verify(ocm3, times(ocm3Count.get())).pickOperatorChain();
   }
 
@@ -144,8 +145,9 @@ public final class GlobalSchedEventProcessorTest {
         try {
           final GlobalSchedGroupInfo group = mock(GlobalSchedGroupInfo.class);
           final OperatorChainManager ocm = mock(OperatorChainManager.class);
+          final OperatorChain operatorChain = mock(OperatorChain.class);
           when(group.getOperatorChainManager()).thenReturn(ocm);
-          when(ocm.pickOperatorChain()).thenReturn(null);
+          when(ocm.pickOperatorChain()).thenReturn(operatorChain);
           return group;
         } catch (final InterruptedException e) {
           throw new RuntimeException(e);
