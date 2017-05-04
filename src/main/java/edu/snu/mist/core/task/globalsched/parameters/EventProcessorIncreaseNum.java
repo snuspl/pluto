@@ -18,7 +18,7 @@ package edu.snu.mist.core.task.globalsched.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The number of decreasing event processors during the subtraction phase.",
-    short_name = "event_processor_decrease_num", default_value = "20")
-public final class EventProcessorDecreaseNum implements Name<Integer> {
+@NamedParameter(doc = "The number of increasing event processors during the increase phase.",
+    short_name = "event_processor_increase_num", default_value = "20")
+public final class EventProcessorIncreaseNum implements Name<Integer> {
 }
