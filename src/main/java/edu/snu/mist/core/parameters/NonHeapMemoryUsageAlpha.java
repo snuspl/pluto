@@ -20,6 +20,7 @@ import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
  * An alpha value of non heap memory usage metric.
+ * It would be used as a decaing rate in EWMA.
  */
 @NamedParameter(doc="An alpha value of non heap memory usage metric.", default_value = "0.7")
 public final class NonHeapMemoryUsageAlpha implements Name<Double> {
