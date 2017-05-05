@@ -20,10 +20,7 @@ import edu.snu.mist.core.task.QueryManager;
 import edu.snu.mist.core.task.eventProcessors.DefaultEventProcessorManager;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorFactory;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
-import edu.snu.mist.core.task.globalsched.GlobalSchedEventProcessorFactory;
-import edu.snu.mist.core.task.globalsched.GroupAwareGlobalSchedQueryManagerImpl;
-import edu.snu.mist.core.task.globalsched.NextGroupSelectorFactory;
-import edu.snu.mist.core.task.globalsched.SchedulingPeriodCalculator;
+import edu.snu.mist.core.task.globalsched.*;
 import edu.snu.mist.core.task.globalsched.cfs.CfsSchedulingPeriodCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.VtimeBasedNextGroupSelectorFactory;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsSchedulingPeriod;
@@ -53,6 +50,7 @@ public final class MistOption2TaskConfigs {
   private final double eventProcessorIncreaseRate;
   private final long cfsSchedulingPeriod;
   private final long minSchedulingPeriod;
+  private final int eventProcessorIncreaseNum;
 
   @Inject
   private MistOption2TaskConfigs(
@@ -63,7 +61,8 @@ public final class MistOption2TaskConfigs {
       @Parameter(EventProcessorDecreaseNum.class) final int eventProcessorDecreaseNum,
       @Parameter(EventProcessorIncreaseRate.class) final double eventProcessorIncreaseRate,
       @Parameter(CfsSchedulingPeriod.class) final long cfsSchedulingPeriod,
-      @Parameter(MinSchedulingPeriod.class) final long minSchedulingPeriod) {
+      @Parameter(MinSchedulingPeriod.class) final long minSchedulingPeriod,
+      @Parameter(EventProcessorIncreaseNum.class) final int eventProcessorIncreaseNum) {
     this.epaType = epaType;
     this.cpuUtilLowThreshold = cpuUtilLowThreshold;
     this.eventNumHighThreshold = eventNumHighThreshold;
@@ -72,6 +71,7 @@ public final class MistOption2TaskConfigs {
     this.eventProcessorIncreaseRate = eventProcessorIncreaseRate;
     this.cfsSchedulingPeriod = cfsSchedulingPeriod;
     this.minSchedulingPeriod = minSchedulingPeriod;
+    this.eventProcessorIncreaseNum = eventProcessorIncreaseNum;
   }
 
   /**
@@ -83,6 +83,8 @@ public final class MistOption2TaskConfigs {
         return DefaultEventProcessorNumAssigner.class;
       case "miad":
         return MISDEventProcessorNumAssigner.class;
+      case "aiad":
+        return AIADEventProcessorNumAssigner.class;
       default:
         throw new RuntimeException("No event processor num assigner type: " + epaType);
     }
@@ -108,6 +110,7 @@ public final class MistOption2TaskConfigs {
     jcb.bindNamedParameter(EventProcessorIncreaseRate.class, Double.toString(eventProcessorIncreaseRate));
     jcb.bindNamedParameter(CfsSchedulingPeriod.class, Long.toString(cfsSchedulingPeriod));
     jcb.bindNamedParameter(MinSchedulingPeriod.class, Long.toString(minSchedulingPeriod));
+    jcb.bindNamedParameter(EventProcessorIncreaseNum.class, Integer.toString(eventProcessorIncreaseNum));
 
     return jcb.build();
   }
@@ -125,6 +128,7 @@ public final class MistOption2TaskConfigs {
         .registerShortNameOfClass(EventProcessorIncreaseRate.class)
         .registerShortNameOfClass(EventProcessorNumAssignerType.class)
         .registerShortNameOfClass(CfsSchedulingPeriod.class)
-        .registerShortNameOfClass(MinSchedulingPeriod.class);
+        .registerShortNameOfClass(MinSchedulingPeriod.class)
+        .registerShortNameOfClass(EventProcessorIncreaseNum.class);
   }
 }
