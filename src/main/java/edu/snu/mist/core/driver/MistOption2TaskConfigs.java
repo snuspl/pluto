@@ -38,7 +38,13 @@ import org.apache.reef.tang.formats.CommandLine;
 import javax.inject.Inject;
 
 /**
- * Configuration of the mist task for option 2.
+ * Configuration of the mist task for option 2 that performs two level scheduling:
+ * first-level: cfs scheduling of groups
+ * second-level: round-robin operator chain scheduling with active/inactive operator chain management.
+ *
+ * An event processor picks a group by using cfs scheduling.
+ * After picking a group, the processor processes events within the group,
+ * by selecting active operator chain that has events in its queue.
  */
 public final class MistOption2TaskConfigs {
 
