@@ -26,7 +26,6 @@ import edu.snu.mist.core.task.metrics.MetricUpdateEvent;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.logging.Logger;
 
 /**
  * This is a EventProcessorNumAssigner assigns global event processors.
@@ -37,8 +36,6 @@ import java.util.logging.Logger;
  * Also, it will do additive increase and additive decrease of the number of event processors.
  */
 public final class AIADEventProcessorNumAssigner implements EventProcessorNumAssigner {
-
-  private static final Logger LOG = Logger.getLogger(AIADEventProcessorNumAssigner.class.getName());
 
   /**
    * The limit of the total number of executor threads.
@@ -125,18 +122,8 @@ public final class AIADEventProcessorNumAssigner implements EventProcessorNumAss
         // In that case, we should increase the number of event processors.
         final int currentEventProcessorsNum = eventProcessorManager.getEventProcessors().size();
         if (currentEventProcessorsNum + increaseNum  < threadNumLimit) {
-          LOG.fine(new StringBuilder("Increase from ")
-              .append(currentEventProcessorsNum)
-              .append(" to ")
-              .append(currentEventProcessorsNum + increaseNum)
-              .toString());
           eventProcessorManager.adjustEventProcessorNum(currentEventProcessorsNum + increaseNum);
         } else if (currentEventProcessorsNum + increaseNum > threadNumLimit) {
-          LOG.fine(new StringBuilder("Increase from ")
-              .append(currentEventProcessorsNum)
-              .append(" to ")
-              .append(threadNumLimit)
-              .toString());
           eventProcessorManager.adjustEventProcessorNum(threadNumLimit);
         }
       } else if (metrics.getNumEventAndWeightMetric().getNumEvents() < eventNumLowThreshold) {
@@ -145,18 +132,8 @@ public final class AIADEventProcessorNumAssigner implements EventProcessorNumAss
         // The decrease will be additive because we do not have to react rapidly to the idle state.
         final int currentEventProcessorsNum = eventProcessorManager.getEventProcessors().size();
         if (currentEventProcessorsNum - decreaseNum > defaultNumEventProcessors) {
-          LOG.fine(new StringBuilder("Decrease from ")
-              .append(currentEventProcessorsNum)
-              .append(" to ")
-              .append(currentEventProcessorsNum - decreaseNum)
-              .toString());
           eventProcessorManager.adjustEventProcessorNum(currentEventProcessorsNum - decreaseNum);
         } else if (currentEventProcessorsNum - decreaseNum < defaultNumEventProcessors) {
-          LOG.fine(new StringBuilder("Decrease from ")
-              .append(currentEventProcessorsNum)
-              .append(" to ")
-              .append(defaultNumEventProcessors)
-              .toString());
           eventProcessorManager.adjustEventProcessorNum(defaultNumEventProcessors);
         }
       }
