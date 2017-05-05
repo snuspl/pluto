@@ -24,6 +24,8 @@ CLASSPATH=$YARN_HOME/share/hadoop/common/*:$YARN_HOME/share/hadoop/common/lib/*:
 
 YARN_CONF_DIR=$YARN_HOME/etc/hadoop
 
+LOGGING_CONFIG="-Djava.util.logging.config.file=$MIST_HOME/src/main/resources/logging.properties"
+
 CMD="java -cp $YARN_CONF_DIR:$SELF_JAR:$CLASSPATH $LOCAL_RUNTIME_TMP $LOGGING_CONFIG edu.snu.mist.Mist $*"
 
 echo $CMD
