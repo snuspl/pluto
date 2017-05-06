@@ -20,6 +20,6 @@ import org.apache.reef.tang.annotations.NamedParameter;
 
 @NamedParameter(doc = "The high threshold of the number of events. " +
     "If there are more events than this value, then the system will be regard as having many events.",
-    short_name = "event_num_high_threshold", default_value = "1000000")
-public final class EventNumHighThreshold implements Name<Long> {
+    short_name = "event_num_high_threshold", default_value = "500000.0")
+public final class EventNumHighThreshold implements Name<Double> {
 }

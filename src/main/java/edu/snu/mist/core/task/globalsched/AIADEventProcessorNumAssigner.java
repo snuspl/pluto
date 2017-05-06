@@ -51,13 +51,13 @@ public final class AIADEventProcessorNumAssigner implements EventProcessorNumAss
    * The high threshold of the number of events.
    * If there are more events than this value, then the system will be regard as having many events.
    */
-  private final long eventNumHighThreshold;
+  private final double eventNumHighThreshold;
 
   /**
    * The low threshold of the number of events.
    * If there are less events than this value, then the system will be regarded as having few events.
    */
-  private final long eventNumLowThreshold;
+  private final double eventNumLowThreshold;
 
   /**
    * The low threshold of the CPU utilization.
@@ -90,8 +90,8 @@ public final class AIADEventProcessorNumAssigner implements EventProcessorNumAss
   private AIADEventProcessorNumAssigner(
       @Parameter(DefaultNumEventProcessors.class) final int defaultNumEventProcessors,
       @Parameter(ThreadNumLimit.class) final int threadNumLimit,
-      @Parameter(EventNumHighThreshold.class) final long eventNumHighThreshold,
-      @Parameter(EventNumLowThreshold.class) final long eventNumLowThreshold,
+      @Parameter(EventNumHighThreshold.class) final double eventNumHighThreshold,
+      @Parameter(EventNumLowThreshold.class) final double eventNumLowThreshold,
       @Parameter(CpuUtilLowThreshold.class) final double cpuUtilLowThreshold,
       @Parameter(EventProcessorIncreaseNum.class) final int increaseNum,
       @Parameter(EventProcessorDecreaseNum.class) final int decreaseNum,
@@ -115,27 +115,23 @@ public final class AIADEventProcessorNumAssigner implements EventProcessorNumAss
    */
   @Override
   public void onNext(final MetricUpdateEvent metricUpdateEvent) {
-    if (metrics.getCpuUtilMetric().getSystemCpuUtil() < cpuUtilLowThreshold) {
-      if (metrics.getNumEventAndWeightMetric().getNumEvents() > eventNumHighThreshold) {
+    final double currCpuUtil = metrics.getCpuUtilMetric().getEwmaSystemCpuUtil();
+    final double currEventNum = metrics.getNumEventAndWeightMetric().getEwmaNumEvents();
+    final int currentEventProcessorsNum = eventProcessorManager.getEventProcessors().size();
+
+    if (currCpuUtil < cpuUtilLowThreshold) {
+      if (currEventNum > eventNumHighThreshold) {
         // If the cpu utilization is low in spite of enough events,
         // the event processors could be blocked by some operations such as I/O.
         // In that case, we should increase the number of event processors.
-        final int currentEventProcessorsNum = eventProcessorManager.getEventProcessors().size();
-        if (currentEventProcessorsNum + increaseNum  < threadNumLimit) {
-          eventProcessorManager.adjustEventProcessorNum(currentEventProcessorsNum + increaseNum);
-        } else if (currentEventProcessorsNum + increaseNum > threadNumLimit) {
-          eventProcessorManager.adjustEventProcessorNum(threadNumLimit);
-        }
-      } else if (metrics.getNumEventAndWeightMetric().getNumEvents() < eventNumLowThreshold) {
+        final int adjustNum = Math.min(currentEventProcessorsNum + increaseNum, threadNumLimit);
+        eventProcessorManager.adjustEventProcessorNum(adjustNum);
+      } else if (currEventNum < eventNumLowThreshold) {
         // If the cpu utilization is low and there are few events,
         // then there might be too many event processors.
         // The decrease will be additive because we do not have to react rapidly to the idle state.
-        final int currentEventProcessorsNum = eventProcessorManager.getEventProcessors().size();
-        if (currentEventProcessorsNum - decreaseNum > defaultNumEventProcessors) {
-          eventProcessorManager.adjustEventProcessorNum(currentEventProcessorsNum - decreaseNum);
-        } else if (currentEventProcessorsNum - decreaseNum < defaultNumEventProcessors) {
-          eventProcessorManager.adjustEventProcessorNum(defaultNumEventProcessors);
-        }
+        final int adjustNum = Math.max(currentEventProcessorsNum - decreaseNum, defaultNumEventProcessors);
+        eventProcessorManager.adjustEventProcessorNum(adjustNum);
       }
     }
   }
