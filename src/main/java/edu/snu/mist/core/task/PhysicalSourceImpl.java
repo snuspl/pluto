@@ -19,6 +19,8 @@ import edu.snu.mist.common.OutputEmitter;
 import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;
 
+import java.util.Set;
+
 /**
  * This class represents the implementation of Source interface.
  * @param <T> the type of input data
@@ -41,6 +43,7 @@ public final class PhysicalSourceImpl<T> extends BasePhysicalVertex implements P
     super(sourceId, configuration);
     this.dataGenerator = dataGenerator;
     this.eventGenerator = eventGenerator;
+    activeSourceIdSet.add(sourceId);
   }
 
   @Override
@@ -69,5 +72,30 @@ public final class PhysicalSourceImpl<T> extends BasePhysicalVertex implements P
   @Override
   public void setOutputEmitter(final OutputEmitter emitter) {
     eventGenerator.setOutputEmitter(emitter);
+  }
+
+  @Override
+  public String getExecutionVertexId() {
+    return id;
+  }
+
+  @Override
+  public int getActiveSourceCount() {
+    return activeSourceIdSet.size();
+  }
+
+  @Override
+  public void putSourceIdSet(final Set<String> sourceIdSet) {
+    activeSourceIdSet.addAll(sourceIdSet);
+  }
+
+  @Override
+  public boolean removeDeactivatedSourceId(final String sourceId) {
+    return activeSourceIdSet.remove(sourceId);
+  }
+
+  @Override
+  public Set<String> getActiveSourceIdSet() {
+    return activeSourceIdSet;
   }
 }

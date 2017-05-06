@@ -23,6 +23,8 @@ import edu.snu.mist.common.operators.UnionOperator;
 import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.core.task.*;
 
+import java.util.Set;
+
 /**
  * This is a utility class for simple operator chain generation.
  */
@@ -122,6 +124,33 @@ public final class SimpleOperatorChainUtils {
     public String getConfiguration() {
       return conf;
     }
+
+    @Override
+    public String getExecutionVertexId() {
+      return null;
+    }
+
+    @Override
+    public int getActiveSourceCount() {
+      return 0;
+    }
+
+    @Override
+    public void putSourceIdSet(final Set<String> sourceIdSet) {
+      // do nothing
+    }
+
+    @Override
+    public boolean removeDeactivatedSourceId(final String sourceId) {
+      // do nothing
+      return false;
+    }
+
+    @Override
+    public Set<String> getActiveSourceIdSet() {
+      // do nothing
+      return null;
+    }
   }
 
   /**
@@ -155,6 +184,33 @@ public final class SimpleOperatorChainUtils {
 
     @Override
     public Sink getSink() {
+      return null;
+    }
+
+    @Override
+    public String getExecutionVertexId() {
+      return null;
+    }
+
+    @Override
+    public int getActiveSourceCount() {
+      return 0;
+    }
+
+    @Override
+    public void putSourceIdSet(final Set<String> sourceIdSet) {
+      // do nothing
+    }
+
+    @Override
+    public boolean removeDeactivatedSourceId(final String sourceId) {
+      // do nothing
+      return false;
+    }
+
+    @Override
+    public Set<String> getActiveSourceIdSet() {
+      // do nothing
       return null;
     }
   }

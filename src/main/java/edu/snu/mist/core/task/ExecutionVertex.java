@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.core.task;
 
+import java.util.Set;
+
 /**
  * This interface represents execution vertices of the query.
  * It is required to represent an execution dag, which consists of the execution vertices and edges.
@@ -32,4 +34,32 @@ public interface ExecutionVertex {
    * Get the type of the execution vertex.
    */
   Type getType();
+
+  /**
+   * Returns the ID of the first PhysicalOperator in the OperatorChain.
+   * TODO:[MIST-527] Currently, there is getId in PhysicalVertex,
+   * but this will be resolved when PhysicalVertex is integrated with ExecutionVertex.
+   */
+  String getExecutionVertexId();
+
+  /**
+   * Returns the number of active sources that contribute to this operator chain.
+   */
+  int getActiveSourceCount();
+
+  /**
+   * Puts the sourceId in the activeSourceIdSet, if it is not already there.
+   */
+  void putSourceIdSet(Set<String> sourceIdSet);
+
+  /**
+   * Removes the sourceId in the activeSourceIdSet.
+   * If the set does not have the sourceId, it returns false.
+   */
+  boolean removeDeactivatedSourceId(String sourceId);
+
+  /**
+   * Returns the whole activeSourceIdSet.
+   */
+  Set<String> getActiveSourceIdSet();
 }

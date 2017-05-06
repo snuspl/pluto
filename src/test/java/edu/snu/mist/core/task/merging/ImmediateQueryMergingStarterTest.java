@@ -479,6 +479,33 @@ public final class ImmediateQueryMergingStarterTest {
     public String getConfiguration() {
       return conf;
     }
+
+    @Override
+    public String getExecutionVertexId() {
+      return null;
+    }
+
+    @Override
+    public int getActiveSourceCount() {
+      return 0;
+    }
+
+    @Override
+    public void putSourceIdSet(final Set<String> sourceIdSet) {
+      // do nothing
+    }
+
+    @Override
+    public boolean removeDeactivatedSourceId(final String sourceId) {
+      // do nothing
+      return false;
+    }
+
+    @Override
+    public Set<String> getActiveSourceIdSet() {
+      // do nothing
+      return null;
+    }
   }
 
   /**

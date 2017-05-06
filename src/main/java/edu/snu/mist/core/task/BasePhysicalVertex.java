@@ -15,6 +15,9 @@
  */
 package edu.snu.mist.core.task;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * This interface represents physical vertices of the query.
  * The physical vertex is one of the source, operator, or sink.
@@ -32,10 +35,16 @@ abstract class BasePhysicalVertex implements PhysicalVertex {
    */
   protected final String configuration;
 
+  /**
+   * The set of dependent and active sources.
+   */
+  protected Set<String> activeSourceIdSet;
+
   public BasePhysicalVertex(final String id,
                             final String configuration) {
     this.id = id;
     this.configuration = configuration;
+    this.activeSourceIdSet = new HashSet<>();
   }
 
   @Override
