@@ -39,6 +39,7 @@ public final class MemoryUsageMetric {
 
   /**
    * The non heap memory usage which will be calculated as used memory / total memory.
+   * If one of non heap memory pools has undefined max size, this value will be 0.
    */
   private volatile double nonHeapMemoryUsage;
 

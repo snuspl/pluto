@@ -24,6 +24,7 @@ import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.globalsched.metrics.CpuUtilMetricEventHandler;
 import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetricEventHandler;
+import edu.snu.mist.core.task.globalsched.metrics.GlobalSchedMemoryUsageMetricEventHandler;
 import edu.snu.mist.core.task.globalsched.metrics.NumGroupsMetricEventHandler;
 import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
 import edu.snu.mist.core.task.merging.MergeAwareQueryRemover;
@@ -115,6 +116,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 final EventNumAndWeightMetricEventHandler eventNumHandler,
                                                 final CpuUtilMetricEventHandler cpuUtilHandler,
                                                 final NumGroupsMetricEventHandler numGroupsHandler,
+                                                final GlobalSchedMemoryUsageMetricEventHandler memUsageHandler,
                                                 final EventProcessorNumAssigner assigner,
                                                 final BatchQueryCreator batchQueryCreator) {
     this.dagGenerator = dagGenerator;
