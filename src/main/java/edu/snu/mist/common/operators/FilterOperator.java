@@ -58,8 +58,12 @@ public final class FilterOperator<I> extends OneStreamOperator {
   public void processLeftData(final MistDataEvent input) {
     final I value = (I)input.getValue();
     if (filterFunc.test(value)) {
-      LOG.log(Level.FINE, "{0} Filters {1}",
-          new Object[]{FilterOperator.class, value});
+
+      if (LOG.isLoggable(Level.FINE)) {
+        LOG.log(Level.FINE, "{0} Filters {1}",
+            new Object[]{FilterOperator.class, value});
+      }
+
       outputEmitter.emitData(input);
     }
   }

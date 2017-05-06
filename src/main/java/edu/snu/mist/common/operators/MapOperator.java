@@ -58,7 +58,11 @@ public final class MapOperator<I, O> extends OneStreamOperator {
   @Override
   public void processLeftData(final MistDataEvent data) {
     final O output = mapFunc.apply((I)data.getValue());
-    LOG.log(Level.FINE, "{0} maps {1} to {2}", new Object[]{MapOperator.class, data, output});
+
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.log(Level.FINE, "{0} maps {1} to {2}", new Object[]{MapOperator.class, data, output});
+    }
+
     data.setValue(output);
     outputEmitter.emitData(data);
   }

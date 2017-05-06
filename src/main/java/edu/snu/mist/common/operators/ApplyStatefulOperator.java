@@ -65,9 +65,12 @@ public final class ApplyStatefulOperator<IN, OUT>
     applyStatefulFunction.update((IN)input.getValue());
     final OUT output = applyStatefulFunction.produceResult();
 
-    LOG.log(Level.FINE, "{0} updates the state to {1} with input {2}, and generates {3}",
-        new Object[]{this.getClass().getName(),
-            applyStatefulFunction.getCurrentState(), input, output});
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.log(Level.FINE, "{0} updates the state to {1} with input {2}, and generates {3}",
+          new Object[]{this.getClass().getName(),
+              applyStatefulFunction.getCurrentState(), input, output});
+    }
+
     input.setValue(output);
     outputEmitter.emitData(input);
   }

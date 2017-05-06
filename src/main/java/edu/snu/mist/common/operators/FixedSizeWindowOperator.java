@@ -114,8 +114,12 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements S
     final Iterator<Window<T>> itr = windowQueue.iterator();
     while (itr.hasNext()) {
       final Window<T> window = itr.next();
-      LOG.log(Level.FINE, "{0} puts input data {1} into window {2}",
-          new Object[]{this.getClass().getName(), input, window});
+
+      if (LOG.isLoggable(Level.FINE)) {
+        LOG.log(Level.FINE, "{0} puts input data {1} into window {2}",
+            new Object[]{this.getClass().getName(), input, window});
+      }
+
       window.putData(input);
     }
   }

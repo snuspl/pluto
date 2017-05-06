@@ -85,8 +85,11 @@ public final class UnionOperator extends TwoStreamOperator {
     final long leftWatermarkTimestamp = recentLeftWatermark.getTimestamp();
     final long rightWatermarkTimestamp = recentRightWatermark.getTimestamp();
     final long timestamp = getMinimumWatermark(leftWatermarkTimestamp, rightWatermarkTimestamp);
-    LOG.log(Level.FINE, "{0} drains inputs until timestamp {1}",
-        new Object[]{this.getClass().getName(), timestamp});
+
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.log(Level.FINE, "{0} drains inputs until timestamp {1}",
+          new Object[]{this.getClass().getName(), timestamp});
+    }
 
     // The events in the queue is ordered by timestamp, so just peeks one by one
     while (!leftUpstreamQueue.isEmpty() && !rightUpstreamQueue.isEmpty()) {
@@ -174,7 +177,11 @@ public final class UnionOperator extends TwoStreamOperator {
     if (recentRightTimestamp > timestamp) {
       throw new RuntimeException("The upstream events should be ordered by timestamp.");
     }
-    LOG.log(Level.FINE, "{0} gets right data {1}", new Object[]{this.getClass().getName(), event});
+
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.log(Level.FINE, "{0} gets right data {1}", new Object[]{this.getClass().getName(), event});
+    }
+
     recentRightTimestamp = timestamp;
     rightUpstreamQueue.add(event);
 
@@ -184,7 +191,10 @@ public final class UnionOperator extends TwoStreamOperator {
 
   @Override
   public void processLeftWatermark(final MistWatermarkEvent event) {
-    LOG.log(Level.FINE, "{0} gets left watermark {1}", new Object[]{this.getClass().getName(), event});
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.log(Level.FINE, "{0} gets left watermark {1}", new Object[]{this.getClass().getName(), event});
+    }
+
     recentLeftWatermark = event;
 
     // Drain events until the minimum watermark.
@@ -193,7 +203,10 @@ public final class UnionOperator extends TwoStreamOperator {
 
   @Override
   public void processRightWatermark(final MistWatermarkEvent event) {
-    LOG.log(Level.FINE, "{0} gets right watermark {1}", new Object[]{this.getClass().getName(), event});
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.log(Level.FINE, "{0} gets right watermark {1}", new Object[]{this.getClass().getName(), event});
+    }
+
     recentRightWatermark = event;
 
     // Drain events until the minimum watermark.

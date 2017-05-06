@@ -20,6 +20,7 @@ import edu.snu.mist.core.task.OperatorChainManager;
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -65,14 +66,24 @@ final class GlobalSchedEventProcessor extends Thread implements EventProcessor {
         final GlobalSchedGroupInfo groupInfo = nextGroupSelector.getNextExecutableGroup();
         final OperatorChainManager operatorChainManager = groupInfo.getOperatorChainManager();
         final long schedulingPeriod = schedPeriodCalculator.calculateSchedulingPeriod(groupInfo);
-        LOG.fine("group " + groupInfo + ", period: " + schedulingPeriod);
+
+        if (LOG.isLoggable(Level.FINE)) {
+          LOG.log(Level.FINE, "{0}: Selected group {1}, Period: {2}",
+              new Object[]{Thread.currentThread().getName(), groupInfo, schedulingPeriod});
+        }
+
         while (TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) < schedulingPeriod && !closed) {
           // This is a blocking operator chain manager
           // So it should not be null
           final OperatorChain operatorChain = operatorChainManager.pickOperatorChain();
           operatorChain.processNextEvent();
-          LOG.fine("Process: " + operatorChain);
         }
+
+        if (LOG.isLoggable(Level.FINE)) {
+          LOG.log(Level.FINE, "{0}: Reschedule group {1}",
+              new Object[]{Thread.currentThread().getName(), groupInfo});
+        }
+
         nextGroupSelector.reschedule(groupInfo);
       }
     } catch (final InterruptedException e) {

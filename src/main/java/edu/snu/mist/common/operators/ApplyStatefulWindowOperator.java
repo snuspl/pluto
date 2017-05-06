@@ -72,11 +72,15 @@ public final class ApplyStatefulWindowOperator<IN, OUT> extends OneStreamOperato
         applyStatefulFunction.update(data);
       }
       final OUT operationResult = applyStatefulFunction.produceResult();
-      LOG.log(Level.FINE, "{0} initializes and updates the operator state to {1} with input window {2} " +
-          "which started at {3} and ended at {4}, and generates {5}",
-          new Object[]{this.getClass().getName(),
-              applyStatefulFunction.getCurrentState(), input,
-              windowData.getStart(), windowData.getEnd(), operationResult});
+
+      if (LOG.isLoggable(Level.FINE)) {
+        LOG.log(Level.FINE, "{0} initializes and updates the operator state to {1} with input window {2} " +
+                "which started at {3} and ended at {4}, and generates {5}",
+            new Object[]{this.getClass().getName(),
+                applyStatefulFunction.getCurrentState(), input,
+                windowData.getStart(), windowData.getEnd(), operationResult});
+      }
+
       input.setValue(operationResult);
       outputEmitter.emitData(input);
     } catch (final ClassCastException e) {

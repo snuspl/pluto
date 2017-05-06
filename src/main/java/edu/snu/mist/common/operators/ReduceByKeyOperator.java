@@ -118,8 +118,12 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
   public void processLeftData(final MistDataEvent input) {
     final HashMap<K, V> intermediateState = updateState((Tuple2)input.getValue(), state);
     final HashMap<K, V> output = generateOutput(intermediateState);
-    LOG.log(Level.FINE, "{0} updates the state {1} with input {2} to {3}, and generates {4}",
-        new Object[]{this.getClass().getName(), state, input, intermediateState, output});
+
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.log(Level.FINE, "{0} updates the state {1} with input {2} to {3}, and generates {4}",
+          new Object[]{this.getClass().getName(), state, input, intermediateState, output});
+    }
+
     input.setValue(output);
     outputEmitter.emitData(input);
     state = intermediateState;

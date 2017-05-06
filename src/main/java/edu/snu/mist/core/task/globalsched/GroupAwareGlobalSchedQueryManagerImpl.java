@@ -151,7 +151,12 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
       final String queryId = tuple.getKey();
       // Update group information
       final String groupId = tuple.getValue().getGroupId();
-      LOG.fine("Create query: " + groupId + ", " + queryId);
+
+      if (LOG.isLoggable(Level.FINE)) {
+        LOG.log(Level.FINE, "Create Query [gid: {0}, qid: {1}]",
+            new Object[]{groupId, queryId});
+      }
+
       if (groupInfoMap.get(groupId) == null) {
         // Add new group id, if it doesn't exist
         final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
@@ -170,7 +175,11 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
         injector.bindVolatileInstance(MistPubSubEventHandler.class, pubSubEventHandler);
         final GlobalSchedGroupInfo groupInfo = injector.getInstance(GlobalSchedGroupInfo.class);
         if (groupInfoMap.putIfAbsent(groupId, groupInfo) == null) {
-          LOG.fine("Create group: " + groupId);
+
+          if (LOG.isLoggable(Level.FINE)) {
+            LOG.log(Level.FINE, "Create Group: {0}", new Object[]{groupId});
+          }
+
           pubSubEventHandler.getPubSubEventHandler().onNext(new GroupEvent(groupInfo,
               GroupEvent.GroupEventType.ADDITION));
         }
@@ -189,6 +198,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
       // [MIST-345] We need to release all of the information that is required for the query when it fails.
       LOG.log(Level.SEVERE, "An exception occurred while starting {0} query: {1}",
           new Object[] {tuple.getKey(), e.toString()});
+
       queryControlResult.setIsSuccess(false);
       queryControlResult.setMsg(e.getMessage());
       return queryControlResult;

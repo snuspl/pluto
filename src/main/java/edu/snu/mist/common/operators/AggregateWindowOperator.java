@@ -63,10 +63,14 @@ public final class AggregateWindowOperator<IN, OUT>
     try {
       final WindowData<IN> windowData = (WindowData<IN>) input.getValue();
       final OUT operationResult = aggregateFunc.apply(windowData);
-      LOG.log(Level.FINE, "{0} aggregates the input window {1} which started at {2} and ended at {3}, " +
-          "and generates {4}",
-          new Object[]{this.getClass().getName(),
-              input, windowData.getStart(), windowData.getEnd(), operationResult});
+
+      if (LOG.isLoggable(Level.FINE)) {
+        LOG.log(Level.FINE, "{0} aggregates the input window {1} which started at {2} and ended at {3}, " +
+                "and generates {4}",
+            new Object[]{this.getClass().getName(),
+                input, windowData.getStart(), windowData.getEnd(), operationResult});
+      }
+
       input.setValue(operationResult);
       outputEmitter.emitData(input);
     } catch (final ClassCastException e) {

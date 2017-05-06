@@ -23,6 +23,7 @@ import edu.snu.mist.core.task.globalsched.metrics.GlobalSchedGlobalMetrics;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -70,9 +71,12 @@ public final class CfsSchedulingPeriodCalculator implements SchedulingPeriodCalc
     if (cfsSchedPeriod / numGroups < minSchedPeriod) {
       adjustCfsSchedPeriod = minSchedPeriod * numGroups;
     }
-    LOG.fine("numGroups: " + numGroups + ", totalWeight: "
-        + totalWeight + ", groupWeight: " + groupWeight + "adjPeriod: "
-        + adjustCfsSchedPeriod + ", period: " + (long) (adjustCfsSchedPeriod * (groupWeight / totalWeight)));
+
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.log(Level.FINE, "NumGroups: {0}, TotalWeight: {1}, GroupWeight: {2}, Period: {3}",
+          new Object[]{numGroups, totalWeight, groupWeight, adjustCfsSchedPeriod * (groupWeight / totalWeight)});
+    }
+
     return Math.max(minSchedPeriod, (long)(adjustCfsSchedPeriod * (groupWeight /totalWeight)));
   }
 }
