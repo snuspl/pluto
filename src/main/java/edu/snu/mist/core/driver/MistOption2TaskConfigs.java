@@ -50,8 +50,8 @@ public final class MistOption2TaskConfigs {
 
   private final String epaType;
   private final double cpuUtilLowThreshold;
-  private final long eventNumHighThreshold;
-  private final long eventNumLowThreshold;
+  private final double eventNumHighThreshold;
+  private final double eventNumLowThreshold;
   private final int eventProcessorDecreaseNum;
   private final double eventProcessorIncreaseRate;
   private final long cfsSchedulingPeriod;
@@ -62,8 +62,8 @@ public final class MistOption2TaskConfigs {
   private MistOption2TaskConfigs(
       @Parameter(EventProcessorNumAssignerType.class) final String epaType,
       @Parameter(CpuUtilLowThreshold.class) final double cpuUtilLowThreshold,
-      @Parameter(EventNumHighThreshold.class) final long eventNumHighThreshold,
-      @Parameter(EventNumLowThreshold.class) final long eventNumLowThreshold,
+      @Parameter(EventNumHighThreshold.class) final double eventNumHighThreshold,
+      @Parameter(EventNumLowThreshold.class) final double eventNumLowThreshold,
       @Parameter(EventProcessorDecreaseNum.class) final int eventProcessorDecreaseNum,
       @Parameter(EventProcessorIncreaseRate.class) final double eventProcessorIncreaseRate,
       @Parameter(CfsSchedulingPeriod.class) final long cfsSchedulingPeriod,
@@ -110,8 +110,8 @@ public final class MistOption2TaskConfigs {
     jcb.bindImplementation(NextGroupSelectorFactory.class, VtimeBasedNextGroupSelectorFactory.class);
 
     jcb.bindNamedParameter(CpuUtilLowThreshold.class, Double.toString(cpuUtilLowThreshold));
-    jcb.bindNamedParameter(EventNumHighThreshold.class, Long.toString(eventNumHighThreshold));
-    jcb.bindNamedParameter(EventNumLowThreshold.class, Long.toString(eventNumLowThreshold));
+    jcb.bindNamedParameter(EventNumHighThreshold.class, Double.toString(eventNumHighThreshold));
+    jcb.bindNamedParameter(EventNumLowThreshold.class, Double.toString(eventNumLowThreshold));
     jcb.bindNamedParameter(EventProcessorDecreaseNum.class, Integer.toString(eventProcessorDecreaseNum));
     jcb.bindNamedParameter(EventProcessorIncreaseRate.class, Double.toString(eventProcessorIncreaseRate));
     jcb.bindNamedParameter(CfsSchedulingPeriod.class, Long.toString(cfsSchedulingPeriod));

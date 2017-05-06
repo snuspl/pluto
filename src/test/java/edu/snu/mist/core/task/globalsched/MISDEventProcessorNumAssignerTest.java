@@ -42,8 +42,8 @@ public final class MISDEventProcessorNumAssignerTest {
   private EventProcessorManager eventProcessorManager;
   private static final int THREAD_NUM_LIMIT = 30;
   private static final int DEFAULT_THREAD_NUM = 10;
-  private static final long EVENT_NUM_HIGH_THRES = 100000;
-  private static final long EVENT_NUM_LOW_THRES = 100;
+  private static final double EVENT_NUM_HIGH_THRES = 1000;
+  private static final double EVENT_NUM_LOW_THRES = 100;
   private static final double CPU_UTIL_LOW_THRES = 0.1;
   private static final double INCREASE_RATE = 2;
   private static final int DECREASE_NUM = 15;
@@ -68,14 +68,15 @@ public final class MISDEventProcessorNumAssignerTest {
   /**
    * Test that the MISDEventProcessorNumAssigner increase and decrease the event processor numbers properly.
    */
-  @Test(timeout = 1000L)
+  @Test
   public void testProcessorNumManaged() throws InjectionException {
 
     eventProcessorManager.adjustEventProcessorNum(DEFAULT_THREAD_NUM);
 
     // Many events, low cpu utilization
-    metric.getNumEventAndWeightMetric().updateNumEvents(EVENT_NUM_HIGH_THRES + 1);
-    metric.getCpuUtilMetric().updateSystemCpuUtil(CPU_UTIL_LOW_THRES - 0.01);
+    metric.getNumEventAndWeightMetric().updateNumEvents((long)EVENT_NUM_HIGH_THRES * 2);
+    metric.getNumEventAndWeightMetric().updateNumEvents((long)EVENT_NUM_HIGH_THRES * 2);
+    metric.getCpuUtilMetric().updateSystemCpuUtil(0);
 
     handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
     // The number of event processors should be doubled
@@ -83,7 +84,8 @@ public final class MISDEventProcessorNumAssignerTest {
         DEFAULT_THREAD_NUM * (int) INCREASE_RATE, eventProcessorManager.getEventProcessors().size());
 
     // Make the number of events to be not enough to increase the event processor number.
-    metric.getNumEventAndWeightMetric().updateNumEvents(EVENT_NUM_HIGH_THRES - 1);
+    metric.getNumEventAndWeightMetric().updateNumEvents(0);
+    metric.getNumEventAndWeightMetric().updateNumEvents(0);
 
     handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
     // The number of event processors should be not changed
@@ -91,14 +93,17 @@ public final class MISDEventProcessorNumAssignerTest {
         DEFAULT_THREAD_NUM * (int) INCREASE_RATE, eventProcessorManager.getEventProcessors().size());
 
     // Many events, low cpu utilization again
-    metric.getNumEventAndWeightMetric().updateNumEvents(EVENT_NUM_HIGH_THRES + 1);
+    metric.getNumEventAndWeightMetric().updateNumEvents((long)EVENT_NUM_HIGH_THRES * 2);
+    metric.getNumEventAndWeightMetric().updateNumEvents((long)EVENT_NUM_HIGH_THRES * 2);
 
     handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
     // The number of event processors should be the limit
     Assert.assertEquals(THREAD_NUM_LIMIT, eventProcessorManager.getEventProcessors().size());
 
     // Few events, low cpu utilization
-    metric.getNumEventAndWeightMetric().updateNumEvents(EVENT_NUM_LOW_THRES - 1);
+    metric.getNumEventAndWeightMetric().updateNumEvents(0);
+    metric.getNumEventAndWeightMetric().updateNumEvents(0);
+    metric.getNumEventAndWeightMetric().updateNumEvents(0);
 
     handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
     // The number of event processors should be half

@@ -20,6 +20,6 @@ import org.apache.reef.tang.annotations.NamedParameter;
 
 @NamedParameter(doc = "The low threshold of the number of events. " +
     "If there are less events than this value, then the system will be regarded as having few events.",
-    short_name = "event_num_low_threshold", default_value = "1000")
-public final class EventNumLowThreshold implements Name<Long> {
+    short_name = "event_num_low_threshold", default_value = "1000.0")
+public final class EventNumLowThreshold implements Name<Double> {
 }
