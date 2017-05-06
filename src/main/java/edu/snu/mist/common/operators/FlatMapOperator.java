@@ -59,8 +59,12 @@ public final class FlatMapOperator<I, O> extends OneStreamOperator {
   public void processLeftData(final MistDataEvent input) {
     final I value = (I)input.getValue();
     final List<O> outputs = flatMapFunc.apply(value);
-    LOG.log(Level.FINE, "{0} FlatMaps {1} to {2}",
-        new Object[]{FlatMapOperator.class, input, outputs});
+
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.log(Level.FINE, "{0} FlatMaps {1} to {2}",
+          new Object[]{FlatMapOperator.class, input, outputs});
+    }
+
     for (final O output : outputs) {
       final MistDataEvent event = new MistDataEvent(output, input.getTimestamp());
       outputEmitter.emitData(event);

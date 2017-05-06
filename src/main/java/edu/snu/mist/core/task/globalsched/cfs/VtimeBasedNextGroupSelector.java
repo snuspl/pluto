@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -135,11 +136,17 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
   @Override
   public void reschedule(final GlobalSchedGroupInfo groupInfo) {
     final long endTime = System.nanoTime();
+    final long elapsedTime = TimeUnit.NANOSECONDS.toMillis(endTime - groupInfo.getLatestScheduledTime());
     final double weight = Math.max(defaultWeight, groupInfo.getEventNumAndWeightMetric().getWeight());
-    final double delta = calculateVRuntimeDelta(endTime - groupInfo.getLatestScheduledTime(), weight);
+    final double delta = calculateVRuntimeDelta(elapsedTime, weight);
     final double adjustedVRuntime = groupInfo.getVRuntime() + delta;
     groupInfo.setVRuntime(adjustedVRuntime);
-    LOG.fine("group " + groupInfo + ", missed: false, " + "vtime: " + adjustedVRuntime);
+
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.log(Level.FINE, "{0}: Reschedule {1}, ElapsedTime: {2}, Delta: {3}, Vtime: {4}",
+          new Object[]{Thread.currentThread().getName(), groupInfo, elapsedTime, delta, adjustedVRuntime});
+    }
+
     addGroup(groupInfo);
   }
 
@@ -150,8 +157,7 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
    * @return delta vruntime
    */
   private double calculateVRuntimeDelta(final long delta, final double weight) {
-    return Math.max(minSchedPeriod * defaultWeight / weight,
-        TimeUnit.NANOSECONDS.toMillis(delta) * defaultWeight / weight);
+    return Math.max(minSchedPeriod * defaultWeight / weight, delta * defaultWeight / weight);
   }
 
   @Override

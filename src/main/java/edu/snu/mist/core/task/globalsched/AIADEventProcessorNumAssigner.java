@@ -26,6 +26,8 @@ import edu.snu.mist.core.task.metrics.MetricUpdateEvent;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * This is a EventProcessorNumAssigner assigns global event processors.
@@ -36,6 +38,8 @@ import javax.inject.Inject;
  * Also, it will do additive increase and additive decrease of the number of event processors.
  */
 public final class AIADEventProcessorNumAssigner implements EventProcessorNumAssigner {
+
+  private static final Logger LOG = Logger.getLogger(AIADEventProcessorNumAssigner.class.getName());
 
   /**
    * The limit of the total number of executor threads.
@@ -125,12 +129,24 @@ public final class AIADEventProcessorNumAssigner implements EventProcessorNumAss
         // the event processors could be blocked by some operations such as I/O.
         // In that case, we should increase the number of event processors.
         final int adjustNum = Math.min(currentEventProcessorsNum + increaseNum, threadNumLimit);
+
+        if (LOG.isLoggable(Level.FINE)) {
+          LOG.log(Level.FINE, "Increase event processors from {0} to {1}: [{2}, {3}]",
+              new Object[]{currentEventProcessorsNum, adjustNum, currCpuUtil, currEventNum});
+        }
+
         eventProcessorManager.adjustEventProcessorNum(adjustNum);
       } else if (currEventNum < eventNumLowThreshold) {
         // If the cpu utilization is low and there are few events,
         // then there might be too many event processors.
         // The decrease will be additive because we do not have to react rapidly to the idle state.
         final int adjustNum = Math.max(currentEventProcessorsNum - decreaseNum, defaultNumEventProcessors);
+
+        if (LOG.isLoggable(Level.FINE)) {
+          LOG.log(Level.FINE, "Decrease event processors from {0} to {1}: [{2}, {3}]",
+              new Object[]{currentEventProcessorsNum, adjustNum, currCpuUtil, currEventNum});
+        }
+
         eventProcessorManager.adjustEventProcessorNum(adjustNum);
       }
     }

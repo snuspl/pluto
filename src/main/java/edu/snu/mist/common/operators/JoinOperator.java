@@ -95,9 +95,13 @@ public final class JoinOperator<T, U> extends OneStreamOperator {
       final long windowStart = windowData.getStart();
       final long windowEnd = windowData.getEnd();
       final WindowImpl<Tuple2<T, U>> window = new WindowImpl<>(windowStart, windowEnd - windowStart + 1, outputList);
-      LOG.log(Level.FINE, "{0} examines input window {1} which started at {2} and ended at {3}, and " +
-          "emits window {4} with matched data list {5}",
-          new Object[]{this.getClass().getName(), input, windowStart, windowEnd, window, outputList});
+
+      if (LOG.isLoggable(Level.FINE)) {
+        LOG.log(Level.FINE, "{0} examines input window {1} which started at {2} and ended at {3}, and " +
+                "emits window {4} with matched data list {5}",
+            new Object[]{this.getClass().getName(), input, windowStart, windowEnd, window, outputList});
+      }
+
       input.setValue(window);
       outputEmitter.emitData(input);
     } catch (final ClassCastException e) {

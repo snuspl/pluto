@@ -145,4 +145,9 @@ public final class GroupInfo implements AutoCloseable {
   public void close() throws Exception {
     eventProcessorManager.close();
   }
+
+  @Override
+  public String toString() {
+    return groupId;
+  }
 }

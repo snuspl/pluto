@@ -176,4 +176,9 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   @Override
   public void close() throws Exception {
   }
+
+  @Override
+  public String toString() {
+    return groupId;
+  }
 }

@@ -92,8 +92,11 @@ public final class SessionWindowOperator<T> extends OneStreamOperator implements
 
   @Override
   public void processLeftData(final MistDataEvent input) {
-    LOG.log(Level.FINE, "{0} puts input data {1} into current window {2}",
-            new Object[]{this.getClass().getName(), input, currentWindow});
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.log(Level.FINE, "{0} puts input data {1} into current window {2}",
+          new Object[]{this.getClass().getName(), input, currentWindow});
+    }
+
     emitAndCreateWindow(input.getTimestamp());
     currentWindow.putData(input);
     startedNewWindow = true;
