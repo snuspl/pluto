@@ -20,7 +20,6 @@ import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
  * An alpha value of num events in GroupMetric.
- * It would be used as a decaing rate in EWMA.
  */
 @NamedParameter(doc="An alpha value of num events in GroupMetric", default_value = "0.7")
 public final class GroupNumEventAlpha implements Name<Double> {
