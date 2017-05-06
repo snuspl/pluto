@@ -93,7 +93,7 @@ public final class MISDEventProcessorNumAssignerTest {
         DEFAULT_THREAD_NUM * (int) INCREASE_RATE, eventProcessorManager.getEventProcessors().size());
 
     // Many events, low cpu utilization again
-    metric.getNumEventAndWeightMetric().updateNumEvents((long) EVENT_NUM_HIGH_THRES * 2);
+    metric.getNumEventAndWeightMetric().updateNumEvents((long)EVENT_NUM_HIGH_THRES * 2);
     metric.getNumEventAndWeightMetric().updateNumEvents((long)EVENT_NUM_HIGH_THRES * 2);
 
     handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
