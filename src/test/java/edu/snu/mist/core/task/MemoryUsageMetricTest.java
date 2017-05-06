@@ -15,8 +15,8 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.core.parameters.HeapMemoryUsageAlpha;
-import edu.snu.mist.core.parameters.NonHeapMemoryUsageAlpha;
+import edu.snu.mist.core.task.metrics.parameters.HeapMemoryUsageAlpha;
+import edu.snu.mist.core.task.metrics.parameters.NonHeapMemoryUsageAlpha;
 import edu.snu.mist.core.task.metrics.MemoryUsageMetric;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Tang;

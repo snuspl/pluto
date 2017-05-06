@@ -13,15 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.parameters;
-
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
-
 /**
- * An alpha value of non heap memory usage metric.
- * It would be used as a decaing rate in EWMA.
+ * A package related to the parameters used during metric tracking.
  */
-@NamedParameter(doc="An alpha value of non heap memory usage metric.", default_value = "0.7")
-public final class NonHeapMemoryUsageAlpha implements Name<Double> {
-}
+package edu.snu.mist.core.task.metrics.parameters;

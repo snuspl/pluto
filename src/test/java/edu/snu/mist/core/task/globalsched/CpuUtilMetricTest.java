@@ -15,8 +15,8 @@
  */
 package edu.snu.mist.core.task.globalsched;
 
-import edu.snu.mist.core.parameters.GlobalProcCpuUtilAlpha;
-import edu.snu.mist.core.parameters.GlobalSysCpuUtilAlpha;
+import edu.snu.mist.core.task.metrics.parameters.GlobalProcCpuUtilAlpha;
+import edu.snu.mist.core.task.metrics.parameters.GlobalSysCpuUtilAlpha;
 import edu.snu.mist.core.task.MetricUtil;
 import edu.snu.mist.core.task.globalsched.metrics.CpuUtilMetric;
 import org.apache.reef.tang.Configuration;

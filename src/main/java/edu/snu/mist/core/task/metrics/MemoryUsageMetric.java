@@ -16,8 +16,8 @@
 package edu.snu.mist.core.task.metrics;
 
 import edu.snu.mist.common.stats.EWMA;
-import edu.snu.mist.core.parameters.HeapMemoryUsageAlpha;
-import edu.snu.mist.core.parameters.NonHeapMemoryUsageAlpha;
+import edu.snu.mist.core.task.metrics.parameters.HeapMemoryUsageAlpha;
+import edu.snu.mist.core.task.metrics.parameters.NonHeapMemoryUsageAlpha;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
