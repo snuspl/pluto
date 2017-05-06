@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.core.task.globalsched.metrics;
 
+import edu.snu.mist.core.task.metrics.MemoryUsageMetric;
+
 import javax.inject.Inject;
 
 /**
@@ -37,13 +39,20 @@ public final class GlobalSchedGlobalMetrics {
    */
   private final NumGroupsMetric numGroupsMetric;
 
+  /**
+   * The metric of memory usage.
+   */
+  private final MemoryUsageMetric memoryUsageMetric;
+
   @Inject
   private GlobalSchedGlobalMetrics(final EventNumAndWeightMetric eventNumAndWeightMetric,
                                    final CpuUtilMetric cpuUtilMetric,
-                                   final NumGroupsMetric numGroupsMetric) {
+                                   final NumGroupsMetric numGroupsMetric,
+                                   final MemoryUsageMetric memoryUsageMetric) {
     this.eventNumAndWeightMetric = eventNumAndWeightMetric;
     this.cpuUtilMetric = cpuUtilMetric;
     this.numGroupsMetric = numGroupsMetric;
+    this.memoryUsageMetric = memoryUsageMetric;
   }
 
   /**
@@ -65,5 +74,12 @@ public final class GlobalSchedGlobalMetrics {
    */
   public NumGroupsMetric getNumGroupsMetric() {
     return numGroupsMetric;
+  }
+
+  /**
+   * @return the metric of memory usage
+   */
+  public MemoryUsageMetric getMemoryUsageMetric() {
+    return memoryUsageMetric;
   }
 }

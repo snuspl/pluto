@@ -19,9 +19,9 @@ import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * An alpha value of num events in GroupMetric.
+ * An alpha value of heap memory usage metric.
  * It would be used as a decaing rate in EWMA.
  */
-@NamedParameter(doc="An alpha value of num events in GroupMetric", default_value = "0.7")
-public final class GroupNumEventAlpha implements Name<Double> {
+@NamedParameter(doc="An alpha value of heap memory usage metric.", default_value = "0.7")
+public final class HeapMemoryUsageAlpha implements Name<Double> {
 }

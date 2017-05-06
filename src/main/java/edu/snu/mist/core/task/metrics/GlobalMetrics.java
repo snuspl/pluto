@@ -27,9 +27,16 @@ public final class GlobalMetrics {
    */
   private final EventNumMetric eventNumMetric;
 
+  /**
+   * The metric of memory usage.
+   */
+  private final MemoryUsageMetric memoryUsageMetric;
+
   @Inject
-  private GlobalMetrics(final EventNumMetric eventNumMetric) {
+  private GlobalMetrics(final EventNumMetric eventNumMetric,
+                        final MemoryUsageMetric memoryUsageMetric) {
     this.eventNumMetric = eventNumMetric;
+    this.memoryUsageMetric = memoryUsageMetric;
   }
 
   /**
@@ -37,5 +44,12 @@ public final class GlobalMetrics {
    */
   public EventNumMetric getNumEventMetric() {
     return eventNumMetric;
+  }
+
+  /**
+   * @return the metric of memory usage
+   */
+  public MemoryUsageMetric getMemoryUsageMetric() {
+    return memoryUsageMetric;
   }
 }

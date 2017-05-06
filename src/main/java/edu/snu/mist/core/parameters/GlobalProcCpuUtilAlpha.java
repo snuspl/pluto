@@ -20,6 +20,7 @@ import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
  * A decaying rate for process cpu utilization in CpuUtilMetric.
+ * It would be used as a decaing rate in EWMA.
  */
 @NamedParameter(doc="A decaying rate for process cpu utilization in CpuUtilMetric", default_value = "0.7")
 public final class GlobalProcCpuUtilAlpha implements Name<Double> {
