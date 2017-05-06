@@ -51,6 +51,8 @@ public final class NoMergingQueryStarter implements QueryStarter {
   public void start(final String queryId, final DAG<ExecutionVertex, MISTEdge> submittedDag) {
     executionPlanDagMap.put(queryId, submittedDag);
     QueryStarterUtils.setUpOutputEmitters(operatorChainManager, submittedDag);
+    // Initiate ActiveSourceCount for all ExecutionVertices.
+    QueryStarterUtils.setActiveSourceCounts(submittedDag, false);
     // starts to receive input data stream from the sources
     for (final ExecutionVertex source : submittedDag.getRootVertices()) {
       final PhysicalSource ps = (PhysicalSource)source;

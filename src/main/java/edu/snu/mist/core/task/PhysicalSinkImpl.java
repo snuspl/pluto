@@ -17,8 +17,6 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.sinks.Sink;
 
-import java.util.Set;
-
 /**
  * This is an implementation of PhysicalSink.
  */
@@ -49,21 +47,21 @@ public final class PhysicalSinkImpl<I> extends BasePhysicalVertex implements Phy
 
   @Override
   public int getActiveSourceCount() {
-    return activeSourceIdSet.size();
+    return activeSourceCount;
   }
 
   @Override
-  public void putSourceIdSet(final Set<String> sourceIdSet) {
-    activeSourceIdSet.addAll(sourceIdSet);
+  public void incrementActiveSourceCount() {
+    activeSourceCount++;
   }
 
   @Override
-  public boolean removeDeactivatedSourceId(final String sourceId) {
-    return activeSourceIdSet.remove(sourceId);
+  public void decrementActiveSourceCount() {
+    activeSourceCount--;
   }
 
   @Override
-  public Set<String> getActiveSourceIdSet() {
-    return activeSourceIdSet;
+  public void clearActiveSourceCount() {
+    activeSourceCount = 0;
   }
 }

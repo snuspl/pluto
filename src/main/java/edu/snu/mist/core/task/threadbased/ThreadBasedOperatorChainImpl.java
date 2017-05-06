@@ -26,10 +26,8 @@ import edu.snu.mist.core.task.PhysicalOperator;
 import edu.snu.mist.formats.avro.Direction;
 import org.apache.reef.io.Tuple;
 
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -57,9 +55,9 @@ public final class ThreadBasedOperatorChainImpl implements OperatorChain {
   private final BlockingQueue<Tuple<MistEvent, Direction>> queue;
 
   /**
-   * The set of dependent and active sources.
+   * The number of active sources that contribute to this execution vertex.
    */
-  private Set<String> activeSourceIdSet;
+  private int activeSourceCount;
 
   /**
    * The operator chain's ID is the operatorId of the first physical operator.
@@ -70,7 +68,7 @@ public final class ThreadBasedOperatorChainImpl implements OperatorChain {
     this.operators = new LinkedList<>();
     this.queue = new LinkedBlockingQueue<>();
     this.operatorChainId = "";
-    this.activeSourceIdSet = new HashSet<>();
+    this.activeSourceCount = 0;
   }
 
   @Override
@@ -80,22 +78,22 @@ public final class ThreadBasedOperatorChainImpl implements OperatorChain {
 
   @Override
   public int getActiveSourceCount() {
-    return activeSourceIdSet.size();
+    return activeSourceCount;
   }
 
   @Override
-  public void putSourceIdSet(final Set<String> sourceIdSet) {
-    activeSourceIdSet.addAll(sourceIdSet);
+  public void incrementActiveSourceCount() {
+    activeSourceCount++;
   }
 
   @Override
-  public boolean removeDeactivatedSourceId(final String sourceId) {
-    return activeSourceIdSet.remove(sourceId);
+  public void decrementActiveSourceCount() {
+    activeSourceCount--;
   }
 
   @Override
-  public Set<String> getActiveSourceIdSet() {
-    return activeSourceIdSet;
+  public void clearActiveSourceCount() {
+    activeSourceCount = 0;
   }
 
   @Override

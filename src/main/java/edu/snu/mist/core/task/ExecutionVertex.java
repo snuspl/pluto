@@ -15,8 +15,6 @@
  */
 package edu.snu.mist.core.task;
 
-import java.util.Set;
-
 /**
  * This interface represents execution vertices of the query.
  * It is required to represent an execution dag, which consists of the execution vertices and edges.
@@ -43,23 +41,22 @@ public interface ExecutionVertex {
   String getExecutionVertexId();
 
   /**
-   * Returns the number of active sources that contribute to this operator chain.
+   * Returns the number of active sources that contribute to this execution vertex.
    */
   int getActiveSourceCount();
 
   /**
-   * Puts the sourceId in the activeSourceIdSet, if it is not already there.
+   * Increases the number of active sources that contribute to this vertex by 1.
    */
-  void putSourceIdSet(Set<String> sourceIdSet);
+  void incrementActiveSourceCount();
 
   /**
-   * Removes the sourceId in the activeSourceIdSet.
-   * If the set does not have the sourceId, it returns false.
+   * Decreases the number of active sources that contribute to this vertex by 1.
    */
-  boolean removeDeactivatedSourceId(String sourceId);
+  void decrementActiveSourceCount();
 
   /**
-   * Returns the whole activeSourceIdSet.
+   * Sets the ActiveSourceCount to 0.
    */
-  Set<String> getActiveSourceIdSet();
+  void clearActiveSourceCount();
 }

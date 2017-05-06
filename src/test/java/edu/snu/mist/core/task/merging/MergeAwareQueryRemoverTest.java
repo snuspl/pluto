@@ -428,20 +428,18 @@ public final class MergeAwareQueryRemoverTest {
     }
 
     @Override
-    public void putSourceIdSet(final Set<String> sourceIdSet) {
+    public void incrementActiveSourceCount() {
       // do nothing
     }
 
     @Override
-    public boolean removeDeactivatedSourceId(final String sourceId) {
+    public void decrementActiveSourceCount() {
       // do nothing
-      return false;
     }
 
     @Override
-    public Set<String> getActiveSourceIdSet() {
+    public void clearActiveSourceCount() {
       // do nothing
-      return null;
     }
   }
 

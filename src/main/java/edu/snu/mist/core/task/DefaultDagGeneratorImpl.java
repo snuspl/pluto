@@ -148,24 +148,6 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
           new MISTEdge(edge.getDirection(), edge.getBranchIndex()));
     }
 
-    // Initiate ActiveSourceSets for all ExecutionVertices.
-    setActiveSourceSets(executionDAG);
     return executionDAG;
-  }
-
-  private void setActiveSourceSets(final DAG<ExecutionVertex, MISTEdge> executionDAG) {
-    for (final ExecutionVertex root : executionDAG.getRootVertices()) {
-      dfsForVertices(root, executionDAG);
-    }
-  }
-  /**
-   * DFS through the executionDAG and set the activeSourceSet for every ExecutionVertex.
-   * Every ExecutionVertex merges all SourceIdSets of the vertices that point to this one.
-   */
-  private void dfsForVertices(final ExecutionVertex root, final DAG<ExecutionVertex, MISTEdge> executionDAG) {
-    for (final ExecutionVertex executionVertex : executionDAG.getEdges(root).keySet()) {
-      executionVertex.putSourceIdSet(root.getActiveSourceIdSet());
-      dfsForVertices(executionVertex, executionDAG);
-    }
   }
 }

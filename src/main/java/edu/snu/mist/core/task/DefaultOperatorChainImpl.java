@@ -61,9 +61,9 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
   private final AtomicReference<Status> status;
 
   /**
-   * The set of dependent and active sources.
+   * The number of active sources that contribute to this operator chain.
    */
-  private Set<String> activeSourceIdSet;
+  private int activeSourceCount;
 
   /**
    * The operator chain's ID is the operatorId of the first physical operator.
@@ -82,7 +82,7 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
     this.outputEmitter = null;
     this.operatorChainManager = null;
     this.operatorChainId = "";
-    this.activeSourceIdSet = new HashSet<>();
+    this.activeSourceCount = 0;
   }
 
   @Override
@@ -92,22 +92,22 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
 
   @Override
   public int getActiveSourceCount() {
-    return activeSourceIdSet.size();
+    return activeSourceCount;
   }
 
   @Override
-  public void putSourceIdSet(final Set<String> sourceIdSet) {
-    activeSourceIdSet.addAll(sourceIdSet);
+  public void incrementActiveSourceCount() {
+    activeSourceCount++;
   }
 
   @Override
-  public boolean removeDeactivatedSourceId(final String sourceId) {
-    return activeSourceIdSet.remove(sourceId);
+  public void decrementActiveSourceCount() {
+    activeSourceCount--;
   }
 
   @Override
-  public Set<String> getActiveSourceIdSet() {
-    return activeSourceIdSet;
+  public void clearActiveSourceCount() {
+    activeSourceCount = 0;
   }
 
   @Override
