@@ -24,12 +24,12 @@ import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.globalsched.metrics.CpuUtilMetricEventHandler;
 import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetricEventHandler;
-import edu.snu.mist.core.task.globalsched.metrics.GlobalSchedMemoryUsageMetricEventHandler;
 import edu.snu.mist.core.task.globalsched.metrics.NumGroupsMetricEventHandler;
 import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
 import edu.snu.mist.core.task.merging.MergeAwareQueryRemover;
 import edu.snu.mist.core.task.merging.MergingExecutionDags;
 import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
+import edu.snu.mist.core.task.metrics.MemoryUsageMetricEventHandler;
 import edu.snu.mist.core.task.metrics.MetricTracker;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
@@ -116,7 +116,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 final EventNumAndWeightMetricEventHandler eventNumHandler,
                                                 final CpuUtilMetricEventHandler cpuUtilHandler,
                                                 final NumGroupsMetricEventHandler numGroupsHandler,
-                                                final GlobalSchedMemoryUsageMetricEventHandler memUsageHandler,
+                                                final MemoryUsageMetricEventHandler memUsageHandler,
                                                 final EventProcessorNumAssigner assigner,
                                                 final BatchQueryCreator batchQueryCreator) {
     this.dagGenerator = dagGenerator;

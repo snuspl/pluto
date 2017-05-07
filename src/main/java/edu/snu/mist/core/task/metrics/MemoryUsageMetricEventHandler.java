@@ -28,14 +28,14 @@ import java.lang.management.MemoryUsage;
 public final class MemoryUsageMetricEventHandler implements MetricTrackEventHandler {
 
   /**
-   * The global metrics.
+   * The global memory usage metric.
    */
-  private final GlobalMetrics globalMetrics;
+  private final MemoryUsageMetric globalMemoryMetric;
 
   @Inject
-  private MemoryUsageMetricEventHandler(final GlobalMetrics globalMetrics,
-                                        final MistPubSubEventHandler pubSubEventHandler) {
-    this.globalMetrics = globalMetrics;
+  private MemoryUsageMetricEventHandler(final MistPubSubEventHandler pubSubEventHandler,
+                                        final MemoryUsageMetric memoryUsageMetric) {
+    this.globalMemoryMetric = memoryUsageMetric;
     pubSubEventHandler.getPubSubEventHandler().subscribe(MetricTrackEvent.class, this);
   }
 
@@ -46,14 +46,14 @@ public final class MemoryUsageMetricEventHandler implements MetricTrackEventHand
     final MemoryUsage heapMemUsage = memBean.getHeapMemoryUsage();
     final MemoryUsage nonHeapMemUsage = memBean.getNonHeapMemoryUsage();
 
-    globalMetrics.getMemoryUsageMetric().updateHeapMemoryUsage(
+    globalMemoryMetric.updateHeapMemoryUsage(
         (double) heapMemUsage.getUsed() / heapMemUsage.getMax());
     final long nonHeapMemMax = nonHeapMemUsage.getMax();
     if (nonHeapMemMax == -1) {
       // One of non heap memory pools has undefined max size
-      globalMetrics.getMemoryUsageMetric().updateNonHeapMemoryUsage(0.0);
+      globalMemoryMetric.updateNonHeapMemoryUsage(0.0);
     } else {
-      globalMetrics.getMemoryUsageMetric().updateNonHeapMemoryUsage(
+      globalMemoryMetric.updateNonHeapMemoryUsage(
           (double) nonHeapMemUsage.getUsed() / nonHeapMemUsage.getMax());
     }
   }
