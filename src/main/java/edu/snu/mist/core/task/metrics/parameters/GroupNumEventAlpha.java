@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.parameters;
+package edu.snu.mist.core.task.metrics.parameters;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * An alpha value for system cpu utilization in CpuUtilMetric.
- * It would be used as a decaing rate in EWMA.
+ * A decaying rate of EWMA for the number of events in a group.
  */
-@NamedParameter(doc="An alpha value for system cpu utilization in CpuUtilMetric", default_value = "0.7")
-public class GlobalSysCpuUtilAlpha implements Name<Double> {
+@NamedParameter(doc="An alpha value of num events in GroupMetric", default_value = "0.7")
+public final class GroupNumEventAlpha implements Name<Double> {
 }

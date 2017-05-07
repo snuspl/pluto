@@ -16,8 +16,8 @@
 package edu.snu.mist.core.task.globalsched.metrics;
 
 import edu.snu.mist.common.stats.EWMA;
-import edu.snu.mist.core.parameters.GlobalProcCpuUtilAlpha;
-import edu.snu.mist.core.parameters.GlobalSysCpuUtilAlpha;
+import edu.snu.mist.core.task.metrics.parameters.GlobalProcCpuUtilAlpha;
+import edu.snu.mist.core.task.metrics.parameters.GlobalSysCpuUtilAlpha;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;

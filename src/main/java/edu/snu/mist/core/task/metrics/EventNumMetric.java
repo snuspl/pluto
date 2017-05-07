@@ -16,7 +16,7 @@
 package edu.snu.mist.core.task.metrics;
 
 import edu.snu.mist.common.stats.EWMA;
-import edu.snu.mist.core.parameters.GroupNumEventAlpha;
+import edu.snu.mist.core.task.metrics.parameters.GroupNumEventAlpha;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;

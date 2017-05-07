@@ -17,7 +17,7 @@ package edu.snu.mist.core.task.globalsched.metrics;
 
 import edu.snu.mist.common.stats.EWMA;
 import edu.snu.mist.core.parameters.DefaultGroupWeight;
-import edu.snu.mist.core.parameters.GlobalNumEventAlpha;
+import edu.snu.mist.core.task.metrics.parameters.GlobalNumEventAlpha;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;

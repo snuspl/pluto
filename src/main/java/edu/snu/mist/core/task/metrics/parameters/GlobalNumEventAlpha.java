@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.parameters;
+package edu.snu.mist.core.task.metrics.parameters;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * An alpha value of heap memory usage metric.
- * It would be used as a decaing rate in EWMA.
+ * A decaying rate of EWMA for the total number of events in a mist task.
  */
-@NamedParameter(doc="An alpha value of heap memory usage metric.", default_value = "0.7")
-public final class HeapMemoryUsageAlpha implements Name<Double> {
+@NamedParameter(doc="An alpha value of num events in EventNumMetric.", default_value = "0.7")
+public final class GlobalNumEventAlpha implements Name<Double> {
 }

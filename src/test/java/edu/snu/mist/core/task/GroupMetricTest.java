@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.core.parameters.GroupNumEventAlpha;
+import edu.snu.mist.core.task.metrics.parameters.GroupNumEventAlpha;
 import edu.snu.mist.core.task.metrics.EventNumMetric;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Tang;
