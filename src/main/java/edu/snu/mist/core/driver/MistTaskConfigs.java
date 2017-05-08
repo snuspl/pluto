@@ -77,7 +77,7 @@ public final class MistTaskConfigs {
   /**
    * Configuration for execution model 2 (global scheduling).
    */
-  private final MistOption2TaskConfigs option2TaskConfigs;
+  private final MistGroupSchedulingTaskConfigs option2TaskConfigs;
 
   @Inject
   private MistTaskConfigs(@Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
@@ -86,7 +86,7 @@ public final class MistTaskConfigs {
                           @Parameter(NumPeriodicSchedulerThreads.class) final int numSchedulerThreads,
                           @Parameter(MergingEnabled.class) final boolean mergingEnabled,
                           @Parameter(ExecutionModelOption.class) final int executionModelOption,
-                          final MistOption2TaskConfigs option2TaskConfigs) {
+                          final MistGroupSchedulingTaskConfigs option2TaskConfigs) {
     this.numEventProcessors = numEventProcessors;
     this.tempFolderPath = tempFolderPath;
     this.rpcServerPort = rpcServerPort + 10 > MAX_PORT_NUM ? rpcServerPort - 10 : rpcServerPort + 10;
@@ -131,7 +131,6 @@ public final class MistTaskConfigs {
     jcb.bindImplementation(OperatorChainFactory.class, ThreadBasedOperatorChainFactory.class);
     return jcb.build();
   }
-
   /**
    * Get the task configuration.
    * @return configuration
@@ -165,6 +164,6 @@ public final class MistTaskConfigs {
         .registerShortNameOfClass(NumPeriodicSchedulerThreads.class)
         .registerShortNameOfClass(MergingEnabled.class)
         .registerShortNameOfClass(ExecutionModelOption.class);
-    return MistOption2TaskConfigs.addCommandLineConf(cmd);
+    return MistGroupSchedulingTaskConfigs.addCommandLineConf(cmd);
   }
 }

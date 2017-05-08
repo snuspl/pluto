@@ -25,6 +25,7 @@ import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.globalsched.metrics.CpuUtilMetricEventHandler;
 import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetricEventHandler;
 import edu.snu.mist.core.task.globalsched.metrics.NumGroupsMetricEventHandler;
+import edu.snu.mist.core.task.globalsched.parameters.GroupSchedModelType;
 import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
 import edu.snu.mist.core.task.merging.MergeAwareQueryRemover;
 import edu.snu.mist.core.task.merging.MergingExecutionDags;
@@ -102,6 +103,11 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   private final BatchQueryCreator batchQueryCreator;
 
   /**
+   * The execution model of event processor (blocking/nonblocking).
+   */
+  private final String executionModel;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -118,7 +124,8 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 final NumGroupsMetricEventHandler numGroupsHandler,
                                                 final MemoryUsageMetricEventHandler memUsageHandler,
                                                 final EventProcessorNumAssigner assigner,
-                                                final BatchQueryCreator batchQueryCreator) {
+                                                final BatchQueryCreator batchQueryCreator,
+                                                @Parameter(GroupSchedModelType.class) final String executionModel) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
@@ -128,6 +135,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     this.mergingEnabled = mergingEnabled;
     this.eventProcessorManager = eventProcessorManager;
     this.batchQueryCreator = batchQueryCreator;
+    this.executionModel = executionModel;
     metricTracker.start();
   }
 
@@ -163,6 +171,8 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
         // Add new group id, if it doesn't exist
         final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
         jcb.bindNamedParameter(GroupId.class, groupId);
+
+        // TODO[DELETE] start: for test
         if (mergingEnabled) {
           jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
           jcb.bindImplementation(QueryRemover.class, MergeAwareQueryRemover.class);
@@ -172,7 +182,19 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
           jcb.bindImplementation(QueryRemover.class, NoMergingAwareQueryRemover.class);
           jcb.bindImplementation(ExecutionDags.class, NoMergingExecutionDags.class);
         }
-        jcb.bindImplementation(OperatorChainManager.class, BlockingActiveOperatorChainPickManager.class);
+
+        switch (executionModel) {
+          case "blocking":
+            jcb.bindImplementation(OperatorChainManager.class, BlockingActiveOperatorChainPickManager.class);
+            break;
+          case "nonblocking":
+            jcb.bindImplementation(OperatorChainManager.class, NonBlockingActiveOperatorChainPickManager.class);
+            break;
+          default:
+            throw new RuntimeException("Invalid execution model: " + executionModel);
+        }
+        // TODO[DELETE] end: for test
+
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
         injector.bindVolatileInstance(MistPubSubEventHandler.class, pubSubEventHandler);
         final GlobalSchedGroupInfo groupInfo = injector.getInstance(GlobalSchedGroupInfo.class);
