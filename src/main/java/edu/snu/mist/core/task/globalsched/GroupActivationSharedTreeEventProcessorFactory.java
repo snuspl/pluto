@@ -25,13 +25,16 @@ import javax.inject.Inject;
  */
 public final class GroupActivationSharedTreeEventProcessorFactory implements EventProcessorFactory {
 
-
   /**
    * Scheduling period calculator.
    */
   private final SchedulingPeriodCalculator schedulingPeriodCalculator;
 
+  /**
+   * A globally shared next group selector.
+   */
   private final NextGroupSelector nextGroupSelector;
+
   @Inject
   private GroupActivationSharedTreeEventProcessorFactory(
       final NextGroupSelector nextGroupSelector,

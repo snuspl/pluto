@@ -35,6 +35,7 @@ import java.util.logging.Logger;
 /**
  * This calculates a vruntime similar to CFS scheduler.
  * It uses RB-tree with vruntime as a key, and picks a group that has the lowest vruntime.
+ * This is designed for shared among multiple event processors.
  */
 public final class VtimeBasedSharedNextGroupSelector implements NextGroupSelector {
 
@@ -127,7 +128,6 @@ public final class VtimeBasedSharedNextGroupSelector implements NextGroupSelecto
   @Override
   public void reschedule(final GlobalSchedGroupInfo groupInfo, final boolean miss) {
     synchronized (rbTreeMap) {
-
       final long endTime = System.nanoTime();
       final long elapsedTime = TimeUnit.NANOSECONDS.toMillis(endTime - groupInfo.getLatestScheduledTime());
       final double weight = Math.max(defaultWeight, groupInfo.getEventNumAndWeightMetric().getWeight());

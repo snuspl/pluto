@@ -29,6 +29,9 @@ import java.util.logging.Logger;
  * to execute the events of queries within the group.
  * It also selects another operator chain manager when there are no active operator chain,
  * which means it does not block when the group has no active operator chain.
+ *
+ * This does not reschedule when the group is inactive,
+ * in order to keep the active groups in the next group selector.
  */
 final class GroupActivationEventProcessor extends Thread implements EventProcessor {
 
@@ -74,8 +77,7 @@ final class GroupActivationEventProcessor extends Thread implements EventProcess
         }
 
         while (TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) < schedulingPeriod && !closed) {
-          // This is a blocking operator chain manager
-          // So it should not be null
+          // This is a non-blocking operator chain manager
           final OperatorChain operatorChain = operatorChainManager.pickOperatorChain();
           // If it has no active operator chain, choose another group
           if (operatorChain == null) {
@@ -84,7 +86,6 @@ final class GroupActivationEventProcessor extends Thread implements EventProcess
             operatorChain.processNextEvent();
           }
         }
-
 
         synchronized (groupInfo) {
           if (groupInfo.isActive()) {
@@ -95,6 +96,8 @@ final class GroupActivationEventProcessor extends Thread implements EventProcess
 
             // If it is active, just reschedule it
             // Otherwise, do not reschedule it
+            // This does not reschedule when the group is inactive,
+            // in order to keep the active groups in the next group selector.
             nextGroupSelector.reschedule(groupInfo, false);
           } else {
             if (LOG.isLoggable(Level.FINE)) {

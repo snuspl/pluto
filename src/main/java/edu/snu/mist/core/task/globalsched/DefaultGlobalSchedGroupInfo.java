@@ -77,6 +77,9 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
    */
   private double vruntime;
 
+  /**
+   * The boolean value for checking the status of the group (active/inactive).
+   */
   private volatile boolean active;
 
   @Inject

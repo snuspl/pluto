@@ -29,6 +29,8 @@ import java.util.logging.Logger;
  * This class picks a query, which has more than one events to be processed, from the active query set randomly.
  * This prevents picking queries which have no events, thus saving CPU cycles compared to RandomlyPickManager.
  * This class uses queues to provide maximum concurrency and efficiency.
+ *
+ * This also reschedules the group if it is activated from deactivated status.
  */
 public final class GroupActiveOperatorChainPickManager implements OperatorChainManager {
   private static final Logger LOG = Logger.getLogger(GroupActiveOperatorChainPickManager.class.getName());
@@ -38,14 +40,19 @@ public final class GroupActiveOperatorChainPickManager implements OperatorChainM
    */
   private final Queue<OperatorChain> activeQueryQueue;
 
+  /**
+   * Next group selector that schedules the group.
+   */
   private final NextGroupSelector nextGroupSelector;
 
+  /**
+   * Group info future that is related to this operator chain manager.
+   */
   private final InjectionFuture<GlobalSchedGroupInfo> groupInfoFuture;
 
   @Inject
   private GroupActiveOperatorChainPickManager(final InjectionFuture<GlobalSchedGroupInfo> groupInfoFuture,
                                               final NextGroupSelector nextGroupSelector) {
-    // ConcurrentLinkedQueue is used to assure concurrency as well as maintain exactly-once query picking.
     this.activeQueryQueue = new LinkedList<>();
     this.nextGroupSelector = nextGroupSelector;
     this.groupInfoFuture = groupInfoFuture;
@@ -70,6 +77,8 @@ public final class GroupActiveOperatorChainPickManager implements OperatorChainM
               new Object[]{Thread.currentThread().getName(), groupInfo});
         }
 
+        // Reschedule if the group is inactive
+        // because the group is removed from rb-tree of the next group selector
         activeQueryQueue.add(operatorChain);
         groupInfo.setActive(true);
         nextGroupSelector.reschedule(groupInfo, false);
@@ -79,8 +88,7 @@ public final class GroupActiveOperatorChainPickManager implements OperatorChainM
 
   /**
    * Delete an operator from the manager.
-   * This method should be only called when the queue is permanently removed from the system,
-   * because this method traverses along the whole queue, thus takes O(n) time to complete.
+   * This method should be only called when the queue is permanently removed from the system.
    * @param operatorChain a operatorChain to be deleted.
    */
   @Override
@@ -103,7 +111,7 @@ public final class GroupActiveOperatorChainPickManager implements OperatorChainM
 
     synchronized (groupInfo) {
       if (activeQueryQueue.isEmpty()) {
-        // Make group inactive
+        // Make group inactive if it is empty
         groupInfo.setActive(false);
       }
     }

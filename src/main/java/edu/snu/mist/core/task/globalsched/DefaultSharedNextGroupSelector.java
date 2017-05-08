@@ -17,7 +17,8 @@ package edu.snu.mist.core.task.globalsched;
 import javax.inject.Inject;
 
 /**
- * This is an interface that picks a next group for processing queries.
+ * This is a default implementation for globally shared next group selector.
+ * It is created for the execution models that do not use a globally shared next group selector.
  */
 public final class DefaultSharedNextGroupSelector implements NextGroupSelector {
 
