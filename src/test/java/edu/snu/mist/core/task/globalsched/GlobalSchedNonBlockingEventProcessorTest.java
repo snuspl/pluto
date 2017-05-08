@@ -33,18 +33,24 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.mockito.Mockito.*;
 
-public final class GlobalSchedEventProcessorTest {
+public final class GlobalSchedNonBlockingEventProcessorTest {
 
   /**
    * Test whether the global sched event processor reselects next group.
-   * In this test, the next group picker will create 3 groups that returns an operator chain manager
+   * In this test, the next group picker will create 3 groups that have the following operator chain:
+   *  - group1: has an operator chain manager that returns operator chain every time
+   *  - group2: has an operator chain manager that returns null
+   *  when the event processor tries to retrieve an operator chain
+   *  - group3: has an operator chain manager that returns operator chain every time
    * EventProcessor first selects group1 from the next group selector, and executes events from the group1.
-   * After scheduling period, the event processor selects group2, and will pick group3 after that.
+   * After scheduling period, the event processor selects group2, but the processor wil pick another group
+   * because the operator chain manager of the group2 returns null when calling .pickOperatorChain()
    * This test verifies if the event processor retrieves
    * the next group correctly from the next group selector.
    */
   @Test(timeout = 5000L)
-  public void testGlobalSchedEventProcessorSchedulingPeriod() throws InjectionException, InterruptedException {
+  public void testGlobalSchedNonBlockingEventProcessorSchedulingPeriod()
+      throws InjectionException, InterruptedException {
     final List<GlobalSchedGroupInfo> groups = new ArrayList<>(3);
 
     // This is a group that returns an operator chain manager that returns an operator chain
@@ -60,15 +66,10 @@ public final class GlobalSchedEventProcessorTest {
     });
 
     // This is a group that returns an operator chain manager that returns null
-    final AtomicInteger ocm2Count = new AtomicInteger(0);
     final GlobalSchedGroupInfo group2 = mock(GlobalSchedGroupInfo.class);
     final OperatorChainManager ocm2 = mock(OperatorChainManager.class);
-    final OperatorChain operatorChain2 = mock(OperatorChain.class);
     when(group2.getOperatorChainManager()).thenReturn(ocm2);
-    when(ocm2.pickOperatorChain()).thenAnswer((iom) -> {
-      ocm2Count.incrementAndGet();
-      return operatorChain2;
-    });
+    when(ocm2.pickOperatorChain()).thenReturn(null);
 
     // This is a group that returns an operator chain manager that returns an operator chain
     final AtomicInteger ocm3Count = new AtomicInteger(0);
@@ -97,7 +98,7 @@ public final class GlobalSchedEventProcessorTest {
 
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     injector.bindVolatileInstance(NextGroupSelectorFactory.class, testNextGroupSelectorFactory);
-    final EventProcessorFactory epFactory = injector.getInstance(GlobalSchedEventProcessorFactory.class);
+    final EventProcessorFactory epFactory = injector.getInstance(GlobalSchedNonBlockingEventProcessorFactory.class);
     final EventProcessor eventProcessor = epFactory.newEventProcessor();
 
     eventProcessor.start();
@@ -108,10 +109,9 @@ public final class GlobalSchedEventProcessorTest {
 
     // Check
     Assert.assertTrue(ocm1Count.get() > 1);
-    Assert.assertTrue(ocm2Count.get() > 1);
     Assert.assertTrue(ocm3Count.get() > 1);
     verify(ocm1, times(ocm1Count.get())).pickOperatorChain();
-    verify(ocm2, times(ocm2Count.get())).pickOperatorChain();
+    verify(ocm2, times(1)).pickOperatorChain();
     verify(ocm3, times(ocm3Count.get())).pickOperatorChain();
   }
 
@@ -145,9 +145,8 @@ public final class GlobalSchedEventProcessorTest {
         try {
           final GlobalSchedGroupInfo group = mock(GlobalSchedGroupInfo.class);
           final OperatorChainManager ocm = mock(OperatorChainManager.class);
-          final OperatorChain operatorChain = mock(OperatorChain.class);
           when(group.getOperatorChainManager()).thenReturn(ocm);
-          when(ocm.pickOperatorChain()).thenReturn(operatorChain);
+          when(ocm.pickOperatorChain()).thenReturn(null);
           return group;
         } catch (final InterruptedException e) {
           throw new RuntimeException(e);

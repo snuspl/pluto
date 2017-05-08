@@ -22,6 +22,7 @@ import edu.snu.mist.core.parameters.DriverRuntimeType;
 import edu.snu.mist.core.parameters.NumTaskCores;
 import edu.snu.mist.core.parameters.TaskMemorySize;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.task.globalsched.parameters.GroupSchedModelType;
 import org.apache.reef.client.LauncherStatus;
 import org.apache.reef.runtime.local.client.LocalRuntimeConfiguration;
 import org.apache.reef.tang.Configuration;
@@ -40,16 +41,25 @@ public final class MistDriverTest {
    */
   @Test
   public void testLaunchDriverOption1() throws InjectionException {
-    launchDriverTestHelper(1, 20332);
+    launchDriverTestHelper(1, 20332, "none");
   }
 
   /**
-   * Test whether MistDriver runs the task of option2 successfully.
+   * Test whether MistDriver runs the task of group scheduling (blocking) successfully.
    * @throws InjectionException
    */
   @Test
-  public void testLaunchDriverOption2() throws InjectionException {
-    launchDriverTestHelper(2, 20333);
+  public void testLaunchDriverOption2Blocking() throws InjectionException {
+    launchDriverTestHelper(2, 20333, "blocking");
+  }
+
+  /**
+   * Test whether MistDriver runs the task of group scheduling (nonblocking) successfully.
+   * @throws InjectionException
+   */
+  @Test
+  public void testLaunchDriverOption2NonBlocking() throws InjectionException {
+    launchDriverTestHelper(2, 20335, "nonblocking");
   }
 
   /**
@@ -58,7 +68,7 @@ public final class MistDriverTest {
    */
   @Test
   public void testLaunchDriverOption3() throws InjectionException {
-    launchDriverTestHelper(3, 20334);
+    launchDriverTestHelper(3, 20334, "none");
   }
 
   /**
@@ -66,7 +76,8 @@ public final class MistDriverTest {
    * @throws InjectionException
    */
   public void launchDriverTestHelper(final int executionModelOption,
-                                     final int rpcServerPort) throws InjectionException {
+                                     final int rpcServerPort,
+                                     final String groupSchedModel) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(DriverRuntimeType.class, "LOCAL");
     jcb.bindNamedParameter(NumTaskCores.class, "1");
@@ -74,6 +85,7 @@ public final class MistDriverTest {
     jcb.bindNamedParameter(TaskMemorySize.class, "256");
     jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
     jcb.bindNamedParameter(ExecutionModelOption.class, Integer.toString(executionModelOption));
+    jcb.bindNamedParameter(GroupSchedModelType.class, groupSchedModel);
 
     final Configuration runtimeConf = LocalRuntimeConfiguration.CONF
         .build();

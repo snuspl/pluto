@@ -35,6 +35,8 @@ public interface NextGroupSelector extends EventHandler<GroupEvent> {
 
   /**
    * Re-schedule the group to the selector.
+   * @param groupInfo group info
+   * @param miss true if the group has no active chain
    */
-  void reschedule(GlobalSchedGroupInfo groupInfo);
+  void reschedule(GlobalSchedGroupInfo groupInfo, boolean miss);
 }

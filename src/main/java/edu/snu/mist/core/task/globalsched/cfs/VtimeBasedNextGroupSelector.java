@@ -134,20 +134,31 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
    * @param groupInfo groupInfo
    */
   @Override
-  public void reschedule(final GlobalSchedGroupInfo groupInfo) {
-    final long endTime = System.nanoTime();
-    final long elapsedTime = TimeUnit.NANOSECONDS.toMillis(endTime - groupInfo.getLatestScheduledTime());
-    final double weight = Math.max(defaultWeight, groupInfo.getEventNumAndWeightMetric().getWeight());
-    final double delta = calculateVRuntimeDelta(elapsedTime, weight);
-    final double adjustedVRuntime = groupInfo.getVRuntime() + delta;
-    groupInfo.setVRuntime(adjustedVRuntime);
+  public void reschedule(final GlobalSchedGroupInfo groupInfo, final boolean miss) {
+    synchronized (rbTreeMap) {
+      if (miss && !rbTreeMap.isEmpty()) {
+        final double vruntime = rbTreeMap.lastKey();
+        groupInfo.setVRuntime(vruntime);
 
-    if (LOG.isLoggable(Level.FINE)) {
-      LOG.log(Level.FINE, "{0}: Reschedule {1}, ElapsedTime: {2}, Delta: {3}, Vtime: {4}",
-          new Object[]{Thread.currentThread().getName(), groupInfo, elapsedTime, delta, adjustedVRuntime});
+        if (LOG.isLoggable(Level.FINE)) {
+          LOG.log(Level.FINE, "{0}: Reschedule {1}, Miss: True, Vtime: {2}",
+              new Object[]{Thread.currentThread().getName(), groupInfo, vruntime});
+        }
+      } else {
+        final long endTime = System.nanoTime();
+        final long elapsedTime = TimeUnit.NANOSECONDS.toMillis(endTime - groupInfo.getLatestScheduledTime());
+        final double weight = Math.max(defaultWeight, groupInfo.getEventNumAndWeightMetric().getWeight());
+        final double delta = calculateVRuntimeDelta(elapsedTime, weight);
+        final double vruntime = groupInfo.getVRuntime() + delta;
+        groupInfo.setVRuntime(vruntime);
+
+        if (LOG.isLoggable(Level.FINE)) {
+          LOG.log(Level.FINE, "{0}: Reschedule {1}, ElapsedTime: {2}, Delta: {3}, Vtime: {4}",
+              new Object[]{Thread.currentThread().getName(), groupInfo, elapsedTime, delta, vruntime});
+        }
+      }
+      addGroup(groupInfo);
     }
-
-    addGroup(groupInfo);
   }
 
   /**

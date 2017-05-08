@@ -38,7 +38,7 @@ import org.apache.reef.tang.formats.CommandLine;
 import javax.inject.Inject;
 
 /**
- * Configuration of the mist task for option 2 that performs two level scheduling:
+ * Configuration of the mist task that performs two level scheduling:
  * first-level: cfs scheduling of groups
  * second-level: round-robin operator chain scheduling with active/inactive operator chain management.
  *
@@ -46,7 +46,7 @@ import javax.inject.Inject;
  * After picking a group, the processor processes events within the group,
  * by selecting active operator chain that has events in its queue.
  */
-public final class MistOption2TaskConfigs {
+public final class MistGroupSchedulingTaskConfigs {
 
   private final String epaType;
   private final double cpuUtilLowThreshold;
@@ -57,9 +57,10 @@ public final class MistOption2TaskConfigs {
   private final long cfsSchedulingPeriod;
   private final long minSchedulingPeriod;
   private final int eventProcessorIncreaseNum;
+  private final String groupSchedModelType;
 
   @Inject
-  private MistOption2TaskConfigs(
+  private MistGroupSchedulingTaskConfigs(
       @Parameter(EventProcessorNumAssignerType.class) final String epaType,
       @Parameter(CpuUtilLowThreshold.class) final double cpuUtilLowThreshold,
       @Parameter(EventNumHighThreshold.class) final double eventNumHighThreshold,
@@ -68,7 +69,8 @@ public final class MistOption2TaskConfigs {
       @Parameter(EventProcessorIncreaseRate.class) final double eventProcessorIncreaseRate,
       @Parameter(CfsSchedulingPeriod.class) final long cfsSchedulingPeriod,
       @Parameter(MinSchedulingPeriod.class) final long minSchedulingPeriod,
-      @Parameter(EventProcessorIncreaseNum.class) final int eventProcessorIncreaseNum) {
+      @Parameter(EventProcessorIncreaseNum.class) final int eventProcessorIncreaseNum,
+      @Parameter(GroupSchedModelType.class) final String groupSchedModelType) {
     this.epaType = epaType;
     this.cpuUtilLowThreshold = cpuUtilLowThreshold;
     this.eventNumHighThreshold = eventNumHighThreshold;
@@ -78,6 +80,7 @@ public final class MistOption2TaskConfigs {
     this.cfsSchedulingPeriod = cfsSchedulingPeriod;
     this.minSchedulingPeriod = minSchedulingPeriod;
     this.eventProcessorIncreaseNum = eventProcessorIncreaseNum;
+    this.groupSchedModelType = groupSchedModelType;
   }
 
   /**
@@ -97,17 +100,31 @@ public final class MistOption2TaskConfigs {
   }
 
   /**
+   * Get event processor factory (blocking / nonblocking).
+   */
+  private Class<? extends EventProcessorFactory> getEventProcessorFactory() {
+    switch (groupSchedModelType) {
+      case "blocking":
+        return GlobalSchedEventProcessorFactory.class;
+      case "nonblocking":
+        return GlobalSchedNonBlockingEventProcessorFactory.class;
+      default:
+        throw new RuntimeException("Invalid group scheduling model: " + groupSchedModelType);
+    }
+  }
+
+  /**
    * Get the configuration for execution model 2 that creates a shared thread pool
    * where each thread executes multiple groups.
    */
   public Configuration getConfiguration() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindImplementation(QueryManager.class, GroupAwareGlobalSchedQueryManagerImpl.class);
-    jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedEventProcessorFactory.class);
     jcb.bindImplementation(EventProcessorNumAssigner.class, getEpaClass());
     jcb.bindImplementation(EventProcessorManager.class, DefaultEventProcessorManager.class);
     jcb.bindImplementation(SchedulingPeriodCalculator.class, CfsSchedulingPeriodCalculator.class);
     jcb.bindImplementation(NextGroupSelectorFactory.class, VtimeBasedNextGroupSelectorFactory.class);
+    jcb.bindImplementation(EventProcessorFactory.class, getEventProcessorFactory());
 
     jcb.bindNamedParameter(CpuUtilLowThreshold.class, Double.toString(cpuUtilLowThreshold));
     jcb.bindNamedParameter(EventNumHighThreshold.class, Double.toString(eventNumHighThreshold));
@@ -117,6 +134,7 @@ public final class MistOption2TaskConfigs {
     jcb.bindNamedParameter(CfsSchedulingPeriod.class, Long.toString(cfsSchedulingPeriod));
     jcb.bindNamedParameter(MinSchedulingPeriod.class, Long.toString(minSchedulingPeriod));
     jcb.bindNamedParameter(EventProcessorIncreaseNum.class, Integer.toString(eventProcessorIncreaseNum));
+    jcb.bindNamedParameter(GroupSchedModelType.class, groupSchedModelType);
 
     return jcb.build();
   }
@@ -135,6 +153,7 @@ public final class MistOption2TaskConfigs {
         .registerShortNameOfClass(EventProcessorNumAssignerType.class)
         .registerShortNameOfClass(CfsSchedulingPeriod.class)
         .registerShortNameOfClass(MinSchedulingPeriod.class)
-        .registerShortNameOfClass(EventProcessorIncreaseNum.class);
+        .registerShortNameOfClass(EventProcessorIncreaseNum.class)
+        .registerShortNameOfClass(GroupSchedModelType.class);
   }
 }
