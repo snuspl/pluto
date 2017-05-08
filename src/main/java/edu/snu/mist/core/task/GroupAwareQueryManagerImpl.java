@@ -63,7 +63,6 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
    */
   private final DagGenerator dagGenerator;
 
-
   /**
    * A map which contains groups and their information.
    */
@@ -107,6 +106,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
                                      final MetricTracker metricTracker,
                                      final EventProcessorNumAssigner assigner,
                                      final EventNumMetricEventHandler eventNumHandler,
+                                     final MemoryUsageMetricEventHandler memoryUsageHandler,
                                      final BatchQueryCreator batchQueryCreator) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
