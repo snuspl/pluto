@@ -20,18 +20,19 @@ import edu.snu.mist.core.task.OperatorChainManager;
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * This is an event processor that can change the operator chain manager.
  * Every time slice of the group, it selects another operator chain manager
  * to execute the events of queries within the group.
- * It also selects another operator chain manager when there are no active operator chain.
+ * It also selects another operator chain manager when there are no active operator chain,
+ * which means it does not block when the group has no active operator chain.
  */
-final class GlobalSchedEventProcessor extends Thread implements EventProcessor {
+final class GlobalSchedNonBlockingEventProcessor extends Thread implements EventProcessor {
 
-  private static final Logger LOG = Logger.getLogger(GlobalSchedEventProcessor.class.getName());
+  private static final Logger LOG = Logger.getLogger(GlobalSchedNonBlockingEventProcessor.class.getName());
 
   /**
    * Variable for checking close or not.
@@ -48,8 +49,8 @@ final class GlobalSchedEventProcessor extends Thread implements EventProcessor {
    */
   private final NextGroupSelector nextGroupSelector;
 
-  public GlobalSchedEventProcessor(final SchedulingPeriodCalculator schedPeriodCalculator,
-                                   final NextGroupSelector nextGroupSelector) {
+  public GlobalSchedNonBlockingEventProcessor(final SchedulingPeriodCalculator schedPeriodCalculator,
+                                              final NextGroupSelector nextGroupSelector) {
     super();
     this.schedPeriodCalculator = schedPeriodCalculator;
     this.nextGroupSelector = nextGroupSelector;
@@ -62,6 +63,7 @@ final class GlobalSchedEventProcessor extends Thread implements EventProcessor {
   public void run() {
     try {
       while (!Thread.currentThread().isInterrupted() && !closed) {
+        boolean miss = false;
         final long startTime = System.nanoTime();
         final GlobalSchedGroupInfo groupInfo = nextGroupSelector.getNextExecutableGroup();
         final OperatorChainManager operatorChainManager = groupInfo.getOperatorChainManager();
@@ -76,7 +78,13 @@ final class GlobalSchedEventProcessor extends Thread implements EventProcessor {
           // This is a blocking operator chain manager
           // So it should not be null
           final OperatorChain operatorChain = operatorChainManager.pickOperatorChain();
-          operatorChain.processNextEvent();
+          // If it has no active operator chain, choose another group
+          if (operatorChain == null) {
+            miss = true;
+            break;
+          } else {
+            operatorChain.processNextEvent();
+          }
         }
 
         if (LOG.isLoggable(Level.FINE)) {
@@ -84,7 +92,7 @@ final class GlobalSchedEventProcessor extends Thread implements EventProcessor {
               new Object[]{Thread.currentThread().getName(), groupInfo});
         }
 
-        nextGroupSelector.reschedule(groupInfo, false);
+        nextGroupSelector.reschedule(groupInfo, miss);
       }
     } catch (final InterruptedException e) {
       // Interrupt occurs while sleeping, so just finishes the process...

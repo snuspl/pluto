@@ -156,7 +156,7 @@ public final class GlobalSchedEventProcessorTest {
     }
 
     @Override
-    public void reschedule(final GlobalSchedGroupInfo groupInfo) {
+    public void reschedule(final GlobalSchedGroupInfo groupInfo, final boolean miss) {
       // do nothing
     }
 

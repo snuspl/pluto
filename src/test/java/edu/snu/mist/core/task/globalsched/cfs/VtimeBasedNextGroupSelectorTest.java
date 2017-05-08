@@ -114,7 +114,7 @@ public final class VtimeBasedNextGroupSelectorTest {
 
     final GlobalSchedGroupInfo rescheduleGroup = selector.getNextExecutableGroup();
     Thread.sleep(1000);
-    selector.reschedule(rescheduleGroup);
+    selector.reschedule(rescheduleGroup, false);
     Assert.assertEquals(group4, selector.getNextExecutableGroup());
     Assert.assertEquals(group3, selector.getNextExecutableGroup());
     Assert.assertEquals(group2, selector.getNextExecutableGroup());
