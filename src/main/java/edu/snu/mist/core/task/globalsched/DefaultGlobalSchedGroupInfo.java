@@ -77,6 +77,8 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
    */
   private double vruntime;
 
+  private volatile boolean active;
+
   @Inject
   private DefaultGlobalSchedGroupInfo(@Parameter(GroupId.class) final String groupId,
                                       final ExecutionDags executionDags,
@@ -91,8 +93,9 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
     this.queryStarter = queryStarter;
     this.operatorChainManager = operatorChainManager;
     this.queryRemover = queryRemover;
-    this.latestScheduledTime = 0;
+    this.latestScheduledTime = System.nanoTime();
     this.vruntime = 0;
+    this.active = false;
   }
 
   /**
@@ -171,6 +174,16 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   @Override
   public void setVRuntime(final double vrt) {
     vruntime = vrt;
+  }
+
+  @Override
+  public void setActive(final boolean activeValue) {
+    active = activeValue;
+  }
+
+  @Override
+  public boolean isActive() {
+    return active;
   }
 
   @Override

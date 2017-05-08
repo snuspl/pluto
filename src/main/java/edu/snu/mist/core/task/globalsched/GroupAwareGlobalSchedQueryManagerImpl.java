@@ -107,6 +107,8 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
    */
   private final String executionModel;
 
+  private final NextGroupSelector sharedNextGroupSelector;
+
   /**
    * Default query manager in MistTask.
    */
@@ -125,6 +127,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 final MemoryUsageMetricEventHandler memUsageHandler,
                                                 final EventProcessorNumAssigner assigner,
                                                 final BatchQueryCreator batchQueryCreator,
+                                                final NextGroupSelector sharedNextGroupSelector,
                                                 @Parameter(GroupSchedModelType.class) final String executionModel) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
@@ -136,6 +139,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     this.eventProcessorManager = eventProcessorManager;
     this.batchQueryCreator = batchQueryCreator;
     this.executionModel = executionModel;
+    this.sharedNextGroupSelector = sharedNextGroupSelector;
     metricTracker.start();
   }
 
@@ -183,19 +187,28 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
           jcb.bindImplementation(ExecutionDags.class, NoMergingExecutionDags.class);
         }
 
+        final Injector injector;
+
         switch (executionModel) {
           case "blocking":
             jcb.bindImplementation(OperatorChainManager.class, BlockingActiveOperatorChainPickManager.class);
+            injector = Tang.Factory.getTang().newInjector(jcb.build());
             break;
           case "nonblocking":
             jcb.bindImplementation(OperatorChainManager.class, NonBlockingActiveOperatorChainPickManager.class);
+            injector = Tang.Factory.getTang().newInjector(jcb.build());
+            break;
+          case "activation":
+            jcb.bindImplementation(OperatorChainManager.class, GroupActiveOperatorChainPickManager.class);
+            injector = Tang.Factory.getTang().newInjector(jcb.build());
+            // Share a next group selector
+            injector.bindVolatileInstance(NextGroupSelector.class, sharedNextGroupSelector);
             break;
           default:
             throw new RuntimeException("Invalid execution model: " + executionModel);
         }
         // TODO[DELETE] end: for test
 
-        final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
         injector.bindVolatileInstance(MistPubSubEventHandler.class, pubSubEventHandler);
         final GlobalSchedGroupInfo groupInfo = injector.getInstance(GlobalSchedGroupInfo.class);
         if (groupInfoMap.putIfAbsent(groupId, groupInfo) == null) {

@@ -54,6 +54,15 @@ public final class MistDriverTest {
   }
 
   /**
+   * Test whether MistDriver runs the task of group scheduling (activation) successfully.
+   * @throws InjectionException
+   */
+  @Test
+  public void testLaunchDriverOption2Activation() throws InjectionException {
+    launchDriverTestHelper(2, 20336, "activation");
+  }
+
+  /**
    * Test whether MistDriver runs the task of group scheduling (nonblocking) successfully.
    * @throws InjectionException
    */

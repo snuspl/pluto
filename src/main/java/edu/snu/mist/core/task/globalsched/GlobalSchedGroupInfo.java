@@ -96,4 +96,8 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
    * @param vruntime vruntime
    */
   void setVRuntime(double vruntime);
+
+  void setActive(boolean active);
+
+  boolean isActive();
 }
