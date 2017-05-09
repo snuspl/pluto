@@ -69,19 +69,19 @@ public final class GroupActiveOperatorChainPickManager implements OperatorChainM
     final GlobalSchedGroupInfo groupInfo = groupInfoFuture.get();
 
     synchronized (groupInfo) {
-      if (groupInfo.isActive()) {
-        activeQueryQueue.add(operatorChain);
-      } else {
+      if (groupInfo.getStatus() == GlobalSchedGroupInfo.Status.INACTIVE) {
         if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "{0}: Activate group {1}",
+          LOG.log(Level.FINE, "{0}: Inactive -> Active group {1}",
               new Object[]{Thread.currentThread().getName(), groupInfo});
         }
 
         // Reschedule if the group is inactive
         // because the group is removed from rb-tree of the next group selector
         activeQueryQueue.add(operatorChain);
-        groupInfo.setActive(true);
+        groupInfo.setStatus(GlobalSchedGroupInfo.Status.ACTIVE);
         nextGroupSelector.reschedule(groupInfo, false);
+      } else {
+        activeQueryQueue.add(operatorChain);
       }
     }
   }
@@ -109,9 +109,9 @@ public final class GroupActiveOperatorChainPickManager implements OperatorChainM
     final GlobalSchedGroupInfo groupInfo = groupInfoFuture.get();
     synchronized (groupInfo) {
       final OperatorChain activeQuery = activeQueryQueue.poll();
-      if (activeQueryQueue.isEmpty()) {
+      if (activeQuery == null) {
         // Make group inactive if it is empty
-        groupInfo.setActive(false);
+        groupInfo.setStatus(GlobalSchedGroupInfo.Status.INACTIVE);
       }
       return activeQuery;
     }

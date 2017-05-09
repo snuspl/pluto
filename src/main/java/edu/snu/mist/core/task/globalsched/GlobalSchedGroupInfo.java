@@ -31,6 +31,11 @@ import java.util.List;
  */
 @DefaultImplementation(DefaultGlobalSchedGroupInfo.class)
 public interface GlobalSchedGroupInfo extends AutoCloseable {
+  public enum Status {
+    ACTIVE,
+    INACTIVE,
+    PROCESSING
+  }
 
   /**
    * Get the operator chain manager.
@@ -99,13 +104,9 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
 
   /**
    * Set the group as active.
-   * @param active active
    */
-  void setActive(boolean active);
+  void setStatus(Status stat);
 
-  /**
-   * Check if the group is active or not.
-   * @return active or not
-   */
-  boolean isActive();
+  Status getStatus();
+
 }

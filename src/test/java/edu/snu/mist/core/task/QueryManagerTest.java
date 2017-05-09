@@ -129,7 +129,7 @@ public final class QueryManagerTest {
   }
 
 
-  @Test(timeout = 5000)
+  @Test()
   public void testSubmitComplexQueryInOption2Activation() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(RPCServerPort.class, "20336");

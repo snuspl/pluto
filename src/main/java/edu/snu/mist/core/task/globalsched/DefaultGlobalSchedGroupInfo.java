@@ -81,7 +81,7 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   /**
    * The boolean value for checking the status of the group (active/inactive).
    */
-  private volatile boolean active;
+  private volatile Status status;
 
   @Inject
   private DefaultGlobalSchedGroupInfo(@Parameter(GroupId.class) final String groupId,
@@ -100,7 +100,7 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
     this.queryRemover = queryRemover;
     this.latestScheduledTime = mistStartTime.getStartTimeInNano();
     this.vruntime = 0;
-    this.active = false;
+    this.status = Status.INACTIVE;
   }
 
   /**
@@ -182,13 +182,13 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   }
 
   @Override
-  public void setActive(final boolean activeValue) {
-    active = activeValue;
+  public void setStatus(final Status stat) {
+    status = stat;
   }
 
   @Override
-  public boolean isActive() {
-    return active;
+  public Status getStatus() {
+    return status;
   }
 
   @Override

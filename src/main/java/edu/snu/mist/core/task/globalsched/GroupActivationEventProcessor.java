@@ -76,6 +76,14 @@ final class GroupActivationEventProcessor extends Thread implements EventProcess
               new Object[]{Thread.currentThread().getName(), groupInfo, schedulingPeriod});
         }
 
+        synchronized (groupInfo) {
+          if (groupInfo.getStatus() == GlobalSchedGroupInfo.Status.ACTIVE) {
+            groupInfo.setStatus(GlobalSchedGroupInfo.Status.PROCESSING);
+          } else {
+            throw new RuntimeException("Group status should be ACTIVE, but " + groupInfo.getStatus());
+          }
+        }
+
         while (TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) < schedulingPeriod && !closed) {
           // This is a non-blocking operator chain manager
           final OperatorChain operatorChain = operatorChainManager.pickOperatorChain();
@@ -88,17 +96,21 @@ final class GroupActivationEventProcessor extends Thread implements EventProcess
         }
 
         synchronized (groupInfo) {
-          if (groupInfo.isActive()) {
+          if (groupInfo.getStatus() == GlobalSchedGroupInfo.Status.PROCESSING) {
             if (LOG.isLoggable(Level.FINE)) {
               LOG.log(Level.FINE, "{0}: Reschedule group {1}",
                   new Object[]{Thread.currentThread().getName(), groupInfo});
             }
 
-            // If it is active, just reschedule it
+            // If it is processing status, just reschedule it
             // Otherwise, do not reschedule it
             // This does not reschedule when the group is inactive,
             // in order to keep the active groups in the next group selector.
+            groupInfo.setStatus(GlobalSchedGroupInfo.Status.ACTIVE);
             nextGroupSelector.reschedule(groupInfo, false);
+          } else if (groupInfo.getStatus() == GlobalSchedGroupInfo.Status.ACTIVE) {
+            // Already rescheduled
+            LOG.log(Level.WARNING, "Group {0} already rescheduled", new Object[] {groupInfo});
           } else {
             if (LOG.isLoggable(Level.FINE)) {
               LOG.log(Level.FINE, "{0}: Deactivate group {1}",
