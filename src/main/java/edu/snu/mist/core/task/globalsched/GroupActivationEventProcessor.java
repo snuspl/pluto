@@ -71,8 +71,8 @@ final class GroupActivationEventProcessor extends Thread implements EventProcess
         final OperatorChainManager operatorChainManager = groupInfo.getOperatorChainManager();
         final long schedulingPeriod = schedPeriodCalculator.calculateSchedulingPeriod(groupInfo);
 
-        if (LOG.isLoggable(Level.INFO)) {
-          LOG.log(Level.INFO, "{0}: Selected group {1}, Period: {2}",
+        if (LOG.isLoggable(Level.FINE)) {
+          LOG.log(Level.FINE, "{0}: Selected group {1}, Period: {2}",
               new Object[]{Thread.currentThread().getName(), groupInfo, schedulingPeriod});
         }
 
@@ -100,8 +100,8 @@ final class GroupActivationEventProcessor extends Thread implements EventProcess
             // in order to keep the active groups in the next group selector.
             nextGroupSelector.reschedule(groupInfo, false);
           } else {
-            if (LOG.isLoggable(Level.INFO)) {
-              LOG.log(Level.INFO, "{0}: Deactivate group {1}",
+            if (LOG.isLoggable(Level.FINE)) {
+              LOG.log(Level.FINE, "{0}: Deactivate group {1}",
                   new Object[]{Thread.currentThread().getName(), groupInfo});
             }
           }

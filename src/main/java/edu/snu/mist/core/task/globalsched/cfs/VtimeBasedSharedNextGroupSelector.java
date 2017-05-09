@@ -56,6 +56,9 @@ public final class VtimeBasedSharedNextGroupSelector implements NextGroupSelecto
    */
   private final long minSchedPeriod;
 
+  // TODO[DELETE] for debugging
+  private long loggingTime;
+
   @Inject
   private VtimeBasedSharedNextGroupSelector(
       @Parameter(DefaultGroupWeight.class) final double defaultWeight,
@@ -64,6 +67,7 @@ public final class VtimeBasedSharedNextGroupSelector implements NextGroupSelecto
     this.rbTreeMap = new TreeMap<>();
     this.defaultWeight = defaultWeight;
     this.minSchedPeriod = minSchedPeriod;
+    this.loggingTime = System.nanoTime();
     pubSubEventHandler.getPubSubEventHandler().subscribe(GroupEvent.class, this);
   }
 
@@ -101,6 +105,14 @@ public final class VtimeBasedSharedNextGroupSelector implements NextGroupSelecto
   @Override
   public GlobalSchedGroupInfo getNextExecutableGroup() {
     synchronized (rbTreeMap) {
+
+      // TODO[DELETE] start
+      if (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - loggingTime) >= 5) {
+        LOG.log(Level.INFO, "RB-tree: {0}", new Object[] {rbTreeMap});
+        loggingTime = System.nanoTime();
+      }
+      // TODO[DELETE] end
+
       while (rbTreeMap.isEmpty()) {
         try {
           rbTreeMap.wait();
@@ -136,8 +148,8 @@ public final class VtimeBasedSharedNextGroupSelector implements NextGroupSelecto
       final double vruntime = groupInfo.getVRuntime() + delta;
       groupInfo.setVRuntime(vruntime);
 
-      if (LOG.isLoggable(Level.INFO)) {
-        LOG.log(Level.INFO, "{0}: Reschedule {1}, ElapsedTime: {2}, Delta: {3}, Vtime: {4}",
+      if (LOG.isLoggable(Level.FINE)) {
+        LOG.log(Level.FINE, "{0}: Reschedule {1}, ElapsedTime: {2}, Delta: {3}, Vtime: {4}",
             new Object[]{Thread.currentThread().getName(), groupInfo, elapsedTime, delta, vruntime});
       }
       addGroup(groupInfo);
