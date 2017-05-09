@@ -107,15 +107,13 @@ public final class GroupActiveOperatorChainPickManager implements OperatorChainM
   @Override
   public OperatorChain pickOperatorChain() {
     final GlobalSchedGroupInfo groupInfo = groupInfoFuture.get();
-    final OperatorChain activeQuery = activeQueryQueue.poll();
-
     synchronized (groupInfo) {
+      final OperatorChain activeQuery = activeQueryQueue.poll();
       if (activeQueryQueue.isEmpty()) {
         // Make group inactive if it is empty
         groupInfo.setActive(false);
       }
+      return activeQuery;
     }
-
-    return activeQuery;
   }
 }
