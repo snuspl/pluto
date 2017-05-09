@@ -22,8 +22,8 @@ import edu.snu.mist.core.task.eventProcessors.EventProcessorFactory;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.globalsched.*;
 import edu.snu.mist.core.task.globalsched.cfs.CfsSchedulingPeriodCalculator;
+import edu.snu.mist.core.task.globalsched.cfs.RoundRobinBasedSharedNextGroupSelector;
 import edu.snu.mist.core.task.globalsched.cfs.VtimeBasedNextGroupSelectorFactory;
-import edu.snu.mist.core.task.globalsched.cfs.VtimeBasedSharedNextGroupSelector;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsSchedulingPeriod;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.MinSchedulingPeriod;
 import edu.snu.mist.core.task.globalsched.metrics.DefaultEventProcessorNumAssigner;
@@ -117,7 +117,7 @@ public final class MistGroupSchedulingTaskConfigs {
         // This model does not schedule inactive groups
         // It just schedules active groups that have active operator chains
         jcb.bindImplementation(EventProcessorFactory.class, GroupActivationSharedTreeEventProcessorFactory.class);
-        jcb.bindImplementation(NextGroupSelector.class, VtimeBasedSharedNextGroupSelector.class);
+        jcb.bindImplementation(NextGroupSelector.class, RoundRobinBasedSharedNextGroupSelector.class);
         break;
       default:
         throw new RuntimeException("Invalid group scheduling model: " + groupSchedModelType);
