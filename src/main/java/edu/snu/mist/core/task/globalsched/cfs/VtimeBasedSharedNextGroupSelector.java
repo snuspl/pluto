@@ -163,7 +163,7 @@ public final class VtimeBasedSharedNextGroupSelector implements NextGroupSelecto
    * @return delta vruntime
    */
   private double calculateVRuntimeDelta(final double delta, final double weight) {
-    return delta * defaultWeight / weight;
+    return Math.max(minSchedPeriod/1000.0 * defaultWeight / weight, delta * defaultWeight / weight);
   }
 
   @Override
