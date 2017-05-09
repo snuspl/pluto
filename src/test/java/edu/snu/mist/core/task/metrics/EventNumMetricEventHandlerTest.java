@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.metrics;
 
 import edu.snu.mist.common.graph.AdjacentListDAG;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.merging.MergingExecutionDags;
-import edu.snu.mist.core.task.metrics.EventNumMetricEventHandler;
-import edu.snu.mist.core.task.metrics.MetricTrackEvent;
+import edu.snu.mist.core.task.metrics.parameters.GlobalNumEventAlpha;
 import edu.snu.mist.core.task.utils.IdAndConfGenerator;
 import edu.snu.mist.formats.avro.Direction;
 import org.apache.reef.tang.Injector;
@@ -48,6 +48,9 @@ public final class EventNumMetricEventHandlerTest {
   public void setUp() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     groupInfoMap = injector.getInstance(GroupInfoMap.class);
+    final MetricHolder globalMetricHolder = injector.getInstance(MetricHolder.class);
+    globalMetricHolder.putEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS, new EWMAMetric(
+        0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalNumEventAlpha.class)));
     metricPubSubEventHandler = injector.getInstance(MistPubSubEventHandler.class);
     handler = injector.getInstance(EventNumMetricEventHandler.class);
     idAndConfGenerator = new IdAndConfGenerator();
@@ -121,8 +124,8 @@ public final class EventNumMetricEventHandlerTest {
     executionDagsB.add(dagB);
 
     // the event number should be zero in each group
-    Assert.assertEquals(0, groupInfoA.getEventNumMetric().getNumEvents());
-    Assert.assertEquals(0, groupInfoB.getEventNumMetric().getNumEvents());
+    Assert.assertEquals(0, getNumEvents(groupInfoA), 0.00001);
+    Assert.assertEquals(0, getNumEvents(groupInfoB), 0.00001);
 
     // add a few events to the operator chains in group A
     opA1.addNextEvent(generateTestEvent(), Direction.LEFT);
@@ -131,8 +134,8 @@ public final class EventNumMetricEventHandlerTest {
 
     // wait the tracker for a while
     metricPubSubEventHandler.getPubSubEventHandler().onNext(new MetricTrackEvent());
-    Assert.assertEquals(3, groupInfoA.getEventNumMetric().getNumEvents());
-    Assert.assertEquals(0, groupInfoB.getEventNumMetric().getNumEvents());
+    Assert.assertEquals(3, getNumEvents(groupInfoA), 0.00001);
+    Assert.assertEquals(0, getNumEvents(groupInfoB), 0.00001);
 
     // add a few events to the operator chains in group B
     opB1.addNextEvent(generateTestEvent(), Direction.LEFT);
@@ -142,8 +145,8 @@ public final class EventNumMetricEventHandlerTest {
 
     // wait the tracker for a while
     metricPubSubEventHandler.getPubSubEventHandler().onNext(new MetricTrackEvent());
-    Assert.assertEquals(3, groupInfoA.getEventNumMetric().getNumEvents());
-    Assert.assertEquals(4, groupInfoB.getEventNumMetric().getNumEvents());
+    Assert.assertEquals(3, getNumEvents(groupInfoA), 0.00001);
+    Assert.assertEquals(4, getNumEvents(groupInfoB), 0.00001);
   }
 
   /**
@@ -160,5 +163,14 @@ public final class EventNumMetricEventHandlerTest {
     final GroupInfo groupInfo = injector.getInstance(GroupInfo.class);
     groupInfoMap.put(groupId, groupInfo);
     return groupInfo;
+  }
+
+  /**
+   * Get the value of num events metric from gorup info.
+   * @param groupInfo the group info
+   * @return the value of num events
+   */
+  private double getNumEvents(final GroupInfo groupInfo) {
+    return groupInfo.getMetricHolder().getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).getValue();
   }
 }

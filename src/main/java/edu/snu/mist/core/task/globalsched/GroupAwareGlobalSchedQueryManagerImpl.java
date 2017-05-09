@@ -29,9 +29,8 @@ import edu.snu.mist.core.task.globalsched.parameters.GroupSchedModelType;
 import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
 import edu.snu.mist.core.task.merging.MergeAwareQueryRemover;
 import edu.snu.mist.core.task.merging.MergingExecutionDags;
-import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
-import edu.snu.mist.core.task.metrics.MemoryUsageMetricEventHandler;
-import edu.snu.mist.core.task.metrics.MetricTracker;
+import edu.snu.mist.core.task.metrics.*;
+import edu.snu.mist.core.task.metrics.parameters.*;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
@@ -40,6 +39,7 @@ import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
+import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -131,7 +131,8 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 final MemoryUsageMetricEventHandler memUsageHandler,
                                                 final EventProcessorNumAssigner assigner,
                                                 final BatchQueryCreator batchQueryCreator,
-                                                @Parameter(GroupSchedModelType.class) final String executionModel) {
+                                                @Parameter(GroupSchedModelType.class) final String executionModel,
+                                                final MetricHolder globalMetricHolder) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
@@ -143,6 +144,27 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     this.configDagGenerator = configDagGenerator;
     this.batchQueryCreator = batchQueryCreator;
     this.executionModel = executionModel;
+    try {
+      // Set up metrics which will be used for system management.
+      globalMetricHolder.putEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS, new EWMAMetric(
+          0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalNumEventAlpha.class)));
+      globalMetricHolder.putEWMAMetric(
+          MetricHolder.EWMAMetricType.HEAP_MEM_USAGE, new EWMAMetric(
+              0.0, Tang.Factory.getTang().newInjector().getNamedInstance(HeapMemoryUsageAlpha.class)));
+      globalMetricHolder.putEWMAMetric(
+          MetricHolder.EWMAMetricType.NON_HEAP_MEM_USAGE, new EWMAMetric(
+              0.0, Tang.Factory.getTang().newInjector().getNamedInstance(NonHeapMemoryUsageAlpha.class)));
+      globalMetricHolder.putEWMAMetric(
+          MetricHolder.EWMAMetricType.CPU_SYS_UTIL, new EWMAMetric(
+              0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalSysCpuUtilAlpha.class)));
+      globalMetricHolder.putEWMAMetric(
+          MetricHolder.EWMAMetricType.CPU_PROC_UTIL, new EWMAMetric(
+              0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalProcCpuUtilAlpha.class)));
+      globalMetricHolder.putNormalMetric(MetricHolder.NormalMetricType.WEIGHT, new NormalMetric<>(1.0));
+      globalMetricHolder.putNormalMetric(MetricHolder.NormalMetricType.NUM_GROUP, new NormalMetric<>(0));
+    } catch (final InjectionException e) {
+      e.printStackTrace();
+    }
     metricTracker.start();
   }
 

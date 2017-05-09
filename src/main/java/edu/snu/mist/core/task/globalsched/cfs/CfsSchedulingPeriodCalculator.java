@@ -19,7 +19,7 @@ import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.SchedulingPeriodCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsSchedulingPeriod;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.MinSchedulingPeriod;
-import edu.snu.mist.core.task.globalsched.metrics.GlobalSchedGlobalMetrics;
+import edu.snu.mist.core.task.metrics.MetricHolder;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -50,24 +50,27 @@ public final class CfsSchedulingPeriodCalculator implements SchedulingPeriodCalc
   private final long minSchedPeriod;
 
   /**
-   * Global metric.
+   * The Global metric holder.
    */
-  private final GlobalSchedGlobalMetrics metric;
+  private final MetricHolder globalMetricHolder;
 
   @Inject
   private CfsSchedulingPeriodCalculator(@Parameter(CfsSchedulingPeriod.class) final long cfsSchedPeriod,
                                         @Parameter(MinSchedulingPeriod.class) final long minSchedPeriod,
-                                        final GlobalSchedGlobalMetrics metric) {
+                                        final MetricHolder globalMetricHolder) {
     this.cfsSchedPeriod = cfsSchedPeriod;
     this.minSchedPeriod = minSchedPeriod;
-    this.metric = metric;
+    this.globalMetricHolder = globalMetricHolder;
   }
 
   @Override
   public long calculateSchedulingPeriod(final GlobalSchedGroupInfo groupInfo) {
-    final double groupWeight = groupInfo.getEventNumAndWeightMetric().getWeight();
-    final double totalWeight = Math.max(groupWeight, metric.getNumEventAndWeightMetric().getWeight());
-    final long numGroups = Math.max(1, metric.getNumGroupsMetric().getNumGroups());
+    final double groupWeight =
+        (double) groupInfo.getMetricHolder().getNormalMetric(MetricHolder.NormalMetricType.WEIGHT).getValue();
+    final double totalWeight = Math.max(
+        groupWeight, (double) globalMetricHolder.getNormalMetric(MetricHolder.NormalMetricType.WEIGHT).getValue());
+    final int numGroups = Math.max(
+        1, (int) globalMetricHolder.getNormalMetric(MetricHolder.NormalMetricType.NUM_GROUP).getValue());
     long adjustCfsSchedPeriod = cfsSchedPeriod;
     if (cfsSchedPeriod / numGroups < minSchedPeriod) {
       adjustCfsSchedPeriod = minSchedPeriod * numGroups;

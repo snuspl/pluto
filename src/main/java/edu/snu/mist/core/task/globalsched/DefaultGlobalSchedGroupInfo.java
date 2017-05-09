@@ -20,8 +20,13 @@ import edu.snu.mist.core.task.ExecutionDags;
 import edu.snu.mist.core.task.OperatorChainManager;
 import edu.snu.mist.core.task.QueryRemover;
 import edu.snu.mist.core.task.QueryStarter;
-import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetric;
+import edu.snu.mist.core.task.metrics.EWMAMetric;
+import edu.snu.mist.core.task.metrics.MetricHolder;
+import edu.snu.mist.core.task.metrics.NormalMetric;
+import edu.snu.mist.core.task.metrics.parameters.GroupNumEventAlpha;
+import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
+import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -53,11 +58,6 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   private final QueryStarter queryStarter;
 
   /**
-   * A metric that represents the number of events and weight in the group, which will be updated periodically.
-   */
-  private final EventNumAndWeightMetric eventNumAndWeightMetric;
-
-  /**
    * Operator chain manager.
    */
   private final OperatorChainManager operatorChainManager;
@@ -77,22 +77,34 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
    */
   private double vruntime;
 
+  /**
+   * A metric holder that contains weight and the number of events in the group, which will be updated periodically.
+   */
+  private final MetricHolder metricHolder;
+
   @Inject
   private DefaultGlobalSchedGroupInfo(@Parameter(GroupId.class) final String groupId,
                                       final ExecutionDags executionDags,
-                                      final EventNumAndWeightMetric eventNumAndWeightMetric,
                                       final QueryStarter queryStarter,
                                       final OperatorChainManager operatorChainManager,
-                                      final QueryRemover queryRemover) {
+                                      final QueryRemover queryRemover,
+                                      final MetricHolder metricHolder) {
     this.groupId = groupId;
     this.queryIdList = new ArrayList<>();
     this.executionDags = executionDags;
-    this.eventNumAndWeightMetric = eventNumAndWeightMetric;
     this.queryStarter = queryStarter;
     this.operatorChainManager = operatorChainManager;
     this.queryRemover = queryRemover;
     this.latestScheduledTime = 0;
     this.vruntime = 0;
+    this.metricHolder = metricHolder;
+    try {
+      metricHolder.putEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS, new EWMAMetric(
+          0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GroupNumEventAlpha.class)));
+      metricHolder.putNormalMetric(MetricHolder.NormalMetricType.WEIGHT, new NormalMetric<>(1.0));
+    } catch (final InjectionException e) {
+      e.printStackTrace();
+    }
   }
 
   /**
@@ -159,8 +171,8 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   }
 
   @Override
-  public EventNumAndWeightMetric getEventNumAndWeightMetric() {
-    return eventNumAndWeightMetric;
+  public MetricHolder getMetricHolder() {
+    return metricHolder;
   }
 
   @Override

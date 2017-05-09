@@ -21,7 +21,8 @@ import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.GroupEvent;
 import edu.snu.mist.core.task.globalsched.NextGroupSelector;
 import edu.snu.mist.core.task.globalsched.NextGroupSelectorFactory;
-import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetric;
+import edu.snu.mist.core.task.metrics.MetricHolder;
+import edu.snu.mist.core.task.metrics.NormalMetric;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -85,8 +86,9 @@ public final class VtimeBasedNextGroupSelectorTest {
     final GlobalSchedGroupInfo group2 = mock(GlobalSchedGroupInfo.class);
     final GlobalSchedGroupInfo group3 = mock(GlobalSchedGroupInfo.class);
     final GlobalSchedGroupInfo group4 = mock(GlobalSchedGroupInfo.class);
-    final EventNumAndWeightMetric metric =
-        Tang.Factory.getTang().newInjector().getInstance(EventNumAndWeightMetric.class);
+    final MetricHolder metricHolder =
+        Tang.Factory.getTang().newInjector().getInstance(MetricHolder.class);
+
 
     final AtomicDouble group1AdjustVRuntime = new AtomicDouble(0);
     doAnswer((invocation) -> {
@@ -96,7 +98,7 @@ public final class VtimeBasedNextGroupSelectorTest {
     }).when(group1).setVRuntime(anyLong());
     
     when(group1.getVRuntime()).thenAnswer((invocation) -> group1AdjustVRuntime.get());
-    when(group1.getEventNumAndWeightMetric()).thenReturn(metric);
+    when(group1.getMetricHolder()).thenReturn(metricHolder);
     when(group2.getVRuntime()).thenReturn(2.0);
     when(group3.getVRuntime()).thenReturn(1.0);
     when(group4.getVRuntime()).thenReturn(0.0);
@@ -113,6 +115,8 @@ public final class VtimeBasedNextGroupSelectorTest {
     pubSubEventHandler.onNext(new GroupEvent(group4, GroupEvent.GroupEventType.ADDITION));
 
     final GlobalSchedGroupInfo rescheduleGroup = selector.getNextExecutableGroup();
+    rescheduleGroup.getMetricHolder().putNormalMetric(
+        MetricHolder.NormalMetricType.WEIGHT, new NormalMetric(0.0));
     Thread.sleep(1000);
     selector.reschedule(rescheduleGroup, false);
     Assert.assertEquals(group4, selector.getNextExecutableGroup());

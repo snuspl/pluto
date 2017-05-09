@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.metrics;
 
 import edu.snu.mist.core.parameters.MetricTrackingInterval;
-import edu.snu.mist.core.task.metrics.*;
+import edu.snu.mist.core.task.MistPubSubEventHandler;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;

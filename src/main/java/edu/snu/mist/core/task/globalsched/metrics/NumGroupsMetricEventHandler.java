@@ -17,13 +17,14 @@ package edu.snu.mist.core.task.globalsched.metrics;
 
 import edu.snu.mist.core.task.MistPubSubEventHandler;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfoMap;
+import edu.snu.mist.core.task.metrics.MetricHolder;
 import edu.snu.mist.core.task.metrics.MetricTrackEvent;
 import edu.snu.mist.core.task.metrics.MetricTrackEventHandler;
 
 import javax.inject.Inject;
 
 /**
- * A class handles the metric event about NumGroupsMetric.
+ * A class handles the metric event about the number of groups.
  */
 public final class NumGroupsMetricEventHandler implements MetricTrackEventHandler {
 
@@ -33,24 +34,22 @@ public final class NumGroupsMetricEventHandler implements MetricTrackEventHandle
   private final GlobalSchedGroupInfoMap groupInfoMap;
 
   /**
-   * The global metrics.
+   * The global metric holder.
    */
-  private final GlobalSchedGlobalMetrics globalMetrics;
+  private final MetricHolder globalMetricHolder;
 
   @Inject
   private NumGroupsMetricEventHandler(final GlobalSchedGroupInfoMap groupInfoMap,
-                                      final GlobalSchedGlobalMetrics globalMetrics,
+                                      final MetricHolder globalMetricHolder,
                                       final MistPubSubEventHandler pubSubEventHandler) {
     this.groupInfoMap = groupInfoMap;
-    this.globalMetrics = globalMetrics;
-    // Initialize
-    this.onNext(new MetricTrackEvent());
+    this.globalMetricHolder = globalMetricHolder;
     pubSubEventHandler.getPubSubEventHandler().subscribe(MetricTrackEvent.class, this);
   }
 
   @Override
   public void onNext(final MetricTrackEvent metricTrackEvent) {
-    final long numGroups = groupInfoMap.size();
-    globalMetrics.getNumGroupsMetric().setNumGroups(numGroups);
+    final int numGroups = groupInfoMap.size();
+    globalMetricHolder.getNormalMetric(MetricHolder.NormalMetricType.NUM_GROUP).setMetric(numGroups);
   }
 }

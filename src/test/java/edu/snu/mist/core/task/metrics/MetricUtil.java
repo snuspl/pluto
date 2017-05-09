@@ -13,14 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.metrics.parameters;
-
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+package edu.snu.mist.core.task.metrics;
 
 /**
- * A decaying rate of EWMA for the total number of events in a mist task.
+ * Util class for metric test.
  */
-@NamedParameter(doc="An alpha value of num events.", default_value = "0.7")
-public final class GlobalNumEventAlpha implements Name<Double> {
+public final class MetricUtil {
+
+  private MetricUtil() {
+    // Should not be called.
+  }
+
+  public static double calculateEwma(final double newValue,
+                                     final double oldEwma,
+                                     final double alpha) {
+    return alpha * newValue + (1 - alpha) * oldEwma;
+  }
 }

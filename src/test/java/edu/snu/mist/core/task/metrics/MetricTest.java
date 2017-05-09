@@ -13,13 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched;
+package edu.snu.mist.core.task.metrics;
 
-import edu.snu.mist.core.task.metrics.parameters.GlobalNumEventAlpha;
-import edu.snu.mist.core.task.MetricUtil;
-import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetric;
-import org.apache.reef.tang.Configuration;
-import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -28,32 +23,45 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Tests on EventNumAndWeightMetric class.
+ * A test class for NormalMetric and EWMAMetric.
  */
-public class EventNumAndWeightMetricTest {
+public class MetricTest {
 
   /**
-   * A test for calculating number of events.
+   * A test for calculating metric with EWMA.
    * @throws InjectionException
    */
   @Test
-  public void testEventNumMetric() throws InjectionException {
+  public void testEwmaMetric() throws InjectionException {
 
     final double alpha = 0.7;
-    final Configuration configuration = Tang.Factory.getTang().newConfigurationBuilder()
-        .bindNamedParameter(GlobalNumEventAlpha.class, String.valueOf(alpha))
-        .build();
-
-    final EventNumAndWeightMetric globalSchedMetric =
-        Tang.Factory.getTang().newInjector().getInstance(EventNumAndWeightMetric.class);
+    final EWMAMetric ewmaMetric = new EWMAMetric(
+        0.0, alpha);
 
     final List<Integer> numberOfEventsList = Arrays.asList(10, 9);
-    globalSchedMetric.updateNumEvents(numberOfEventsList.get(0));
+    ewmaMetric.updateMetric(numberOfEventsList.get(0));
     final double firstExpectedEWMA = MetricUtil.calculateEwma(numberOfEventsList.get(0), 0.0, alpha);
-    Assert.assertEquals(firstExpectedEWMA, globalSchedMetric.getEwmaNumEvents(), 0.0001);
-    globalSchedMetric.updateNumEvents(numberOfEventsList.get(1));
+    Assert.assertEquals(firstExpectedEWMA, ewmaMetric.getEwmaValue(), 0.0001);
+    ewmaMetric.updateMetric(numberOfEventsList.get(1));
     final double secondExpectedEWMA = MetricUtil.calculateEwma(numberOfEventsList.get(1),
         firstExpectedEWMA, alpha);
-    Assert.assertEquals(secondExpectedEWMA, globalSchedMetric.getEwmaNumEvents(), 0.0001);
+    Assert.assertEquals(secondExpectedEWMA, ewmaMetric.getEwmaValue(), 0.0001);
+  }
+
+  /**
+   * A test for calculating metric without EWMA.
+   * @throws InjectionException
+   */
+  @Test
+  public void testNormalMetric() throws InjectionException {
+
+    final double alpha = 0.7;
+    final NormalMetric normalMetric = new NormalMetric<>(0.0);
+
+    final List<Double> numberOfEventsList = Arrays.asList(10.0, 9.0);
+    normalMetric.setMetric(numberOfEventsList.get(0));
+    Assert.assertEquals(numberOfEventsList.get(0), normalMetric.getValue());
+    normalMetric.setMetric(numberOfEventsList.get(1));
+    Assert.assertEquals(numberOfEventsList.get(1), normalMetric.getValue());
   }
 }

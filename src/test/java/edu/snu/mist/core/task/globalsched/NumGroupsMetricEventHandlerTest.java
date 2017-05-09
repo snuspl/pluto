@@ -16,9 +16,10 @@
 package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.core.task.*;
-import edu.snu.mist.core.task.globalsched.metrics.GlobalSchedGlobalMetrics;
 import edu.snu.mist.core.task.globalsched.metrics.NumGroupsMetricEventHandler;
+import edu.snu.mist.core.task.metrics.MetricHolder;
 import edu.snu.mist.core.task.metrics.MetricTrackEvent;
+import edu.snu.mist.core.task.metrics.NormalMetric;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -35,14 +36,17 @@ public final class NumGroupsMetricEventHandlerTest {
 
   private MistPubSubEventHandler metricPubSubEventHandler;
   private GlobalSchedGroupInfoMap groupInfoMap;
-  private GlobalSchedGlobalMetrics metric;
+  private MetricHolder metricHolder;
   private NumGroupsMetricEventHandler handler;
   private static final int UPDATE_GROUP_SIZE = 10;
+  private static final int DEFAULT_GROUP_SIZE = 0;
 
   @Before
   public void setUp() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
-    metric = injector.getInstance(GlobalSchedGlobalMetrics.class);
+    metricHolder = injector.getInstance(MetricHolder.class);
+    metricHolder.putNormalMetric(
+        MetricHolder.NormalMetricType.NUM_GROUP, new NormalMetric<>(DEFAULT_GROUP_SIZE));
     groupInfoMap = injector.getInstance(GlobalSchedGroupInfoMap.class);
     metricPubSubEventHandler = injector.getInstance(MistPubSubEventHandler.class);
     handler = injector.getInstance(NumGroupsMetricEventHandler.class);
@@ -54,7 +58,8 @@ public final class NumGroupsMetricEventHandlerTest {
   @Test(timeout = 1000L)
   public void testNumGroupsMetricTracking() throws Exception {
     // Test default value
-    Assert.assertEquals(0, metric.getNumGroupsMetric().getNumGroups());
+    Assert.assertEquals(DEFAULT_GROUP_SIZE,
+        metricHolder.getNormalMetric(MetricHolder.NormalMetricType.NUM_GROUP).getValue());
 
     // Update the value
     for (int i = 0; i < UPDATE_GROUP_SIZE; i++) {
@@ -64,6 +69,7 @@ public final class NumGroupsMetricEventHandlerTest {
 
     // Wait the tracker to call handler
     metricPubSubEventHandler.getPubSubEventHandler().onNext(new MetricTrackEvent());
-    Assert.assertEquals(UPDATE_GROUP_SIZE, metric.getNumGroupsMetric().getNumGroups());
+    Assert.assertEquals(
+        UPDATE_GROUP_SIZE, metricHolder.getNormalMetric(MetricHolder.NormalMetricType.NUM_GROUP).getValue());
   }
 }

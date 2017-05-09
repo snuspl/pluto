@@ -20,6 +20,7 @@ import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfoMap;
 import edu.snu.mist.core.task.globalsched.GroupEvent;
 import edu.snu.mist.core.task.globalsched.NextGroupSelector;
+import edu.snu.mist.core.task.metrics.MetricHolder;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -145,7 +146,8 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
         final long endTime = System.nanoTime();
         final double elapsedTime =
             TimeUnit.NANOSECONDS.toMillis(endTime - groupInfo.getLatestScheduledTime()) / 1000.0;
-        final double weight = Math.max(defaultWeight, groupInfo.getEventNumAndWeightMetric().getWeight());
+        final double weight = Math.max(defaultWeight,
+            (double) groupInfo.getMetricHolder().getNormalMetric(MetricHolder.NormalMetricType.WEIGHT).getValue());
         final double delta = calculateVRuntimeDelta(elapsedTime, weight);
         final double vruntime = groupInfo.getVRuntime() + delta;
         groupInfo.setVRuntime(vruntime);

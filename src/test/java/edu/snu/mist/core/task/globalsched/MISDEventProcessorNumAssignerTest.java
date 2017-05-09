@@ -17,11 +17,14 @@ package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.core.parameters.ThreadNumLimit;
 import edu.snu.mist.core.task.MistPubSubEventHandler;
+import edu.snu.mist.core.task.metrics.EWMAMetric;
+import edu.snu.mist.core.task.metrics.MetricHolder;
+import edu.snu.mist.core.task.metrics.MetricUpdateEvent;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
-import edu.snu.mist.core.task.globalsched.metrics.GlobalSchedGlobalMetrics;
 import edu.snu.mist.core.task.globalsched.parameters.*;
-import edu.snu.mist.core.task.metrics.MetricUpdateEvent;
+import edu.snu.mist.core.task.metrics.parameters.GlobalNumEventAlpha;
+import edu.snu.mist.core.task.metrics.parameters.GlobalSysCpuUtilAlpha;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -31,13 +34,13 @@ import org.junit.Test;
 import static org.mockito.Mockito.*;
 
 /**
- * Test whether MISDEventProcessorNumAssigner assigns proper event processor number according to the metric.
+ * Test whether MISDEventProcessorNumAssigner assigns proper event processor number according to the globalMetricHolder.
  */
 public final class MISDEventProcessorNumAssignerTest {
 
   private MISDEventProcessorNumAssigner assigner;
   private MistPubSubEventHandler handler;
-  private GlobalSchedGlobalMetrics metric;
+  private MetricHolder globalMetricHolder;
   private EventProcessorManager eventProcessorManager;
   private static final int THREAD_NUM_LIMIT = 30;
   private static final int DEFAULT_THREAD_NUM = 10;
@@ -52,7 +55,7 @@ public final class MISDEventProcessorNumAssignerTest {
   public void setUp() throws InjectionException {
     eventProcessorManager = mock(EventProcessorManager.class);
     final Injector injector = Tang.Factory.getTang().newInjector();
-    metric = injector.getInstance(GlobalSchedGlobalMetrics.class);
+    globalMetricHolder = injector.getInstance(MetricHolder.class);
     handler = injector.getInstance(MistPubSubEventHandler.class);
     injector.bindVolatileParameter(ThreadNumLimit.class, THREAD_NUM_LIMIT);
     injector.bindVolatileParameter(DefaultNumEventProcessors.class, DEFAULT_THREAD_NUM);
@@ -63,6 +66,11 @@ public final class MISDEventProcessorNumAssignerTest {
     injector.bindVolatileParameter(EventProcessorIncreaseRate.class, INCREASE_RATE);
     injector.bindVolatileParameter(EventProcessorDecreaseNum.class, DECREASE_NUM);
     assigner = injector.getInstance(MISDEventProcessorNumAssigner.class);
+    globalMetricHolder.putEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS, new EWMAMetric(
+        0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalNumEventAlpha.class)));
+    globalMetricHolder.putEWMAMetric(
+        MetricHolder.EWMAMetricType.CPU_SYS_UTIL, new EWMAMetric(
+            0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalSysCpuUtilAlpha.class)));
   }
 
   /**
@@ -72,9 +80,11 @@ public final class MISDEventProcessorNumAssignerTest {
   public void testProcessorNumManaged() throws InjectionException {
 
     // Many events, low cpu utilization
-    metric.getNumEventAndWeightMetric().updateNumEvents((long)EVENT_NUM_HIGH_THRES * 2);
-    metric.getNumEventAndWeightMetric().updateNumEvents((long)EVENT_NUM_HIGH_THRES * 2);
-    metric.getCpuUtilMetric().updateSystemCpuUtil(0);
+    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(
+        (long)EVENT_NUM_HIGH_THRES * 2);
+    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(
+        (long)EVENT_NUM_HIGH_THRES * 2);
+    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.CPU_SYS_UTIL).updateMetric(0);
 
     handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
     // The number of event processors should increase
@@ -82,25 +92,27 @@ public final class MISDEventProcessorNumAssignerTest {
     verify(eventProcessorManager, times(1)).increaseEventProcessors(prevIncreaseNum);
 
     // Make the number of events to be not enough to increase the event processor number.
-    metric.getNumEventAndWeightMetric().updateNumEvents(0);
-    metric.getNumEventAndWeightMetric().updateNumEvents(0);
+    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(0);
+    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(0);
 
     handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
     // The number of event processors should be not changed
     verify(eventProcessorManager, times(1)).increaseEventProcessors(prevIncreaseNum);
 
     // Many events, low cpu utilization again
-    metric.getNumEventAndWeightMetric().updateNumEvents((long)EVENT_NUM_HIGH_THRES * 2);
-    metric.getNumEventAndWeightMetric().updateNumEvents((long)EVENT_NUM_HIGH_THRES * 2);
+    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(
+        (long)EVENT_NUM_HIGH_THRES * 2);
+    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(
+        (long)EVENT_NUM_HIGH_THRES * 2);
 
     handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
     prevIncreaseNum = (int)(prevIncreaseNum * INCREASE_RATE);
     verify(eventProcessorManager, times(1)).increaseEventProcessors(prevIncreaseNum);
 
     // Few events, low cpu utilization
-    metric.getNumEventAndWeightMetric().updateNumEvents(0);
-    metric.getNumEventAndWeightMetric().updateNumEvents(0);
-    metric.getNumEventAndWeightMetric().updateNumEvents(0);
+    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(0);
+    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(0);
+    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(0);
 
     handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
     // The number of event processors should decrease

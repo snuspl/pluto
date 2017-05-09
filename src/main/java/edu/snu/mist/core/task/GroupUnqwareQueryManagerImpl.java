@@ -25,6 +25,9 @@ import edu.snu.mist.core.task.merging.MergeAwareQueryRemover;
 import edu.snu.mist.core.task.merging.MergingExecutionDags;
 import edu.snu.mist.core.task.metrics.*;
 import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
+import edu.snu.mist.core.task.metrics.parameters.GlobalNumEventAlpha;
+import edu.snu.mist.core.task.metrics.parameters.HeapMemoryUsageAlpha;
+import edu.snu.mist.core.task.metrics.parameters.NonHeapMemoryUsageAlpha;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
@@ -33,6 +36,7 @@ import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
+import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -113,7 +117,8 @@ public final class GroupUnqwareQueryManagerImpl implements QueryManager {
                                        final EventProcessorNumAssigner assigner,
                                        final EventNumMetricEventHandler eventNumHandler,
                                        final MemoryUsageMetricEventHandler memoryUsageHandler,
-                                       final BatchQueryCreator batchQueryCreator) {
+                                       final BatchQueryCreator batchQueryCreator,
+                                       final MetricHolder globalMetricHolder) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
@@ -124,6 +129,19 @@ public final class GroupUnqwareQueryManagerImpl implements QueryManager {
     this.assigner = assigner;
     this.configDagGenerator = configDagGenerator;
     this.batchQueryCreator = batchQueryCreator;
+    try {
+      // Set up metrics which will be used for system management.
+      globalMetricHolder.putEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS, new EWMAMetric(
+          0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalNumEventAlpha.class)));
+      globalMetricHolder.putEWMAMetric(
+          MetricHolder.EWMAMetricType.HEAP_MEM_USAGE, new EWMAMetric(
+              0.0, Tang.Factory.getTang().newInjector().getNamedInstance(HeapMemoryUsageAlpha.class)));
+      globalMetricHolder.putEWMAMetric(
+          MetricHolder.EWMAMetricType.NON_HEAP_MEM_USAGE, new EWMAMetric(
+              0.0, Tang.Factory.getTang().newInjector().getNamedInstance(NonHeapMemoryUsageAlpha.class)));
+    } catch (final InjectionException e) {
+      e.printStackTrace();
+    }
     metricTracker.start();
   }
 

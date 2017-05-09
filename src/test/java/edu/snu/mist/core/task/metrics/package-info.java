@@ -13,20 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
-
 /**
- * Util class for metric test.
+ * Utility classes for metrics.
  */
-public final class MetricUtil {
-
-  private MetricUtil() {
-    // Should not be called.
-  }
-
-  public static double calculateEwma(final double newValue,
-                                     final double oldEwma,
-                                     final double alpha) {
-    return alpha * newValue + (1 - alpha) * oldEwma;
-  }
-}
+package edu.snu.mist.core.task.metrics;
