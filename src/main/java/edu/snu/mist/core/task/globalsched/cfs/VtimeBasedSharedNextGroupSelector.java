@@ -136,8 +136,8 @@ public final class VtimeBasedSharedNextGroupSelector implements NextGroupSelecto
       final double vruntime = groupInfo.getVRuntime() + delta;
       groupInfo.setVRuntime(vruntime);
 
-      if (LOG.isLoggable(Level.FINE)) {
-        LOG.log(Level.FINE, "{0}: Reschedule {1}, ElapsedTime: {2}, Delta: {3}, Vtime: {4}",
+      if (LOG.isLoggable(Level.INFO)) {
+        LOG.log(Level.INFO, "{0}: Reschedule {1}, ElapsedTime: {2}, Delta: {3}, Vtime: {4}",
             new Object[]{Thread.currentThread().getName(), groupInfo, elapsedTime, delta, vruntime});
       }
       addGroup(groupInfo);

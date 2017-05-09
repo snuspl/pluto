@@ -20,6 +20,7 @@ import edu.snu.mist.core.task.ExecutionDags;
 import edu.snu.mist.core.task.OperatorChainManager;
 import edu.snu.mist.core.task.QueryRemover;
 import edu.snu.mist.core.task.QueryStarter;
+import edu.snu.mist.core.task.globalsched.cfs.MistStartTime;
 import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetric;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -88,6 +89,7 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
                                       final EventNumAndWeightMetric eventNumAndWeightMetric,
                                       final QueryStarter queryStarter,
                                       final OperatorChainManager operatorChainManager,
+                                      final MistStartTime mistStartTime,
                                       final QueryRemover queryRemover) {
     this.groupId = groupId;
     this.queryIdList = new ArrayList<>();
@@ -96,7 +98,7 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
     this.queryStarter = queryStarter;
     this.operatorChainManager = operatorChainManager;
     this.queryRemover = queryRemover;
-    this.latestScheduledTime = System.nanoTime();
+    this.latestScheduledTime = mistStartTime.getStartTimeInNano();
     this.vruntime = 0;
     this.active = false;
   }
