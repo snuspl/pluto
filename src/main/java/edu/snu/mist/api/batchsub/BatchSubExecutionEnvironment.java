@@ -122,11 +122,10 @@ public final class BatchSubExecutionEnvironment {
             SerializeUtils.serializeToString(batchSubConfig.getPubTopicGenerateFunc()))
         .setSubTopicGenerateFunc(
             SerializeUtils.serializeToString(batchSubConfig.getSubTopicGenerateFunc()))
-        .setQueryGroupList(batchSubConfig.getQueryGroupList())
-        .setStartQueryNum(batchSubConfig.getStartQueryNum())
+        .setGroupIdList(batchSubConfig.getGroupIdList())
         .build();
     final QueryControlResult queryControlResult =
-        proxyToTask.sendBatchQueries(operatorChainDag, batchSubConfig.getBatchSize());
+        proxyToTask.sendBatchQueries(operatorChainDag, batchSubConfig.getGroupIdList().size());
 
     // Transform QueryControlResult to APIQueryControlResult
     final APIQueryControlResult apiQueryControlResult =

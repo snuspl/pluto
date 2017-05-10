@@ -67,7 +67,7 @@ import static org.mockito.Mockito.when;
 public final class BatchSubQueryManagerTest {
   private QueryManager manager;
   private Tuple<List<String>, AvroOperatorChainDag> tuple;
-  private List<Integer> queryGroupList;
+  private List<String> groupIdList;
   private Injector injector;
   private AvroConfigurationSerializer avroConfigurationSerializer;
   private static final String QUERY_ID_PREFIX = "TestQueryId";
@@ -75,33 +75,30 @@ public final class BatchSubQueryManagerTest {
   private static final String ORIGINAL_PUB_TOPIC = "OriginalPubTopic";
   private static final String ORIGINAL_SUB_TOPIC1 = "OriginalSubTopic1";
   private static final String ORIGINAL_SUB_TOPIC2 = "OriginalSubTopic2";
-  private static final int START_QUERY_NUM = 10;
-  private static final int BATCH_SIZE = 3;
-  private static final String EXPECTED_GROUP_ID = "2";
   private static final String BROKER_URI = "tcp://localhost:12345";
   private static final MISTFunction<MqttMessage, Tuple<MqttMessage, Long>> EXTRACT_FUNC
       = (msg) -> new Tuple<>(msg, 10L);
   private static final MISTFunction<MqttMessage, MqttMessage> MAP_FUNC =
       (msg) -> new MqttMessage("TestData".getBytes());
-  private static final MISTBiFunction<String, Integer, String> PUB_TOPIC_FUNCTION = (groupId, queryNum) ->
+  private static final MISTBiFunction<String, String, String> PUB_TOPIC_FUNCTION = (groupId, queryId) ->
       new StringBuilder("/group")
           .append(groupId)
           .append("/device")
-          .append(queryNum * 3)
+          .append(queryId)
           .append("/pub")
           .toString();
-  private static final MISTBiFunction<String, Integer, Set<String>> SUB_TOPIC_FUNCTION = (groupId, queryNum) -> {
+  private static final MISTBiFunction<String, String, Set<String>> SUB_TOPIC_FUNCTION = (groupId, queryId) -> {
         final Set<String> topicList = new HashSet<>();
         topicList.add(new StringBuilder("/group")
             .append(groupId)
             .append("/device")
-            .append(queryNum * 3 + 1)
+            .append(queryId + "_1")
             .append("/sub")
             .toString());
         topicList.add(new StringBuilder("/group")
             .append(groupId)
             .append("/device")
-            .append(queryNum * 3 + 2)
+            .append(queryId + "_2")
             .append("/sub")
             .toString());
         return topicList;
@@ -117,13 +114,13 @@ public final class BatchSubQueryManagerTest {
   @Before
   public void setUp() throws Exception {
     // Make batch submission configuration
-    // The batch will start from group 1 in this list and end at group 2
-    queryGroupList = new LinkedList<>();
-    queryGroupList.add(9);
-    queryGroupList.add(2);
-    queryGroupList.add(2);
+    // The batch will create a query for group 0 and two queries for group 1
+    groupIdList = new LinkedList<>();
+    groupIdList.add("0");
+    groupIdList.add("1");
+    groupIdList.add("1");
     final BatchSubmissionConfiguration batchSubConfig = new BatchSubmissionConfiguration(
-        SUB_TOPIC_FUNCTION, PUB_TOPIC_FUNCTION, queryGroupList, START_QUERY_NUM, BATCH_SIZE);
+        SUB_TOPIC_FUNCTION, PUB_TOPIC_FUNCTION, groupIdList);
 
     // Create MQTT query having original configuration
     final SourceConfiguration sourceConfiguration1 = MQTTSourceConfiguration.newBuilder()
@@ -163,8 +160,7 @@ public final class BatchSubQueryManagerTest {
             SerializeUtils.serializeToString(batchSubConfig.getPubTopicGenerateFunc()))
         .setSubTopicGenerateFunc(
             SerializeUtils.serializeToString(batchSubConfig.getSubTopicGenerateFunc()))
-        .setQueryGroupList(batchSubConfig.getQueryGroupList())
-        .setStartQueryNum(batchSubConfig.getStartQueryNum())
+        .setGroupIdList(batchSubConfig.getGroupIdList())
         .build();
 
     // Create query id list
@@ -246,11 +242,11 @@ public final class BatchSubQueryManagerTest {
     final AvroOperatorChainDag opChainDag = tuple.getValue();
     final String actualGroupId = opChainDag.getGroupId();
     final Set<String> expectedSubTopicSet =
-        SUB_TOPIC_FUNCTION.apply(actualGroupId, START_QUERY_NUM + BATCH_SIZE - 1);
+        SUB_TOPIC_FUNCTION.apply(actualGroupId, QUERY_ID_PREFIX + "2");
 
     // Test whether the group id is overwritten well
     // The batch creation is expected to end at group 2
-    Assert.assertEquals(EXPECTED_GROUP_ID, actualGroupId);
+    Assert.assertEquals("1", actualGroupId);
     // Test whether the MQTT configuration is overwritten well
     for (final AvroVertexChain avroVertexChain : opChainDag.getAvroVertices()) {
       switch (avroVertexChain.getAvroVertexChainType()) {
@@ -307,7 +303,7 @@ public final class BatchSubQueryManagerTest {
           Assert.assertEquals(BROKER_URI, mqttBrokerURI);
           // The topic should be overwritten
           Assert.assertEquals(
-              PUB_TOPIC_FUNCTION.apply(actualGroupId, START_QUERY_NUM + BATCH_SIZE - 1), mqttPubTopic);
+              PUB_TOPIC_FUNCTION.apply(actualGroupId, QUERY_ID_PREFIX + "2"), mqttPubTopic);
           break;
 
         }
