@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 package edu.snu.mist.core.task.globalsched;
-import edu.snu.mist.core.task.globalsched.cfs.VtimeBasedNextGroupSelector;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.wake.EventHandler;
 
 /**
  * This is an interface that picks a next group for processing queries.
  */
-@DefaultImplementation(VtimeBasedNextGroupSelector.class)
+@DefaultImplementation(DefaultSharedNextGroupSelector.class)
 public interface NextGroupSelector extends EventHandler<GroupEvent> {
 
   /**

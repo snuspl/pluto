@@ -22,6 +22,7 @@ import edu.snu.mist.core.task.eventProcessors.EventProcessorFactory;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.globalsched.*;
 import edu.snu.mist.core.task.globalsched.cfs.CfsSchedulingPeriodCalculator;
+import edu.snu.mist.core.task.globalsched.cfs.RoundRobinBasedSharedNextGroupSelector;
 import edu.snu.mist.core.task.globalsched.cfs.VtimeBasedNextGroupSelectorFactory;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsSchedulingPeriod;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.MinSchedulingPeriod;
@@ -30,6 +31,7 @@ import edu.snu.mist.core.task.globalsched.metrics.MISDEventProcessorNumAssigner;
 import edu.snu.mist.core.task.globalsched.parameters.*;
 import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
 import org.apache.reef.tang.Configuration;
+import org.apache.reef.tang.Configurations;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
@@ -102,15 +104,25 @@ public final class MistGroupSchedulingTaskConfigs {
   /**
    * Get event processor factory (blocking / nonblocking).
    */
-  private Class<? extends EventProcessorFactory> getEventProcessorFactory() {
+  private Configuration getConfigurationForExecutionModel() {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     switch (groupSchedModelType) {
       case "blocking":
-        return GlobalSchedEventProcessorFactory.class;
+        jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedEventProcessorFactory.class);
+        break;
       case "nonblocking":
-        return GlobalSchedNonBlockingEventProcessorFactory.class;
+        jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedNonBlockingEventProcessorFactory.class);
+        break;
+      case "activation":
+        // This model does not schedule inactive groups
+        // It just schedules active groups that have active operator chains
+        jcb.bindImplementation(EventProcessorFactory.class, GroupActivationSharedTreeEventProcessorFactory.class);
+        jcb.bindImplementation(NextGroupSelector.class, RoundRobinBasedSharedNextGroupSelector.class);
+        break;
       default:
         throw new RuntimeException("Invalid group scheduling model: " + groupSchedModelType);
     }
+    return jcb.build();
   }
 
   /**
@@ -124,7 +136,6 @@ public final class MistGroupSchedulingTaskConfigs {
     jcb.bindImplementation(EventProcessorManager.class, DefaultEventProcessorManager.class);
     jcb.bindImplementation(SchedulingPeriodCalculator.class, CfsSchedulingPeriodCalculator.class);
     jcb.bindImplementation(NextGroupSelectorFactory.class, VtimeBasedNextGroupSelectorFactory.class);
-    jcb.bindImplementation(EventProcessorFactory.class, getEventProcessorFactory());
 
     jcb.bindNamedParameter(CpuUtilLowThreshold.class, Double.toString(cpuUtilLowThreshold));
     jcb.bindNamedParameter(EventNumHighThreshold.class, Double.toString(eventNumHighThreshold));
@@ -136,7 +147,7 @@ public final class MistGroupSchedulingTaskConfigs {
     jcb.bindNamedParameter(EventProcessorIncreaseNum.class, Integer.toString(eventProcessorIncreaseNum));
     jcb.bindNamedParameter(GroupSchedModelType.class, groupSchedModelType);
 
-    return jcb.build();
+    return Configurations.merge(getConfigurationForExecutionModel(), jcb.build());
   }
 
   /**

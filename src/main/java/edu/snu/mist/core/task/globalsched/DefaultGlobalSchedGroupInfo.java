@@ -20,6 +20,7 @@ import edu.snu.mist.core.task.ExecutionDags;
 import edu.snu.mist.core.task.OperatorChainManager;
 import edu.snu.mist.core.task.QueryRemover;
 import edu.snu.mist.core.task.QueryStarter;
+import edu.snu.mist.core.task.globalsched.cfs.MistStartTime;
 import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetric;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -77,12 +78,18 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
    */
   private double vruntime;
 
+  /**
+   * The boolean value for checking the status of the group (active/inactive).
+   */
+  private volatile Status status;
+
   @Inject
   private DefaultGlobalSchedGroupInfo(@Parameter(GroupId.class) final String groupId,
                                       final ExecutionDags executionDags,
                                       final EventNumAndWeightMetric eventNumAndWeightMetric,
                                       final QueryStarter queryStarter,
                                       final OperatorChainManager operatorChainManager,
+                                      final MistStartTime mistStartTime,
                                       final QueryRemover queryRemover) {
     this.groupId = groupId;
     this.queryIdList = new ArrayList<>();
@@ -91,8 +98,9 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
     this.queryStarter = queryStarter;
     this.operatorChainManager = operatorChainManager;
     this.queryRemover = queryRemover;
-    this.latestScheduledTime = 0;
+    this.latestScheduledTime = mistStartTime.getStartTimeInNano();
     this.vruntime = 0;
+    this.status = Status.INACTIVE;
   }
 
   /**
@@ -171,6 +179,16 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   @Override
   public void setVRuntime(final double vrt) {
     vruntime = vrt;
+  }
+
+  @Override
+  public void setStatus(final Status stat) {
+    status = stat;
+  }
+
+  @Override
+  public Status getStatus() {
+    return status;
   }
 
   @Override

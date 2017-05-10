@@ -20,8 +20,8 @@ import edu.snu.mist.core.task.OperatorChainManager;
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This is an event processor that can change the operator chain manager.
@@ -29,10 +29,13 @@ import java.util.logging.Level;
  * to execute the events of queries within the group.
  * It also selects another operator chain manager when there are no active operator chain,
  * which means it does not block when the group has no active operator chain.
+ *
+ * This does not reschedule when the group is inactive,
+ * in order to keep the active groups in the next group selector.
  */
-final class GlobalSchedNonBlockingEventProcessor extends Thread implements EventProcessor {
+final class GroupActivationEventProcessor extends Thread implements EventProcessor {
 
-  private static final Logger LOG = Logger.getLogger(GlobalSchedNonBlockingEventProcessor.class.getName());
+  private static final Logger LOG = Logger.getLogger(GroupActivationEventProcessor.class.getName());
 
   /**
    * Variable for checking close or not.
@@ -49,8 +52,8 @@ final class GlobalSchedNonBlockingEventProcessor extends Thread implements Event
    */
   private final NextGroupSelector nextGroupSelector;
 
-  public GlobalSchedNonBlockingEventProcessor(final SchedulingPeriodCalculator schedPeriodCalculator,
-                                              final NextGroupSelector nextGroupSelector) {
+  public GroupActivationEventProcessor(final SchedulingPeriodCalculator schedPeriodCalculator,
+                                       final NextGroupSelector nextGroupSelector) {
     super();
     this.schedPeriodCalculator = schedPeriodCalculator;
     this.nextGroupSelector = nextGroupSelector;
@@ -63,26 +66,37 @@ final class GlobalSchedNonBlockingEventProcessor extends Thread implements Event
   public void run() {
     try {
       while (!Thread.currentThread().isInterrupted() && !closed) {
-        boolean miss = false;
-        final long startTime = System.nanoTime();
         final GlobalSchedGroupInfo groupInfo = nextGroupSelector.getNextExecutableGroup();
         final OperatorChainManager operatorChainManager = groupInfo.getOperatorChainManager();
         final long schedulingPeriod = schedPeriodCalculator.calculateSchedulingPeriod(groupInfo);
 
         if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "{0}: Selected group {1}, Period: {2}",
-              new Object[]{Thread.currentThread().getName(), groupInfo, schedulingPeriod});
+          LOG.log(Level.FINE, "{0}: Selected group {1} ({2}), Period: {3}",
+              new Object[]{Thread.currentThread().getName(), groupInfo, groupInfo.getStatus(), schedulingPeriod});
         }
 
+        // TODO[DELETE]
+        //LOG.log(Level.INFO, "START {0} Group {1} Processing",
+        //    new Object[]{Thread.currentThread().getName(), groupInfo});
+
+        synchronized (groupInfo) {
+          if (groupInfo.getStatus() == GlobalSchedGroupInfo.Status.ACTIVE) {
+            groupInfo.setStatus(GlobalSchedGroupInfo.Status.PROCESSING);
+          } else {
+            throw new RuntimeException(Thread.currentThread().getName() + " Group " + groupInfo +
+                " status should be ACTIVE, but " + groupInfo.getStatus());
+          }
+        }
+
+        // TODO[DELETE]: processedEvent, missedEvent
         long processedEvent = 0;
         long missedEvent = 0;
+        final long startTime = System.nanoTime();
         while (TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) < schedulingPeriod && !closed) {
-          // This is a blocking operator chain manager
-          // So it should not be null
+          // This is a non-blocking operator chain manager
           final OperatorChain operatorChain = operatorChainManager.pickOperatorChain();
           // If it has no active operator chain, choose another group
           if (operatorChain == null) {
-            miss = true;
             break;
           } else {
             if (operatorChain.processNextEvent()) {
@@ -104,16 +118,47 @@ final class GlobalSchedNonBlockingEventProcessor extends Thread implements Event
         }
         // TODO[DELETE]
 
-        if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "{0}: Reschedule group {1}",
-              new Object[]{Thread.currentThread().getName(), groupInfo});
-        }
+        synchronized (groupInfo) {
+          if (operatorChainManager.activeSize() == 0) {
+            // Inactive
+            if (LOG.isLoggable(Level.FINE)) {
+              LOG.log(Level.FINE, "{0}: Deactivate group {1}",
+                  new Object[]{Thread.currentThread().getName(), groupInfo});
+            }
+            groupInfo.setStatus(GlobalSchedGroupInfo.Status.INACTIVE);
+          } else if (groupInfo.getStatus() == GlobalSchedGroupInfo.Status.PROCESSING) {
+            if (LOG.isLoggable(Level.FINE)) {
+              LOG.log(Level.FINE, "{0}: Reschedule group {1}",
+                  new Object[]{Thread.currentThread().getName(), groupInfo});
+            }
 
-        nextGroupSelector.reschedule(groupInfo, miss);
+            // If it is processing status, just reschedule it
+            // Otherwise, do not reschedule it
+            // This does not reschedule when the group is inactive,
+            // in order to keep the active groups in the next group selector.
+            groupInfo.setStatus(GlobalSchedGroupInfo.Status.ACTIVE);
+            // TODO[DELETE]
+            //LOG.log(Level.INFO, "{0} Reschedule Group {1} ({2})", new Object[]{Thread.currentThread().getName(),
+            //groupInfo, groupInfo.getStatus()});
+            nextGroupSelector.reschedule(groupInfo, false);
+          } else if (groupInfo.getStatus() == GlobalSchedGroupInfo.Status.ACTIVE) {
+            // Already rescheduled
+            throw new RuntimeException(
+                Thread.currentThread().getName() + ": Group " + groupInfo + " should not be ACTIVE");
+          }
+        }
       }
+      // TODO[DELETE]
+      //LOG.log(Level.INFO, "END {0} Group {1} Processing",
+      //    new Object[]{Thread.currentThread().getName(), groupInfo});
+
     } catch (final InterruptedException e) {
       // Interrupt occurs while sleeping, so just finishes the process...
+      e.printStackTrace();
       return;
+    } catch (final Exception e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
     }
   }
 

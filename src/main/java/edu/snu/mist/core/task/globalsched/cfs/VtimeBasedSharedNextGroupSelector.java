@@ -15,12 +15,15 @@
  */
 package edu.snu.mist.core.task.globalsched.cfs;
 
+import edu.snu.mist.core.parameters.DefaultGroupWeight;
 import edu.snu.mist.core.task.MistPubSubEventHandler;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfoMap;
 import edu.snu.mist.core.task.globalsched.GroupEvent;
 import edu.snu.mist.core.task.globalsched.NextGroupSelector;
+import edu.snu.mist.core.task.globalsched.cfs.parameters.MinSchedulingPeriod;
+import org.apache.reef.tang.annotations.Parameter;
 
+import javax.inject.Inject;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
@@ -32,10 +35,11 @@ import java.util.logging.Logger;
 /**
  * This calculates a vruntime similar to CFS scheduler.
  * It uses RB-tree with vruntime as a key, and picks a group that has the lowest vruntime.
+ * This is designed for shared among multiple event processors.
  */
-public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
+public final class VtimeBasedSharedNextGroupSelector implements NextGroupSelector {
 
-  private static final Logger LOG = Logger.getLogger(VtimeBasedNextGroupSelector.class.getName());
+  private static final Logger LOG = Logger.getLogger(VtimeBasedSharedNextGroupSelector.class.getName());
 
   /**
    * A Red-Black tree based map to pick a group that has the lowest virtual time.
@@ -52,27 +56,19 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
    */
   private final long minSchedPeriod;
 
-  VtimeBasedNextGroupSelector(final double defaultWeight,
-                              final long minSchedPeriod,
-                              final MistPubSubEventHandler pubSubEventHandler,
-                              final GlobalSchedGroupInfoMap globalSchedGroupInfoMap) {
+  // TODO[DELETE] for debugging
+  private long loggingTime;
+
+  @Inject
+  private VtimeBasedSharedNextGroupSelector(
+      @Parameter(DefaultGroupWeight.class) final double defaultWeight,
+      @Parameter(MinSchedulingPeriod.class) final long minSchedPeriod,
+      final MistPubSubEventHandler pubSubEventHandler) {
     this.rbTreeMap = new TreeMap<>();
     this.defaultWeight = defaultWeight;
     this.minSchedPeriod = minSchedPeriod;
-    initialize(globalSchedGroupInfoMap);
+    this.loggingTime = System.nanoTime();
     pubSubEventHandler.getPubSubEventHandler().subscribe(GroupEvent.class, this);
-  }
-
-  /**
-   * Initialize the rb tree.
-   * @param globalSchedGroupInfoMap
-   */
-  private void initialize(final GlobalSchedGroupInfoMap globalSchedGroupInfoMap) {
-    synchronized (rbTreeMap) {
-      for (final GlobalSchedGroupInfo groupInfo : globalSchedGroupInfoMap.values()) {
-        addGroup(groupInfo);
-      }
-    }
   }
 
   /**
@@ -88,7 +84,7 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
         queue = rbTreeMap.get(vruntime);
       }
       queue.add(groupInfo);
-      rbTreeMap.notify();
+      rbTreeMap.notifyAll();
     }
   }
 
@@ -109,6 +105,14 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
   @Override
   public GlobalSchedGroupInfo getNextExecutableGroup() {
     synchronized (rbTreeMap) {
+
+      // TODO[DELETE] start
+      if (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - loggingTime) >= 5) {
+        LOG.log(Level.INFO, "RB-tree: {0}", new Object[] {rbTreeMap});
+        loggingTime = System.nanoTime();
+      }
+      // TODO[DELETE] end
+
       while (rbTreeMap.isEmpty()) {
         try {
           rbTreeMap.wait();
@@ -136,27 +140,17 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
   @Override
   public void reschedule(final GlobalSchedGroupInfo groupInfo, final boolean miss) {
     synchronized (rbTreeMap) {
-      if (miss && !rbTreeMap.isEmpty()) {
-        final double vruntime = rbTreeMap.lastKey();
-        groupInfo.setVRuntime(vruntime);
+      final long endTime = System.nanoTime();
+      final double elapsedTime =
+          TimeUnit.NANOSECONDS.toMillis(endTime - groupInfo.getLatestScheduledTime()) / 1000.0;
+      final double weight = Math.max(defaultWeight, groupInfo.getEventNumAndWeightMetric().getWeight());
+      final double delta = calculateVRuntimeDelta(elapsedTime, weight);
+      final double vruntime = groupInfo.getVRuntime() + delta;
+      groupInfo.setVRuntime(vruntime);
 
-        if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "{0}: Reschedule {1}, Miss: True, Vtime: {2}",
-              new Object[]{Thread.currentThread().getName(), groupInfo, vruntime});
-        }
-      } else {
-        final long endTime = System.nanoTime();
-        final double elapsedTime =
-            TimeUnit.NANOSECONDS.toMillis(endTime - groupInfo.getLatestScheduledTime()) / 1000.0;
-        final double weight = Math.max(defaultWeight, groupInfo.getEventNumAndWeightMetric().getWeight());
-        final double delta = calculateVRuntimeDelta(elapsedTime, weight);
-        final double vruntime = groupInfo.getVRuntime() + delta;
-        groupInfo.setVRuntime(vruntime);
-
-        if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "{0}: Reschedule {1}, ElapsedTime: {2}, Delta: {3}, Vtime: {4}",
-              new Object[]{Thread.currentThread().getName(), groupInfo, elapsedTime, delta, vruntime});
-        }
+      if (LOG.isLoggable(Level.FINE)) {
+        LOG.log(Level.FINE, "{0}: Reschedule {1}, ElapsedTime: {2}, Delta: {3}, Vtime: {4}",
+            new Object[]{Thread.currentThread().getName(), groupInfo, elapsedTime, delta, vruntime});
       }
       addGroup(groupInfo);
     }
@@ -174,15 +168,6 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
 
   @Override
   public void onNext(final GroupEvent groupEvent) {
-    switch (groupEvent.getGroupEventType()) {
-      case ADDITION:
-        addGroup(groupEvent.getGroupInfo());
-        break;
-      case DELETION:
-        removeGroup(groupEvent.getGroupInfo());
-        break;
-      default:
-        throw new RuntimeException("Invalid group event type: " + groupEvent.getGroupEventType());
-    }
+    // do nothing
   }
 }

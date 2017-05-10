@@ -25,11 +25,13 @@ import edu.snu.mist.core.task.metrics.MetricTrackEventHandler;
 
 import javax.inject.Inject;
 import java.util.Collection;
+import java.util.logging.Logger;
 
 /**
  * A class handles the metric event about EventNumMetric.
  */
 public final class EventNumAndWeightMetricEventHandler implements MetricTrackEventHandler {
+  private static final Logger LOG = Logger.getLogger(EventNumAndWeightMetricEventHandler.class.getName());
 
   /**
    * The map of group ids and group info to update.
@@ -56,6 +58,9 @@ public final class EventNumAndWeightMetricEventHandler implements MetricTrackEve
   public void onNext(final MetricTrackEvent metricTrackEvent) {
     long totalNumEvent = 0;
     double totalWeight = 0;
+
+    final StringBuilder sb = new StringBuilder();
+
     final Collection<GlobalSchedGroupInfo> groupInfos = groupInfoMap.values();
     for (final GlobalSchedGroupInfo groupInfo : groupInfos) {
       // Track the number of event per each group
@@ -68,6 +73,7 @@ public final class EventNumAndWeightMetricEventHandler implements MetricTrackEve
           }
         }
       }
+
       final EventNumAndWeightMetric metric = groupInfo.getEventNumAndWeightMetric();
       metric.updateNumEvents(groupNumEvent);
       totalNumEvent += groupNumEvent;
@@ -76,7 +82,16 @@ public final class EventNumAndWeightMetricEventHandler implements MetricTrackEve
       final double weight = metric.getEwmaNumEvents();
       metric.setWeight(weight);
       totalWeight += weight;
+
+      sb.append("Group ");
+      sb.append(groupInfo);
+      sb.append(" Event: ");
+      sb.append(groupNumEvent);
+      sb.append("\n");
     }
+
+    LOG.info(sb.toString());
+
     globalMetrics.getNumEventAndWeightMetric().updateNumEvents(totalNumEvent);
     globalMetrics.getNumEventAndWeightMetric().setWeight(totalWeight);
   }
