@@ -28,61 +28,39 @@ import java.util.Set;
 public final class BatchSubmissionConfiguration {
 
   /**
-   * A function generates MQTT sink topic to publish from a group id and query number.
+   * A function generates MQTT sink topic to publish from a group id and query id.
    * The first parameter should be group Id.
    */
-  private final MISTBiFunction<String, Integer, String> pubTopicGenerateFunc;
+  private final MISTBiFunction<String, String, String> pubTopicGenerateFunc;
 
   /**
-   * A function generates a set of MQTT sink topic to subscribe from a group id and query number.
+   * A function generates a set of MQTT sink topic to subscribe from a group id and query id.
    * The first parameter should be group Id.
    */
-  private final MISTBiFunction<String, Integer, Set<String>> subTopicGenerateFunc;
+  private final MISTBiFunction<String, String, Set<String>> subTopicGenerateFunc;
 
   /**
-   * A list represents the number of queries per each groups.
+   * A list of group id.
    */
-  private final List<Integer> queryGroupList;
+  private final List<String> groupIdList;
 
-  /**
-   * A query number represents the starting point of query group list.
-   */
-  private final int startQueryNum;
-
-  /**
-   * A batch size represents how many queries will be generated.
-   */
-  private final int batchSize;
-
-  public BatchSubmissionConfiguration(final MISTBiFunction<String, Integer, Set<String>> subTopicGenerateFunc,
-                                      final MISTBiFunction<String, Integer, String> pubTopicGenerateFunc,
-                                      final List<Integer> queryGroupList,
-                                      final int startQueryNum,
-                                      final int batchSize) {
+  public BatchSubmissionConfiguration(final MISTBiFunction<String, String, Set<String>> subTopicGenerateFunc,
+                                      final MISTBiFunction<String, String, String> pubTopicGenerateFunc,
+                                      final List<String> groupIdList) {
     this.subTopicGenerateFunc = subTopicGenerateFunc;
     this.pubTopicGenerateFunc = pubTopicGenerateFunc;
-    this.queryGroupList = queryGroupList;
-    this.startQueryNum = startQueryNum;
-    this.batchSize = batchSize;
+    this.groupIdList = groupIdList;
   }
 
-  public MISTBiFunction<String, Integer, String> getPubTopicGenerateFunc() {
+  public MISTBiFunction<String, String, String> getPubTopicGenerateFunc() {
     return pubTopicGenerateFunc;
   }
 
-  public MISTBiFunction<String, Integer, Set<String>> getSubTopicGenerateFunc() {
+  public MISTBiFunction<String, String, Set<String>> getSubTopicGenerateFunc() {
     return subTopicGenerateFunc;
   }
 
-  public List<Integer> getQueryGroupList() {
-    return queryGroupList;
-  }
-
-  public int getStartQueryNum() {
-    return startQueryNum;
-  }
-
-  public int getBatchSize() {
-    return batchSize;
+  public List<String> getGroupIdList() {
+    return groupIdList;
   }
 }
