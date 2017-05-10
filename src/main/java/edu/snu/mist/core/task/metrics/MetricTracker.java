@@ -95,9 +95,9 @@ public final class MetricTracker implements AutoCloseable {
     final ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
     final long[] threadIds = threadBean.findMonitorDeadlockedThreads();
     final int deadlockedThreads = threadIds != null? threadIds.length : 0;
-    LOG.info("Deadlock: " + deadlockedThreads);
 
     if (deadlockedThreads > 0) {
+      LOG.info("Deadlock: " + deadlockedThreads);
       if (threadIds != null) {
         final ThreadInfo[] infos = threadBean.getThreadInfo(threadIds);
         handleDeadlock(infos);
