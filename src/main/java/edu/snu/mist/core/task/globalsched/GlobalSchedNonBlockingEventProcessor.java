@@ -64,7 +64,6 @@ final class GlobalSchedNonBlockingEventProcessor extends Thread implements Event
     try {
       while (!Thread.currentThread().isInterrupted() && !closed) {
         boolean miss = false;
-        final long startTime = System.nanoTime();
         final GlobalSchedGroupInfo groupInfo = nextGroupSelector.getNextExecutableGroup();
         final OperatorChainManager operatorChainManager = groupInfo.getOperatorChainManager();
         final long schedulingPeriod = schedPeriodCalculator.calculateSchedulingPeriod(groupInfo);
@@ -73,6 +72,8 @@ final class GlobalSchedNonBlockingEventProcessor extends Thread implements Event
           LOG.log(Level.FINE, "{0}: Selected group {1}, Period: {2}",
               new Object[]{Thread.currentThread().getName(), groupInfo, schedulingPeriod});
         }
+
+        final long startTime = System.nanoTime();
 
         while (TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) < schedulingPeriod && !closed) {
           // This is a blocking operator chain manager
