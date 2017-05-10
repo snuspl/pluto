@@ -84,6 +84,8 @@ final class GroupActivationEventProcessor extends Thread implements EventProcess
           }
         }
 
+        // TODO[DELETE] processedEvent
+        long processedEvent = 0;
         while (TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) < schedulingPeriod && !closed) {
           // This is a non-blocking operator chain manager
           final OperatorChain operatorChain = operatorChainManager.pickOperatorChain();
@@ -91,9 +93,17 @@ final class GroupActivationEventProcessor extends Thread implements EventProcess
           if (operatorChain == null) {
             break;
           } else {
-            operatorChain.processNextEvent();
+            if (operatorChain.processNextEvent()) {
+              processedEvent += 1;
+            }
           }
         }
+
+        // TODO[DELETE]
+        LOG.log(Level.INFO, "{0} Processing Time of {1} ({2}): {3}, Processed Event: {4}", new Object[] {
+            Thread.currentThread().getName(), groupInfo, groupInfo.getStatus(),
+            TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime), processedEvent});
+        // TODO[DELETE]
 
         synchronized (groupInfo) {
           if (groupInfo.getStatus() == GlobalSchedGroupInfo.Status.PROCESSING) {
