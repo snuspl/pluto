@@ -109,8 +109,8 @@ final class GroupActivationEventProcessor extends Thread implements EventProcess
 
 
         // TODO[DELETE]
-        if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "{0} Processing Time of {1} ({2}): {3}, Exp Period: {4}, Processed Event: {5}, " +
+        if (LOG.isLoggable(Level.INFO)) {
+          LOG.log(Level.INFO, "{0} Processing Time of {1} ({2}): {3}, Exp Period: {4}, Processed Event: {5}, " +
               "Missed Event: {6}", new Object[]{
               Thread.currentThread().getName(), groupInfo, groupInfo.getStatus(),
               TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime),
