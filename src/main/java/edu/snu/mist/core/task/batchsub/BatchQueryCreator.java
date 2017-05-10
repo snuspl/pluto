@@ -18,6 +18,7 @@ package edu.snu.mist.core.task.batchsub;
 
 import edu.snu.mist.api.datastreams.configurations.*;
 import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.parameters.MQTTBrokerURI;
 import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
@@ -41,6 +42,7 @@ import javax.inject.Inject;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * TODO[DELETE] this code is for test.
@@ -82,9 +84,9 @@ public final class BatchQueryCreator {
     final ClassLoader classLoader = classLoaderProvider.newInstance(urls);
 
     // Load the batch submission configuration
-    final MISTFunction<String, String> pubTopicFunc = SerializeUtils.deserializeFromString(
+    final MISTBiFunction<String, Integer, String> pubTopicFunc = SerializeUtils.deserializeFromString(
         operatorChainDag.getPubTopicGenerateFunc(), classLoader);
-    final MISTFunction<String, String> subTopicFunc = SerializeUtils.deserializeFromString(
+    final MISTBiFunction<String, Integer, Set<String>> subTopicFunc = SerializeUtils.deserializeFromString(
         operatorChainDag.getSubTopicGenerateFunc(), classLoader);
     final List<Integer> queryGroupList = operatorChainDag.getQueryGroupList();
     final int startQueryNum = operatorChainDag.getStartQueryNum();
@@ -101,15 +103,15 @@ public final class BatchQueryCreator {
     // The remaining query to start in the starting group
     int remain = sum - startQueryNum + 1;
     String newGroupId = String.valueOf(group);
-    String queryNum;
+    int queryNum;
+    Iterator<String> subTopicItr;
     String pubTopic;
-    String subTopic;
 
     for (int i = 0; i < queryIdList.size(); i++) {
       // Set the topic according to the query number
-      queryNum = String.valueOf(startQueryNum + i);
-      pubTopic = pubTopicFunc.apply(queryNum);
-      subTopic = subTopicFunc.apply(queryNum);
+      queryNum = startQueryNum + i;
+      pubTopic = pubTopicFunc.apply(newGroupId, queryNum);
+      subTopicItr = subTopicFunc.apply(newGroupId, queryNum).iterator();
 
       // Overwrite the group id
       operatorChainDag.setGroupId(newGroupId);
@@ -157,7 +159,7 @@ public final class BatchQueryCreator {
 
             final Configuration modifiedDataGeneratorConf = builder
                 .setBrokerURI(mqttBrokerURI)
-                .setTopic(subTopic)
+                .setTopic(subTopicItr.next())
                 .build().getConfiguration();
             final Configuration modifiedConf =
                 Configurations.merge(modifiedDataGeneratorConf, defaultWatermarkConfig.getConfiguration());

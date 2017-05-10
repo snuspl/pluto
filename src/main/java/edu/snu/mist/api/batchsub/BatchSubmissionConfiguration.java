@@ -15,9 +15,10 @@
  */
 package edu.snu.mist.api.batchsub;
 
-import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.common.functions.MISTBiFunction;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * TODO[DELETE] this code is for test.
@@ -27,14 +28,16 @@ import java.util.List;
 public final class BatchSubmissionConfiguration {
 
   /**
-   * A function generates MQTT sink topic to publish from a query number.
+   * A function generates MQTT sink topic to publish from a group id and query number.
+   * The first parameter should be group Id.
    */
-  private final MISTFunction<String, String> pubTopicGenerateFunc;
+  private final MISTBiFunction<String, Integer, String> pubTopicGenerateFunc;
 
   /**
-   * A function generates MQTT source topic to subscribe from a query number.
+   * A function generates a set of MQTT sink topic to subscribe from a group id and query number.
+   * The first parameter should be group Id.
    */
-  private final MISTFunction<String, String> subTopicGenerateFunc;
+  private final MISTBiFunction<String, Integer, Set<String>> subTopicGenerateFunc;
 
   /**
    * A list represents the number of queries per each groups.
@@ -51,8 +54,8 @@ public final class BatchSubmissionConfiguration {
    */
   private final int batchSize;
 
-  public BatchSubmissionConfiguration(final MISTFunction<String, String> subTopicGenerateFunc,
-                                      final MISTFunction<String, String> pubTopicGenerateFunc,
+  public BatchSubmissionConfiguration(final MISTBiFunction<String, Integer, Set<String>> subTopicGenerateFunc,
+                                      final MISTBiFunction<String, Integer, String> pubTopicGenerateFunc,
                                       final List<Integer> queryGroupList,
                                       final int startQueryNum,
                                       final int batchSize) {
@@ -63,11 +66,11 @@ public final class BatchSubmissionConfiguration {
     this.batchSize = batchSize;
   }
 
-  public MISTFunction<String, String> getPubTopicGenerateFunc() {
+  public MISTBiFunction<String, Integer, String> getPubTopicGenerateFunc() {
     return pubTopicGenerateFunc;
   }
 
-  public MISTFunction<String, String> getSubTopicGenerateFunc() {
+  public MISTBiFunction<String, Integer, Set<String>> getSubTopicGenerateFunc() {
     return subTopicGenerateFunc;
   }
 

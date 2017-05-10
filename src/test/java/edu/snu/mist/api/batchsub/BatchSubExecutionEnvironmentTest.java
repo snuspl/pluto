@@ -18,7 +18,7 @@ package edu.snu.mist.api.batchsub;
 import edu.snu.mist.api.*;
 import edu.snu.mist.api.utils.MockDriverServer;
 import edu.snu.mist.api.utils.MockTaskServer;
-import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.formats.avro.*;
 import edu.snu.mist.utils.TestParameters;
@@ -32,9 +32,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  * TODO[DELETE] this code is for test.
@@ -80,8 +78,31 @@ public class BatchSubExecutionEnvironmentTest {
     // Step 3: Send a query in batch manner and check whether the query comes to the task correctly
     final BatchSubExecutionEnvironment executionEnvironment = new BatchSubExecutionEnvironment(
         driverHost, driverPortNum);
-    final MISTFunction<String, String> pubTopicGenerateFunc = (str) -> "/device" + str + "/pub";
-    final MISTFunction<String, String> subTopicGenerateFunc = (str) -> "/device" + str + "/sub";
+    final MISTBiFunction<String, Integer, String> pubTopicGenerateFunc = (groupId, queryNum) ->
+        new StringBuilder("/group")
+            .append(groupId)
+            .append("/device")
+            .append(queryNum + 2)
+            .append("/pub")
+            .toString();
+    final MISTBiFunction<String, Integer, Set<String>> subTopicGenerateFunc = (groupId, queryNum) -> {
+      final Set<String> topicList = new HashSet<>();
+      topicList.add(
+          new StringBuilder("/group")
+              .append(groupId)
+              .append("/device")
+              .append(queryNum + 3)
+              .append("/sub")
+              .toString());
+      topicList.add(
+          new StringBuilder("/group")
+              .append(groupId)
+              .append("/device")
+              .append(queryNum + 4)
+              .append("/sub")
+              .toString());
+      return topicList;
+    };
     final List<Integer> queryGroupList = new LinkedList<>();
     queryGroupList.add(10);
     queryGroupList.add(20);

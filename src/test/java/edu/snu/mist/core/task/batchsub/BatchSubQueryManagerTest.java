@@ -18,9 +18,11 @@ package edu.snu.mist.core.task.batchsub;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.api.batchsub.BatchSubmissionConfiguration;
+import edu.snu.mist.api.datastreams.ContinuousStream;
 import edu.snu.mist.api.datastreams.configurations.MQTTSourceConfiguration;
 import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.graph.AdjacentListDAG;
 import edu.snu.mist.common.graph.DAG;
@@ -54,7 +56,6 @@ import org.mockito.Matchers;
 
 import java.io.File;
 import java.util.*;
-import java.util.logging.Logger;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -72,22 +73,45 @@ public final class BatchSubQueryManagerTest {
   private static final String QUERY_ID_PREFIX = "TestQueryId";
   private static final String ORIGINAL_GROUP_ID = "OriginalGroupId";
   private static final String ORIGINAL_PUB_TOPIC = "OriginalPubTopic";
-  private static final String ORIGINAL_SUB_TOPIC = "OriginalSubTopic";
+  private static final String ORIGINAL_SUB_TOPIC1 = "OriginalSubTopic1";
+  private static final String ORIGINAL_SUB_TOPIC2 = "OriginalSubTopic2";
   private static final int START_QUERY_NUM = 10;
   private static final int BATCH_SIZE = 3;
   private static final String EXPECTED_GROUP_ID = "2";
   private static final String BROKER_URI = "tcp://localhost:12345";
   private static final MISTFunction<MqttMessage, Tuple<MqttMessage, Long>> EXTRACT_FUNC
       = (msg) -> new Tuple<>(msg, 10L);
-  private static final MISTFunction<MqttMessage, String> MAP_FUNC = (msg) -> "TestData";
-  private static final MISTFunction<String, String> PUB_TOPIC_FUNCTION = (queryNum) -> "/group" + queryNum + "/pub";
-  private static final MISTFunction<String, String> SUB_TOPIC_FUNCTION = (queryNum) -> "/group" + queryNum + "/sub";
-  private static final Logger LOG = Logger.getLogger(BatchSubQueryManagerTest.class.getName());
+  private static final MISTFunction<MqttMessage, MqttMessage> MAP_FUNC =
+      (msg) -> new MqttMessage("TestData".getBytes());
+  private static final MISTBiFunction<String, Integer, String> PUB_TOPIC_FUNCTION = (groupId, queryNum) ->
+      new StringBuilder("/group")
+          .append(groupId)
+          .append("/device")
+          .append(queryNum * 3)
+          .append("/pub")
+          .toString();
+  private static final MISTBiFunction<String, Integer, Set<String>> SUB_TOPIC_FUNCTION = (groupId, queryNum) -> {
+        final Set<String> topicList = new HashSet<>();
+        topicList.add(new StringBuilder("/group")
+            .append(groupId)
+            .append("/device")
+            .append(queryNum * 3 + 1)
+            .append("/sub")
+            .toString());
+        topicList.add(new StringBuilder("/group")
+            .append(groupId)
+            .append("/device")
+            .append(queryNum * 3 + 2)
+            .append("/sub")
+            .toString());
+        return topicList;
+      };
 
   /**
    * Build a simple query and make the AvroOperatorChainDag.
    * The simple query will consists of:
-   * mqttSrc -> map -> mqttSink
+   * mqttSrc1 -> union -> map -> mqttSink
+   * mqttSrc2
    * This query will be duplicated and the group id, topic configuration of source and sink will be overwritten.
    */
   @Before
@@ -102,15 +126,22 @@ public final class BatchSubQueryManagerTest {
         SUB_TOPIC_FUNCTION, PUB_TOPIC_FUNCTION, queryGroupList, START_QUERY_NUM, BATCH_SIZE);
 
     // Create MQTT query having original configuration
-    final SourceConfiguration sourceConfiguration = MQTTSourceConfiguration.newBuilder()
+    final SourceConfiguration sourceConfiguration1 = MQTTSourceConfiguration.newBuilder()
         .setBrokerURI(BROKER_URI)
-        .setTopic(ORIGINAL_PUB_TOPIC)
+        .setTopic(ORIGINAL_SUB_TOPIC1)
+        .setTimestampExtractionFunction(EXTRACT_FUNC)
+        .build();
+    final SourceConfiguration sourceConfiguration2 = MQTTSourceConfiguration.newBuilder()
+        .setBrokerURI(BROKER_URI)
+        .setTopic(ORIGINAL_SUB_TOPIC2)
         .setTimestampExtractionFunction(EXTRACT_FUNC)
         .build();
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(ORIGINAL_GROUP_ID);
-    queryBuilder.mqttStream(sourceConfiguration)
+    final ContinuousStream<MqttMessage> mqttStream1 = queryBuilder.mqttStream(sourceConfiguration1);
+    final ContinuousStream<MqttMessage> mqttStream2 = queryBuilder.mqttStream(sourceConfiguration2);
+    mqttStream1.union(mqttStream2)
         .map(MAP_FUNC)
-        .mqttOutput(BROKER_URI, ORIGINAL_SUB_TOPIC);
+        .mqttOutput(BROKER_URI, ORIGINAL_PUB_TOPIC);
     final MISTQuery query = queryBuilder.build();
 
     // Make fake jar upload result
@@ -213,11 +244,13 @@ public final class BatchSubQueryManagerTest {
     manager = queryManagerBuild(tuple, dagGenerator);
     manager.createBatch(tuple);
     final AvroOperatorChainDag opChainDag = tuple.getValue();
+    final String actualGroupId = opChainDag.getGroupId();
+    final Set<String> expectedSubTopicSet =
+        SUB_TOPIC_FUNCTION.apply(actualGroupId, START_QUERY_NUM + BATCH_SIZE - 1);
 
     // Test whether the group id is overwritten well
     // The batch creation is expected to end at group 2
-    Assert.assertEquals(EXPECTED_GROUP_ID, opChainDag.getGroupId());
-
+    Assert.assertEquals(EXPECTED_GROUP_ID, actualGroupId);
     // Test whether the MQTT configuration is overwritten well
     for (final AvroVertexChain avroVertexChain : opChainDag.getAvroVertices()) {
       switch (avroVertexChain.getAvroVertexChainType()) {
@@ -228,16 +261,27 @@ public final class BatchSubQueryManagerTest {
           // Restore the configuration and see whether it is overwritten well
           final Injector newInjector = Tang.Factory.getTang().newInjector(modifiedConf);
           final String mqttBrokerURI = newInjector.getNamedInstance(MQTTBrokerURI.class);
-          final String mqttSubTopic = newInjector.getNamedInstance(MQTTTopic.class);
+          final String mqttActualSubTopic = newInjector.getNamedInstance(MQTTTopic.class);
           final String serializedTimestampFunc = newInjector.getNamedInstance(SerializedTimestampExtractUdf.class);
           final MISTFunction<MqttMessage, Tuple<MqttMessage, Long>> timestampFunc =
               SerializeUtils.deserializeFromString(serializedTimestampFunc);
 
           // The broker URI should not be overwritten
           Assert.assertEquals(BROKER_URI, mqttBrokerURI);
+
           // The topic should be overwritten
-          Assert.assertEquals(
-              SUB_TOPIC_FUNCTION.apply(String.valueOf(START_QUERY_NUM + BATCH_SIZE - 1)), mqttSubTopic);
+          boolean matched = false;
+          final Iterator<String> itr = expectedSubTopicSet.iterator();
+          while(itr.hasNext()) {
+            final String expectedSubTopic = itr.next();
+            if (expectedSubTopic.equals(mqttActualSubTopic)) {
+              itr.remove();
+              matched = true;
+              break;
+            }
+          }
+          Assert.assertTrue(matched);
+
           // The timestamp extract function should not be modified
           final MqttMessage tmpMsg = new MqttMessage();
           final Tuple<MqttMessage, Long> expectedTuple = EXTRACT_FUNC.apply(tmpMsg);
@@ -263,7 +307,7 @@ public final class BatchSubQueryManagerTest {
           Assert.assertEquals(BROKER_URI, mqttBrokerURI);
           // The topic should be overwritten
           Assert.assertEquals(
-              PUB_TOPIC_FUNCTION.apply(String.valueOf(START_QUERY_NUM + BATCH_SIZE - 1)), mqttPubTopic);
+              PUB_TOPIC_FUNCTION.apply(actualGroupId, START_QUERY_NUM + BATCH_SIZE - 1), mqttPubTopic);
           break;
 
         }
