@@ -69,7 +69,6 @@ final class GroupActivationEventProcessor extends Thread implements EventProcess
         final GlobalSchedGroupInfo groupInfo = nextGroupSelector.getNextExecutableGroup();
         final OperatorChainManager operatorChainManager = groupInfo.getOperatorChainManager();
         final long schedulingPeriod = schedPeriodCalculator.calculateSchedulingPeriod(groupInfo);
-        final long startTime = System.nanoTime();
 
         if (LOG.isLoggable(Level.FINE)) {
           LOG.log(Level.FINE, "{0}: Selected group {1} ({2}), Period: {3}",
@@ -92,6 +91,7 @@ final class GroupActivationEventProcessor extends Thread implements EventProcess
         // TODO[DELETE]: processedEvent, missedEvent
         long processedEvent = 0;
         long missedEvent = 0;
+        final long startTime = System.nanoTime();
         while (TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) < schedulingPeriod && !closed) {
           // This is a non-blocking operator chain manager
           final OperatorChain operatorChain = operatorChainManager.pickOperatorChain();
@@ -110,7 +110,7 @@ final class GroupActivationEventProcessor extends Thread implements EventProcess
 
         // TODO[DELETE]
         if (LOG.isLoggable(Level.INFO)) {
-          LOG.log(Level.INFO, "{0} Processing Time of {1} ({2}): {3}, Exp Period: {4}, Processed Event: {5}, " +
+          LOG.log(Level.INFO, "{0} Processing Time of Group {1} ({2}): {3}, Exp Period: {4}, Processed Event: {5}, " +
               "Missed Event: {6}", new Object[]{
               Thread.currentThread().getName(), groupInfo, groupInfo.getStatus(),
               TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime),
