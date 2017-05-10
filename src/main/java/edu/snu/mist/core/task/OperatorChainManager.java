@@ -39,4 +39,6 @@ public interface OperatorChainManager {
    * @return an operator chain.
    */
   OperatorChain pickOperatorChain() throws InterruptedException;
+
+  int activeSize();
 }

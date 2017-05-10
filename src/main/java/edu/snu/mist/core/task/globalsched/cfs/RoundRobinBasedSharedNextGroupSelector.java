@@ -27,6 +27,7 @@ import javax.inject.Inject;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * This calculates a vruntime similar to CFS scheduler.
@@ -74,6 +75,9 @@ public final class RoundRobinBasedSharedNextGroupSelector implements NextGroupSe
   private void addGroup(final GlobalSchedGroupInfo groupInfo) {
     synchronized (queue) {
       queue.add(groupInfo);
+      // TODO[DELETE]
+      //LOG.log(Level.INFO, "{0} add Group {1} to Queue: {2}",
+      //    new Object[]{Thread.currentThread().getName(), groupInfo, queue});
       if (queue.size() <= 1) {
         queue.notifyAll();
       }
@@ -96,13 +100,25 @@ public final class RoundRobinBasedSharedNextGroupSelector implements NextGroupSe
 
       while (queue.isEmpty()) {
         try {
+          // TODO[DELETE]
+          LOG.log(Level.FINE, "{0} WAIT QUEUE",
+              new Object[]{Thread.currentThread().getName()});
+
           queue.wait();
+
+          // TODO[DELETE]
+          LOG.log(Level.FINE, "{0} WAKEUP QUEUE",
+              new Object[]{Thread.currentThread().getName()});
+
         } catch (final InterruptedException e) {
           e.printStackTrace();
         }
       }
 
       final GlobalSchedGroupInfo groupInfo = queue.poll();
+      // TODO[DELETE]
+      //LOG.log(Level.INFO, "{0} rm Group {1} from Queue: {2}",
+      //    new Object[]{Thread.currentThread().getName(), groupInfo, queue});
       groupInfo.setLatestScheduledTime(System.nanoTime());
       return groupInfo;
     }

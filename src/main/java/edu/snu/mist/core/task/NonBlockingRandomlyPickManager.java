@@ -63,4 +63,9 @@ public final class NonBlockingRandomlyPickManager implements OperatorChainManage
       }
     }
   }
+
+  @Override
+  public int activeSize() {
+    return queues.size();
+  }
 }

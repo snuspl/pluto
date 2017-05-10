@@ -66,26 +66,32 @@ final class GroupActivationEventProcessor extends Thread implements EventProcess
   public void run() {
     try {
       while (!Thread.currentThread().isInterrupted() && !closed) {
-        final long startTime = System.nanoTime();
         final GlobalSchedGroupInfo groupInfo = nextGroupSelector.getNextExecutableGroup();
         final OperatorChainManager operatorChainManager = groupInfo.getOperatorChainManager();
         final long schedulingPeriod = schedPeriodCalculator.calculateSchedulingPeriod(groupInfo);
+        final long startTime = System.nanoTime();
 
         if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "{0}: Selected group {1}, Period: {2}",
-              new Object[]{Thread.currentThread().getName(), groupInfo, schedulingPeriod});
+          LOG.log(Level.FINE, "{0}: Selected group {1} ({2}), Period: {3}",
+              new Object[]{Thread.currentThread().getName(), groupInfo, groupInfo.getStatus(), schedulingPeriod});
         }
+
+        // TODO[DELETE]
+        //LOG.log(Level.INFO, "START {0} Group {1} Processing",
+        //    new Object[]{Thread.currentThread().getName(), groupInfo});
 
         synchronized (groupInfo) {
           if (groupInfo.getStatus() == GlobalSchedGroupInfo.Status.ACTIVE) {
             groupInfo.setStatus(GlobalSchedGroupInfo.Status.PROCESSING);
           } else {
-            throw new RuntimeException("Group status should be ACTIVE, but " + groupInfo.getStatus());
+            throw new RuntimeException(Thread.currentThread().getName() + " Group " + groupInfo +
+                " status should be ACTIVE, but " + groupInfo.getStatus());
           }
         }
 
-        // TODO[DELETE] processedEvent
+        // TODO[DELETE]: processedEvent, missedEvent
         long processedEvent = 0;
+        long missedEvent = 0;
         while (TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) < schedulingPeriod && !closed) {
           // This is a non-blocking operator chain manager
           final OperatorChain operatorChain = operatorChainManager.pickOperatorChain();
@@ -95,18 +101,32 @@ final class GroupActivationEventProcessor extends Thread implements EventProcess
           } else {
             if (operatorChain.processNextEvent()) {
               processedEvent += 1;
+            } else {
+              missedEvent += 1;
             }
           }
         }
 
+
         // TODO[DELETE]
-        LOG.log(Level.INFO, "{0} Processing Time of {1} ({2}): {3}, Processed Event: {4}", new Object[] {
-            Thread.currentThread().getName(), groupInfo, groupInfo.getStatus(),
-            TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime), processedEvent});
+        if (LOG.isLoggable(Level.FINE)) {
+          LOG.log(Level.FINE, "{0} Processing Time of {1} ({2}): {3}, Exp Period: {4}, Processed Event: {5}, " +
+              "Missed Event: {6}", new Object[]{
+              Thread.currentThread().getName(), groupInfo, groupInfo.getStatus(),
+              TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime),
+              schedulingPeriod, processedEvent, missedEvent});
+        }
         // TODO[DELETE]
 
         synchronized (groupInfo) {
-          if (groupInfo.getStatus() == GlobalSchedGroupInfo.Status.PROCESSING) {
+          if (operatorChainManager.activeSize() == 0) {
+            // Inactive
+            if (LOG.isLoggable(Level.FINE)) {
+              LOG.log(Level.FINE, "{0}: Deactivate group {1}",
+                  new Object[]{Thread.currentThread().getName(), groupInfo});
+            }
+            groupInfo.setStatus(GlobalSchedGroupInfo.Status.INACTIVE);
+          } else if (groupInfo.getStatus() == GlobalSchedGroupInfo.Status.PROCESSING) {
             if (LOG.isLoggable(Level.FINE)) {
               LOG.log(Level.FINE, "{0}: Reschedule group {1}",
                   new Object[]{Thread.currentThread().getName(), groupInfo});
@@ -117,21 +137,28 @@ final class GroupActivationEventProcessor extends Thread implements EventProcess
             // This does not reschedule when the group is inactive,
             // in order to keep the active groups in the next group selector.
             groupInfo.setStatus(GlobalSchedGroupInfo.Status.ACTIVE);
+            // TODO[DELETE]
+            //LOG.log(Level.INFO, "{0} Reschedule Group {1} ({2})", new Object[]{Thread.currentThread().getName(),
+            //groupInfo, groupInfo.getStatus()});
             nextGroupSelector.reschedule(groupInfo, false);
           } else if (groupInfo.getStatus() == GlobalSchedGroupInfo.Status.ACTIVE) {
             // Already rescheduled
-            LOG.log(Level.WARNING, "Group {0} already rescheduled", new Object[] {groupInfo});
-          } else {
-            if (LOG.isLoggable(Level.FINE)) {
-              LOG.log(Level.FINE, "{0}: Deactivate group {1}",
-                  new Object[]{Thread.currentThread().getName(), groupInfo});
-            }
+            throw new RuntimeException(
+                Thread.currentThread().getName() + ": Group " + groupInfo + " should not be ACTIVE");
           }
         }
       }
+      // TODO[DELETE]
+      //LOG.log(Level.INFO, "END {0} Group {1} Processing",
+      //    new Object[]{Thread.currentThread().getName(), groupInfo});
+
     } catch (final InterruptedException e) {
       // Interrupt occurs while sleeping, so just finishes the process...
+      e.printStackTrace();
       return;
+    } catch (final Exception e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
     }
   }
 
