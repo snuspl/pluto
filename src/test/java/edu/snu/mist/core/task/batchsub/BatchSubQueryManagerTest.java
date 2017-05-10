@@ -33,7 +33,10 @@ import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
 import edu.snu.mist.core.parameters.PlanStorePath;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.task.globalsched.GroupAwareGlobalSchedQueryManagerImpl;
+import edu.snu.mist.core.task.globalsched.GroupEvent;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
+import edu.snu.mist.core.task.threadbased.ThreadBasedQueryManagerImpl;
 import edu.snu.mist.formats.avro.*;
 import junit.framework.Assert;
 import org.apache.reef.io.Tuple;
@@ -42,6 +45,7 @@ import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
+import org.apache.reef.wake.EventHandler;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.junit.After;
 import org.junit.Before;
@@ -157,6 +161,7 @@ public final class BatchSubQueryManagerTest {
     jcb.bindNamedParameter(RPCServerPort.class, "20332");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
     jcb.bindNamedParameter(ExecutionModelOption.class, "1");
+    jcb.bindImplementation(QueryManager.class, GroupAwareQueryManagerImpl.class);
     injector = Tang.Factory.getTang().newInjector(jcb.build());
     testBatchSubmitQueryHelper();
   }
@@ -170,7 +175,10 @@ public final class BatchSubQueryManagerTest {
     jcb.bindNamedParameter(RPCServerPort.class, "20333");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
     jcb.bindNamedParameter(ExecutionModelOption.class, "2");
+    jcb.bindImplementation(QueryManager.class, GroupAwareGlobalSchedQueryManagerImpl.class);
     injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final MistPubSubEventHandler pubSubEventHandler = injector.getInstance(MistPubSubEventHandler.class);
+    new TestGroupEventHandler(pubSubEventHandler);
     testBatchSubmitQueryHelper();
   }
 
@@ -183,6 +191,7 @@ public final class BatchSubQueryManagerTest {
     jcb.bindNamedParameter(RPCServerPort.class, "20334");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
     jcb.bindNamedParameter(ExecutionModelOption.class, "3");
+    jcb.bindImplementation(QueryManager.class, ThreadBasedQueryManagerImpl.class);
     injector = Tang.Factory.getTang().newInjector(jcb.build());
     testBatchSubmitQueryHelper();
   }
@@ -299,6 +308,21 @@ public final class BatchSubQueryManagerTest {
         des.delete();
       }
       planFolder.delete();
+    }
+  }
+
+  /**
+   * A simple group event handler for test.
+   */
+  private final class TestGroupEventHandler implements EventHandler<GroupEvent> {
+
+    private TestGroupEventHandler(final MistPubSubEventHandler pubSubEventHandler) {
+      pubSubEventHandler.getPubSubEventHandler().subscribe(GroupEvent.class, this);
+    }
+
+    @Override
+    public void onNext(final GroupEvent groupEvent) {
+      // Do nothing
     }
   }
 }
