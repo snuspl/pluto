@@ -74,6 +74,8 @@ final class GlobalSchedNonBlockingEventProcessor extends Thread implements Event
               new Object[]{Thread.currentThread().getName(), groupInfo, schedulingPeriod});
         }
 
+        long processedEvent = 0;
+        long missedEvent = 0;
         while (TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) < schedulingPeriod && !closed) {
           // This is a blocking operator chain manager
           // So it should not be null
@@ -83,9 +85,24 @@ final class GlobalSchedNonBlockingEventProcessor extends Thread implements Event
             miss = true;
             break;
           } else {
-            operatorChain.processNextEvent();
+            if (operatorChain.processNextEvent()) {
+              processedEvent += 1;
+            } else {
+              missedEvent += 1;
+            }
           }
         }
+
+
+        // TODO[DELETE]
+        if (LOG.isLoggable(Level.INFO)) {
+          LOG.log(Level.INFO, "{0} Processing Time of Group {1} ({2}): {3}, Exp Period: {4}, Processed Event: {5}, " +
+              "Missed Event: {6}", new Object[]{
+              Thread.currentThread().getName(), groupInfo, groupInfo.getStatus(),
+              TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime),
+              schedulingPeriod, processedEvent, missedEvent});
+        }
+        // TODO[DELETE]
 
         if (LOG.isLoggable(Level.FINE)) {
           LOG.log(Level.FINE, "{0}: Reschedule group {1}",
