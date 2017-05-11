@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 package edu.snu.mist.core.task.globalsched;
+
 import edu.snu.mist.core.task.globalsched.cfs.VtimeBasedNextGroupSelector;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.wake.EventHandler;
+
+import java.util.Collection;
 
 /**
  * This is an interface that picks a next group for processing queries.
@@ -39,4 +42,10 @@ public interface NextGroupSelector extends EventHandler<GroupEvent> {
    * @param miss true if the group has no active chain
    */
   void reschedule(GlobalSchedGroupInfo groupInfo, boolean miss);
+
+  /**
+   * Re-schedule the groups to the selector.
+   * @param groupInfos group infos
+   */
+  void reschedule(Collection<GlobalSchedGroupInfo> groupInfos);
 }

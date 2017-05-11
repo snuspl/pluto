@@ -13,18 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched;
-import edu.snu.mist.core.task.globalsched.roundrobin.WeightedRRNextGroupSelectorFactory;
-import org.apache.reef.tang.annotations.DefaultImplementation;
-
 /**
- * This is a factory class for NextGroupSelector.
+ * Test classes for round-robin scheduling.
  */
-@DefaultImplementation(WeightedRRNextGroupSelectorFactory.class)
-public interface NextGroupSelectorFactory {
-  /**
-   * Creates a new next group selector.
-   * @return next group selector
-   */
-  NextGroupSelector newInstance();
-}
+package edu.snu.mist.core.task.globalsched.roundrobin;
