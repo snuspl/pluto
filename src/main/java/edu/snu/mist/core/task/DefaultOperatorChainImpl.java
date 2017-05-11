@@ -63,11 +63,6 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
   private final AtomicReference<Status> status;
 
   /**
-   * The operator chain's ID is the operatorId of the first physical operator.
-   */
-  private String operatorChainId;
-
-  /**
    * The operator chain manager which would manage this operator chain.
    */
   private OperatorChainManager operatorChainManager;
@@ -78,7 +73,6 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
     this.status = new AtomicReference<>(Status.READY);
     this.outputEmitter = null;
     this.operatorChainManager = null;
-    this.operatorChainId = "";
   }
 
   @Override
@@ -92,7 +86,6 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
       }
     }
     operators.add(0, newOperator);
-    operatorChainId = operators.get(0).getId();
   }
 
   @Override
@@ -100,8 +93,6 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
     if (!operators.isEmpty()) {
       final PhysicalOperator lastOperator = operators.get(operators.size() - 1);
       lastOperator.getOperator().setOutputEmitter(new NextOperatorEmitter(newOperator));
-    } else {
-      operatorChainId = newOperator.getId();
     }
     if (outputEmitter != null) {
       newOperator.getOperator().setOutputEmitter(outputEmitter);
@@ -189,7 +180,7 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
 
   @Override
   public String getExecutionVertexId() {
-    return operatorChainId;
+    return operators.get(0).getId();
   }
 
   private void process(final Tuple<MistEvent, Direction> input) {
@@ -265,7 +256,7 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
       return false;
     }
 
-    if (!operatorChainId.equals(that.operatorChainId)) {
+    if (!operators.get(0).getId().equals(that.operators.get(0).getId())) {
       return false;
     }
 
@@ -274,14 +265,14 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
 
   @Override
   public int hashCode() {
-    return 31 * operators.hashCode() + operatorChainId.hashCode();
+    return 31 * operators.hashCode() + operators.get(0).getId().hashCode();
   }
 
-    /**
-     * An output emitter forwarding events to the next operator.
-     * It only has one stream for input because the operators are chained sequentially.
-     * Thus, it only calls processLeftData/processLeftWatermark.
-     */
+  /**
+   * An output emitter forwarding events to the next operator.
+   * It only has one stream for input because the operators are chained sequentially.
+   * Thus, it only calls processLeftData/processLeftWatermark.
+   */
   class NextOperatorEmitter implements OutputEmitter {
     private final PhysicalOperator nextPhysicalOp;
     private final Operator op;
