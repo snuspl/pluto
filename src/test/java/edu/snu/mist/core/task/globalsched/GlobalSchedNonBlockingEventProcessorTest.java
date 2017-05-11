@@ -28,6 +28,7 @@ import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -156,6 +157,11 @@ public final class GlobalSchedNonBlockingEventProcessorTest {
 
     @Override
     public void reschedule(final GlobalSchedGroupInfo groupInfo, final boolean miss) {
+      // do nothing
+    }
+
+    @Override
+    public void reschedule(final Collection<GlobalSchedGroupInfo> groupInfos) {
       // do nothing
     }
 

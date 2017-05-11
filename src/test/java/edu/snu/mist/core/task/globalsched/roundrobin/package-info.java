@@ -13,12 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched.parameters;
-
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
-
-@NamedParameter(doc = "The type of group scheduling execution model (blocking/nonblocking)",
-    short_name = "group_sched_model", default_value = "nonblocking")
-public final class GroupSchedModelType implements Name<String> {
-}
+/**
+ * Test classes for round-robin scheduling.
+ */
+package edu.snu.mist.core.task.globalsched.roundrobin;

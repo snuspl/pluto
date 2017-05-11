@@ -21,10 +21,7 @@ import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfoMap;
 import edu.snu.mist.core.task.globalsched.GroupEvent;
 import edu.snu.mist.core.task.globalsched.NextGroupSelector;
 
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Queue;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -160,6 +157,12 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
       }
       addGroup(groupInfo);
     }
+  }
+
+  @Override
+  public void reschedule(final Collection<GlobalSchedGroupInfo> groupInfos) {
+    throw new RuntimeException(VtimeBasedNextGroupSelector.class.getSimpleName() +" does not support "
+        + "reschedule(Collection<GlobalSchedGroupInfo> groupInfos)");
   }
 
   /**
