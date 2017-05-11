@@ -226,8 +226,7 @@ public final class ThreadBasedOperatorChainImpl implements OperatorChain {
   public int hashCode() {
     return 31 * operators.hashCode() + operatorChainId.hashCode();
   }
-
-
+  
   @Override
   public String toString() {
     return operators.toString();
