@@ -110,6 +110,7 @@ public final class MistGroupSchedulingTaskConfigs {
     switch (groupSchedModelType) {
       case "blocking":
         jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedEventProcessorFactory.class);
+        jcb.bindImplementation(NextGroupSelectorFactory.class, WeightedRRNextGroupSelectorFactory.class);
         break;
       case "nonblocking":
         jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedNonBlockingEventProcessorFactory.class);
