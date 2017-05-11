@@ -466,6 +466,11 @@ public final class ImmediateQueryMergingStarterTest {
     }
 
     @Override
+    public String getExecutionVertexId() {
+      return id;
+    }
+
+    @Override
     public void setOutputEmitter(final OutputEmitter emitter) {
       outputEmitter = emitter;
     }

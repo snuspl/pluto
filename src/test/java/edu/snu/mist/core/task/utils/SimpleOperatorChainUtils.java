@@ -109,6 +109,11 @@ public final class SimpleOperatorChainUtils {
     }
 
     @Override
+    public String getExecutionVertexId() {
+      return id;
+    }
+
+    @Override
     public void setOutputEmitter(final OutputEmitter emitter) {
       // do nothing
     }
@@ -141,6 +146,11 @@ public final class SimpleOperatorChainUtils {
     @Override
     public Type getType() {
       return Type.SINK;
+    }
+
+    @Override
+    public String getExecutionVertexId() {
+      return id;
     }
 
     @Override

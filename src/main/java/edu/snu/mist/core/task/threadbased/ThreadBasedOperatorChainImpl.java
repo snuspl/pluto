@@ -54,9 +54,15 @@ public final class ThreadBasedOperatorChainImpl implements OperatorChain {
    */
   private final BlockingQueue<Tuple<MistEvent, Direction>> queue;
 
+  /**
+   * The operator chain's ID is the operatorId of the first physical operator.
+   */
+  private String operatorChainId;
+
   ThreadBasedOperatorChainImpl() {
     this.operators = new LinkedList<>();
     this.queue = new LinkedBlockingQueue<>();
+    this.operatorChainId = "";
   }
 
   @Override
@@ -145,6 +151,11 @@ public final class ThreadBasedOperatorChainImpl implements OperatorChain {
     return Type.OPERATOR_CHIAN;
   }
 
+  @Override
+  public String getExecutionVertexId() {
+    return operatorChainId;
+  }
+
   private void process(final Tuple<MistEvent, Direction> input) {
     if (outputEmitter == null) {
       throw new RuntimeException("OutputEmitter should be set in OperatorChain");
@@ -197,28 +208,35 @@ public final class ThreadBasedOperatorChainImpl implements OperatorChain {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
+
     final ThreadBasedOperatorChainImpl that = (ThreadBasedOperatorChainImpl) o;
+
     if (!operators.equals(that.operators)) {
       return false;
     }
+
+    if (!operatorChainId.equals(that.operatorChainId)) {
+      return false;
+    }
+
     return true;
   }
 
   @Override
   public int hashCode() {
-    return operators.hashCode();
+    return 31 * operators.hashCode() + operatorChainId.hashCode();
   }
+
 
   @Override
   public String toString() {
     return operators.toString();
   }
-
-  /**
-   * An output emitter forwarding events to the next operator.
-   * It only has one stream for input because the operators are chained sequentially.
-   * Thus, it only calls processLeftData/processLeftWatermark.
-   */
+    /**
+     * An output emitter forwarding events to the next operator.
+     * It only has one stream for input because the operators are chained sequentially.
+     * Thus, it only calls processLeftData/processLeftWatermark.
+     */
   class NextOperatorEmitter implements OutputEmitter {
     private final PhysicalOperator nextPhysicalOp;
     private final Operator op;

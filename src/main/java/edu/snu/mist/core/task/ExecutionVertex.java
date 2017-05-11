@@ -32,4 +32,12 @@ public interface ExecutionVertex {
    * Get the type of the execution vertex.
    */
   Type getType();
+
+  /**
+   * Returns the ID of the ExecutionVertex.
+   * For OperatorChains, it returns the first PhysicalOperator in the chain.
+   * TODO:[MIST-527] Currently, there is getId in PhysicalVertex,
+   * but this will be resolved when PhysicalVertex is integrated with ExecutionVertex.
+   */
+  String getExecutionVertexId();
 }

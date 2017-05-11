@@ -403,6 +403,11 @@ public final class MergeAwareQueryRemoverTest {
     }
 
     @Override
+    public String getExecutionVertexId() {
+      return id;
+    }
+
+    @Override
     public void setOutputEmitter(final OutputEmitter emitter) {
       outputEmitter = emitter;
     }

@@ -85,4 +85,27 @@ public final class DefaultPhysicalOperatorImpl extends BasePhysicalVertex implem
   public void setLatestWatermarkTimestamp(final long timestamp) {
     latestWatermarkTimestamp = timestamp;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    final DefaultPhysicalOperatorImpl that = (DefaultPhysicalOperatorImpl) o;
+
+    if (!id.equals(that.id)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    return id.hashCode();
+  }
 }
