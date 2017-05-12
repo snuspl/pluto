@@ -37,17 +37,12 @@
           "default": "null"
         },
         {
-          "name": "QueryGroupList", /* TODO[DELETE] this code is for test */
+          "name": "GroupIdList", /* TODO[DELETE] this code is for test */
           "type": {
             "type": "array",
-            "items": "int"
+            "items": "string"
           },
           "default": []
-        },
-        {
-          "name": "StartQueryNum", /* TODO[DELETE] this code is for test */
-          "type": "int",
-          "default": 0
         },
         {
           "name": "GroupId",

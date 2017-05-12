@@ -84,37 +84,24 @@ public final class BatchQueryCreator {
     final ClassLoader classLoader = classLoaderProvider.newInstance(urls);
 
     // Load the batch submission configuration
-    final MISTBiFunction<String, Integer, String> pubTopicFunc = SerializeUtils.deserializeFromString(
+    final MISTBiFunction<String, String, String> pubTopicFunc = SerializeUtils.deserializeFromString(
         operatorChainDag.getPubTopicGenerateFunc(), classLoader);
-    final MISTBiFunction<String, Integer, Set<String>> subTopicFunc = SerializeUtils.deserializeFromString(
+    final MISTBiFunction<String, String, Set<String>> subTopicFunc = SerializeUtils.deserializeFromString(
         operatorChainDag.getSubTopicGenerateFunc(), classLoader);
-    final List<Integer> queryGroupList = operatorChainDag.getQueryGroupList();
-    final int startQueryNum = operatorChainDag.getStartQueryNum();
+    final List<String> groupIdList = operatorChainDag.getGroupIdList();
 
-    // Calculate the starting point
-    int group = -1;
-    int sum = 0;
-    final Iterator<Integer> itr = queryGroupList.iterator();
-    while (itr.hasNext() && sum <= startQueryNum) {
-      final int groupQuery = itr.next();
-      sum += groupQuery;
-      group++;
-    }
-    // The remaining query to start in the starting group
-    int remain = sum - startQueryNum + 1;
-    String newGroupId = String.valueOf(group);
-    int queryNum;
     Iterator<String> subTopicItr;
     String pubTopic;
 
     for (int i = 0; i < queryIdList.size(); i++) {
       // Set the topic according to the query number
-      queryNum = startQueryNum + i;
-      pubTopic = pubTopicFunc.apply(newGroupId, queryNum);
-      subTopicItr = subTopicFunc.apply(newGroupId, queryNum).iterator();
+      final String groupId = groupIdList.get(i);
+      final String queryId = queryIdList.get(i);
+      pubTopic = pubTopicFunc.apply(groupId, queryId);
+      subTopicItr = subTopicFunc.apply(groupId, queryId).iterator();
 
       // Overwrite the group id
-      operatorChainDag.setGroupId(newGroupId);
+      operatorChainDag.setGroupId(groupId);
       // Insert the topic information to a copied AvroOperatorChainDag
       for (final AvroVertexChain avroVertexChain : operatorChainDag.getAvroVertices()) {
         switch (avroVertexChain.getAvroVertexChainType()) {
@@ -196,17 +183,6 @@ public final class BatchQueryCreator {
       final QueryControlResult result = manager.create(newTuple);
       if (!result.getIsSuccess()) {
         throw new RuntimeException(i + "'th duplicated query creation failed.");
-      }
-
-      remain--;
-      if (remain <= 0) {
-        if (itr.hasNext()) {
-          remain = itr.next();
-          group++;
-          newGroupId = String.valueOf(group);
-        } else {
-          throw new RuntimeException("The query group list does not have enough queries");
-        }
       }
     }
   }

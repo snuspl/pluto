@@ -78,39 +78,37 @@ public class BatchSubExecutionEnvironmentTest {
     // Step 3: Send a query in batch manner and check whether the query comes to the task correctly
     final BatchSubExecutionEnvironment executionEnvironment = new BatchSubExecutionEnvironment(
         driverHost, driverPortNum);
-    final MISTBiFunction<String, Integer, String> pubTopicGenerateFunc = (groupId, queryNum) ->
+    final MISTBiFunction<String, String, String> pubTopicGenerateFunc = (groupId, queryId) ->
         new StringBuilder("/group")
             .append(groupId)
             .append("/device")
-            .append(queryNum + 2)
+            .append(queryId)
             .append("/pub")
             .toString();
-    final MISTBiFunction<String, Integer, Set<String>> subTopicGenerateFunc = (groupId, queryNum) -> {
+    final MISTBiFunction<String, String, Set<String>> subTopicGenerateFunc = (groupId, queryId) -> {
       final Set<String> topicList = new HashSet<>();
       topicList.add(
           new StringBuilder("/group")
               .append(groupId)
               .append("/device")
-              .append(queryNum + 3)
+              .append(queryId + "_1")
               .append("/sub")
               .toString());
       topicList.add(
           new StringBuilder("/group")
               .append(groupId)
               .append("/device")
-              .append(queryNum + 4)
+              .append(queryId + "_2")
               .append("/sub")
               .toString());
       return topicList;
     };
-    final List<Integer> queryGroupList = new LinkedList<>();
-    queryGroupList.add(10);
-    queryGroupList.add(20);
-    final int startQueryNum = 2;
-    final int batchSize = 27;
+    final List<String> queryGroupList = new LinkedList<>();
+    queryGroupList.add("1");
+    queryGroupList.add("2");
 
     final BatchSubmissionConfiguration batchConf = new BatchSubmissionConfiguration(
-        subTopicGenerateFunc, pubTopicGenerateFunc, queryGroupList, startQueryNum, batchSize);
+        subTopicGenerateFunc, pubTopicGenerateFunc, queryGroupList);
     final APIQueryControlResult batchResult =
         executionEnvironment.batchSubmit(query, batchConf, tempJarFile.toString());
     Assert.assertEquals(batchResult.getQueryId(), testQueryResult);
