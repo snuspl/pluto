@@ -30,6 +30,7 @@ import org.apache.reef.wake.EventHandler;
 import org.apache.reef.wake.impl.DefaultThreadFactory;
 
 import javax.inject.Inject;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -46,9 +47,9 @@ public final class NettySharedResource implements AutoCloseable {
   private final int threads;
 
   /**
-   * Map of channel and handler.
+   * Map of channel and list of handlers.
    */
-  private ConcurrentMap<Channel, EventHandler<String>> channelMap;
+  private ConcurrentMap<Channel, List<EventHandler<String>>> channelMap;
 
   /**
    * An identifier factory.
@@ -90,7 +91,7 @@ public final class NettySharedResource implements AutoCloseable {
     return clientBootstrap;
   }
 
-  public ConcurrentMap<Channel, EventHandler<String>> getChannelMap() {
+  public ConcurrentMap<Channel, List<EventHandler<String>>> getChannelMap() {
     return channelMap;
   }
 

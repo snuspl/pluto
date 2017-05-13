@@ -20,6 +20,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.apache.reef.wake.EventHandler;
 
+import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 
@@ -31,9 +32,9 @@ public final class NettyMessageForwarder extends ChannelInboundHandlerAdapter {
   /**
    * Map of channel and event handler.
    */
-  private final ConcurrentMap<Channel, EventHandler<String>> channelMap;
+  private final ConcurrentMap<Channel, List<EventHandler<String>>> channelMap;
 
-  public NettyMessageForwarder(final ConcurrentMap<Channel, EventHandler<String>> channelMap) {
+  public NettyMessageForwarder(final ConcurrentMap<Channel, List<EventHandler<String>>> channelMap) {
     this.channelMap = channelMap;
   }
 
@@ -46,9 +47,9 @@ public final class NettyMessageForwarder extends ChannelInboundHandlerAdapter {
   @Override
   public void channelRead(
       final ChannelHandlerContext ctx, final Object msg) throws Exception {
-    final EventHandler<String> eventHandler = channelMap.get(ctx.channel());
-    if (eventHandler != null) {
-      eventHandler.onNext((String)msg);
+    final List<EventHandler<String>> eventHandlerList = channelMap.get(ctx.channel());
+    if (eventHandlerList != null) {
+      eventHandlerList.forEach(eventHandler -> eventHandler.onNext((String)msg));
     }
   }
 

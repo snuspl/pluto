@@ -26,9 +26,7 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -77,7 +75,7 @@ public final class KafkaDataGenerator<K, V> implements DataGenerator<ConsumerRec
   /**
    * Event generator which is the destination of fetched data.
    */
-  private EventGenerator<ConsumerRecord<K, V>> eventGenerator;
+  private List<EventGenerator<ConsumerRecord<K, V>>> eventGeneratorList;
 
   @Inject
   private KafkaDataGenerator(
@@ -99,12 +97,13 @@ public final class KafkaDataGenerator<K, V> implements DataGenerator<ConsumerRec
     this.kafkaConsumerConf = kafkaConsumerConf;
     this.executorService = kafkaSharedResource.getExecutorService();
     this.pollTimeout = kafkaSharedResource.getPollTimeout();
+    this.eventGeneratorList = new ArrayList<>();
   }
 
   @Override
   public void start() {
     if (started.compareAndSet(false, true)) {
-      if (eventGenerator != null) {
+      if (!eventGeneratorList.isEmpty()) {
         try {
           // TODO: [MIST-355] support topic having multiple partitions in kafka source
           consumer = new KafkaConsumer<>(kafkaConsumerConf);
@@ -119,7 +118,7 @@ public final class KafkaDataGenerator<K, V> implements DataGenerator<ConsumerRec
                 while(!closed.get()) {
                   final ConsumerRecords<K, V> consumerRecords = consumer.poll(pollTimeout);
                   for (final ConsumerRecord<K, V> record : consumerRecords) {
-                    eventGenerator.emitData(record);
+                    eventGeneratorList.forEach(eventGenerator -> eventGenerator.emitData(record));
                   }
                 }
               } catch (final Exception e) {
@@ -144,6 +143,6 @@ public final class KafkaDataGenerator<K, V> implements DataGenerator<ConsumerRec
 
   @Override
   public void addEventGenerator(final EventGenerator eventGeneratorParam) {
-    this.eventGenerator = eventGeneratorParam;
+    this.eventGeneratorList.add(eventGeneratorParam);
   }
 }

@@ -28,6 +28,8 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -42,9 +44,9 @@ public final class NettyTextDataGenerator implements DataGenerator<String> {
   private final AtomicBoolean started;
 
   /**
-   * Map of netty channel and data stream handler.
+   * Map of netty channel and the list of data stream handler.
    */
-  private final ConcurrentMap<Channel, EventHandler<String>> channelMap;
+  private final ConcurrentMap<Channel, List<EventHandler<String>>> channelMap;
 
   /**
    * Netty client bootstrap.
@@ -64,7 +66,7 @@ public final class NettyTextDataGenerator implements DataGenerator<String> {
   /**
    * Event generator which is the destination of fetching data.
    */
-  private EventGenerator eventGenerator;
+  private List<EventGenerator> eventGeneratorList;
 
   @Inject
   public NettyTextDataGenerator(
@@ -75,12 +77,13 @@ public final class NettyTextDataGenerator implements DataGenerator<String> {
     this.channelMap = resource.getChannelMap();
     this.started = new AtomicBoolean(false);
     this.serverSocketAddress = new InetSocketAddress(serverAddr, port);
+    this.eventGeneratorList = new ArrayList<>();
   }
 
   @Override
   public void start() {
     if (started.compareAndSet(false, true)) {
-      if (eventGenerator != null) {
+      if (eventGeneratorList != null) {
         // register the data stream handler
         final ChannelFuture channelFuture;
         channelFuture = clientBootstrap.connect(serverSocketAddress);
@@ -92,8 +95,10 @@ public final class NettyTextDataGenerator implements DataGenerator<String> {
           throw new RuntimeException(sb.toString());
         }
         channel = channelFuture.channel();
-        channelMap.putIfAbsent(channel, (input) ->
-            eventGenerator.emitData(input));
+        final List<EventHandler<String>> streamHandlerList = new ArrayList<>();
+        eventGeneratorList.forEach(eventGenerator -> streamHandlerList.add(
+            inputData -> eventGenerator.emitData(inputData)));
+        channelMap.putIfAbsent(channel, streamHandlerList);
       }
     }
   }
@@ -108,6 +113,6 @@ public final class NettyTextDataGenerator implements DataGenerator<String> {
 
   @Override
   public void addEventGenerator(final EventGenerator eventGeneratorParam) {
-    this.eventGenerator = eventGeneratorParam;
+    this.eventGeneratorList.add(eventGeneratorParam);
   }
 }
