@@ -122,6 +122,31 @@ public final class SimpleOperatorChainUtils {
     public String getConfiguration() {
       return conf;
     }
+
+    @Override
+    public String getExecutionVertexId() {
+      return null;
+    }
+
+    @Override
+    public int getActiveSourceCount() {
+      return 0;
+    }
+
+    @Override
+    public void incrementActiveSourceCount() {
+      // do nothing
+    }
+
+    @Override
+    public void decrementActiveSourceCount() {
+      // do nothing
+    }
+
+    @Override
+    public void clearActiveSourceCount() {
+      // do nothing
+    }
   }
 
   /**
@@ -156,6 +181,31 @@ public final class SimpleOperatorChainUtils {
     @Override
     public Sink getSink() {
       return null;
+    }
+
+    @Override
+    public String getExecutionVertexId() {
+      return null;
+    }
+
+    @Override
+    public int getActiveSourceCount() {
+      return 0;
+    }
+
+    @Override
+    public void incrementActiveSourceCount() {
+      // do nothing
+    }
+
+    @Override
+    public void decrementActiveSourceCount() {
+      // do nothing
+    }
+
+    @Override
+    public void clearActiveSourceCount() {
+      // do nothing
     }
   }
 }

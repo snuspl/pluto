@@ -39,4 +39,29 @@ public final class PhysicalSinkImpl<I> extends BasePhysicalVertex implements Phy
   public Type getType() {
     return Type.SINK;
   }
+
+  @Override
+  public String getExecutionVertexId() {
+    return id;
+  }
+
+  @Override
+  public int getActiveSourceCount() {
+    return activeSourceCount;
+  }
+
+  @Override
+  public void incrementActiveSourceCount() {
+    activeSourceCount++;
+  }
+
+  @Override
+  public void decrementActiveSourceCount() {
+    activeSourceCount--;
+  }
+
+  @Override
+  public void clearActiveSourceCount() {
+    activeSourceCount = 0;
+  }
 }

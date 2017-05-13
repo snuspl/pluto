@@ -32,4 +32,31 @@ public interface ExecutionVertex {
    * Get the type of the execution vertex.
    */
   Type getType();
+
+  /**
+   * Returns the ID of the first PhysicalOperator in the OperatorChain.
+   * TODO:[MIST-527] Currently, there is getId in PhysicalVertex,
+   * but this will be resolved when PhysicalVertex is integrated with ExecutionVertex.
+   */
+  String getExecutionVertexId();
+
+  /**
+   * Returns the number of active sources that contribute to this execution vertex.
+   */
+  int getActiveSourceCount();
+
+  /**
+   * Increases the number of active sources that contribute to this vertex by 1.
+   */
+  void incrementActiveSourceCount();
+
+  /**
+   * Decreases the number of active sources that contribute to this vertex by 1.
+   */
+  void decrementActiveSourceCount();
+
+  /**
+   * Sets the ActiveSourceCount to 0.
+   */
+  void clearActiveSourceCount();
 }

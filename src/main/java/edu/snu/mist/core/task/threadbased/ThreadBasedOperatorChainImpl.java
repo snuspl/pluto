@@ -54,9 +54,46 @@ public final class ThreadBasedOperatorChainImpl implements OperatorChain {
    */
   private final BlockingQueue<Tuple<MistEvent, Direction>> queue;
 
+  /**
+   * The number of active sources that contribute to this execution vertex.
+   */
+  private int activeSourceCount;
+
+  /**
+   * The operator chain's ID is the operatorId of the first physical operator.
+   */
+  private String operatorChainId;
+
   ThreadBasedOperatorChainImpl() {
     this.operators = new LinkedList<>();
     this.queue = new LinkedBlockingQueue<>();
+    this.operatorChainId = "";
+    this.activeSourceCount = 0;
+  }
+
+  @Override
+  public String getExecutionVertexId() {
+    return operatorChainId;
+  }
+
+  @Override
+  public int getActiveSourceCount() {
+    return activeSourceCount;
+  }
+
+  @Override
+  public void incrementActiveSourceCount() {
+    activeSourceCount++;
+  }
+
+  @Override
+  public void decrementActiveSourceCount() {
+    activeSourceCount--;
+  }
+
+  @Override
+  public void clearActiveSourceCount() {
+    activeSourceCount = 0;
   }
 
   @Override

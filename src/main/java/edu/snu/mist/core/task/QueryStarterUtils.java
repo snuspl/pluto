@@ -19,8 +19,10 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This is an utility class for query starter.
@@ -63,6 +65,50 @@ public final class QueryStarterUtils {
         }
         default:
           throw new RuntimeException("Invalid vertex type: " + executionVertex.getType());
+      }
+    }
+  }
+
+  /**
+   * Initializes the ActiveSourceCounts in a dag.
+   * The mustClear is used for dags that have been recently merged.
+   * @param executionDAG the given dag
+   * @param mustClear true if all ExecutionVertices' ActiveSourceCounts should be cleared, and then reinitialized.
+   */
+  public static void setActiveSourceCounts(final DAG<ExecutionVertex, MISTEdge> executionDAG, final boolean mustClear) {
+    if (mustClear) {
+      final Set<String> visited = new HashSet<>();
+      for (final ExecutionVertex root : executionDAG.getRootVertices()) {
+        root.clearActiveSourceCount();
+        dfsForVertices(root, executionDAG, visited, true);
+      }
+    }
+    for (final ExecutionVertex root : executionDAG.getRootVertices()) {
+      final Set<String> visited = new HashSet<>();
+      if (root.getActiveSourceCount() == 0) {
+        root.incrementActiveSourceCount();
+      }
+      dfsForVertices(root, executionDAG, visited, false);
+    }
+  }
+
+  /**
+   * DFS through the executionDAG and set the activeSourceCount for every ExecutionVertex.
+   * If mustClear is true, it sets every activeSourceCount to zero.
+   * Else, it increases the activeSourceCount.
+   */
+  private static void dfsForVertices(final ExecutionVertex root, final DAG<ExecutionVertex, MISTEdge> executionDAG,
+                                     final Set<String> visited, final boolean mustClear) {
+    for (final ExecutionVertex executionVertex : executionDAG.getEdges(root).keySet()) {
+      final String currentVertexId = executionVertex.getExecutionVertexId();
+      if (!visited.contains(currentVertexId)) {
+        visited.add(currentVertexId);
+        if (mustClear) {
+          executionVertex.clearActiveSourceCount();
+        } else {
+          executionVertex.incrementActiveSourceCount();
+        }
+        dfsForVertices(executionVertex, executionDAG, visited, mustClear);
       }
     }
   }

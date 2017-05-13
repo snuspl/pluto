@@ -70,4 +70,29 @@ public final class PhysicalSourceImpl<T> extends BasePhysicalVertex implements P
   public void setOutputEmitter(final OutputEmitter emitter) {
     eventGenerator.setOutputEmitter(emitter);
   }
+
+  @Override
+  public String getExecutionVertexId() {
+    return id;
+  }
+
+  @Override
+  public int getActiveSourceCount() {
+    return activeSourceCount;
+  }
+
+  @Override
+  public void incrementActiveSourceCount() {
+    activeSourceCount++;
+  }
+
+  @Override
+  public void decrementActiveSourceCount() {
+    activeSourceCount--;
+  }
+
+  @Override
+  public void clearActiveSourceCount() {
+    activeSourceCount = 0;
+  }
 }

@@ -23,9 +23,7 @@ import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.formats.avro.Direction;
 import org.apache.reef.io.Tuple;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -63,6 +61,16 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
   private final AtomicReference<Status> status;
 
   /**
+   * The number of active sources that contribute to this operator chain.
+   */
+  private int activeSourceCount;
+
+  /**
+   * The operator chain's ID is the operatorId of the first physical operator.
+   */
+  private String operatorChainId;
+
+  /**
    * The operator chain manager which would manage this operator chain.
    */
   private OperatorChainManager operatorChainManager;
@@ -73,6 +81,33 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
     this.status = new AtomicReference<>(Status.READY);
     this.outputEmitter = null;
     this.operatorChainManager = null;
+    this.operatorChainId = "";
+    this.activeSourceCount = 0;
+  }
+
+  @Override
+  public String getExecutionVertexId() {
+    return operatorChainId;
+  }
+
+  @Override
+  public int getActiveSourceCount() {
+    return activeSourceCount;
+  }
+
+  @Override
+  public void incrementActiveSourceCount() {
+    activeSourceCount++;
+  }
+
+  @Override
+  public void decrementActiveSourceCount() {
+    activeSourceCount--;
+  }
+
+  @Override
+  public void clearActiveSourceCount() {
+    activeSourceCount = 0;
   }
 
   @Override
@@ -86,6 +121,7 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
       }
     }
     operators.add(0, newOperator);
+    operatorChainId = operators.get(0).getId();
   }
 
   @Override
@@ -93,6 +129,8 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
     if (!operators.isEmpty()) {
       final PhysicalOperator lastOperator = operators.get(operators.size() - 1);
       lastOperator.getOperator().setOutputEmitter(new NextOperatorEmitter(newOperator));
+    } else {
+      operatorChainId = newOperator.getId();
     }
     if (outputEmitter != null) {
       newOperator.getOperator().setOutputEmitter(outputEmitter);

@@ -108,6 +108,8 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
           srcAndDagMap.put(src.getConfiguration(), submittedDag);
           src.start();
         }
+        // Initiate ActiveSourceCount for all ExecutionVertices.
+        QueryStarterUtils.setActiveSourceCounts(submittedDag, false);
         executionDags.add(submittedDag);
         return;
       }
@@ -169,6 +171,9 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
           src.start();
         }
       }
+
+      // Update the ActiveSourceCount of the merged dag.
+      QueryStarterUtils.setActiveSourceCounts(sharableDag, true);
     }
   }
 

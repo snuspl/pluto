@@ -32,10 +32,16 @@ abstract class BasePhysicalVertex implements PhysicalVertex {
    */
   protected final String configuration;
 
+  /**
+   * The number of active sources that contribute to this execution vertex.
+   */
+  protected int activeSourceCount;
+
   public BasePhysicalVertex(final String id,
                             final String configuration) {
     this.id = id;
     this.configuration = configuration;
+    this.activeSourceCount = 0;
   }
 
   @Override
