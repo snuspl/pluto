@@ -430,8 +430,8 @@ public final class QueryManagerTest {
     }
 
     @Override
-    public void setEventGenerator(final EventGenerator eventGenerator) {
-      this.eventGenerator = eventGenerator;
+    public void addEventGenerator(final EventGenerator eventGeneratorParam) {
+      this.eventGenerator = eventGeneratorParam;
     }
   }
 

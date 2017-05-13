@@ -46,7 +46,7 @@ public final class PhysicalSourceImpl<T> extends BasePhysicalVertex implements P
   @Override
   public void start() {
     if (dataGenerator != null && eventGenerator != null) {
-      dataGenerator.setEventGenerator(eventGenerator);
+      dataGenerator.addEventGenerator(eventGenerator);
       eventGenerator.start();
       dataGenerator.start();
     } else {

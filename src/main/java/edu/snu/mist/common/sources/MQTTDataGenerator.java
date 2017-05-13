@@ -18,6 +18,8 @@ package edu.snu.mist.common.sources;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -51,7 +53,7 @@ public final class MQTTDataGenerator implements DataGenerator<MqttMessage> {
   /**
    * Event generator which is the destination of fetched data.
    */
-  private EventGenerator<MqttMessage> eventGenerator;
+  private List<EventGenerator<MqttMessage>> eventGeneratorList;
 
   public MQTTDataGenerator(final MQTTSubscribeClient subClient,
                            final String topic) {
@@ -59,16 +61,17 @@ public final class MQTTDataGenerator implements DataGenerator<MqttMessage> {
     this.topic = topic;
     this.started = new AtomicBoolean(false);
     this.closed = new AtomicBoolean(false);
+    this.eventGeneratorList = new ArrayList<>();
   }
 
   /**
-   * Emit the given MQTT message toward the EventGenerator.
+   * Emit the given MQTT message toward the EventGenerators.
    * This function would be called by MQTTSubscribeClient when it received message of the target topic from it's broker.
    * @param message the message to emit
    */
   void emitData(final MqttMessage message) {
     if (!closed.get()) {
-      eventGenerator.emitData(message);
+      eventGeneratorList.forEach(eventGenerator -> eventGenerator.emitData(message));
     }
   }
 
@@ -92,7 +95,7 @@ public final class MQTTDataGenerator implements DataGenerator<MqttMessage> {
   }
 
   @Override
-  public void setEventGenerator(final EventGenerator eventGenerator) {
-    this.eventGenerator = eventGenerator;
+  public void addEventGenerator(final EventGenerator eventGenerator) {
+    this.eventGeneratorList.add(eventGenerator);
   }
 }

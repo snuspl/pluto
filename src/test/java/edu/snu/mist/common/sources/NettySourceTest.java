@@ -121,7 +121,7 @@ public final class NettySourceTest {
         final EventGenerator<String> eventGenerator =
             new PunctuatedEventGenerator<>(extractFunc, isWatermark, parseTsFunc);
         sources.add(new Tuple<>(dataGenerator, eventGenerator));
-        dataGenerator.setEventGenerator(eventGenerator);
+        dataGenerator.addEventGenerator(eventGenerator);
 
         final List<String> receivedData = new LinkedList<>();
         final List<Long> receivedWatermark = new LinkedList<>();
@@ -190,7 +190,7 @@ public final class NettySourceTest {
           new NettyTextDataGenerator(SERVER_ADDR, SERVER_PORT, nettySharedResource);
       final EventGenerator<String> eventGenerator =
           new PeriodicEventGenerator<>(null, period, period, TimeUnit.MILLISECONDS, scheduler);
-      dataGenerator.setEventGenerator(eventGenerator);
+      dataGenerator.addEventGenerator(eventGenerator);
 
       final List<String> periodicReceivedData = new LinkedList<>();
       final List<Long> periodicReceivedWatermark = new LinkedList<>();

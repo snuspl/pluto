@@ -33,5 +33,5 @@ public interface DataGenerator<T> extends AutoCloseable {
    * Sets the event generator which is the destination of data.
    * @param eventGenerator event generator which is the destination of data
    */
-  void setEventGenerator(EventGenerator eventGenerator);
+  void addEventGenerator(EventGenerator eventGenerator);
 }

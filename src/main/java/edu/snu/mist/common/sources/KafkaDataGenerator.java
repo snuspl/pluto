@@ -143,7 +143,7 @@ public final class KafkaDataGenerator<K, V> implements DataGenerator<ConsumerRec
   }
 
   @Override
-  public void setEventGenerator(final EventGenerator eventGenerator) {
-    this.eventGenerator = eventGenerator;
+  public void addEventGenerator(final EventGenerator eventGeneratorParam) {
+    this.eventGenerator = eventGeneratorParam;
   }
 }

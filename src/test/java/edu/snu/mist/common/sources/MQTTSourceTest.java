@@ -78,8 +78,8 @@ public final class MQTTSourceTest {
     final MQTTDataGenerator dataGenerator2 = mqttSharedResource.getDataGenerator(MqttUtils.BROKER_URI, SECOND_TOPIC);
     final SourceTestEventGenerator eventGenerator1 = new SourceTestEventGenerator(result1, dataCountDownLatch1);
     final SourceTestEventGenerator eventGenerator2 = new SourceTestEventGenerator(result2, dataCountDownLatch2);
-    dataGenerator1.setEventGenerator(eventGenerator1);
-    dataGenerator2.setEventGenerator(eventGenerator2);
+    dataGenerator1.addEventGenerator(eventGenerator1);
+    dataGenerator2.addEventGenerator(eventGenerator2);
 
     dataGenerator1.start();
     dataGenerator2.start();

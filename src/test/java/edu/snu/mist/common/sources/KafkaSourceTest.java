@@ -118,7 +118,7 @@ public final class KafkaSourceTest {
         new KafkaDataGenerator<>(KAFKA_TOPIC, kafkaConsumerConf, kafkaSharedResource);
     final SourceTestEventGenerator<String, String> eventGenerator =
         new SourceTestEventGenerator<>(result, dataCountDownLatch);
-    kafkaDataGenerator.setEventGenerator(eventGenerator);
+    kafkaDataGenerator.addEventGenerator(eventGenerator);
     kafkaDataGenerator.start();
 
     // create kafka producer
