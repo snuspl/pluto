@@ -73,7 +73,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
    * @param topic the topic of connected broker to subscribe
    * @return requested MQTTDataGenerator connected with the target broker and topic
    */
-  synchronized public MQTTDataGenerator connectToTopic(final String topic) {
+  public synchronized MQTTDataGenerator connectToTopic(final String topic) {
     List<MQTTDataGenerator> dataGeneratorList = dataGeneratorListMap.get(topic);
     if (dataGeneratorList == null) {
       dataGeneratorList = new ArrayList<>();
