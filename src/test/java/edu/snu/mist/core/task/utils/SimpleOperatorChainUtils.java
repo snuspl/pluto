@@ -109,7 +109,7 @@ public final class SimpleOperatorChainUtils {
     }
 
     @Override
-    public String getExecutionVertexId() {
+    public String getIdentifier() {
       return id;
     }
 
@@ -149,7 +149,7 @@ public final class SimpleOperatorChainUtils {
     }
 
     @Override
-    public String getExecutionVertexId() {
+    public String getIdentifier() {
       return id;
     }
 

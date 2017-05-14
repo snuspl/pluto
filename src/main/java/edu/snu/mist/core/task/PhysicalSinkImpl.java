@@ -41,7 +41,7 @@ public final class PhysicalSinkImpl<I> extends BasePhysicalVertex implements Phy
   }
 
   @Override
-  public String getExecutionVertexId() {
+  public String getIdentifier() {
     return id;
   }
 

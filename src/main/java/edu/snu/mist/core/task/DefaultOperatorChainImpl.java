@@ -185,7 +185,7 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
   }
 
   @Override
-  public String getExecutionVertexId() {
+  public String getIdentifier() {
     return operatorChainId;
   }
 

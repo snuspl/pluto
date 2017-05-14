@@ -152,7 +152,7 @@ public final class ThreadBasedOperatorChainImpl implements OperatorChain {
   }
 
   @Override
-  public String getExecutionVertexId() {
+  public String getIdentifier() {
     return operatorChainId;
   }
 

@@ -39,5 +39,5 @@ public interface ExecutionVertex {
    * TODO:[MIST-527] Currently, there is getId in PhysicalVertex,
    * but this will be resolved when PhysicalVertex is integrated with ExecutionVertex.
    */
-  String getExecutionVertexId();
+  String getIdentifier();
 }

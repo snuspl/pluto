@@ -466,7 +466,7 @@ public final class ImmediateQueryMergingStarterTest {
     }
 
     @Override
-    public String getExecutionVertexId() {
+    public String getIdentifier() {
       return id;
     }
 

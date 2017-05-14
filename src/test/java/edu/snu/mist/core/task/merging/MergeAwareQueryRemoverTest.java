@@ -403,7 +403,7 @@ public final class MergeAwareQueryRemoverTest {
     }
 
     @Override
-    public String getExecutionVertexId() {
+    public String getIdentifier() {
       return id;
     }
 

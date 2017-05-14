@@ -67,7 +67,7 @@ public final class PhysicalSourceImpl<T> extends BasePhysicalVertex implements P
   }
 
   @Override
-  public String getExecutionVertexId() {
+  public String getIdentifier() {
     return id;
   }
 
