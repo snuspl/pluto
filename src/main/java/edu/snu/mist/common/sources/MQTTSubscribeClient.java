@@ -73,7 +73,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
    * @param topic the topic of connected broker to subscribe
    * @return requested MQTTDataGenerator connected with the target broker and topic
    */
-  public MQTTDataGenerator connectToTopic(final String topic) {
+  synchronized public MQTTDataGenerator connectToTopic(final String topic) {
     List<MQTTDataGenerator> dataGeneratorList = dataGeneratorListMap.get(topic);
     if (dataGeneratorList == null) {
       dataGeneratorList = new ArrayList<>();
@@ -87,7 +87,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
   /**
    * Start to subscribe a topic.
    */
-  void subscribe(final String topic) throws MqttException {
+  synchronized void subscribe(final String topic) throws MqttException {
     synchronized (subscribeLock) {
       if (!started) {
         client = new MqttClient(brokerURI, clientId);
@@ -102,7 +102,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
   /**
    * Unsubscribe a topic.
    */
-  void unsubscribe(final String topic) throws MqttException {
+  synchronized void unsubscribe(final String topic) throws MqttException {
     client.unsubscribe(topic);
     dataGeneratorListMap.remove(topic);
   }
