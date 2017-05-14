@@ -16,6 +16,7 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.core.parameters.OperatorIdPrefix;
+import edu.snu.mist.core.parameters.OperatorChainIdPrefix;
 import edu.snu.mist.core.parameters.SinkIdPrefix;
 import edu.snu.mist.core.parameters.SourceIdPrefix;
 import org.apache.reef.tang.annotations.Parameter;
@@ -34,6 +35,11 @@ final class DefaultIdGeneratorImpl implements IdGenerator {
   private final String operatorPrefix;
 
   /**
+   * Prefix used for generating operatorChain Ids.
+   */
+  private final String operatorChainPrefix;
+
+  /**
    * Prefix used for generating source Ids.
    */
   private final String sourcePrefix;
@@ -50,6 +56,11 @@ final class DefaultIdGeneratorImpl implements IdGenerator {
   private final AtomicLong operatorIdSeqNum;
 
   /**
+   * Atomic ID Sequence number used for generating operatorChain Ids.
+   */
+  private final AtomicLong operatorChainIdSeqNum;
+
+  /**
    * Atomic ID Sequence number used for generating source Ids.
    */
   private final AtomicLong sourceIdSeqNum;
@@ -61,12 +72,15 @@ final class DefaultIdGeneratorImpl implements IdGenerator {
 
   @Inject
   private DefaultIdGeneratorImpl(@Parameter(OperatorIdPrefix.class) final String operatorPrefix,
+                                 @Parameter(OperatorChainIdPrefix.class) final String operatorChainPrefix,
                                  @Parameter(SourceIdPrefix.class) final String sourcePrefix,
                                  @Parameter(SinkIdPrefix.class) final String sinkPrefix) {
     this.operatorPrefix = operatorPrefix;
+    this.operatorChainPrefix = operatorChainPrefix;
     this.sourcePrefix = sourcePrefix;
     this.sinkPrefix = sinkPrefix;
     this.operatorIdSeqNum = new AtomicLong();
+    this.operatorChainIdSeqNum = new AtomicLong();
     this.sourceIdSeqNum = new AtomicLong();
     this.sinkIdSeqNum = new AtomicLong();
   }
@@ -76,6 +90,14 @@ final class DefaultIdGeneratorImpl implements IdGenerator {
     final StringBuilder sb = new StringBuilder();
     sb.append(operatorPrefix);
     sb.append(operatorIdSeqNum.getAndIncrement());
+    return sb.toString();
+  }
+
+  @Override
+  public String generateOperatorChainId() {
+    final StringBuilder sb = new StringBuilder();
+    sb.append(operatorChainPrefix);
+    sb.append(operatorChainIdSeqNum.getAndIncrement());
     return sb.toString();
   }
 

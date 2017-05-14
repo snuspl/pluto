@@ -243,9 +243,9 @@ public final class QueryManagerTest {
     // src -> [flatMap -> filter -> toTupleMap -> reduceByKey] -> [toStringMap]   -> sink1
     //                                                         -> [totalCountMap] -> sink2
     //                                                               (chain3)
-    final OperatorChain chain1 = new DefaultOperatorChainImpl();
-    final OperatorChain chain2 = new DefaultOperatorChainImpl();
-    final OperatorChain chain3 = new DefaultOperatorChainImpl();
+    final OperatorChain chain1 = new DefaultOperatorChainImpl("testOpChain-1");
+    final OperatorChain chain2 = new DefaultOperatorChainImpl("testOpChain-2");
+    final OperatorChain chain3 = new DefaultOperatorChainImpl("testOpChain-3");
 
     final PhysicalOperator flatMap = new DefaultPhysicalOperatorImpl("flatMap",
         null, new FlatMapOperator<>(flatMapFunc), chain1);

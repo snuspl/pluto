@@ -54,9 +54,15 @@ public final class ThreadBasedOperatorChainImpl implements OperatorChain {
    */
   private final BlockingQueue<Tuple<MistEvent, Direction>> queue;
 
-  ThreadBasedOperatorChainImpl() {
+  /**
+   * The id of this operator chain.
+   */
+  private String operatorChainId;
+
+  ThreadBasedOperatorChainImpl(final String operatorChainId) {
     this.operators = new LinkedList<>();
     this.queue = new LinkedBlockingQueue<>();
+    this.operatorChainId = operatorChainId;
   }
 
   @Override
@@ -147,7 +153,7 @@ public final class ThreadBasedOperatorChainImpl implements OperatorChain {
 
   @Override
   public String getExecutionVertexId() {
-    return operators.get(0).getId();
+    return operatorChainId;
   }
 
   private void process(final Tuple<MistEvent, Direction> input) {
@@ -209,7 +215,7 @@ public final class ThreadBasedOperatorChainImpl implements OperatorChain {
       return false;
     }
 
-    if (!operators.get(0).getId().equals(that.operators.get(0).getId())) {
+    if (!operatorChainId.equals(that.operatorChainId)) {
       return false;
     }
 
@@ -218,7 +224,7 @@ public final class ThreadBasedOperatorChainImpl implements OperatorChain {
 
   @Override
   public int hashCode() {
-    return 31 * operators.hashCode() + operators.get(0).getId().hashCode();
+    return 31 * operators.hashCode() + operatorChainId.hashCode();
   }
 
   @Override

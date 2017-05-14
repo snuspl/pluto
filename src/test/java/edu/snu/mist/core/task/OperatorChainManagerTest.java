@@ -33,7 +33,7 @@ public class OperatorChainManagerTest {
         = injector.getInstance(NonBlockingRandomlyPickManager.class);
 
     // Select a chain
-    final OperatorChain chain = new DefaultOperatorChainImpl();
+    final OperatorChain chain = new DefaultOperatorChainImpl("testOpChain");
     operatorChainManager.insert(chain);
     final OperatorChain selectedChain = operatorChainManager.pickOperatorChain();
     Assert.assertEquals(chain, selectedChain);
@@ -51,7 +51,7 @@ public class OperatorChainManagerTest {
         = injector.getInstance(NonBlockingActiveOperatorChainPickManager.class);
 
     // Select a chain
-    final OperatorChain chain = new DefaultOperatorChainImpl();
+    final OperatorChain chain = new DefaultOperatorChainImpl("testOpChain");
     operatorChainManager.insert(chain);
     final OperatorChain selectedChain = operatorChainManager.pickOperatorChain();
     Assert.assertEquals(chain, selectedChain);
@@ -69,7 +69,7 @@ public class OperatorChainManagerTest {
         = injector.getInstance(BlockingActiveOperatorChainPickManager.class);
 
     // Select a chain
-    final OperatorChain chain = new DefaultOperatorChainImpl();
+    final OperatorChain chain = new DefaultOperatorChainImpl("testOpChain");
     operatorChainManager.insert(chain);
     final OperatorChain selectedChain = operatorChainManager.pickOperatorChain();
     Assert.assertEquals(chain, selectedChain);

@@ -66,7 +66,7 @@ public final class ImmediateQueryMergingStarterTest {
    */
   private OperatorChain generateFilterOperatorChain(final String conf,
                                                     final MISTPredicate<String> predicate) {
-    final OperatorChain operatorChain = new DefaultOperatorChainImpl();
+    final OperatorChain operatorChain = new DefaultOperatorChainImpl("testOpChain");
     final PhysicalOperator filterOp = new DefaultPhysicalOperatorImpl(idAndConfGenerator.generateId(),
         conf, new FilterOperator<>(predicate), operatorChain);
     operatorChain.insertToHead(filterOp);

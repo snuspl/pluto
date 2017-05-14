@@ -67,12 +67,18 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
    */
   private OperatorChainManager operatorChainManager;
 
-  public DefaultOperatorChainImpl() {
+  /**
+   * The id of this operator chain.
+   */
+  private String operatorChainId;
+
+  public DefaultOperatorChainImpl(final String operatorChainId) {
     this.operators = new LinkedList<>();
     this.queue = new ConcurrentLinkedQueue<>();
     this.status = new AtomicReference<>(Status.READY);
     this.outputEmitter = null;
     this.operatorChainManager = null;
+    this.operatorChainId = operatorChainId;
   }
 
   @Override
@@ -180,7 +186,7 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
 
   @Override
   public String getExecutionVertexId() {
-    return operators.get(0).getId();
+    return operatorChainId;
   }
 
   private void process(final Tuple<MistEvent, Direction> input) {
@@ -256,7 +262,7 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
       return false;
     }
 
-    if (!operators.get(0).getId().equals(that.operators.get(0).getId())) {
+    if (!operatorChainId.equals(that.operatorChainId)) {
       return false;
     }
 
@@ -265,7 +271,7 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
 
   @Override
   public int hashCode() {
-    return 31 * operators.hashCode() + operators.get(0).getId().hashCode();
+    return 31 * operators.hashCode() + operatorChainId.hashCode();
   }
 
   /**

@@ -53,7 +53,7 @@ public final class SimpleOperatorChainUtils {
    * @return operator chain
    */
   public static OperatorChain generateFilterOperatorChain(final IdAndConfGenerator idAndConfGenerator) {
-    final OperatorChain operatorChain = new DefaultOperatorChainImpl();
+    final OperatorChain operatorChain = new DefaultOperatorChainImpl("testOpChain");
     final PhysicalOperator filterOp = new DefaultPhysicalOperatorImpl(idAndConfGenerator.generateId(),
         idAndConfGenerator.generateConf(), new FilterOperator<>((input) -> true), operatorChain);
     operatorChain.insertToHead(filterOp);
@@ -65,7 +65,7 @@ public final class SimpleOperatorChainUtils {
    * @return operator chain
    */
   public static OperatorChain generateUnionOperatorChain(final IdAndConfGenerator idAndConfGenerator) {
-    final OperatorChain operatorChain = new DefaultOperatorChainImpl();
+    final OperatorChain operatorChain = new DefaultOperatorChainImpl("testOpChain");
     final PhysicalOperator filterOp = new DefaultPhysicalOperatorImpl(idAndConfGenerator.generateId(),
         idAndConfGenerator.generateConf(), new UnionOperator(), operatorChain);
     operatorChain.insertToHead(filterOp);

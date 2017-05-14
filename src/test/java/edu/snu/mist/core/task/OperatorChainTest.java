@@ -42,7 +42,7 @@ public final class OperatorChainTest {
     final List<MistEvent> result = new LinkedList<>();
     final Integer input = 3;
 
-    final OperatorChain operatorChain = new DefaultOperatorChainImpl();
+    final OperatorChain operatorChain = new DefaultOperatorChainImpl("testOpChain");
     operatorChain.setOutputEmitter(new OutputBufferEmitter(result));
 
     final String squareOpId = "squareOp";
