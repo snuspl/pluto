@@ -18,9 +18,9 @@ package edu.snu.mist.common.sources;
 import org.eclipse.paho.client.mqttv3.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Map;
 
 /**
  * This class represents MQTT clients implemented with eclipse Paho.
@@ -46,7 +46,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
   /**
    * The map coupling MQTT topic name and list of MQTTDataGenerators.
    */
-  private final ConcurrentMap<String, List<MQTTDataGenerator>> dataGeneratorListMap;
+  private final Map<String, List<MQTTDataGenerator>> dataGeneratorListMap;
   /**
    * The lock used when a DataGenerator want to start subscription.
    */
@@ -61,7 +61,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
     this.started = false;
     this.brokerURI = brokerURI;
     this.clientId = clientId;
-    this.dataGeneratorListMap = new ConcurrentHashMap<>();
+    this.dataGeneratorListMap = new HashMap<>();
     this.subscribeLock = new Object();
   }
 
@@ -77,7 +77,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
     List<MQTTDataGenerator> dataGeneratorList = dataGeneratorListMap.get(topic);
     if (dataGeneratorList == null) {
       dataGeneratorList = new ArrayList<>();
-      dataGeneratorListMap.putIfAbsent(topic, dataGeneratorList);
+      dataGeneratorListMap.put(topic, dataGeneratorList);
     }
     final MQTTDataGenerator dataGenerator = new MQTTDataGenerator(this, topic);
     dataGeneratorListMap.get(topic).add(dataGenerator);
