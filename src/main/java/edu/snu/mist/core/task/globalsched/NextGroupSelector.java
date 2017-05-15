@@ -25,7 +25,7 @@ import java.util.Collection;
  * This is an interface that picks a next group for processing queries.
  */
 @DefaultImplementation(VtimeBasedNextGroupSelector.class)
-public interface NextGroupSelector extends EventHandler<GroupEvent> {
+public interface NextGroupSelector extends EventHandler<GroupEvent>, AutoCloseable {
 
   /**
    * Select the next group that will be processed.

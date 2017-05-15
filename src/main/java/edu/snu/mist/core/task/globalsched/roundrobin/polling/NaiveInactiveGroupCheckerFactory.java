@@ -13,20 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.eventProcessors;
+package edu.snu.mist.core.task.globalsched.roundrobin.polling;
+
+import javax.inject.Inject;
 
 /**
- * This is an interface of EventProcessor that processes events of queries.
+ * NaiveInactiveChecker factory.
  */
-public interface EventProcessor extends AutoCloseable {
+public final class NaiveInactiveGroupCheckerFactory implements InactiveGroupCheckerFactory {
 
-  /**
-   * Start to execute the events of queries.
-   */
-  void start();
+  @Inject
+  private NaiveInactiveGroupCheckerFactory() {
+    // do nothing
+  }
 
-  /**
-   * Interrupt the event processing.
-   */
-  void interrupt();
+  @Override
+  public InactiveGroupChecker newInstance() {
+    return new NaiveInactiveGroupChecker();
+  }
 }

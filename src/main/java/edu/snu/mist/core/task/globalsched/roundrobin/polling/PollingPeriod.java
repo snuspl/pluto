@@ -13,20 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.eventProcessors;
+package edu.snu.mist.core.task.globalsched.roundrobin.polling;
 
-/**
- * This is an interface of EventProcessor that processes events of queries.
- */
-public interface EventProcessor extends AutoCloseable {
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-  /**
-   * Start to execute the events of queries.
-   */
-  void start();
-
-  /**
-   * Interrupt the event processing.
-   */
-  void interrupt();
+@NamedParameter(doc = "inactive polling period", short_name = "polling_period", default_value = "50")
+public final class PollingPeriod implements Name<Long> {
 }

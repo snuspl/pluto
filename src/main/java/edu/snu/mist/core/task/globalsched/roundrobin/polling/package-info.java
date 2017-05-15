@@ -13,20 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.eventProcessors;
-
 /**
- * This is an interface of EventProcessor that processes events of queries.
+ * This package contains classes related to Round-robin scheduler polling.
  */
-public interface EventProcessor extends AutoCloseable {
-
-  /**
-   * Start to execute the events of queries.
-   */
-  void start();
-
-  /**
-   * Interrupt the event processing.
-   */
-  void interrupt();
-}
+package edu.snu.mist.core.task.globalsched.roundrobin.polling;

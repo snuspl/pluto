@@ -24,7 +24,6 @@ import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
-import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -45,7 +44,7 @@ public final class GlobalSchedEventProcessorTest {
    * the next group correctly from the next group selector.
    */
   @Test(timeout = 5000L)
-  public void testGlobalSchedEventProcessorSchedulingPeriod() throws InjectionException, InterruptedException {
+  public void testGlobalSchedEventProcessorSchedulingPeriod() throws Exception {
     final List<GlobalSchedGroupInfo> groups = new ArrayList<>(3);
 
     // This is a group that returns an operator chain manager that returns an operator chain
@@ -168,6 +167,11 @@ public final class GlobalSchedEventProcessorTest {
 
     @Override
     public void onNext(final GroupEvent groupEvent) {
+      // do nothing
+    }
+
+    @Override
+    public void close() throws Exception {
       // do nothing
     }
   }

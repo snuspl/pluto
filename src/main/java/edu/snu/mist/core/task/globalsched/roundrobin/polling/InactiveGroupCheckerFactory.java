@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.eventProcessors;
+package edu.snu.mist.core.task.globalsched.roundrobin.polling;
+
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * This is an interface of EventProcessor that processes events of queries.
+ * Inactive group checker factory interface.
  */
-public interface EventProcessor extends AutoCloseable {
+@DefaultImplementation(NaiveInactiveGroupCheckerFactory.class)
+public interface InactiveGroupCheckerFactory {
 
   /**
-   * Start to execute the events of queries.
+   * Get a new instance of inactive group checker.
    */
-  void start();
-
-  /**
-   * Interrupt the event processing.
-   */
-  void interrupt();
+  InactiveGroupChecker newInstance();
 }

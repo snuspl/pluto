@@ -71,7 +71,11 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
       final Iterator<EventProcessor> iterator = eventProcessors.iterator();
       while(iterator.hasNext()) {
         final EventProcessor eventProcessor = iterator.next();
-        eventProcessor.close();
+        try {
+          eventProcessor.close();
+        } catch (final Exception e) {
+          e.printStackTrace();
+        }
         iterator.remove();
         closedProcessorNum++;
         if (closedProcessorNum >= currentThreadNum - threadNum) {
@@ -88,6 +92,12 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
 
   @Override
   public void close() throws Exception {
-    eventProcessors.forEach(eventProcessor -> eventProcessor.close());
+    eventProcessors.forEach(eventProcessor -> {
+      try {
+        eventProcessor.close();
+      } catch (final Exception e) {
+        e.printStackTrace();
+      }
+    });
   }
 }
