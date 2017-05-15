@@ -16,12 +16,15 @@
 package edu.snu.mist.core.task.eventProcessors;
 
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorLowerBound;
+import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorUpperBound;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This is a default implementation that can adjust the number of event processors.
@@ -29,10 +32,22 @@ import java.util.Set;
  */
 public final class DefaultEventProcessorManager implements EventProcessorManager {
 
+  private static final Logger LOG = Logger.getLogger(DefaultEventProcessorManager.class.getName());
+
+  /**
+   * The lowest number of event processors.
+   */
+  private final int eventProcessorLowerBound;
+
+  /**
+   * The highest number of event processors.
+   */
+  private final int eventProcessorUpperBound;
+
   /**
    * A set of EventProcessor.
    */
-  private final Set<EventProcessor> eventProcessors;
+  private final Queue<EventProcessor> eventProcessors;
 
   /**
    * Event processor factory.
@@ -41,8 +56,12 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
 
   @Inject
   private DefaultEventProcessorManager(@Parameter(DefaultNumEventProcessors.class) final int defaultNumEventProcessors,
+                                       @Parameter(EventProcessorLowerBound.class) final int eventProcessorLowerBound,
+                                       @Parameter(EventProcessorUpperBound.class) final int eventProcessorUpperBound,
                                        final EventProcessorFactory eventProcessorFactory) {
-    this.eventProcessors = new HashSet<>();
+    this.eventProcessorLowerBound = eventProcessorLowerBound;
+    this.eventProcessorUpperBound = eventProcessorUpperBound;
+    this.eventProcessors = new LinkedList<>();
     this.eventProcessorFactory = eventProcessorFactory;
     addNewThreadsToSet(defaultNumEventProcessors);
   }
@@ -60,44 +79,75 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
   }
 
   @Override
-  public void adjustEventProcessorNum(final long threadNum) {
-    final int currentThreadNum = eventProcessors.size();
-    if (currentThreadNum <= threadNum) {
-      // if we need to make more event processor
-      addNewThreadsToSet(threadNum - currentThreadNum);
-    } else if (currentThreadNum > threadNum) {
-      // if we need to close some processor
-      int closedProcessorNum = 0;
-      final Iterator<EventProcessor> iterator = eventProcessors.iterator();
-      while(iterator.hasNext()) {
-        final EventProcessor eventProcessor = iterator.next();
-        try {
-          eventProcessor.close();
-        } catch (final Exception e) {
-          e.printStackTrace();
+  public void increaseEventProcessors(final int delta) {
+    synchronized (eventProcessors) {
+      final int currNum = eventProcessors.size();
+      final int increaseNum = Math.min(delta, eventProcessorUpperBound - currNum);
+      if (increaseNum != 0) {
+
+        if (LOG.isLoggable(Level.FINE)) {
+          LOG.log(Level.FINE, "Increase event processors from {0} to {1}",
+              new Object[]{currNum, currNum + increaseNum});
         }
-        iterator.remove();
-        closedProcessorNum++;
-        if (closedProcessorNum >= currentThreadNum - threadNum) {
-          break;
+
+        addNewThreadsToSet(increaseNum);
+      }
+    }
+  }
+
+  @Override
+  public void decreaseEventProcessors(final int delta) {
+    synchronized (eventProcessors) {
+      final int currNum = eventProcessors.size();
+      final int decreaseNum = Math.min(delta, currNum - eventProcessorLowerBound);
+      if (decreaseNum != 0) {
+
+        if (LOG.isLoggable(Level.FINE)) {
+          LOG.log(Level.FINE, "Decrease event processors from {0} to {1}",
+              new Object[]{currNum, currNum - decreaseNum});
+        }
+
+        for (int i = 0; i < decreaseNum; i++) {
+          final EventProcessor eventProcessor = eventProcessors.poll();
+          try {
+            eventProcessor.close();
+          } catch (final Exception e) {
+            e.printStackTrace();
+          }
         }
       }
     }
   }
 
   @Override
-  public Set<EventProcessor> getEventProcessors() {
-    return eventProcessors;
+  public void adjustEventProcessorNum(final int adjustNum) {
+    synchronized (eventProcessors) {
+      final int currSize = eventProcessors.size();
+      if (adjustNum < currSize) {
+        decreaseEventProcessors(currSize - adjustNum);
+      } else if (adjustNum > currSize) {
+        increaseEventProcessors(adjustNum - currSize);
+      }
+    }
+  }
+
+  @Override
+  public int size() {
+    synchronized (eventProcessors) {
+      return eventProcessors.size();
+    }
   }
 
   @Override
   public void close() throws Exception {
-    eventProcessors.forEach(eventProcessor -> {
-      try {
-        eventProcessor.close();
-      } catch (final Exception e) {
-        e.printStackTrace();
-      }
-    });
+    synchronized (eventProcessors) {
+      eventProcessors.forEach(eventProcessor -> {
+        try {
+          eventProcessor.close();
+        } catch (final Exception e) {
+          e.printStackTrace();
+        }
+      });
+    }
   }
 }

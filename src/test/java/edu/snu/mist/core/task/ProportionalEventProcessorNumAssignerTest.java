@@ -21,7 +21,6 @@ import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.metrics.GlobalMetrics;
 import edu.snu.mist.core.task.metrics.MetricUpdateEvent;
 import edu.snu.mist.core.task.metrics.ProportionalEventProcessorNumAssigner;
-import edu.snu.mist.core.task.utils.TestEventProcessorManager;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -74,7 +73,7 @@ public final class ProportionalEventProcessorNumAssignerTest {
 
     // Only one thread should be assigned to each group
     groupInfoMap.values().forEach(groupInfo -> Assert.assertEquals(
-        1, groupInfo.getEventProcessorManager().getEventProcessors().size()));
+        1, groupInfo.getEventProcessorManager().size()));
   }
 
   /**
@@ -93,7 +92,7 @@ public final class ProportionalEventProcessorNumAssignerTest {
 
     // Only one thread should be assigned to each group
     groupInfoMap.values().forEach(groupInfo -> Assert.assertEquals(
-        1, groupInfo.getEventProcessorManager().getEventProcessors().size()));
+        1, groupInfo.getEventProcessorManager().size()));
   }
 
   /**
@@ -124,7 +123,7 @@ public final class ProportionalEventProcessorNumAssignerTest {
         expected = 1;
       }
       Assert.assertEquals(
-          expected, groupInfo.getEventProcessorManager().getEventProcessors().size());
+          expected, groupInfo.getEventProcessorManager().size());
     }
   }
 
@@ -143,5 +142,43 @@ public final class ProportionalEventProcessorNumAssignerTest {
     final GroupInfo groupInfo = injector.getInstance(GroupInfo.class);
     groupInfoMap.put(groupId, groupInfo);
     return groupInfo;
+  }
+
+  /**
+   * This class represents a simple EventProcessorManager for test.
+   * It just keep the processorNum value.
+   */
+  final class TestEventProcessorManager implements EventProcessorManager {
+
+    private int processorNum;
+
+    public TestEventProcessorManager() {
+      this.processorNum = 0;
+    }
+
+    @Override
+    public void close() {
+      // do nothing
+    }
+
+    @Override
+    public void increaseEventProcessors(final int delta) {
+      throw new RuntimeException();
+    }
+
+    @Override
+    public void decreaseEventProcessors(final int delta) {
+      throw new RuntimeException();
+    }
+
+    @Override
+    public void adjustEventProcessorNum(final int adjNum) {
+      this.processorNum = adjNum;
+    }
+
+    @Override
+    public int size() {
+      return processorNum;
+    }
   }
 }

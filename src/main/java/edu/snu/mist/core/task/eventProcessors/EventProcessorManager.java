@@ -17,8 +17,6 @@ package edu.snu.mist.core.task.eventProcessors;
 
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
-import java.util.Set;
-
 /**
  * This interface is for event processor management.
  */
@@ -26,16 +24,25 @@ import java.util.Set;
 public interface EventProcessorManager extends AutoCloseable {
 
   /**
-   * Returns the EventProcessors.
-   * @return a set of event processors.
+   * Increase the number of event processors.
+   * @param delta the increase number of event processors.
    */
-  Set<EventProcessor> getEventProcessors();
+  void increaseEventProcessors(int delta);
 
   /**
-   * Adjust the number of event processors.
-   * It will create new event processors if the current # of event processors < adjustNum.
-   * It will delete existing event processors if the current # of event processors > adjustNum.
-   * @param adjustNum the number of event processors to be adjusted.
+   * Decrease the number of event processors.
+   * @param delta the decrease number of event processors.
    */
-  void adjustEventProcessorNum(long adjustNum);
+  void decreaseEventProcessors(int delta);
+
+  /**
+   * Adjust the number of event processors to adjNum.
+   * @param adjNum adjust number
+   */
+  void adjustEventProcessorNum(int adjNum);
+
+  /**
+   * The number of event processors.
+   */
+  int size();
 }

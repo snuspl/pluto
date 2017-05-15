@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched.metrics;
+package edu.snu.mist.core.task.globalsched;
 
-import edu.snu.mist.core.parameters.ThreadNumLimit;
 import edu.snu.mist.core.task.MistPubSubEventHandler;
+import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
+import edu.snu.mist.core.task.globalsched.metrics.GlobalSchedGlobalMetrics;
+import edu.snu.mist.core.task.globalsched.parameters.*;
 import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
 import edu.snu.mist.core.task.metrics.MetricUpdateEvent;
-import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
-import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
-import edu.snu.mist.core.task.globalsched.parameters.*;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -39,16 +37,6 @@ import java.util.logging.Logger;
 public final class MISDEventProcessorNumAssigner implements EventProcessorNumAssigner {
 
   private static final Logger LOG = Logger.getLogger(MISDEventProcessorNumAssigner.class.getName());
-
-  /**
-   * The limit of the total number of executor threads.
-   */
-  private final int threadNumLimit;
-
-  /**
-   * The default number of event processors.
-   */
-  private final int defaultNumEventProcessors;
 
   /**
    * The high threshold of the number of events.
@@ -89,10 +77,13 @@ public final class MISDEventProcessorNumAssigner implements EventProcessorNumAss
    */
   private final GlobalSchedGlobalMetrics metrics;
 
+  /**
+   * Previous increase number.
+   */
+  private int prevIncreaseNum;
+
   @Inject
   private MISDEventProcessorNumAssigner(
-      @Parameter(DefaultNumEventProcessors.class) final int defaultNumEventProcessors,
-      @Parameter(ThreadNumLimit.class) final int threadNumLimit,
       @Parameter(EventNumHighThreshold.class) final double eventNumHighThreshold,
       @Parameter(EventNumLowThreshold.class) final double eventNumLowThreshold,
       @Parameter(CpuUtilLowThreshold.class) final double cpuUtilLowThreshold,
@@ -101,8 +92,6 @@ public final class MISDEventProcessorNumAssigner implements EventProcessorNumAss
       final EventProcessorManager eventProcessorManager,
       final GlobalSchedGlobalMetrics globalMetrics,
       final MistPubSubEventHandler pubSubEventHandler) {
-    this.defaultNumEventProcessors = defaultNumEventProcessors;
-    this.threadNumLimit = threadNumLimit;
     this.eventNumHighThreshold = eventNumHighThreshold;
     this.eventNumLowThreshold = eventNumLowThreshold;
     this.cpuUtilLowThreshold = cpuUtilLowThreshold;
@@ -110,6 +99,7 @@ public final class MISDEventProcessorNumAssigner implements EventProcessorNumAss
     this.decreaseNum = decreaseNum;
     this.eventProcessorManager = eventProcessorManager;
     this.metrics = globalMetrics;
+    this.prevIncreaseNum = 1;
     pubSubEventHandler.getPubSubEventHandler().subscribe(MetricUpdateEvent.class, this);
   }
 
@@ -120,7 +110,6 @@ public final class MISDEventProcessorNumAssigner implements EventProcessorNumAss
   public void onNext(final MetricUpdateEvent metricUpdateEvent) {
     final double currCpuUtil = metrics.getCpuUtilMetric().getEwmaSystemCpuUtil();
     final double currEventNum = metrics.getNumEventAndWeightMetric().getEwmaNumEvents();
-    final int currentEventProcessorsNum = eventProcessorManager.getEventProcessors().size();
 
     if (currCpuUtil < cpuUtilLowThreshold) {
       if (currEventNum > eventNumHighThreshold) {
@@ -128,26 +117,15 @@ public final class MISDEventProcessorNumAssigner implements EventProcessorNumAss
         // the event processors could be blocked by some operations such as I/O.
         // In that case, we should increase the number of event processors.
         // The increase will be multiplicative because we should react rapidly to the congestion state.
-        final int adjustNum = Math.min((int)(currentEventProcessorsNum * increaseRate), threadNumLimit);
-
-        if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "Increase event processors from {0} to {1}: [{2}, {3}]",
-              new Object[]{currentEventProcessorsNum, adjustNum, currCpuUtil, currEventNum});
-        }
-
-        eventProcessorManager.adjustEventProcessorNum(adjustNum);
+        final int increaseNum = (int)(prevIncreaseNum * increaseRate);
+        eventProcessorManager.increaseEventProcessors(increaseNum);
+        prevIncreaseNum = increaseNum;
       } else if (currEventNum < eventNumLowThreshold) {
         // If the cpu utilization is low and there are few events,
         // then there might be too many event processors.
         // The decrease will be additive because we do not have to react rapidly to the idle state.
-        final int adjustNum = Math.max(currentEventProcessorsNum - decreaseNum, defaultNumEventProcessors);
-
-        if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "Decrease event processors from {0} to {1}: [{2}, {3}]",
-              new Object[]{currentEventProcessorsNum, adjustNum, currCpuUtil, currEventNum});
-        }
-
-        eventProcessorManager.adjustEventProcessorNum(adjustNum);
+        eventProcessorManager.decreaseEventProcessors(decreaseNum);
+        prevIncreaseNum = 1;
       }
     }
   }
