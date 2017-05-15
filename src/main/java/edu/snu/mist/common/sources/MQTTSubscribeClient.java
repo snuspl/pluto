@@ -17,9 +17,9 @@ package edu.snu.mist.common.sources;
 
 import org.eclipse.paho.client.mqttv3.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -46,7 +46,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
   /**
    * The map coupling MQTT topic name and list of MQTTDataGenerators.
    */
-  private final ConcurrentMap<String, List<MQTTDataGenerator>> dataGeneratorListMap;
+  private final ConcurrentMap<String, Queue<MQTTDataGenerator>> dataGeneratorListMap;
   /**
    * The lock used when a DataGenerator want to start subscription.
    */
@@ -73,10 +73,10 @@ public final class MQTTSubscribeClient implements MqttCallback {
    * @param topic the topic of connected broker to subscribe
    * @return requested MQTTDataGenerator connected with the target broker and topic
    */
-  public synchronized MQTTDataGenerator connectToTopic(final String topic) {
-    List<MQTTDataGenerator> dataGeneratorList = dataGeneratorListMap.get(topic);
+  public MQTTDataGenerator connectToTopic(final String topic) {
+    Queue<MQTTDataGenerator> dataGeneratorList = dataGeneratorListMap.get(topic);
     if (dataGeneratorList == null) {
-      dataGeneratorList = new ArrayList<>();
+      dataGeneratorList = new ConcurrentLinkedQueue<>();
       dataGeneratorListMap.put(topic, dataGeneratorList);
     }
     final MQTTDataGenerator dataGenerator = new MQTTDataGenerator(this, topic);
@@ -87,7 +87,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
   /**
    * Start to subscribe a topic.
    */
-  synchronized void subscribe(final String topic) throws MqttException {
+  void subscribe(final String topic) throws MqttException {
     synchronized (subscribeLock) {
       if (!started) {
         client = new MqttClient(brokerURI, clientId);
@@ -102,9 +102,8 @@ public final class MQTTSubscribeClient implements MqttCallback {
   /**
    * Unsubscribe a topic.
    */
-  synchronized void unsubscribe(final String topic) throws MqttException {
-    client.unsubscribe(topic);
-    dataGeneratorListMap.remove(topic);
+  void unsubscribe(final String topic) throws MqttException {
+    throw new UnsupportedOperationException("Unsubscribing is not supported now!");
   }
 
   /**
@@ -121,7 +120,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
 
   @Override
   public void messageArrived(final String topic, final MqttMessage message) {
-    final List<MQTTDataGenerator> dataGeneratorList = dataGeneratorListMap.get(topic);
+    final Queue<MQTTDataGenerator> dataGeneratorList = dataGeneratorListMap.get(topic);
     if (dataGeneratorList != null) {
       dataGeneratorList.forEach(dataGenerator -> dataGenerator.emitData(message));
     }
