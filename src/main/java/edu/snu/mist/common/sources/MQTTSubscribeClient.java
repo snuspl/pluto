@@ -17,7 +17,9 @@ package edu.snu.mist.common.sources;
 
 import org.eclipse.paho.client.mqttv3.*;
 
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -42,9 +44,9 @@ public final class MQTTSubscribeClient implements MqttCallback {
    */
   private final String clientId;
   /**
-   * The map coupling MQTT topic name and MQTTDataGenerator.
+   * The map coupling MQTT topic name and list of MQTTDataGenerators.
    */
-  private final ConcurrentMap<String, MQTTDataGenerator> dataGeneratorMap;
+  private final ConcurrentMap<String, Queue<MQTTDataGenerator>> dataGeneratorListMap;
   /**
    * The lock used when a DataGenerator want to start subscription.
    */
@@ -59,7 +61,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
     this.started = false;
     this.brokerURI = brokerURI;
     this.clientId = clientId;
-    this.dataGeneratorMap = new ConcurrentHashMap<>();
+    this.dataGeneratorListMap = new ConcurrentHashMap<>();
     this.subscribeLock = new Object();
   }
 
@@ -72,12 +74,13 @@ public final class MQTTSubscribeClient implements MqttCallback {
    * @return requested MQTTDataGenerator connected with the target broker and topic
    */
   public MQTTDataGenerator connectToTopic(final String topic) {
-    MQTTDataGenerator dataGenerator = dataGeneratorMap.get(topic);
-    if (dataGenerator == null) {
-      dataGenerator = new MQTTDataGenerator(this, topic);
-      dataGeneratorMap.putIfAbsent(topic, dataGenerator);
-      dataGenerator = dataGeneratorMap.get(topic);
+    Queue<MQTTDataGenerator> dataGeneratorList = dataGeneratorListMap.get(topic);
+    if (dataGeneratorList == null) {
+      dataGeneratorList = new ConcurrentLinkedQueue<>();
+      dataGeneratorListMap.put(topic, dataGeneratorList);
     }
+    final MQTTDataGenerator dataGenerator = new MQTTDataGenerator(this, topic);
+    dataGeneratorListMap.get(topic).add(dataGenerator);
     return dataGenerator;
   }
 
@@ -100,8 +103,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
    * Unsubscribe a topic.
    */
   void unsubscribe(final String topic) throws MqttException {
-    client.unsubscribe(topic);
-    dataGeneratorMap.remove(topic);
+    throw new UnsupportedOperationException("Unsubscribing is not supported now!");
   }
 
   /**
@@ -118,9 +120,9 @@ public final class MQTTSubscribeClient implements MqttCallback {
 
   @Override
   public void messageArrived(final String topic, final MqttMessage message) {
-    final MQTTDataGenerator dataGenerator = dataGeneratorMap.get(topic);
-    if (dataGenerator != null) {
-      dataGenerator.emitData(message);
+    final Queue<MQTTDataGenerator> dataGeneratorList = dataGeneratorListMap.get(topic);
+    if (dataGeneratorList != null) {
+      dataGeneratorList.forEach(dataGenerator -> dataGenerator.emitData(message));
     }
   }
 
