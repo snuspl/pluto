@@ -67,6 +67,9 @@ public final class WrrPollingNextGroupSelector implements NextGroupSelector {
    */
   private final Map<GlobalSchedGroupInfo, AtomicBoolean> groupStatusMap;
 
+  /**
+   * Variable for checking whether the selector is closed or not.
+   */
   private final AtomicBoolean closed = new AtomicBoolean(false);
 
   WrrPollingNextGroupSelector(final MistPubSubEventHandler pubSubEventHandler,

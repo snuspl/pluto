@@ -18,6 +18,6 @@ package edu.snu.mist.core.task.globalsched.roundrobin.polling;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "inactive polling period", short_name = "polling_period", default_value = "50")
+@NamedParameter(doc = "inactive polling period (ms)", short_name = "polling_period", default_value = "50")
 public final class PollingPeriod implements Name<Long> {
 }
