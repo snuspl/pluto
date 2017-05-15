@@ -27,5 +27,5 @@ public interface OperatorChainFactory {
    * Get the new operator chain.
    * @return operator chain
    */
-  OperatorChain newInstance();
+  OperatorChain newInstance(String id);
 }

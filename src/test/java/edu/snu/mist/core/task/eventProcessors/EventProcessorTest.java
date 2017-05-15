@@ -112,12 +112,12 @@ public final class EventProcessorTest {
     final List<MistEvent> list2 = new LinkedList<>();
     final List<MistEvent> result = new LinkedList<>();
 
-    final OperatorChain chain1 = new DefaultOperatorChainImpl();
+    final OperatorChain chain1 = new DefaultOperatorChainImpl("testOpChain-1");
     final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl("op1", null, new TestOperator(countDownLatch1), chain1);
     chain1.insertToHead(o1);
     chain1.setOutputEmitter(new OutputBufferEmitter(list1));
     chain1.setOperatorChainManager(operatorChainManager);
-    final OperatorChain chain2 = new DefaultOperatorChainImpl();
+    final OperatorChain chain2 = new DefaultOperatorChainImpl("testOpChain-2");
     final PhysicalOperator o2 = new DefaultPhysicalOperatorImpl("op2", null, new TestOperator(countDownLatch2), chain2);
     chain2.insertToHead(o2);
     chain2.setOutputEmitter(new OutputBufferEmitter(list2));
@@ -156,7 +156,7 @@ public final class EventProcessorTest {
     final List<MistEvent> list1 = new LinkedList<>();
     final List<MistEvent> result = new LinkedList<>();
 
-    final OperatorChain query = new DefaultOperatorChainImpl();
+    final OperatorChain query = new DefaultOperatorChainImpl("testOpChain");
     final PhysicalOperator o1 = new DefaultPhysicalOperatorImpl("op1", null, new TestOperator(countDownLatch), query);
     query.insertToHead(o1);
     query.setOutputEmitter(new OutputBufferEmitter(list1));

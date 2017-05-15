@@ -105,7 +105,8 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
           break;
         }
         case OPERATOR_CHAIN: {
-          final OperatorChain operatorChain = operatorChainFactory.newInstance();
+          final String opChainId = idGenerator.generateOperatorChainId();
+          final OperatorChain operatorChain = operatorChainFactory.newInstance(opChainId);
           deserializedVertices.add(operatorChain);
           for (final Vertex vertex : avroVertexChain.getVertexChain()) {
             final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),

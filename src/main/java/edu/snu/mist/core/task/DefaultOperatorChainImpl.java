@@ -67,12 +67,18 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
    */
   private OperatorChainManager operatorChainManager;
 
-  public DefaultOperatorChainImpl() {
+  /**
+   * The id of this operator chain.
+   */
+  private String operatorChainId;
+
+  public DefaultOperatorChainImpl(final String operatorChainId) {
     this.operators = new LinkedList<>();
     this.queue = new ConcurrentLinkedQueue<>();
     this.status = new AtomicReference<>(Status.READY);
     this.outputEmitter = null;
     this.operatorChainManager = null;
+    this.operatorChainId = operatorChainId;
   }
 
   @Override
@@ -178,6 +184,11 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
     return Type.OPERATOR_CHIAN;
   }
 
+  @Override
+  public String getIdentifier() {
+    return operatorChainId;
+  }
+
   private void process(final Tuple<MistEvent, Direction> input) {
     if (outputEmitter == null) {
       throw new RuntimeException("OutputEmitter should be set in OperatorChain");
@@ -234,6 +245,33 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
     sb.append("|");
     sb.append(operators.toString());
     return sb.toString();
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    final DefaultOperatorChainImpl that = (DefaultOperatorChainImpl) o;
+
+    if (!operators.equals(that.operators)) {
+      return false;
+    }
+
+    if (!operatorChainId.equals(that.operatorChainId)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    return 31 * operators.hashCode() + operatorChainId.hashCode();
   }
 
   /**

@@ -13,22 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.parameters;
 
-import javax.inject.Inject;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * This is a default implementation of operator chain factory.
+ * Prefix used for making operatorChain IDs.
  */
-public final class DefaultOperatorChainFactory implements OperatorChainFactory {
-
-  @Inject
-  private DefaultOperatorChainFactory() {
-    // empty
-  }
-
-  @Override
-  public OperatorChain newInstance(final String id) {
-    return new DefaultOperatorChainImpl(id);
-  }
+@NamedParameter(doc = "A prefix used for making operatorChain ID", default_value = "opChain-")
+public final class OperatorChainIdPrefix implements Name<String> {
+  // empty
 }

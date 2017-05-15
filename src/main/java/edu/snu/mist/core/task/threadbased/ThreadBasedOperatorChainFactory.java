@@ -31,7 +31,7 @@ public final class ThreadBasedOperatorChainFactory implements OperatorChainFacto
   }
 
   @Override
-  public OperatorChain newInstance() {
-    return new ThreadBasedOperatorChainImpl();
+  public OperatorChain newInstance(final String id) {
+    return new ThreadBasedOperatorChainImpl(id);
   }
 }

@@ -67,7 +67,35 @@ public final class PhysicalSourceImpl<T> extends BasePhysicalVertex implements P
   }
 
   @Override
+  public String getIdentifier() {
+    return id;
+  }
+
+  @Override
   public void setOutputEmitter(final OutputEmitter emitter) {
     eventGenerator.setOutputEmitter(emitter);
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    final PhysicalSourceImpl<T> that = (PhysicalSourceImpl<T>) o;
+
+    if (!id.equals(that.id)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    return id.hashCode();
   }
 }

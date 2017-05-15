@@ -39,4 +39,32 @@ public final class PhysicalSinkImpl<I> extends BasePhysicalVertex implements Phy
   public Type getType() {
     return Type.SINK;
   }
+
+  @Override
+  public String getIdentifier() {
+    return id;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    final PhysicalSinkImpl<I> that = (PhysicalSinkImpl<I>) o;
+
+    if (!id.equals(that.id)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    return id.hashCode();
+  }
 }
