@@ -28,6 +28,9 @@ import edu.snu.mist.core.task.globalsched.metrics.DefaultEventProcessorNumAssign
 import edu.snu.mist.core.task.globalsched.metrics.MISDEventProcessorNumAssigner;
 import edu.snu.mist.core.task.globalsched.parameters.*;
 import edu.snu.mist.core.task.globalsched.roundrobin.WeightedRRNextGroupSelectorFactory;
+import edu.snu.mist.core.task.globalsched.roundrobin.polling.InactiveGroupCheckerFactory;
+import edu.snu.mist.core.task.globalsched.roundrobin.polling.NaiveInactiveGroupCheckerFactory;
+import edu.snu.mist.core.task.globalsched.roundrobin.polling.WrrPollingNextGroupSelectorFactory;
 import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
@@ -104,6 +107,7 @@ public final class MistGroupSchedulingTaskConfigs {
    * Get the configuration for execution model.
    * - blocking: round-robin with blocking
    * - nonblocking: round-robin without blocking
+   * - polling: round-robin without blocking + activate/deactivate group in polling approach
    */
   private Configuration getConfigurationForExecutionModel() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
@@ -115,6 +119,11 @@ public final class MistGroupSchedulingTaskConfigs {
       case "nonblocking":
         jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedNonBlockingEventProcessorFactory.class);
         jcb.bindImplementation(NextGroupSelectorFactory.class, WeightedRRNextGroupSelectorFactory.class);
+        break;
+      case "polling":
+        jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedNonBlockingEventProcessorFactory.class);
+        jcb.bindImplementation(NextGroupSelectorFactory.class, WrrPollingNextGroupSelectorFactory.class);
+        jcb.bindImplementation(InactiveGroupCheckerFactory.class, NaiveInactiveGroupCheckerFactory.class);
         break;
       default:
         throw new RuntimeException("Invalid group scheduling model: " + groupSchedModelType);

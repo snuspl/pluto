@@ -25,11 +25,13 @@ import edu.snu.mist.core.task.metrics.MetricTrackEventHandler;
 
 import javax.inject.Inject;
 import java.util.Collection;
+import java.util.logging.Logger;
 
 /**
  * A class handles the metric event about EventNumMetric.
  */
 public final class EventNumAndWeightMetricEventHandler implements MetricTrackEventHandler {
+  private static final Logger LOG = Logger.getLogger(EventNumAndWeightMetricEventHandler.class.getName());
 
   /**
    * The map of group ids and group info to update.

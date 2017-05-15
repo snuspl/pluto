@@ -13,20 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.eventProcessors;
+package edu.snu.mist.core.task.globalsched.roundrobin.polling;
+
+import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 
 /**
- * This is an interface of EventProcessor that processes events of queries.
+ * This class checks whether the group is inactive or not based on the miss.
  */
-public interface EventProcessor extends AutoCloseable {
+public final class NaiveInactiveGroupChecker implements InactiveGroupChecker {
+
+  NaiveInactiveGroupChecker() {
+    // do nothing
+  }
 
   /**
-   * Start to execute the events of queries.
+   * Just returns the miss value (it means it determines the group becomes inactive when a single miss occur).
    */
-  void start();
-
-  /**
-   * Interrupt the event processing.
-   */
-  void interrupt();
+  @Override
+  public boolean check(final GlobalSchedGroupInfo groupInfo, final boolean miss) {
+    return miss;
+  }
 }

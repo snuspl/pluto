@@ -75,6 +75,7 @@ final class GlobalSchedNonBlockingEventProcessor extends Thread implements Event
 
         final long startTime = System.nanoTime();
 
+        long procsesedEvent = 0;
         while (TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) < schedulingPeriod && !closed) {
           // This is a blocking operator chain manager
           // So it should not be null
@@ -84,11 +85,16 @@ final class GlobalSchedNonBlockingEventProcessor extends Thread implements Event
             miss = true;
             break;
           } else {
+            procsesedEvent += 1;
             operatorChain.processNextEvent();
           }
         }
 
         if (LOG.isLoggable(Level.FINE)) {
+        LOG.log(Level.FINE, "{0} Process Group {1}, Event: {2}, Period: {3}, ActualTime: {4}",
+            new Object[]{Thread.currentThread().getName(), groupInfo, procsesedEvent, schedulingPeriod,
+            TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime)});
+
           LOG.log(Level.FINE, "{0}: Reschedule group {1}",
               new Object[]{Thread.currentThread().getName(), groupInfo});
         }
@@ -97,11 +103,15 @@ final class GlobalSchedNonBlockingEventProcessor extends Thread implements Event
       }
     } catch (final InterruptedException e) {
       // Interrupt occurs while sleeping, so just finishes the process...
-      return;
+      e.printStackTrace();
+    } catch (final Exception e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
     }
   }
 
-  public void close() {
+  public void close() throws Exception {
     closed = true;
+    nextGroupSelector.close();
   }
 }

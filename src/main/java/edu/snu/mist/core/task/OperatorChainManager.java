@@ -39,4 +39,10 @@ public interface OperatorChainManager {
    * @return an operator chain.
    */
   OperatorChain pickOperatorChain() throws InterruptedException;
+
+  /**
+   * The number of active operator chains.
+   * @return active operator chain
+   */
+  int size();
 }

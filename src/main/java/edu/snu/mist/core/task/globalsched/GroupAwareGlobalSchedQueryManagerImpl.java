@@ -188,6 +188,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
             jcb.bindImplementation(OperatorChainManager.class, BlockingActiveOperatorChainPickManager.class);
             break;
           case "nonblocking":
+          case "polling":
             jcb.bindImplementation(OperatorChainManager.class, NonBlockingActiveOperatorChainPickManager.class);
             break;
           default:

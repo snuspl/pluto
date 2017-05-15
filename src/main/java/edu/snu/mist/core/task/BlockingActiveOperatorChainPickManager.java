@@ -100,4 +100,9 @@ public final class BlockingActiveOperatorChainPickManager implements OperatorCha
     }
     return operatorChain;
   }
+
+  @Override
+  public int size() {
+    return activeQueryQueue.size();
+  }
 }

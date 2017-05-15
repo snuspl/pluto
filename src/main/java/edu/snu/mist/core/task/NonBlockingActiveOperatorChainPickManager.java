@@ -67,4 +67,9 @@ public final class NonBlockingActiveOperatorChainPickManager implements Operator
   public OperatorChain pickOperatorChain() {
     return activeQueryQueue.poll();
   }
+
+  @Override
+  public int size() {
+    return activeQueryQueue.size();
+  }
 }

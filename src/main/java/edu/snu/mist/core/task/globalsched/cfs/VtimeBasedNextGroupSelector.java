@@ -188,4 +188,9 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
         throw new RuntimeException("Invalid group event type: " + groupEvent.getGroupEventType());
     }
   }
+
+  @Override
+  public void close() throws Exception {
+    // do nothing
+  }
 }
