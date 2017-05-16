@@ -16,6 +16,8 @@
 package edu.snu.mist.core.task.eventProcessors;
 
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorLowerBound;
+import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorUpperBound;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -26,9 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.inject.Inject;
-import java.util.Set;
 
-import static java.lang.Thread.sleep;
 import static org.mockito.Mockito.mock;
 
 public class EventProcessorManagerTest {
@@ -36,11 +36,14 @@ public class EventProcessorManagerTest {
   private EventProcessorManager eventProcessorManager;
   private static final int DEFAULT_NUM_THREADS = 5;
   private static final int MAX_NUM_THREADS = 10;
+  private static final int MIN_NUM_THREADS = 2;
 
   @Before
   public void setUp() throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, Integer.toString(DEFAULT_NUM_THREADS));
+    jcb.bindNamedParameter(EventProcessorUpperBound.class, Integer.toString(MAX_NUM_THREADS));
+    jcb.bindNamedParameter(EventProcessorLowerBound.class, Integer.toString(MIN_NUM_THREADS));
     jcb.bindImplementation(EventProcessorFactory.class, TestEventProcessorFactory.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     eventProcessorManager = injector.getInstance(DefaultEventProcessorManager.class);
@@ -56,35 +59,55 @@ public class EventProcessorManagerTest {
    */
   @Test
   public void testFixedNumberGeneration() throws Exception {
-    final Set<EventProcessor> eventProcessors = eventProcessorManager.getEventProcessors();
-    Assert.assertEquals(eventProcessors.size(), DEFAULT_NUM_THREADS);
+    Assert.assertEquals(DEFAULT_NUM_THREADS, eventProcessorManager.size());
   }
 
   /**
-   * Test whether EventProcessorManager creates new event processors when current_num_processors < adjust_num.
+   * Test whether EventProcessorManager increases the number of event processors.
    */
   @Test
   public void testIncreaseEventProcessors() throws Exception {
     // The event processors will be generated synchronously.
-    eventProcessorManager.adjustEventProcessorNum(MAX_NUM_THREADS);
+    eventProcessorManager.increaseEventProcessors(MAX_NUM_THREADS - DEFAULT_NUM_THREADS);
+    Assert.assertEquals(MAX_NUM_THREADS, eventProcessorManager.size());
 
-    final Set<EventProcessor> eventProcessors = eventProcessorManager.getEventProcessors();
-    Assert.assertEquals(MAX_NUM_THREADS, eventProcessors.size());
-    eventProcessorManager.close();
+    // upper bound test
+    eventProcessorManager.increaseEventProcessors(5);
+    Assert.assertEquals(MAX_NUM_THREADS, eventProcessorManager.size());
   }
 
   /**
-   * Test whether EventProcessorManager remove existing event processors when current_num_processors > adjust_num.
+   * Test whether EventProcessorManager decreases the number of event processors.
    */
   @Test
   public void testDecreaseEventProcessors() throws Exception {
-    // The event processors will be deleted asynchronously.
-    eventProcessorManager.adjustEventProcessorNum(2);
+    // The event processors will be generated synchronously.
+    eventProcessorManager.decreaseEventProcessors(DEFAULT_NUM_THREADS - MIN_NUM_THREADS);
+    Assert.assertEquals(MIN_NUM_THREADS, eventProcessorManager.size());
 
-    sleep(100);
-    final Set<EventProcessor> eventProcessors = eventProcessorManager.getEventProcessors();
-    Assert.assertEquals(2, eventProcessors.size());
-    eventProcessorManager.close();
+    // lower bound test
+    eventProcessorManager.decreaseEventProcessors(5);
+    Assert.assertEquals(MIN_NUM_THREADS, eventProcessorManager.size());
+  }
+
+  /**
+   * Test whether EventProcessorManager adjusts the number of event processors correctly.
+   */
+  @Test
+  public void testAdjustEventProcessors() throws Exception {
+    // The event processors will be generated synchronously.
+    eventProcessorManager.adjustEventProcessorNum(MAX_NUM_THREADS);
+    Assert.assertEquals(MAX_NUM_THREADS, eventProcessorManager.size());
+
+    eventProcessorManager.adjustEventProcessorNum(DEFAULT_NUM_THREADS);
+    Assert.assertEquals(DEFAULT_NUM_THREADS, eventProcessorManager.size());
+
+
+    eventProcessorManager.adjustEventProcessorNum(MAX_NUM_THREADS + 1);
+    Assert.assertEquals(MAX_NUM_THREADS, eventProcessorManager.size());
+
+    eventProcessorManager.adjustEventProcessorNum(MIN_NUM_THREADS - 1);
+    Assert.assertEquals(MIN_NUM_THREADS, eventProcessorManager.size());
   }
 
   /**

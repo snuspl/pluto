@@ -25,7 +25,7 @@ import edu.snu.mist.core.task.globalsched.cfs.CfsSchedulingPeriodCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsSchedulingPeriod;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.MinSchedulingPeriod;
 import edu.snu.mist.core.task.globalsched.metrics.DefaultEventProcessorNumAssigner;
-import edu.snu.mist.core.task.globalsched.metrics.MISDEventProcessorNumAssigner;
+import edu.snu.mist.core.task.globalsched.MISDEventProcessorNumAssigner;
 import edu.snu.mist.core.task.globalsched.parameters.*;
 import edu.snu.mist.core.task.globalsched.roundrobin.WeightedRRNextGroupSelectorFactory;
 import edu.snu.mist.core.task.globalsched.roundrobin.polling.InactiveGroupCheckerFactory;

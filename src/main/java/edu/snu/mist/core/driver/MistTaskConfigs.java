@@ -23,6 +23,8 @@ import edu.snu.mist.core.parameters.NumPeriodicSchedulerThreads;
 import edu.snu.mist.core.parameters.TempFolderPath;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorLowerBound;
+import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorUpperBound;
 import edu.snu.mist.core.task.threadbased.ThreadBasedOperatorChainFactory;
 import edu.snu.mist.core.task.threadbased.ThreadBasedQueryManagerImpl;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
@@ -79,6 +81,16 @@ public final class MistTaskConfigs {
    */
   private final MistGroupSchedulingTaskConfigs option2TaskConfigs;
 
+  /**
+   * The lowest number of event processors.
+   */
+  private final int eventProcessorLowerBound;
+
+  /**
+   * The highest number of event processors.
+   */
+  private final int eventProcessorUpperBound;
+
   @Inject
   private MistTaskConfigs(@Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
                           @Parameter(RPCServerPort.class) final int rpcServerPort,
@@ -86,12 +98,16 @@ public final class MistTaskConfigs {
                           @Parameter(NumPeriodicSchedulerThreads.class) final int numSchedulerThreads,
                           @Parameter(MergingEnabled.class) final boolean mergingEnabled,
                           @Parameter(ExecutionModelOption.class) final int executionModelOption,
+                          @Parameter(EventProcessorLowerBound.class) final int eventProcessorLowerBound,
+                          @Parameter(EventProcessorUpperBound.class) final int eventProcessorUpperBound,
                           final MistGroupSchedulingTaskConfigs option2TaskConfigs) {
     this.numEventProcessors = numEventProcessors;
     this.tempFolderPath = tempFolderPath;
     this.rpcServerPort = rpcServerPort + 10 > MAX_PORT_NUM ? rpcServerPort - 10 : rpcServerPort + 10;
     this.numSchedulerThreads = numSchedulerThreads;
     this.mergingEnabled = mergingEnabled;
+    this.eventProcessorUpperBound = eventProcessorUpperBound;
+    this.eventProcessorLowerBound = eventProcessorLowerBound;
     this.executionModelOption = executionModelOption;
     this.option2TaskConfigs = option2TaskConfigs;
   }
@@ -144,6 +160,8 @@ public final class MistTaskConfigs {
     jcb.bindNamedParameter(NumPeriodicSchedulerThreads.class, Integer.toString(numSchedulerThreads));
     jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
     jcb.bindNamedParameter(MergingEnabled.class, Boolean.toString(mergingEnabled));
+    jcb.bindNamedParameter(EventProcessorLowerBound.class, Integer.toString(eventProcessorLowerBound));
+    jcb.bindNamedParameter(EventProcessorUpperBound.class, Integer.toString(eventProcessorUpperBound));
 
     // Implementation
     jcb.bindImplementation(ClientToTaskMessage.class, DefaultClientToTaskMessageImpl.class);
@@ -163,6 +181,8 @@ public final class MistTaskConfigs {
         .registerShortNameOfClass(TempFolderPath.class)
         .registerShortNameOfClass(NumPeriodicSchedulerThreads.class)
         .registerShortNameOfClass(MergingEnabled.class)
+        .registerShortNameOfClass(EventProcessorLowerBound.class)
+        .registerShortNameOfClass(EventProcessorUpperBound.class)
         .registerShortNameOfClass(ExecutionModelOption.class);
     return MistGroupSchedulingTaskConfigs.addCommandLineConf(cmd);
   }

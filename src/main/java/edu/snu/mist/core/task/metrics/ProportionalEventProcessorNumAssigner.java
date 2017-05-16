@@ -96,7 +96,7 @@ public final class ProportionalEventProcessorNumAssigner implements EventProcess
         for (final GroupInfo groupInfo : groupInfoMap.values()) {
           final long numEvents = (long) groupInfo.getEventNumMetric().getEwmaNumEvents();
           // Assign processor number proportionally to the number of events
-          long processorNumToAssign = remainderProcessorNum * numEvents / sum;
+          int processorNumToAssign = (int)(remainderProcessorNum * numEvents / sum);
           if (processorNumToAssign == 0) {
             // Each group needs at lease one event processor
             processorNumToAssign = 1;
