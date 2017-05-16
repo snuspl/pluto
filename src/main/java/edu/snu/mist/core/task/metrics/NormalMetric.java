@@ -42,10 +42,10 @@ public final class NormalMetric<T> {
   }
 
   /**
-   * Update the value of this metric.
+   * Set the value of this metric.
    * @param updateValue the value to set
    */
-  public void setMetric(final T updateValue) {
+  public void setValue(final T updateValue) {
     this.value = updateValue;
   }
 

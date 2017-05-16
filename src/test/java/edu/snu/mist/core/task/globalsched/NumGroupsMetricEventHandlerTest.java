@@ -45,8 +45,7 @@ public final class NumGroupsMetricEventHandlerTest {
   public void setUp() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     metricHolder = injector.getInstance(MetricHolder.class);
-    metricHolder.putNormalMetric(
-        MetricHolder.NormalMetricType.NUM_GROUP, new NormalMetric<>(DEFAULT_GROUP_SIZE));
+    metricHolder.initializeNumGroups(new NormalMetric<>(DEFAULT_GROUP_SIZE));
     groupInfoMap = injector.getInstance(GlobalSchedGroupInfoMap.class);
     metricPubSubEventHandler = injector.getInstance(MistPubSubEventHandler.class);
     handler = injector.getInstance(NumGroupsMetricEventHandler.class);
@@ -59,7 +58,7 @@ public final class NumGroupsMetricEventHandlerTest {
   public void testNumGroupsMetricTracking() throws Exception {
     // Test default value
     Assert.assertEquals(DEFAULT_GROUP_SIZE,
-        metricHolder.getNormalMetric(MetricHolder.NormalMetricType.NUM_GROUP).getValue());
+        (int) metricHolder.getNumGroupsMetric().getValue());
 
     // Update the value
     for (int i = 0; i < UPDATE_GROUP_SIZE; i++) {
@@ -70,6 +69,6 @@ public final class NumGroupsMetricEventHandlerTest {
     // Wait the tracker to call handler
     metricPubSubEventHandler.getPubSubEventHandler().onNext(new MetricTrackEvent());
     Assert.assertEquals(
-        UPDATE_GROUP_SIZE, metricHolder.getNormalMetric(MetricHolder.NormalMetricType.NUM_GROUP).getValue());
+        UPDATE_GROUP_SIZE, (int) metricHolder.getNumGroupsMetric().getValue());
   }
 }

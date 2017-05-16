@@ -61,7 +61,7 @@ public final class EWMAMetric {
    * Update the value of this metric.
    * @param updateValue the value to set
    */
-  public void updateMetric(final double updateValue) {
+  public void updateValue(final double updateValue) {
     this.value = updateValue;
     this.ewmaValue.updateAndTick(updateValue);
   }

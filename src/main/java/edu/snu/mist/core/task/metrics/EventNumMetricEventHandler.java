@@ -61,10 +61,10 @@ public final class EventNumMetricEventHandler implements MetricTrackEventHandler
         }
       }
       final EWMAMetric numEventMetric =
-          groupInfo.getMetricHolder().getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS);
-      numEventMetric.updateMetric(groupNumEvent);
+          groupInfo.getMetricHolder().getNumEventsMetric();
+      numEventMetric.updateValue(groupNumEvent);
       totalNumEvent += groupNumEvent;
     }
-    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(totalNumEvent);
+    globalMetricHolder.getNumEventsMetric().updateValue(totalNumEvent);
   }
 }

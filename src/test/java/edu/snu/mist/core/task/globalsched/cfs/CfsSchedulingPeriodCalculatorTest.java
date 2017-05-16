@@ -45,8 +45,8 @@ public final class CfsSchedulingPeriodCalculatorTest {
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     schedPeriodCalculator = injector.getInstance(CfsSchedulingPeriodCalculator.class);
     globalMetricHolder = injector.getInstance(MetricHolder.class);
-    globalMetricHolder.putNormalMetric(MetricHolder.NormalMetricType.WEIGHT, new NormalMetric<>(1.0));
-    globalMetricHolder.putNormalMetric(MetricHolder.NormalMetricType.NUM_GROUP, new NormalMetric<>(0));
+    globalMetricHolder.initializeWeight(new NormalMetric<>(1.0));
+    globalMetricHolder.initializeNumGroups(new NormalMetric<>(0));
   }
 
   /**
@@ -57,12 +57,12 @@ public final class CfsSchedulingPeriodCalculatorTest {
   public void testCfsSchedulingPeriodCalculationSmallGroup() throws InjectionException {
     final MetricHolder metricHolder =
         Tang.Factory.getTang().newInjector().getInstance(MetricHolder.class);
-    metricHolder.putNormalMetric(MetricHolder.NormalMetricType.WEIGHT, new NormalMetric<>(10.0));
+    metricHolder.initializeWeight(new NormalMetric<>(10.0));
 
     final GlobalSchedGroupInfo groupInfo = mock(GlobalSchedGroupInfo.class);
     when(groupInfo.getMetricHolder()).thenReturn(metricHolder);
-    globalMetricHolder.getNormalMetric(MetricHolder.NormalMetricType.NUM_GROUP).setMetric(5);
-    globalMetricHolder.getNormalMetric(MetricHolder.NormalMetricType.WEIGHT).setMetric(20.0);
+    globalMetricHolder.getNumGroupsMetric().setValue(5);
+    globalMetricHolder.getWeightMetric().setValue(20.0);
     final long period = schedPeriodCalculator.calculateSchedulingPeriod(groupInfo);
     Assert.assertEquals(500, period);
   }
@@ -77,13 +77,13 @@ public final class CfsSchedulingPeriodCalculatorTest {
         Tang.Factory.getTang().newInjector().getInstance(MetricHolder.class);
     final MetricHolder metricHolder2 =
         Tang.Factory.getTang().newInjector().getInstance(MetricHolder.class);
-    metricHolder1.putNormalMetric(MetricHolder.NormalMetricType.WEIGHT, new NormalMetric<>(10.0));
-    metricHolder2.putNormalMetric(MetricHolder.NormalMetricType.WEIGHT, new NormalMetric<>(1.0));
+    metricHolder1.initializeWeight(new NormalMetric<>(10.0));
+    metricHolder2.initializeWeight(new NormalMetric<>(1.0));
 
     final GlobalSchedGroupInfo groupInfo = mock(GlobalSchedGroupInfo.class);
     when(groupInfo.getMetricHolder()).thenReturn(metricHolder1);
-    globalMetricHolder.getNormalMetric(MetricHolder.NormalMetricType.NUM_GROUP).setMetric(20);
-    globalMetricHolder.getNormalMetric(MetricHolder.NormalMetricType.WEIGHT).setMetric(40.0);
+    globalMetricHolder.getNumGroupsMetric().setValue(20);
+    globalMetricHolder.getWeightMetric().setValue(40.0);
     final long period1 = schedPeriodCalculator.calculateSchedulingPeriod(groupInfo);
     Assert.assertEquals(500, period1);
 

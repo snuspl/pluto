@@ -46,14 +46,14 @@ public final class MemoryUsageMetricEventHandler implements MetricTrackEventHand
     final MemoryUsage heapMemUsage = memBean.getHeapMemoryUsage();
     final MemoryUsage nonHeapMemUsage = memBean.getNonHeapMemoryUsage();
 
-    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.HEAP_MEM_USAGE).updateMetric(
+    globalMetricHolder.getHeapMemUsageMetric().updateValue(
         (double) heapMemUsage.getUsed() / heapMemUsage.getMax());
     final long nonHeapMemMax = nonHeapMemUsage.getMax();
     if (nonHeapMemMax == -1) {
       // One of non heap memory pools has undefined max size
-      globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NON_HEAP_MEM_USAGE).updateMetric(0.0);
+      globalMetricHolder.getNonHeapMemUsageMetric().updateValue(0.0);
     } else {
-      globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NON_HEAP_MEM_USAGE).updateMetric(
+      globalMetricHolder.getNonHeapMemUsageMetric().updateValue(
           (double) nonHeapMemUsage.getUsed() / nonHeapMemUsage.getMax());
     }
   }

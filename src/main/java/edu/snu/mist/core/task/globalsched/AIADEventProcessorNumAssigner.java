@@ -104,9 +104,9 @@ public final class AIADEventProcessorNumAssigner implements EventProcessorNumAss
   @Override
   public void onNext(final MetricUpdateEvent metricUpdateEvent) {
     final double currCpuUtil =
-        globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.CPU_SYS_UTIL).getEwmaValue();
+        globalMetricHolder.getCpuSysUtilMetric().getEwmaValue();
     final double currEventNum =
-        globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).getEwmaValue();
+        globalMetricHolder.getNumEventsMetric().getEwmaValue();
 
     if (currCpuUtil < cpuUtilLowThreshold) {
       if (currEventNum > eventNumHighThreshold) {

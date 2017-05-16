@@ -53,10 +53,9 @@ public final class EventNumAndWeightMetricEventHandlerTest {
   public void setUp() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     globalMetricHolder = injector.getInstance(MetricHolder.class);
-    globalMetricHolder.putNormalMetric(MetricHolder.NormalMetricType.WEIGHT, new NormalMetric<>(1.0));
-    globalMetricHolder.putEWMAMetric(
-        MetricHolder.EWMAMetricType.NUM_EVENTS, new EWMAMetric(
-            0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalNumEventAlpha.class)));
+    globalMetricHolder.initializeWeight(new NormalMetric<>(1.0));
+    globalMetricHolder.initializeNumEvents(new EWMAMetric(
+        0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalNumEventAlpha.class)));
     groupInfoMap = injector.getInstance(GlobalSchedGroupInfoMap.class);
     metricPubSubEventHandler = injector.getInstance(MistPubSubEventHandler.class);
     handler = injector.getInstance(EventNumAndWeightMetricEventHandler.class);
@@ -76,19 +75,19 @@ public final class EventNumAndWeightMetricEventHandlerTest {
 
     final Injector injector1 = Tang.Factory.getTang().newInjector();
     final MetricHolder expectedA = injector1.getInstance(MetricHolder.class);
-    expectedA.putEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS, new EWMAMetric(
+    expectedA.initializeNumEvents(new EWMAMetric(
         0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GroupNumEventAlpha.class)));
-    expectedA.putNormalMetric(MetricHolder.NormalMetricType.WEIGHT, new NormalMetric<>(1.0));
+    expectedA.initializeWeight(new NormalMetric<>(1.0));
     final Injector injector2 = Tang.Factory.getTang().newInjector();
     final MetricHolder expectedB = injector2.getInstance(MetricHolder.class);
-    expectedB.putEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS, new EWMAMetric(
+    expectedB.initializeNumEvents(new EWMAMetric(
         0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GroupNumEventAlpha.class)));
-    expectedB.putNormalMetric(MetricHolder.NormalMetricType.WEIGHT, new NormalMetric<>(1.0));
+    expectedB.initializeWeight(new NormalMetric<>(1.0));
     final Injector injector3 = Tang.Factory.getTang().newInjector();
     final MetricHolder expectedTotal = injector3.getInstance(MetricHolder.class);
-    expectedTotal.putEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS, new EWMAMetric(
+    expectedTotal.initializeNumEvents(new EWMAMetric(
         0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GroupNumEventAlpha.class)));
-    expectedTotal.putNormalMetric(MetricHolder.NormalMetricType.WEIGHT, new NormalMetric<>(1.0));
+    expectedTotal.initializeWeight(new NormalMetric<>(1.0));
 
     // two dags in group A:
     // srcA1 -> opA1 -> sinkA1
@@ -134,11 +133,11 @@ public final class EventNumAndWeightMetricEventHandlerTest {
 
     // the total and per-group event number should be zero
     Assert.assertEquals(
-        0, globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).getValue(), 0.00001);
+        0, globalMetricHolder.getNumEventsMetric().getValue(), 0.00001);
     Assert.assertEquals(
-        0, groupInfoA.getMetricHolder().getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).getValue(), 0.00001);
+        0, groupInfoA.getMetricHolder().getNumEventsMetric().getValue(), 0.00001);
     Assert.assertEquals(
-        0, groupInfoB.getMetricHolder().getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).getValue(), 0.00001);
+        0, groupInfoB.getMetricHolder().getNumEventsMetric().getValue(), 0.00001);
 
     // add a few events to the operator chains in group A
     opA.addNextEvent(generateTestEvent(), Direction.LEFT);
@@ -198,7 +197,7 @@ public final class EventNumAndWeightMetricEventHandlerTest {
    */
   private void updateNumEvents(final MetricHolder metricHolder,
                                final long numEvents) {
-    metricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(numEvents);
+    metricHolder.getNumEventsMetric().updateValue(numEvents);
   }
 
   /**
@@ -207,7 +206,7 @@ public final class EventNumAndWeightMetricEventHandlerTest {
    * @return the EMWA value of num events
    */
   private double getEwmaNumEvents(final MetricHolder metricHolder) {
-    return metricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).getEwmaValue();
+    return metricHolder.getNumEventsMetric().getEwmaValue();
   }
 
   /**
@@ -217,6 +216,6 @@ public final class EventNumAndWeightMetricEventHandlerTest {
    */
   private void setWeight(final MetricHolder metricHolder,
                          final double weight) {
-    metricHolder.getNormalMetric(MetricHolder.NormalMetricType.WEIGHT).setMetric(weight);
+    metricHolder.getWeightMetric().setValue(weight);
   }
 }

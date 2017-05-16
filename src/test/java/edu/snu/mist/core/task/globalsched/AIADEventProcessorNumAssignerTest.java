@@ -60,11 +60,10 @@ public final class AIADEventProcessorNumAssignerTest {
     injector.bindVolatileParameter(EventProcessorIncreaseNum.class, INCREASE_NUM);
     injector.bindVolatileParameter(EventProcessorDecreaseNum.class, DECREASE_NUM);
     assigner = injector.getInstance(AIADEventProcessorNumAssigner.class);
-    globalMetricHolder.putEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS, new EWMAMetric(
+    globalMetricHolder.initializeNumEvents(new EWMAMetric(
         0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalNumEventAlpha.class)));
-    globalMetricHolder.putEWMAMetric(
-        MetricHolder.EWMAMetricType.CPU_SYS_UTIL, new EWMAMetric(
-            0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalSysCpuUtilAlpha.class)));
+    globalMetricHolder.initializeCpuSysUtil(new EWMAMetric(
+        0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalSysCpuUtilAlpha.class)));
   }
 
   /**
@@ -74,36 +73,36 @@ public final class AIADEventProcessorNumAssignerTest {
   public void testProcessorNumManaged() throws InjectionException {
 
     // Many events, low cpu utilization
-    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(
+    globalMetricHolder.getNumEventsMetric().updateValue(
         (long)EVENT_NUM_HIGH_THRES * 2);
-    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(
+    globalMetricHolder.getNumEventsMetric().updateValue(
         (long)EVENT_NUM_HIGH_THRES * 2);
-    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.CPU_SYS_UTIL).updateMetric(0);
+    globalMetricHolder.getCpuSysUtilMetric().updateValue(0);
 
     handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
     verify(eventProcessorManager, times(1)).increaseEventProcessors(INCREASE_NUM);
 
     // Make the number of events to be not enough to increase the event processor number.
-    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(0);
-    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(0);
+    globalMetricHolder.getNumEventsMetric().updateValue(0);
+    globalMetricHolder.getNumEventsMetric().updateValue(0);
 
     handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
     verify(eventProcessorManager, times(1)).increaseEventProcessors(INCREASE_NUM);
 
 
     // Many events, low cpu utilization again
-    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(
+    globalMetricHolder.getNumEventsMetric().updateValue(
         (long) EVENT_NUM_HIGH_THRES * 2);
-    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(
+    globalMetricHolder.getNumEventsMetric().updateValue(
         (long)EVENT_NUM_HIGH_THRES * 2);
 
     handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
     verify(eventProcessorManager, times(2)).increaseEventProcessors(INCREASE_NUM);
 
     // Few events, low cpu utilization
-    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(0);
-    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(0);
-    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(0);
+    globalMetricHolder.getNumEventsMetric().updateValue(0);
+    globalMetricHolder.getNumEventsMetric().updateValue(0);
+    globalMetricHolder.getNumEventsMetric().updateValue(0);
 
     handler.getPubSubEventHandler().onNext(new MetricUpdateEvent());
     // The number of event processors should decrease

@@ -70,17 +70,16 @@ public final class EventNumAndWeightMetricEventHandler implements MetricTrackEve
           }
         }
       }
-      final EWMAMetric numEventMetric =
-          groupInfo.getMetricHolder().getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS);
-      numEventMetric.updateMetric(groupNumEvent);
+      final EWMAMetric numEventMetric = groupInfo.getMetricHolder().getNumEventsMetric();
+      numEventMetric.updateValue(groupNumEvent);
       totalNumEvent += groupNumEvent;
 
       // Set the weight per group
       final double weight = numEventMetric.getEwmaValue();
-      groupInfo.getMetricHolder().getNormalMetric(MetricHolder.NormalMetricType.WEIGHT).setMetric(weight);
+      groupInfo.getMetricHolder().getWeightMetric().setValue(weight);
       totalWeight += weight;
     }
-    globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).updateMetric(totalNumEvent);
-    globalMetricHolder.getNormalMetric(MetricHolder.NormalMetricType.WEIGHT).setMetric(totalWeight);
+    globalMetricHolder.getNumEventsMetric().updateValue(totalNumEvent);
+    globalMetricHolder.getWeightMetric().setValue(totalWeight);
   }
 }

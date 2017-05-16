@@ -39,10 +39,10 @@ public class MetricTest {
         0.0, alpha);
 
     final List<Integer> numberOfEventsList = Arrays.asList(10, 9);
-    ewmaMetric.updateMetric(numberOfEventsList.get(0));
+    ewmaMetric.updateValue(numberOfEventsList.get(0));
     final double firstExpectedEWMA = MetricUtil.calculateEwma(numberOfEventsList.get(0), 0.0, alpha);
     Assert.assertEquals(firstExpectedEWMA, ewmaMetric.getEwmaValue(), 0.0001);
-    ewmaMetric.updateMetric(numberOfEventsList.get(1));
+    ewmaMetric.updateValue(numberOfEventsList.get(1));
     final double secondExpectedEWMA = MetricUtil.calculateEwma(numberOfEventsList.get(1),
         firstExpectedEWMA, alpha);
     Assert.assertEquals(secondExpectedEWMA, ewmaMetric.getEwmaValue(), 0.0001);
@@ -59,9 +59,9 @@ public class MetricTest {
     final NormalMetric normalMetric = new NormalMetric<>(0.0);
 
     final List<Double> numberOfEventsList = Arrays.asList(10.0, 9.0);
-    normalMetric.setMetric(numberOfEventsList.get(0));
+    normalMetric.setValue(numberOfEventsList.get(0));
     Assert.assertEquals(numberOfEventsList.get(0), normalMetric.getValue());
-    normalMetric.setMetric(numberOfEventsList.get(1));
+    normalMetric.setValue(numberOfEventsList.get(1));
     Assert.assertEquals(numberOfEventsList.get(1), normalMetric.getValue());
   }
 }

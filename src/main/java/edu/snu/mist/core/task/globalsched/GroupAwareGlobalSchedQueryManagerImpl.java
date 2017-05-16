@@ -146,22 +146,18 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     this.executionModel = executionModel;
     try {
       // Set up metrics which will be used for system management.
-      globalMetricHolder.putEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS, new EWMAMetric(
+      globalMetricHolder.initializeNumEvents(new EWMAMetric(
           0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalNumEventAlpha.class)));
-      globalMetricHolder.putEWMAMetric(
-          MetricHolder.EWMAMetricType.HEAP_MEM_USAGE, new EWMAMetric(
-              0.0, Tang.Factory.getTang().newInjector().getNamedInstance(HeapMemoryUsageAlpha.class)));
-      globalMetricHolder.putEWMAMetric(
-          MetricHolder.EWMAMetricType.NON_HEAP_MEM_USAGE, new EWMAMetric(
-              0.0, Tang.Factory.getTang().newInjector().getNamedInstance(NonHeapMemoryUsageAlpha.class)));
-      globalMetricHolder.putEWMAMetric(
-          MetricHolder.EWMAMetricType.CPU_SYS_UTIL, new EWMAMetric(
-              0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalSysCpuUtilAlpha.class)));
-      globalMetricHolder.putEWMAMetric(
-          MetricHolder.EWMAMetricType.CPU_PROC_UTIL, new EWMAMetric(
-              0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalProcCpuUtilAlpha.class)));
-      globalMetricHolder.putNormalMetric(MetricHolder.NormalMetricType.WEIGHT, new NormalMetric<>(1.0));
-      globalMetricHolder.putNormalMetric(MetricHolder.NormalMetricType.NUM_GROUP, new NormalMetric<>(0));
+      globalMetricHolder.initializeHeapMemUsage(new EWMAMetric(
+          0.0, Tang.Factory.getTang().newInjector().getNamedInstance(HeapMemoryUsageAlpha.class)));
+      globalMetricHolder.initializeNonHeapMemUsage(new EWMAMetric(
+          0.0, Tang.Factory.getTang().newInjector().getNamedInstance(NonHeapMemoryUsageAlpha.class)));
+      globalMetricHolder.initializeCpuSysUtil(new EWMAMetric(
+          0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalSysCpuUtilAlpha.class)));
+      globalMetricHolder.initializeCpuProcUtil(new EWMAMetric(
+          0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalProcCpuUtilAlpha.class)));
+      globalMetricHolder.initializeWeight(new NormalMetric<>(1.0));
+      globalMetricHolder.initializeNumGroups(new NormalMetric<>(0));
     } catch (final InjectionException e) {
       e.printStackTrace();
     }

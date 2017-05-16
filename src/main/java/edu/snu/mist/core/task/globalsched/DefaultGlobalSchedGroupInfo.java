@@ -99,9 +99,9 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
     this.vruntime = 0;
     this.metricHolder = metricHolder;
     try {
-      metricHolder.putEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS, new EWMAMetric(
+      metricHolder.initializeNumEvents(new EWMAMetric(
           0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GroupNumEventAlpha.class)));
-      metricHolder.putNormalMetric(MetricHolder.NormalMetricType.WEIGHT, new NormalMetric<>(1.0));
+      metricHolder.initializeWeight(new NormalMetric<>(1.0));
     } catch (final InjectionException e) {
       e.printStackTrace();
     }

@@ -49,7 +49,7 @@ public final class EventNumMetricEventHandlerTest {
     final Injector injector = Tang.Factory.getTang().newInjector();
     groupInfoMap = injector.getInstance(GroupInfoMap.class);
     final MetricHolder globalMetricHolder = injector.getInstance(MetricHolder.class);
-    globalMetricHolder.putEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS, new EWMAMetric(
+    globalMetricHolder.initializeNumEvents(new EWMAMetric(
         0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalNumEventAlpha.class)));
     metricPubSubEventHandler = injector.getInstance(MistPubSubEventHandler.class);
     handler = injector.getInstance(EventNumMetricEventHandler.class);
@@ -171,6 +171,6 @@ public final class EventNumMetricEventHandlerTest {
    * @return the value of num events
    */
   private double getNumEvents(final GroupInfo groupInfo) {
-    return groupInfo.getMetricHolder().getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).getValue();
+    return groupInfo.getMetricHolder().getNumEventsMetric().getValue();
   }
 }

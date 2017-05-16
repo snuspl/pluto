@@ -115,8 +115,7 @@ public final class VtimeBasedNextGroupSelectorTest {
     pubSubEventHandler.onNext(new GroupEvent(group4, GroupEvent.GroupEventType.ADDITION));
 
     final GlobalSchedGroupInfo rescheduleGroup = selector.getNextExecutableGroup();
-    rescheduleGroup.getMetricHolder().putNormalMetric(
-        MetricHolder.NormalMetricType.WEIGHT, new NormalMetric(0.0));
+    rescheduleGroup.getMetricHolder().initializeWeight(new NormalMetric<>(0.0));
     Thread.sleep(1000);
     selector.reschedule(rescheduleGroup, false);
     Assert.assertEquals(group4, selector.getNextExecutableGroup());

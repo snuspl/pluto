@@ -90,7 +90,7 @@ public final class GroupInfo implements AutoCloseable {
     this.queryRemover = queryRemover;
     this.metricHolder = metricHolder;
     try {
-      metricHolder.putEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS, new EWMAMetric(
+      metricHolder.initializeNumEvents(new EWMAMetric(
           0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GroupNumEventAlpha.class)));
     } catch (final InjectionException e) {
       e.printStackTrace();

@@ -50,6 +50,6 @@ public final class NumGroupsMetricEventHandler implements MetricTrackEventHandle
   @Override
   public void onNext(final MetricTrackEvent metricTrackEvent) {
     final int numGroups = groupInfoMap.size();
-    globalMetricHolder.getNormalMetric(MetricHolder.NormalMetricType.NUM_GROUP).setMetric(numGroups);
+    globalMetricHolder.getNumGroupsMetric().setValue(numGroups);
   }
 }

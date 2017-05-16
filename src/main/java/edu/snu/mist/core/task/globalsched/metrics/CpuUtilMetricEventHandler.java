@@ -68,11 +68,11 @@ public final class CpuUtilMetricEventHandler implements MetricTrackEventHandler 
 
       if (systemUtil != -1.0) {
         // If the monitoring was successful
-        globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.CPU_SYS_UTIL).updateMetric(systemUtil);
+        globalMetricHolder.getCpuSysUtilMetric().updateValue(systemUtil);
       }
       if (processUtil != -1.0) {
         // If the monitoring was successful
-        globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.CPU_PROC_UTIL).updateMetric(processUtil);
+        globalMetricHolder.getCpuProcUtilMetric().updateValue(processUtil);
       }
     }
   }

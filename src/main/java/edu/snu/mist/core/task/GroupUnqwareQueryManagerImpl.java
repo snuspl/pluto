@@ -131,14 +131,12 @@ public final class GroupUnqwareQueryManagerImpl implements QueryManager {
     this.batchQueryCreator = batchQueryCreator;
     try {
       // Set up metrics which will be used for system management.
-      globalMetricHolder.putEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS, new EWMAMetric(
+      globalMetricHolder.initializeNumEvents(new EWMAMetric(
           0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalNumEventAlpha.class)));
-      globalMetricHolder.putEWMAMetric(
-          MetricHolder.EWMAMetricType.HEAP_MEM_USAGE, new EWMAMetric(
-              0.0, Tang.Factory.getTang().newInjector().getNamedInstance(HeapMemoryUsageAlpha.class)));
-      globalMetricHolder.putEWMAMetric(
-          MetricHolder.EWMAMetricType.NON_HEAP_MEM_USAGE, new EWMAMetric(
-              0.0, Tang.Factory.getTang().newInjector().getNamedInstance(NonHeapMemoryUsageAlpha.class)));
+      globalMetricHolder.initializeHeapMemUsage(new EWMAMetric(
+          0.0, Tang.Factory.getTang().newInjector().getNamedInstance(HeapMemoryUsageAlpha.class)));
+      globalMetricHolder.initializeNonHeapMemUsage(new EWMAMetric(
+          0.0, Tang.Factory.getTang().newInjector().getNamedInstance(NonHeapMemoryUsageAlpha.class)));
     } catch (final InjectionException e) {
       e.printStackTrace();
     }

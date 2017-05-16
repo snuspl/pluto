@@ -79,7 +79,7 @@ public final class ProportionalEventProcessorNumAssigner implements EventProcess
       int zeroCount = 0;
       for (final GroupInfo groupInfo : groupInfoMap.values()) {
         final double numEvents =
-            groupInfo.getMetricHolder().getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).getEwmaValue();
+            groupInfo.getMetricHolder().getNumEventsMetric().getEwmaValue();
         if ((long) numEvents == 0) {
           zeroCount++;
           continue;
@@ -88,7 +88,7 @@ public final class ProportionalEventProcessorNumAssigner implements EventProcess
       // The number of event processors which are assignable additionally
       final int remainderProcessorNum = threadNumLimit - zeroCount;
       // The total number of events in the operator queues
-      final double sum = globalMetricHolder.getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).getEwmaValue();
+      final double sum = globalMetricHolder.getNumEventsMetric().getEwmaValue();
 
       if (sum == 0) {
         // If sum of events is zero, than we should assign one event processor number to each group
@@ -96,7 +96,7 @@ public final class ProportionalEventProcessorNumAssigner implements EventProcess
       } else {
         for (final GroupInfo groupInfo : groupInfoMap.values()) {
           final double numEvents =
-              groupInfo.getMetricHolder().getEWMAMetric(MetricHolder.EWMAMetricType.NUM_EVENTS).getEwmaValue();
+              groupInfo.getMetricHolder().getNumEventsMetric().getEwmaValue();
           // Assign processor number proportionally to the number of events
           int processorNumToAssign = (int)(remainderProcessorNum * numEvents / sum);
           if (processorNumToAssign == 0) {
