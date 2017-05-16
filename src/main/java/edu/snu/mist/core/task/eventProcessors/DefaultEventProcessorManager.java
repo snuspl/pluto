@@ -80,6 +80,10 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
 
   @Override
   public void increaseEventProcessors(final int delta) {
+    if (delta < 0) {
+      throw new RuntimeException("The delta value should be greater than zero, but " + delta);
+    }
+
     synchronized (eventProcessors) {
       final int currNum = eventProcessors.size();
       final int increaseNum = Math.min(delta, eventProcessorUpperBound - currNum);
@@ -97,6 +101,10 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
 
   @Override
   public void decreaseEventProcessors(final int delta) {
+    if (delta < 0) {
+      throw new RuntimeException("The delta value should be greater than zero, but " + delta);
+    }
+
     synchronized (eventProcessors) {
       final int currNum = eventProcessors.size();
       final int decreaseNum = Math.min(delta, currNum - eventProcessorLowerBound);
@@ -121,6 +129,10 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
 
   @Override
   public void adjustEventProcessorNum(final int adjustNum) {
+    if (adjustNum < 0) {
+      throw new RuntimeException("The adjustNum value should be greater than zero, but " + adjustNum);
+    }
+
     synchronized (eventProcessors) {
       final int currSize = eventProcessors.size();
       if (adjustNum < currSize) {
