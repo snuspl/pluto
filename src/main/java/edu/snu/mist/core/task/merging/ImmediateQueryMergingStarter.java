@@ -20,8 +20,10 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.*;
+import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -61,23 +63,36 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
    */
   private final ExecutionDags executionDags;
 
+  /**
+   * The execution dag generator.
+   */
+  private final DagGenerator dagGenerator;
+
   @Inject
   private ImmediateQueryMergingStarter(final OperatorChainManager operatorChainManager,
                                        final CommonSubDagFinder commonSubDagFinder,
                                        final SrcAndDagMap<String> srcAndDagMap,
                                        final ExecutionPlanDagMap executionPlanDagMap,
                                        final ExecutionDags executionDags,
-                                       final VertexInfoMap vertexInfoMap) {
+                                       final VertexInfoMap vertexInfoMap,
+                                       final DagGenerator dagGenerator) {
     this.operatorChainManager = operatorChainManager;
     this.commonSubDagFinder = commonSubDagFinder;
     this.srcAndDagMap = srcAndDagMap;
     this.executionPlanDagMap = executionPlanDagMap;
     this.vertexInfoMap = vertexInfoMap;
     this.executionDags = executionDags;
+    this.dagGenerator = dagGenerator;
   }
 
   @Override
-  public synchronized void start(final String queryId, final DAG<ExecutionVertex, MISTEdge> submittedDag) {
+  public synchronized void start(final String queryId,
+                                 final DAG<ConfigVertex, MISTEdge> configDag,
+                                 final List<String> jarFilePaths)
+      throws InjectionException, IOException, ClassNotFoundException {
+    // TODO[MIST-686] Do not create new instances of execution vertices in query merging
+    final DAG<ExecutionVertex, MISTEdge> submittedDag = dagGenerator.generate(configDag, jarFilePaths);
+
     // Synchronize the execution dags to evade concurrent modifications
     // TODO:[MIST-590] We need to improve this code for concurrent modification
     synchronized (srcAndDagMap) {
@@ -224,7 +239,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
       if (correspondingVertex.getType() == ExecutionVertex.Type.SOURCE) {
         ((PhysicalSource)correspondingVertex)
             .setOutputEmitter(new SourceOutputEmitter<>(executionDag.getEdges(correspondingVertex)));
-      } else if (correspondingVertex.getType() == ExecutionVertex.Type.OPERATOR_CHIAN) {
+      } else if (correspondingVertex.getType() == ExecutionVertex.Type.OPERATOR_CHAIN) {
         ((OperatorChain)correspondingVertex).setOutputEmitter(
             new OperatorOutputEmitter(executionDag.getEdges(correspondingVertex)));
       }

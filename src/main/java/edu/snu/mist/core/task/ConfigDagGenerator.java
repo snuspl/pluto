@@ -17,23 +17,20 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import org.apache.reef.tang.annotations.DefaultImplementation;
-import org.apache.reef.tang.exceptions.InjectionException;
-
-import java.io.IOException;
-import java.util.List;
 
 /**
- * This interface is for generating the execution dag from avro operator chain dag.
+ * This interface is for generating the configuration dag of vertices from avro dag.
  */
-@DefaultImplementation(DefaultDagGeneratorImpl.class)
-public interface DagGenerator {
+@DefaultImplementation(DefaultConfigDagGeneratorImpl.class)
+public interface ConfigDagGenerator {
   /**
-   * Generates the execution dag from the configuration dag.
-   * @param configDag the dag that has configuration of each vertices
-   * @param jarFilePaths jar file path for creating udf instances
-   * @return execution dag
+   * Generates the configuration dag from the avro dag.
+   * It extracts configurations of vertices from the avro dag and creates a dag that contains the configuration.
+   * By doing this, we can decouple the generation logic of execution dag from the avro dag.
+   * @param avroOpChainDag the dag that is serialized by Avro
+   * @return configuration dag
    */
-  DAG<ExecutionVertex, MISTEdge> generate(final DAG<ConfigVertex, MISTEdge> configDag, List<String> jarFilePaths)
-      throws IOException, ClassNotFoundException, InjectionException;
+  DAG<ConfigVertex, MISTEdge> generate(AvroOperatorChainDag avroOpChainDag);
 }

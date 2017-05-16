@@ -19,6 +19,10 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
 import org.apache.reef.tang.annotations.DefaultImplementation;
+import org.apache.reef.tang.exceptions.InjectionException;
+
+import java.io.IOException;
+import java.util.List;
 
 /**
  * This interface represents a component that is responsible for starting and executing queries.
@@ -29,7 +33,8 @@ public interface QueryStarter {
   /**
    * Start to execute the submitted query.
    * @param queryId query id
-   * @param submittedDag the submitted dag
+   * @param configDag dag that has configuration of vertices
    */
-  void start(String queryId, DAG<ExecutionVertex, MISTEdge> submittedDag);
+  void start(String queryId, DAG<ConfigVertex, MISTEdge> configDag, List<String> jarFilePaths)
+      throws InjectionException, IOException, ClassNotFoundException;
 }

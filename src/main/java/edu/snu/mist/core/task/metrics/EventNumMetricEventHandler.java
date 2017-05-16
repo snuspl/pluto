@@ -55,7 +55,7 @@ public final class EventNumMetricEventHandler implements MetricTrackEventHandler
       for (final DAG<ExecutionVertex, MISTEdge> dag : groupInfo.getExecutionDags().values()) {
         final Collection<ExecutionVertex> vertices = dag.getVertices();
         for (final ExecutionVertex ev : vertices) {
-          if (ev.getType() == ExecutionVertex.Type.OPERATOR_CHIAN) {
+          if (ev.getType() == ExecutionVertex.Type.OPERATOR_CHAIN) {
             groupNumEvent += ((OperatorChain) ev).numberOfEvents();
           }
         }

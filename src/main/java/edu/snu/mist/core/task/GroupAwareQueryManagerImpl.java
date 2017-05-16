@@ -94,6 +94,11 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
   private final BatchQueryCreator batchQueryCreator;
 
   /**
+   * A dag generator that creates DAG<ConfigVertex, MISTEdge> from avro vertex chain dag.
+   */
+  private final ConfigDagGenerator configDagGenerator;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -104,6 +109,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
                                      final QueryInfoStore planStore,
                                      @Parameter(MergingEnabled.class) final boolean mergingEnabled,
                                      final MetricTracker metricTracker,
+                                     final ConfigDagGenerator configDagGenerator,
                                      final EventProcessorNumAssigner assigner,
                                      final EventNumMetricEventHandler eventNumHandler,
                                      final MemoryUsageMetricEventHandler memoryUsageHandler,
@@ -116,6 +122,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     this.mergingEnabled = mergingEnabled;
     this.metricTracker = metricTracker;
     this.assigner = assigner;
+    this.configDagGenerator = configDagGenerator;
     this.batchQueryCreator = batchQueryCreator;
     metricTracker.start();
   }
@@ -138,7 +145,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
       // 1) Saves the avro operator chain dag to the PlanStore and
       // converts the avro operator chain dag to the logical and execution dag
       planStore.saveAvroOpChainDag(tuple);
-      final DAG<ExecutionVertex, MISTEdge> executionDag = dagGenerator.generate(tuple);
+
       final String queryId = tuple.getKey();
       // Update group information
       final String groupId = tuple.getValue().getGroupId();
@@ -157,13 +164,16 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
           jcb.bindImplementation(ExecutionDags.class, NoMergingExecutionDags.class);
         }
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+        injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
         groupInfoMap.putIfAbsent(groupId, injector.getInstance(GroupInfo.class));
       }
       // Add the query into the group
       final GroupInfo groupInfo = groupInfoMap.get(groupId);
       groupInfo.addQueryIdToGroup(queryId);
+
       // Start the submitted dag
-      groupInfo.getQueryStarter().start(queryId, executionDag);
+      final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
+      groupInfo.getQueryStarter().start(queryId, configDag, tuple.getValue().getJarFilePaths());
 
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));

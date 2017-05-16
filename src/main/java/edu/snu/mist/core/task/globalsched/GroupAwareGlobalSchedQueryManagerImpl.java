@@ -103,6 +103,11 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   private final BatchQueryCreator batchQueryCreator;
 
   /**
+   * A dag generator that creates DAG<ConfigVertex, MISTEdge> from avro vertex chain dag.
+   */
+  private final ConfigDagGenerator configDagGenerator;
+
+  /**
    * The execution model of event processor (blocking/nonblocking).
    */
   private final String executionModel;
@@ -119,6 +124,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 final EventProcessorManager eventProcessorManager,
                                                 @Parameter(MergingEnabled.class) final boolean mergingEnabled,
                                                 final MetricTracker metricTracker,
+                                                final ConfigDagGenerator configDagGenerator,
                                                 final EventNumAndWeightMetricEventHandler eventNumHandler,
                                                 final CpuUtilMetricEventHandler cpuUtilHandler,
                                                 final NumGroupsMetricEventHandler numGroupsHandler,
@@ -134,6 +140,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     this.pubSubEventHandler = pubSubEventHandler;
     this.mergingEnabled = mergingEnabled;
     this.eventProcessorManager = eventProcessorManager;
+    this.configDagGenerator = configDagGenerator;
     this.batchQueryCreator = batchQueryCreator;
     this.executionModel = executionModel;
     metricTracker.start();
@@ -157,7 +164,6 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
       // 1) Saves the avro operator chain dag to the PlanStore and
       // converts the avro operator chain dag to the logical and execution dag
       planStore.saveAvroOpChainDag(tuple);
-      final DAG<ExecutionVertex, MISTEdge> executionDag = dagGenerator.generate(tuple);
       final String queryId = tuple.getKey();
       // Update group information
       final String groupId = tuple.getValue().getGroupId();
@@ -198,6 +204,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
 
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
         injector.bindVolatileInstance(MistPubSubEventHandler.class, pubSubEventHandler);
+        injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
         final GlobalSchedGroupInfo groupInfo = injector.getInstance(GlobalSchedGroupInfo.class);
         if (groupInfoMap.putIfAbsent(groupId, groupInfo) == null) {
 
@@ -212,8 +219,10 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
       // Add the query into the group
       final GlobalSchedGroupInfo groupInfo = groupInfoMap.get(groupId);
       groupInfo.addQueryIdToGroup(queryId);
+
       // Start the submitted dag
-      groupInfo.getQueryStarter().start(queryId, executionDag);
+      final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
+      groupInfo.getQueryStarter().start(queryId, configDag, tuple.getValue().getJarFilePaths());
 
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));

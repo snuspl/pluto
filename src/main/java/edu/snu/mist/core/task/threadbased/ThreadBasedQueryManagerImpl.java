@@ -69,18 +69,25 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
   private final BatchQueryCreator batchQueryCreator;
 
   /**
+   * A dag generator that creates DAG<ConfigVertex, MISTEdge> from avro vertex chain dag.
+   */
+  private final ConfigDagGenerator configDagGenerator;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
   private ThreadBasedQueryManagerImpl(final DagGenerator dagGenerator,
                                       final ScheduledExecutorServiceWrapper schedulerWrapper,
                                       final QueryInfoStore planStore,
+                                      final ConfigDagGenerator configDagGenerator,
                                       final BatchQueryCreator batchQueryCreator) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.threads = new ConcurrentHashMap<>();
     this.batchQueryCreator = batchQueryCreator;
+    this.configDagGenerator = configDagGenerator;
   }
 
   /**
@@ -101,7 +108,11 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
       // 1) Saves the avro operator chain dag to the PlanStore and
       // converts the avro operator chain dag to the logical and execution dag
       planStore.saveAvroOpChainDag(tuple);
-      final DAG<ExecutionVertex, MISTEdge> executionDag = dagGenerator.generate(tuple);
+
+      final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
+      final DAG<ExecutionVertex, MISTEdge> executionDag =
+          dagGenerator.generate(configDag, tuple.getValue().getJarFilePaths());
+
       // Execute the execution dag
       start(executionDag);
 
@@ -166,7 +177,7 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
           sources.add(source);
           break;
         }
-        case OPERATOR_CHIAN: {
+        case OPERATOR_CHAIN: {
           // 2) Inserts the OperatorChain to OperatorChainManager.
           final OperatorChain operatorChain = (OperatorChain)executionVertex;
           final Map<ExecutionVertex, MISTEdge> edges =

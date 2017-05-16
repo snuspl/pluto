@@ -181,7 +181,7 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
 
   @Override
   public Type getType() {
-    return Type.OPERATOR_CHIAN;
+    return Type.OPERATOR_CHAIN;
   }
 
   @Override

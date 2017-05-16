@@ -21,11 +21,6 @@ import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;
-import edu.snu.mist.formats.avro.AvroOperatorChainDag;
-import edu.snu.mist.formats.avro.AvroVertexChain;
-import edu.snu.mist.formats.avro.Edge;
-import edu.snu.mist.formats.avro.Vertex;
-import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
@@ -34,8 +29,10 @@ import org.apache.reef.tang.implementation.java.ClassHierarchyImpl;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -64,91 +61,105 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
     this.operatorChainFactory = operatorChainFactory;
   }
 
+  private ExecutionVertex createExecutionVertex(final ConfigVertex configVertex,
+                                                final URL[] urls,
+                                                final ClassLoader classLoader) throws IOException, InjectionException {
+    switch (configVertex.getType()) {
+      case SOURCE: {
+        final String strConf = configVertex.getConfiguration().get(0);
+        final Configuration conf = avroConfigurationSerializer.fromString(strConf, new ClassHierarchyImpl(urls));
+        // Create an event generator
+        final EventGenerator eventGenerator = physicalObjectGenerator.newEventGenerator(conf, classLoader);
+        // Create a data generator
+        final DataGenerator dataGenerator = physicalObjectGenerator.newDataGenerator(conf, classLoader);
+        // Create a source
+        final String id = idGenerator.generateSourceId();
+        return new PhysicalSourceImpl<>(id, strConf, dataGenerator, eventGenerator);
+      }
+      case OPERATOR_CHAIN: {
+        final String opChainId = idGenerator.generateOperatorChainId();
+        final OperatorChain operatorChain = operatorChainFactory.newInstance(opChainId);
+        for (final String strConf : configVertex.getConfiguration()) {
+          final Configuration conf = avroConfigurationSerializer.fromString(strConf,
+              new ClassHierarchyImpl(urls));
+          final String id = idGenerator.generateOperatorId();
+          final Operator operator = physicalObjectGenerator.newOperator(conf, classLoader);
+          final PhysicalOperator physicalOperator = new DefaultPhysicalOperatorImpl(id, strConf,
+              operator, operatorChain);
+          operatorChain.insertToTail(physicalOperator);
+        }
+        return operatorChain;
+      }
+      case SINK:
+        final String strConf = configVertex.getConfiguration().get(0);
+        final Configuration conf = avroConfigurationSerializer.fromString(strConf,
+            new ClassHierarchyImpl(urls));
+        final String id = idGenerator.generateSinkId();
+        final PhysicalSink sink = new PhysicalSinkImpl<>(id, strConf,
+            physicalObjectGenerator.newSink(conf, classLoader));
+        return sink;
+      default:
+        throw new IllegalArgumentException("Invalid vertex type: " + configVertex.getType());
+    }
+  }
+
+  private void dfsCreation(final ExecutionVertex parent,
+                           final MISTEdge parentEdge,
+                           final ConfigVertex currVertex,
+                           final Set<ConfigVertex> visited,
+                           final DAG<ConfigVertex, MISTEdge> configDag,
+                           final DAG<ExecutionVertex, MISTEdge> executionDag,
+                           final URL[] urls,
+                           final ClassLoader classLoader) throws IOException, InjectionException {
+    if (visited.contains(currVertex)) {
+      return;
+    }
+
+    visited.add(currVertex);
+
+    final ExecutionVertex currExecutionVertex = createExecutionVertex(currVertex, urls, classLoader);
+    executionDag.addVertex(currExecutionVertex);
+    executionDag.addEdge(parent, currExecutionVertex, parentEdge);
+
+    // do dfs creation
+    for (final Map.Entry<ConfigVertex, MISTEdge> edges : configDag.getEdges(currVertex).entrySet()) {
+      final ConfigVertex childVertex = edges.getKey();
+      final MISTEdge edge = edges.getValue();
+      dfsCreation(currExecutionVertex, edge, childVertex, visited, configDag, executionDag, urls, classLoader);
+    }
+  }
+
   /**
    * This generates the logical and physical plan from the avro operator chain dag.
    * Note that the avro operator chain dag is already partitioned,
    * so we need to rewind the partition to generate the logical dag.
-   * @param queryIdAndAvroOperatorChainDag the tuple of queryId and avro operator chain dag
+   * @param configDag the tuple of queryId and avro operator chain dag
    * @return the logical and execution dag
    */
-  @SuppressWarnings("unchecked")
   @Override
-  public DAG<ExecutionVertex, MISTEdge> generate(
-      final Tuple<String, AvroOperatorChainDag> queryIdAndAvroOperatorChainDag)
-      throws IllegalArgumentException, IOException, ClassNotFoundException, InjectionException {
-    final AvroOperatorChainDag avroOpChainDag = queryIdAndAvroOperatorChainDag.getValue();
+  public DAG<ExecutionVertex, MISTEdge> generate(final DAG<ConfigVertex, MISTEdge> configDag,
+                                                 final List<String> jarFilePaths)
+      throws IOException, ClassNotFoundException, InjectionException {
     // For execution dag
-    final List<ExecutionVertex> deserializedVertices = new ArrayList<>(avroOpChainDag.getAvroVertices().size());
-    final DAG<ExecutionVertex, MISTEdge> executionDAG = new AdjacentListConcurrentMapDAG<>();
+    final DAG<ExecutionVertex, MISTEdge> executionDag = new AdjacentListConcurrentMapDAG<>();
 
     // Get a class loader
-    final URL[] urls = SerializeUtils.getJarFileURLs(avroOpChainDag.getJarFilePaths());
+    final URL[] urls = SerializeUtils.getJarFileURLs(jarFilePaths);
     final ClassLoader classLoader = classLoaderProvider.newInstance(urls);
 
-    // Deserialize vertices
-    for (final AvroVertexChain avroVertexChain : avroOpChainDag.getAvroVertices()) {
-      switch (avroVertexChain.getAvroVertexChainType()) {
-        case SOURCE: {
-          final Vertex vertex = avroVertexChain.getVertexChain().get(0);
-          final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
-              new ClassHierarchyImpl(urls));
-          // Create an event generator
-          final EventGenerator eventGenerator = physicalObjectGenerator.newEventGenerator(conf, classLoader);
-          // Create a data generator
-          final DataGenerator dataGenerator = physicalObjectGenerator.newDataGenerator(conf, classLoader);
-          // Create a source
-          final String id = idGenerator.generateSourceId();
-          final PhysicalSource source = new PhysicalSourceImpl<>(id, vertex.getConfiguration(),
-              dataGenerator, eventGenerator);
-          deserializedVertices.add(source);
-          executionDAG.addVertex(source);
-          break;
-        }
-        case OPERATOR_CHAIN: {
-          final String opChainId = idGenerator.generateOperatorChainId();
-          final OperatorChain operatorChain = operatorChainFactory.newInstance(opChainId);
-          deserializedVertices.add(operatorChain);
-          for (final Vertex vertex : avroVertexChain.getVertexChain()) {
-            final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
-                new ClassHierarchyImpl(urls));
-            final String id = idGenerator.generateOperatorId();
-            final Operator operator = physicalObjectGenerator.newOperator(conf, classLoader);
-            final PhysicalOperator physicalOperator = new DefaultPhysicalOperatorImpl(id, vertex.getConfiguration(),
-                operator, operatorChain);
-            operatorChain.insertToTail(physicalOperator);
-          }
-          executionDAG.addVertex(operatorChain);
-          break;
-        }
-        case SINK: {
-          final Vertex vertex = avroVertexChain.getVertexChain().get(0);
-          final Configuration conf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
-              new ClassHierarchyImpl(urls));
-          final String id = idGenerator.generateSinkId();
-          final PhysicalSink sink = new PhysicalSinkImpl<>(id, vertex.getConfiguration(),
-              physicalObjectGenerator.newSink(conf, classLoader));
-          deserializedVertices.add(sink);
-          executionDAG.addVertex(sink);
-          break;
-        }
-        default: {
-          throw new IllegalArgumentException("MISTTask: Invalid vertex detected in AvroLogicalPlan!");
-        }
+    final Set<ConfigVertex> visited = new HashSet<>(configDag.numberOfVertices());
+    for (final ConfigVertex source : configDag.getRootVertices()) {
+      visited.add(source);
+      final ExecutionVertex currExecutionVertex = createExecutionVertex(source, urls, classLoader);
+      executionDag.addVertex(currExecutionVertex);
+      // do dfs creation
+      for (final Map.Entry<ConfigVertex, MISTEdge> edges : configDag.getEdges(source).entrySet()) {
+        final ConfigVertex childVertex = edges.getKey();
+        final MISTEdge edge = edges.getValue();
+        dfsCreation(currExecutionVertex, edge, childVertex, visited, configDag, executionDag, urls, classLoader);
       }
     }
 
-    // Add edge info to the execution dag and logical dag
-    for (final Edge edge : avroOpChainDag.getEdges()) {
-      final int srcIndex = edge.getFrom();
-      final int dstIndex = edge.getTo();
-
-      // Add edge to the execution dag
-      final ExecutionVertex deserializedSrcVertex = deserializedVertices.get(srcIndex);
-      final ExecutionVertex deserializedDstVertex = deserializedVertices.get(dstIndex);
-      executionDAG.addEdge(deserializedSrcVertex, deserializedDstVertex,
-          new MISTEdge(edge.getDirection(), edge.getBranchIndex()));
-    }
-
-    return executionDAG;
+    return executionDag;
   }
 }
