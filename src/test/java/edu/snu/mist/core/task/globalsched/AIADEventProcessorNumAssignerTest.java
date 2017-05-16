@@ -18,12 +18,9 @@ package edu.snu.mist.core.task.globalsched;
 import edu.snu.mist.core.task.MistPubSubEventHandler;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.globalsched.parameters.*;
-import edu.snu.mist.core.task.metrics.EWMAMetric;
 import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
 import edu.snu.mist.core.task.metrics.MetricHolder;
 import edu.snu.mist.core.task.metrics.MetricUpdateEvent;
-import edu.snu.mist.core.task.metrics.parameters.GlobalNumEventAlpha;
-import edu.snu.mist.core.task.metrics.parameters.GlobalSysCpuUtilAlpha;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -60,10 +57,6 @@ public final class AIADEventProcessorNumAssignerTest {
     injector.bindVolatileParameter(EventProcessorIncreaseNum.class, INCREASE_NUM);
     injector.bindVolatileParameter(EventProcessorDecreaseNum.class, DECREASE_NUM);
     assigner = injector.getInstance(AIADEventProcessorNumAssigner.class);
-    globalMetricHolder.initializeNumEvents(new EWMAMetric(
-        0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalNumEventAlpha.class)));
-    globalMetricHolder.initializeCpuSysUtil(new EWMAMetric(
-        0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalSysCpuUtilAlpha.class)));
   }
 
   /**

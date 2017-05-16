@@ -22,7 +22,6 @@ import edu.snu.mist.core.task.globalsched.GroupEvent;
 import edu.snu.mist.core.task.globalsched.NextGroupSelector;
 import edu.snu.mist.core.task.globalsched.NextGroupSelectorFactory;
 import edu.snu.mist.core.task.metrics.MetricHolder;
-import edu.snu.mist.core.task.metrics.NormalMetric;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -115,7 +114,6 @@ public final class VtimeBasedNextGroupSelectorTest {
     pubSubEventHandler.onNext(new GroupEvent(group4, GroupEvent.GroupEventType.ADDITION));
 
     final GlobalSchedGroupInfo rescheduleGroup = selector.getNextExecutableGroup();
-    rescheduleGroup.getMetricHolder().initializeWeight(new NormalMetric<>(0.0));
     Thread.sleep(1000);
     selector.reschedule(rescheduleGroup, false);
     Assert.assertEquals(group4, selector.getNextExecutableGroup());

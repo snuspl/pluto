@@ -15,6 +15,9 @@
  */
 package edu.snu.mist.core.task.metrics;
 
+import edu.snu.mist.core.task.metrics.parameters.*;
+import org.apache.reef.tang.annotations.Parameter;
+
 import javax.inject.Inject;
 
 /**
@@ -27,222 +30,100 @@ public final class MetricHolder {
   /**
    * The number of events metric with EWMA.
    */
-  private EWMAMetric numEventsMetric;
+  private final EWMAMetric numEventsMetric;
 
   /**
    * The system CPU utilization metric with EWMA.
    */
-  private EWMAMetric cpuSysUtilMetric;
+  private final EWMAMetric cpuSysUtilMetric;
 
   /**
    * The process CPU utilization metric with EWMA.
    */
-  private EWMAMetric cpuProcUtilMetric;
+  private final EWMAMetric cpuProcUtilMetric;
 
   /**
    * The heap memory usage metric with EWMA.
    */
-  private EWMAMetric heapMemUsageMetric;
+  private final EWMAMetric heapMemUsageMetric;
 
   /**
    * The non heap memory usage metric with EWMA.
    */
-  private EWMAMetric nonHeapMemUsageMetric;
+  private final EWMAMetric nonHeapMemUsageMetric;
 
   /**
    * The weight metric.
    */
-  private NormalMetric<Double> weightMetric;
+  private final NormalMetric<Double> weightMetric;
 
   /**
    * The number of groups metric.
    */
-  private NormalMetric<Integer> numGroupsMetric;
+  private final NormalMetric<Integer> numGroupsMetric;
 
   @Inject
-  private MetricHolder() {
-    this.numEventsMetric = null;
-    this.cpuSysUtilMetric = null;
-    this.cpuProcUtilMetric = null;
-    this.heapMemUsageMetric = null;
-    this.nonHeapMemUsageMetric = null;
-    this.weightMetric = null;
-    this.numGroupsMetric = null;
-  }
-
-  /**
-   * Initialize the number of events metric.
-   * @param noe the number of events metric to set
-   * @throws RuntimeException if the metric was set already
-   */
-  public void initializeNumEvents(final EWMAMetric noe) throws RuntimeException {
-    if (this.numEventsMetric == null) {
-      this.numEventsMetric = noe;
-    } else {
-      throw new RuntimeException("The number of events metric was set already.");
-    }
-  }
-
-  /**
-   * Initialize the CPU system utilization metric.
-   * @param csu the CPU system utilization metric to set
-   * @throws RuntimeException if the metric was set already
-   */
-  public void initializeCpuSysUtil(final EWMAMetric csu) throws RuntimeException {
-    if (this.cpuSysUtilMetric == null) {
-      this.cpuSysUtilMetric = csu;
-    } else {
-      throw new RuntimeException("The CPU system utilization metric was set already.");
-    }
-  }
-
-  /**
-   * Initialize the CPU process utilization metric.
-   * @param cpu the CPU process utilization metric to set
-   * @throws RuntimeException if the metric was set already
-   */
-  public void initializeCpuProcUtil(final EWMAMetric cpu) throws RuntimeException {
-    if (this.cpuProcUtilMetric == null) {
-      this.cpuProcUtilMetric = cpu;
-    } else {
-      throw new RuntimeException("The CPU process utilization metric was set already.");
-    }
-  }
-
-  /**
-   * Initialize the heap memory usage metric.
-   * @param hmu the heap memory usage metric to set
-   * @throws RuntimeException if the metric was set already
-   */
-  public void initializeHeapMemUsage(final EWMAMetric hmu) throws RuntimeException {
-    if (this.heapMemUsageMetric == null) {
-      this.heapMemUsageMetric = hmu;
-    } else {
-      throw new RuntimeException("The heap memory usage metric was set already.");
-    }
-  }
-
-  /**
-   * Initialize the non heap memory usage metric.
-   * @param nhmu the non heap memory usage metric to set.
-   * @throws RuntimeException
-   */
-  public void initializeNonHeapMemUsage(final EWMAMetric nhmu) throws RuntimeException {
-    if (this.nonHeapMemUsageMetric == null) {
-      this.nonHeapMemUsageMetric = nhmu;
-    } else {
-      throw new RuntimeException("The non heap memory usage metric was set already.");
-    }
-  }
-
-  /**
-   * Initialize the weight metric.
-   * @param weight the weight metric to set
-   * @throws RuntimeException if the metric was set already
-   */
-  public void initializeWeight(final NormalMetric weight) throws RuntimeException {
-    if (this.weightMetric == null) {
-      this.weightMetric = weight;
-    } else {
-      throw new RuntimeException("The weight metric was set already.");
-    }
-  }
-
-  /**
-   * Initialize the number of groups metric.
-   * @param nog the number of groups metric to set
-   * @throws RuntimeException if the metric was set already
-   */
-  public void initializeNumGroups(final NormalMetric nog) throws RuntimeException {
-    if (this.numGroupsMetric == null) {
-      this.numGroupsMetric = nog;
-    } else {
-      throw new RuntimeException("The number of groups metric was set already.");
-    }
+  private MetricHolder(@Parameter(NumEventAlpha.class) final double numEventAlpha,
+                       @Parameter(SysCpuUtilAlpha.class) final double sysCpuUtilAlpha,
+                       @Parameter(ProcCpuUtilAlpha.class) final double procCpuUtilAlpha,
+                       @Parameter(HeapMemoryUsageAlpha.class) final double heapMemUsageAlpha,
+                       @Parameter(NonHeapMemoryUsageAlpha.class) final double nonHeapMemUsageAlpha) {
+    this.numEventsMetric = new EWMAMetric(0.0, numEventAlpha);
+    this.cpuSysUtilMetric = new EWMAMetric(0.0, sysCpuUtilAlpha);
+    this.cpuProcUtilMetric = new EWMAMetric(0.0, procCpuUtilAlpha);
+    this.heapMemUsageMetric = new EWMAMetric(0.0, heapMemUsageAlpha);
+    this.nonHeapMemUsageMetric = new EWMAMetric(0.0, nonHeapMemUsageAlpha);
+    this.weightMetric = new NormalMetric<>(1.0);
+    this.numGroupsMetric = new NormalMetric<>(0);
   }
 
   /**
    * @return the number of events metric
-   * @throws RuntimeException if the metric was not set yet
    */
   public EWMAMetric getNumEventsMetric() throws RuntimeException {
-    if (numEventsMetric != null) {
-      return numEventsMetric;
-    } else {
-      throw new RuntimeException("The number of events metric was not set yet.");
-    }
+    return numEventsMetric;
   }
 
   /**
    * @return the CPU system utilization metric
-   * @throws RuntimeException if the metric was not set yet
    */
   public EWMAMetric getCpuSysUtilMetric() throws RuntimeException {
-    if (cpuSysUtilMetric != null) {
-      return cpuSysUtilMetric;
-    } else {
-      throw new RuntimeException("The CPU system utilization metric was not set yet.");
-    }
+    return cpuSysUtilMetric;
   }
 
   /**
    * @return the CPU process utilization metric
-   * @throws RuntimeException if the metric was not set yet
    */
   public EWMAMetric getCpuProcUtilMetric() throws RuntimeException {
-    if (cpuProcUtilMetric != null) {
-      return cpuProcUtilMetric;
-    } else {
-      throw new RuntimeException("The CPU process utilization metric was not set yet.");
-    }
+    return cpuProcUtilMetric;
   }
 
   /**
    * @return the heap memory usage metric
-   * @throws RuntimeException if the metric was not set yet
    */
   public EWMAMetric getHeapMemUsageMetric() throws RuntimeException {
-    if (heapMemUsageMetric != null) {
-      return heapMemUsageMetric;
-    } else {
-      throw new RuntimeException("The heap memory usage metric was not set yet.");
-    }
+    return heapMemUsageMetric;
   }
 
   /**
    * @return the non heap memory usage metric
-   * @throws RuntimeException if the metric was not set yet
    */
   public EWMAMetric getNonHeapMemUsageMetric() throws RuntimeException {
-    if (nonHeapMemUsageMetric != null) {
-      return nonHeapMemUsageMetric;
-    } else {
-      throw new RuntimeException("The non heap memory usage metric was not set yet.");
-    }
+    return nonHeapMemUsageMetric;
   }
 
   /**
    * @return the weight metric
-   * @throws RuntimeException if the metric was not set yet
    */
   public NormalMetric<Double> getWeightMetric() throws RuntimeException {
-    if (weightMetric != null) {
-      return weightMetric;
-    } else {
-      throw new RuntimeException("The weight metric was not set yet.");
-    }
+    return weightMetric;
   }
 
   /**
    * @return the number of groups metric
-   * @throws RuntimeException if the metric was not set yet
    */
   public NormalMetric<Integer> getNumGroupsMetric() throws RuntimeException {
-    if (numGroupsMetric != null) {
-      return numGroupsMetric;
-    } else {
-      throw new RuntimeException("The number of groups metric was not set yet.");
-    }
+    return numGroupsMetric;
   }
 
   @Override
@@ -256,39 +137,36 @@ public final class MetricHolder {
 
     final MetricHolder that = (MetricHolder) o;
 
-    if (numEventsMetric != null ? !numEventsMetric.equals(that.numEventsMetric) : that.numEventsMetric != null) {
+    if (!getNumEventsMetric().equals(that.getNumEventsMetric())) {
       return false;
     }
-    if (cpuSysUtilMetric != null ? !cpuSysUtilMetric.equals(that.cpuSysUtilMetric) : that.cpuSysUtilMetric != null) {
+    if (!getCpuSysUtilMetric().equals(that.getCpuSysUtilMetric())) {
       return false;
     }
-    if (cpuProcUtilMetric != null ? !cpuProcUtilMetric.equals(that.cpuProcUtilMetric) :
-        that.cpuProcUtilMetric != null) {
+    if (!getCpuProcUtilMetric().equals(that.getCpuProcUtilMetric())) {
       return false;
     }
-    if (heapMemUsageMetric != null ? !heapMemUsageMetric.equals(that.heapMemUsageMetric) :
-        that.heapMemUsageMetric != null) {
+    if (!getHeapMemUsageMetric().equals(that.getHeapMemUsageMetric())) {
       return false;
     }
-    if (nonHeapMemUsageMetric != null ? !nonHeapMemUsageMetric.equals(that.nonHeapMemUsageMetric) :
-        that.nonHeapMemUsageMetric != null) {
+    if (!getNonHeapMemUsageMetric().equals(that.getNonHeapMemUsageMetric())) {
       return false;
     }
-    if (weightMetric != null ? !weightMetric.equals(that.weightMetric) : that.weightMetric != null) {
+    if (!getWeightMetric().equals(that.getWeightMetric())) {
       return false;
     }
-    return numGroupsMetric != null ? numGroupsMetric.equals(that.numGroupsMetric) : that.numGroupsMetric == null;
+    return getNumGroupsMetric().equals(that.getNumGroupsMetric());
   }
 
   @Override
   public int hashCode() {
-    int result = numEventsMetric != null ? numEventsMetric.hashCode() : 0;
-    result = 31 * result + (cpuSysUtilMetric != null ? cpuSysUtilMetric.hashCode() : 0);
-    result = 31 * result + (cpuProcUtilMetric != null ? cpuProcUtilMetric.hashCode() : 0);
-    result = 31 * result + (heapMemUsageMetric != null ? heapMemUsageMetric.hashCode() : 0);
-    result = 31 * result + (nonHeapMemUsageMetric != null ? nonHeapMemUsageMetric.hashCode() : 0);
-    result = 31 * result + (weightMetric != null ? weightMetric.hashCode() : 0);
-    result = 31 * result + (numGroupsMetric != null ? numGroupsMetric.hashCode() : 0);
+    int result = getNumEventsMetric().hashCode();
+    result = 31 * result + getCpuSysUtilMetric().hashCode();
+    result = 31 * result + getCpuProcUtilMetric().hashCode();
+    result = 31 * result + getHeapMemUsageMetric().hashCode();
+    result = 31 * result + getNonHeapMemUsageMetric().hashCode();
+    result = 31 * result + getWeightMetric().hashCode();
+    result = 31 * result + getNumGroupsMetric().hashCode();
     return result;
   }
 }

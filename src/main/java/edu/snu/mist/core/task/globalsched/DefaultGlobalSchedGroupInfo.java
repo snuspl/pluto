@@ -20,13 +20,8 @@ import edu.snu.mist.core.task.ExecutionDags;
 import edu.snu.mist.core.task.OperatorChainManager;
 import edu.snu.mist.core.task.QueryRemover;
 import edu.snu.mist.core.task.QueryStarter;
-import edu.snu.mist.core.task.metrics.EWMAMetric;
 import edu.snu.mist.core.task.metrics.MetricHolder;
-import edu.snu.mist.core.task.metrics.NormalMetric;
-import edu.snu.mist.core.task.metrics.parameters.GroupNumEventAlpha;
-import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
-import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -98,13 +93,6 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
     this.latestScheduledTime = 0;
     this.vruntime = 0;
     this.metricHolder = metricHolder;
-    try {
-      metricHolder.initializeNumEvents(new EWMAMetric(
-          0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GroupNumEventAlpha.class)));
-      metricHolder.initializeWeight(new NormalMetric<>(1.0));
-    } catch (final InjectionException e) {
-      e.printStackTrace();
-    }
   }
 
   /**

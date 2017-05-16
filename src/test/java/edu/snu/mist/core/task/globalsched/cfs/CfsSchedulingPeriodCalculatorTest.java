@@ -20,7 +20,6 @@ import edu.snu.mist.core.task.globalsched.SchedulingPeriodCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsSchedulingPeriod;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.MinSchedulingPeriod;
 import edu.snu.mist.core.task.metrics.MetricHolder;
-import edu.snu.mist.core.task.metrics.NormalMetric;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -45,8 +44,6 @@ public final class CfsSchedulingPeriodCalculatorTest {
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     schedPeriodCalculator = injector.getInstance(CfsSchedulingPeriodCalculator.class);
     globalMetricHolder = injector.getInstance(MetricHolder.class);
-    globalMetricHolder.initializeWeight(new NormalMetric<>(1.0));
-    globalMetricHolder.initializeNumGroups(new NormalMetric<>(0));
   }
 
   /**
@@ -57,7 +54,7 @@ public final class CfsSchedulingPeriodCalculatorTest {
   public void testCfsSchedulingPeriodCalculationSmallGroup() throws InjectionException {
     final MetricHolder metricHolder =
         Tang.Factory.getTang().newInjector().getInstance(MetricHolder.class);
-    metricHolder.initializeWeight(new NormalMetric<>(10.0));
+    metricHolder.getWeightMetric().setValue(10.0);
 
     final GlobalSchedGroupInfo groupInfo = mock(GlobalSchedGroupInfo.class);
     when(groupInfo.getMetricHolder()).thenReturn(metricHolder);
@@ -77,8 +74,8 @@ public final class CfsSchedulingPeriodCalculatorTest {
         Tang.Factory.getTang().newInjector().getInstance(MetricHolder.class);
     final MetricHolder metricHolder2 =
         Tang.Factory.getTang().newInjector().getInstance(MetricHolder.class);
-    metricHolder1.initializeWeight(new NormalMetric<>(10.0));
-    metricHolder2.initializeWeight(new NormalMetric<>(1.0));
+    metricHolder1.getWeightMetric().setValue(10.0);
+    metricHolder2.getWeightMetric().setValue(1.0);
 
     final GlobalSchedGroupInfo groupInfo = mock(GlobalSchedGroupInfo.class);
     when(groupInfo.getMetricHolder()).thenReturn(metricHolder1);

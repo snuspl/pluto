@@ -17,12 +17,8 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
-import edu.snu.mist.core.task.metrics.EWMAMetric;
 import edu.snu.mist.core.task.metrics.MetricHolder;
-import edu.snu.mist.core.task.metrics.parameters.GroupNumEventAlpha;
-import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
-import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -89,12 +85,6 @@ public final class GroupInfo implements AutoCloseable {
     this.operatorChainManager = operatorChainManager;
     this.queryRemover = queryRemover;
     this.metricHolder = metricHolder;
-    try {
-      metricHolder.initializeNumEvents(new EWMAMetric(
-          0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GroupNumEventAlpha.class)));
-    } catch (final InjectionException e) {
-      e.printStackTrace();
-    }
   }
 
   /**

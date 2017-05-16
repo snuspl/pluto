@@ -19,7 +19,6 @@ import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.globalsched.metrics.NumGroupsMetricEventHandler;
 import edu.snu.mist.core.task.metrics.MetricHolder;
 import edu.snu.mist.core.task.metrics.MetricTrackEvent;
-import edu.snu.mist.core.task.metrics.NormalMetric;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -39,13 +38,11 @@ public final class NumGroupsMetricEventHandlerTest {
   private MetricHolder metricHolder;
   private NumGroupsMetricEventHandler handler;
   private static final int UPDATE_GROUP_SIZE = 10;
-  private static final int DEFAULT_GROUP_SIZE = 0;
 
   @Before
   public void setUp() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     metricHolder = injector.getInstance(MetricHolder.class);
-    metricHolder.initializeNumGroups(new NormalMetric<>(DEFAULT_GROUP_SIZE));
     groupInfoMap = injector.getInstance(GlobalSchedGroupInfoMap.class);
     metricPubSubEventHandler = injector.getInstance(MistPubSubEventHandler.class);
     handler = injector.getInstance(NumGroupsMetricEventHandler.class);
@@ -57,7 +54,7 @@ public final class NumGroupsMetricEventHandlerTest {
   @Test(timeout = 1000L)
   public void testNumGroupsMetricTracking() throws Exception {
     // Test default value
-    Assert.assertEquals(DEFAULT_GROUP_SIZE,
+    Assert.assertEquals(0,
         (int) metricHolder.getNumGroupsMetric().getValue());
 
     // Update the value

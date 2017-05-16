@@ -21,7 +21,6 @@ import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.merging.MergingExecutionDags;
-import edu.snu.mist.core.task.metrics.parameters.GlobalNumEventAlpha;
 import edu.snu.mist.core.task.utils.IdAndConfGenerator;
 import edu.snu.mist.formats.avro.Direction;
 import org.apache.reef.tang.Injector;
@@ -49,8 +48,6 @@ public final class EventNumMetricEventHandlerTest {
     final Injector injector = Tang.Factory.getTang().newInjector();
     groupInfoMap = injector.getInstance(GroupInfoMap.class);
     final MetricHolder globalMetricHolder = injector.getInstance(MetricHolder.class);
-    globalMetricHolder.initializeNumEvents(new EWMAMetric(
-        0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalNumEventAlpha.class)));
     metricPubSubEventHandler = injector.getInstance(MistPubSubEventHandler.class);
     handler = injector.getInstance(EventNumMetricEventHandler.class);
     idAndConfGenerator = new IdAndConfGenerator();

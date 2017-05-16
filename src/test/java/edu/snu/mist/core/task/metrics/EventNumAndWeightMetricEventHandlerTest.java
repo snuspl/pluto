@@ -24,8 +24,6 @@ import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfoMap;
 import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetricEventHandler;
 import edu.snu.mist.core.task.merging.MergingExecutionDags;
-import edu.snu.mist.core.task.metrics.parameters.GlobalNumEventAlpha;
-import edu.snu.mist.core.task.metrics.parameters.GroupNumEventAlpha;
 import edu.snu.mist.core.task.utils.IdAndConfGenerator;
 import edu.snu.mist.formats.avro.Direction;
 import org.apache.reef.tang.Injector;
@@ -53,9 +51,6 @@ public final class EventNumAndWeightMetricEventHandlerTest {
   public void setUp() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     globalMetricHolder = injector.getInstance(MetricHolder.class);
-    globalMetricHolder.initializeWeight(new NormalMetric<>(1.0));
-    globalMetricHolder.initializeNumEvents(new EWMAMetric(
-        0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GlobalNumEventAlpha.class)));
     groupInfoMap = injector.getInstance(GlobalSchedGroupInfoMap.class);
     metricPubSubEventHandler = injector.getInstance(MistPubSubEventHandler.class);
     handler = injector.getInstance(EventNumAndWeightMetricEventHandler.class);
@@ -75,19 +70,10 @@ public final class EventNumAndWeightMetricEventHandlerTest {
 
     final Injector injector1 = Tang.Factory.getTang().newInjector();
     final MetricHolder expectedA = injector1.getInstance(MetricHolder.class);
-    expectedA.initializeNumEvents(new EWMAMetric(
-        0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GroupNumEventAlpha.class)));
-    expectedA.initializeWeight(new NormalMetric<>(1.0));
     final Injector injector2 = Tang.Factory.getTang().newInjector();
     final MetricHolder expectedB = injector2.getInstance(MetricHolder.class);
-    expectedB.initializeNumEvents(new EWMAMetric(
-        0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GroupNumEventAlpha.class)));
-    expectedB.initializeWeight(new NormalMetric<>(1.0));
     final Injector injector3 = Tang.Factory.getTang().newInjector();
     final MetricHolder expectedTotal = injector3.getInstance(MetricHolder.class);
-    expectedTotal.initializeNumEvents(new EWMAMetric(
-        0.0, Tang.Factory.getTang().newInjector().getNamedInstance(GroupNumEventAlpha.class)));
-    expectedTotal.initializeWeight(new NormalMetric<>(1.0));
 
     // two dags in group A:
     // srcA1 -> opA1 -> sinkA1
