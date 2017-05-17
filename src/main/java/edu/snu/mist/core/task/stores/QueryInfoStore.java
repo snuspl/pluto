@@ -27,15 +27,21 @@ import java.util.List;
  * This interface saves the information related to a query (the operator chain dag of a query and jar files).
  * Also, this supports loading a logical plan and removing the plan and its corresponding jar files.
  */
-@DefaultImplementation(DiskQueryInfoStore.class)
-public interface QueryInfoStore {
+@DefaultImplementation(AsyncDiskQueryInfoStore.class)
+public interface QueryInfoStore extends AutoCloseable {
   /**
    * Saves the operator chain dag.
    * @param tuple
-   * @return true if saving is success. Otherwise return false.
    * @throws IOException
    */
-  boolean saveAvroOpChainDag(Tuple<String, AvroOperatorChainDag> tuple) throws IOException;
+  void saveAvroOpChainDag(Tuple<String, AvroOperatorChainDag> tuple);
+
+  /**
+   * Check whether the query is stored properly or not.
+   * @param queryId the query id to check
+   * @return true if saving is success. Otherwise return false
+   */
+  boolean isStored(String queryId);
 
   /**
    * Saves the jar files and returns paths of the stored jar files.

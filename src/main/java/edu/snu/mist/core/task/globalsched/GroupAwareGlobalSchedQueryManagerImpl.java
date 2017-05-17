@@ -271,6 +271,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   @Override
   public void close() throws Exception {
     scheduler.shutdown();
+    planStore.close();
     metricTracker.close();
     for (final GlobalSchedGroupInfo groupInfo : groupInfoMap.values()) {
       groupInfo.close();

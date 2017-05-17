@@ -15,9 +15,9 @@
  */
 package edu.snu.mist.core.task.stores;
 
-
 import edu.snu.mist.core.parameters.TempFolderPath;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
+import io.netty.util.internal.ConcurrentSet;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.DatumReader;
@@ -37,13 +37,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
-
+import java.util.Set;
+import java.util.concurrent.*;
 
 /**
  * It saves the information of a query (operator chain dag, jar files) into the disk.
+ * The store request is done by separated thread asynchronously.
  */
-
-final class DiskQueryInfoStore implements QueryInfoStore {
+final class AsyncDiskQueryInfoStore implements QueryInfoStore {
   /**
    * A path for the temporary folder that stores jar files and operator chain dags of queries.
    */
@@ -64,9 +65,24 @@ final class DiskQueryInfoStore implements QueryInfoStore {
    */
   private final FileNameGenerator fileNameGenerator;
 
+  /**
+   * A executor service that contains a thread doing plan store.
+   */
+  private final ExecutorService planStoreExecutorService;
+
+  /**
+   * A blocking queue that contains the plans to be stored.
+   */
+  private final BlockingQueue<Tuple<String, AvroOperatorChainDag>> planQueue;
+
+  /**
+   * A set that contains the query ids that were stored properly.
+   */
+  private final Set<String> storedQuerySet;
+
   @Inject
-  private DiskQueryInfoStore(@Parameter(TempFolderPath.class) final String tmpFolderPath,
-                             final FileNameGenerator fileNameGenerator) {
+  private AsyncDiskQueryInfoStore(@Parameter(TempFolderPath.class) final String tmpFolderPath,
+                                  final FileNameGenerator fileNameGenerator) {
     this.tmpFolderPath = tmpFolderPath;
     this.fileNameGenerator = fileNameGenerator;
     this.datumWriter = new SpecificDatumWriter<>(AvroOperatorChainDag.class);
@@ -81,6 +97,33 @@ final class DiskQueryInfoStore implements QueryInfoStore {
         des.delete();
       }
     }
+
+    this.planQueue = new LinkedBlockingQueue<>();
+    this.planStoreExecutorService = Executors.newSingleThreadExecutor();
+    this.storedQuerySet = new ConcurrentSet<>();
+
+    planStoreExecutorService.submit(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          while (true) {
+            final Tuple<String, AvroOperatorChainDag> tuple = planQueue.take();
+            final String queryId = tuple.getKey();
+            final AvroOperatorChainDag dag = tuple.getValue();
+            final File storedFile = getAvroOperatorChainDagFile(queryId);
+            if (!storedFile.exists()) {
+              final DataFileWriter<AvroOperatorChainDag> dataFileWriter = new DataFileWriter<>(datumWriter);
+              dataFileWriter.create(dag.getSchema(), storedFile);
+              dataFileWriter.append(dag);
+              dataFileWriter.close();
+              storedQuerySet.add(queryId);
+            }
+          }
+        } catch(final Exception e){
+          e.printStackTrace();
+        }
+      }
+    });
   }
 
   /**
@@ -95,22 +138,26 @@ final class DiskQueryInfoStore implements QueryInfoStore {
   }
 
   /**
-   * Saves the dag as queryId.plan to disk.
-   * @param tuple
-   * @throws IOException
+   * Saves the dag as queryId.plan to disk asynchronously.
+   * @param tuple the tuple to save
    */
   @Override
-  public boolean saveAvroOpChainDag(final Tuple<String, AvroOperatorChainDag> tuple) throws IOException {
-    final AvroOperatorChainDag dag = tuple.getValue();
-    final File storedFile = getAvroOperatorChainDagFile(tuple.getKey());
-    if (!storedFile.exists()) {
-      final DataFileWriter<AvroOperatorChainDag> dataFileWriter = new DataFileWriter<AvroOperatorChainDag>(datumWriter);
-      dataFileWriter.create(dag.getSchema(), storedFile);
-      dataFileWriter.append(dag);
-      dataFileWriter.close();
-      return true;
+  public void saveAvroOpChainDag(final Tuple<String, AvroOperatorChainDag> tuple) {
+    try {
+      planQueue.put(tuple);
+    } catch (final InterruptedException ie) {
+      ie.printStackTrace();
     }
-    return false;
+  }
+
+  /**
+   * Check whether the query is stored properly or not.
+   * @param queryId the query id to check
+   * @return true if saving is success. Otherwise return false
+   */
+  @Override
+  public boolean isStored(final String queryId) {
+    return storedQuerySet.contains(queryId);
   }
 
   /**
@@ -168,6 +215,7 @@ final class DiskQueryInfoStore implements QueryInfoStore {
    */
   @Override
   public void delete(final String queryId) throws IOException {
+    storedQuerySet.remove(queryId);
     final File storedFile = getAvroOperatorChainDagFile(queryId);
     final AvroOperatorChainDag logicalPlan = loadFromFile(storedFile);
     final List<String> paths = logicalPlan.getJarFilePaths();
@@ -187,5 +235,10 @@ final class DiskQueryInfoStore implements QueryInfoStore {
     if (storedFile.exists()) {
       storedFile.delete();
     }
+  }
+
+  @Override
+  public void close() {
+    planStoreExecutorService.shutdown();
   }
 }
