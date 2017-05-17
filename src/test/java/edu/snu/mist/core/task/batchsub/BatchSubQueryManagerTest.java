@@ -26,6 +26,9 @@ import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.common.parameters.MQTTBrokerURI;
+import edu.snu.mist.common.parameters.MQTTTopic;
+import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
 import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
 import edu.snu.mist.core.parameters.PlanStorePath;
@@ -35,26 +38,24 @@ import edu.snu.mist.core.task.globalsched.GroupAwareGlobalSchedQueryManagerImpl;
 import edu.snu.mist.core.task.globalsched.GroupEvent;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.core.task.threadbased.ThreadBasedQueryManagerImpl;
-import edu.snu.mist.formats.avro.AvroOperatorChainDag;
-import edu.snu.mist.formats.avro.AvroVertexChain;
-import edu.snu.mist.formats.avro.Edge;
-import edu.snu.mist.formats.avro.JarUploadResult;
+import edu.snu.mist.formats.avro.*;
 import org.apache.reef.io.Tuple;
+import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
-import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
 import org.apache.reef.wake.EventHandler;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.Matchers;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -69,6 +70,7 @@ public final class BatchSubQueryManagerTest {
   private List<String> groupIdList;
   private Injector injector;
   private AvroConfigurationSerializer avroConfigurationSerializer;
+  private AtomicBoolean duplicationSuccess;
   private static final String QUERY_ID_PREFIX = "TestQueryId";
   private static final String ORIGINAL_GROUP_ID = "OriginalGroupId";
   private static final String ORIGINAL_PUB_TOPIC = "OriginalPubTopic";
@@ -80,25 +82,26 @@ public final class BatchSubQueryManagerTest {
       = (msg) -> new Tuple<>(msg, 10L);
   private static final MISTFunction<MqttMessage, MqttMessage> MAP_FUNC =
       (msg) -> new MqttMessage("TestData".getBytes());
+  // This pub topic function is query-id unaware for testing
   private static final MISTBiFunction<String, String, String> PUB_TOPIC_FUNCTION = (groupId, queryId) ->
       new StringBuilder("/group")
           .append(groupId)
           .append("/device")
-          .append(queryId)
           .append("/pub")
           .toString();
+  // This sub topic function is query-id unaware for testing
   private static final MISTBiFunction<String, String, Set<String>> SUB_TOPIC_FUNCTION = (groupId, queryId) -> {
         final Set<String> topicList = new HashSet<>();
         topicList.add(new StringBuilder("/group")
             .append(groupId)
             .append("/device")
-            .append(queryId + "_1")
+            .append("_1")
             .append("/sub")
             .toString());
         topicList.add(new StringBuilder("/group")
             .append(groupId)
             .append("/device")
-            .append(queryId + "_2")
+            .append("_2")
             .append("/sub")
             .toString());
         return topicList;
@@ -111,7 +114,7 @@ public final class BatchSubQueryManagerTest {
    * mqttSrc2
    * This query will be duplicated and the group id, topic configuration of source and sink will be overwritten.
    */
- //@Before
+  @Before
   public void setUp() throws Exception {
     // Make batch submission configuration
     // Because the size is 101, two threads will deal with this submission
@@ -169,9 +172,11 @@ public final class BatchSubQueryManagerTest {
       queryIdList.add(QUERY_ID_PREFIX + i);
     }
     tuple = new Tuple<>(queryIdList, operatorChainDag);
+
+    duplicationSuccess = new AtomicBoolean(true);
   }
 
-  //@After
+  @After
   public void tearDown() throws Exception {
     // Close the query manager
     manager.close();
@@ -182,7 +187,7 @@ public final class BatchSubQueryManagerTest {
   /**
    * Test option 1 query manager.
    */
-  //@Test(timeout = 5000)
+  @Test(timeout = 5000)
   public void testSubmitComplexQueryInOption1() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(RPCServerPort.class, "20332");
@@ -196,7 +201,7 @@ public final class BatchSubQueryManagerTest {
   /**
    * Test option 2 query manager.
    */
-  //@Test(timeout = 5000)
+  @Test(timeout = 5000)
   public void testSubmitComplexQueryInOption2() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(RPCServerPort.class, "20333");
@@ -212,7 +217,7 @@ public final class BatchSubQueryManagerTest {
   /**
    * Test option 3 query manager.
    */
-  //@Test(timeout = 5000)
+  @Test(timeout = 5000)
   public void testSubmitComplexQueryInOption3() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(RPCServerPort.class, "20334");
@@ -230,24 +235,26 @@ public final class BatchSubQueryManagerTest {
     avroConfigurationSerializer = injector.getInstance(AvroConfigurationSerializer.class);
 
     // Create a TestDagGenerator. It checks whether the operator chain dag is modified properly.
-    final DagGenerator dagGenerator = new TestDagGenerator();
+    final ConfigDagGenerator dagGenerator = new TestDagGenerator();
 
     // Build QueryManager and create queries in batch manner
     manager = queryManagerBuild(tuple, dagGenerator);
     manager.createBatch(tuple);
+
+    Assert.assertTrue(duplicationSuccess.get());
   }
 
   /**
    * A builder for QueryManager.
    */
   private QueryManager queryManagerBuild(final Tuple<List<String>, AvroOperatorChainDag> tp,
-                                         final DagGenerator dagGenerator) throws Exception {
+                                         final ConfigDagGenerator dagGenerator) throws Exception {
     // Create mock PlanStore. It returns true and the above logical plan
     final QueryInfoStore planStore = mock(QueryInfoStore.class);
     when(planStore.load(Matchers.any())).thenReturn(tp.getValue());
 
     // Create QueryManager
-    injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
+    injector.bindVolatileInstance(ConfigDagGenerator.class, dagGenerator);
     injector.bindVolatileInstance(QueryInfoStore.class, planStore);
 
     // Submit the fake logical plan
@@ -291,99 +298,91 @@ public final class BatchSubQueryManagerTest {
   /**
    * A dag generator for testing the modification of operator chain.
    */
-  private final class TestDagGenerator implements DagGenerator {
+  private final class TestDagGenerator implements ConfigDagGenerator {
 
     private TestDagGenerator() {
       // do nothing
     }
 
-    /*
     @Override
-    public DAG<ExecutionVertex, MISTEdge> generate(final Tuple<String, AvroOperatorChainDag> queryIdAndAvroLogicalDag)
-        throws IOException, InjectionException, ClassNotFoundException {
-      final String queryId = queryIdAndAvroLogicalDag.getKey();
-      final AvroOperatorChainDag opChainDag = queryIdAndAvroLogicalDag.getValue();
-      final String actualGroupId = opChainDag.getGroupId();
-      final Set<String> expectedSubTopicSet =
-          SUB_TOPIC_FUNCTION.apply(actualGroupId, queryId);
+    public DAG<ConfigVertex, MISTEdge> generate(final AvroOperatorChainDag opChainDag) {
+      try {
+        final String actualGroupId = opChainDag.getGroupId();
+        final Set<String> expectedSubTopicSet =
+            SUB_TOPIC_FUNCTION.apply(actualGroupId, "arbitrary");
 
-      // Test whether the group id is overwritten well
-      Assert.assertFalse(ORIGINAL_GROUP_ID.equals(actualGroupId));
-      // Test whether the MQTT configuration is overwritten well
-      for (final AvroVertexChain avroVertexChain : opChainDag.getAvroVertices()) {
-        switch (avroVertexChain.getAvroVertexChainType()) {
-          case SOURCE: {
-            final Vertex vertex = avroVertexChain.getVertexChain().get(0);
-            final Configuration modifiedConf = avroConfigurationSerializer.fromString(vertex.getConfiguration());
+        // Test whether the group id is overwritten well
+        Assert.assertFalse(ORIGINAL_GROUP_ID.equals(actualGroupId));
+        // Test whether the MQTT configuration is overwritten well
+        for (final AvroVertexChain avroVertexChain : opChainDag.getAvroVertices()) {
+          switch (avroVertexChain.getAvroVertexChainType()) {
+            case SOURCE: {
+              final Vertex vertex = avroVertexChain.getVertexChain().get(0);
+              final Configuration modifiedConf = avroConfigurationSerializer.fromString(vertex.getConfiguration());
 
-            // Restore the configuration and see whether it is overwritten well
-            final Injector newInjector = Tang.Factory.getTang().newInjector(modifiedConf);
-            final String mqttBrokerURI = newInjector.getNamedInstance(MQTTBrokerURI.class);
-            final String mqttActualSubTopic = newInjector.getNamedInstance(MQTTTopic.class);
-            final String serializedTimestampFunc = newInjector.getNamedInstance(SerializedTimestampExtractUdf.class);
-            final MISTFunction<MqttMessage, Tuple<MqttMessage, Long>> timestampFunc =
-                SerializeUtils.deserializeFromString(serializedTimestampFunc);
+              // Restore the configuration and see whether it is overwritten well
+              final Injector newInjector = Tang.Factory.getTang().newInjector(modifiedConf);
+              final String mqttBrokerURI = newInjector.getNamedInstance(MQTTBrokerURI.class);
+              final String mqttActualSubTopic = newInjector.getNamedInstance(MQTTTopic.class);
+              final String serializedTimestampFunc = newInjector.getNamedInstance(SerializedTimestampExtractUdf.class);
+              final MISTFunction<MqttMessage, Tuple<MqttMessage, Long>> timestampFunc =
+                  SerializeUtils.deserializeFromString(serializedTimestampFunc);
 
-            // The broker URI should not be overwritten
-            Assert.assertEquals(BROKER_URI, mqttBrokerURI);
+              // The broker URI should not be overwritten
+              Assert.assertEquals(BROKER_URI, mqttBrokerURI);
 
-            // The topic should be overwritten
-            boolean matched = false;
-            final Iterator<String> itr = expectedSubTopicSet.iterator();
-            while(itr.hasNext()) {
-              final String expectedSubTopic = itr.next();
-              if (expectedSubTopic.equals(mqttActualSubTopic)) {
-                itr.remove();
-                matched = true;
-                break;
+              // The topic should be overwritten
+              boolean matched = false;
+              final Iterator<String> itr = expectedSubTopicSet.iterator();
+              while (itr.hasNext()) {
+                final String expectedSubTopic = itr.next();
+                if (expectedSubTopic.equals(mqttActualSubTopic)) {
+                  itr.remove();
+                  matched = true;
+                  break;
+                }
               }
+              Assert.assertTrue(matched);
+
+              // The timestamp extract function should not be modified
+              final MqttMessage tmpMsg = new MqttMessage();
+              final Tuple<MqttMessage, Long> expectedTuple = EXTRACT_FUNC.apply(tmpMsg);
+              final Tuple<MqttMessage, Long> actualTuple = timestampFunc.apply(tmpMsg);
+              Assert.assertEquals(expectedTuple.getKey(), actualTuple.getKey());
+              Assert.assertEquals(expectedTuple.getValue(), actualTuple.getValue());
+              break;
             }
-            Assert.assertTrue(matched);
+            case OPERATOR_CHAIN: {
+              // Do nothing
+              break;
+            }
+            case SINK: {
+              final Vertex vertex = avroVertexChain.getVertexChain().get(0);
+              final Configuration modifiedConf = avroConfigurationSerializer.fromString(vertex.getConfiguration());
 
-            // The timestamp extract function should not be modified
-            final MqttMessage tmpMsg = new MqttMessage();
-            final Tuple<MqttMessage, Long> expectedTuple = EXTRACT_FUNC.apply(tmpMsg);
-            final Tuple<MqttMessage, Long> actualTuple = timestampFunc.apply(tmpMsg);
-            Assert.assertEquals(expectedTuple.getKey(), actualTuple.getKey());
-            Assert.assertEquals(expectedTuple.getValue(), actualTuple.getValue());
-            break;
-          }
-          case OPERATOR_CHAIN: {
-            // Do nothing
-            break;
-          }
-          case SINK: {
-            final Vertex vertex = avroVertexChain.getVertexChain().get(0);
-            final Configuration modifiedConf = avroConfigurationSerializer.fromString(vertex.getConfiguration());
+              // Restore the configuration and see whether it is overwritten well
+              final Injector newInjector = Tang.Factory.getTang().newInjector(modifiedConf);
+              final String mqttBrokerURI = newInjector.getNamedInstance(MQTTBrokerURI.class);
+              final String mqttPubTopic = newInjector.getNamedInstance(MQTTTopic.class);
 
-            // Restore the configuration and see whether it is overwritten well
-            final Injector newInjector = Tang.Factory.getTang().newInjector(modifiedConf);
-            final String mqttBrokerURI = newInjector.getNamedInstance(MQTTBrokerURI.class);
-            final String mqttPubTopic = newInjector.getNamedInstance(MQTTTopic.class);
-
-            // The broker URI should not be overwritten
-            Assert.assertEquals(BROKER_URI, mqttBrokerURI);
-            // The topic should be overwritten
-            Assert.assertEquals(
-                PUB_TOPIC_FUNCTION.apply(actualGroupId, queryId), mqttPubTopic);
-            break;
-
-          }
-          default: {
-            throw new IllegalArgumentException("MISTTest: Invalid vertex type");
+              // The broker URI should not be overwritten
+              Assert.assertEquals(BROKER_URI, mqttBrokerURI);
+              // The topic should be overwritten
+              Assert.assertEquals(
+                  PUB_TOPIC_FUNCTION.apply(actualGroupId, "arbitrary"), mqttPubTopic);
+              break;
+            }
+            default: {
+              throw new IllegalArgumentException("MISTTest: Invalid vertex type");
+            }
           }
         }
+      } catch (final Exception e) {
+        e.printStackTrace();
+        duplicationSuccess.compareAndSet(true, false);
       }
-      
-      return new AdjacentListConcurrentMapDAG<>();
-    }
-    */
 
-    @Override
-    public DAG<ExecutionVertex, MISTEdge> generate(final DAG<ConfigVertex, MISTEdge> configDag,
-                                                   final List<String> jarFilePaths)
-        throws IOException, ClassNotFoundException, InjectionException {
-      return null;
+      return new AdjacentListConcurrentMapDAG<>();
     }
   }
 }
