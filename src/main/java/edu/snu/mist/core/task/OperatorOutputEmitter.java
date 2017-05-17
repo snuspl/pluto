@@ -48,7 +48,7 @@ public final class OperatorOutputEmitter implements OutputEmitter {
                         final Direction direction,
                         final ExecutionVertex nextVertex) {
     switch (nextVertex.getType()) {
-      case OPERATOR_CHIAN: {
+      case OPERATOR_CHAIN: {
         ((OperatorChain)nextVertex).addNextEvent(output, direction);
         break;
       }
@@ -71,7 +71,7 @@ public final class OperatorOutputEmitter implements OutputEmitter {
                              final Direction direction,
                              final ExecutionVertex nextVertex) {
     switch (nextVertex.getType()) {
-      case OPERATOR_CHIAN: {
+      case OPERATOR_CHAIN: {
         ((OperatorChain)nextVertex).addNextEvent(watermark, direction);
         break;
       }

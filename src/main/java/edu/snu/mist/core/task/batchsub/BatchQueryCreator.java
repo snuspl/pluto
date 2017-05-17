@@ -200,7 +200,7 @@ public final class BatchQueryCreator {
               final Tuple<String, AvroOperatorChainDag> newTuple = new Tuple<>(queryIdList.get(j), opChainDagClone);
               final QueryControlResult result = manager.create(newTuple);
               if (!result.getIsSuccess()) {
-                throw new RuntimeException(j + "'th duplicated query creation failed.");
+                throw new RuntimeException(j + "'th duplicated query creation failed: " + result.getMsg());
               }
             }
             // There was no exception during submission

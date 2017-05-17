@@ -17,12 +17,11 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.formats.avro.AvroOperatorChainDag;
-import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.tang.exceptions.InjectionException;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * This interface is for generating the execution dag from avro operator chain dag.
@@ -30,10 +29,11 @@ import java.io.IOException;
 @DefaultImplementation(DefaultDagGeneratorImpl.class)
 public interface DagGenerator {
   /**
-   * Generates the execution dag by deserializing the avro logical dag.
-   * @param queryIdAndAvroLogicalDag the tuple of queryId and avro logical dag
+   * Generates the execution dag from the configuration dag.
+   * @param configDag the dag that has configuration of each vertices
+   * @param jarFilePaths jar file path for creating udf instances
    * @return execution dag
    */
-  DAG<ExecutionVertex, MISTEdge> generate(Tuple<String, AvroOperatorChainDag> queryIdAndAvroLogicalDag)
+  DAG<ExecutionVertex, MISTEdge> generate(DAG<ConfigVertex, MISTEdge> configDag, List<String> jarFilePaths)
       throws IOException, ClassNotFoundException, InjectionException;
 }

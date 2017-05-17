@@ -24,7 +24,7 @@ public interface ExecutionVertex {
 
   public static enum Type {
     SOURCE,
-    OPERATOR_CHIAN,
+    OPERATOR_CHAIN,
     SINK
   }
 

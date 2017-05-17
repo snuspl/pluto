@@ -128,10 +128,10 @@ final class DfsCommonSubDagFinder implements CommonSubDagFinder {
    */
   private ExecutionVertex findSameVertex(final Collection<ExecutionVertex> vertices, final ExecutionVertex v) {
     switch (v.getType()) {
-      case OPERATOR_CHIAN:
+      case OPERATOR_CHAIN:
         // We need to consider OperatorChain
         for (final ExecutionVertex vertex : vertices) {
-          if (vertex.getType() == ExecutionVertex.Type.OPERATOR_CHIAN) {
+          if (vertex.getType() == ExecutionVertex.Type.OPERATOR_CHAIN) {
             final List<String> vConf = getOperatorChainConfig((OperatorChain)v);
             final List<String> vertexConf = getOperatorChainConfig((OperatorChain)vertex);
             if (vConf.equals(vertexConf)) {

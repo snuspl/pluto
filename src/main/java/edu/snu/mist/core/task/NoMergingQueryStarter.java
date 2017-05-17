@@ -17,8 +17,11 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
+import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
+import java.io.IOException;
+import java.util.List;
 
 /**
  * This query starter does not merge queries.
@@ -36,11 +39,18 @@ public final class NoMergingQueryStarter implements QueryStarter {
    */
   private final ExecutionPlanDagMap executionPlanDagMap;
 
+  /**
+   * The dag generator.
+   */
+  private final DagGenerator dagGenerator;
+
   @Inject
   private NoMergingQueryStarter(final OperatorChainManager operatorChainManager,
-                                final ExecutionPlanDagMap executionPlanDagMap) {
+                                final ExecutionPlanDagMap executionPlanDagMap,
+                                final DagGenerator dagGenerator) {
     this.operatorChainManager = operatorChainManager;
     this.executionPlanDagMap = executionPlanDagMap;
+    this.dagGenerator = dagGenerator;
   }
 
   /**
@@ -48,7 +58,11 @@ public final class NoMergingQueryStarter implements QueryStarter {
    * and starts to receive input data stream from the sources.
    */
   @Override
-  public void start(final String queryId, final DAG<ExecutionVertex, MISTEdge> submittedDag) {
+  public void start(final String queryId,
+                    final DAG<ConfigVertex, MISTEdge> configDag,
+                    final List<String> jarFilePaths)
+      throws InjectionException, IOException, ClassNotFoundException {
+    final DAG<ExecutionVertex, MISTEdge> submittedDag = dagGenerator.generate(configDag, jarFilePaths);
     executionPlanDagMap.put(queryId, submittedDag);
     QueryStarterUtils.setUpOutputEmitters(operatorChainManager, submittedDag);
     // starts to receive input data stream from the sources

@@ -17,24 +17,20 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
+import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import org.apache.reef.tang.annotations.DefaultImplementation;
-import org.apache.reef.tang.exceptions.InjectionException;
-
-import java.io.IOException;
-import java.util.List;
 
 /**
- * This interface represents a component that is responsible for starting and executing queries.
+ * This interface is for generating the configuration dag of vertices from avro dag.
  */
-@DefaultImplementation(ImmediateQueryMergingStarter.class)
-public interface QueryStarter {
-
+@DefaultImplementation(DefaultConfigDagGeneratorImpl.class)
+public interface ConfigDagGenerator {
   /**
-   * Start to execute the submitted query.
-   * @param queryId query id
-   * @param configDag dag that has configuration of vertices
+   * Generates the configuration dag from the avro dag.
+   * It extracts configurations of vertices from the avro dag and creates a dag that contains the configuration.
+   * By doing this, we can decouple the generation logic of execution dag from the avro dag.
+   * @param avroOpChainDag the dag that is serialized by Avro
+   * @return configuration dag
    */
-  void start(String queryId, DAG<ConfigVertex, MISTEdge> configDag, List<String> jarFilePaths)
-      throws InjectionException, IOException, ClassNotFoundException;
+  DAG<ConfigVertex, MISTEdge> generate(AvroOperatorChainDag avroOpChainDag);
 }

@@ -38,6 +38,9 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.*;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 /**
  * Test whether ImmediateQueryMergingStarter merges and starts the submitted queries correctly.
  */
@@ -135,23 +138,30 @@ public final class ImmediateQueryMergingStarterTest {
    * Test if it executes a single query correctly when there are no execution dags that are currently running
    */
   @Test
-  public void singleQueryMergingTest() throws InjectionException {
+  public void singleQueryMergingTest() throws InjectionException, IOException, ClassNotFoundException {
     final List<String> result = new LinkedList<>();
     final String sourceConf = idAndConfGenerator.generateConf();
     final TestSource source = generateSource(sourceConf);
     final OperatorChain operatorChain = generateFilterOperatorChain(idAndConfGenerator.generateConf(), (s) -> true);
     final PhysicalSink<String> sink = generateSink(idAndConfGenerator.generateConf(), result);
+    final DAG<ConfigVertex, MISTEdge> configDag = mock(DAG.class);
+    final List<String> paths = mock(List.class);
     final DAG<ExecutionVertex, MISTEdge> query = generateSimpleQuery(source, operatorChain, sink);
     // Execute the query 1
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+
+    final DagGenerator dagGenerator = mock(DagGenerator.class);
+    when(dagGenerator.generate(configDag, paths)).thenReturn(query);
+    injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
+
     final ImmediateQueryMergingStarter starter = injector.getInstance(ImmediateQueryMergingStarter.class);
     final SrcAndDagMap<String> srcAndDagMap = injector.getInstance(SrcAndDagMap.class);
     final ExecutionPlanDagMap executionPlanDagMap = injector.getInstance(ExecutionPlanDagMap.class);
     final ExecutionDags executionDags = injector.getInstance(ExecutionDags.class);
     final VertexInfoMap vertexInfoMap = injector.getInstance(VertexInfoMap.class);
-    starter.start("q1", query);
+    starter.start("q1", configDag, paths);
 
     // Generate events for the query and check if the dag is executed correctly
     final String data1 = "Hello";
@@ -175,7 +185,8 @@ public final class ImmediateQueryMergingStarterTest {
    * Case 2: Merging two queries that have different sources.
    */
   @Test
-  public void mergingDifferentSourceQueriesOneGroupTest() throws InjectionException {
+  public void mergingDifferentSourceQueriesOneGroupTest()
+      throws InjectionException, IOException, ClassNotFoundException {
     // Create a query 1:
     // src1 -> oc1 -> sink1
     final List<String> result1 = new LinkedList<>();
@@ -183,6 +194,9 @@ public final class ImmediateQueryMergingStarterTest {
     final OperatorChain operatorChain1 = generateFilterOperatorChain(idAndConfGenerator.generateConf(), (s) -> true);
     final PhysicalSink<String> sink1 = generateSink(idAndConfGenerator.generateConf(), result1);
     final DAG<ExecutionVertex, MISTEdge> query1 = generateSimpleQuery(src1, operatorChain1, sink1);
+    final DAG<ConfigVertex, MISTEdge> configDag1 = mock(DAG.class);
+    final List<String> paths1 = mock(List.class);
+
     // Create a query 2:
     // src2 -> oc2 -> sink2
     // The configuration of src2 is different from that of src1.
@@ -191,18 +205,26 @@ public final class ImmediateQueryMergingStarterTest {
     final OperatorChain operatorChain2 = generateFilterOperatorChain(idAndConfGenerator.generateConf(), (s) -> true);
     final PhysicalSink<String> sink2 = generateSink(idAndConfGenerator.generateConf(), result2);
     final DAG<ExecutionVertex, MISTEdge> query2 = generateSimpleQuery(src2, operatorChain2, sink2);
+    final DAG<ConfigVertex, MISTEdge> configDag2 = mock(DAG.class);
+    final List<String> paths2 = mock(List.class);
 
     // Execute two queries
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+
+    final DagGenerator dagGenerator = mock(DagGenerator.class);
+    when(dagGenerator.generate(configDag1, paths1)).thenReturn(query1);
+    when(dagGenerator.generate(configDag2, paths2)).thenReturn(query2);
+    injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
+
     final ImmediateQueryMergingStarter starter = injector.getInstance(ImmediateQueryMergingStarter.class);
     final SrcAndDagMap<String> srcAndDagMap = injector.getInstance(SrcAndDagMap.class);
     final ExecutionDags executionDags = injector.getInstance(ExecutionDags.class);
     final ExecutionPlanDagMap executionPlanDagMap = injector.getInstance(ExecutionPlanDagMap.class);
     final VertexInfoMap vertexInfoMap = injector.getInstance(VertexInfoMap.class);
-    starter.start("q1", query1);
-    starter.start("q2", query2);
+    starter.start("q1", configDag1, paths1);
+    starter.start("q2", configDag2, paths2);
 
     // Check
     Assert.assertEquals(2, srcAndDagMap.size());
@@ -255,6 +277,8 @@ public final class ImmediateQueryMergingStarterTest {
     final DAG<ExecutionVertex, MISTEdge> query1 = generateSimpleQuery(src1, operatorChain1, sink1);
     final DAG<ExecutionVertex, MISTEdge> query1Plan = new AdjacentListDAG<>();
     GraphUtils.copy(query1, query1Plan);
+    final DAG<ConfigVertex, MISTEdge> configDag1 = mock(DAG.class);
+    final List<String> paths1 = mock(List.class);
 
     // Create a query 2:
     // src2 -> oc2 -> sink2
@@ -266,17 +290,25 @@ public final class ImmediateQueryMergingStarterTest {
     final DAG<ExecutionVertex, MISTEdge> query2 = generateSimpleQuery(src2, operatorChain2, sink2);
     final DAG<ExecutionVertex, MISTEdge> query2Plan = new AdjacentListDAG<>();
     GraphUtils.copy(query2, query2Plan);
+    final DAG<ConfigVertex, MISTEdge> configDag2 = mock(DAG.class);
+    final List<String> paths2 = mock(List.class);
 
     // Execute the query 1
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+
+    final DagGenerator dagGenerator = mock(DagGenerator.class);
+    when(dagGenerator.generate(configDag1, paths1)).thenReturn(query1);
+    when(dagGenerator.generate(configDag2, paths2)).thenReturn(query2);
+    injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
+
     final ImmediateQueryMergingStarter starter = injector.getInstance(ImmediateQueryMergingStarter.class);
     final SrcAndDagMap<String> srcAndDagMap = injector.getInstance(SrcAndDagMap.class);
     final ExecutionDags executionDags = injector.getInstance(ExecutionDags.class);
     final ExecutionPlanDagMap executionPlanDagMap = injector.getInstance(ExecutionPlanDagMap.class);
     final VertexInfoMap vertexInfoMap = injector.getInstance(VertexInfoMap.class);
-    starter.start("q1", query1);
+    starter.start("q1", configDag1, paths1);
 
     // The query 1 and 2 should be merged and the following dag should be created:
     // src1 -> oc1 -> sink1
@@ -287,7 +319,7 @@ public final class ImmediateQueryMergingStarterTest {
     expectedDag.addEdge(operatorChain1, sink2, query2.getEdges(operatorChain2).get(sink2));
 
     // Execute the query 2
-    starter.start("q2", query2);
+    starter.start("q2", configDag2, paths2);
 
     final DAG<ExecutionVertex, MISTEdge> mergedDag = srcAndDagMap.get(sourceConf);
     Assert.assertEquals(1, srcAndDagMap.size());
@@ -343,6 +375,8 @@ public final class ImmediateQueryMergingStarterTest {
     final DAG<ExecutionVertex, MISTEdge> query1 = generateSimpleQuery(src1, operatorChain1, sink1);
     final DAG<ExecutionVertex, MISTEdge> query1Plan = new AdjacentListDAG<>();
     GraphUtils.copy(query1, query1Plan);
+    final DAG<ConfigVertex, MISTEdge> configDag1 = mock(DAG.class);
+    final List<String> paths1 = mock(List.class);
 
     // Create a query 2:
     // src2 -> oc2 -> sink2
@@ -356,17 +390,25 @@ public final class ImmediateQueryMergingStarterTest {
     final DAG<ExecutionVertex, MISTEdge> query2 = generateSimpleQuery(src2, operatorChain2, sink2);
     final DAG<ExecutionVertex, MISTEdge> query2Plan = new AdjacentListDAG<>();
     GraphUtils.copy(query2, query2Plan);
+    final DAG<ConfigVertex, MISTEdge> configDag2 = mock(DAG.class);
+    final List<String> paths2 = mock(List.class);
 
     // Execute the query 1
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+
+    final DagGenerator dagGenerator = mock(DagGenerator.class);
+    when(dagGenerator.generate(configDag1, paths1)).thenReturn(query1);
+    when(dagGenerator.generate(configDag2, paths2)).thenReturn(query2);
+    injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
+
     final ImmediateQueryMergingStarter starter = injector.getInstance(ImmediateQueryMergingStarter.class);
     final SrcAndDagMap<String> srcAndDagMap = injector.getInstance(SrcAndDagMap.class);
     final ExecutionDags executionDags = injector.getInstance(ExecutionDags.class);
     final ExecutionPlanDagMap executionPlanDagMap = injector.getInstance(ExecutionPlanDagMap.class);
     final VertexInfoMap vertexInfoMap = injector.getInstance(VertexInfoMap.class);
-    starter.start("q1", query1);
+    starter.start("q1", configDag1, paths1);
 
     // The query 1 and 2 should be merged and the following dag should be created:
     // src1 -> oc1 -> sink1
@@ -380,7 +422,7 @@ public final class ImmediateQueryMergingStarterTest {
     expectedDag.addEdge(operatorChain2, sink2, query2.getEdges(operatorChain2).get(sink2));
 
     // Execute the query 2
-    starter.start("q2", query2);
+    starter.start("q2", configDag2, paths2);
 
     final DAG<ExecutionVertex, MISTEdge> mergedDag = srcAndDagMap.get(sourceConf);
     Assert.assertEquals(1, srcAndDagMap.size());

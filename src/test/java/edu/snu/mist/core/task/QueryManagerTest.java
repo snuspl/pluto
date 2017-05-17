@@ -201,11 +201,14 @@ public final class QueryManagerTest {
     constructExecutionDag(tuple, dag, src, sink1, sink2);
 
     // Create mock DagGenerator. It returns the above  execution dag
+    final ConfigDagGenerator configDagGenerator = mock(ConfigDagGenerator.class);
+    final DAG<ConfigVertex, MISTEdge> configDag = mock(DAG.class);
+    when(configDagGenerator.generate(tuple.getValue())).thenReturn(configDag);
     final DagGenerator dagGenerator = mock(DagGenerator.class);
-    when(dagGenerator.generate(tuple)).thenReturn(dag);
+    when(dagGenerator.generate(configDag, tuple.getValue().getJarFilePaths())).thenReturn(dag);
 
     // Build QueryManager
-    final QueryManager queryManager = queryManagerBuild(tuple, dagGenerator, injector);
+    final QueryManager queryManager = queryManagerBuild(tuple, configDagGenerator, dagGenerator, injector);
     queryManager.create(tuple);
 
     // Wait until all of the outputs are generated
@@ -304,6 +307,7 @@ public final class QueryManagerTest {
    * It receives inputs tuple, physicalPlanGenerator, injector then makes query manager.
    */
   private QueryManager queryManagerBuild(final Tuple<String, AvroOperatorChainDag> tuple,
+                                         final ConfigDagGenerator configDagGenerator,
                                          final DagGenerator dagGenerator,
                                          final Injector injector) throws Exception {
     // Create mock PlanStore. It returns true and the above logical plan
@@ -312,6 +316,7 @@ public final class QueryManagerTest {
     when(planStore.load(tuple.getKey())).thenReturn(tuple.getValue());
 
     // Create QueryManager
+    injector.bindVolatileInstance(ConfigDagGenerator.class, configDagGenerator);
     injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
     injector.bindVolatileInstance(QueryInfoStore.class, planStore);
 

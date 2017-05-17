@@ -49,7 +49,7 @@ public final class QueryStarterUtils {
           source.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
           break;
         }
-        case OPERATOR_CHIAN: {
+        case OPERATOR_CHAIN: {
           final OperatorChain operatorChain = (OperatorChain)executionVertex;
           final Map<ExecutionVertex, MISTEdge> edges =
               submittedDag.getEdges(operatorChain);

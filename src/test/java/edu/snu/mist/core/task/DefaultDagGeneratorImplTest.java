@@ -31,6 +31,7 @@ import edu.snu.mist.formats.avro.AvroVertexChain;
 import edu.snu.mist.formats.avro.Edge;
 import edu.snu.mist.utils.TestParameters;
 import org.apache.reef.io.Tuple;
+import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.After;
@@ -97,9 +98,13 @@ public final class DefaultDagGeneratorImplTest {
         .setEdges(serializedDag.getValue())
         .build();
 
-    final DagGenerator dagGenerator = Tang.Factory.getTang().newInjector().getInstance(DagGenerator.class);
+    final Injector injector = Tang.Factory.getTang().newInjector();
+    final ConfigDagGenerator configDagGenerator = injector.getInstance(ConfigDagGenerator.class);
+    final DagGenerator dagGenerator = injector.getInstance(DagGenerator.class);
     final Tuple<String, AvroOperatorChainDag> tuple = new Tuple<>("query-test", avroChainedDag);
-    final DAG<ExecutionVertex, MISTEdge> executionDag = dagGenerator.generate(tuple);
+    final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
+    final DAG<ExecutionVertex, MISTEdge> executionDag =
+        dagGenerator.generate(configDag, avroChainedDag.getJarFilePaths());
 
     // Test execution dag
     final Set<ExecutionVertex> sources = executionDag.getRootVertices();
