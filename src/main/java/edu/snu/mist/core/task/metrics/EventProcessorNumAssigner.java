@@ -15,12 +15,13 @@
  */
 package edu.snu.mist.core.task.metrics;
 
+import edu.snu.mist.core.task.globalsched.metrics.DefaultEventProcessorNumAssigner;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.wake.EventHandler;
 
 /**
  * This interface represents the thread num assigner.
  */
-@DefaultImplementation(ProportionalEventProcessorNumAssigner.class)
+@DefaultImplementation(DefaultEventProcessorNumAssigner.class)
 public interface EventProcessorNumAssigner extends EventHandler<MetricUpdateEvent> {
 }

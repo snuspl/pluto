@@ -133,7 +133,7 @@ public final class MistTaskConfigs {
    */
   private Configuration getOption1Configuration() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindImplementation(QueryManager.class, GroupAwareQueryManagerImpl.class);
+    jcb.bindImplementation(QueryManager.class, GroupUnqwareQueryManagerImpl.class);
     return jcb.build();
   }
 

@@ -41,12 +41,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * This QueryManager is aware of the group and manages queries per group.
+ * This QueryManager is unaware of the group. This just schedules queries.
  */
 @SuppressWarnings("unchecked")
-public final class GroupAwareQueryManagerImpl implements QueryManager {
+public final class GroupUnqwareQueryManagerImpl implements QueryManager {
 
-  private static final Logger LOG = Logger.getLogger(GroupAwareQueryManagerImpl.class.getName());
+  private static final Logger LOG = Logger.getLogger(GroupUnqwareQueryManagerImpl.class.getName());
 
   /**
    * Scheduler for periodic watermark emission.
@@ -102,18 +102,18 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
    * Default query manager in MistTask.
    */
   @Inject
-  private GroupAwareQueryManagerImpl(final DagGenerator dagGenerator,
-                                     final ScheduledExecutorServiceWrapper schedulerWrapper,
-                                     final GroupInfoMap groupInfoMap,
-                                     @Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
-                                     final QueryInfoStore planStore,
-                                     @Parameter(MergingEnabled.class) final boolean mergingEnabled,
-                                     final MetricTracker metricTracker,
-                                     final ConfigDagGenerator configDagGenerator,
-                                     final EventProcessorNumAssigner assigner,
-                                     final EventNumMetricEventHandler eventNumHandler,
-                                     final MemoryUsageMetricEventHandler memoryUsageHandler,
-                                     final BatchQueryCreator batchQueryCreator) {
+  private GroupUnqwareQueryManagerImpl(final DagGenerator dagGenerator,
+                                       final ScheduledExecutorServiceWrapper schedulerWrapper,
+                                       final GroupInfoMap groupInfoMap,
+                                       @Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
+                                       final QueryInfoStore planStore,
+                                       @Parameter(MergingEnabled.class) final boolean mergingEnabled,
+                                       final MetricTracker metricTracker,
+                                       final ConfigDagGenerator configDagGenerator,
+                                       final EventProcessorNumAssigner assigner,
+                                       final EventNumMetricEventHandler eventNumHandler,
+                                       final MemoryUsageMetricEventHandler memoryUsageHandler,
+                                       final BatchQueryCreator batchQueryCreator) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
@@ -148,7 +148,8 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
 
       final String queryId = tuple.getKey();
       // Update group information
-      final String groupId = tuple.getValue().getGroupId();
+      //final String groupId = tuple.getValue().getGroupId();
+      final String groupId = "1";
       if (groupInfoMap.get(groupId) == null) {
         // Add new group id, if it doesn't exist
         final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
