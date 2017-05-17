@@ -19,6 +19,6 @@ import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 @NamedParameter(doc = "The type of group scheduling execution model (blocking/nonblocking)",
-    short_name = "group_sched_model", default_value = "nonblocking")
+    short_name = "group_sched_model", default_value = "polling")
 public final class GroupSchedModelType implements Name<String> {
 }
