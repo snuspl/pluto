@@ -29,10 +29,9 @@ import org.apache.reef.tang.implementation.java.ClassHierarchyImpl;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.net.URL;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -106,26 +105,27 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
   private void dfsCreation(final ExecutionVertex parent,
                            final MISTEdge parentEdge,
                            final ConfigVertex currVertex,
-                           final Set<ConfigVertex> visited,
+                           final Map<ConfigVertex, ExecutionVertex> created,
                            final DAG<ConfigVertex, MISTEdge> configDag,
                            final DAG<ExecutionVertex, MISTEdge> executionDag,
                            final URL[] urls,
                            final ClassLoader classLoader) throws IOException, InjectionException {
-    if (visited.contains(currVertex)) {
-      return;
+    final ExecutionVertex currExecutionVertex;
+    if (created.get(currVertex) == null) {
+      currExecutionVertex = createExecutionVertex(currVertex, urls, classLoader);
+      created.put(currVertex, currExecutionVertex);
+      executionDag.addVertex(currExecutionVertex);
+    } else {
+      currExecutionVertex = created.get(currVertex);
     }
 
-    visited.add(currVertex);
-
-    final ExecutionVertex currExecutionVertex = createExecutionVertex(currVertex, urls, classLoader);
-    executionDag.addVertex(currExecutionVertex);
     executionDag.addEdge(parent, currExecutionVertex, parentEdge);
 
     // do dfs creation
     for (final Map.Entry<ConfigVertex, MISTEdge> edges : configDag.getEdges(currVertex).entrySet()) {
       final ConfigVertex childVertex = edges.getKey();
       final MISTEdge edge = edges.getValue();
-      dfsCreation(currExecutionVertex, edge, childVertex, visited, configDag, executionDag, urls, classLoader);
+      dfsCreation(currExecutionVertex, edge, childVertex, created, configDag, executionDag, urls, classLoader);
     }
   }
 
@@ -147,16 +147,16 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
     final URL[] urls = SerializeUtils.getJarFileURLs(jarFilePaths);
     final ClassLoader classLoader = classLoaderProvider.newInstance(urls);
 
-    final Set<ConfigVertex> visited = new HashSet<>(configDag.numberOfVertices());
+    final Map<ConfigVertex, ExecutionVertex> created = new HashMap<>(configDag.numberOfVertices());
     for (final ConfigVertex source : configDag.getRootVertices()) {
-      visited.add(source);
       final ExecutionVertex currExecutionVertex = createExecutionVertex(source, urls, classLoader);
       executionDag.addVertex(currExecutionVertex);
+      created.put(source, currExecutionVertex);
       // do dfs creation
       for (final Map.Entry<ConfigVertex, MISTEdge> edges : configDag.getEdges(source).entrySet()) {
         final ConfigVertex childVertex = edges.getKey();
         final MISTEdge edge = edges.getValue();
-        dfsCreation(currExecutionVertex, edge, childVertex, visited, configDag, executionDag, urls, classLoader);
+        dfsCreation(currExecutionVertex, edge, childVertex, created, configDag, executionDag, urls, classLoader);
       }
     }
 
