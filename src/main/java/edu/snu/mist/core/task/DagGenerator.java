@@ -34,6 +34,6 @@ public interface DagGenerator {
    * @param jarFilePaths jar file path for creating udf instances
    * @return execution dag
    */
-  DAG<ExecutionVertex, MISTEdge> generate(final DAG<ConfigVertex, MISTEdge> configDag, List<String> jarFilePaths)
+  DAG<ExecutionVertex, MISTEdge> generate(DAG<ConfigVertex, MISTEdge> configDag, List<String> jarFilePaths)
       throws IOException, ClassNotFoundException, InjectionException;
 }
