@@ -215,6 +215,7 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
   @Override
   public void close() throws Exception {
     scheduler.shutdown();
+    planStore.close();
     for (final Thread thread : threads.values()) {
       thread.interrupt();
     }

@@ -244,7 +244,6 @@ public final class BatchSubQueryManagerTest {
                                          final DagGenerator dagGenerator) throws Exception {
     // Create mock PlanStore. It returns true and the above logical plan
     final QueryInfoStore planStore = mock(QueryInfoStore.class);
-    when(planStore.saveAvroOpChainDag(Matchers.any())).thenReturn(true);
     when(planStore.load(Matchers.any())).thenReturn(tp.getValue());
 
     // Create QueryManager

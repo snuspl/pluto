@@ -312,7 +312,6 @@ public final class QueryManagerTest {
                                          final Injector injector) throws Exception {
     // Create mock PlanStore. It returns true and the above logical plan
     final QueryInfoStore planStore = mock(QueryInfoStore.class);
-    when(planStore.saveAvroOpChainDag(tuple)).thenReturn(true);
     when(planStore.load(tuple.getKey())).thenReturn(tuple.getValue());
 
     // Create QueryManager

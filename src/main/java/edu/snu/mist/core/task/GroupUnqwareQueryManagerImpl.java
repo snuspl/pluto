@@ -222,6 +222,7 @@ public final class GroupUnqwareQueryManagerImpl implements QueryManager {
   @Override
   public void close() throws Exception {
     scheduler.shutdown();
+    planStore.close();
     for (final GroupInfo groupInfo : groupInfoMap.values()) {
       groupInfo.close();
     }

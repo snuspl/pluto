@@ -44,7 +44,7 @@ public class QueryInfoStoreTest {
    * @throws InjectionException
    * @throws IOException
    */
-  @Test
+  @Test(timeout = 1000)
   public void diskStoreTest() throws InjectionException, IOException {
     // Generate a query
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(TestParameters.GROUP_ID);
@@ -65,7 +65,8 @@ public class QueryInfoStoreTest {
 
     final Injector injector = Tang.Factory.getTang().newInjector();
     final QueryInfoStore store = injector.getInstance(QueryInfoStore.class);
-    final String queryId = "testQuery";
+    final String queryId1 = "testQuery1";
+    final String queryId2 = "testQuery2";
     final String tmpFolderPath = injector.getNamedInstance(TempFolderPath.class);
     final File folder = new File(tmpFolderPath);
 
@@ -83,7 +84,13 @@ public class QueryInfoStoreTest {
     // Generate logical plan
     final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getAvroOperatorChainDag();
     final AvroOperatorChainDag.Builder avroOpChainDagBuilder = AvroOperatorChainDag.newBuilder();
-    final AvroOperatorChainDag avroOpChainDag = avroOpChainDagBuilder
+    final AvroOperatorChainDag avroOpChainDag1 = avroOpChainDagBuilder
+        .setGroupId(TestParameters.GROUP_ID)
+        .setJarFilePaths(paths)
+        .setAvroVertices(serializedDag.getKey())
+        .setEdges(serializedDag.getValue())
+        .build();
+    final AvroOperatorChainDag avroOpChainDag2 = avroOpChainDagBuilder
         .setGroupId(TestParameters.GROUP_ID)
         .setJarFilePaths(paths)
         .setAvroVertices(serializedDag.getKey())
@@ -91,15 +98,32 @@ public class QueryInfoStoreTest {
         .build();
 
     // Store the chained dag
-    store.saveAvroOpChainDag(new Tuple<>(queryId, avroOpChainDag));
-    Assert.assertTrue(new File(tmpFolderPath, queryId + ".plan").exists());
+    store.saveAvroOpChainDag(new Tuple<>(queryId1, avroOpChainDag1));
+    store.saveAvroOpChainDag(new Tuple<>(queryId2, avroOpChainDag2));
+    while(!(store.isStored(queryId1) && store.isStored(queryId2))) {
+      // Wait until the plan is stored
+    }
+    Assert.assertTrue(new File(tmpFolderPath, queryId1 + ".plan").exists());
+    Assert.assertTrue(new File(tmpFolderPath, queryId2 + ".plan").exists());
 
-    final AvroOperatorChainDag loadedDag = store.load(queryId);
-    Assert.assertEquals(avroOpChainDag.getEdges(), loadedDag.getEdges());
-    Assert.assertEquals(avroOpChainDag.getSchema(), loadedDag.getSchema());
-    testVerticesEqual(avroOpChainDag.getAvroVertices(), loadedDag.getAvroVertices());
-    store.delete(queryId);
-    Assert.assertFalse(new File(tmpFolderPath, queryId + ".plan").exists());
+    // Test stored file
+    final AvroOperatorChainDag loadedDag1 = store.load(queryId1);
+    Assert.assertEquals(avroOpChainDag1.getEdges(), loadedDag1.getEdges());
+    Assert.assertEquals(avroOpChainDag1.getSchema(), loadedDag1.getSchema());
+    testVerticesEqual(avroOpChainDag1.getAvroVertices(), loadedDag1.getAvroVertices());
+
+    final AvroOperatorChainDag loadedDag2 = store.load(queryId2);
+    Assert.assertEquals(avroOpChainDag2.getEdges(), loadedDag2.getEdges());
+    Assert.assertEquals(avroOpChainDag2.getSchema(), loadedDag2.getSchema());
+    testVerticesEqual(avroOpChainDag2.getAvroVertices(), loadedDag2.getAvroVertices());
+
+    // Test deletion
+    store.delete(queryId1);
+    store.delete(queryId2);
+    Assert.assertFalse(store.isStored(queryId1));
+    Assert.assertFalse(new File(tmpFolderPath, queryId1 + ".plan").exists());
+    Assert.assertFalse(store.isStored(queryId2));
+    Assert.assertFalse(new File(tmpFolderPath, queryId2 + ".plan").exists());
     for (final String path : paths) {
       Assert.assertFalse(new File(path).exists());
     }
