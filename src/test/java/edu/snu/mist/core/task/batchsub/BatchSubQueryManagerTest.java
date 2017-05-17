@@ -188,7 +188,7 @@ public final class BatchSubQueryManagerTest {
     jcb.bindNamedParameter(RPCServerPort.class, "20332");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
     jcb.bindNamedParameter(ExecutionModelOption.class, "1");
-    jcb.bindImplementation(QueryManager.class, GroupAwareQueryManagerImpl.class);
+    jcb.bindImplementation(QueryManager.class, GroupUnqwareQueryManagerImpl.class);
     injector = Tang.Factory.getTang().newInjector(jcb.build());
     testBatchSubmitQueryHelper();
   }

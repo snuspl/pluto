@@ -129,11 +129,12 @@ public final class MistTaskConfigs {
   }
 
   /**
-   * Get the configuration for execution model 1 that creates separate thread pools per group.
+   * Get the configuration for execution model 1 that
+   * creates a thread pool and schedules queries without considering group.
    */
   private Configuration getOption1Configuration() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindImplementation(QueryManager.class, GroupAwareQueryManagerImpl.class);
+    jcb.bindImplementation(QueryManager.class, GroupUnqwareQueryManagerImpl.class);
     return jcb.build();
   }
 
