@@ -23,7 +23,8 @@ import javax.inject.Inject;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * An implementation of ExecutionDagsForMerge that uses concurrent hash map.
+ * A map that has the source configuration as the key and the execution dag that contains the source as the value.
+ * With this map, we can find the sharable dag efficiently by just searching the same source configuration.
  */
 final class SrcAndDagHashMap implements SrcAndDagMap<String> {
 

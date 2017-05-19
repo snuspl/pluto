@@ -17,6 +17,7 @@ package edu.snu.mist.core.task.merging;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.core.task.ConfigVertex;
 import edu.snu.mist.core.task.ExecutionVertex;
 import edu.snu.mist.core.task.OperatorChain;
 import edu.snu.mist.core.task.PhysicalSource;
@@ -40,20 +41,19 @@ final class DfsCommonSubDagFinder implements CommonSubDagFinder {
    * @return
    */
   @Override
-  public Map<ExecutionVertex, ExecutionVertex> findSubDag(final DAG<ExecutionVertex, MISTEdge> executionDag,
-                                                          final DAG<ExecutionVertex, MISTEdge> submittedDag) {
+  public Map<ConfigVertex, ExecutionVertex> findSubDag(final DAG<ExecutionVertex, MISTEdge> executionDag,
+                                                       final DAG<ConfigVertex, MISTEdge> submittedDag) {
     // Key: vertex of the submitted dag, Value: vertex of the execution dag
-    final Map<ExecutionVertex, ExecutionVertex> vertexMap = new HashMap<>();
-    final Set<ExecutionVertex> visited = new HashSet<>(submittedDag.numberOfVertices());
-    final Set<ExecutionVertex> markedVertices = new HashSet<>();
+    final Map<ConfigVertex, ExecutionVertex> vertexMap = new HashMap<>();
+    final Set<ConfigVertex> visited = new HashSet<>(submittedDag.numberOfVertices());
+    final Set<ConfigVertex> markedVertices = new HashSet<>();
 
     final Set<ExecutionVertex> sourcesInExecutionDag = executionDag.getRootVertices();
-    for (final ExecutionVertex executionVertex : submittedDag.getRootVertices()) {
-      final PhysicalSource sourceInSubmitDag = (PhysicalSource) executionVertex;
-      final ExecutionVertex sameVertex = findSameVertex(sourcesInExecutionDag, sourceInSubmitDag);
+    for (final ConfigVertex submitVertex : submittedDag.getRootVertices()) {
+      final ExecutionVertex sameVertex = findSameVertex(sourcesInExecutionDag, submitVertex);
       if (sameVertex != null) {
         // do dfs search
-        dfsSearch(executionDag, submittedDag, markedVertices, sameVertex, sourceInSubmitDag, vertexMap, visited);
+        dfsSearch(executionDag, submittedDag, markedVertices, sameVertex, submitVertex, vertexMap, visited);
       }
     }
     return vertexMap;
@@ -70,12 +70,12 @@ final class DfsCommonSubDagFinder implements CommonSubDagFinder {
    * @param visited a set for checking visited vertices
    */
   private void dfsSearch(final DAG<ExecutionVertex, MISTEdge> executionDag,
-                         final DAG<ExecutionVertex, MISTEdge> submittedDag,
-                         final Set<ExecutionVertex> markedVertices,
+                         final DAG<ConfigVertex, MISTEdge> submittedDag,
+                         final Set<ConfigVertex> markedVertices,
                          final ExecutionVertex currExecutionDagVertex,
-                         final ExecutionVertex currSubmitDagVertex,
-                         final Map<ExecutionVertex, ExecutionVertex> vertexMap,
-                         final Set<ExecutionVertex> visited) {
+                         final ConfigVertex currSubmitDagVertex,
+                         final Map<ConfigVertex, ExecutionVertex> vertexMap,
+                         final Set<ConfigVertex> visited) {
     // Check if the vertex is already visited
     if (visited.contains(currSubmitDagVertex)) {
       return;
@@ -93,7 +93,7 @@ final class DfsCommonSubDagFinder implements CommonSubDagFinder {
 
     // traverse edges of the submitted dag
     // We should compare each child node with the child nodes of the execution dag
-    for (final Map.Entry<ExecutionVertex, MISTEdge> entry :
+    for (final Map.Entry<ConfigVertex, MISTEdge> entry :
         submittedDag.getEdges(currSubmitDagVertex).entrySet()) {
       final Map<ExecutionVertex, MISTEdge> childNodesOfExecutionDag =
           executionDag.getEdges(currExecutionDagVertex);
@@ -126,15 +126,14 @@ final class DfsCommonSubDagFinder implements CommonSubDagFinder {
    * @param v vertex to be found in the set of vertices
    * @return same vertex with v
    */
-  private ExecutionVertex findSameVertex(final Collection<ExecutionVertex> vertices, final ExecutionVertex v) {
+  private ExecutionVertex findSameVertex(final Collection<ExecutionVertex> vertices, final ConfigVertex v) {
     switch (v.getType()) {
       case OPERATOR_CHAIN:
         // We need to consider OperatorChain
         for (final ExecutionVertex vertex : vertices) {
           if (vertex.getType() == ExecutionVertex.Type.OPERATOR_CHAIN) {
-            final List<String> vConf = getOperatorChainConfig((OperatorChain)v);
             final List<String> vertexConf = getOperatorChainConfig((OperatorChain)vertex);
-            if (vConf.equals(vertexConf)) {
+            if (v.getConfiguration().equals(vertexConf)) {
               return vertex;
             }
           }
@@ -144,8 +143,7 @@ final class DfsCommonSubDagFinder implements CommonSubDagFinder {
         for (final ExecutionVertex vertex : vertices) {
           if (vertex.getType() == ExecutionVertex.Type.SOURCE) {
             final PhysicalSource vertexSource = (PhysicalSource)vertex;
-            final PhysicalSource vSource = (PhysicalSource)v;
-            if (vertexSource.getConfiguration().equals(vSource.getConfiguration())) {
+            if (vertexSource.getConfiguration().equals(v.getConfiguration().get(0))) {
               return vertex;
             }
           }

@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.merging;
 
-import edu.snu.mist.common.graph.AdjacentListDAG;
+import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
@@ -24,6 +24,7 @@ import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.net.URL;
 import java.util.*;
 
 /**
@@ -49,14 +50,9 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
   private final SrcAndDagMap<String> srcAndDagMap;
 
   /**
-   * The map that has the query id as a key and its execution dag as a value.
+   * The map that has the query id as a key and its configuration dag as a value.
    */
-  private final ExecutionPlanDagMap executionPlanDagMap;
-
-  /**
-   * Vertex info map that has the execution vertex as a key and the vertex info as a value.
-   */
-  private final VertexInfoMap vertexInfoMap;
+  private final QueryIdConfigDagMap queryIdConfigDagMap;
 
   /**
    * Physical execution dags.
@@ -64,66 +60,90 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
   private final ExecutionDags executionDags;
 
   /**
-   * The execution dag generator.
+   * Class loader provider.
    */
-  private final DagGenerator dagGenerator;
+  private final ClassLoaderProvider classLoaderProvider;
+
+  /**
+   * Execution vertex generator.
+   */
+  private final ExecutionVertexGenerator executionVertexGenerator;
+
+  /**
+   * A map that has config vertex as a key and the corresponding execution vertex as a value.
+   */
+  private final ConfigExecutionVertexMap configExecutionVertexMap;
+
+  /**
+   * A map that has an execution vertex as a key and the reference count number as a value.
+   * The reference count number represents how many queries are sharing the execution vertex.
+   */
+  private final ExecutionVertexCountMap executionVertexCountMap;
+
+  /**
+   * A map that has an execution vertex as a key and the dag that contains its vertex as a value.
+   */
+  private final ExecutionVertexDagMap executionVertexDagMap;
 
   @Inject
   private ImmediateQueryMergingStarter(final OperatorChainManager operatorChainManager,
                                        final CommonSubDagFinder commonSubDagFinder,
                                        final SrcAndDagMap<String> srcAndDagMap,
-                                       final ExecutionPlanDagMap executionPlanDagMap,
+                                       final QueryIdConfigDagMap queryIdConfigDagMap,
                                        final ExecutionDags executionDags,
-                                       final VertexInfoMap vertexInfoMap,
-                                       final DagGenerator dagGenerator) {
+                                       final ConfigExecutionVertexMap configExecutionVertexMap,
+                                       final ExecutionVertexCountMap executionVertexCountMap,
+                                       final ClassLoaderProvider classLoaderProvider,
+                                       final ExecutionVertexGenerator executionVertexGenerator,
+                                       final ExecutionVertexDagMap executionVertexDagMap) {
     this.operatorChainManager = operatorChainManager;
     this.commonSubDagFinder = commonSubDagFinder;
     this.srcAndDagMap = srcAndDagMap;
-    this.executionPlanDagMap = executionPlanDagMap;
-    this.vertexInfoMap = vertexInfoMap;
+    this.queryIdConfigDagMap = queryIdConfigDagMap;
     this.executionDags = executionDags;
-    this.dagGenerator = dagGenerator;
+    this.classLoaderProvider = classLoaderProvider;
+    this.executionVertexGenerator = executionVertexGenerator;
+    this.configExecutionVertexMap = configExecutionVertexMap;
+    this.executionVertexCountMap = executionVertexCountMap;
+    this.executionVertexDagMap = executionVertexDagMap;
   }
 
   @Override
   public synchronized void start(final String queryId,
-                                 final DAG<ConfigVertex, MISTEdge> configDag,
+                                 final DAG<ConfigVertex, MISTEdge> submittedDag,
                                  final List<String> jarFilePaths)
       throws InjectionException, IOException, ClassNotFoundException {
-    // TODO[MIST-686] Do not create new instances of execution vertices in query merging
-    final DAG<ExecutionVertex, MISTEdge> submittedDag = dagGenerator.generate(configDag, jarFilePaths);
+
+    queryIdConfigDagMap.put(queryId, submittedDag);
+    // Get a class loader
+    final URL[] urls = SerializeUtils.getJarFileURLs(jarFilePaths);
+    final ClassLoader classLoader = classLoaderProvider.newInstance(urls);
 
     // Synchronize the execution dags to evade concurrent modifications
     // TODO:[MIST-590] We need to improve this code for concurrent modification
     synchronized (srcAndDagMap) {
-      // Merging two DAGs can change the original execution plan.
-      // So, copy the submitted dag to keep the execution plan even though it is merged
-      // We keep the execution plan to delete a query from the merged dag
-      final DAG<ExecutionVertex, MISTEdge> executionPlan = new AdjacentListDAG<>();
-      GraphUtils.copy(submittedDag, executionPlan);
-      executionPlanDagMap.put(queryId, executionPlan);
-
-      // Create vertex info map
-      for (final ExecutionVertex ev : executionPlan.getVertices()) {
-        final VertexInfo vertexInfo = new VertexInfo(submittedDag, ev);
-        vertexInfoMap.put(ev, vertexInfo);
-      }
-
-      // Set up the output emitters of the submitted DAG
-      QueryStarterUtils.setUpOutputEmitters(operatorChainManager, submittedDag);
-
       // Find mergeable DAGs from the execution dags
       final Map<String, DAG<ExecutionVertex, MISTEdge>> mergeableDags = findMergeableDags(submittedDag);
 
       // Exit the merging process if there is no mergeable dag
       if (mergeableDags.size() == 0) {
-        for (final ExecutionVertex source : submittedDag.getRootVertices()) {
+        final DAG<ExecutionVertex, MISTEdge> executionDag = generate(submittedDag, jarFilePaths);
+        // Set up the output emitters of the submitted DAG
+        QueryStarterUtils.setUpOutputEmitters(operatorChainManager, executionDag);
+
+        for (final ExecutionVertex source : executionDag.getRootVertices()) {
           // Start the source
           final PhysicalSource src = (PhysicalSource) source;
-          srcAndDagMap.put(src.getConfiguration(), submittedDag);
+          srcAndDagMap.put(src.getConfiguration(), executionDag);
           src.start();
         }
-        executionDags.add(submittedDag);
+
+        // Update the execution dag of the execution vertex
+        for (final ExecutionVertex ev : executionDag.getVertices()) {
+          executionVertexDagMap.put(ev, executionDag);
+        }
+
+        executionDags.add(executionDag);
         return;
       }
 
@@ -143,93 +163,167 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
             srcAndDagMap.replace(((PhysicalSource) source).getConfiguration(), sharableDag);
           }
 
-          // Update physical execution dag of the vertex info
+          // Update the execution dag of the execution vertex
           for (final ExecutionVertex ev : sd.getVertices()) {
-            final VertexInfo vertexInfo = vertexInfoMap.get(ev);
-            if (vertexInfo == null) {
-              throw new RuntimeException("VertexInfo should not be null");
-            }
-            // Set it to the sharable dag
-            vertexInfo.setPhysicalExecutionDag(sharableDag);
+            executionVertexDagMap.put(ev, sharableDag);
           }
         }
       }
 
       // After that, find the sub-dag between the sharableDAG and the submitted dag
-      final Map<ExecutionVertex, ExecutionVertex> subDagMap = commonSubDagFinder.findSubDag(sharableDag, submittedDag);
+      final Map<ConfigVertex, ExecutionVertex> subDagMap =
+          commonSubDagFinder.findSubDag(sharableDag, submittedDag);
 
       // After that, we should merge the sharable dag with the submitted dag
       // and update the output emitters of the sharable dag
-      final Set<ExecutionVertex> visited = new HashSet<>(submittedDag.numberOfVertices());
-      for (final ExecutionVertex source : submittedDag.getRootVertices()) {
+      final Set<ConfigVertex> visited = new HashSet<>(submittedDag.numberOfVertices());
+      for (final ConfigVertex source : submittedDag.getRootVertices()) {
         // dfs search
-        dfsMerge(subDagMap, visited, source, sharableDag, submittedDag);
-      }
+        ExecutionVertex executionVertex;
+        if (subDagMap.get(source) == null) {
+          executionVertex = executionVertexGenerator.generate(source, urls, classLoader);
+          sharableDag.addVertex(executionVertex);
+          executionVertexCountMap.put(executionVertex, 1);
+          executionVertexDagMap.put(executionVertex, sharableDag);
+        } else {
+          executionVertex = subDagMap.get(source);
+          executionVertexCountMap.put(executionVertex, executionVertexCountMap.get(executionVertex) + 1);
+        }
+        configExecutionVertexMap.put(source, executionVertex);
 
-      // Update the vertex info reflecting the merging
-      for (final Map.Entry<ExecutionVertex, ExecutionVertex> entry : subDagMap.entrySet()) {
-        final VertexInfo srcVertexInfo = vertexInfoMap.get(entry.getKey());
-        final VertexInfo dstVertexInfo = vertexInfoMap.get(entry.getValue());
-        // Increase the reference count of the merging vertex
-        // and replace the vertex info of the src vertex that will be merged with the dest vertex
-        dstVertexInfo.setRefCount(dstVertexInfo.getRefCount() + 1);
-        vertexInfoMap.replace(entry.getKey(), srcVertexInfo, dstVertexInfo);
+        for (final Map.Entry<ConfigVertex, MISTEdge> child : submittedDag.getEdges(source).entrySet()) {
+          dfsMerge(subDagMap, visited, executionVertex,
+              child.getValue(), child.getKey(), sharableDag, submittedDag, urls, classLoader);
+        }
       }
 
       // If there are sources that are not shared, start them
-      for (final ExecutionVertex source : submittedDag.getRootVertices()) {
-        final PhysicalSource src = (PhysicalSource) source;
-        if (!subDagMap.containsKey(src)) {
-          srcAndDagMap.put(src.getConfiguration(), sharableDag);
-          src.start();
+      for (final ConfigVertex source : submittedDag.getRootVertices()) {
+        if (!subDagMap.containsKey(source)) {
+          srcAndDagMap.put(source.getConfiguration().get(0), sharableDag);
+          ((PhysicalSource)configExecutionVertexMap.get(source)).start();
         }
       }
     }
   }
 
   /**
+   * Create the execution dag in dfs order.
+   */
+  private void dfsCreation(final ExecutionVertex parent,
+                           final MISTEdge parentEdge,
+                           final ConfigVertex currVertex,
+                           final Map<ConfigVertex, ExecutionVertex> created,
+                           final DAG<ConfigVertex, MISTEdge> configDag,
+                           final DAG<ExecutionVertex, MISTEdge> executionDag,
+                           final URL[] urls,
+                           final ClassLoader classLoader) throws IOException, InjectionException {
+    final ExecutionVertex currExecutionVertex;
+    if (created.get(currVertex) == null) {
+      currExecutionVertex = executionVertexGenerator.generate(currVertex, urls, classLoader);
+      created.put(currVertex, currExecutionVertex);
+      executionVertexCountMap.put(currExecutionVertex, 1);
+      executionVertexDagMap.put(currExecutionVertex, executionDag);
+      executionDag.addVertex(currExecutionVertex);
+      // do dfs creation
+      for (final Map.Entry<ConfigVertex, MISTEdge> edges : configDag.getEdges(currVertex).entrySet()) {
+        final ConfigVertex childVertex = edges.getKey();
+        final MISTEdge edge = edges.getValue();
+        dfsCreation(currExecutionVertex, edge, childVertex, created, configDag, executionDag, urls, classLoader);
+      }
+    } else {
+      currExecutionVertex = created.get(currVertex);
+    }
+    configExecutionVertexMap.put(currVertex, currExecutionVertex);
+    executionDag.addEdge(parent, currExecutionVertex, parentEdge);
+  }
+
+  /**
+   * This generates a new execution dag from the configuration dag.
+   */
+  private DAG<ExecutionVertex, MISTEdge> generate(final DAG<ConfigVertex, MISTEdge> configDag,
+                                                  final List<String> jarFilePaths)
+      throws IOException, ClassNotFoundException, InjectionException {
+    // For execution dag
+    final DAG<ExecutionVertex, MISTEdge> executionDag = new AdjacentListConcurrentMapDAG<>();
+
+    // Get a class loader
+    final URL[] urls = SerializeUtils.getJarFileURLs(jarFilePaths);
+    final ClassLoader classLoader = classLoaderProvider.newInstance(urls);
+
+    final Map<ConfigVertex, ExecutionVertex> created = new HashMap<>(configDag.numberOfVertices());
+    for (final ConfigVertex source : configDag.getRootVertices()) {
+      final ExecutionVertex currExecutionVertex = executionVertexGenerator.generate(source, urls, classLoader);
+      created.put(source, currExecutionVertex);
+      configExecutionVertexMap.put(source, currExecutionVertex);
+      executionVertexCountMap.put(currExecutionVertex, 1);
+      executionVertexDagMap.put(currExecutionVertex, executionDag);
+      executionDag.addVertex(currExecutionVertex);
+      // do dfs creation
+      for (final Map.Entry<ConfigVertex, MISTEdge> edges : configDag.getEdges(source).entrySet()) {
+        final ConfigVertex childVertex = edges.getKey();
+        final MISTEdge edge = edges.getValue();
+        dfsCreation(currExecutionVertex, edge, childVertex, created, configDag, executionDag, urls, classLoader);
+      }
+    }
+
+    return executionDag;
+  }
+
+  /**
    * This function merges the submitted dag with the execution dag by traversing the dags in DFS order.
    * @param subDagMap a map that contains vertices of the sub-dag
    * @param visited a set that holds the visited vertices
-   * @param currentVertex currently visited vertex
-   * @param executionDag execution dag
+   * @param parent parent (execution) vertex of the current vertex
+   * @param parentEdge parent edge of the current vertex
+   * @param currentVertex current (config) vertex
+   * @param executionDag execution dag that merges the submitted dag
    * @param submittedDag submitted dag
+   * @param urls urls for creating execution vertices
+   * @param classLoader classLoader for creating execution vertices
    */
-  private void dfsMerge(final Map<ExecutionVertex, ExecutionVertex> subDagMap,
-                        final Set<ExecutionVertex> visited,
-                        final ExecutionVertex currentVertex,
+  private void dfsMerge(final Map<ConfigVertex, ExecutionVertex> subDagMap,
+                        final Set<ConfigVertex> visited,
+                        final ExecutionVertex parent,
+                        final MISTEdge parentEdge,
+                        final ConfigVertex currentVertex,
                         final DAG<ExecutionVertex, MISTEdge> executionDag,
-                        final DAG<ExecutionVertex, MISTEdge> submittedDag) {
+                        final DAG<ConfigVertex, MISTEdge> submittedDag,
+                        final URL[] urls,
+                        final ClassLoader classLoader) throws IOException, InjectionException {
     if (visited.contains(currentVertex)) {
+      executionDag.addEdge(parent, configExecutionVertexMap.get(currentVertex), parentEdge);
       return;
     }
+
     // Add to the visited set
     visited.add(currentVertex);
 
     // Traverse in DFS order
-    final boolean isCurrentVertexShared = subDagMap.containsKey(currentVertex);
-    final ExecutionVertex correspondingVertex = subDagMap.getOrDefault(currentVertex, currentVertex);
+    ExecutionVertex correspondingVertex = subDagMap.get(currentVertex);
+
+    if (correspondingVertex == null) {
+      // it is not shared, so we need to create it
+      correspondingVertex = executionVertexGenerator.generate(currentVertex, urls, classLoader);
+      executionDag.addVertex(correspondingVertex);
+      executionVertexCountMap.put(correspondingVertex, 1);
+      executionVertexDagMap.put(correspondingVertex, executionDag);
+    } else {
+      // It is shared, so increase the reference count
+      executionVertexCountMap.put(correspondingVertex, executionVertexCountMap.get(correspondingVertex) + 1);
+    }
+
+    configExecutionVertexMap.put(currentVertex, correspondingVertex);
+
+    // Traverse
     boolean outputEmitterUpdateNeeded = false;
-    for (final Map.Entry<ExecutionVertex, MISTEdge> neighbor : submittedDag.getEdges(currentVertex).entrySet()) {
-      final ExecutionVertex child = neighbor.getKey();
-      if (isCurrentVertexShared) {
-        if (subDagMap.containsKey(child)) {
-          // Just search in dfs order because the child node already exists in the sharableDag
-          dfsMerge(subDagMap, visited, child, executionDag, submittedDag);
-        } else {
-          // If the current vertex is shared but the child is not shared,
-          // update the output emitter of the parent
-          outputEmitterUpdateNeeded = true;
-          executionDag.addVertex(child);
-          executionDag.addEdge(correspondingVertex, child, neighbor.getValue());
-          dfsMerge(subDagMap, visited, child, executionDag, submittedDag);
-        }
-      } else {
-        // Current vertex is not shared, so just add the child to the sharableDag
-        executionDag.addVertex(child);
-        executionDag.addEdge(correspondingVertex, child, neighbor.getValue());
-        dfsMerge(subDagMap, visited, child, executionDag, submittedDag);
+    for (final Map.Entry<ConfigVertex, MISTEdge> neighbor : submittedDag.getEdges(currentVertex).entrySet()) {
+      final ConfigVertex child = neighbor.getKey();
+      if (!subDagMap.containsKey(child)) {
+        outputEmitterUpdateNeeded = true;
       }
+      dfsMerge(subDagMap, visited, correspondingVertex, neighbor.getValue(),
+        child, executionDag, submittedDag, urls, classLoader);
     }
 
     // [TODO:MIST-527] Integrate ExecutionVertex and PhysicalVertex
@@ -244,6 +338,8 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
             new OperatorOutputEmitter(executionDag.getEdges(correspondingVertex)));
       }
     }
+
+    executionDag.addEdge(parent, correspondingVertex, parentEdge);
   }
 
   /**
@@ -266,20 +362,20 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
   }
 
   /**
-   * Find mergeable dag with the submitted dag.
-   * @param submittedDag submitted dag
+   * Find mergeable dag with the submitted query.
+   * @param configDag the configuration dag of the submitted query
    * @return mergeable dags
    */
   private Map<String, DAG<ExecutionVertex, MISTEdge>> findMergeableDags(
-      final DAG<ExecutionVertex, MISTEdge> submittedDag) {
-    final Set<ExecutionVertex> sources = submittedDag.getRootVertices();
+      final DAG<ConfigVertex, MISTEdge> configDag) {
+    final Set<ConfigVertex> sources = configDag.getRootVertices();
     final Map<String, DAG<ExecutionVertex, MISTEdge>> mergeableDags = new HashMap<>(sources.size());
-    for (final ExecutionVertex source : sources) {
-      final PhysicalSource src = (PhysicalSource) source;
-      final DAG<ExecutionVertex, MISTEdge> dag = srcAndDagMap.get(src.getConfiguration());
+    for (final ConfigVertex source : sources) {
+      final String srcConf = source.getConfiguration().get(0);
+      final DAG<ExecutionVertex, MISTEdge> dag = srcAndDagMap.get(srcConf);
       if (dag != null) {
         // Mergeable source
-        mergeableDags.put(src.getConfiguration(), dag);
+        mergeableDags.put(srcConf, dag);
       }
     }
     return mergeableDags;

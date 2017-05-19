@@ -15,38 +15,36 @@
  */
 package edu.snu.mist.core.task.merging;
 
+import edu.snu.mist.common.graph.DAG;
+import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.ExecutionVertex;
 
 import javax.inject.Inject;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * This is a map that has an execution vertex as a key and a vertex info as a value.
+ * This contains an execution vertex as a key and the dag that contains the vertex as a value.
+ * This map is needed for deleting the execution vertex from the execution dag.
  */
-final class VertexInfoMap {
+public final class ExecutionVertexDagMap {
 
-  private final ConcurrentHashMap<ExecutionVertex, VertexInfo> map;
+  private final Map<ExecutionVertex, DAG<ExecutionVertex, MISTEdge>> map;
 
   @Inject
-  private VertexInfoMap() {
-    this.map = new ConcurrentHashMap<>();
+  private ExecutionVertexDagMap() {
+    this.map = new HashMap<>();
   }
 
-  public VertexInfo get(final ExecutionVertex executionVertex) {
+  public DAG<ExecutionVertex, MISTEdge> get(final ExecutionVertex executionVertex) {
     return map.get(executionVertex);
   }
 
-  public void put(final ExecutionVertex executionVertex, final VertexInfo vertexInfo) {
-    map.put(executionVertex, vertexInfo);
+  public void put(final ExecutionVertex executionVertex, final DAG<ExecutionVertex, MISTEdge> dag) {
+    map.put(executionVertex, dag);
   }
 
-  public boolean replace(final ExecutionVertex executionVertex,
-                         final VertexInfo prevInfo,
-                         final VertexInfo newInfo) {
-    return map.replace(executionVertex, prevInfo, newInfo);
-  }
-
-  public VertexInfo remove(final ExecutionVertex executionVertex) {
+  public DAG<ExecutionVertex, MISTEdge> remove(final ExecutionVertex executionVertex) {
     return map.remove(executionVertex);
   }
 }

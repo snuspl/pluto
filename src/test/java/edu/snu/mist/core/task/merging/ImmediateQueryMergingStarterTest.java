@@ -18,7 +18,6 @@ package edu.snu.mist.core.task.merging;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.OutputEmitter;
 import edu.snu.mist.common.functions.MISTPredicate;
-import edu.snu.mist.common.graph.AdjacentListDAG;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
@@ -27,6 +26,7 @@ import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.utils.IdAndConfGenerator;
 import edu.snu.mist.formats.avro.Direction;
+import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -36,8 +36,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.*;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -47,10 +50,33 @@ import static org.mockito.Mockito.when;
 public final class ImmediateQueryMergingStarterTest {
 
   private IdAndConfGenerator idAndConfGenerator;
+  private ExecutionVertexGenerator executionVertexGenerator;
+  private ConfigExecutionVertexMap configExecutionVertexMap;
+  private ExecutionVertexCountMap executionVertexCountMap;
+  private ExecutionVertexDagMap executionVertexDagMap;
+  private ExecutionDags executionDags;
+  private QueryIdConfigDagMap queryIdConfigDagMap;
+  private SrcAndDagMap<String> srcAndDagMap;
+  private QueryStarter queryStarter;
 
   @Before
   public void setUp() throws InjectionException, IOException {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
+    jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
     idAndConfGenerator = new IdAndConfGenerator();
+    executionVertexGenerator = mock(ExecutionVertexGenerator.class);
+
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    injector.bindVolatileInstance(ExecutionVertexGenerator.class, executionVertexGenerator);
+
+    configExecutionVertexMap = injector.getInstance(ConfigExecutionVertexMap.class);
+    executionVertexCountMap = injector.getInstance(ExecutionVertexCountMap.class);
+    executionVertexDagMap = injector.getInstance(ExecutionVertexDagMap.class);
+    executionDags = injector.getInstance(ExecutionDags.class);
+    queryIdConfigDagMap = injector.getInstance(QueryIdConfigDagMap.class);
+    srcAndDagMap = injector.getInstance(SrcAndDagMap.class);
+    queryStarter = injector.getInstance(QueryStarter.class);
   }
 
   /**
@@ -94,31 +120,38 @@ public final class ImmediateQueryMergingStarterTest {
    * @param sink sink
    * @return dag
    */
-  private DAG<ExecutionVertex, MISTEdge> generateSimpleQuery(final TestSource source,
-                                                             final OperatorChain operatorChain,
-                                                             final PhysicalSink<String> sink) {
+  private Tuple<DAG<ConfigVertex, MISTEdge>, DAG<ExecutionVertex, MISTEdge>> generateSimpleDag(
+      final TestSource source,
+      final OperatorChain operatorChain,
+      final PhysicalSink<String> sink,
+      final ConfigVertex srcVertex,
+      final ConfigVertex ocVertex,
+      final ConfigVertex sinkVertex) throws IOException, InjectionException {
     // Create DAG
-    final DAG<ExecutionVertex, MISTEdge> dag = new AdjacentListDAG<>();
-    dag.addVertex(source);
-    dag.addVertex(operatorChain);
-    dag.addVertex(sink);
-    dag.addEdge(source, operatorChain, new MISTEdge(Direction.LEFT));
-    dag.addEdge(operatorChain, sink, new MISTEdge(Direction.LEFT));
-    return dag;
-  }
+    final DAG<ConfigVertex, MISTEdge> dag = new AdjacentListConcurrentMapDAG<>();
+    dag.addVertex(srcVertex);
+    dag.addVertex(ocVertex);
+    dag.addVertex(sinkVertex);
 
-  /**
-   * Check the reference count of the vertices of a DAG.
-   * @param dag dag
-   * @param vertexInfoMap vertex info map that contains the reference count
-   * @param refCount expected reference count
-   */
-  private void checkReferenceCountOfExecutionVertices(final DAG<ExecutionVertex, MISTEdge> dag,
-                                                      final VertexInfoMap vertexInfoMap,
-                                                      final int refCount) {
-    for (final ExecutionVertex ev : dag.getVertices()) {
-      Assert.assertEquals(refCount, vertexInfoMap.get(ev).getRefCount());
-    }
+    dag.addEdge(srcVertex, ocVertex, new MISTEdge(Direction.LEFT));
+    dag.addEdge(ocVertex, sinkVertex, new MISTEdge(Direction.LEFT));
+
+    final DAG<ExecutionVertex, MISTEdge> executionDag = new AdjacentListConcurrentMapDAG<>();
+    executionDag.addVertex(source);
+    executionDag.addVertex(operatorChain);
+    executionDag.addVertex(sink);
+
+    executionDag.addEdge(source, operatorChain, new MISTEdge(Direction.LEFT));
+    executionDag.addEdge(operatorChain, sink, new MISTEdge(Direction.LEFT));
+
+    when(executionVertexGenerator.generate(eq(srcVertex), any(URL[].class), any(ClassLoader.class)))
+        .thenReturn(source);
+    when(executionVertexGenerator.generate(eq(ocVertex), any(URL[].class), any(ClassLoader.class)))
+        .thenReturn(operatorChain);
+    when(executionVertexGenerator.generate(eq(sinkVertex), any(URL[].class), any(ClassLoader.class)))
+        .thenReturn(sink);
+
+    return new Tuple<>(dag, executionDag);
   }
 
   /**
@@ -140,28 +173,28 @@ public final class ImmediateQueryMergingStarterTest {
   @Test
   public void singleQueryMergingTest() throws InjectionException, IOException, ClassNotFoundException {
     final List<String> result = new LinkedList<>();
+
+   // Physical vertices
     final String sourceConf = idAndConfGenerator.generateConf();
+    final String ocConf = idAndConfGenerator.generateConf();
+    final String sinkConf = idAndConfGenerator.generateConf();
     final TestSource source = generateSource(sourceConf);
-    final OperatorChain operatorChain = generateFilterOperatorChain(idAndConfGenerator.generateConf(), (s) -> true);
-    final PhysicalSink<String> sink = generateSink(idAndConfGenerator.generateConf(), result);
-    final DAG<ConfigVertex, MISTEdge> configDag = mock(DAG.class);
-    final List<String> paths = mock(List.class);
-    final DAG<ExecutionVertex, MISTEdge> query = generateSimpleQuery(source, operatorChain, sink);
+    final OperatorChain operatorChain = generateFilterOperatorChain(ocConf, (s) -> true);
+    final PhysicalSink<String> sink = generateSink(sinkConf, result);
+
+    // Config vertices
+    final ConfigVertex srcVertex = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(sourceConf));
+    final ConfigVertex ocVertex = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(ocConf));
+    final ConfigVertex sinkVertex = new ConfigVertex(ExecutionVertex.Type.SINK, Arrays.asList(sinkConf));
+
+    // Create dag
+    final Tuple<DAG<ConfigVertex, MISTEdge>, DAG<ExecutionVertex, MISTEdge>>
+        dagTuple = generateSimpleDag(source, operatorChain, sink,
+        srcVertex, ocVertex, sinkVertex);
+
     // Execute the query 1
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-
-    final DagGenerator dagGenerator = mock(DagGenerator.class);
-    when(dagGenerator.generate(configDag, paths)).thenReturn(query);
-    injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
-
-    final ImmediateQueryMergingStarter starter = injector.getInstance(ImmediateQueryMergingStarter.class);
-    final SrcAndDagMap<String> srcAndDagMap = injector.getInstance(SrcAndDagMap.class);
-    final ExecutionPlanDagMap executionPlanDagMap = injector.getInstance(ExecutionPlanDagMap.class);
-    final ExecutionDags executionDags = injector.getInstance(ExecutionDags.class);
-    final VertexInfoMap vertexInfoMap = injector.getInstance(VertexInfoMap.class);
-    starter.start("q1", configDag, paths);
+    final List<String> paths = mock(List.class);
+    queryStarter.start("q1", dagTuple.getKey(), paths);
 
     // Generate events for the query and check if the dag is executed correctly
     final String data1 = "Hello";
@@ -170,15 +203,32 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(1, operatorChain.numberOfEvents());
     Assert.assertEquals(true, operatorChain.processNextEvent());
     Assert.assertEquals(Arrays.asList(data1), result);
-    Assert.assertEquals(query, srcAndDagMap.get(sourceConf));
+
+    // Check queryIdConfigDagMap
+    Assert.assertEquals(dagTuple.getKey(), queryIdConfigDagMap.get("q1"));
+
+    // Check srcAndDagMap
+    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple.getValue(), srcAndDagMap.get(sourceConf)));
+
+    // Check executionVertexDagMap
+    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple.getValue(), executionVertexDagMap.get(source)));
+    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple.getValue(), executionVertexDagMap.get(operatorChain)));
+    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple.getValue(), executionVertexDagMap.get(sink)));
+
+    // Check configExecutionVertexMap
+    Assert.assertEquals(source, configExecutionVertexMap.get(srcVertex));
+    Assert.assertEquals(operatorChain, configExecutionVertexMap.get(ocVertex));
+    Assert.assertEquals(sink, configExecutionVertexMap.get(sinkVertex));
+
+    // Check reference count
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(source));
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(operatorChain));
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(sink));
 
     // Check execution dags
     final Collection<DAG<ExecutionVertex, MISTEdge>> expectedDags = new HashSet<>();
-    expectedDags.add(query);
+    expectedDags.add(srcAndDagMap.get(sourceConf));
     Assert.assertEquals(expectedDags, executionDags.values());
-    // Check reference count of the execution vertices
-    Assert.assertTrue(GraphUtils.compareTwoDag(query, executionPlanDagMap.get("q1")));
-    checkReferenceCountOfExecutionVertices(query, vertexInfoMap, 1);
   }
 
   /**
@@ -190,46 +240,55 @@ public final class ImmediateQueryMergingStarterTest {
     // Create a query 1:
     // src1 -> oc1 -> sink1
     final List<String> result1 = new LinkedList<>();
-    final TestSource src1 = generateSource(idAndConfGenerator.generateConf());
-    final OperatorChain operatorChain1 = generateFilterOperatorChain(idAndConfGenerator.generateConf(), (s) -> true);
-    final PhysicalSink<String> sink1 = generateSink(idAndConfGenerator.generateConf(), result1);
-    final DAG<ExecutionVertex, MISTEdge> query1 = generateSimpleQuery(src1, operatorChain1, sink1);
-    final DAG<ConfigVertex, MISTEdge> configDag1 = mock(DAG.class);
     final List<String> paths1 = mock(List.class);
+
+    // Physical vertices
+    final String sourceConf1 = idAndConfGenerator.generateConf();
+    final String ocConf1 = idAndConfGenerator.generateConf();
+    final String sinkConf1 = idAndConfGenerator.generateConf();
+    final TestSource src1 = generateSource(sourceConf1);
+    final OperatorChain operatorChain1 = generateFilterOperatorChain(ocConf1, (s) -> true);
+    final PhysicalSink<String> sink1 = generateSink(sinkConf1, result1);
+
+    // Config vertices
+    final ConfigVertex srcVertex1 = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(sourceConf1));
+    final ConfigVertex ocVertex1 = new ConfigVertex(ExecutionVertex.Type.OPERATOR_CHAIN, Arrays.asList(ocConf1));
+    final ConfigVertex sinkVertex1 = new ConfigVertex(ExecutionVertex.Type.SINK, Arrays.asList(sinkConf1));
+
+    // Create dag
+    final Tuple<DAG<ConfigVertex, MISTEdge>, DAG<ExecutionVertex, MISTEdge>>
+        dagTuple1 = generateSimpleDag(src1, operatorChain1, sink1,
+        srcVertex1, ocVertex1, sinkVertex1);
 
     // Create a query 2:
     // src2 -> oc2 -> sink2
     // The configuration of src2 is different from that of src1.
     final List<String> result2 = new LinkedList<>();
-    final TestSource src2 = generateSource(idAndConfGenerator.generateConf());
-    final OperatorChain operatorChain2 = generateFilterOperatorChain(idAndConfGenerator.generateConf(), (s) -> true);
-    final PhysicalSink<String> sink2 = generateSink(idAndConfGenerator.generateConf(), result2);
-    final DAG<ExecutionVertex, MISTEdge> query2 = generateSimpleQuery(src2, operatorChain2, sink2);
-    final DAG<ConfigVertex, MISTEdge> configDag2 = mock(DAG.class);
     final List<String> paths2 = mock(List.class);
 
+    // Physical vertices
+    final String sourceConf2 = idAndConfGenerator.generateConf();
+    final String ocConf2 = idAndConfGenerator.generateConf();
+    final String sinkConf2 = idAndConfGenerator.generateConf();
+    final TestSource src2 = generateSource(sourceConf2);
+    final OperatorChain operatorChain2 = generateFilterOperatorChain(ocConf2, (s) -> true);
+    final PhysicalSink<String> sink2 = generateSink(sinkConf2, result2);
+
+    // Config vertices
+    final ConfigVertex srcVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(sourceConf2));
+    final ConfigVertex ocVertex2 = new ConfigVertex(ExecutionVertex.Type.OPERATOR_CHAIN, Arrays.asList(ocConf2));
+    final ConfigVertex sinkVertex2 = new ConfigVertex(ExecutionVertex.Type.SINK, Arrays.asList(sinkConf2));
+
+    // Create dag
+    final Tuple<DAG<ConfigVertex, MISTEdge>, DAG<ExecutionVertex, MISTEdge>>
+        dagTuple2 = generateSimpleDag(src2, operatorChain2, sink2,
+        srcVertex2, ocVertex2, sinkVertex2);
+
     // Execute two queries
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-
-    final DagGenerator dagGenerator = mock(DagGenerator.class);
-    when(dagGenerator.generate(configDag1, paths1)).thenReturn(query1);
-    when(dagGenerator.generate(configDag2, paths2)).thenReturn(query2);
-    injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
-
-    final ImmediateQueryMergingStarter starter = injector.getInstance(ImmediateQueryMergingStarter.class);
-    final SrcAndDagMap<String> srcAndDagMap = injector.getInstance(SrcAndDagMap.class);
-    final ExecutionDags executionDags = injector.getInstance(ExecutionDags.class);
-    final ExecutionPlanDagMap executionPlanDagMap = injector.getInstance(ExecutionPlanDagMap.class);
-    final VertexInfoMap vertexInfoMap = injector.getInstance(VertexInfoMap.class);
-    starter.start("q1", configDag1, paths1);
-    starter.start("q2", configDag2, paths2);
-
-    // Check
-    Assert.assertEquals(2, srcAndDagMap.size());
-    Assert.assertEquals(query1, srcAndDagMap.get(src1.getConfiguration()));
-    Assert.assertEquals(query2, srcAndDagMap.get(src2.getConfiguration()));
+    final String query1Id = "q1";
+    final String query2Id = "q2";
+    queryStarter.start(query1Id, dagTuple1.getKey(), paths1);
+    queryStarter.start(query2Id, dagTuple2.getKey(), paths2);
 
     // The query 1 and 2 have different sources, so they should be executed separately
     final String data1 = "Hello";
@@ -246,17 +305,46 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(false, operatorChain1.processNextEvent());
     Assert.assertEquals(Arrays.asList(data1), result1);
 
+    // Check queryIdConfigDagMap
+    Assert.assertEquals(dagTuple1.getKey(), queryIdConfigDagMap.get(query1Id));
+    Assert.assertEquals(dagTuple2.getKey(), queryIdConfigDagMap.get(query2Id));
+
+    // Check srcAndDagMap
+    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple1.getValue(), srcAndDagMap.get(sourceConf1)));
+    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple2.getValue(), srcAndDagMap.get(sourceConf2)));
+
+    // Check executionVertexDagMap
+    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple1.getValue(), executionVertexDagMap.get(src1)));
+    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple1.getValue(), executionVertexDagMap.get(operatorChain1)));
+    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple1.getValue(), executionVertexDagMap.get(sink1)));
+
+    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple2.getValue(), executionVertexDagMap.get(src2)));
+    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple2.getValue(), executionVertexDagMap.get(operatorChain2)));
+    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple2.getValue(), executionVertexDagMap.get(sink2)));
+
+    // Check configExecutionVertexMap
+    Assert.assertEquals(src1, configExecutionVertexMap.get(srcVertex1));
+    Assert.assertEquals(operatorChain1, configExecutionVertexMap.get(ocVertex1));
+    Assert.assertEquals(sink1, configExecutionVertexMap.get(sinkVertex1));
+
+    Assert.assertEquals(src2, configExecutionVertexMap.get(srcVertex2));
+    Assert.assertEquals(operatorChain2, configExecutionVertexMap.get(ocVertex2));
+    Assert.assertEquals(sink2, configExecutionVertexMap.get(sinkVertex2));
+
+    // Check reference count
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(src1));
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(operatorChain1));
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(sink1));
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(src2));
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(operatorChain2));
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(sink2));
+
     // Check execution dags
     final Collection<DAG<ExecutionVertex, MISTEdge>> expectedDags = new HashSet<>();
-    expectedDags.add(query1);
-    expectedDags.add(query2);
-    Assert.assertEquals(expectedDags, executionDags.values());
+    expectedDags.add(srcAndDagMap.get(sourceConf1));
+    expectedDags.add(srcAndDagMap.get(sourceConf2));
 
-    // Check reference count of the execution vertices
-    Assert.assertTrue(GraphUtils.compareTwoDag(query1, executionPlanDagMap.get("q1")));
-    Assert.assertTrue(GraphUtils.compareTwoDag(query2, executionPlanDagMap.get("q2")));
-    checkReferenceCountOfExecutionVertices(query1, vertexInfoMap, 1);
-    checkReferenceCountOfExecutionVertices(query2, vertexInfoMap, 1);
+    Assert.assertEquals(expectedDags, executionDags.values());
   }
 
   /**
@@ -272,63 +360,46 @@ public final class ImmediateQueryMergingStarterTest {
     final String sourceConf = idAndConfGenerator.generateConf();
     final String operatorConf = idAndConfGenerator.generateConf();
     final TestSource src1 = generateSource(sourceConf);
+    final String sinkConf1 = idAndConfGenerator.generateConf();
     final OperatorChain operatorChain1 = generateFilterOperatorChain(operatorConf, (s) -> true);
-    final PhysicalSink<String> sink1 = generateSink(idAndConfGenerator.generateConf(), result1);
-    final DAG<ExecutionVertex, MISTEdge> query1 = generateSimpleQuery(src1, operatorChain1, sink1);
-    final DAG<ExecutionVertex, MISTEdge> query1Plan = new AdjacentListDAG<>();
-    GraphUtils.copy(query1, query1Plan);
-    final DAG<ConfigVertex, MISTEdge> configDag1 = mock(DAG.class);
+    final PhysicalSink<String> sink1 = generateSink(sinkConf1, result1);
+
+    // Config vertices
+    final ConfigVertex srcVertex1 = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(sourceConf));
+    final ConfigVertex ocVertex1 = new ConfigVertex(ExecutionVertex.Type.OPERATOR_CHAIN, Arrays.asList(operatorConf));
+    final ConfigVertex sinkVertex1 = new ConfigVertex(ExecutionVertex.Type.SINK, Arrays.asList(sinkConf1));
     final List<String> paths1 = mock(List.class);
+
+    // Create dag
+    final Tuple<DAG<ConfigVertex, MISTEdge>, DAG<ExecutionVertex, MISTEdge>>
+        dagTuple1 = generateSimpleDag(src1, operatorChain1, sink1,
+        srcVertex1, ocVertex1, sinkVertex1);
 
     // Create a query 2:
     // src2 -> oc2 -> sink2
     // The configuration of src2 and operatorChain2 is same as that of src1 and operatorChain2.
     final List<String> result2 = new LinkedList<>();
+    final String sinkConf2 = idAndConfGenerator.generateConf();
     final TestSource src2 = generateSource(sourceConf);
     final OperatorChain operatorChain2 = generateFilterOperatorChain(operatorConf, (s) -> true);
-    final PhysicalSink<String> sink2 = generateSink(idAndConfGenerator.generateConf(), result2);
-    final DAG<ExecutionVertex, MISTEdge> query2 = generateSimpleQuery(src2, operatorChain2, sink2);
-    final DAG<ExecutionVertex, MISTEdge> query2Plan = new AdjacentListDAG<>();
-    GraphUtils.copy(query2, query2Plan);
-    final DAG<ConfigVertex, MISTEdge> configDag2 = mock(DAG.class);
+    final PhysicalSink<String> sink2 = generateSink(sinkConf2, result2);
     final List<String> paths2 = mock(List.class);
 
-    // Execute the query 1
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    // Config vertices
+    final ConfigVertex srcVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(sourceConf));
+    final ConfigVertex ocVertex2 = new ConfigVertex(ExecutionVertex.Type.OPERATOR_CHAIN, Arrays.asList(operatorConf));
+    final ConfigVertex sinkVertex2 = new ConfigVertex(ExecutionVertex.Type.SINK, Arrays.asList(sinkConf2));
 
-    final DagGenerator dagGenerator = mock(DagGenerator.class);
-    when(dagGenerator.generate(configDag1, paths1)).thenReturn(query1);
-    when(dagGenerator.generate(configDag2, paths2)).thenReturn(query2);
-    injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
+    // Create dag
+    final Tuple<DAG<ConfigVertex, MISTEdge>, DAG<ExecutionVertex, MISTEdge>>
+        dagTuple2 = generateSimpleDag(src2, operatorChain2, sink2,
+        srcVertex2, ocVertex2, sinkVertex2);
 
-    final ImmediateQueryMergingStarter starter = injector.getInstance(ImmediateQueryMergingStarter.class);
-    final SrcAndDagMap<String> srcAndDagMap = injector.getInstance(SrcAndDagMap.class);
-    final ExecutionDags executionDags = injector.getInstance(ExecutionDags.class);
-    final ExecutionPlanDagMap executionPlanDagMap = injector.getInstance(ExecutionPlanDagMap.class);
-    final VertexInfoMap vertexInfoMap = injector.getInstance(VertexInfoMap.class);
-    starter.start("q1", configDag1, paths1);
-
-    // The query 1 and 2 should be merged and the following dag should be created:
-    // src1 -> oc1 -> sink1
-    //             -> sink2
-    final DAG<ExecutionVertex, MISTEdge> expectedDag = new AdjacentListDAG<>();
-    GraphUtils.copy(query1, expectedDag);
-    expectedDag.addVertex(sink2);
-    expectedDag.addEdge(operatorChain1, sink2, query2.getEdges(operatorChain2).get(sink2));
-
-    // Execute the query 2
-    starter.start("q2", configDag2, paths2);
-
-    final DAG<ExecutionVertex, MISTEdge> mergedDag = srcAndDagMap.get(sourceConf);
-    Assert.assertEquals(1, srcAndDagMap.size());
-    Assert.assertTrue(GraphUtils.compareTwoDag(expectedDag, mergedDag));
-
-    // Check execution dags
-    final Collection<DAG<ExecutionVertex, MISTEdge>> expectedDags = new HashSet<>();
-    expectedDags.add(mergedDag);
-    Assert.assertEquals(expectedDags, executionDags.values());
+    // Execute two queries
+    final String query1Id = "q1";
+    final String query2Id = "q2";
+    queryStarter.start(query1Id, dagTuple1.getKey(), paths1);
+    queryStarter.start(query2Id, dagTuple2.getKey(), paths2);
 
     // Generate events for the merged query and check if the dag is executed correctly
     final String data = "Hello";
@@ -340,21 +411,56 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(Arrays.asList(data), result1);
     Assert.assertEquals(Arrays.asList(data), result2);
 
-    // Check reference count and physical vertex of the execution vertices
-    Assert.assertTrue(GraphUtils.compareTwoDag(query1Plan, executionPlanDagMap.get("q1")));
-    Assert.assertTrue(GraphUtils.compareTwoDag(query2Plan, executionPlanDagMap.get("q2")));
-    Assert.assertEquals(2, vertexInfoMap.get(src1).getRefCount());
-    Assert.assertEquals(src1, vertexInfoMap.get(src1).getPhysicalExecutionVertex());
-    Assert.assertEquals(2, vertexInfoMap.get(src2).getRefCount());
-    Assert.assertEquals(src1, vertexInfoMap.get(src2).getPhysicalExecutionVertex());
-    Assert.assertEquals(2, vertexInfoMap.get(operatorChain1).getRefCount());
-    Assert.assertEquals(operatorChain1, vertexInfoMap.get(operatorChain1).getPhysicalExecutionVertex());
-    Assert.assertEquals(2, vertexInfoMap.get(operatorChain2).getRefCount());
-    Assert.assertEquals(operatorChain1, vertexInfoMap.get(operatorChain2).getPhysicalExecutionVertex());
-    Assert.assertEquals(1, vertexInfoMap.get(sink1).getRefCount());
-    Assert.assertEquals(sink1, vertexInfoMap.get(sink1).getPhysicalExecutionVertex());
-    Assert.assertEquals(1, vertexInfoMap.get(sink2).getRefCount());
-    Assert.assertEquals(sink2, vertexInfoMap.get(sink2).getPhysicalExecutionVertex());
+    // Src2 and 1 are the same, so the output emitter of src2 should be null
+    try {
+      src2.send(data);
+      Assert.fail("OutputEmitter should be null");
+    } catch (final NullPointerException e) {
+      // do nothing
+    }
+
+    // Check queryIdConfigDagMap
+    Assert.assertEquals(dagTuple1.getKey(), queryIdConfigDagMap.get(query1Id));
+    Assert.assertEquals(dagTuple2.getKey(), queryIdConfigDagMap.get(query2Id));
+
+    // Check execution dags
+    final Collection<DAG<ExecutionVertex, MISTEdge>> expectedDags = new HashSet<>();
+    final DAG<ExecutionVertex, MISTEdge> mergedDag = dagTuple1.getValue();
+    mergedDag.addVertex(sink2);
+    mergedDag.addEdge(operatorChain1, sink2, new MISTEdge(Direction.LEFT));
+    expectedDags.add(srcAndDagMap.get(sourceConf));
+    Assert.assertEquals(expectedDags, executionDags.values());
+
+    // Check srcAndDagMap
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, srcAndDagMap.get(sourceConf)));
+
+    // Check executionVertexDagMap
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, executionVertexDagMap.get(src1)));
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, executionVertexDagMap.get(operatorChain1)));
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, executionVertexDagMap.get(sink1)));
+
+    // They are merged, so src2, oc2 and sink2 should be included in dag1
+    Assert.assertNull(executionVertexDagMap.get(src2));
+    Assert.assertNull(executionVertexDagMap.get(operatorChain2));
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, executionVertexDagMap.get(sink2)));
+
+    // Check configExecutionVertexMap
+    Assert.assertEquals(src1, configExecutionVertexMap.get(srcVertex1));
+    Assert.assertEquals(operatorChain1, configExecutionVertexMap.get(ocVertex1));
+    Assert.assertEquals(sink1, configExecutionVertexMap.get(sinkVertex1));
+
+    Assert.assertEquals(src1, configExecutionVertexMap.get(srcVertex2));
+    Assert.assertEquals(operatorChain1, configExecutionVertexMap.get(ocVertex2));
+    Assert.assertEquals(sink2, configExecutionVertexMap.get(sinkVertex2));
+
+    // Check reference count
+    Assert.assertEquals(2, (int)executionVertexCountMap.get(src1));
+    Assert.assertEquals(2, (int)executionVertexCountMap.get(operatorChain1));
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(sink1));
+    Assert.assertNull(executionVertexCountMap.get(src2));
+    Assert.assertNull(executionVertexCountMap.get(operatorChain2));
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(sink2));
+
   }
 
   /**
@@ -368,70 +474,55 @@ public final class ImmediateQueryMergingStarterTest {
     // src1 -> oc1 -> sink1
     final List<String> result1 = new LinkedList<>();
     final String sourceConf = idAndConfGenerator.generateConf();
-    final TestSource src1 = generateSource(sourceConf);
-    final OperatorChain operatorChain1 = generateFilterOperatorChain(
-        idAndConfGenerator.generateConf(), (s) -> s.startsWith("Hello"));
-    final PhysicalSink<String> sink1 = generateSink(idAndConfGenerator.generateConf(), result1);
-    final DAG<ExecutionVertex, MISTEdge> query1 = generateSimpleQuery(src1, operatorChain1, sink1);
-    final DAG<ExecutionVertex, MISTEdge> query1Plan = new AdjacentListDAG<>();
-    GraphUtils.copy(query1, query1Plan);
-    final DAG<ConfigVertex, MISTEdge> configDag1 = mock(DAG.class);
+    final String ocConf1 = idAndConfGenerator.generateConf();
+    final String sinkConf1 = idAndConfGenerator.generateConf();
     final List<String> paths1 = mock(List.class);
+
+    final TestSource src1 = generateSource(sourceConf);
+    final OperatorChain operatorChain1 = generateFilterOperatorChain(ocConf1, (s) -> true);
+    final PhysicalSink<String> sink1 = generateSink(sinkConf1, result1);
+
+    // Config vertices
+    final ConfigVertex srcVertex1 = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(sourceConf));
+    final ConfigVertex ocVertex1 = new ConfigVertex(ExecutionVertex.Type.OPERATOR_CHAIN, Arrays.asList(ocConf1));
+    final ConfigVertex sinkVertex1 = new ConfigVertex(ExecutionVertex.Type.SINK, Arrays.asList(sinkConf1));
+
+    // Create dag
+    final Tuple<DAG<ConfigVertex, MISTEdge>, DAG<ExecutionVertex, MISTEdge>>
+        dagTuple1 = generateSimpleDag(src1, operatorChain1, sink1,
+        srcVertex1, ocVertex1, sinkVertex1);
 
     // Create a query 2:
     // src2 -> oc2 -> sink2
-    // The configuration of src2 is same as that of src1,
-    // but the configuration of oc2 is different from that of oc1.
+    // The configuration of src2 and operatorChain2 is same as that of src1 and operatorChain2.
     final List<String> result2 = new LinkedList<>();
+    final String ocConf2 = idAndConfGenerator.generateConf();
+    final String sinkConf2 = idAndConfGenerator.generateConf();
+
     final TestSource src2 = generateSource(sourceConf);
-    final OperatorChain operatorChain2 = generateFilterOperatorChain(
-        idAndConfGenerator.generateConf(), (s) -> s.startsWith("World"));
-    final PhysicalSink<String> sink2 = generateSink(idAndConfGenerator.generateConf(), result2);
-    final DAG<ExecutionVertex, MISTEdge> query2 = generateSimpleQuery(src2, operatorChain2, sink2);
-    final DAG<ExecutionVertex, MISTEdge> query2Plan = new AdjacentListDAG<>();
-    GraphUtils.copy(query2, query2Plan);
-    final DAG<ConfigVertex, MISTEdge> configDag2 = mock(DAG.class);
+    final OperatorChain operatorChain2 = generateFilterOperatorChain(ocConf2, (s) -> true);
+    final PhysicalSink<String> sink2 = generateSink(sinkConf2, result2);
     final List<String> paths2 = mock(List.class);
 
-    // Execute the query 1
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    // Config vertices
+    final ConfigVertex srcVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(sourceConf));
+    final ConfigVertex ocVertex2 = new ConfigVertex(ExecutionVertex.Type.OPERATOR_CHAIN, Arrays.asList(ocConf2));
+    final ConfigVertex sinkVertex2 = new ConfigVertex(ExecutionVertex.Type.SINK, Arrays.asList(sinkConf2));
 
-    final DagGenerator dagGenerator = mock(DagGenerator.class);
-    when(dagGenerator.generate(configDag1, paths1)).thenReturn(query1);
-    when(dagGenerator.generate(configDag2, paths2)).thenReturn(query2);
-    injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
+    // Create dag
+    final Tuple<DAG<ConfigVertex, MISTEdge>, DAG<ExecutionVertex, MISTEdge>>
+        dagTuple2 = generateSimpleDag(src2, operatorChain2, sink2,
+        srcVertex2, ocVertex2, sinkVertex2);
 
-    final ImmediateQueryMergingStarter starter = injector.getInstance(ImmediateQueryMergingStarter.class);
-    final SrcAndDagMap<String> srcAndDagMap = injector.getInstance(SrcAndDagMap.class);
-    final ExecutionDags executionDags = injector.getInstance(ExecutionDags.class);
-    final ExecutionPlanDagMap executionPlanDagMap = injector.getInstance(ExecutionPlanDagMap.class);
-    final VertexInfoMap vertexInfoMap = injector.getInstance(VertexInfoMap.class);
-    starter.start("q1", configDag1, paths1);
-
+    // Execute two queries
     // The query 1 and 2 should be merged and the following dag should be created:
     // src1 -> oc1 -> sink1
     //      -> oc2 -> sink2
-    final DAG<ExecutionVertex, MISTEdge> expectedDag = new AdjacentListDAG<>();
-    GraphUtils.copy(query1, expectedDag);
 
-    expectedDag.addVertex(operatorChain2);
-    expectedDag.addVertex(sink2);
-    expectedDag.addEdge(src1, operatorChain2, query2.getEdges(src2).get(operatorChain2));
-    expectedDag.addEdge(operatorChain2, sink2, query2.getEdges(operatorChain2).get(sink2));
-
-    // Execute the query 2
-    starter.start("q2", configDag2, paths2);
-
-    final DAG<ExecutionVertex, MISTEdge> mergedDag = srcAndDagMap.get(sourceConf);
-    Assert.assertEquals(1, srcAndDagMap.size());
-    Assert.assertTrue(GraphUtils.compareTwoDag(expectedDag, mergedDag));
-
-    // Check execution dags
-    final Collection<DAG<ExecutionVertex, MISTEdge>> expectedDags = new HashSet<>();
-    expectedDags.add(mergedDag);
-    Assert.assertEquals(expectedDags, executionDags.values());
+    final String query1Id = "q1";
+    final String query2Id = "q2";
+    queryStarter.start(query1Id, dagTuple1.getKey(), paths1);
+    queryStarter.start(query2Id, dagTuple2.getKey(), paths2);
 
     // Generate events for the merged query and check if the dag is executed correctly
     final String data1 = "Hello";
@@ -441,7 +532,7 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(true, operatorChain1.processNextEvent());
     Assert.assertEquals(true, operatorChain2.processNextEvent());
     Assert.assertEquals(Arrays.asList(data1), result1);
-    Assert.assertEquals(Arrays.asList(), result2);
+    Assert.assertEquals(Arrays.asList(data1), result2);
 
     final String data2 = "World";
     src1.send(data2);
@@ -449,24 +540,60 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(1, operatorChain2.numberOfEvents());
     Assert.assertEquals(true, operatorChain1.processNextEvent());
     Assert.assertEquals(true, operatorChain2.processNextEvent());
-    Assert.assertEquals(Arrays.asList(data1), result1);
-    Assert.assertEquals(Arrays.asList(data2), result2);
+    Assert.assertEquals(Arrays.asList(data1, data2), result1);
+    Assert.assertEquals(Arrays.asList(data1, data2), result2);
 
-    // Check reference count and physical vertex of the execution vertices
-    Assert.assertTrue(GraphUtils.compareTwoDag(query1Plan, executionPlanDagMap.get("q1")));
-    Assert.assertTrue(GraphUtils.compareTwoDag(query2Plan, executionPlanDagMap.get("q2")));
-    Assert.assertEquals(2, vertexInfoMap.get(src1).getRefCount());
-    Assert.assertEquals(src1, vertexInfoMap.get(src1).getPhysicalExecutionVertex());
-    Assert.assertEquals(2, vertexInfoMap.get(src2).getRefCount());
-    Assert.assertEquals(src1, vertexInfoMap.get(src2).getPhysicalExecutionVertex());
-    Assert.assertEquals(1, vertexInfoMap.get(operatorChain1).getRefCount());
-    Assert.assertEquals(operatorChain1, vertexInfoMap.get(operatorChain1).getPhysicalExecutionVertex());
-    Assert.assertEquals(1, vertexInfoMap.get(operatorChain2).getRefCount());
-    Assert.assertEquals(operatorChain2, vertexInfoMap.get(operatorChain2).getPhysicalExecutionVertex());
-    Assert.assertEquals(1, vertexInfoMap.get(sink1).getRefCount());
-    Assert.assertEquals(sink1, vertexInfoMap.get(sink1).getPhysicalExecutionVertex());
-    Assert.assertEquals(1, vertexInfoMap.get(sink2).getRefCount());
-    Assert.assertEquals(sink2, vertexInfoMap.get(sink2).getPhysicalExecutionVertex());
+    // Src2 and 1 are the same, so the output emitter of src2 should be null
+    try {
+      src2.send(data1);
+      Assert.fail("OutputEmitter should be null");
+    } catch (final NullPointerException e) {
+      // do nothing
+    }
+
+    // Check execution dags
+    final Collection<DAG<ExecutionVertex, MISTEdge>> expectedDags = new HashSet<>();
+    final DAG<ExecutionVertex, MISTEdge> mergedDag = dagTuple1.getValue();
+    mergedDag.addVertex(operatorChain2);
+    mergedDag.addVertex(sink2);
+    mergedDag.addEdge(src1, operatorChain2, new MISTEdge(Direction.LEFT));
+    mergedDag.addEdge(operatorChain2, sink2, new MISTEdge(Direction.LEFT));
+    expectedDags.add(srcAndDagMap.get(sourceConf));
+    Assert.assertEquals(expectedDags, executionDags.values());
+
+    // Check queryIdConfigDagMap
+    Assert.assertEquals(dagTuple1.getKey(), queryIdConfigDagMap.get(query1Id));
+    Assert.assertEquals(dagTuple2.getKey(), queryIdConfigDagMap.get(query2Id));
+
+    // Check srcAndDagMap
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, srcAndDagMap.get(sourceConf)));
+
+    // Check executionVertexDagMap
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, executionVertexDagMap.get(src1)));
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, executionVertexDagMap.get(operatorChain1)));
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, executionVertexDagMap.get(sink1)));
+
+    // They are merged, so src2, oc2 and sink2 should be included in dag1
+    Assert.assertEquals(null, executionVertexDagMap.get(src2));
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, executionVertexDagMap.get(operatorChain2)));
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, executionVertexDagMap.get(sink2)));
+
+    // Check configExecutionVertexMap
+    Assert.assertEquals(src1, configExecutionVertexMap.get(srcVertex1));
+    Assert.assertEquals(operatorChain1, configExecutionVertexMap.get(ocVertex1));
+    Assert.assertEquals(sink1, configExecutionVertexMap.get(sinkVertex1));
+
+    Assert.assertEquals(src1, configExecutionVertexMap.get(srcVertex2));
+    Assert.assertEquals(operatorChain2, configExecutionVertexMap.get(ocVertex2));
+    Assert.assertEquals(sink2, configExecutionVertexMap.get(sinkVertex2));
+
+    // Check reference count
+    Assert.assertEquals(2, (int)executionVertexCountMap.get(src1));
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(operatorChain1));
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(sink1));
+    Assert.assertEquals(null, executionVertexCountMap.get(src2));
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(operatorChain2));
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(sink2));
   }
 
   /**
@@ -494,6 +621,9 @@ public final class ImmediateQueryMergingStarterTest {
      * @param <T> data type
      */
     public <T> void send(final T data) {
+      if (outputEmitter == null) {
+        throw new NullPointerException("Output emitter is null");
+      }
       outputEmitter.emitData(new MistDataEvent(data));
     }
 
