@@ -431,7 +431,6 @@ public final class ImmediateQueryMergingStarterTest {
     expectedDags.add(srcAndDagMap.get(sourceConf));
     Assert.assertEquals(expectedDags, executionDags.values());
 
-
     // Check srcAndDagMap
     Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, srcAndDagMap.get(sourceConf)));
 
@@ -453,7 +452,6 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(src1, configExecutionVertexMap.get(srcVertex2));
     Assert.assertEquals(operatorChain1, configExecutionVertexMap.get(ocVertex2));
     Assert.assertEquals(sink2, configExecutionVertexMap.get(sinkVertex2));
-
 
     // Check reference count
     Assert.assertEquals(2, (int)executionVertexCountMap.get(src1));
