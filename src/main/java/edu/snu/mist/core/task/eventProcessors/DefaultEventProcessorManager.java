@@ -18,11 +18,13 @@ package edu.snu.mist.core.task.eventProcessors;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorLowerBound;
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorUpperBound;
+import edu.snu.mist.core.task.eventProcessors.parameters.GracePeriod;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -54,16 +56,29 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
    */
   private final EventProcessorFactory eventProcessorFactory;
 
+  /**
+   * Grace period that prevents the adjustment of the number of event processors.
+   */
+  private final int gracePeriod;
+
+  /**
+   * The previous time of adjustment of the number of event processors.
+   */
+  private long prevAdjustTime;
+
   @Inject
   private DefaultEventProcessorManager(@Parameter(DefaultNumEventProcessors.class) final int defaultNumEventProcessors,
                                        @Parameter(EventProcessorLowerBound.class) final int eventProcessorLowerBound,
                                        @Parameter(EventProcessorUpperBound.class) final int eventProcessorUpperBound,
+                                       @Parameter(GracePeriod.class) final int gracePeriod,
                                        final EventProcessorFactory eventProcessorFactory) {
     this.eventProcessorLowerBound = eventProcessorLowerBound;
     this.eventProcessorUpperBound = eventProcessorUpperBound;
     this.eventProcessors = new LinkedList<>();
     this.eventProcessorFactory = eventProcessorFactory;
+    this.gracePeriod = gracePeriod;
     addNewThreadsToSet(defaultNumEventProcessors);
+    this.prevAdjustTime = System.nanoTime();
   }
 
   /**
@@ -85,16 +100,19 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
     }
 
     synchronized (eventProcessors) {
-      final int currNum = eventProcessors.size();
-      final int increaseNum = Math.min(delta, eventProcessorUpperBound - currNum);
-      if (increaseNum != 0) {
+      if (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - prevAdjustTime) >= gracePeriod) {
+        final int currNum = eventProcessors.size();
+        final int increaseNum = Math.min(delta, eventProcessorUpperBound - currNum);
+        if (increaseNum != 0) {
 
-        if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "Increase event processors from {0} to {1}",
-              new Object[]{currNum, currNum + increaseNum});
+          if (LOG.isLoggable(Level.FINE)) {
+            LOG.log(Level.FINE, "Increase event processors from {0} to {1}",
+                new Object[]{currNum, currNum + increaseNum});
+          }
+
+          addNewThreadsToSet(increaseNum);
+          prevAdjustTime = System.nanoTime();
         }
-
-        addNewThreadsToSet(increaseNum);
       }
     }
   }
@@ -106,22 +124,25 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
     }
 
     synchronized (eventProcessors) {
-      final int currNum = eventProcessors.size();
-      final int decreaseNum = Math.min(delta, currNum - eventProcessorLowerBound);
-      if (decreaseNum != 0) {
+      if (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - prevAdjustTime) >= gracePeriod) {
+        final int currNum = eventProcessors.size();
+        final int decreaseNum = Math.min(delta, currNum - eventProcessorLowerBound);
+        if (decreaseNum != 0) {
 
-        if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "Decrease event processors from {0} to {1}",
-              new Object[]{currNum, currNum - decreaseNum});
-        }
-
-        for (int i = 0; i < decreaseNum; i++) {
-          final EventProcessor eventProcessor = eventProcessors.poll();
-          try {
-            eventProcessor.close();
-          } catch (final Exception e) {
-            e.printStackTrace();
+          if (LOG.isLoggable(Level.FINE)) {
+            LOG.log(Level.FINE, "Decrease event processors from {0} to {1}",
+                new Object[]{currNum, currNum - decreaseNum});
           }
+
+          for (int i = 0; i < decreaseNum; i++) {
+            final EventProcessor eventProcessor = eventProcessors.poll();
+            try {
+              eventProcessor.close();
+            } catch (final Exception e) {
+              e.printStackTrace();
+            }
+          }
+          prevAdjustTime = System.nanoTime();
         }
       }
     }

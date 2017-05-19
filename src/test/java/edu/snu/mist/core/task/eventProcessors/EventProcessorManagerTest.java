@@ -18,6 +18,7 @@ package edu.snu.mist.core.task.eventProcessors;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorLowerBound;
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorUpperBound;
+import edu.snu.mist.core.task.eventProcessors.parameters.GracePeriod;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -28,6 +29,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.inject.Inject;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Mockito.mock;
 
@@ -44,6 +47,7 @@ public class EventProcessorManagerTest {
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, Integer.toString(DEFAULT_NUM_THREADS));
     jcb.bindNamedParameter(EventProcessorUpperBound.class, Integer.toString(MAX_NUM_THREADS));
     jcb.bindNamedParameter(EventProcessorLowerBound.class, Integer.toString(MIN_NUM_THREADS));
+    jcb.bindNamedParameter(GracePeriod.class, Integer.toString(0));
     jcb.bindImplementation(EventProcessorFactory.class, TestEventProcessorFactory.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     eventProcessorManager = injector.getInstance(DefaultEventProcessorManager.class);
@@ -108,6 +112,49 @@ public class EventProcessorManagerTest {
 
     eventProcessorManager.adjustEventProcessorNum(MIN_NUM_THREADS - 1);
     Assert.assertEquals(MIN_NUM_THREADS, eventProcessorManager.size());
+  }
+
+  /**
+   * Test whether EventPrcoessorManager does not adjust the number of events processors in grace period.
+   */
+  @Test
+  public void testGracePeriod() throws InjectionException {
+    final int gracePeriod = 3;
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(DefaultNumEventProcessors.class, Integer.toString(DEFAULT_NUM_THREADS));
+    jcb.bindNamedParameter(EventProcessorUpperBound.class, Integer.toString(MAX_NUM_THREADS));
+    jcb.bindNamedParameter(EventProcessorLowerBound.class, Integer.toString(MIN_NUM_THREADS));
+    jcb.bindNamedParameter(GracePeriod.class, Integer.toString(gracePeriod));
+    jcb.bindImplementation(EventProcessorFactory.class, TestEventProcessorFactory.class);
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+
+    long prevAdjustTime = System.nanoTime();
+
+    eventProcessorManager = injector.getInstance(DefaultEventProcessorManager.class);
+    eventProcessorManager.increaseEventProcessors(MAX_NUM_THREADS - DEFAULT_NUM_THREADS);
+    // EventProcessorManager should not adjust the number of event processors during grace period
+    Assert.assertEquals(DEFAULT_NUM_THREADS, eventProcessorManager.size());
+
+    while (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - prevAdjustTime) < gracePeriod + 1) {
+      // wait
+    }
+
+    prevAdjustTime = System.nanoTime();
+    eventProcessorManager.increaseEventProcessors(MAX_NUM_THREADS - DEFAULT_NUM_THREADS);
+    // EventProcessorManager should adjust the number of event processors
+    Assert.assertEquals(MAX_NUM_THREADS, eventProcessorManager.size());
+
+    eventProcessorManager.decreaseEventProcessors(1);
+    // EventProcessorManager should not adjust the number of event processors during grace period
+    Assert.assertEquals(MAX_NUM_THREADS, eventProcessorManager.size());
+
+    while (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - prevAdjustTime) < gracePeriod + 1) {
+      // wait
+    }
+
+    eventProcessorManager.decreaseEventProcessors(1);
+    // EventProcessorManager should adjust the number of event processors
+    Assert.assertEquals(MAX_NUM_THREADS - 1, eventProcessorManager.size());
   }
 
   /**
