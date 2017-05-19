@@ -26,40 +26,55 @@ import java.util.Collection;
 /**
  * This removes the query from MIST.
  * It considers the queries are merged and vertices have their reference count.
- * So, this remover will decrease the reference count of the physical vertices
+ * So, this remover will decrease the reference count of the execution vertices
  * and delete them when it becomes zero.
  */
 public final class MergeAwareQueryRemover implements QueryRemover {
 
   /**
-   * Map that has the source conf as a key and the physical execution dag as a value.
+   * Map that has the source conf as a key and the execution dag as a value.
    */
   private final SrcAndDagMap<String> srcAndDagMap;
-
-  /**
-   * The map that has the query id as a key and its execution dag as a value.
-   */
-  private final ExecutionPlanDagMap executionPlanDagMap;
-
-  /**
-   * Vertex info map that has the execution vertex as a key and the vertex info as a value.
-   */
-  private final VertexInfoMap vertexInfoMap;
 
   /**
    * The physical execution dags.
    */
   private final ExecutionDags executionDags;
 
+  /**
+   * The map that has the query id as a key and its configuration dag as a value.
+   */
+  private final QueryIdConfigDagMap queryIdConfigDagMap;
+
+  /**
+   * A map that has config vertex as a key and the corresponding execution vertex as a value.
+   */
+  private final ConfigExecutionVertexMap configExecutionVertexMap;
+
+  /**
+   * A map that has an execution vertex as a key and the reference count number as a value.
+   * The reference count number represents how many queries are sharing the execution vertex.
+   */
+  private final ExecutionVertexCountMap executionVertexCountMap;
+
+  /**
+   * A map that has an execution vertex as a key and the dag that contains its vertex as a value.
+   */
+  private final ExecutionVertexDagMap executionVertexDagMap;
+
   @Inject
-  private MergeAwareQueryRemover(final ExecutionPlanDagMap executionPlanDagMap,
+  private MergeAwareQueryRemover(final QueryIdConfigDagMap queryIdConfigDagMap,
                                  final SrcAndDagMap<String> srcAndDagMap,
                                  final ExecutionDags executionDags,
-                                 final VertexInfoMap vertexInfoMap) {
+                                 final ExecutionVertexCountMap executionVertexCountMap,
+                                 final ConfigExecutionVertexMap configExecutionVertexMap,
+                                 final ExecutionVertexDagMap executionVertexDagMap) {
     this.srcAndDagMap = srcAndDagMap;
-    this.executionPlanDagMap = executionPlanDagMap;
-    this.vertexInfoMap = vertexInfoMap;
+    this.queryIdConfigDagMap = queryIdConfigDagMap;
+    this.configExecutionVertexMap = configExecutionVertexMap;
+    this.executionVertexCountMap = executionVertexCountMap;
     this.executionDags = executionDags;
+    this.executionVertexDagMap = executionVertexDagMap;
   }
 
   /**
@@ -72,20 +87,21 @@ public final class MergeAwareQueryRemover implements QueryRemover {
     // TODO:[MIST-590] We need to improve this code for concurrent modification
     synchronized (srcAndDagMap) {
       // Delete the query plan from ExecutionPlanDagMap
-      final DAG<ExecutionVertex, MISTEdge> executionPlan = executionPlanDagMap.remove(queryId);
+      final DAG<ConfigVertex, MISTEdge> configDag = queryIdConfigDagMap.remove(queryId);
       // Delete vertices from vertex info map
-      final Collection<ExecutionVertex> vertices = executionPlan.getVertices();
-      for (final ExecutionVertex vertex : vertices) {
-        final VertexInfo vertexInfo = vertexInfoMap.remove(vertex);
-        vertexInfo.setRefCount(vertexInfo.getRefCount() - 1);
-        if (vertexInfo.getRefCount() == 0) {
-          // Delete it from the physical dag
-          final DAG<ExecutionVertex, MISTEdge> targetDag = vertexInfo.getPhysicalExecutionDag();
-          final ExecutionVertex deleteVertex = vertexInfo.getPhysicalExecutionVertex();
-          targetDag.removeVertex(deleteVertex);
+      final Collection<ConfigVertex> vertices = configDag.getVertices();
+      for (final ConfigVertex vertex : vertices) {
+        final ExecutionVertex executionVertex = configExecutionVertexMap.remove(vertex);
+        final int refCount = executionVertexCountMap.get(executionVertex);
+        if (refCount == 1) {
+          // Delete it from the execution dag
+          final DAG<ExecutionVertex, MISTEdge> executionDag = executionVertexDagMap.remove(executionVertex);
+          executionDag.removeVertex(executionVertex);
+          executionVertexCountMap.remove(executionVertex);
+
           // Stop if it is source
-          if (deleteVertex.getType() == ExecutionVertex.Type.SOURCE) {
-            final PhysicalSource src = (PhysicalSource)deleteVertex;
+          if (executionVertex.getType() == ExecutionVertex.Type.SOURCE) {
+            final PhysicalSource src = (PhysicalSource)executionVertex;
             srcAndDagMap.remove(src.getConfiguration());
             try {
               src.close();
@@ -94,10 +110,13 @@ public final class MergeAwareQueryRemover implements QueryRemover {
             }
           }
 
-          // Remove the target dag if the size is 0
-          if (targetDag.numberOfVertices() == 0) {
-            executionDags.remove(targetDag);
+          // Remove the executionDag if the size is 0
+          if (executionDag.numberOfVertices() == 0) {
+            executionDags.remove(executionDag);
           }
+
+        } else {
+          executionVertexCountMap.put(executionVertex, refCount - 1);
         }
       }
     }

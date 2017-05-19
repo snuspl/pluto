@@ -18,35 +18,30 @@ package edu.snu.mist.core.task.merging;
 import edu.snu.mist.core.task.ExecutionVertex;
 
 import javax.inject.Inject;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * This is a map that has an execution vertex as a key and a vertex info as a value.
+ * This contains an execution vertex as a key and the reference count number as a value.
  */
-final class VertexInfoMap {
+public final class ExecutionVertexCountMap {
 
-  private final ConcurrentHashMap<ExecutionVertex, VertexInfo> map;
+  private final Map<ExecutionVertex, Integer> map;
 
   @Inject
-  private VertexInfoMap() {
-    this.map = new ConcurrentHashMap<>();
+  private ExecutionVertexCountMap() {
+    this.map = new HashMap<>();
   }
 
-  public VertexInfo get(final ExecutionVertex executionVertex) {
+  public Integer get(final ExecutionVertex executionVertex) {
     return map.get(executionVertex);
   }
 
-  public void put(final ExecutionVertex executionVertex, final VertexInfo vertexInfo) {
-    map.put(executionVertex, vertexInfo);
+  public void put(final ExecutionVertex executionVertex, final Integer refCount) {
+    map.put(executionVertex, refCount);
   }
 
-  public boolean replace(final ExecutionVertex executionVertex,
-                         final VertexInfo prevInfo,
-                         final VertexInfo newInfo) {
-    return map.replace(executionVertex, prevInfo, newInfo);
-  }
-
-  public VertexInfo remove(final ExecutionVertex executionVertex) {
+  public Integer remove(final ExecutionVertex executionVertex) {
     return map.remove(executionVertex);
   }
 }

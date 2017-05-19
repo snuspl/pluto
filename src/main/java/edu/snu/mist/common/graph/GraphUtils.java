@@ -83,4 +83,38 @@ public final class GraphUtils {
     }
     return list.iterator();
   }
+
+  /**
+   * Compare two dags whether they are the same.
+   * @return true if they are the same
+   */
+  public static <V, I> boolean compareTwoDag(final DAG<V, I> dag1, final DAG<V, I> dag2) {
+    boolean comp = true;
+    for (final V root : dag1.getRootVertices()) {
+      comp = dfsCompare(dag1, dag2, root) && comp;
+    }
+    return comp;
+  }
+
+  /**
+   * Helper function for comparing two dags whether they are the same.
+   * It traverses the dag in dfs order.
+   */
+  private static <V, I> boolean dfsCompare(final DAG<V, I> dag1,
+                                           final DAG<V, I> dag2,
+                                           final V dag1Vertex) {
+    final Map<V, I> dag1Edges = dag1.getEdges(dag1Vertex);
+    final Map<V, I> dag2Edges = dag2.getEdges(dag1Vertex);
+
+    if (dag2Edges == null || !dag1Edges.equals(dag2Edges)) {
+      return false;
+    }
+
+    boolean comp = true;
+    for (final Map.Entry<V, I> entry : dag1Edges.entrySet()) {
+      comp = dfsCompare(dag1, dag2, entry.getKey()) && comp;
+    }
+
+    return comp;
+  }
 }
