@@ -25,6 +25,7 @@ import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorLowerBound;
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorUpperBound;
+import edu.snu.mist.core.task.eventProcessors.parameters.GracePeriod;
 import edu.snu.mist.core.task.threadbased.ThreadBasedOperatorChainFactory;
 import edu.snu.mist.core.task.threadbased.ThreadBasedQueryManagerImpl;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
@@ -91,6 +92,11 @@ public final class MistTaskConfigs {
    */
   private final int eventProcessorUpperBound;
 
+  /**
+   * The grace period for adjusting the number of event processors.
+   */
+  private final int gracePeriod;
+
   @Inject
   private MistTaskConfigs(@Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
                           @Parameter(RPCServerPort.class) final int rpcServerPort,
@@ -100,6 +106,7 @@ public final class MistTaskConfigs {
                           @Parameter(ExecutionModelOption.class) final int executionModelOption,
                           @Parameter(EventProcessorLowerBound.class) final int eventProcessorLowerBound,
                           @Parameter(EventProcessorUpperBound.class) final int eventProcessorUpperBound,
+                          @Parameter(GracePeriod.class) final int gracePeriod,
                           final MistGroupSchedulingTaskConfigs option2TaskConfigs) {
     this.numEventProcessors = numEventProcessors;
     this.tempFolderPath = tempFolderPath;
@@ -109,6 +116,7 @@ public final class MistTaskConfigs {
     this.eventProcessorUpperBound = eventProcessorUpperBound;
     this.eventProcessorLowerBound = eventProcessorLowerBound;
     this.executionModelOption = executionModelOption;
+    this.gracePeriod = gracePeriod;
     this.option2TaskConfigs = option2TaskConfigs;
   }
 
@@ -163,6 +171,7 @@ public final class MistTaskConfigs {
     jcb.bindNamedParameter(MergingEnabled.class, Boolean.toString(mergingEnabled));
     jcb.bindNamedParameter(EventProcessorLowerBound.class, Integer.toString(eventProcessorLowerBound));
     jcb.bindNamedParameter(EventProcessorUpperBound.class, Integer.toString(eventProcessorUpperBound));
+    jcb.bindNamedParameter(GracePeriod.class, Integer.toString(gracePeriod));
 
     // Implementation
     jcb.bindImplementation(ClientToTaskMessage.class, DefaultClientToTaskMessageImpl.class);
@@ -184,7 +193,8 @@ public final class MistTaskConfigs {
         .registerShortNameOfClass(MergingEnabled.class)
         .registerShortNameOfClass(EventProcessorLowerBound.class)
         .registerShortNameOfClass(EventProcessorUpperBound.class)
-        .registerShortNameOfClass(ExecutionModelOption.class);
+        .registerShortNameOfClass(ExecutionModelOption.class)
+        .registerShortNameOfClass(GracePeriod.class);
     return MistGroupSchedulingTaskConfigs.addCommandLineConf(cmd);
   }
 }
