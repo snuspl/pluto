@@ -47,7 +47,7 @@ public final class EventNumMetricEventHandlerTest {
   public void setUp() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     groupInfoMap = injector.getInstance(GroupInfoMap.class);
-    final CommonMetrics globalMetricHolder = injector.getInstance(CommonMetrics.class);
+    final GroupMetrics globalMetricHolder = injector.getInstance(GroupMetrics.class);
     metricPubSubEventHandler = injector.getInstance(MistPubSubEventHandler.class);
     handler = injector.getInstance(EventNumMetricEventHandler.class);
     idAndConfGenerator = new IdAndConfGenerator();

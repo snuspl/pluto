@@ -21,7 +21,7 @@ import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.GroupEvent;
 import edu.snu.mist.core.task.globalsched.NextGroupSelector;
 import edu.snu.mist.core.task.globalsched.NextGroupSelectorFactory;
-import edu.snu.mist.core.task.metrics.CommonMetrics;
+import edu.snu.mist.core.task.metrics.GroupMetrics;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -85,8 +85,8 @@ public final class VtimeBasedNextGroupSelectorTest {
     final GlobalSchedGroupInfo group2 = mock(GlobalSchedGroupInfo.class);
     final GlobalSchedGroupInfo group3 = mock(GlobalSchedGroupInfo.class);
     final GlobalSchedGroupInfo group4 = mock(GlobalSchedGroupInfo.class);
-    final CommonMetrics metricHolder =
-        Tang.Factory.getTang().newInjector().getInstance(CommonMetrics.class);
+    final GroupMetrics metricHolder =
+        Tang.Factory.getTang().newInjector().getInstance(GroupMetrics.class);
 
 
     final AtomicDouble group1AdjustVRuntime = new AtomicDouble(0);

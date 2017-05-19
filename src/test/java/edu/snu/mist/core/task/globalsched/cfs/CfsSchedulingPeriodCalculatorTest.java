@@ -19,7 +19,7 @@ import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.SchedulingPeriodCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsSchedulingPeriod;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.MinSchedulingPeriod;
-import edu.snu.mist.core.task.metrics.CommonMetrics;
+import edu.snu.mist.core.task.metrics.GroupMetrics;
 import edu.snu.mist.core.task.metrics.GlobalMetrics;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
@@ -53,8 +53,8 @@ public final class CfsSchedulingPeriodCalculatorTest {
    */
   @Test
   public void testCfsSchedulingPeriodCalculationSmallGroup() throws InjectionException {
-    final CommonMetrics metricHolder =
-        Tang.Factory.getTang().newInjector().getInstance(CommonMetrics.class);
+    final GroupMetrics metricHolder =
+        Tang.Factory.getTang().newInjector().getInstance(GroupMetrics.class);
     metricHolder.getWeightMetric().setValue(10.0);
 
     final GlobalSchedGroupInfo groupInfo = mock(GlobalSchedGroupInfo.class);
@@ -71,10 +71,10 @@ public final class CfsSchedulingPeriodCalculatorTest {
    */
   @Test
   public void testCfsSchedulingPeriodCalculationLargeGroup() throws InjectionException {
-    final CommonMetrics metricHolder1 =
-        Tang.Factory.getTang().newInjector().getInstance(CommonMetrics.class);
-    final CommonMetrics metricHolder2 =
-        Tang.Factory.getTang().newInjector().getInstance(CommonMetrics.class);
+    final GroupMetrics metricHolder1 =
+        Tang.Factory.getTang().newInjector().getInstance(GroupMetrics.class);
+    final GroupMetrics metricHolder2 =
+        Tang.Factory.getTang().newInjector().getInstance(GroupMetrics.class);
     metricHolder1.getWeightMetric().setValue(10.0);
     metricHolder2.getWeightMetric().setValue(1.0);
 

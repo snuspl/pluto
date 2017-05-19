@@ -21,10 +21,10 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 
 /**
- * A class represents a metric holder contains commonly-used metrics.
- * The metrics in this holder can be regarded as a global status or group status.
+ * A class represents a group metric holder.
+ * The metrics in this holder will represent the group status.
  */
-public class CommonMetrics {
+public final class GroupMetrics {
 
   /**
    * The number of events metric with EWMA.
@@ -37,7 +37,7 @@ public class CommonMetrics {
   private final NormalMetric<Double> weightMetric;
 
   @Inject
-  protected CommonMetrics(@Parameter(NumEventAlpha.class) final double numEventAlpha) {
+  private GroupMetrics(@Parameter(NumEventAlpha.class) final double numEventAlpha) {
     this.numEventsMetric = new EWMAMetric(0.0, numEventAlpha);
     this.weightMetric = new NormalMetric<>(1.0);
   }
@@ -65,7 +65,7 @@ public class CommonMetrics {
       return false;
     }
 
-    final CommonMetrics that = (CommonMetrics) o;
+    final GroupMetrics that = (GroupMetrics) o;
 
     if (!getNumEventsMetric().equals(that.getNumEventsMetric())) {
       return false;

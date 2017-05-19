@@ -24,7 +24,7 @@ import javax.inject.Inject;
  * A class represents a global metric holder.
  * The metrics in this holder will represent the global status.
  */
-public final class GlobalMetrics extends CommonMetrics {
+public final class GlobalMetrics {
 
   /**
    * The system CPU utilization metric with EWMA.
@@ -51,18 +51,29 @@ public final class GlobalMetrics extends CommonMetrics {
    */
   private final NormalMetric<Integer> numGroupsMetric;
 
+  /**
+   * The number of events metric with EWMA.
+   */
+  private final EWMAMetric numEventsMetric;
+
+  /**
+   * The weight metric.
+   */
+  private final NormalMetric<Double> weightMetric;
+
   @Inject
   private GlobalMetrics(@Parameter(NumEventAlpha.class) final double numEventAlpha,
                         @Parameter(SysCpuUtilAlpha.class) final double sysCpuUtilAlpha,
                         @Parameter(ProcCpuUtilAlpha.class) final double procCpuUtilAlpha,
                         @Parameter(HeapMemoryUsageAlpha.class) final double heapMemUsageAlpha,
                         @Parameter(NonHeapMemoryUsageAlpha.class) final double nonHeapMemUsageAlpha) {
-    super(numEventAlpha);
     this.cpuSysUtilMetric = new EWMAMetric(0.0, sysCpuUtilAlpha);
     this.cpuProcUtilMetric = new EWMAMetric(0.0, procCpuUtilAlpha);
     this.heapMemUsageMetric = new EWMAMetric(0.0, heapMemUsageAlpha);
     this.nonHeapMemUsageMetric = new EWMAMetric(0.0, nonHeapMemUsageAlpha);
     this.numGroupsMetric = new NormalMetric<>(0);
+    this.numEventsMetric = new EWMAMetric(0.0, numEventAlpha);
+    this.weightMetric = new NormalMetric<>(1.0);
   }
 
   /**
@@ -99,16 +110,28 @@ public final class GlobalMetrics extends CommonMetrics {
   public NormalMetric<Integer> getNumGroupsMetric() throws RuntimeException {
     return numGroupsMetric;
   }
-  
+
+  /**
+   * @return the number of events metric
+   */
+  public EWMAMetric getNumEventsMetric() throws RuntimeException {
+    return numEventsMetric;
+  }
+
+  /**
+   * @return the weight metric
+   */
+  public NormalMetric<Double> getWeightMetric() throws RuntimeException {
+    return weightMetric;
+  }
+
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }
     if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    if (!super.equals(o)) {
       return false;
     }
 
@@ -126,17 +149,24 @@ public final class GlobalMetrics extends CommonMetrics {
     if (!getNonHeapMemUsageMetric().equals(that.getNonHeapMemUsageMetric())) {
       return false;
     }
-    return getNumGroupsMetric().equals(that.getNumGroupsMetric());
+    if (!getNumGroupsMetric().equals(that.getNumGroupsMetric())) {
+      return false;
+    }
+    if (!getNumEventsMetric().equals(that.getNumEventsMetric())) {
+      return false;
+    }
+    return getWeightMetric().equals(that.getWeightMetric());
   }
 
   @Override
   public int hashCode() {
-    int result = super.hashCode();
-    result = 31 * result + getCpuSysUtilMetric().hashCode();
+    int result = getCpuSysUtilMetric().hashCode();
     result = 31 * result + getCpuProcUtilMetric().hashCode();
     result = 31 * result + getHeapMemUsageMetric().hashCode();
     result = 31 * result + getNonHeapMemUsageMetric().hashCode();
     result = 31 * result + getNumGroupsMetric().hashCode();
+    result = 31 * result + getNumEventsMetric().hashCode();
+    result = 31 * result + getWeightMetric().hashCode();
     return result;
   }
 }

@@ -69,9 +69,9 @@ public final class EventNumAndWeightMetricEventHandlerTest {
     final ExecutionDags executionDagsB = groupInfoB.getExecutionDags();
 
     final Injector injector1 = Tang.Factory.getTang().newInjector();
-    final CommonMetrics expectedA = injector1.getInstance(CommonMetrics.class);
+    final GroupMetrics expectedA = injector1.getInstance(GroupMetrics.class);
     final Injector injector2 = Tang.Factory.getTang().newInjector();
-    final CommonMetrics expectedB = injector2.getInstance(CommonMetrics.class);
+    final GroupMetrics expectedB = injector2.getInstance(GroupMetrics.class);
     final Injector injector3 = Tang.Factory.getTang().newInjector();
     final GlobalMetrics expectedTotal = injector3.getInstance(GlobalMetrics.class);
 
@@ -177,11 +177,21 @@ public final class EventNumAndWeightMetricEventHandlerTest {
   }
 
   /**
-   * Update the value of num events metric.
+   * Update the value of num events metric of group.
    * @param metricHolder the metric holder
    * @param numEvents the number of events to set
    */
-  private void updateNumEvents(final CommonMetrics metricHolder,
+  private void updateNumEvents(final GroupMetrics metricHolder,
+                               final long numEvents) {
+    metricHolder.getNumEventsMetric().updateValue(numEvents);
+  }
+
+  /**
+   * Update the value of global num events metric.
+   * @param metricHolder the metric holder
+   * @param numEvents the number of events to set
+   */
+  private void updateNumEvents(final GlobalMetrics metricHolder,
                                final long numEvents) {
     metricHolder.getNumEventsMetric().updateValue(numEvents);
   }
@@ -191,16 +201,26 @@ public final class EventNumAndWeightMetricEventHandlerTest {
    * @param metricHolder the metric holder
    * @return the EMWA value of num events
    */
-  private double getEwmaNumEvents(final CommonMetrics metricHolder) {
+  private double getEwmaNumEvents(final GroupMetrics metricHolder) {
     return metricHolder.getNumEventsMetric().getEwmaValue();
   }
 
   /**
-   * Set the value of weight metric.
+   * Set the value of weight metric of group.
    * @param metricHolder the metric holder
    * @param weight the weight value to set
    */
-  private void setWeight(final CommonMetrics metricHolder,
+  private void setWeight(final GroupMetrics metricHolder,
+                         final double weight) {
+    metricHolder.getWeightMetric().setValue(weight);
+  }
+
+  /**
+   * Set the value of global weight metric.
+   * @param metricHolder the metric holder
+   * @param weight the weight value to set
+   */
+  private void setWeight(final GlobalMetrics metricHolder,
                          final double weight) {
     metricHolder.getWeightMetric().setValue(weight);
   }

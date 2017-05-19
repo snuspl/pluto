@@ -20,7 +20,7 @@ import edu.snu.mist.core.task.ExecutionDags;
 import edu.snu.mist.core.task.OperatorChainManager;
 import edu.snu.mist.core.task.QueryRemover;
 import edu.snu.mist.core.task.QueryStarter;
-import edu.snu.mist.core.task.metrics.CommonMetrics;
+import edu.snu.mist.core.task.metrics.GroupMetrics;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -75,7 +75,7 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   /**
    * A metric holder that contains weight and the number of events in the group, which will be updated periodically.
    */
-  private final CommonMetrics metricHolder;
+  private final GroupMetrics metricHolder;
 
   @Inject
   private DefaultGlobalSchedGroupInfo(@Parameter(GroupId.class) final String groupId,
@@ -83,7 +83,7 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
                                       final QueryStarter queryStarter,
                                       final OperatorChainManager operatorChainManager,
                                       final QueryRemover queryRemover,
-                                      final CommonMetrics metricHolder) {
+                                      final GroupMetrics metricHolder) {
     this.groupId = groupId;
     this.queryIdList = new ArrayList<>();
     this.executionDags = executionDags;
@@ -159,7 +159,7 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   }
 
   @Override
-  public CommonMetrics getMetricHolder() {
+  public GroupMetrics getMetricHolder() {
     return metricHolder;
   }
 
