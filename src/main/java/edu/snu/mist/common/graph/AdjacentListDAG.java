@@ -82,6 +82,11 @@ public final class AdjacentListDAG<V, I> implements DAG<V, I> {
   }
 
   @Override
+  public boolean hasVertex(final V v) {
+    return adjacent.get(v) != null;
+  }
+
+  @Override
   public boolean isAdjacent(final V v1, final V v2) {
     final Map<V, I> adjs = adjacent.get(v1);
     return adjs.containsKey(v2);

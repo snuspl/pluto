@@ -89,6 +89,11 @@ public final class GraphUtils {
    * @return true if they are the same
    */
   public static <V, I> boolean compareTwoDag(final DAG<V, I> dag1, final DAG<V, I> dag2) {
+    if (!(dag1.numberOfVertices() == dag2.numberOfVertices()
+        && dag1.numberOfEdges() == dag2.numberOfEdges())) {
+      return false;
+    }
+
     boolean comp = true;
     for (final V root : dag1.getRootVertices()) {
       comp = dfsCompare(dag1, dag2, root) && comp;
@@ -103,6 +108,10 @@ public final class GraphUtils {
   private static <V, I> boolean dfsCompare(final DAG<V, I> dag1,
                                            final DAG<V, I> dag2,
                                            final V dag1Vertex) {
+    if (!dag2.hasVertex(dag1Vertex)) {
+      return false;
+    }
+
     final Map<V, I> dag1Edges = dag1.getEdges(dag1Vertex);
     final Map<V, I> dag2Edges = dag2.getEdges(dag1Vertex);
 

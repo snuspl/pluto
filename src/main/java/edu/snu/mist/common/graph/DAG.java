@@ -51,6 +51,12 @@ public interface DAG<V, I> {
   Collection<V> getVertices();
 
   /**
+   * Return true if it has the vertex v.
+   * @param v vertex
+   */
+  boolean hasVertex(V v);
+
+  /**
    * Checks whether there is an edge from the vertices v to w.
    * @param v src vertex
    * @param w dest vertex
