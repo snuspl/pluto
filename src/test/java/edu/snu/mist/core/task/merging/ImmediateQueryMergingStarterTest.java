@@ -177,7 +177,7 @@ public final class ImmediateQueryMergingStarterTest {
     expectedDags.add(query);
     Assert.assertEquals(expectedDags, executionDags.values());
     // Check reference count of the execution vertices
-    Assert.assertEquals(query, executionPlanDagMap.get("q1"));
+    Assert.assertTrue(GraphUtils.compareTwoDag(query, executionPlanDagMap.get("q1")));
     checkReferenceCountOfExecutionVertices(query, vertexInfoMap, 1);
   }
 
@@ -253,8 +253,8 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(expectedDags, executionDags.values());
 
     // Check reference count of the execution vertices
-    Assert.assertEquals(query1, executionPlanDagMap.get("q1"));
-    Assert.assertEquals(query2, executionPlanDagMap.get("q2"));
+    Assert.assertTrue(GraphUtils.compareTwoDag(query1, executionPlanDagMap.get("q1")));
+    Assert.assertTrue(GraphUtils.compareTwoDag(query2, executionPlanDagMap.get("q2")));
     checkReferenceCountOfExecutionVertices(query1, vertexInfoMap, 1);
     checkReferenceCountOfExecutionVertices(query2, vertexInfoMap, 1);
   }
@@ -323,11 +323,11 @@ public final class ImmediateQueryMergingStarterTest {
 
     final DAG<ExecutionVertex, MISTEdge> mergedDag = srcAndDagMap.get(sourceConf);
     Assert.assertEquals(1, srcAndDagMap.size());
-    Assert.assertEquals(expectedDag, mergedDag);
+    Assert.assertTrue(GraphUtils.compareTwoDag(expectedDag, mergedDag));
 
     // Check execution dags
     final Collection<DAG<ExecutionVertex, MISTEdge>> expectedDags = new HashSet<>();
-    expectedDags.add(expectedDag);
+    expectedDags.add(mergedDag);
     Assert.assertEquals(expectedDags, executionDags.values());
 
     // Generate events for the merged query and check if the dag is executed correctly
@@ -341,8 +341,8 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(Arrays.asList(data), result2);
 
     // Check reference count and physical vertex of the execution vertices
-    Assert.assertEquals(query1Plan, executionPlanDagMap.get("q1"));
-    Assert.assertEquals(query2Plan, executionPlanDagMap.get("q2"));
+    Assert.assertTrue(GraphUtils.compareTwoDag(query1Plan, executionPlanDagMap.get("q1")));
+    Assert.assertTrue(GraphUtils.compareTwoDag(query2Plan, executionPlanDagMap.get("q2")));
     Assert.assertEquals(2, vertexInfoMap.get(src1).getRefCount());
     Assert.assertEquals(src1, vertexInfoMap.get(src1).getPhysicalExecutionVertex());
     Assert.assertEquals(2, vertexInfoMap.get(src2).getRefCount());
@@ -426,11 +426,11 @@ public final class ImmediateQueryMergingStarterTest {
 
     final DAG<ExecutionVertex, MISTEdge> mergedDag = srcAndDagMap.get(sourceConf);
     Assert.assertEquals(1, srcAndDagMap.size());
-    Assert.assertEquals(expectedDag, mergedDag);
+    Assert.assertTrue(GraphUtils.compareTwoDag(expectedDag, mergedDag));
 
     // Check execution dags
     final Collection<DAG<ExecutionVertex, MISTEdge>> expectedDags = new HashSet<>();
-    expectedDags.add(expectedDag);
+    expectedDags.add(mergedDag);
     Assert.assertEquals(expectedDags, executionDags.values());
 
     // Generate events for the merged query and check if the dag is executed correctly
@@ -453,8 +453,8 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(Arrays.asList(data2), result2);
 
     // Check reference count and physical vertex of the execution vertices
-    Assert.assertEquals(query1Plan, executionPlanDagMap.get("q1"));
-    Assert.assertEquals(query2Plan, executionPlanDagMap.get("q2"));
+    Assert.assertTrue(GraphUtils.compareTwoDag(query1Plan, executionPlanDagMap.get("q1")));
+    Assert.assertTrue(GraphUtils.compareTwoDag(query2Plan, executionPlanDagMap.get("q2")));
     Assert.assertEquals(2, vertexInfoMap.get(src1).getRefCount());
     Assert.assertEquals(src1, vertexInfoMap.get(src1).getPhysicalExecutionVertex());
     Assert.assertEquals(2, vertexInfoMap.get(src2).getRefCount());

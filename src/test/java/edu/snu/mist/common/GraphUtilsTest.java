@@ -55,7 +55,7 @@ public final class GraphUtilsTest {
    * Copy from src graph to dest graph.
    */
   @Test
-  public void copyGraphTest() {
+  public void testCopyGraph() {
     final DAG<Integer, Direction> destDAG = new AdjacentListDAG<>();
     GraphUtils.copy(srcDAG, destDAG);
 
@@ -74,7 +74,7 @@ public final class GraphUtilsTest {
    * Test whether GraphUtils.topologicalSort(dag) sorts the DAG correctly by topological order.
    */
   @Test
-  public void topologicalSortTest() {
+  public void testTopologicalSort() {
     final Iterator<Integer> vertices = GraphUtils.topologicalSort(srcDAG);
     int vertexNum = 0;
     while (vertices.hasNext()) {
@@ -85,5 +85,22 @@ public final class GraphUtilsTest {
       vertexNum += 1;
     }
     Assert.assertEquals("Vertex number should be 7", 7, vertexNum);
+  }
+
+  /**
+   * Test whether GraphUtils.compareTwoDag compares the two dags correctly.
+   */
+  @Test
+  public void testCompareDag() {
+    final DAG<Integer, Direction> dag2 = new AdjacentListDAG<>();
+    GraphUtils.copy(srcDAG, dag2);
+
+    Assert.assertTrue(GraphUtils.compareTwoDag(srcDAG, dag2));
+
+    dag2.addVertex(10);
+    Assert.assertFalse(GraphUtils.compareTwoDag(srcDAG, dag2));
+
+    srcDAG.addVertex(9);
+    Assert.assertFalse(GraphUtils.compareTwoDag(srcDAG, dag2));
   }
 }
