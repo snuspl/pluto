@@ -26,7 +26,7 @@ import java.util.List;
  * This interface manages queries that are submitted from clients.
  * It executes the queries when they are submitted, and deletes them if requested.
  */
-@DefaultImplementation(GroupUnqwareQueryManagerImpl.class)
+@DefaultImplementation(GroupUnawareQueryManagerImpl.class)
 public interface QueryManager extends AutoCloseable {
   /**
    * Start to the query.

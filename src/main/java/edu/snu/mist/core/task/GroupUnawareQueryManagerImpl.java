@@ -44,9 +44,9 @@ import java.util.logging.Logger;
  * This QueryManager is unaware of the group. This just schedules queries.
  */
 @SuppressWarnings("unchecked")
-public final class GroupUnqwareQueryManagerImpl implements QueryManager {
+public final class GroupUnawareQueryManagerImpl implements QueryManager {
 
-  private static final Logger LOG = Logger.getLogger(GroupUnqwareQueryManagerImpl.class.getName());
+  private static final Logger LOG = Logger.getLogger(GroupUnawareQueryManagerImpl.class.getName());
 
   /**
    * Scheduler for periodic watermark emission.
@@ -102,7 +102,7 @@ public final class GroupUnqwareQueryManagerImpl implements QueryManager {
    * Default query manager in MistTask.
    */
   @Inject
-  private GroupUnqwareQueryManagerImpl(final DagGenerator dagGenerator,
+  private GroupUnawareQueryManagerImpl(final DagGenerator dagGenerator,
                                        final ScheduledExecutorServiceWrapper schedulerWrapper,
                                        final GroupInfoMap groupInfoMap,
                                        @Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
