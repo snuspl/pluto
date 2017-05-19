@@ -17,7 +17,7 @@ package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.core.task.MistPubSubEventHandler;
 import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
-import edu.snu.mist.core.task.metrics.MetricHolder;
+import edu.snu.mist.core.task.metrics.GlobalMetrics;
 import edu.snu.mist.core.task.metrics.MetricUpdateEvent;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.globalsched.parameters.*;
@@ -75,7 +75,7 @@ public final class MISDEventProcessorNumAssigner implements EventProcessorNumAss
    * A global metric holder.
    * The number of events and the cpu utilization of the whole system in this metric will be used.
    */
-  private final MetricHolder globalMetricHolder;
+  private final GlobalMetrics globalMetricHolder;
 
   /**
    * Previous increase number.
@@ -90,7 +90,7 @@ public final class MISDEventProcessorNumAssigner implements EventProcessorNumAss
       @Parameter(EventProcessorIncreaseRate.class) final double increaseRate,
       @Parameter(EventProcessorDecreaseNum.class) final int decreaseNum,
       final EventProcessorManager eventProcessorManager,
-      final MetricHolder globalMetricHolder,
+      final GlobalMetrics globalMetricHolder,
       final MistPubSubEventHandler pubSubEventHandler) {
     this.eventNumHighThreshold = eventNumHighThreshold;
     this.eventNumLowThreshold = eventNumLowThreshold;

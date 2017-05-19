@@ -17,7 +17,7 @@ package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.globalsched.metrics.NumGroupsMetricEventHandler;
-import edu.snu.mist.core.task.metrics.MetricHolder;
+import edu.snu.mist.core.task.metrics.GlobalMetrics;
 import edu.snu.mist.core.task.metrics.MetricTrackEvent;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -35,14 +35,14 @@ public final class NumGroupsMetricEventHandlerTest {
 
   private MistPubSubEventHandler metricPubSubEventHandler;
   private GlobalSchedGroupInfoMap groupInfoMap;
-  private MetricHolder metricHolder;
+  private GlobalMetrics metricHolder;
   private NumGroupsMetricEventHandler handler;
   private static final int UPDATE_GROUP_SIZE = 10;
 
   @Before
   public void setUp() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
-    metricHolder = injector.getInstance(MetricHolder.class);
+    metricHolder = injector.getInstance(GlobalMetrics.class);
     groupInfoMap = injector.getInstance(GlobalSchedGroupInfoMap.class);
     metricPubSubEventHandler = injector.getInstance(MistPubSubEventHandler.class);
     handler = injector.getInstance(NumGroupsMetricEventHandler.class);

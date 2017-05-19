@@ -20,10 +20,7 @@ import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfoMap;
-import edu.snu.mist.core.task.metrics.EWMAMetric;
-import edu.snu.mist.core.task.metrics.MetricHolder;
-import edu.snu.mist.core.task.metrics.MetricTrackEvent;
-import edu.snu.mist.core.task.metrics.MetricTrackEventHandler;
+import edu.snu.mist.core.task.metrics.*;
 
 import javax.inject.Inject;
 import java.util.Collection;
@@ -43,11 +40,11 @@ public final class EventNumAndWeightMetricEventHandler implements MetricTrackEve
   /**
    * The global metric holder.
    */
-  private final MetricHolder globalMetricHolder;
+  private final GlobalMetrics globalMetricHolder;
 
   @Inject
   private EventNumAndWeightMetricEventHandler(final GlobalSchedGroupInfoMap groupInfoMap,
-                                              final MetricHolder globalMetricHolder,
+                                              final GlobalMetrics globalMetricHolder,
                                               final MistPubSubEventHandler pubSubEventHandler) {
     this.groupInfoMap = groupInfoMap;
     this.globalMetricHolder = globalMetricHolder;

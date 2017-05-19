@@ -17,7 +17,7 @@ package edu.snu.mist.core.task.globalsched.metrics;
 
 import edu.snu.mist.core.task.MistPubSubEventHandler;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfoMap;
-import edu.snu.mist.core.task.metrics.MetricHolder;
+import edu.snu.mist.core.task.metrics.GlobalMetrics;
 import edu.snu.mist.core.task.metrics.MetricTrackEvent;
 import edu.snu.mist.core.task.metrics.MetricTrackEventHandler;
 
@@ -36,11 +36,11 @@ public final class NumGroupsMetricEventHandler implements MetricTrackEventHandle
   /**
    * The global metric holder.
    */
-  private final MetricHolder globalMetricHolder;
+  private final GlobalMetrics globalMetricHolder;
 
   @Inject
   private NumGroupsMetricEventHandler(final GlobalSchedGroupInfoMap groupInfoMap,
-                                      final MetricHolder globalMetricHolder,
+                                      final GlobalMetrics globalMetricHolder,
                                       final MistPubSubEventHandler pubSubEventHandler) {
     this.groupInfoMap = groupInfoMap;
     this.globalMetricHolder = globalMetricHolder;

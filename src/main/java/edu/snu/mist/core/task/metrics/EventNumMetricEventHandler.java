@@ -35,11 +35,11 @@ public final class EventNumMetricEventHandler implements MetricTrackEventHandler
   /**
    * The global metric holder.
    */
-  private final MetricHolder globalMetricHolder;
+  private final GlobalMetrics globalMetricHolder;
 
   @Inject
   private EventNumMetricEventHandler(final GroupInfoMap groupInfoMap,
-                                     final MetricHolder globalMetricHolder,
+                                     final GlobalMetrics globalMetricHolder,
                                      final MistPubSubEventHandler pubSubEventHandler) {
     this.groupInfoMap = groupInfoMap;
     this.globalMetricHolder = globalMetricHolder;

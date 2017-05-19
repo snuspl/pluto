@@ -19,7 +19,7 @@ import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.SchedulingPeriodCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsSchedulingPeriod;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.MinSchedulingPeriod;
-import edu.snu.mist.core.task.metrics.MetricHolder;
+import edu.snu.mist.core.task.metrics.GlobalMetrics;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -52,12 +52,12 @@ public final class CfsSchedulingPeriodCalculator implements SchedulingPeriodCalc
   /**
    * The Global metric holder.
    */
-  private final MetricHolder globalMetricHolder;
+  private final GlobalMetrics globalMetricHolder;
 
   @Inject
   private CfsSchedulingPeriodCalculator(@Parameter(CfsSchedulingPeriod.class) final long cfsSchedPeriod,
                                         @Parameter(MinSchedulingPeriod.class) final long minSchedPeriod,
-                                        final MetricHolder globalMetricHolder) {
+                                        final GlobalMetrics globalMetricHolder) {
     this.cfsSchedPeriod = cfsSchedPeriod;
     this.minSchedPeriod = minSchedPeriod;
     this.globalMetricHolder = globalMetricHolder;

@@ -19,7 +19,7 @@ import edu.snu.mist.core.task.MistPubSubEventHandler;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.globalsched.parameters.*;
 import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
-import edu.snu.mist.core.task.metrics.MetricHolder;
+import edu.snu.mist.core.task.metrics.GlobalMetrics;
 import edu.snu.mist.core.task.metrics.MetricUpdateEvent;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -36,7 +36,7 @@ public final class AIADEventProcessorNumAssignerTest {
 
   private EventProcessorNumAssigner assigner;
   private MistPubSubEventHandler handler;
-  private MetricHolder globalMetricHolder;
+  private GlobalMetrics globalMetricHolder;
   private EventProcessorManager eventProcessorManager;
   private static final double EVENT_NUM_HIGH_THRES = 1000;
   private static final double EVENT_NUM_LOW_THRES = 100;
@@ -48,7 +48,7 @@ public final class AIADEventProcessorNumAssignerTest {
   public void setUp() throws InjectionException {
     eventProcessorManager = mock(EventProcessorManager.class);
     final Injector injector = Tang.Factory.getTang().newInjector();
-    globalMetricHolder = injector.getInstance(MetricHolder.class);
+    globalMetricHolder = injector.getInstance(GlobalMetrics.class);
     handler = injector.getInstance(MistPubSubEventHandler.class);
     injector.bindVolatileParameter(EventNumHighThreshold.class, EVENT_NUM_HIGH_THRES);
     injector.bindVolatileParameter(EventNumLowThreshold.class, EVENT_NUM_LOW_THRES);

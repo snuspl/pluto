@@ -19,7 +19,8 @@ import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.SchedulingPeriodCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsSchedulingPeriod;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.MinSchedulingPeriod;
-import edu.snu.mist.core.task.metrics.MetricHolder;
+import edu.snu.mist.core.task.metrics.CommonMetrics;
+import edu.snu.mist.core.task.metrics.GlobalMetrics;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -34,7 +35,7 @@ import static org.mockito.Mockito.when;
 public final class CfsSchedulingPeriodCalculatorTest {
 
   private SchedulingPeriodCalculator schedPeriodCalculator;
-  private MetricHolder globalMetricHolder;
+  private GlobalMetrics globalMetricHolder;
 
   @Before
   public void setUp() throws InjectionException {
@@ -43,7 +44,7 @@ public final class CfsSchedulingPeriodCalculatorTest {
     jcb.bindNamedParameter(MinSchedulingPeriod.class, "100");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     schedPeriodCalculator = injector.getInstance(CfsSchedulingPeriodCalculator.class);
-    globalMetricHolder = injector.getInstance(MetricHolder.class);
+    globalMetricHolder = injector.getInstance(GlobalMetrics.class);
   }
 
   /**
@@ -52,8 +53,8 @@ public final class CfsSchedulingPeriodCalculatorTest {
    */
   @Test
   public void testCfsSchedulingPeriodCalculationSmallGroup() throws InjectionException {
-    final MetricHolder metricHolder =
-        Tang.Factory.getTang().newInjector().getInstance(MetricHolder.class);
+    final CommonMetrics metricHolder =
+        Tang.Factory.getTang().newInjector().getInstance(CommonMetrics.class);
     metricHolder.getWeightMetric().setValue(10.0);
 
     final GlobalSchedGroupInfo groupInfo = mock(GlobalSchedGroupInfo.class);
@@ -70,10 +71,10 @@ public final class CfsSchedulingPeriodCalculatorTest {
    */
   @Test
   public void testCfsSchedulingPeriodCalculationLargeGroup() throws InjectionException {
-    final MetricHolder metricHolder1 =
-        Tang.Factory.getTang().newInjector().getInstance(MetricHolder.class);
-    final MetricHolder metricHolder2 =
-        Tang.Factory.getTang().newInjector().getInstance(MetricHolder.class);
+    final CommonMetrics metricHolder1 =
+        Tang.Factory.getTang().newInjector().getInstance(CommonMetrics.class);
+    final CommonMetrics metricHolder2 =
+        Tang.Factory.getTang().newInjector().getInstance(CommonMetrics.class);
     metricHolder1.getWeightMetric().setValue(10.0);
     metricHolder2.getWeightMetric().setValue(1.0);
 

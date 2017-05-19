@@ -44,13 +44,13 @@ public final class EventNumAndWeightMetricEventHandlerTest {
   private MistPubSubEventHandler metricPubSubEventHandler;
   private IdAndConfGenerator idAndConfGenerator;
   private GlobalSchedGroupInfoMap groupInfoMap;
-  private MetricHolder globalMetricHolder;
+  private GlobalMetrics globalMetricHolder;
   private EventNumAndWeightMetricEventHandler handler;
 
   @Before
   public void setUp() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
-    globalMetricHolder = injector.getInstance(MetricHolder.class);
+    globalMetricHolder = injector.getInstance(GlobalMetrics.class);
     groupInfoMap = injector.getInstance(GlobalSchedGroupInfoMap.class);
     metricPubSubEventHandler = injector.getInstance(MistPubSubEventHandler.class);
     handler = injector.getInstance(EventNumAndWeightMetricEventHandler.class);
@@ -69,11 +69,11 @@ public final class EventNumAndWeightMetricEventHandlerTest {
     final ExecutionDags executionDagsB = groupInfoB.getExecutionDags();
 
     final Injector injector1 = Tang.Factory.getTang().newInjector();
-    final MetricHolder expectedA = injector1.getInstance(MetricHolder.class);
+    final CommonMetrics expectedA = injector1.getInstance(CommonMetrics.class);
     final Injector injector2 = Tang.Factory.getTang().newInjector();
-    final MetricHolder expectedB = injector2.getInstance(MetricHolder.class);
+    final CommonMetrics expectedB = injector2.getInstance(CommonMetrics.class);
     final Injector injector3 = Tang.Factory.getTang().newInjector();
-    final MetricHolder expectedTotal = injector3.getInstance(MetricHolder.class);
+    final GlobalMetrics expectedTotal = injector3.getInstance(GlobalMetrics.class);
 
     // two dags in group A:
     // srcA1 -> opA1 -> sinkA1
@@ -181,7 +181,7 @@ public final class EventNumAndWeightMetricEventHandlerTest {
    * @param metricHolder the metric holder
    * @param numEvents the number of events to set
    */
-  private void updateNumEvents(final MetricHolder metricHolder,
+  private void updateNumEvents(final CommonMetrics metricHolder,
                                final long numEvents) {
     metricHolder.getNumEventsMetric().updateValue(numEvents);
   }
@@ -191,7 +191,7 @@ public final class EventNumAndWeightMetricEventHandlerTest {
    * @param metricHolder the metric holder
    * @return the EMWA value of num events
    */
-  private double getEwmaNumEvents(final MetricHolder metricHolder) {
+  private double getEwmaNumEvents(final CommonMetrics metricHolder) {
     return metricHolder.getNumEventsMetric().getEwmaValue();
   }
 
@@ -200,7 +200,7 @@ public final class EventNumAndWeightMetricEventHandlerTest {
    * @param metricHolder the metric holder
    * @param weight the weight value to set
    */
-  private void setWeight(final MetricHolder metricHolder,
+  private void setWeight(final CommonMetrics metricHolder,
                          final double weight) {
     metricHolder.getWeightMetric().setValue(weight);
   }

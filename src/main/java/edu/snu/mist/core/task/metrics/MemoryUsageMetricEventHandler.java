@@ -30,11 +30,11 @@ public final class MemoryUsageMetricEventHandler implements MetricTrackEventHand
   /**
    * The global metric holder.
    */
-  private final MetricHolder globalMetricHolder;
+  private final GlobalMetrics globalMetricHolder;
 
   @Inject
   private MemoryUsageMetricEventHandler(final MistPubSubEventHandler pubSubEventHandler,
-                                        final MetricHolder globalMetricHolder) {
+                                        final GlobalMetrics globalMetricHolder) {
     this.globalMetricHolder = globalMetricHolder;
     pubSubEventHandler.getPubSubEventHandler().subscribe(MetricTrackEvent.class, this);
   }

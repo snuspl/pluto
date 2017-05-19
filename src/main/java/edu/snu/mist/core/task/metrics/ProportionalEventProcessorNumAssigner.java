@@ -43,12 +43,12 @@ public final class ProportionalEventProcessorNumAssigner implements EventProcess
   /**
    * The global metric holder.
    */
-  private final MetricHolder globalMetricHolder;
+  private final GlobalMetrics globalMetricHolder;
 
   @Inject
   private ProportionalEventProcessorNumAssigner(@Parameter(ThreadNumLimit.class) final int threadNumLimit,
                                                 final GroupInfoMap groupInfoMap,
-                                                final MetricHolder globalMetricHolder,
+                                                final GlobalMetrics globalMetricHolder,
                                                 final MistPubSubEventHandler pubSubEventHandler) {
     this.threadNumLimit = threadNumLimit;
     this.groupInfoMap = groupInfoMap;

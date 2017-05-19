@@ -17,7 +17,7 @@ package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.core.parameters.ThreadNumLimit;
 import edu.snu.mist.core.task.MistPubSubEventHandler;
-import edu.snu.mist.core.task.metrics.MetricHolder;
+import edu.snu.mist.core.task.metrics.GlobalMetrics;
 import edu.snu.mist.core.task.metrics.MetricUpdateEvent;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
@@ -37,7 +37,7 @@ public final class MISDEventProcessorNumAssignerTest {
 
   private MISDEventProcessorNumAssigner assigner;
   private MistPubSubEventHandler handler;
-  private MetricHolder globalMetricHolder;
+  private GlobalMetrics globalMetricHolder;
   private EventProcessorManager eventProcessorManager;
   private static final int THREAD_NUM_LIMIT = 30;
   private static final int DEFAULT_THREAD_NUM = 10;
@@ -52,7 +52,7 @@ public final class MISDEventProcessorNumAssignerTest {
   public void setUp() throws InjectionException {
     eventProcessorManager = mock(EventProcessorManager.class);
     final Injector injector = Tang.Factory.getTang().newInjector();
-    globalMetricHolder = injector.getInstance(MetricHolder.class);
+    globalMetricHolder = injector.getInstance(GlobalMetrics.class);
     handler = injector.getInstance(MistPubSubEventHandler.class);
     injector.bindVolatileParameter(ThreadNumLimit.class, THREAD_NUM_LIMIT);
     injector.bindVolatileParameter(DefaultNumEventProcessors.class, DEFAULT_THREAD_NUM);
