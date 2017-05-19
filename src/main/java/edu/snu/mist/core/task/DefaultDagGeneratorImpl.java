@@ -20,7 +20,6 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.merging.ExecutionVertexGenerator;
 import org.apache.reef.tang.exceptions.InjectionException;
-import org.apache.reef.tang.formats.AvroConfigurationSerializer;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -37,23 +36,14 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
 
   private static final Logger LOG = Logger.getLogger(DefaultDagGeneratorImpl.class.getName());
 
-  private final IdGenerator idGenerator;
   private final ClassLoaderProvider classLoaderProvider;
-  private final AvroConfigurationSerializer avroConfigurationSerializer;
-  private final OperatorChainFactory operatorChainFactory;
   private final ExecutionVertexGenerator executionVertexGenerator;
 
   @Inject
-  private DefaultDagGeneratorImpl(final IdGenerator idGenerator,
-                                  final ClassLoaderProvider classLoaderProvider,
-                                  final AvroConfigurationSerializer avroConfigurationSerializer,
-                                  final ExecutionVertexGenerator executionVertexGenerator,
-                                  final OperatorChainFactory operatorChainFactory) {
-    this.idGenerator = idGenerator;
+  private DefaultDagGeneratorImpl(final ClassLoaderProvider classLoaderProvider,
+                                  final ExecutionVertexGenerator executionVertexGenerator) {
     this.classLoaderProvider = classLoaderProvider;
-    this.avroConfigurationSerializer = avroConfigurationSerializer;
     this.executionVertexGenerator = executionVertexGenerator;
-    this.operatorChainFactory = operatorChainFactory;
   }
 
   private void dfsCreation(final ExecutionVertex parent,
