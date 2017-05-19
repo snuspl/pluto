@@ -86,9 +86,9 @@ public final class MergeAwareQueryRemover implements QueryRemover {
     // Synchronize the execution dags to evade concurrent modifications
     // TODO:[MIST-590] We need to improve this code for concurrent modification
     synchronized (srcAndDagMap) {
-      // Delete the query plan from ExecutionPlanDagMap
+      // Delete the query plan from queryIdConfigDagMap
       final DAG<ConfigVertex, MISTEdge> configDag = queryIdConfigDagMap.remove(queryId);
-      // Delete vertices from vertex info map
+      // Delete vertices
       final Collection<ConfigVertex> vertices = configDag.getVertices();
       for (final ConfigVertex vertex : vertices) {
         final ExecutionVertex executionVertex = configExecutionVertexMap.remove(vertex);
@@ -116,6 +116,7 @@ public final class MergeAwareQueryRemover implements QueryRemover {
           }
 
         } else {
+          // Decrease the reference count
           executionVertexCountMap.put(executionVertex, refCount - 1);
         }
       }

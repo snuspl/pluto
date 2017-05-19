@@ -207,6 +207,9 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
     }
   }
 
+  /**
+   * Create the execution dag in dfs order.
+   */
   private void dfsCreation(final ExecutionVertex parent,
                            final MISTEdge parentEdge,
                            final ConfigVertex currVertex,
@@ -236,11 +239,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
   }
 
   /**
-   * This generates the logical and physical plan from the avro operator chain dag.
-   * Note that the avro operator chain dag is already partitioned,
-   * so we need to rewind the partition to generate the logical dag.
-   * @param configDag the tuple of queryId and avro operator chain dag
-   * @return the logical and execution dag
+   * This generates a new execution dag from the configuration dag.
    */
   private DAG<ExecutionVertex, MISTEdge> generate(final DAG<ConfigVertex, MISTEdge> configDag,
                                                   final List<String> jarFilePaths)
@@ -275,9 +274,13 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
    * This function merges the submitted dag with the execution dag by traversing the dags in DFS order.
    * @param subDagMap a map that contains vertices of the sub-dag
    * @param visited a set that holds the visited vertices
-   * @param currentVertex currently visited vertex
-   * @param executionDag execution dag
+   * @param parent parent (execution) vertex of the current vertex
+   * @param parentEdge parent edge of the current vertex
+   * @param currentVertex current (config) vertex
+   * @param executionDag execution dag that merges the submitted dag
    * @param submittedDag submitted dag
+   * @param urls urls for creating execution vertices
+   * @param classLoader classLoader for creating execution vertices
    */
   private void dfsMerge(final Map<ConfigVertex, ExecutionVertex> subDagMap,
                         final Set<ConfigVertex> visited,
