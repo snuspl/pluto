@@ -16,11 +16,11 @@
 package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.core.task.MistPubSubEventHandler;
-import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
-import edu.snu.mist.core.task.globalsched.metrics.GlobalSchedGlobalMetrics;
-import edu.snu.mist.core.task.globalsched.parameters.*;
 import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
+import edu.snu.mist.core.task.metrics.GlobalMetrics;
 import edu.snu.mist.core.task.metrics.MetricUpdateEvent;
+import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
+import edu.snu.mist.core.task.globalsched.parameters.*;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -72,10 +72,10 @@ public final class MISDEventProcessorNumAssigner implements EventProcessorNumAss
   private final EventProcessorManager eventProcessorManager;
 
   /**
-   * A metric contains global information.
+   * A global metric holder.
    * The number of events and the cpu utilization of the whole system in this metric will be used.
    */
-  private final GlobalSchedGlobalMetrics metrics;
+  private final GlobalMetrics globalMetricHolder;
 
   /**
    * Previous increase number.
@@ -90,7 +90,7 @@ public final class MISDEventProcessorNumAssigner implements EventProcessorNumAss
       @Parameter(EventProcessorIncreaseRate.class) final double increaseRate,
       @Parameter(EventProcessorDecreaseNum.class) final int decreaseNum,
       final EventProcessorManager eventProcessorManager,
-      final GlobalSchedGlobalMetrics globalMetrics,
+      final GlobalMetrics globalMetricHolder,
       final MistPubSubEventHandler pubSubEventHandler) {
     this.eventNumHighThreshold = eventNumHighThreshold;
     this.eventNumLowThreshold = eventNumLowThreshold;
@@ -98,8 +98,8 @@ public final class MISDEventProcessorNumAssigner implements EventProcessorNumAss
     this.increaseRate = increaseRate;
     this.decreaseNum = decreaseNum;
     this.eventProcessorManager = eventProcessorManager;
-    this.metrics = globalMetrics;
     this.prevIncreaseNum = 1;
+    this.globalMetricHolder = globalMetricHolder;
     pubSubEventHandler.getPubSubEventHandler().subscribe(MetricUpdateEvent.class, this);
   }
 
@@ -108,8 +108,10 @@ public final class MISDEventProcessorNumAssigner implements EventProcessorNumAss
    */
   @Override
   public void onNext(final MetricUpdateEvent metricUpdateEvent) {
-    final double currCpuUtil = metrics.getCpuUtilMetric().getEwmaSystemCpuUtil();
-    final double currEventNum = metrics.getNumEventAndWeightMetric().getEwmaNumEvents();
+    final double currCpuUtil =
+        globalMetricHolder.getCpuSysUtilMetric().getEwmaValue();
+    final double currEventNum =
+        globalMetricHolder.getNumEventsMetric().getEwmaValue();
 
     if (currCpuUtil < cpuUtilLowThreshold) {
       if (currEventNum > eventNumHighThreshold) {

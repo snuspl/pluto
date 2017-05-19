@@ -16,6 +16,7 @@
 package edu.snu.mist.core.task.globalsched.metrics;
 
 import edu.snu.mist.core.task.MistPubSubEventHandler;
+import edu.snu.mist.core.task.metrics.GlobalMetrics;
 import edu.snu.mist.core.task.metrics.MetricTrackEvent;
 import edu.snu.mist.core.task.metrics.MetricTrackEventHandler;
 
@@ -27,14 +28,14 @@ import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 
 /**
- * A class handles the metric event about CpuUtilMetric.
+ * A class handles the metric event about CPU utilization.
  */
 public final class CpuUtilMetricEventHandler implements MetricTrackEventHandler {
 
   /**
-   * The global metrics.
+   * The global metric holder.
    */
-  private final GlobalSchedGlobalMetrics globalMetrics;
+  private final GlobalMetrics globalMetricHolder;
 
   /**
    * A MBean server for monitoring.
@@ -42,9 +43,9 @@ public final class CpuUtilMetricEventHandler implements MetricTrackEventHandler 
   private final MBeanServer mbs;
 
   @Inject
-  private CpuUtilMetricEventHandler(final GlobalSchedGlobalMetrics globalMetrics,
+  private CpuUtilMetricEventHandler(final GlobalMetrics globalMetricHolder,
                                     final MistPubSubEventHandler pubSubEventHandler) {
-    this.globalMetrics = globalMetrics;
+    this.globalMetricHolder = globalMetricHolder;
     this.mbs = ManagementFactory.getPlatformMBeanServer();
     pubSubEventHandler.getPubSubEventHandler().subscribe(MetricTrackEvent.class, this);
   }
@@ -67,11 +68,11 @@ public final class CpuUtilMetricEventHandler implements MetricTrackEventHandler 
 
       if (systemUtil != -1.0) {
         // If the monitoring was successful
-        globalMetrics.getCpuUtilMetric().updateSystemCpuUtil(systemUtil);
+        globalMetricHolder.getCpuSysUtilMetric().updateValue(systemUtil);
       }
       if (processUtil != -1.0) {
         // If the monitoring was successful
-        globalMetrics.getCpuUtilMetric().updateProcessCpuUtil(processUtil);
+        globalMetricHolder.getCpuProcUtilMetric().updateValue(processUtil);
       }
     }
   }

@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.common.stats;
 
-import edu.snu.mist.core.task.MetricUtil;
+import edu.snu.mist.core.task.metrics.MetricUtil;
 import org.junit.Assert;
 import org.junit.Test;
 

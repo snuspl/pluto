@@ -21,7 +21,7 @@ import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.GroupEvent;
 import edu.snu.mist.core.task.globalsched.NextGroupSelector;
 import edu.snu.mist.core.task.globalsched.NextGroupSelectorFactory;
-import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetric;
+import edu.snu.mist.core.task.metrics.GroupMetrics;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -85,8 +85,9 @@ public final class VtimeBasedNextGroupSelectorTest {
     final GlobalSchedGroupInfo group2 = mock(GlobalSchedGroupInfo.class);
     final GlobalSchedGroupInfo group3 = mock(GlobalSchedGroupInfo.class);
     final GlobalSchedGroupInfo group4 = mock(GlobalSchedGroupInfo.class);
-    final EventNumAndWeightMetric metric =
-        Tang.Factory.getTang().newInjector().getInstance(EventNumAndWeightMetric.class);
+    final GroupMetrics metricHolder =
+        Tang.Factory.getTang().newInjector().getInstance(GroupMetrics.class);
+
 
     final AtomicDouble group1AdjustVRuntime = new AtomicDouble(0);
     doAnswer((invocation) -> {
@@ -96,7 +97,7 @@ public final class VtimeBasedNextGroupSelectorTest {
     }).when(group1).setVRuntime(anyLong());
     
     when(group1.getVRuntime()).thenAnswer((invocation) -> group1AdjustVRuntime.get());
-    when(group1.getEventNumAndWeightMetric()).thenReturn(metric);
+    when(group1.getMetricHolder()).thenReturn(metricHolder);
     when(group2.getVRuntime()).thenReturn(2.0);
     when(group3.getVRuntime()).thenReturn(1.0);
     when(group4.getVRuntime()).thenReturn(0.0);

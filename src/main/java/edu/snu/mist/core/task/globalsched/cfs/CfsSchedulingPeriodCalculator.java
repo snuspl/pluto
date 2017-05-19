@@ -19,7 +19,7 @@ import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.SchedulingPeriodCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsSchedulingPeriod;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.MinSchedulingPeriod;
-import edu.snu.mist.core.task.globalsched.metrics.GlobalSchedGlobalMetrics;
+import edu.snu.mist.core.task.metrics.GlobalMetrics;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -50,24 +50,24 @@ public final class CfsSchedulingPeriodCalculator implements SchedulingPeriodCalc
   private final long minSchedPeriod;
 
   /**
-   * Global metric.
+   * The Global metric holder.
    */
-  private final GlobalSchedGlobalMetrics metric;
+  private final GlobalMetrics globalMetricHolder;
 
   @Inject
   private CfsSchedulingPeriodCalculator(@Parameter(CfsSchedulingPeriod.class) final long cfsSchedPeriod,
                                         @Parameter(MinSchedulingPeriod.class) final long minSchedPeriod,
-                                        final GlobalSchedGlobalMetrics metric) {
+                                        final GlobalMetrics globalMetricHolder) {
     this.cfsSchedPeriod = cfsSchedPeriod;
     this.minSchedPeriod = minSchedPeriod;
-    this.metric = metric;
+    this.globalMetricHolder = globalMetricHolder;
   }
 
   @Override
   public long calculateSchedulingPeriod(final GlobalSchedGroupInfo groupInfo) {
-    final double groupWeight = groupInfo.getEventNumAndWeightMetric().getWeight();
-    final double totalWeight = Math.max(groupWeight, metric.getNumEventAndWeightMetric().getWeight());
-    final long numGroups = Math.max(1, metric.getNumGroupsMetric().getNumGroups());
+    final double groupWeight = groupInfo.getMetricHolder().getWeightMetric().getValue();
+    final double totalWeight = Math.max(groupWeight, globalMetricHolder.getWeightMetric().getValue());
+    final int numGroups = Math.max(1, globalMetricHolder.getNumGroupsMetric().getValue());
     long adjustCfsSchedPeriod = cfsSchedPeriod;
     if (cfsSchedPeriod / numGroups < minSchedPeriod) {
       adjustCfsSchedPeriod = minSchedPeriod * numGroups;

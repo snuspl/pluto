@@ -13,20 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.metrics.parameters;
+
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * Util class for metric test.
+ * A decaying rate of EWMA for system cpu utilization.
  */
-public final class MetricUtil {
-
-  private MetricUtil() {
-    // Should not be called.
-  }
-
-  public static double calculateEwma(final double newValue,
-                                     final double oldEwma,
-                                     final double alpha) {
-    return alpha * newValue + (1 - alpha) * oldEwma;
-  }
+@NamedParameter(doc="An alpha value for system cpu utilization", default_value = "0.7")
+public class SysCpuUtilAlpha implements Name<Double> {
 }

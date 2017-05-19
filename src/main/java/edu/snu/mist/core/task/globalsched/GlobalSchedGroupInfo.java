@@ -19,7 +19,7 @@ import edu.snu.mist.core.task.ExecutionDags;
 import edu.snu.mist.core.task.OperatorChainManager;
 import edu.snu.mist.core.task.QueryRemover;
 import edu.snu.mist.core.task.QueryStarter;
-import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetric;
+import edu.snu.mist.core.task.metrics.GroupMetrics;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.List;
@@ -80,10 +80,10 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
   void setLatestScheduledTime(long time);
 
   /**
-   * Get the number of events and weight metric of this group.
-   * @return the number of events and weight metric of this group
+   * Get the metric holder contains the number of events and weight metric of this group.
+   * @return the metric holder of this group
    */
-  EventNumAndWeightMetric getEventNumAndWeightMetric();
+  GroupMetrics getMetricHolder();
 
   /**
    * Get the vruntime of the group.

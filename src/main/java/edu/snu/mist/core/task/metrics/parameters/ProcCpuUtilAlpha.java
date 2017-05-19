@@ -19,8 +19,8 @@ import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * A decaying rate of EWMA for system cpu utilization in CpuUtilMetric.
+ A decaying rate of EWMA for process cpu utilization.
  */
-@NamedParameter(doc="An alpha value for system cpu utilization in CpuUtilMetric", default_value = "0.7")
-public class GlobalSysCpuUtilAlpha implements Name<Double> {
+@NamedParameter(doc="A decaying rate for process cpu utilization", default_value = "0.7")
+public final class ProcCpuUtilAlpha implements Name<Double> {
 }

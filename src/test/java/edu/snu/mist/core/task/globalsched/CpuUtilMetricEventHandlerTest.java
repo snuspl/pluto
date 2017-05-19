@@ -23,7 +23,7 @@ import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 
 /**
- * Test whether CpuUtilMetricEventHandler tracks the CpuUtilMetric properly or not.
+ * Test whether CpuUtilMetricEventHandler tracks the CPU utilization properly or not.
  */
 public final class CpuUtilMetricEventHandlerTest {
 

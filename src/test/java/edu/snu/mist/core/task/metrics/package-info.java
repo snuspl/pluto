@@ -13,14 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.metrics.parameters;
-
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
-
 /**
- A decaying rate of EWMA for process cpu utilization in CpuUtilMetric.
+ * Utility classes for metrics.
  */
-@NamedParameter(doc="A decaying rate for process cpu utilization in CpuUtilMetric", default_value = "0.7")
-public final class GlobalProcCpuUtilAlpha implements Name<Double> {
-}
+package edu.snu.mist.core.task.metrics;

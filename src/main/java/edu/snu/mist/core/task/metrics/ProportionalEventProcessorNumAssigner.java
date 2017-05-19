@@ -41,18 +41,18 @@ public final class ProportionalEventProcessorNumAssigner implements EventProcess
   private final GroupInfoMap groupInfoMap;
 
   /**
-   * The global metrics.
+   * The global metric holder.
    */
-  private final GlobalMetrics globalMetrics;
+  private final GlobalMetrics globalMetricHolder;
 
   @Inject
   private ProportionalEventProcessorNumAssigner(@Parameter(ThreadNumLimit.class) final int threadNumLimit,
                                                 final GroupInfoMap groupInfoMap,
-                                                final GlobalMetrics globalMetrics,
+                                                final GlobalMetrics globalMetricHolder,
                                                 final MistPubSubEventHandler pubSubEventHandler) {
     this.threadNumLimit = threadNumLimit;
     this.groupInfoMap = groupInfoMap;
-    this.globalMetrics = globalMetrics;
+    this.globalMetricHolder = globalMetricHolder;
     pubSubEventHandler.getPubSubEventHandler().subscribe(MetricUpdateEvent.class, this);
   }
 
@@ -78,8 +78,9 @@ public final class ProportionalEventProcessorNumAssigner implements EventProcess
       // Check the number of empty groups
       int zeroCount = 0;
       for (final GroupInfo groupInfo : groupInfoMap.values()) {
-        final long numEvents = (long) groupInfo.getEventNumMetric().getEwmaNumEvents();
-        if (numEvents == 0) {
+        final double numEvents =
+            groupInfo.getMetricHolder().getNumEventsMetric().getEwmaValue();
+        if ((long) numEvents == 0) {
           zeroCount++;
           continue;
         }
@@ -87,14 +88,15 @@ public final class ProportionalEventProcessorNumAssigner implements EventProcess
       // The number of event processors which are assignable additionally
       final int remainderProcessorNum = threadNumLimit - zeroCount;
       // The total number of events in the operator queues
-      final long sum = globalMetrics.getNumEventMetric().getNumEvents();
+      final double sum = globalMetricHolder.getNumEventsMetric().getEwmaValue();
 
       if (sum == 0) {
-        // If sum of events is zero, than we should assign one event procesosr number to each group
+        // If sum of events is zero, than we should assign one event processor number to each group
         assignSingleThread();
       } else {
         for (final GroupInfo groupInfo : groupInfoMap.values()) {
-          final long numEvents = (long) groupInfo.getEventNumMetric().getEwmaNumEvents();
+          final double numEvents =
+              groupInfo.getMetricHolder().getNumEventsMetric().getEwmaValue();
           // Assign processor number proportionally to the number of events
           int processorNumToAssign = (int)(remainderProcessorNum * numEvents / sum);
           if (processorNumToAssign == 0) {

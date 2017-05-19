@@ -16,8 +16,8 @@
 package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.core.task.*;
-import edu.snu.mist.core.task.globalsched.metrics.GlobalSchedGlobalMetrics;
 import edu.snu.mist.core.task.globalsched.metrics.NumGroupsMetricEventHandler;
+import edu.snu.mist.core.task.metrics.GlobalMetrics;
 import edu.snu.mist.core.task.metrics.MetricTrackEvent;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -35,14 +35,14 @@ public final class NumGroupsMetricEventHandlerTest {
 
   private MistPubSubEventHandler metricPubSubEventHandler;
   private GlobalSchedGroupInfoMap groupInfoMap;
-  private GlobalSchedGlobalMetrics metric;
+  private GlobalMetrics metricHolder;
   private NumGroupsMetricEventHandler handler;
   private static final int UPDATE_GROUP_SIZE = 10;
 
   @Before
   public void setUp() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
-    metric = injector.getInstance(GlobalSchedGlobalMetrics.class);
+    metricHolder = injector.getInstance(GlobalMetrics.class);
     groupInfoMap = injector.getInstance(GlobalSchedGroupInfoMap.class);
     metricPubSubEventHandler = injector.getInstance(MistPubSubEventHandler.class);
     handler = injector.getInstance(NumGroupsMetricEventHandler.class);
@@ -54,7 +54,8 @@ public final class NumGroupsMetricEventHandlerTest {
   @Test(timeout = 1000L)
   public void testNumGroupsMetricTracking() throws Exception {
     // Test default value
-    Assert.assertEquals(0, metric.getNumGroupsMetric().getNumGroups());
+    Assert.assertEquals(0,
+        (int) metricHolder.getNumGroupsMetric().getValue());
 
     // Update the value
     for (int i = 0; i < UPDATE_GROUP_SIZE; i++) {
@@ -64,6 +65,7 @@ public final class NumGroupsMetricEventHandlerTest {
 
     // Wait the tracker to call handler
     metricPubSubEventHandler.getPubSubEventHandler().onNext(new MetricTrackEvent());
-    Assert.assertEquals(UPDATE_GROUP_SIZE, metric.getNumGroupsMetric().getNumGroups());
+    Assert.assertEquals(
+        UPDATE_GROUP_SIZE, (int) metricHolder.getNumGroupsMetric().getValue());
   }
 }

@@ -20,7 +20,7 @@ import edu.snu.mist.core.task.ExecutionDags;
 import edu.snu.mist.core.task.OperatorChainManager;
 import edu.snu.mist.core.task.QueryRemover;
 import edu.snu.mist.core.task.QueryStarter;
-import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetric;
+import edu.snu.mist.core.task.metrics.GroupMetrics;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -53,11 +53,6 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   private final QueryStarter queryStarter;
 
   /**
-   * A metric that represents the number of events and weight in the group, which will be updated periodically.
-   */
-  private final EventNumAndWeightMetric eventNumAndWeightMetric;
-
-  /**
    * Operator chain manager.
    */
   private final OperatorChainManager operatorChainManager;
@@ -77,22 +72,27 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
    */
   private double vruntime;
 
+  /**
+   * A metric holder that contains weight and the number of events in the group, which will be updated periodically.
+   */
+  private final GroupMetrics metricHolder;
+
   @Inject
   private DefaultGlobalSchedGroupInfo(@Parameter(GroupId.class) final String groupId,
                                       final ExecutionDags executionDags,
-                                      final EventNumAndWeightMetric eventNumAndWeightMetric,
                                       final QueryStarter queryStarter,
                                       final OperatorChainManager operatorChainManager,
-                                      final QueryRemover queryRemover) {
+                                      final QueryRemover queryRemover,
+                                      final GroupMetrics metricHolder) {
     this.groupId = groupId;
     this.queryIdList = new ArrayList<>();
     this.executionDags = executionDags;
-    this.eventNumAndWeightMetric = eventNumAndWeightMetric;
     this.queryStarter = queryStarter;
     this.operatorChainManager = operatorChainManager;
     this.queryRemover = queryRemover;
     this.latestScheduledTime = 0;
     this.vruntime = 0;
+    this.metricHolder = metricHolder;
   }
 
   /**
@@ -159,8 +159,8 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   }
 
   @Override
-  public EventNumAndWeightMetric getEventNumAndWeightMetric() {
-    return eventNumAndWeightMetric;
+  public GroupMetrics getMetricHolder() {
+    return metricHolder;
   }
 
   @Override

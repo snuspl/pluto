@@ -23,7 +23,7 @@ import javax.inject.Inject;
 import java.util.Collection;
 
 /**
- * A class handles the metric event about EventNumMetric.
+ * A class handles the metric event about the number of events.
  */
 public final class EventNumMetricEventHandler implements MetricTrackEventHandler {
 
@@ -33,16 +33,16 @@ public final class EventNumMetricEventHandler implements MetricTrackEventHandler
   private final GroupInfoMap groupInfoMap;
 
   /**
-   * The global metrics.
+   * The global metric holder.
    */
-  private final GlobalMetrics globalMetrics;
+  private final GlobalMetrics globalMetricHolder;
 
   @Inject
   private EventNumMetricEventHandler(final GroupInfoMap groupInfoMap,
-                                     final GlobalMetrics globalMetrics,
+                                     final GlobalMetrics globalMetricHolder,
                                      final MistPubSubEventHandler pubSubEventHandler) {
     this.groupInfoMap = groupInfoMap;
-    this.globalMetrics = globalMetrics;
+    this.globalMetricHolder = globalMetricHolder;
     pubSubEventHandler.getPubSubEventHandler().subscribe(MetricTrackEvent.class, this);
   }
 
@@ -60,10 +60,11 @@ public final class EventNumMetricEventHandler implements MetricTrackEventHandler
           }
         }
       }
-      final EventNumMetric metric = groupInfo.getEventNumMetric();
-      metric.updateNumEvents(groupNumEvent);
+      final EWMAMetric numEventMetric =
+          groupInfo.getMetricHolder().getNumEventsMetric();
+      numEventMetric.updateValue(groupNumEvent);
       totalNumEvent += groupNumEvent;
     }
-    globalMetrics.getNumEventMetric().updateNumEvents(totalNumEvent);
+    globalMetricHolder.getNumEventsMetric().updateValue(totalNumEvent);
   }
 }

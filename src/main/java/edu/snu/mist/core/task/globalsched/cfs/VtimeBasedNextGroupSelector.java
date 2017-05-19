@@ -145,7 +145,8 @@ public final class VtimeBasedNextGroupSelector implements NextGroupSelector {
         final long endTime = System.nanoTime();
         final double elapsedTime =
             TimeUnit.NANOSECONDS.toMillis(endTime - groupInfo.getLatestScheduledTime()) / 1000.0;
-        final double weight = Math.max(defaultWeight, groupInfo.getEventNumAndWeightMetric().getWeight());
+        final double weight = Math.max(defaultWeight,
+            (double) groupInfo.getMetricHolder().getWeightMetric().getValue());
         final double delta = calculateVRuntimeDelta(elapsedTime, weight);
         final double vruntime = groupInfo.getVRuntime() + delta;
         groupInfo.setVRuntime(vruntime);

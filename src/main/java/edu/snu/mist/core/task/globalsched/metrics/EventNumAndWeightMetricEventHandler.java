@@ -20,15 +20,14 @@ import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfoMap;
-import edu.snu.mist.core.task.metrics.MetricTrackEvent;
-import edu.snu.mist.core.task.metrics.MetricTrackEventHandler;
+import edu.snu.mist.core.task.metrics.*;
 
 import javax.inject.Inject;
 import java.util.Collection;
 import java.util.logging.Logger;
 
 /**
- * A class handles the metric event about EventNumMetric.
+ * A class handles the metric event about weight and the number of events.
  */
 public final class EventNumAndWeightMetricEventHandler implements MetricTrackEventHandler {
   private static final Logger LOG = Logger.getLogger(EventNumAndWeightMetricEventHandler.class.getName());
@@ -39,18 +38,16 @@ public final class EventNumAndWeightMetricEventHandler implements MetricTrackEve
   private final GlobalSchedGroupInfoMap groupInfoMap;
 
   /**
-   * The global metrics.
+   * The global metric holder.
    */
-  private final GlobalSchedGlobalMetrics globalMetrics;
+  private final GlobalMetrics globalMetricHolder;
 
   @Inject
   private EventNumAndWeightMetricEventHandler(final GlobalSchedGroupInfoMap groupInfoMap,
-                                              final GlobalSchedGlobalMetrics globalMetrics,
+                                              final GlobalMetrics globalMetricHolder,
                                               final MistPubSubEventHandler pubSubEventHandler) {
     this.groupInfoMap = groupInfoMap;
-    this.globalMetrics = globalMetrics;
-    // Initialize
-    this.onNext(new MetricTrackEvent());
+    this.globalMetricHolder = globalMetricHolder;
     pubSubEventHandler.getPubSubEventHandler().subscribe(MetricTrackEvent.class, this);
   }
 
@@ -70,16 +67,16 @@ public final class EventNumAndWeightMetricEventHandler implements MetricTrackEve
           }
         }
       }
-      final EventNumAndWeightMetric metric = groupInfo.getEventNumAndWeightMetric();
-      metric.updateNumEvents(groupNumEvent);
+      final EWMAMetric numEventMetric = groupInfo.getMetricHolder().getNumEventsMetric();
+      numEventMetric.updateValue(groupNumEvent);
       totalNumEvent += groupNumEvent;
 
       // Set the weight per group
-      final double weight = metric.getEwmaNumEvents();
-      metric.setWeight(weight);
+      final double weight = numEventMetric.getEwmaValue();
+      groupInfo.getMetricHolder().getWeightMetric().setValue(weight);
       totalWeight += weight;
     }
-    globalMetrics.getNumEventAndWeightMetric().updateNumEvents(totalNumEvent);
-    globalMetrics.getNumEventAndWeightMetric().setWeight(totalWeight);
+    globalMetricHolder.getNumEventsMetric().updateValue(totalNumEvent);
+    globalMetricHolder.getWeightMetric().setValue(totalWeight);
   }
 }

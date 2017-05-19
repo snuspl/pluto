@@ -19,13 +19,14 @@ import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.SchedulingPeriodCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsSchedulingPeriod;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.MinSchedulingPeriod;
-import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetric;
-import edu.snu.mist.core.task.globalsched.metrics.GlobalSchedGlobalMetrics;
+import edu.snu.mist.core.task.metrics.GroupMetrics;
+import edu.snu.mist.core.task.metrics.GlobalMetrics;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.mockito.Mockito.mock;
@@ -33,27 +34,34 @@ import static org.mockito.Mockito.when;
 
 public final class CfsSchedulingPeriodCalculatorTest {
 
+  private SchedulingPeriodCalculator schedPeriodCalculator;
+  private GlobalMetrics globalMetricHolder;
+
+  @Before
+  public void setUp() throws InjectionException {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(CfsSchedulingPeriod.class, "1000");
+    jcb.bindNamedParameter(MinSchedulingPeriod.class, "100");
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    schedPeriodCalculator = injector.getInstance(CfsSchedulingPeriodCalculator.class);
+    globalMetricHolder = injector.getInstance(GlobalMetrics.class);
+  }
+
   /**
    * Test the cfs scheduling period calculator when the number of groups is 5.
    * @throws InjectionException
    */
   @Test
   public void testCfsSchedulingPeriodCalculationSmallGroup() throws InjectionException {
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(CfsSchedulingPeriod.class, "1000");
-    jcb.bindNamedParameter(MinSchedulingPeriod.class, "100");
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final SchedulingPeriodCalculator schePeriodCalculator = injector.getInstance(CfsSchedulingPeriodCalculator.class);
-    final GlobalSchedGlobalMetrics globalSchedMetric = injector.getInstance(GlobalSchedGlobalMetrics.class);
-    final EventNumAndWeightMetric metric =
-        Tang.Factory.getTang().newInjector().getInstance(EventNumAndWeightMetric.class);
-    metric.setWeight(10);
+    final GroupMetrics metricHolder =
+        Tang.Factory.getTang().newInjector().getInstance(GroupMetrics.class);
+    metricHolder.getWeightMetric().setValue(10.0);
 
     final GlobalSchedGroupInfo groupInfo = mock(GlobalSchedGroupInfo.class);
-    when(groupInfo.getEventNumAndWeightMetric()).thenReturn(metric);
-    globalSchedMetric.getNumGroupsMetric().setNumGroups(5);
-    globalSchedMetric.getNumEventAndWeightMetric().setWeight(20);
-    final long period = schePeriodCalculator.calculateSchedulingPeriod(groupInfo);
+    when(groupInfo.getMetricHolder()).thenReturn(metricHolder);
+    globalMetricHolder.getNumGroupsMetric().setValue(5);
+    globalMetricHolder.getWeightMetric().setValue(20.0);
+    final long period = schedPeriodCalculator.calculateSchedulingPeriod(groupInfo);
     Assert.assertEquals(500, period);
   }
 
@@ -63,28 +71,22 @@ public final class CfsSchedulingPeriodCalculatorTest {
    */
   @Test
   public void testCfsSchedulingPeriodCalculationLargeGroup() throws InjectionException {
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(CfsSchedulingPeriod.class, "1000");
-    jcb.bindNamedParameter(MinSchedulingPeriod.class, "100");
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final SchedulingPeriodCalculator schedPeriodCalculator = injector.getInstance(CfsSchedulingPeriodCalculator.class);
-    final GlobalSchedGlobalMetrics globalSchedMetric = injector.getInstance(GlobalSchedGlobalMetrics.class);
-    final EventNumAndWeightMetric metric1 =
-        Tang.Factory.getTang().newInjector().getInstance(EventNumAndWeightMetric.class);
-    final EventNumAndWeightMetric metric2 =
-        Tang.Factory.getTang().newInjector().getInstance(EventNumAndWeightMetric.class);
-    metric1.setWeight(10);
-    metric2.setWeight(1);
+    final GroupMetrics metricHolder1 =
+        Tang.Factory.getTang().newInjector().getInstance(GroupMetrics.class);
+    final GroupMetrics metricHolder2 =
+        Tang.Factory.getTang().newInjector().getInstance(GroupMetrics.class);
+    metricHolder1.getWeightMetric().setValue(10.0);
+    metricHolder2.getWeightMetric().setValue(1.0);
 
     final GlobalSchedGroupInfo groupInfo = mock(GlobalSchedGroupInfo.class);
-    when(groupInfo.getEventNumAndWeightMetric()).thenReturn(metric1);
-    globalSchedMetric.getNumGroupsMetric().setNumGroups(20);
-    globalSchedMetric.getNumEventAndWeightMetric().setWeight(40);
+    when(groupInfo.getMetricHolder()).thenReturn(metricHolder1);
+    globalMetricHolder.getNumGroupsMetric().setValue(20);
+    globalMetricHolder.getWeightMetric().setValue(40.0);
     final long period1 = schedPeriodCalculator.calculateSchedulingPeriod(groupInfo);
     Assert.assertEquals(500, period1);
 
     final GlobalSchedGroupInfo groupInfo2 = mock(GlobalSchedGroupInfo.class);
-    when(groupInfo2.getEventNumAndWeightMetric()).thenReturn(metric2);
+    when(groupInfo2.getMetricHolder()).thenReturn(metricHolder2);
     final long period2 = schedPeriodCalculator.calculateSchedulingPeriod(groupInfo2);
     Assert.assertEquals(100, period2); // min slice
   }

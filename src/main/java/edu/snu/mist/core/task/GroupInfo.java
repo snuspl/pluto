@@ -17,7 +17,7 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
-import edu.snu.mist.core.task.metrics.EventNumMetric;
+import edu.snu.mist.core.task.metrics.GroupMetrics;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -45,11 +45,6 @@ public final class GroupInfo implements AutoCloseable {
   private final ExecutionDags executionDags;
 
   /**
-   * A metric that represents the number of events in the group, which will be updated periodically.
-   */
-  private final EventNumMetric eventNumMetric;
-
-  /**
    * An event processor manager.
    */
   private final EventProcessorManager eventProcessorManager;
@@ -69,22 +64,27 @@ public final class GroupInfo implements AutoCloseable {
    */
   private final QueryRemover queryRemover;
 
+  /**
+   * A metric holder that contains the number of events in the group, which will be updated periodically.
+   */
+  private final GroupMetrics metricHolder;
+
   @Inject
   private GroupInfo(@Parameter(GroupId.class) final String groupId,
-                    final EventNumMetric eventNumMetric,
                     final ExecutionDags executionDags,
                     final EventProcessorManager eventProcessorManager,
                     final QueryStarter queryStarter,
                     final OperatorChainManager operatorChainManager,
-                    final QueryRemover queryRemover) {
+                    final QueryRemover queryRemover,
+                    final GroupMetrics metricHolder) {
     this.groupId = groupId;
     this.queryIdList = new ArrayList<>();
     this.executionDags = executionDags;
-    this.eventNumMetric = eventNumMetric;
     this.eventProcessorManager = eventProcessorManager;
     this.queryStarter = queryStarter;
     this.operatorChainManager = operatorChainManager;
     this.queryRemover = queryRemover;
+    this.metricHolder = metricHolder;
   }
 
   /**
@@ -119,10 +119,10 @@ public final class GroupInfo implements AutoCloseable {
   }
 
   /**
-   * @return the number of events metric of this group
+   * @return the metric holder contains the number of events in this group
    */
-  public EventNumMetric getEventNumMetric() {
-    return eventNumMetric;
+  public GroupMetrics getMetricHolder() {
+    return metricHolder;
   }
 
   /**

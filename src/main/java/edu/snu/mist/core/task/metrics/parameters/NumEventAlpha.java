@@ -19,8 +19,8 @@ import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * A decaying rate of EWMA for the number of events in a group.
+ * A decaying rate of EWMA for the number of events.
  */
-@NamedParameter(doc="An alpha value of num events in GroupMetric", default_value = "0.7")
-public final class GroupNumEventAlpha implements Name<Double> {
+@NamedParameter(doc="An alpha value of num events", default_value = "0.7")
+public final class NumEventAlpha implements Name<Double> {
 }
