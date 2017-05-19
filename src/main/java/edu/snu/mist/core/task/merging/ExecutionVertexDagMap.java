@@ -25,6 +25,7 @@ import java.util.Map;
 
 /**
  * This contains an execution vertex as a key and the dag that contains the vertex as a value.
+ * This map is needed for deleting the execution vertex from the execution dag.
  */
 public final class ExecutionVertexDagMap {
 

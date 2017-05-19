@@ -23,6 +23,7 @@ import java.util.Map;
 
 /**
  * This contains an execution vertex as a key and the reference count number as a value.
+ * With this map, we can delete execution vertex.
  */
 public final class ExecutionVertexCountMap {
 
