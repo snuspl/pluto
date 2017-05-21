@@ -21,6 +21,8 @@ import edu.snu.mist.api.datastreams.configurations.*;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.common.functions.MISTPredicate;
+import edu.snu.mist.common.functions.WatermarkTimestampFunction;
 import edu.snu.mist.common.parameters.MQTTBrokerURI;
 import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
 import edu.snu.mist.core.task.ClassLoaderProvider;
@@ -106,7 +108,6 @@ public final class BatchQueryCreator {
       final int threadNum = i;
       // Do a deep copy for operatorChainDag
       final AvroOperatorChainDag opChainDagClone = new Cloner().deepClone(operatorChainDag);
-
       futures.add(executorService.submit(new Runnable() {
         @Override
         public void run() {
@@ -135,12 +136,13 @@ public final class BatchQueryCreator {
                     final MQTTSourceConfiguration.MQTTSourceConfigurationBuilder builder =
                         MQTTSourceConfiguration.newBuilder();
 
-                    // At now, this default watermark configuration is only supported in batch submission.
-                    final WatermarkConfiguration defaultWatermarkConfig = PeriodicWatermarkConfiguration.newBuilder()
-                        .setWatermarkPeriod(100)
-                        .setExpectedDelay(0)
-                        .build();
-
+                    // For test availability, the source won't send any watermark.
+                    final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
+                    final WatermarkConfiguration defaultWatermarkConfig =
+                        PunctuatedWatermarkConfiguration.<MqttMessage>newBuilder()
+                            .setWatermarkPredicate(FalsePredicate.class, funcConf)
+                            .setParsingWatermarkFunction(DefaultWatermarkTimestampExtractFunc.class, funcConf)
+                            .build();
                     try {
                       final MISTFunction extractFuncClass = injector.getInstance(MISTFunction.class);
                       // Class-based timestamp extract function config in batch submission is not allowed at now
@@ -228,6 +230,37 @@ public final class BatchQueryCreator {
 
     if (!allSuccess) {
       throw new RuntimeException("Submission failed");
+    }
+  }
+
+  /**
+   * A predicate that always return false which will be used for evaluation.
+   */
+  private static final class FalsePredicate implements MISTPredicate<MqttMessage> {
+    @Inject
+    private FalsePredicate() {
+      // do nothing
+    }
+
+    @Override
+    public boolean test(final MqttMessage s) {
+      return false;
+    }
+  }
+
+  /**
+   * A watermark timestamp function which will be used for evaluation.
+   */
+  private static final class DefaultWatermarkTimestampExtractFunc
+      implements WatermarkTimestampFunction<MqttMessage> {
+    @Inject
+    private DefaultWatermarkTimestampExtractFunc() {
+      // do nothing
+    }
+
+    @Override
+    public Long apply(final MqttMessage s) {
+      return 0L;
     }
   }
 }
