@@ -21,9 +21,7 @@ import edu.snu.mist.core.parameters.MaxInflightMqttEventNum;
 import edu.snu.mist.core.parameters.MaxMqttSinkNumPerClient;
 import edu.snu.mist.core.parameters.MaxMqttSourceNumPerClient;
 import org.apache.reef.tang.annotations.Parameter;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.*;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -64,12 +62,12 @@ public final class MQTTSharedResource implements AutoCloseable {
   /**
    * The map that has broker URI as a key and list of mqtt clients as a value.
    */
-  private final Map<String, List<MqttClient>> mqttPublisherMap;
+  private final Map<String, List<IMqttAsyncClient>> mqttPublisherMap;
 
   /**
    * The map that has the number of sinks each mqtt clients support.
    */
-  private final Map<MqttClient, Integer> publisherSinkNumMap;
+  private final Map<IMqttAsyncClient, Integer> publisherSinkNumMap;
 
   /**
    * The number of maximum mqtt sources per client.
@@ -119,17 +117,17 @@ public final class MQTTSharedResource implements AutoCloseable {
    * @throws MqttException
    * @throws IOException
    */
-  public MqttClient getMqttSinkClient(final String brokerURI) throws MqttException, IOException {
+  public IMqttAsyncClient getMqttSinkClient(final String brokerURI) throws MqttException, IOException {
     this.publisherLock.lock();
-    final List<MqttClient> mqttClientList = mqttPublisherMap.get(brokerURI);
+    final List<IMqttAsyncClient> mqttClientList = mqttPublisherMap.get(brokerURI);
     if (mqttClientList == null) {
       mqttPublisherMap.put(brokerURI, new ArrayList<>());
-      final MqttClient client = createSinkClient(brokerURI, mqttPublisherMap.get(brokerURI));
+      final IMqttAsyncClient client = createSinkClient(brokerURI, mqttPublisherMap.get(brokerURI));
       this.publisherLock.unlock();
       return client;
     } else {
       // Pick the last client for the candidate.
-      final MqttClient clientCandidate = mqttClientList.get(mqttClientList.size() - 1);
+      final IMqttAsyncClient clientCandidate = mqttClientList.get(mqttClientList.size() - 1);
       final int sinkNum = publisherSinkNumMap.get(clientCandidate);
       if (sinkNum < maxMqttSinkNumPerClient) {
         // It is okay to share already created mqtt client.
@@ -138,7 +136,7 @@ public final class MQTTSharedResource implements AutoCloseable {
         return clientCandidate;
       } else {
         // We need to make a new mqtt client.
-        final MqttClient newClientCandidate = createSinkClient(brokerURI, mqttClientList);
+        final IMqttAsyncClient newClientCandidate = createSinkClient(brokerURI, mqttClientList);
         this.publisherLock.unlock();
         return newClientCandidate;
       }
@@ -153,12 +151,13 @@ public final class MQTTSharedResource implements AutoCloseable {
    * @throws MqttException
    * @throws IOException
    */
-  private MqttClient createSinkClient(final String brokerURI, final List<MqttClient> mqttClientList)
+  private IMqttAsyncClient createSinkClient(final String brokerURI, final List<IMqttAsyncClient> mqttClientList)
       throws MqttException, IOException {
-    final MqttClient client = new MqttClient(brokerURI, MQTT_PUBLISHER_ID_PREFIX + brokerURI + mqttClientList.size());
+    final IMqttAsyncClient client = new MqttAsyncClient(brokerURI, MQTT_PUBLISHER_ID_PREFIX + brokerURI +
+        mqttClientList.size());
     final MqttConnectOptions connectOptions = new MqttConnectOptions();
     connectOptions.setMaxInflight(maxInflightMqttEventNum);
-    client.connect(connectOptions);
+    client.connect(connectOptions).waitForCompletion();
     mqttClientList.add(client);
     publisherSinkNumMap.put(client, 1);
     return client;
