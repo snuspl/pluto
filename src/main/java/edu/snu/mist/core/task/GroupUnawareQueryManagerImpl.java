@@ -18,6 +18,7 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.core.driver.parameters.DeactivationEnabled;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
@@ -89,6 +90,11 @@ public final class GroupUnawareQueryManagerImpl implements QueryManager {
   private final boolean mergingEnabled;
 
   /**
+   * Deactivation enabled or not.
+   */
+  private final boolean deactivationEnabled;
+
+  /**
    * A batch query submission helper.
    */
   private final BatchQueryCreator batchQueryCreator;
@@ -108,6 +114,7 @@ public final class GroupUnawareQueryManagerImpl implements QueryManager {
                                        @Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
                                        final QueryInfoStore planStore,
                                        @Parameter(MergingEnabled.class) final boolean mergingEnabled,
+                                       @Parameter(DeactivationEnabled.class) final boolean deactivationEnabled,
                                        final MetricTracker metricTracker,
                                        final ConfigDagGenerator configDagGenerator,
                                        final EventProcessorNumAssigner assigner,
@@ -120,6 +127,7 @@ public final class GroupUnawareQueryManagerImpl implements QueryManager {
     this.groupInfoMap = groupInfoMap;
     this.numEventProcessors = numEventProcessors;
     this.mergingEnabled = mergingEnabled;
+    this.deactivationEnabled = deactivationEnabled;
     this.metricTracker = metricTracker;
     this.assigner = assigner;
     this.configDagGenerator = configDagGenerator;
@@ -164,8 +172,16 @@ public final class GroupUnawareQueryManagerImpl implements QueryManager {
           jcb.bindImplementation(QueryRemover.class, NoMergingAwareQueryRemover.class);
           jcb.bindImplementation(ExecutionDags.class, NoMergingExecutionDags.class);
         }
+
+        if (deactivationEnabled) {
+          jcb.bindImplementation(GroupSourceManager.class, DeactivationGroupSourceManager.class);
+        } else {
+          jcb.bindImplementation(GroupSourceManager.class, NoDeactivationGroupSourceManager.class);
+        }
+
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
         injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
+        injector.bindVolatileInstance(QueryInfoStore.class, planStore);
         groupInfoMap.putIfAbsent(groupId, injector.getInstance(GroupInfo.class));
       }
       // Add the query into the group
@@ -175,6 +191,10 @@ public final class GroupUnawareQueryManagerImpl implements QueryManager {
       // Start the submitted dag
       final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
       groupInfo.getQueryStarter().start(queryId, configDag, tuple.getValue().getJarFilePaths());
+      // Initialize the activeExecutionVertexIdMap by inserting all vertices.
+      if (deactivationEnabled) {
+        groupInfo.getGroupSourceManager().initializeActiveExecutionVertexIdMap();
+      }
 
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
@@ -240,5 +260,10 @@ public final class GroupUnawareQueryManagerImpl implements QueryManager {
     queryControlResult.setIsSuccess(true);
     queryControlResult.setMsg(ResultMessage.deleteSuccess(queryId));
     return queryControlResult;
+  }
+
+  @Override
+  public GroupSourceManager getGroupSourceManager(final String groupId) {
+    return groupInfoMap.get(groupId).getGroupSourceManager();
   }
 }

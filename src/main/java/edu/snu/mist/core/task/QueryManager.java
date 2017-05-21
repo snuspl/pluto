@@ -49,4 +49,10 @@ public interface QueryManager extends AutoCloseable {
    * @return Returns the result message of deletion.
    */
   QueryControlResult delete(String groupId, String queryId);
+
+  /**
+   * Get the GroupSourceManager.
+   * @param groupId group id
+   */
+  GroupSourceManager getGroupSourceManager(String groupId);
 }

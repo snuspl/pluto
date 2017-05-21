@@ -21,6 +21,7 @@ import edu.snu.mist.common.OutputEmitter;
 import edu.snu.mist.common.operators.FilterOperator;
 import edu.snu.mist.common.operators.UnionOperator;
 import edu.snu.mist.common.sinks.Sink;
+import edu.snu.mist.common.sources.EventGenerator;
 import edu.snu.mist.core.task.*;
 
 /**
@@ -96,6 +97,11 @@ public final class SimpleOperatorChainUtils {
     @Override
     public void start() {
       // do nothing
+    }
+
+    @Override
+    public EventGenerator getEventGenerator() {
+      return null;
     }
 
     @Override

@@ -232,4 +232,10 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
     queryControlResult.setMsg(ResultMessage.deleteSuccess(queryId));
     return queryControlResult;
   }
+
+  @Override
+  public GroupSourceManager getGroupSourceManager(final String groupId) {
+    // This method should not be used in option 3.
+    return null;
+  }
 }
