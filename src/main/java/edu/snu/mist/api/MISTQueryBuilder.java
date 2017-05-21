@@ -42,7 +42,7 @@ public final class MISTQueryBuilder {
   /**
    * Period of default watermark represented in milliseconds.
    */
-  private static final int DEFAULT_WATERMARK_PERIOD = 100;
+  private static final int DEFAULT_WATERMARK_PERIOD = 10000;
 
   /**
    * Expected delay of default watermark represented in milliseconds.

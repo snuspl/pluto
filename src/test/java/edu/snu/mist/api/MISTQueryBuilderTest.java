@@ -144,7 +144,7 @@ public class MISTQueryBuilderTest {
     // Check about watermark configuration
     final long period = injector.getNamedInstance(PeriodicWatermarkPeriod.class);
     final long delay = injector.getNamedInstance(PeriodicWatermarkDelay.class);
-    Assert.assertEquals(100, period);
+    Assert.assertEquals(10000, period);
     Assert.assertEquals(0, delay);
   }
 
@@ -171,7 +171,7 @@ public class MISTQueryBuilderTest {
     // Check watermark configuration
     final long period = injector.getNamedInstance(PeriodicWatermarkPeriod.class);
     final long delay = injector.getNamedInstance(PeriodicWatermarkDelay.class);
-    Assert.assertEquals(100, period);
+    Assert.assertEquals(10000, period);
     Assert.assertEquals(0, delay);
   }
 }
