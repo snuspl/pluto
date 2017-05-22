@@ -31,6 +31,7 @@ import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.stream.NettyChannelHandler;
 import edu.snu.mist.common.stream.textmessage.NettyTextMessageStreamGenerator;
 import edu.snu.mist.common.types.Tuple2;
+import edu.snu.mist.core.driver.parameters.DeactivationEnabled;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorFactory;
 import edu.snu.mist.core.task.globalsched.GlobalSchedNonBlockingEventProcessorFactory;
 import edu.snu.mist.core.task.globalsched.GroupAwareGlobalSchedQueryManagerImpl;
@@ -163,6 +164,7 @@ public class DefaultGroupSourceManagerTest {
   public void testDeactivation() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(GroupId.class, "testGroup");
+    jcb.bindNamedParameter(DeactivationEnabled.class, "true");
     jcb.bindImplementation(QueryManager.class, GroupAwareGlobalSchedQueryManagerImpl.class);
     jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedNonBlockingEventProcessorFactory.class);
     jcb.bindImplementation(NextGroupSelectorFactory.class, WrrPollingNextGroupSelectorFactory.class);
@@ -181,7 +183,7 @@ public class DefaultGroupSourceManagerTest {
         SERVER_ADDR, SOURCE_PORT3, new TestChannelHandler(sourceCountDownLatch3));
 
     // Submit query. submitQuery()
-    Configuration configuration = jcb.build();
+    final Configuration configuration = jcb.build();
     final Injector injector = Tang.Factory.getTang().newInjector(configuration);
     final MISTQuery query = buildQuery();
 

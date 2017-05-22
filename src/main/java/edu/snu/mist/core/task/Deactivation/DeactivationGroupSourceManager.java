@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.Deactivation;
 
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.graph.DAG;
@@ -22,6 +22,7 @@ import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.common.operators.StateHandler;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.common.sinks.Sink;
+import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.stores.AvroExecutionVertexStore;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.*;

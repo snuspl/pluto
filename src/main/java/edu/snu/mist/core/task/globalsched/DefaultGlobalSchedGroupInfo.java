@@ -17,6 +17,7 @@ package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.Deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.metrics.GroupMetrics;
 import org.apache.reef.tang.annotations.Parameter;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Seoul National University
+ * Copyright (C) 2016 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.driver.parameters;
-
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
-
-@NamedParameter(doc = "Enabling the deactivation of queries", short_name = "deactivation", default_value = "false")
-public final class DeactivationEnabled implements Name<Boolean> {
-  // empty
-}
+/**
+ * A package for batch query submission to support test in task side.
+ */
+package edu.snu.mist.core.task.Deactivation;

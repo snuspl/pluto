@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.Deactivation;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.OutputEmitter;
 import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.core.task.ExecutionVertex;
+import edu.snu.mist.core.task.OperatorChain;
+import edu.snu.mist.core.task.PhysicalSource;
 import edu.snu.mist.formats.avro.Direction;
 
 import java.io.IOException;
@@ -84,7 +87,7 @@ final class DeactivatedSourceOutputEmitter implements OutputEmitter {
       groupSourceManager.activateBasedOnSource(queryId, sourceID);
       // Emit watermarks to the new emitter.
       source.getEventGenerator().getOutputEmitter().emitData(data);
-    } catch (IOException e) {
+    } catch (final IOException e) {
       LOG.log(Level.SEVERE, "An exception occurred while activating the source with ID {0} with a data event.",
           new Object[] {sourceID});
     }

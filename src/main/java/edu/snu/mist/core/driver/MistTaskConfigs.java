@@ -200,6 +200,7 @@ public final class MistTaskConfigs {
         .registerShortNameOfClass(TempFolderPath.class)
         .registerShortNameOfClass(NumPeriodicSchedulerThreads.class)
         .registerShortNameOfClass(MergingEnabled.class)
+        .registerShortNameOfClass(DeactivationEnabled.class)
         .registerShortNameOfClass(EventProcessorLowerBound.class)
         .registerShortNameOfClass(EventProcessorUpperBound.class)
         .registerShortNameOfClass(ExecutionModelOption.class)
