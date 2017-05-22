@@ -16,4 +16,4 @@
 /**
  * A package for batch query submission to support test in task side.
  */
-package edu.snu.mist.core.task.Deactivation;
+package edu.snu.mist.core.task.deactivation;

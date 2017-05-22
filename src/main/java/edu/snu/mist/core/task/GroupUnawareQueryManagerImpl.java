@@ -19,7 +19,7 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
-import edu.snu.mist.core.task.Deactivation.GroupSourceManager;
+import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;

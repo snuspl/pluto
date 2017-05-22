@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.Deactivation;
+package edu.snu.mist.core.task.deactivation;
 
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.graph.DAG;
