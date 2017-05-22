@@ -19,7 +19,7 @@ import edu.snu.mist.common.parameters.MQTTBrokerURI;
 import edu.snu.mist.common.parameters.MQTTTopic;
 import edu.snu.mist.common.shared.MQTTSharedResource;
 import org.apache.reef.tang.annotations.Parameter;
-import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.IMqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
@@ -34,7 +34,7 @@ public final class MqttSink implements Sink<MqttMessage> {
   /**
    * MQTT publisher client.
    */
-  private final MqttClient mqttClient;
+  private final IMqttAsyncClient mqttClient;
 
   /**
    * MQTT topic.

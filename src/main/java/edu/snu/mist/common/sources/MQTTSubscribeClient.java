@@ -34,7 +34,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
   /**
    * The actual Paho MQTT client.
    */
-  private MqttClient client;
+  private IMqttAsyncClient client;
   /**
    * The URI of broker to connect.
    */
@@ -90,12 +90,12 @@ public final class MQTTSubscribeClient implements MqttCallback {
   void subscribe(final String topic) throws MqttException {
     synchronized (subscribeLock) {
       if (!started) {
-        client = new MqttClient(brokerURI, clientId);
-        client.connect();
+        client = new MqttAsyncClient(brokerURI, clientId);
+        client.connect().waitForCompletion();
         client.setCallback(this);
         started = true;
       }
-      client.subscribe(topic);
+      client.subscribe(topic, 0);
     }
   }
 
