@@ -44,7 +44,7 @@ public final class WindowImpl<T> implements Window<T>, Serializable {
 
   public WindowImpl(final long start, final long size, final Collection<T> dataCollection) {
     latestTimestamp = 0L;
-    latestWatermark = null;
+    latestWatermark = new MistWatermarkEvent(0L);
     this.dataCollection = dataCollection;
     this.start = start;
     this.end = start + size - 1;
@@ -78,7 +78,9 @@ public final class WindowImpl<T> implements Window<T>, Serializable {
     if (latestTimestamp < timestamp) {
       latestTimestamp = timestamp;
     }
-    latestWatermark = event;
+    if (latestWatermark.getTimestamp() < timestamp) {
+      latestWatermark = event;
+    }
   }
 
   @Override
@@ -98,27 +100,37 @@ public final class WindowImpl<T> implements Window<T>, Serializable {
 
   @Override
   public boolean equals(final Object o) {
-    if (!(o instanceof Window)) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    Window<T> window = (Window<T>) o;
 
-    if (this.getLatestWatermark() == null ^ window.getLatestWatermark() == null) {
+    final WindowImpl<?> window = (WindowImpl<?>) o;
+
+    if (getLatestTimestamp() != window.getLatestTimestamp()) {
       return false;
     }
-    return ((this.getLatestWatermark() == null && window.getLatestWatermark() == null) ||
-        this.getLatestWatermark().getTimestamp() == window.getLatestWatermark().getTimestamp())
-        && this.getStart() == window.getStart()
-        && this.getEnd() == window.getEnd()
-        && this.getLatestTimestamp() == window.getLatestTimestamp()
-        && this.getDataCollection().equals(window.getDataCollection());
+    if (getStart() != window.getStart()) {
+      return false;
+    }
+    if (getEnd() != window.getEnd()) {
+      return false;
+    }
+    if (!getLatestWatermark().equals(window.getLatestWatermark())) {
+      return false;
+    }
+    return getDataCollection().equals(window.getDataCollection());
   }
 
   @Override
   public int hashCode() {
-    return Long.hashCode(this.getStart()) * 10000 + Long.hashCode(this.getEnd()) * 1000
-        + Long.hashCode(this.getLatestTimestamp()) * 1000
-        + (this.getLatestWatermark() == null ? 0 : Long.hashCode(this.getLatestWatermark().getTimestamp()) * 10)
-        + this.getDataCollection().hashCode();
+    int result = (int) (getLatestTimestamp() ^ (getLatestTimestamp() >>> 32));
+    result = 31 * result + getLatestWatermark().hashCode();
+    result = 31 * result + getDataCollection().hashCode();
+    result = 31 * result + (int) (getStart() ^ (getStart() >>> 32));
+    result = 31 * result + (int) (getEnd() ^ (getEnd() >>> 32));
+    return result;
   }
 }

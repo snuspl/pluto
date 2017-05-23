@@ -99,7 +99,7 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements S
       final Window<T> window = windowQueue.poll();
       outputEmitter.emitData(new MistDataEvent(window, window.getLatestTimestamp()));
       final MistWatermarkEvent latestWatermark = window.getLatestWatermark();
-      if (latestWatermark != null) {
+      if (latestWatermark.getTimestamp() != 0L) {
         outputEmitter.emitWatermark(latestWatermark);
       }
     }
