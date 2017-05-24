@@ -26,6 +26,7 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This is the default implementation of the GlobalSchedGroupInfo.
@@ -76,6 +77,11 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
    * A metric holder that contains weight and the number of events in the group, which will be updated periodically.
    */
   private final GroupMetrics metricHolder;
+
+  /**
+   * Assigned value whether this group is assiged to an event processor or not.
+   */
+  private final AtomicBoolean assigned = new AtomicBoolean(false);
 
   @Inject
   private DefaultGlobalSchedGroupInfo(@Parameter(GroupId.class) final String groupId,
@@ -171,6 +177,21 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   @Override
   public void setVRuntime(final double vrt) {
     vruntime = vrt;
+  }
+
+  @Override
+  public boolean isActive() {
+   return operatorChainManager.size() != 0;
+  }
+
+  @Override
+  public boolean isAssigned() {
+    return assigned.get();
+  }
+
+  @Override
+  public void setAssigned(final boolean value) {
+    assigned.set(value);
   }
 
   @Override

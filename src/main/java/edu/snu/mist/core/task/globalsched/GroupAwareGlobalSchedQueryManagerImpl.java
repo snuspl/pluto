@@ -22,6 +22,7 @@ import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
+import edu.snu.mist.core.task.globalsched.dispatch.GroupDispatcher;
 import edu.snu.mist.core.task.globalsched.metrics.CpuUtilMetricEventHandler;
 import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetricEventHandler;
 import edu.snu.mist.core.task.globalsched.metrics.NumGroupsMetricEventHandler;
@@ -29,7 +30,9 @@ import edu.snu.mist.core.task.globalsched.parameters.GroupSchedModelType;
 import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
 import edu.snu.mist.core.task.merging.MergeAwareQueryRemover;
 import edu.snu.mist.core.task.merging.MergingExecutionDags;
-import edu.snu.mist.core.task.metrics.*;
+import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
+import edu.snu.mist.core.task.metrics.MemoryUsageMetricEventHandler;
+import edu.snu.mist.core.task.metrics.MetricTracker;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
@@ -111,6 +114,11 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   private final String executionModel;
 
   /**
+   * Group dispatcher that loops and dispaches active groups that are not assigned.
+   */
+  private final GroupDispatcher groupDispatcher;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -128,6 +136,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 final NumGroupsMetricEventHandler numGroupsHandler,
                                                 final MemoryUsageMetricEventHandler memUsageHandler,
                                                 final EventProcessorNumAssigner assigner,
+                                                final GroupDispatcher groupDispatcher,
                                                 final BatchQueryCreator batchQueryCreator,
                                                 @Parameter(GroupSchedModelType.class) final String executionModel) {
     this.dagGenerator = dagGenerator;
@@ -141,7 +150,11 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     this.configDagGenerator = configDagGenerator;
     this.batchQueryCreator = batchQueryCreator;
     this.executionModel = executionModel;
+    this.groupDispatcher = groupDispatcher;
     metricTracker.start();
+    if (executionModel.equals("dispatching")) {
+      groupDispatcher.start();
+    }
   }
 
   /**
@@ -193,6 +206,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
             break;
           case "nonblocking":
           case "polling":
+          case "dispatching":
             jcb.bindImplementation(OperatorChainManager.class, NonBlockingActiveOperatorChainPickManager.class);
             break;
           default:

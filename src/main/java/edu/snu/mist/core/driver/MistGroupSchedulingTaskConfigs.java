@@ -24,8 +24,8 @@ import edu.snu.mist.core.task.globalsched.*;
 import edu.snu.mist.core.task.globalsched.cfs.CfsSchedulingPeriodCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsSchedulingPeriod;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.MinSchedulingPeriod;
+import edu.snu.mist.core.task.globalsched.dispatch.DispatcherGroupSelectorFactory;
 import edu.snu.mist.core.task.globalsched.metrics.DefaultEventProcessorNumAssigner;
-import edu.snu.mist.core.task.globalsched.MISDEventProcessorNumAssigner;
 import edu.snu.mist.core.task.globalsched.parameters.*;
 import edu.snu.mist.core.task.globalsched.roundrobin.WeightedRRNextGroupSelectorFactory;
 import edu.snu.mist.core.task.globalsched.roundrobin.polling.InactiveGroupCheckerFactory;
@@ -123,6 +123,11 @@ public final class MistGroupSchedulingTaskConfigs {
       case "polling":
         jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedNonBlockingEventProcessorFactory.class);
         jcb.bindImplementation(NextGroupSelectorFactory.class, WrrPollingNextGroupSelectorFactory.class);
+        jcb.bindImplementation(InactiveGroupCheckerFactory.class, NaiveInactiveGroupCheckerFactory.class);
+        break;
+      case "dispatching":
+        jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedNonBlockingEventProcessorFactory.class);
+        jcb.bindImplementation(NextGroupSelectorFactory.class, DispatcherGroupSelectorFactory.class);
         jcb.bindImplementation(InactiveGroupCheckerFactory.class, NaiveInactiveGroupCheckerFactory.class);
         break;
       default:
