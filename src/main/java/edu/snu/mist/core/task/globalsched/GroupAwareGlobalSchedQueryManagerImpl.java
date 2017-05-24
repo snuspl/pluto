@@ -239,10 +239,6 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
       // Start the submitted dag
       final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
       groupInfo.getQueryStarter().start(queryId, configDag, tuple.getValue().getJarFilePaths());
-      // Initialize the activeExecutionVertexIdMap by inserting all vertices.
-      if (deactivationEnabled) {
-        groupInfo.getGroupSourceManager().initializeActiveExecutionVertexIdMap();
-      }
 
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));

@@ -28,17 +28,15 @@ public final class NoDeactivationGroupSourceManager implements GroupSourceManage
 
   @Inject
   private NoDeactivationGroupSourceManager() {
-  }
-
-  @Override
-  public void initializeActiveExecutionVertexIdMap() {
     // do nothing
   }
+
   @Override
   public void deactivateBasedOnSource(final String queryId, final String sourceId)
       throws AvroRemoteException {
     // do nothing
   }
+
   @Override
   public void activateBasedOnSource(final String queryId, final String sourceId)
       throws AvroRemoteException, MalformedURLException {
@@ -47,6 +45,7 @@ public final class NoDeactivationGroupSourceManager implements GroupSourceManage
 
   @Override
   public ExecutionDags getExecutionDags() {
+    // do nothing
     return null;
   }
 }

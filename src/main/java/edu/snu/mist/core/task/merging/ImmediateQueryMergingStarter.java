@@ -20,6 +20,7 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.deactivation.ActiveExecutionVertexIdMap;
 import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
@@ -85,6 +86,11 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
    */
   private final ExecutionVertexDagMap executionVertexDagMap;
 
+  /**
+   * The map holding the Id and ExecutionVertex of active ExecutionVertices.
+   */
+  private final ActiveExecutionVertexIdMap activeExecutionVertexIdMap;
+
   @Inject
   private ImmediateQueryMergingStarter(final OperatorChainManager operatorChainManager,
                                        final CommonSubDagFinder commonSubDagFinder,
@@ -95,7 +101,8 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
                                        final ExecutionVertexCountMap executionVertexCountMap,
                                        final ClassLoaderProvider classLoaderProvider,
                                        final ExecutionVertexGenerator executionVertexGenerator,
-                                       final ExecutionVertexDagMap executionVertexDagMap) {
+                                       final ExecutionVertexDagMap executionVertexDagMap,
+                                       final ActiveExecutionVertexIdMap activeExecutionVertexIdMap) {
     this.operatorChainManager = operatorChainManager;
     this.commonSubDagFinder = commonSubDagFinder;
     this.srcAndDagMap = srcAndDagMap;
@@ -106,6 +113,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
     this.configExecutionVertexMap = configExecutionVertexMap;
     this.executionVertexCountMap = executionVertexCountMap;
     this.executionVertexDagMap = executionVertexDagMap;
+    this.activeExecutionVertexIdMap = activeExecutionVertexIdMap;
   }
 
   @Override
@@ -144,6 +152,11 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
         }
 
         executionDags.add(executionDag);
+
+        // Add the execution vertices to the ActiveExecutionVertexIdMap.
+        for (final ExecutionVertex executionVertex : executionDag.getVertices()) {
+          activeExecutionVertexIdMap.put(executionVertex.getIdentifier(), executionVertex);
+        }
         return;
       }
 
@@ -202,6 +215,14 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
         if (!subDagMap.containsKey(source)) {
           srcAndDagMap.put(source.getConfiguration().get(0), sharableDag);
           ((PhysicalSource)configExecutionVertexMap.get(source)).start();
+        }
+      }
+
+      // Add the execution vertices to the ActiveExecutionVertexIdMap.
+      for (final ExecutionVertex executionVertex : sharableDag.getVertices()) {
+        final String vertexId = executionVertex.getIdentifier();
+        if (!activeExecutionVertexIdMap.containsKey(vertexId)) {
+          activeExecutionVertexIdMap.put(executionVertex.getIdentifier(), executionVertex);
         }
       }
     }

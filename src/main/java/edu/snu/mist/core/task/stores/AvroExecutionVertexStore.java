@@ -46,8 +46,8 @@ public final class AvroExecutionVertexStore {
   /**
    * A writer that stores AvroPhysicalOperatorChains.
    */
-
   private final DatumWriter<AvroPhysicalOperatorChain> operatorChainDatumWriter;
+
   /**
    * A reader that reads stored AvroPhysicalOperatorChains.
    */
@@ -56,8 +56,8 @@ public final class AvroExecutionVertexStore {
   /**
    * A writer that stores AvroPhysicalSourceOutgoingEdgesInfos.
    */
-
   private final DatumWriter<AvroPhysicalSourceOutgoingEdgesInfo> sourceDatumWriter;
+
   /**
    * A reader that reads stored AvroPhysicalSourceOutgoingEdgesInfos.
    */

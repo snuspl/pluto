@@ -237,6 +237,6 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
   @Override
   public GroupSourceManager getGroupSourceManager(final String groupId) {
     // This method should not be used in option 3.
-    return null;
+    throw new RuntimeException("getGroupSourceManager should not be used in option 3.");
   }
 }

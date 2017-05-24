@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.deactivation;
 
 import com.rits.cloning.Cloner;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.api.datastreams.ContinuousStream;
-import edu.snu.mist.api.datastreams.MISTStream;
 import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
@@ -32,6 +31,7 @@ import edu.snu.mist.common.stream.NettyChannelHandler;
 import edu.snu.mist.common.stream.textmessage.NettyTextMessageStreamGenerator;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.core.driver.parameters.DeactivationEnabled;
+import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorFactory;
 import edu.snu.mist.core.task.globalsched.GlobalSchedNonBlockingEventProcessorFactory;
 import edu.snu.mist.core.task.globalsched.GroupAwareGlobalSchedQueryManagerImpl;
@@ -61,6 +61,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
+/**
+ * Test class for DefaultGroupSourceManager.
+ */
 public class DefaultGroupSourceManagerTest {
   private static final String SERVER_ADDR = "localhost";
   private static final int SOURCE_PORT1 = 16118;
@@ -77,7 +80,6 @@ public class DefaultGroupSourceManagerTest {
           .map(e -> new Tuple2<>(e.getKey(), e.getValue()))
           .collect(Collectors.toList());
   private final MISTFunction<TreeMap<String, Integer>, String> toStringMapFunc = (input) -> input.toString();
-
 
   // Inputs in to the source.
   private static final List<String> SRC0INPUT1 = Arrays.asList("first", "first");
@@ -126,31 +128,26 @@ public class DefaultGroupSourceManagerTest {
 
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("testGroup");
 
-    final ContinuousStream sourceStream1 = queryBuilder.socketTextStream(localTextSocketSource1Conf);
-    final ContinuousStream sourceStream2 = queryBuilder.socketTextStream(localTextSocketSource2Conf);
-    final ContinuousStream<Tuple2<String, Integer>> toTupleMapStream1 = sourceStream1.map(toTupleMapFunc);
-    final ContinuousStream<Tuple2<String, Integer>> toTupleMapStream2 = sourceStream2.map(toTupleMapFunc);
-    final ContinuousStream<Map<String, Integer>> reduceByKeyStream1 =
-        toTupleMapStream1.reduceByKey(0, String.class, countFunc);
-    final ContinuousStream<Map<String, Integer>> reduceByKeyStream2 =
-        toTupleMapStream2.reduceByKey(0, String.class, countFunc);
-    final ContinuousStream flatMapStream1 = reduceByKeyStream1.flatMap(mapToListFunc);
-    final ContinuousStream flatMapStream2 = reduceByKeyStream2.flatMap(mapToListFunc);
-    final ContinuousStream<Tuple2<String, Integer>> unionStream1 = flatMapStream1.union(flatMapStream2);
+    final ContinuousStream sourceStream1 = queryBuilder.socketTextStream(localTextSocketSource1Conf)
+        .map(toTupleMapFunc)
+        .reduceByKey(0, String.class, countFunc)
+        .flatMap(mapToListFunc);
+    final ContinuousStream sourceStream2 = queryBuilder.socketTextStream(localTextSocketSource2Conf)
+        .map(toTupleMapFunc)
+        .reduceByKey(0, String.class, countFunc)
+        .flatMap(mapToListFunc);
+    final ContinuousStream<Tuple2<String, Integer>> unionStream1 = sourceStream1.union(sourceStream2);
 
-    final ContinuousStream sourceStream3 = queryBuilder.socketTextStream(localTextSocketSource3Conf);
-    final ContinuousStream<Tuple2<String, Integer>> toTupleMapStream3 = sourceStream3.map(toTupleMapFunc);
-    final ContinuousStream<Map<String, Integer>> reduceByKeyStream3 =
-        toTupleMapStream3.reduceByKey(0, String.class, countFunc);
-    final ContinuousStream flatMapStream3 = reduceByKeyStream3.flatMap(mapToListFunc);
-    final ContinuousStream<Tuple2<String, Integer>> unionStream2 = unionStream1.union(flatMapStream3);
+    final ContinuousStream sourceStream3 = queryBuilder.socketTextStream(localTextSocketSource3Conf)
+        .map(toTupleMapFunc)
+        .reduceByKey(0, String.class, countFunc)
+        .flatMap(mapToListFunc);
+    final ContinuousStream<Tuple2<String, Integer>> unionStream2 = unionStream1.union(sourceStream3);
 
-    final ContinuousStream<Map<String, Integer>> reduceByKeyStream4 =
-        unionStream2.reduceByKey(0, String.class, countFunc);
-    final ContinuousStream<TreeMap<String, Integer>> sortMapStream = reduceByKeyStream4.map(m -> new TreeMap<>(m));
-    final ContinuousStream<String> toStringMapStream = sortMapStream.map(toStringMapFunc);
-    final MISTStream sinkStream =
-        toStringMapStream.textSocketOutput("localhost", SINK_PORT);
+    unionStream2.reduceByKey(0, String.class, countFunc)
+        .map(m -> new TreeMap<>(m))
+        .map(toStringMapFunc)
+        .textSocketOutput("localhost", SINK_PORT);
 
     return queryBuilder.build();
   }
@@ -182,7 +179,7 @@ public class DefaultGroupSourceManagerTest {
     final NettyTextMessageStreamGenerator textMessageStreamGenerator3 = new NettyTextMessageStreamGenerator(
         SERVER_ADDR, SOURCE_PORT3, new TestChannelHandler(sourceCountDownLatch3));
 
-    // Submit query. submitQuery()
+    // Submit query.
     final Configuration configuration = jcb.build();
     final Injector injector = Tang.Factory.getTang().newInjector(configuration);
     final MISTQuery query = buildQuery();
@@ -228,6 +225,7 @@ public class DefaultGroupSourceManagerTest {
         testSink.getResults().get(testSink.getResults().size() - 1));
 
     // 2nd stage. Deactivate SRC1, input from all SRCs, and check the input.
+    // Inputs from all SRCs will ensure the activation of the deactivated SRC1.
     final DAG<ExecutionVertex, MISTEdge> dagCopy1 = copyDag(executionDag);
     queryManager.getGroupSourceManager("testGroup").deactivateBasedOnSource("query-0", "source-1");
     final DAG<ExecutionVertex, MISTEdge> expectedDag1 = deactivateSourceExpectedResult(dagCopy1, "source-1");
@@ -244,6 +242,7 @@ public class DefaultGroupSourceManagerTest {
     GraphUtils.compareTwoDag(originalDagCopy, executionDag);
 
     // 3rd stage. Deactivate SRC0 and SRC2, input from all SRCs, and check the input.
+    // Inputs from all SRCs will ensure the activation of the deactivated SRC0 and SRC2.
     final DAG<ExecutionVertex, MISTEdge> dagCopy2 = copyDag(executionDag);
     queryManager.getGroupSourceManager("testGroup").deactivateBasedOnSource("query-0", "source-0");
     queryManager.getGroupSourceManager("testGroup").deactivateBasedOnSource("query-0", "source-2");
@@ -262,6 +261,7 @@ public class DefaultGroupSourceManagerTest {
     GraphUtils.compareTwoDag(originalDagCopy, executionDag);
 
     // 4th stage. Deactivate SRC0 and SRC1, input from all SRCs, and check the input.
+    // Inputs from all SRCs will ensure the activation of the deactivated SRC0 and SRC1.
     final DAG<ExecutionVertex, MISTEdge> dagCopy3 = copyDag(executionDag);
     queryManager.getGroupSourceManager("testGroup").deactivateBasedOnSource("query-0", "source-0");
     queryManager.getGroupSourceManager("testGroup").deactivateBasedOnSource("query-0", "source-1");
@@ -305,8 +305,6 @@ public class DefaultGroupSourceManagerTest {
     }
     return opChainDagClone;
   }
-
-
 
   private Sink findSink(final DAG<ExecutionVertex, MISTEdge> dag) {
     for (final ExecutionVertex vertex : dag.getVertices()) {

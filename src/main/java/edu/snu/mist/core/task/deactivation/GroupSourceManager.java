@@ -26,11 +26,6 @@ import java.net.MalformedURLException;
  */
 @DefaultImplementation(DeactivationGroupSourceManager.class)
 public interface GroupSourceManager {
-  /**
-   * Initializes the activeExecutionVertexIdMap by inserting all current vertices in the dag.
-   * This must be done after the query is submitted.
-   */
-  void initializeActiveExecutionVertexIdMap();
 
   /**
    * Deactivates a source and the part of the physical plan that solely depends on it.

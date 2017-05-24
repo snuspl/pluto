@@ -21,7 +21,6 @@ import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.common.operators.StateHandler;
 import edu.snu.mist.common.parameters.GroupId;
-import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.stores.AvroExecutionVertexStore;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
@@ -81,7 +80,7 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
    * The key is the source name, and the value is the ExecutionVertex.
    * Becauses sources are never truly deactivated, they are not removed from this map upon deactivation.
    */
-  private final Map<String, ExecutionVertex> activeExecutionVertexIdMap;
+  private final ActiveExecutionVertexIdMap activeExecutionVertexIdMap;
 
   /**
    * Physical execution dags within the group.
@@ -105,6 +104,7 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
                                          final QueryInfoStore planStore,
                                          final AvroExecutionVertexStore avroExecutionVertexStore,
                                          final AvroConfigurationSerializer avroConfigurationSerializer,
+                                         final ActiveExecutionVertexIdMap activeExecutionVertexIdMap,
                                          final ExecutionDags executionDags,
                                          final ClassLoaderProvider classLoaderProvider) {
     this.groupId = groupId;
@@ -112,36 +112,10 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
     this.planStore = planStore;
     this.avroExecutionVertexStore = avroExecutionVertexStore;
     this.avroConfigurationSerializer = avroConfigurationSerializer;
-    this.activeExecutionVertexIdMap = new HashMap<>();
+    this.activeExecutionVertexIdMap = activeExecutionVertexIdMap;
     this.executionDags = executionDags;
     this.deactivatedSourceDagMap = new HashMap<>();
     this.classLoaderProvider = classLoaderProvider;
-  }
-
-  @Override
-  public void initializeActiveExecutionVertexIdMap() {
-    for (final DAG<ExecutionVertex, MISTEdge> executionDag : executionDags.values()) {
-      final Set<String> visitedVertexIds = new HashSet<>();
-      for (final ExecutionVertex root : executionDag.getRootVertices()) {
-        addActiveExecutionVertices(executionDag, root, visitedVertexIds);
-      }
-    }
-  }
-
-  /**
-   * The function for recursively doing DFS and adding ActiveExecutionVertices.
-   */
-  private void addActiveExecutionVertices(final DAG<ExecutionVertex, MISTEdge> dag,
-                                          final ExecutionVertex currentVertex,
-                                          final Set<String> visitedVertexIds) {
-    final String currentVertexId = currentVertex.getIdentifier();
-    if (!visitedVertexIds.contains(currentVertexId)) {
-      visitedVertexIds.add(currentVertexId);
-      activeExecutionVertexIdMap.put(currentVertexId, currentVertex);
-      for (final ExecutionVertex executionVertex : dag.getEdges(currentVertex).keySet()) {
-          addActiveExecutionVertices(dag, executionVertex, visitedVertexIds);
-      }
-    }
   }
 
   @Override
@@ -152,6 +126,7 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
       final ExecutionVertex root = tuple.getKey();
       final DAG<ExecutionVertex, MISTEdge> executionDag = tuple.getValue();
       if (!(root == null || executionDag == null)) {
+        // TODO: [MIST-771] Synchronization between source deactivation/activation and query merging
         synchronized (executionDag) {
           final Map<ExecutionVertex, MISTEdge> needWatermarkVertices = new HashMap<>();
           // Update physical plan and save the deactivated execution vertices.
@@ -204,15 +179,7 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
           case SOURCE: {
             // For the outgoingEdges of the source(to be deactivated), save the index and direction information.
             final Map<ExecutionVertex, MISTEdge> outgoingEdges = executionDag.getEdges(currentVertex);
-            final Map<String, AvroMISTEdge> avroOutgoingEdges = new HashMap<>();
-            for (final ExecutionVertex executionVertex : outgoingEdges.keySet()) {
-              final int index = outgoingEdges.get(executionVertex).getIndex();
-              final Direction direction = outgoingEdges.get(executionVertex).getDirection();
-              final AvroMISTEdge.Builder avroMISTEdgeBuilder = AvroMISTEdge.newBuilder()
-                  .setIndex(index)
-                  .setDirection(direction == Direction.LEFT ? "LEFT" : "RIGHT");
-              avroOutgoingEdges.put(executionVertex.getIdentifier(), avroMISTEdgeBuilder.build());
-            }
+            final Map<String, AvroMISTEdge> avroOutgoingEdges = convertToAvroOutgoingEdges(outgoingEdges);
             final AvroPhysicalSourceOutgoingEdgesInfo.Builder avroPhysicalSourceOutgoingEdgesInfoBuilder =
                 AvroPhysicalSourceOutgoingEdgesInfo.newBuilder()
                     .setAvroPhysicalSourceId(currentVertex.getIdentifier())
@@ -246,13 +213,7 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
             activeExecutionVertexIdMap.remove(currentVertex.getIdentifier());
             // Remove the vertex from executionDag.
             executionDag.removeVertex(currentVertex);
-            // Closes the channel of Sink.
-            final Sink sink = ((PhysicalSink) currentVertex).getSink();
-            try {
-              sink.close();
-            } catch (final Exception e) {
-              e.printStackTrace();
-            }
+            // TODO: [MIST-459] Policy of Sink closing. Currently, the sink is left open.
             break;
           }
           default: {
@@ -279,6 +240,25 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
   }
 
   /**
+   * Converts a map of outgoing edges to a map of Avro OutgoingEdges.
+   * @param outgoingEdges
+   * @return
+   */
+  private Map<String, AvroMISTEdge> convertToAvroOutgoingEdges(final Map<ExecutionVertex, MISTEdge> outgoingEdges) {
+    final Map<String, AvroMISTEdge> avroOutgoingEdges = new HashMap<>();
+    for (final Map.Entry<ExecutionVertex, MISTEdge> entry : outgoingEdges.entrySet()) {
+      final MISTEdge edge = entry.getValue();
+      final int index = edge.getIndex();
+      final Direction direction = edge.getDirection();
+      final AvroMISTEdge.Builder avroMISTEdgeBuilder = AvroMISTEdge.newBuilder()
+          .setIndex(index)
+          .setDirection(direction == Direction.LEFT ? "LEFT" : "RIGHT");
+      avroOutgoingEdges.put(entry.getKey().getIdentifier(), avroMISTEdgeBuilder.build());
+    }
+    return avroOutgoingEdges;
+  }
+
+  /**
    * Return a serialized AvroPhysicalOperatorChain from a operatorChain.
    * @param operatorChain
    * @param outgoingEdges
@@ -297,15 +277,8 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
           .setConfigurations(physicalOperator.getConfiguration());
       avroOperatorDataList.add(avroPhysicalOperatorDataBuilder.build());
     }
-    final Map<String, AvroMISTEdge> avroOutgoingEdges = new HashMap<>();
-    for (final Map.Entry<ExecutionVertex, MISTEdge> entry : outgoingEdges.entrySet()) {
-      final int index = entry.getValue().getIndex();
-      final Direction direction = entry.getValue().getDirection();
-      final AvroMISTEdge.Builder avroMISTEdgeBuilder = AvroMISTEdge.newBuilder()
-          .setIndex(index)
-          .setDirection(direction == Direction.LEFT ? "LEFT" : "RIGHT");
-      avroOutgoingEdges.put(entry.getKey().getIdentifier(), avroMISTEdgeBuilder.build());
-    }
+
+    final Map<String, AvroMISTEdge> avroOutgoingEdges = convertToAvroOutgoingEdges(outgoingEdges);
     avroPhysicalOperatorChainBuilder
         .setAvroPhysicalOperatorChainId(operatorChain.getIdentifier())
         .setAvroPhysicalOperatorDataList(avroOperatorDataList)
@@ -339,12 +312,13 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
         if (executionDag == null) {
           LOG.log(Level.INFO, "Source is already activated");
         } else {
+          // TODO: [MIST-771] Synchronization between source deactivation/activation and query merging
           synchronized (executionDag) {
             dfsAndLoadExecutionVertices(urlsAndClassLoader, executionDag, sourceId);
           }
         }
       }
-    } catch (Exception e) {
+    } catch (final Exception e) {
       e.printStackTrace();
     }
   }
@@ -357,8 +331,12 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
    */
   private Tuple<URL[], ClassLoader> getURLsAndClassLoader(final String queryId)
       throws IOException {
-    final URL[] urls = SerializeUtils.getJarFileURLs(planStore.load(queryId).getJarFilePaths());
-    return new Tuple<>(urls, classLoaderProvider.newInstance(urls));
+    if (planStore.isStored(queryId)) {
+      final URL[] urls = SerializeUtils.getJarFileURLs(planStore.load(queryId).getJarFilePaths());
+      return new Tuple<>(urls, classLoaderProvider.newInstance(urls));
+    } else {
+      throw new RuntimeException("The plan for the query was not found in plan store.");
+    }
   }
 
   /**
@@ -371,16 +349,16 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
                                            final DAG<ExecutionVertex, MISTEdge> executionDag,
                                            final String currentVertexIdToActivate)
       throws IOException, InjectionException, ClassNotFoundException, InterruptedException {
-    // If the current ExecutionVertex is an inactive ExecutionVertex
-    if (currentVertexIdToActivate.startsWith("source") ||
-        !activeExecutionVertexIdMap.containsKey(currentVertexIdToActivate)) {
-      // Get the outgoingEdgeMap holds the edges' indexes and directions for each edge connected to executionVertex.
-      final Map<String, AvroMISTEdge> outgoingEdgeMap;
-      if (currentVertexIdToActivate.startsWith("source")) {
-        final AvroPhysicalSourceOutgoingEdgesInfo avroPhysicalSourceOutgoingEdgesInfo =
-            avroExecutionVertexStore.loadAvroPhysicalSourceOutgoingEdgesInfo(currentVertexIdToActivate);
-        outgoingEdgeMap = avroPhysicalSourceOutgoingEdgesInfo.getOutgoingEdges();
-      } else if (currentVertexIdToActivate.startsWith("opChain")) {
+    // The outgoingEdgeMap holds the edges' indexes and directions for each edge connected to executionVertex.
+    final Map<String, AvroMISTEdge> outgoingEdgeMap;
+    // If the current ExecutionVertex is an inactive source
+    if (currentVertexIdToActivate.startsWith("source")) {
+      final AvroPhysicalSourceOutgoingEdgesInfo avroPhysicalSourceOutgoingEdgesInfo =
+          avroExecutionVertexStore.loadAvroPhysicalSourceOutgoingEdgesInfo(currentVertexIdToActivate);
+      outgoingEdgeMap = avroPhysicalSourceOutgoingEdgesInfo.getOutgoingEdges();
+    } else if (!activeExecutionVertexIdMap.containsKey(currentVertexIdToActivate)) {
+      // If the current ExecutionVertex is an inactive operator chain
+      if (currentVertexIdToActivate.startsWith("opChain")) {
         final AvroPhysicalOperatorChain avroPhysicalOperatorChain =
             avroExecutionVertexStore.loadAvroPhysicalOperatorChain(currentVertexIdToActivate);
         outgoingEdgeMap = avroPhysicalOperatorChain.getOutgoingEdges();
@@ -388,92 +366,95 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
         // TODO: [MIST-459] Currently, this part means sink, and it should not be reached.
         outgoingEdgeMap = new HashMap<>();
       }
+    } else {
+      // If the current vertex is active, do nothing.
+      return;
+    }
 
-      // Set up nextOps, which holds the vertices and edges that the current executionVertex(to activate) points to.
-      final Map<ExecutionVertex, MISTEdge> nextOps = new HashMap<>();
-      for (final Map.Entry<String, AvroMISTEdge> entry : outgoingEdgeMap.entrySet()) {
-        final String nextVertexId = entry.getKey();
-        dfsAndLoadExecutionVertices(urlsAndClassLoader, executionDag, nextVertexId);
-        final AvroMISTEdge avroMISTEdge = entry.getValue();
-        final MISTEdge mistEdge = new MISTEdge(
-            avroMISTEdge.getDirection().equals("LEFT") ? Direction.LEFT : Direction.RIGHT, avroMISTEdge.getIndex());
-        nextOps.put(activeExecutionVertexIdMap.get(nextVertexId), mistEdge);
+    // Set up nextOps, which holds the vertices and edges that the current executionVertex(to activate) points to.
+    final Map<ExecutionVertex, MISTEdge> nextOps = new HashMap<>();
+    for (final Map.Entry<String, AvroMISTEdge> entry : outgoingEdgeMap.entrySet()) {
+      final String nextVertexId = entry.getKey();
+      dfsAndLoadExecutionVertices(urlsAndClassLoader, executionDag, nextVertexId);
+      final AvroMISTEdge avroMISTEdge = entry.getValue();
+      final MISTEdge mistEdge = new MISTEdge(
+          avroMISTEdge.getDirection().equals("LEFT") ? Direction.LEFT : Direction.RIGHT, avroMISTEdge.getIndex());
+      nextOps.put(activeExecutionVertexIdMap.get(nextVertexId), mistEdge);
+    }
+
+    // Bring back the ExecutionVertex into the executionDag.
+    final ExecutionVertex revivedExecutionVertex;
+    if (currentVertexIdToActivate.startsWith("source")) {
+      // If the current vertex is a source, just get if from the activeExecutionVertexIdMap.
+      revivedExecutionVertex = activeExecutionVertexIdMap.get(currentVertexIdToActivate);
+    } else if (currentVertexIdToActivate.startsWith("opChain")) {
+      // If the current vertex is an operator chain, it must be revived from the avroExecutionVertexStore.
+      revivedExecutionVertex = new DefaultOperatorChainImpl(currentVertexIdToActivate);
+      ((OperatorChain) revivedExecutionVertex).setOperatorChainManager(operatorChainManager);
+      final AvroPhysicalOperatorChain avroPhysicalOperatorChain =
+          avroExecutionVertexStore.loadAvroPhysicalOperatorChain(currentVertexIdToActivate);
+      for (final AvroPhysicalOperatorData avroPhysicalOperatorData :
+          avroPhysicalOperatorChain.getAvroPhysicalOperatorDataList()) {
+        final Configuration conf = avroConfigurationSerializer.fromString(
+            avroPhysicalOperatorData.getConfigurations(), new ClassHierarchyImpl(urlsAndClassLoader.getKey()));
+        // Create operator from conf and classloader.
+        final ClassLoader classLoader = urlsAndClassLoader.getValue();
+        final Injector injector = Tang.Factory.getTang().newInjector(conf);
+        injector.bindVolatileInstance(ClassLoader.class, classLoader);
+        final Operator operator = injector.getInstance(Operator.class);
+        // Create the physicalOperator and set the state.
+        final PhysicalOperator physicalOperator = new DefaultPhysicalOperatorImpl(avroPhysicalOperatorData.getId(),
+            avroPhysicalOperatorData.getConfigurations(), operator, (OperatorChain) revivedExecutionVertex);
+        setPhysicalOperatorState(physicalOperator, avroPhysicalOperatorData.getAvroPhysicalOperatorState());
+        // Add the operator to the OperatorChain.
+        ((OperatorChain) revivedExecutionVertex).insertToTail(physicalOperator);
       }
+    } else if (currentVertexIdToActivate.startsWith("sink")) {
+      // The corresponding sink is already closed, and cannot be reopened as of now.
+      // TODO: [MIST-459] Policy of Sink closing
+      revivedExecutionVertex = null;
+      LOG.log(Level.INFO, "Sink is already closed.");
+    } else {
+      throw new RuntimeException("A wrong id for the ExecutionVertex. It is: " + currentVertexIdToActivate);
+    }
 
-      // Bring back the ExecutionVertex into the executionDag.
-      final ExecutionVertex revivedExecutionVertex;
-      if (currentVertexIdToActivate.startsWith("source")) {
-        // If the current vertex is a source, just get if from the activeExecutionVertexIdMap.
-        revivedExecutionVertex = activeExecutionVertexIdMap.get(currentVertexIdToActivate);
-      } else if (currentVertexIdToActivate.startsWith("opChain")) {
-        // If the current vertex is an operator chain, it must be revived from the avroExecutionVertexStore.
-        revivedExecutionVertex = new DefaultOperatorChainImpl(currentVertexIdToActivate);
-        ((OperatorChain) revivedExecutionVertex).setOperatorChainManager(operatorChainManager);
-        final AvroPhysicalOperatorChain avroPhysicalOperatorChain =
-            avroExecutionVertexStore.loadAvroPhysicalOperatorChain(currentVertexIdToActivate);
-        for (final AvroPhysicalOperatorData avroPhysicalOperatorData :
-            avroPhysicalOperatorChain.getAvroPhysicalOperatorDataList()) {
-          final Configuration conf = avroConfigurationSerializer.fromString(
-              avroPhysicalOperatorData.getConfigurations(), new ClassHierarchyImpl(urlsAndClassLoader.getKey()));
-          // Create operator from conf and classloader.
-          final ClassLoader classLoader = urlsAndClassLoader.getValue();
-          final Injector injector = Tang.Factory.getTang().newInjector(conf);
-          injector.bindVolatileInstance(ClassLoader.class, classLoader);
-          final Operator operator = injector.getInstance(Operator.class);
-          // Create the physicalOperator and set the state.
-          final PhysicalOperator physicalOperator = new DefaultPhysicalOperatorImpl(avroPhysicalOperatorData.getId(),
-              avroPhysicalOperatorData.getConfigurations(), operator, (OperatorChain) revivedExecutionVertex);
-          setPhysicalOperatorState(physicalOperator, avroPhysicalOperatorData.getAvroPhysicalOperatorState());
-          // Add the operator to the OperatorChain.
-          ((OperatorChain) revivedExecutionVertex).insertToTail(physicalOperator);
+    // Setting the output emitter for the revived Execution Vertex
+    switch (revivedExecutionVertex.getType()) {
+      case SOURCE: {
+        final PhysicalSource source = (PhysicalSource) revivedExecutionVertex;
+        // Set output emitter
+        source.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
+        // Add vertex and edges to executionDag
+        executionDag.addVertex(revivedExecutionVertex);
+        for (final ExecutionVertex adjacentVertex : nextOps.keySet()) {
+          executionDag.addVertex(adjacentVertex);
+          executionDag.addEdge(revivedExecutionVertex, adjacentVertex, nextOps.get(adjacentVertex));
         }
-      } else if (currentVertexIdToActivate.startsWith("sink")) {
-        // The corresponding sink is already closed, and cannot be reopened as of now.
+        LOG.log(Level.INFO, revivedExecutionVertex.getIdentifier() + " has been activated.");
+        activeExecutionVertexIdMap.put(currentVertexIdToActivate, revivedExecutionVertex);
+        break;
+      }
+      case OPERATOR_CHAIN: {
+        final OperatorChain operatorChain = (OperatorChain) revivedExecutionVertex;
+        operatorChainManager.insert(operatorChain);
+        // Set output emitter
+        operatorChain.setOutputEmitter(new OperatorOutputEmitter(nextOps));
+        // Add vertex and edges to executionDag.
+        executionDag.addVertex(revivedExecutionVertex);
+        for (final ExecutionVertex adjacentVertex : nextOps.keySet()) {
+          executionDag.addVertex(adjacentVertex);
+          executionDag.addEdge(revivedExecutionVertex, adjacentVertex, nextOps.get(adjacentVertex));
+        }
+        LOG.log(Level.INFO, revivedExecutionVertex.getIdentifier() + " has been activated.");
+        activeExecutionVertexIdMap.put(currentVertexIdToActivate, revivedExecutionVertex);
+        break;
+      }
+      case SINK: {
         // TODO: [MIST-459] Policy of Sink closing
-        revivedExecutionVertex = null;
-        LOG.log(Level.INFO, "Sink is already closed.");
-      } else {
-        throw new RuntimeException("A wrong id for the ExecutionVertex. It is: " + currentVertexIdToActivate);
+        break;
       }
-
-      // Setting the output emitter for the revived Execution Vertex
-      switch (revivedExecutionVertex.getType()) {
-        case SOURCE: {
-          final PhysicalSource source = (PhysicalSource) revivedExecutionVertex;
-          // Set output emitter
-          source.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
-          // Add vertex and edges to executionDag
-          executionDag.addVertex(revivedExecutionVertex);
-          for (final ExecutionVertex adjacentVertex : nextOps.keySet()) {
-            executionDag.addVertex(adjacentVertex);
-            executionDag.addEdge(revivedExecutionVertex, adjacentVertex, nextOps.get(adjacentVertex));
-          }
-          LOG.log(Level.INFO, revivedExecutionVertex.getIdentifier() + " has been activated.");
-          activeExecutionVertexIdMap.put(currentVertexIdToActivate, revivedExecutionVertex);
-          break;
-        }
-        case OPERATOR_CHAIN: {
-          final OperatorChain operatorChain = (OperatorChain) revivedExecutionVertex;
-          operatorChainManager.insert(operatorChain);
-          // Set output emitter
-          operatorChain.setOutputEmitter(new OperatorOutputEmitter(nextOps));
-          // Add vertex and edges to executionDag.
-          executionDag.addVertex(revivedExecutionVertex);
-          for (final ExecutionVertex adjacentVertex : nextOps.keySet()) {
-            executionDag.addVertex(adjacentVertex);
-            executionDag.addEdge(revivedExecutionVertex, adjacentVertex, nextOps.get(adjacentVertex));
-          }
-          LOG.log(Level.INFO, revivedExecutionVertex.getIdentifier() + " has been activated.");
-          activeExecutionVertexIdMap.put(currentVertexIdToActivate, revivedExecutionVertex);
-          break;
-        }
-        case SINK: {
-          // TODO: [MIST-459] Policy of Sink closing
-          break;
-        }
-        default: {
-          throw new RuntimeException("Invalid vertex type: " + revivedExecutionVertex.getType());
-        }
+      default: {
+        throw new RuntimeException("Invalid vertex type: " + revivedExecutionVertex.getType());
       }
     }
   }
