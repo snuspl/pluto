@@ -19,19 +19,20 @@ import edu.snu.mist.common.graph.AdjacentListDAG;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.UnionOperator;
-import edu.snu.mist.common.sinks.Sink;
-import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;
 import edu.snu.mist.common.sources.PeriodicEventGenerator;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.utils.TestDataGenerator;
+import edu.snu.mist.core.task.utils.TestWithCountDownSink;
 import edu.snu.mist.formats.avro.Direction;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Test class for DeactivatedSourceOutputEmitter.
@@ -77,11 +78,9 @@ public class DeactivatedSourceOutputEmitterTest {
 
     // Create sources.
     final TestDataGenerator dataGenerator1 = new TestDataGenerator(inputs);
-    final EventGenerator eventGenerator1 = new PeriodicEventGenerator(null, period, period,
-        TimeUnit.MILLISECONDS, scheduler);
+    final EventGenerator eventGenerator1 = new PeriodicEventGenerator(period, period, TimeUnit.MILLISECONDS, scheduler);
     final TestDataGenerator dataGenerator2 = new TestDataGenerator(new ArrayList(0));
-    final EventGenerator eventGenerator2 = new PeriodicEventGenerator(null, period, period,
-        TimeUnit.MILLISECONDS, scheduler);
+    final EventGenerator eventGenerator2 = new PeriodicEventGenerator(period, period, TimeUnit.MILLISECONDS, scheduler);
     final PhysicalSource src1 = new PhysicalSourceImpl("testSource-1", "conf-1", dataGenerator1, eventGenerator1);
     final PhysicalSource src2 = new PhysicalSourceImpl("testSource-2", "conf-2", dataGenerator2, eventGenerator2);
 
@@ -104,7 +103,7 @@ public class DeactivatedSourceOutputEmitterTest {
     // Create sink.
     final List<String> sinkResult = new LinkedList<>();
     final PhysicalSink sink1 = new PhysicalSinkImpl<>("sink1",
-        null, new TestSink<>(sinkResult, countDownAllOutputs));
+        null, new TestWithCountDownSink<>(sinkResult, countDownAllOutputs));
 
     // Construct execution dag.
     final DAG<ExecutionVertex, MISTEdge> dag = constructExecutionDag(src1, chain, sink1);
@@ -133,104 +132,5 @@ public class DeactivatedSourceOutputEmitterTest {
     src1.close();
     src2.close();
     thread.interrupt();
-  }
-
-  /**
-   * Test source generator which generates inputs from List.
-   */
-  final class TestDataGenerator<String> implements DataGenerator<String> {
-
-    private final AtomicBoolean closed;
-    private final AtomicBoolean started;
-    private final ExecutorService executorService;
-    private final long sleepTime;
-    private EventGenerator eventGenerator;
-    private final Iterator<String> inputs;
-
-    /**
-     * Generates input data from List and count down the number of input data.
-     */
-    TestDataGenerator(final List<String> inputs) {
-      this.executorService = Executors.newSingleThreadExecutor();
-      this.closed = new AtomicBoolean(false);
-      this.started = new AtomicBoolean(false);
-      this.sleepTime = 1000L;
-      this.inputs = inputs.iterator();
-    }
-
-    @Override
-    public void start() {
-      if (started.compareAndSet(false, true)) {
-        executorService.submit(() -> {
-          while (!closed.get()) {
-            try {
-              // fetch an input
-              final String input = nextInput();
-              if (eventGenerator == null) {
-                throw new RuntimeException("EventGenerator should be set in " +
-                    TestDataGenerator.class.getName());
-              }
-              if (input == null) {
-                Thread.sleep(sleepTime);
-              } else {
-                eventGenerator.emitData(input);
-              }
-            } catch (final IOException e) {
-              e.printStackTrace();
-              throw new RuntimeException(e);
-            } catch (final InterruptedException e) {
-              e.printStackTrace();
-            }
-          }
-        });
-      }
-    }
-
-    public String nextInput() throws IOException {
-      if (inputs.hasNext()) {
-        final String input = inputs.next();
-        return input;
-      } else {
-        return null;
-      }
-    }
-
-    @Override
-    public void close() throws Exception {
-      if (closed.compareAndSet(false, true)) {
-        executorService.shutdown();
-      }
-    }
-
-    @Override
-    public void setEventGenerator(final EventGenerator eventGenerator) {
-      this.eventGenerator = eventGenerator;
-    }
-  }
-
-  /**
-   * Test sink.
-   * It receives inputs, adds them to list, and countdown.
-   */
-  final class TestSink<I> implements Sink<I> {
-    private final List<I> result;
-    private final CountDownLatch countDownLatch;
-
-    TestSink(final List<I> result,
-             final CountDownLatch countDownLatch) {
-      this.result = result;
-      this.countDownLatch = countDownLatch;
-    }
-
-    @Override
-    public void close() throws Exception {
-      // do nothing
-    }
-
-    @Override
-    public void handle(final I input) {
-      result.add(input);
-      countDownLatch.countDown();
-    }
   }
 }
