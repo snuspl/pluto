@@ -76,6 +76,11 @@ public abstract class EventGeneratorImpl<I, V> implements EventGenerator<I> {
     }
   }
 
+  @Override
+  public OutputEmitter getOutputEmitter() {
+    return outputEmitter;
+  }
+
   /**
    * If there is any remainder to do during start in downstream class, conduct it.
    */

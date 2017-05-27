@@ -191,6 +191,11 @@ public final class MQTTSourceTest {
     }
 
     @Override
+    public OutputEmitter getOutputEmitter() {
+      return null;
+    }
+
+    @Override
     public void close() {
       // do nothing
     }

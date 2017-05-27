@@ -15,10 +15,8 @@
  */
 package edu.snu.mist.core.task.globalsched;
 
-import edu.snu.mist.core.task.ExecutionDags;
-import edu.snu.mist.core.task.OperatorChainManager;
-import edu.snu.mist.core.task.QueryRemover;
-import edu.snu.mist.core.task.QueryStarter;
+import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.metrics.GroupMetrics;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
@@ -96,4 +94,9 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
    * @param vruntime vruntime
    */
   void setVRuntime(double vruntime);
+
+  /**
+   * Get the GroupSourceManager.
+   */
+  GroupSourceManager getGroupSourceManager();
 }

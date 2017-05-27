@@ -1,0 +1,110 @@
+/*
+ * Copyright (C) 2017 Seoul National University
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * This schema defines the operations with the execution vertices.
+ */
+[
+  {
+    "namespace": "edu.snu.mist.formats.avro",
+    "type": "record",
+    "name": "AvroMISTEdge",
+    "fields":
+    [
+      {
+        "name": "Index",
+        "type": "int"
+      },
+      {
+        "name": "Direction",
+        "type": "string"
+      }
+    ]
+  },
+  {
+    "namespace": "edu.snu.mist.formats.avro",
+    "type": "record",
+    "name": "AvroPhysicalOperatorChain",
+    "fields":
+    [
+      {
+        "name": "AvroPhysicalOperatorChainId",
+        "type": "string"
+      },
+      {
+        "name": "AvroPhysicalOperatorDataList",
+        "type":
+        {
+          "type": "array",
+          "items":
+          {
+            "name": "AvroPhysicalOperatorData",
+            "type": "record",
+            "fields":
+            [
+              {
+                "name": "Id",
+                "type": "string"
+              },
+              {
+                "name": "Configurations",
+                "type": "string"
+              },
+              {
+                "name": "AvroPhysicalOperatorState",
+                "type":
+                {
+                  "type": "map",
+                  "values":
+                  [
+                    "boolean", "int", "long", "float", "double", "string", "bytes"
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "OutgoingEdges",
+        "type":
+        {
+          "type": "map",
+          "values": "AvroMISTEdge"
+        }
+      }
+    ]
+  },
+  {
+   "namespace": "edu.snu.mist.formats.avro",
+   "type": "record",
+   "name": "AvroPhysicalSourceOutgoingEdgesInfo",
+   "fields":
+   [
+     {
+       "name": "AvroPhysicalSourceId",
+       "type": "string"
+     },
+     {
+       "name": "OutgoingEdges",
+       "type":
+       {
+         "type": "map",
+         "values": "AvroMISTEdge"
+       }
+     }
+   ]
+  }
+]

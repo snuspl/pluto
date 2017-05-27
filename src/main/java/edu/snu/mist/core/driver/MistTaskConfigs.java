@@ -17,6 +17,7 @@ package edu.snu.mist.core.driver;
 
 import edu.snu.mist.common.rpc.AvroRPCNettyServerWrapper;
 import edu.snu.mist.common.rpc.RPCServerPort;
+import edu.snu.mist.core.driver.parameters.DeactivationEnabled;
 import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.parameters.NumPeriodicSchedulerThreads;
@@ -73,6 +74,11 @@ public final class MistTaskConfigs {
   private final boolean mergingEnabled;
 
   /**
+   * Enabling the deactivation of queries in Mist task.
+   */
+  private final boolean deactivationEnabled;
+
+  /**
    * The execution model of Mist.
    */
   private final int executionModelOption;
@@ -103,6 +109,7 @@ public final class MistTaskConfigs {
                           @Parameter(TempFolderPath.class) final String tempFolderPath,
                           @Parameter(NumPeriodicSchedulerThreads.class) final int numSchedulerThreads,
                           @Parameter(MergingEnabled.class) final boolean mergingEnabled,
+                          @Parameter(DeactivationEnabled.class) final boolean deactivationEnabled,
                           @Parameter(ExecutionModelOption.class) final int executionModelOption,
                           @Parameter(EventProcessorLowerBound.class) final int eventProcessorLowerBound,
                           @Parameter(EventProcessorUpperBound.class) final int eventProcessorUpperBound,
@@ -113,6 +120,7 @@ public final class MistTaskConfigs {
     this.rpcServerPort = rpcServerPort + 10 > MAX_PORT_NUM ? rpcServerPort - 10 : rpcServerPort + 10;
     this.numSchedulerThreads = numSchedulerThreads;
     this.mergingEnabled = mergingEnabled;
+    this.deactivationEnabled = deactivationEnabled;
     this.eventProcessorUpperBound = eventProcessorUpperBound;
     this.eventProcessorLowerBound = eventProcessorLowerBound;
     this.executionModelOption = executionModelOption;
@@ -169,6 +177,7 @@ public final class MistTaskConfigs {
     jcb.bindNamedParameter(NumPeriodicSchedulerThreads.class, Integer.toString(numSchedulerThreads));
     jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
     jcb.bindNamedParameter(MergingEnabled.class, Boolean.toString(mergingEnabled));
+    jcb.bindNamedParameter(DeactivationEnabled.class, Boolean.toString(deactivationEnabled));
     jcb.bindNamedParameter(EventProcessorLowerBound.class, Integer.toString(eventProcessorLowerBound));
     jcb.bindNamedParameter(EventProcessorUpperBound.class, Integer.toString(eventProcessorUpperBound));
     jcb.bindNamedParameter(GracePeriod.class, Integer.toString(gracePeriod));
@@ -191,6 +200,7 @@ public final class MistTaskConfigs {
         .registerShortNameOfClass(TempFolderPath.class)
         .registerShortNameOfClass(NumPeriodicSchedulerThreads.class)
         .registerShortNameOfClass(MergingEnabled.class)
+        .registerShortNameOfClass(DeactivationEnabled.class)
         .registerShortNameOfClass(EventProcessorLowerBound.class)
         .registerShortNameOfClass(EventProcessorUpperBound.class)
         .registerShortNameOfClass(ExecutionModelOption.class)
