@@ -49,9 +49,11 @@ public final class GraphUtils {
   private static <V, I> void dfsCopy(final DAG<V, I> srcDAG, final V src, final DAG<V, I> destDAG) {
     final Map<V, I> edges = srcDAG.getEdges(src);
     for (final Map.Entry<V, I> edge : edges.entrySet()) {
-      if (destDAG.addVertex(edge.getKey())) {
-        destDAG.addEdge(src, edge.getKey(), edge.getValue());
-        dfsCopy(srcDAG, edge.getKey(), destDAG);
+      final V nextVertex = edge.getKey();
+      final boolean hasVertex = destDAG.addVertex(nextVertex);
+      destDAG.addEdge(src, nextVertex, edge.getValue());
+      if (hasVertex) {
+        dfsCopy(srcDAG, nextVertex, destDAG);
       }
     }
   }
