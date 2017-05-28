@@ -50,9 +50,9 @@ public final class GraphUtils {
     final Map<V, I> edges = srcDAG.getEdges(src);
     for (final Map.Entry<V, I> edge : edges.entrySet()) {
       final V nextVertex = edge.getKey();
-      final boolean hasVertex = destDAG.addVertex(nextVertex);
+      final boolean newVertexAdded = destDAG.addVertex(nextVertex);
       destDAG.addEdge(src, nextVertex, edge.getValue());
-      if (hasVertex) {
+      if (newVertexAdded) {
         dfsCopy(srcDAG, nextVertex, destDAG);
       }
     }
