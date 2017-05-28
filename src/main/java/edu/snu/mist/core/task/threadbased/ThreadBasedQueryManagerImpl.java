@@ -19,6 +19,7 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
@@ -231,5 +232,11 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
     queryControlResult.setIsSuccess(true);
     queryControlResult.setMsg(ResultMessage.deleteSuccess(queryId));
     return queryControlResult;
+  }
+
+  @Override
+  public GroupSourceManager getGroupSourceManager(final String groupId) {
+    // This method should not be used in option 3.
+    throw new RuntimeException("getGroupSourceManager should not be used in option 3.");
   }
 }

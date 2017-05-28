@@ -16,10 +16,8 @@
 package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.common.parameters.GroupId;
-import edu.snu.mist.core.task.ExecutionDags;
-import edu.snu.mist.core.task.OperatorChainManager;
-import edu.snu.mist.core.task.QueryRemover;
-import edu.snu.mist.core.task.QueryStarter;
+import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.metrics.GroupMetrics;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -79,9 +77,15 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   private final GroupMetrics metricHolder;
 
   /**
-   * Assigned value whether this group is assiged to an event processor or not.
+<<<<<<< HEAD
+   * Assigned value whether this group is assigned to an event processor or not.
    */
   private final AtomicBoolean assigned = new AtomicBoolean(false);
+
+  /**
+   * GroupSourceManager for this group.
+   */
+  private final GroupSourceManager groupSourceManager;
 
   @Inject
   private DefaultGlobalSchedGroupInfo(@Parameter(GroupId.class) final String groupId,
@@ -89,7 +93,8 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
                                       final QueryStarter queryStarter,
                                       final OperatorChainManager operatorChainManager,
                                       final QueryRemover queryRemover,
-                                      final GroupMetrics metricHolder) {
+                                      final GroupMetrics metricHolder,
+                                      final GroupSourceManager groupSourceManager) {
     this.groupId = groupId;
     this.queryIdList = new ArrayList<>();
     this.executionDags = executionDags;
@@ -99,6 +104,7 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
     this.latestScheduledTime = 0;
     this.vruntime = 0;
     this.metricHolder = metricHolder;
+    this.groupSourceManager = groupSourceManager;
   }
 
   /**
@@ -192,6 +198,11 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   @Override
   public void setAssigned(final boolean value) {
     assigned.set(value);
+  }
+
+  @Override
+  public GroupSourceManager getGroupSourceManager() {
+    return groupSourceManager;
   }
 
   @Override

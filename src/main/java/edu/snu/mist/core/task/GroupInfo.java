@@ -16,6 +16,7 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.metrics.GroupMetrics;
 import org.apache.reef.tang.annotations.Parameter;
@@ -69,6 +70,11 @@ public final class GroupInfo implements AutoCloseable {
    */
   private final GroupMetrics metricHolder;
 
+  /**
+   * GroupSourceManager for this group.
+   */
+  private final GroupSourceManager groupSourceManager;
+
   @Inject
   private GroupInfo(@Parameter(GroupId.class) final String groupId,
                     final ExecutionDags executionDags,
@@ -76,7 +82,8 @@ public final class GroupInfo implements AutoCloseable {
                     final QueryStarter queryStarter,
                     final OperatorChainManager operatorChainManager,
                     final QueryRemover queryRemover,
-                    final GroupMetrics metricHolder) {
+                    final GroupMetrics metricHolder,
+                    final GroupSourceManager groupSourceManager) {
     this.groupId = groupId;
     this.queryIdList = new ArrayList<>();
     this.executionDags = executionDags;
@@ -85,6 +92,7 @@ public final class GroupInfo implements AutoCloseable {
     this.operatorChainManager = operatorChainManager;
     this.queryRemover = queryRemover;
     this.metricHolder = metricHolder;
+    this.groupSourceManager = groupSourceManager;
   }
 
   /**
@@ -139,6 +147,13 @@ public final class GroupInfo implements AutoCloseable {
    */
   public QueryRemover getQueryRemover() {
     return queryRemover;
+  }
+
+  /**
+   * Get the GroupSourceManager.
+   */
+  public GroupSourceManager getGroupSourceManager() {
+    return groupSourceManager;
   }
 
   @Override

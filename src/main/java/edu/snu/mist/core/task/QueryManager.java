@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
+import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
@@ -49,4 +50,10 @@ public interface QueryManager extends AutoCloseable {
    * @return Returns the result message of deletion.
    */
   QueryControlResult delete(String groupId, String queryId);
+
+  /**
+   * Get the GroupSourceManager.
+   * @param groupId group id
+   */
+  GroupSourceManager getGroupSourceManager(String groupId);
 }

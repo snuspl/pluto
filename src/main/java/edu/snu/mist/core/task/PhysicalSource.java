@@ -16,6 +16,7 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.OutputEmittable;
+import edu.snu.mist.common.sources.EventGenerator;
 
 /**
  * Source receives input stream.
@@ -31,4 +32,9 @@ public interface PhysicalSource extends AutoCloseable, OutputEmittable, Physical
    * Starts to receive source stream and forwards inputs to the OutputEmitter.
    */
   void start();
+
+  /**
+   * Gets the current EventGenerator.
+   */
+  EventGenerator getEventGenerator();
 }

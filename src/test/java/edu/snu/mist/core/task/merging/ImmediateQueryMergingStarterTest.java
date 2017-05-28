@@ -23,6 +23,7 @@ import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.FilterOperator;
 import edu.snu.mist.common.sinks.Sink;
+import edu.snu.mist.common.sources.EventGenerator;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.utils.IdAndConfGenerator;
 import edu.snu.mist.formats.avro.Direction;
@@ -613,6 +614,11 @@ public final class ImmediateQueryMergingStarterTest {
     @Override
     public void start() {
       // do nothing
+    }
+
+    @Override
+    public EventGenerator getEventGenerator() {
+      return null;
     }
 
     /**

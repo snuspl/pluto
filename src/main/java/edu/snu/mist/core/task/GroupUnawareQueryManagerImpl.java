@@ -19,12 +19,16 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
+import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
 import edu.snu.mist.core.task.merging.MergeAwareQueryRemover;
 import edu.snu.mist.core.task.merging.MergingExecutionDags;
-import edu.snu.mist.core.task.metrics.*;
-import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
+import edu.snu.mist.core.task.metrics.EventNumMetricEventHandler;
+import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
+import edu.snu.mist.core.task.metrics.MemoryUsageMetricEventHandler;
+import edu.snu.mist.core.task.metrics.MetricTracker;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
@@ -166,6 +170,7 @@ public final class GroupUnawareQueryManagerImpl implements QueryManager {
         }
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
         injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
+        injector.bindVolatileInstance(QueryInfoStore.class, planStore);
         groupInfoMap.putIfAbsent(groupId, injector.getInstance(GroupInfo.class));
       }
       // Add the query into the group
@@ -240,5 +245,10 @@ public final class GroupUnawareQueryManagerImpl implements QueryManager {
     queryControlResult.setIsSuccess(true);
     queryControlResult.setMsg(ResultMessage.deleteSuccess(queryId));
     return queryControlResult;
+  }
+
+  @Override
+  public GroupSourceManager getGroupSourceManager(final String groupId) {
+    return groupInfoMap.get(groupId).getGroupSourceManager();
   }
 }

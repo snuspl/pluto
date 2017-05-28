@@ -18,8 +18,12 @@ package edu.snu.mist.core.task.globalsched;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.core.driver.parameters.DeactivationEnabled;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.deactivation.DeactivationGroupSourceManager;
+import edu.snu.mist.core.task.deactivation.GroupSourceManager;
+import edu.snu.mist.core.task.deactivation.NoDeactivationGroupSourceManager;
 import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.globalsched.dispatch.GroupDispatcher;
@@ -94,6 +98,11 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   private final boolean mergingEnabled;
 
   /**
+   * Deactivation enabled or not.
+   */
+  private final boolean deactivationEnabled;
+
+  /**
    * Event processor manager.
    */
   private final EventProcessorManager eventProcessorManager;
@@ -129,6 +138,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 final MistPubSubEventHandler pubSubEventHandler,
                                                 final EventProcessorManager eventProcessorManager,
                                                 @Parameter(MergingEnabled.class) final boolean mergingEnabled,
+                                                @Parameter(DeactivationEnabled.class) final boolean deactivateEnabled,
                                                 final MetricTracker metricTracker,
                                                 final ConfigDagGenerator configDagGenerator,
                                                 final EventNumAndWeightMetricEventHandler eventNumHandler,
@@ -146,6 +156,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     this.metricTracker = metricTracker;
     this.pubSubEventHandler = pubSubEventHandler;
     this.mergingEnabled = mergingEnabled;
+    this.deactivationEnabled = deactivateEnabled;
     this.eventProcessorManager = eventProcessorManager;
     this.configDagGenerator = configDagGenerator;
     this.batchQueryCreator = batchQueryCreator;
@@ -200,6 +211,12 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
           jcb.bindImplementation(ExecutionDags.class, NoMergingExecutionDags.class);
         }
 
+        if (deactivationEnabled) {
+          jcb.bindImplementation(GroupSourceManager.class, DeactivationGroupSourceManager.class);
+        } else {
+          jcb.bindImplementation(GroupSourceManager.class, NoDeactivationGroupSourceManager.class);
+        }
+
         switch (executionModel) {
           case "blocking":
             jcb.bindImplementation(OperatorChainManager.class, BlockingActiveOperatorChainPickManager.class);
@@ -217,6 +234,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
         injector.bindVolatileInstance(MistPubSubEventHandler.class, pubSubEventHandler);
         injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
+        injector.bindVolatileInstance(QueryInfoStore.class, planStore);
         final GlobalSchedGroupInfo groupInfo = injector.getInstance(GlobalSchedGroupInfo.class);
         if (groupInfoMap.putIfAbsent(groupId, groupInfo) == null) {
 
@@ -302,5 +320,10 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     queryControlResult.setIsSuccess(true);
     queryControlResult.setMsg(ResultMessage.deleteSuccess(queryId));
     return queryControlResult;
+  }
+
+  @Override
+  public GroupSourceManager getGroupSourceManager(final String groupId) {
+    return groupInfoMap.get(groupId).getGroupSourceManager();
   }
 }
