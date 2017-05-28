@@ -96,6 +96,23 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
   void setVRuntime(double vruntime);
 
   /**
+   * Check whether the group has events to be processed.
+   * @return true if it has events to be processed.
+   */
+  boolean isActive();
+
+  /**
+   * Check whether this group is assigned to an event processor.
+   * @return true if it is assigned.
+   */
+  boolean isAssigned();
+
+  /**
+   * Set assigned to true/false.
+   */
+  void setAssigned(boolean value);
+
+  /**
    * Get the GroupSourceManager.
    */
   GroupSourceManager getGroupSourceManager();
