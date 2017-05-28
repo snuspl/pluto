@@ -53,7 +53,7 @@ public final class ModGroupAssigner implements GroupAssigner {
   /**
    * Available group indexes.
    */
-  private final Queue<Integer> availableIndexes;
+  private final Queue<Integer> availableIndices;
 
   /**
    * Group count.
@@ -65,7 +65,7 @@ public final class ModGroupAssigner implements GroupAssigner {
     this.groupIndexMap = new ConcurrentHashMap<>();
     this.selectors = new LinkedList<>();
     this.selectorStampedLock = new StampedLock();
-    this.availableIndexes = new ConcurrentLinkedQueue<>();
+    this.availableIndices = new ConcurrentLinkedQueue<>();
     mistPubSubEventHandler.getPubSubEventHandler().subscribe(GroupEvent.class, this);
   }
 
@@ -107,8 +107,8 @@ public final class ModGroupAssigner implements GroupAssigner {
     switch (groupEvent.getGroupEventType()) {
       case ADDITION: {
         int index;
-        if (availableIndexes.size() != 0) {
-          index = availableIndexes.poll();
+        if (availableIndices.size() != 0) {
+          index = availableIndices.poll();
         } else {
           index = count.getAndIncrement();
         }
@@ -117,7 +117,7 @@ public final class ModGroupAssigner implements GroupAssigner {
       }
       case DELETION: {
         final int deletedIndex = groupIndexMap.remove(groupEvent.getGroupInfo());
-        availableIndexes.add(deletedIndex);
+        availableIndices.add(deletedIndex);
         break;
       }
       default:

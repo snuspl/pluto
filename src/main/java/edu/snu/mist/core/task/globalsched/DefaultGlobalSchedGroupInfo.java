@@ -77,7 +77,6 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   private final GroupMetrics metricHolder;
 
   /**
-<<<<<<< HEAD
    * Assigned value whether this group is assigned to an event processor or not.
    */
   private final AtomicBoolean assigned = new AtomicBoolean(false);
