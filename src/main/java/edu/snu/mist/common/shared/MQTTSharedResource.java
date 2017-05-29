@@ -49,6 +49,8 @@ public final class MQTTSharedResource implements AutoCloseable {
    */
   public static final String MQTT_SUBSCRIBER_ID_PREFIX = "MIST_MQTT_SUBSCRIBER_";
 
+  private Map<String, Map<String, MQTTSubscribeClient>> topicSubscriberMap;
+
   /**
    * The map coupling MQTT broker URI and MQTTSubscribeClient.
    */
@@ -100,6 +102,7 @@ public final class MQTTSharedResource implements AutoCloseable {
       @Parameter(MaxMqttSinkNumPerClient.class) final int maxMqttSinkNumPerClientParam,
       @Parameter(MaxInflightMqttEventNum.class) final int maxInflightMqttEventNumParam) {
     this.mqttSubscriberMap = new HashMap<>();
+    this.topicSubscriberMap = new HashMap<>();
     this.subscriberSinkNumMap = new HashMap<>();
     this.mqttPublisherMap = new HashMap<>();
     this.publisherSinkNumMap = new HashMap<>();
@@ -175,28 +178,40 @@ public final class MQTTSharedResource implements AutoCloseable {
     final List<MQTTSubscribeClient> subscribeClientList = mqttSubscriberMap.get(brokerURI);
     if (subscribeClientList == null) {
       mqttSubscriberMap.put(brokerURI, new ArrayList<>());
+      topicSubscriberMap.put(brokerURI, new HashMap<>());
       final MQTTSubscribeClient subscribeClient = new MQTTSubscribeClient(brokerURI, MQTT_SUBSCRIBER_ID_PREFIX +
           brokerURI + "_0");
       mqttSubscriberMap.get(brokerURI).add(subscribeClient);
+      topicSubscriberMap.get(brokerURI).put(topic, subscribeClient);
       subscriberSinkNumMap.put(subscribeClient, 1);
       this.subscriberLock.unlock();
       return subscribeClient.connectToTopic(topic);
     } else {
-      // Pick the last client for the candidate.
-      final MQTTSubscribeClient subscribeClientCandidate = subscribeClientList.get(subscribeClientList.size() - 1);
-      final int sourceNum = subscriberSinkNumMap.get(subscribeClientCandidate);
-      if (sourceNum < maxMqttSourceNumPerClient) {
-        // Let's reuse already existing one.
-        subscriberSinkNumMap.replace(subscribeClientCandidate, sourceNum + 1);
+      final Map<String, MQTTSubscribeClient> myTopicSubMap = topicSubscriberMap.get(brokerURI);
+      // Found the same topic in the
+      if (myTopicSubMap.containsKey(topic)) {
+        final MQTTSubscribeClient mqttSubscribeClient = myTopicSubMap.get(topic);
         this.subscriberLock.unlock();
-        return subscribeClientCandidate.connectToTopic(topic);
+        return mqttSubscribeClient.connectToTopic(topic);
       } else {
-        final MQTTSubscribeClient newSubscribeClientCandidate = new MQTTSubscribeClient(brokerURI,
-            MQTT_SUBSCRIBER_ID_PREFIX + brokerURI + "_" + subscribeClientList.size());
-        subscribeClientList.add(newSubscribeClientCandidate);
-        subscriberSinkNumMap.put(newSubscribeClientCandidate, 1);
-        this.subscriberLock.unlock();
-        return subscribeClientCandidate.connectToTopic(topic);
+        // Pick the last client for the candidate.
+        final MQTTSubscribeClient subscribeClientCandidate = subscribeClientList.get(subscribeClientList.size() - 1);
+        final int sourceNum = subscriberSinkNumMap.get(subscribeClientCandidate);
+        if (sourceNum < maxMqttSourceNumPerClient) {
+          // Let's reuse already existing one.
+          subscriberSinkNumMap.replace(subscribeClientCandidate, sourceNum + 1);
+          myTopicSubMap.put(topic, subscribeClientCandidate);
+          this.subscriberLock.unlock();
+          return subscribeClientCandidate.connectToTopic(topic);
+        } else {
+          final MQTTSubscribeClient newSubscribeClientCandidate = new MQTTSubscribeClient(brokerURI,
+              MQTT_SUBSCRIBER_ID_PREFIX + brokerURI + "_" + subscribeClientList.size());
+          subscribeClientList.add(newSubscribeClientCandidate);
+          subscriberSinkNumMap.put(newSubscribeClientCandidate, 1);
+          myTopicSubMap.put(topic, newSubscribeClientCandidate);
+          this.subscriberLock.unlock();
+          return subscribeClientCandidate.connectToTopic(topic);
+        }
       }
     }
   }
@@ -212,7 +227,7 @@ public final class MQTTSharedResource implements AutoCloseable {
             // do nothing
           }
         }
-      ));
+    ));
     mqttPublisherMap.clear();
   }
 }
