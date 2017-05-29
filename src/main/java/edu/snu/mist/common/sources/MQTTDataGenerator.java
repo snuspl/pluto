@@ -67,7 +67,7 @@ public final class MQTTDataGenerator implements DataGenerator<MqttMessage> {
    * @param message the message to emit
    */
   void emitData(final MqttMessage message) {
-    if (!closed.get()) {
+    if (!closed.get() && eventGenerator != null) {
       eventGenerator.emitData(message);
     }
   }
