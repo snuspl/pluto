@@ -79,7 +79,8 @@ public final class UnionOperator extends TwoStreamOperator {
 
   /**
    * Emits events which have less timestamp than the minimum watermark
-   * calculated from the leftUpstreamQueue, currentLeftWatermark, rightUpstreamQueue, and currentRightWatermark,.
+   * calculated from the leftUpstreamQueue, currentLeftWatermark, rightUpstreamQueue, and currentRightWatermark.
+   * This method is not thread-safe now. Therefore, only one event processor have to process union operation at once.
    */
   private void drainUntilMinimumWatermark() {
     final long leftWatermarkTimestamp = latestLeftWatermark.getTimestamp();
