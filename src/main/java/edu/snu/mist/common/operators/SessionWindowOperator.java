@@ -80,7 +80,7 @@ public final class SessionWindowOperator<T> extends OneStreamOperator implements
         startedNewWindow = false;
       }
       final MistWatermarkEvent latestWatermark = currentWindow.getLatestWatermark();
-      if (latestWatermark != null) {
+      if (latestWatermark.getTimestamp() != 0L) {
         outputEmitter.emitWatermark(latestWatermark);
       }
       // Create a new session window
