@@ -19,7 +19,9 @@ import com.rits.cloning.Cloner;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.api.datastreams.ContinuousStream;
+import edu.snu.mist.api.datastreams.configurations.PeriodicWatermarkConfiguration;
 import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
+import edu.snu.mist.api.datastreams.configurations.WatermarkConfiguration;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.graph.DAG;
@@ -106,6 +108,26 @@ public class DefaultGroupSourceManagerTest {
       new CountDownLatch(SRC0INPUT4.size() + SRC1INPUT4.size() + SRC2INPUT4.size());
 
   /**
+   * Period of default watermark represented in milliseconds.
+   */
+  private static final int DEFAULT_WATERMARK_PERIOD = 100;
+
+  /**
+   * Expected delay of default watermark represented in milliseconds.
+   */
+  private static final int DEFAULT_EXPECTED_DELAY = 0;
+
+  /**
+   * The default watermark configuration for this test.
+   */
+  private WatermarkConfiguration testConf() {
+    return PeriodicWatermarkConfiguration.newBuilder()
+        .setWatermarkPeriod(DEFAULT_WATERMARK_PERIOD)
+        .setExpectedDelay(DEFAULT_EXPECTED_DELAY)
+        .build();
+  }
+
+  /**
    * Builds the query for this test.
    * @return the built MISTQuery
    */
@@ -128,17 +150,17 @@ public class DefaultGroupSourceManagerTest {
 
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("testGroup");
 
-    final ContinuousStream sourceStream1 = queryBuilder.socketTextStream(localTextSocketSource1Conf)
+    final ContinuousStream sourceStream1 = queryBuilder.socketTextStream(localTextSocketSource1Conf, testConf())
         .map(toTupleMapFunc)
         .reduceByKey(0, String.class, countFunc)
         .flatMap(mapToListFunc);
-    final ContinuousStream sourceStream2 = queryBuilder.socketTextStream(localTextSocketSource2Conf)
+    final ContinuousStream sourceStream2 = queryBuilder.socketTextStream(localTextSocketSource2Conf, testConf())
         .map(toTupleMapFunc)
         .reduceByKey(0, String.class, countFunc)
         .flatMap(mapToListFunc);
     final ContinuousStream<Tuple2<String, Integer>> unionStream1 = sourceStream1.union(sourceStream2);
 
-    final ContinuousStream sourceStream3 = queryBuilder.socketTextStream(localTextSocketSource3Conf)
+    final ContinuousStream sourceStream3 = queryBuilder.socketTextStream(localTextSocketSource3Conf, testConf())
         .map(toTupleMapFunc)
         .reduceByKey(0, String.class, countFunc)
         .flatMap(mapToListFunc);
