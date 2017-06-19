@@ -179,7 +179,7 @@ public class DefaultGroupSourceManagerTest {
    * There is only one group, one query, one ExecutionDag for this test's test query.
    * @throws Exception
    */
-  @Test
+  @Test(timeout = 40000)
   public void testDeactivation() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(GroupId.class, "testGroup");

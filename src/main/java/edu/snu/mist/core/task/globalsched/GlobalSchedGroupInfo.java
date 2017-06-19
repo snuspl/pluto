@@ -108,7 +108,7 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
   boolean isAssigned();
 
   /**
-   * Set assigned to true/false.
+   * Set true if events within the group is processed.
    */
   void setAssigned(boolean value);
 

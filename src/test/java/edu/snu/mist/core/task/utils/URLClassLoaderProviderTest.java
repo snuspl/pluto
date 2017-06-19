@@ -13,31 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.utils;
 
+import edu.snu.mist.core.task.ClassLoaderProvider;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class OperatorChainManagerTest {
+import java.net.MalformedURLException;
+import java.util.Arrays;
+import java.util.List;
+
+public final class URLClassLoaderProviderTest {
 
   @Test
-  public void nonBlockingActiveQueryPickManagerTest() throws InjectionException {
+  public void classLoaderSharingTest() throws InjectionException, MalformedURLException {
     final Injector injector = Tang.Factory.getTang().newInjector();
-    final NonBlockingActiveOperatorChainPickManager operatorChainManager
-        = injector.getInstance(NonBlockingActiveOperatorChainPickManager.class);
+    final ClassLoaderProvider classLoaderProvider = injector.getInstance(ClassLoaderProvider.class);
 
-    // Select a chain
-    final OperatorChain chain = new DefaultOperatorChainImpl("testOpChain");
-    operatorChainManager.insert(chain);
-    final OperatorChain selectedChain = operatorChainManager.pickOperatorChain();
-    Assert.assertEquals(chain, selectedChain);
+    final List<String> paths = Arrays.asList();
+    final ClassLoader classLoader1 = classLoaderProvider.newInstance(paths);
+    final ClassLoader classLoader2 = classLoaderProvider.newInstance(paths);
 
-    // When QueryPickManager has no chain, it should returns null
-    operatorChainManager.delete(chain);
-    final OperatorChain c = operatorChainManager.pickOperatorChain();
-    Assert.assertEquals(null, c);
+    Assert.assertTrue(classLoader1 == classLoader2);
   }
 }

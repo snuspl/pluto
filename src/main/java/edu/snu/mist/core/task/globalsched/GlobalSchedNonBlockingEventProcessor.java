@@ -91,9 +91,9 @@ final class GlobalSchedNonBlockingEventProcessor extends Thread implements Event
         }
 
         if (LOG.isLoggable(Level.FINE)) {
-        LOG.log(Level.FINE, "{0} Process Group {1}, Event: {2}, Period: {3}, ActualTime: {4}",
-            new Object[]{Thread.currentThread().getName(), groupInfo, procsesedEvent, schedulingPeriod,
-            TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime)});
+          LOG.log(Level.FINE, "{0} Process Group {1}, Event: {2}, Period: {3}, ActualTime: {4}",
+              new Object[]{Thread.currentThread().getName(), groupInfo, procsesedEvent, schedulingPeriod,
+                  TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime)});
 
           LOG.log(Level.FINE, "{0}: Reschedule group {1}",
               new Object[]{Thread.currentThread().getName(), groupInfo});

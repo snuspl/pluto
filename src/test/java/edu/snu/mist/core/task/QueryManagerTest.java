@@ -88,30 +88,6 @@ public final class QueryManagerTest {
   private final MISTFunction<Map<String, Integer>, Integer> totalCountMapFunc =
       (input) -> input.values().stream().reduce(0, (x, y) -> x + y);
 
-
-  @Test(timeout = 5000)
-  public void testSubmitComplexQueryInOption1() throws Exception {
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(RPCServerPort.class, "20332");
-    jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
-    jcb.bindNamedParameter(ExecutionModelOption.class, "1");
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final MistTaskConfigs taskConfigs = injector.getInstance(MistTaskConfigs.class);
-    testSubmitComplexQueryHelper(taskConfigs.getConfiguration());
-  }
-
-  @Test(timeout = 5000)
-  public void testSubmitComplexQueryInOption2Blocking() throws Exception {
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(RPCServerPort.class, "20333");
-    jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
-    jcb.bindNamedParameter(ExecutionModelOption.class, "2");
-    jcb.bindNamedParameter(GroupSchedModelType.class, "blocking");
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final MistTaskConfigs taskConfigs = injector.getInstance(MistTaskConfigs.class);
-    testSubmitComplexQueryHelper(taskConfigs.getConfiguration());
-  }
-
   @Test(timeout = 5000)
   public void testSubmitComplexQueryInOption2NonBlocking() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();

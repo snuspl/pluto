@@ -133,8 +133,6 @@ public final class MistTaskConfigs {
    */
   private Configuration getConfigurationForExecutionModel() {
     switch (executionModelOption) {
-      case 1:
-        return getOption1Configuration();
       case 2:
         return option2TaskConfigs.getConfiguration();
       case 3:
@@ -142,16 +140,6 @@ public final class MistTaskConfigs {
       default:
         throw new RuntimeException("Undefined execution model: " + executionModelOption);
     }
-  }
-
-  /**
-   * Get the configuration for execution model 1 that
-   * creates a thread pool and schedules queries without considering group.
-   */
-  private Configuration getOption1Configuration() {
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindImplementation(QueryManager.class, GroupUnawareQueryManagerImpl.class);
-    return jcb.build();
   }
 
   /**
