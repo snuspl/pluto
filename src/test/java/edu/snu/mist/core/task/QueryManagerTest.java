@@ -31,6 +31,7 @@ import edu.snu.mist.common.sources.PunctuatedEventGenerator;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.core.driver.MistTaskConfigs;
 import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
+import edu.snu.mist.core.driver.parameters.GroupAware;
 import edu.snu.mist.core.parameters.PlanStorePath;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.globalsched.parameters.GroupSchedModelType;
@@ -119,6 +120,19 @@ public final class QueryManagerTest {
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
     jcb.bindNamedParameter(ExecutionModelOption.class, "2");
     jcb.bindNamedParameter(GroupSchedModelType.class, "dispatching");
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final MistTaskConfigs taskConfigs = injector.getInstance(MistTaskConfigs.class);
+    testSubmitComplexQueryHelper(taskConfigs.getConfiguration());
+  }
+
+  @Test(timeout = 5000)
+  public void testSubmitComplexQueryInOption2GroupUnaware() throws Exception {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(RPCServerPort.class, "20339");
+    jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "2");
+    jcb.bindNamedParameter(GroupSchedModelType.class, "dispatching");
+    jcb.bindNamedParameter(GroupAware.class, "false");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final MistTaskConfigs taskConfigs = injector.getInstance(MistTaskConfigs.class);
     testSubmitComplexQueryHelper(taskConfigs.getConfiguration());

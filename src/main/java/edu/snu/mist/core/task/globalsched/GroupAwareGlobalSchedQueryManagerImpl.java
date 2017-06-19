@@ -19,12 +19,13 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.driver.parameters.DeactivationEnabled;
+import edu.snu.mist.core.driver.parameters.GroupAware;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
 import edu.snu.mist.core.task.deactivation.DeactivationGroupSourceManager;
 import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.deactivation.NoDeactivationGroupSourceManager;
-import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 import edu.snu.mist.core.task.globalsched.dispatch.GroupDispatcher;
 import edu.snu.mist.core.task.globalsched.metrics.CpuUtilMetricEventHandler;
@@ -49,6 +50,7 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -128,6 +130,14 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   private final GroupDispatcher groupDispatcher;
 
   /**
+   * TODO[REMOVE]: false if group unaware execution model.
+   */
+  private final boolean groupAware;
+
+  // TODO[REMOVE]
+  private final AtomicLong groupIdCounter = new AtomicLong(0);
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -148,6 +158,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 final EventProcessorNumAssigner assigner,
                                                 final GroupDispatcher groupDispatcher,
                                                 final BatchQueryCreator batchQueryCreator,
+                                                @Parameter(GroupAware.class) final boolean groupAware,
                                                 @Parameter(GroupSchedModelType.class) final String executionModel) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
@@ -162,6 +173,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     this.batchQueryCreator = batchQueryCreator;
     this.executionModel = executionModel;
     this.groupDispatcher = groupDispatcher;
+    this.groupAware = groupAware;
     metricTracker.start();
     if (executionModel.equals("dispatching")) {
       groupDispatcher.start();
@@ -187,8 +199,15 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
       // converts the avro operator chain dag to the logical and execution dag
       planStore.saveAvroOpChainDag(tuple);
       final String queryId = tuple.getKey();
+
       // Update group information
-      final String groupId = tuple.getValue().getGroupId();
+      final String groupId;
+      if (groupAware) {
+        groupId = tuple.getValue().getGroupId();
+      } else {
+        // TODO[REMOVE]: If it is groupUnaware, just assign unique group Id per query
+        groupId = Long.toString(groupIdCounter.getAndIncrement());
+      }
 
       if (LOG.isLoggable(Level.FINE)) {
         LOG.log(Level.FINE, "Create Query [gid: {0}, qid: {1}]",
