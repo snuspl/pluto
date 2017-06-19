@@ -218,9 +218,6 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
         }
 
         switch (executionModel) {
-          case "blocking":
-            jcb.bindImplementation(OperatorChainManager.class, BlockingActiveOperatorChainPickManager.class);
-            break;
           case "nonblocking":
           case "polling":
           case "dispatching":

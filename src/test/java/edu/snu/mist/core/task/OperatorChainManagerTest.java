@@ -23,27 +23,6 @@ import org.junit.Test;
 
 public class OperatorChainManagerTest {
 
-  /**
-   * Test whether RandomlyPickManager selects an operator chain.
-   */
-  @Test
-  public void randomPickManagerTest() throws InjectionException {
-    final Injector injector = Tang.Factory.getTang().newInjector();
-    final NonBlockingRandomlyPickManager operatorChainManager
-        = injector.getInstance(NonBlockingRandomlyPickManager.class);
-
-    // Select a chain
-    final OperatorChain chain = new DefaultOperatorChainImpl("testOpChain");
-    operatorChainManager.insert(chain);
-    final OperatorChain selectedChain = operatorChainManager.pickOperatorChain();
-    Assert.assertEquals(chain, selectedChain);
-
-    // When QueryPickManager has no chain, it should returns null
-    operatorChainManager.delete(chain);
-    final OperatorChain c = operatorChainManager.pickOperatorChain();
-    Assert.assertEquals(null, c);
-  }
-
   @Test
   public void nonBlockingActiveQueryPickManagerTest() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
@@ -60,18 +39,5 @@ public class OperatorChainManagerTest {
     operatorChainManager.delete(chain);
     final OperatorChain c = operatorChainManager.pickOperatorChain();
     Assert.assertEquals(null, c);
-  }
-
-  @Test
-  public void blockingActiveQueryPickManagerTest() throws InjectionException, InterruptedException {
-    final Injector injector = Tang.Factory.getTang().newInjector();
-    final BlockingActiveOperatorChainPickManager operatorChainManager
-        = injector.getInstance(BlockingActiveOperatorChainPickManager.class);
-
-    // Select a chain
-    final OperatorChain chain = new DefaultOperatorChainImpl("testOpChain");
-    operatorChainManager.insert(chain);
-    final OperatorChain selectedChain = operatorChainManager.pickOperatorChain();
-    Assert.assertEquals(chain, selectedChain);
   }
 }

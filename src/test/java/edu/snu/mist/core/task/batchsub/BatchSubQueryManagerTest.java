@@ -185,23 +185,9 @@ public final class BatchSubQueryManagerTest {
   }
 
   /**
-   * Test option 1 query manager.
-   */
-  @Test(timeout = 5000)
-  public void testSubmitComplexQueryInOption1() throws Exception {
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(RPCServerPort.class, "20332");
-    jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
-    jcb.bindNamedParameter(ExecutionModelOption.class, "1");
-    jcb.bindImplementation(QueryManager.class, GroupUnawareQueryManagerImpl.class);
-    injector = Tang.Factory.getTang().newInjector(jcb.build());
-    testBatchSubmitQueryHelper();
-  }
-
-  /**
    * Test option 2 query manager.
    */
-  @Test(timeout = 5000)
+  @Test(timeout = 10000)
   public void testSubmitComplexQueryInOption2() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(RPCServerPort.class, "20333");

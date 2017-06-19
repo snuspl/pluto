@@ -36,24 +36,6 @@ import org.junit.Test;
 public final class MistDriverTest {
 
   /**
-   * Test whether MistDriver runs the task of option1 successfully.
-   * @throws InjectionException
-   */
-  @Test
-  public void testLaunchDriverOption1() throws InjectionException {
-    launchDriverTestHelper(1, 20332, "none");
-  }
-
-  /**
-   * Test whether MistDriver runs the task of group scheduling (blocking) successfully.
-   * @throws InjectionException
-   */
-  @Test
-  public void testLaunchDriverOption2Blocking() throws InjectionException {
-    launchDriverTestHelper(2, 20333, "blocking");
-  }
-
-  /**
    * Test whether MistDriver runs the task of group scheduling (nonblocking) successfully.
    * @throws InjectionException
    */

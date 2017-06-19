@@ -66,6 +66,8 @@ public final class GroupDispatcher implements EventHandler<GroupEvent>, Stage {
             final GlobalSchedGroupInfo group = groups.get(i);
             if (!group.isAssigned() && group.isActive()) {
               // dispatch the inactive group
+              // Mark this group is being processed
+              group.setAssigned(true);
               groupAssigner.assign(group);
             }
           }
@@ -79,6 +81,8 @@ public final class GroupDispatcher implements EventHandler<GroupEvent>, Stage {
               final GlobalSchedGroupInfo group = groups.get(i);
               if (!group.isAssigned() && group.isActive()) {
                 // dispatch the inactive group
+                // Mark this group is being processed
+                group.setAssigned(true);
                 groupAssigner.assign(group);
               }
             }
