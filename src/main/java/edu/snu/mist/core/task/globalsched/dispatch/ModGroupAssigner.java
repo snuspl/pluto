@@ -84,7 +84,6 @@ public final class ModGroupAssigner implements GroupAssigner {
       selectorStampedLock.unlockRead(stamp);
     }
 
-    groupInfo.setAssigned(true);
     selector.reschedule(groupInfo, false);
   }
 

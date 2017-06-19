@@ -46,30 +46,12 @@ public final class EventProcessorTest {
   }
 
   /**
-   * Test whether the condition event processor processes events from multiple queries correctly.
-   */
-  @Test(timeout = 10000L)
-  public void conditionEventProcessorActivePickProcessTest() throws InterruptedException, InjectionException {
-    activePickProcessTestHelper(BlockingActiveOperatorChainPickManager.class,
-        ConditionEventProcessorFactory.class);
-  }
-
-  /**
    * Test whether the polling event processor processes events concurrently.
    */
   @Test(timeout = 10000L)
   public void pollingEventProcessoconcurrentProcessTest() throws InterruptedException, InjectionException {
     concurrentProcessTestHelper(NonBlockingActiveOperatorChainPickManager.class,
         PollingEventProcessorFactory.class);
-  }
-
-  /**
-   * Test whether the condition event processor processes events concurrently.
-   */
-  @Test(timeout = 10000L)
-  public void conditionEventProcessorconcurrentProcessTest() throws InterruptedException, InjectionException {
-    concurrentProcessTestHelper(BlockingActiveOperatorChainPickManager.class,
-        ConditionEventProcessorFactory.class);
   }
 
   /**
