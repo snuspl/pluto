@@ -28,10 +28,8 @@ import edu.snu.mist.core.task.globalsched.cfs.parameters.MinSchedulingPeriod;
 import edu.snu.mist.core.task.globalsched.dispatch.DispatcherGroupSelectorFactory;
 import edu.snu.mist.core.task.globalsched.metrics.DefaultEventProcessorNumAssigner;
 import edu.snu.mist.core.task.globalsched.parameters.*;
-import edu.snu.mist.core.task.globalsched.roundrobin.WeightedRRNextGroupSelectorFactory;
 import edu.snu.mist.core.task.globalsched.roundrobin.polling.InactiveGroupCheckerFactory;
 import edu.snu.mist.core.task.globalsched.roundrobin.polling.NaiveInactiveGroupCheckerFactory;
-import edu.snu.mist.core.task.globalsched.roundrobin.polling.WrrPollingNextGroupSelectorFactory;
 import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
@@ -116,15 +114,6 @@ public final class MistGroupSchedulingTaskConfigs {
   private Configuration getConfigurationForExecutionModel() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     switch (groupSchedModelType) {
-      case "nonblocking":
-        jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedNonBlockingEventProcessorFactory.class);
-        jcb.bindImplementation(NextGroupSelectorFactory.class, WeightedRRNextGroupSelectorFactory.class);
-        break;
-      case "polling":
-        jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedNonBlockingEventProcessorFactory.class);
-        jcb.bindImplementation(NextGroupSelectorFactory.class, WrrPollingNextGroupSelectorFactory.class);
-        jcb.bindImplementation(InactiveGroupCheckerFactory.class, NaiveInactiveGroupCheckerFactory.class);
-        break;
       case "dispatching":
         jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedNonBlockingEventProcessorFactory.class);
         jcb.bindImplementation(NextGroupSelectorFactory.class, DispatcherGroupSelectorFactory.class);
