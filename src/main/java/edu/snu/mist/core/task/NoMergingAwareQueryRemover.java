@@ -15,9 +15,6 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
-
 import javax.inject.Inject;
 
 /**
@@ -42,7 +39,7 @@ public final class NoMergingAwareQueryRemover implements QueryRemover {
    */
   @Override
   public synchronized void deleteQuery(final String queryId) {
-    final DAG<ExecutionVertex, MISTEdge> executionDag = executionPlanDagMap.remove(queryId);
+    final ExecutionDag executionDag = executionPlanDagMap.remove(queryId);
     for (final ExecutionVertex vertex : executionDag.getRootVertices()) {
       final PhysicalSource src = (PhysicalSource)vertex;
       try {

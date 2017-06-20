@@ -17,10 +17,7 @@ package edu.snu.mist.core.task.merging;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.core.task.ConfigVertex;
-import edu.snu.mist.core.task.ExecutionVertex;
-import edu.snu.mist.core.task.OperatorChain;
-import edu.snu.mist.core.task.PhysicalSource;
+import edu.snu.mist.core.task.*;
 
 import javax.inject.Inject;
 import java.util.*;
@@ -41,7 +38,7 @@ final class DfsCommonSubDagFinder implements CommonSubDagFinder {
    * @return
    */
   @Override
-  public Map<ConfigVertex, ExecutionVertex> findSubDag(final DAG<ExecutionVertex, MISTEdge> executionDag,
+  public Map<ConfigVertex, ExecutionVertex> findSubDag(final ExecutionDag executionDag,
                                                        final DAG<ConfigVertex, MISTEdge> submittedDag) {
     // Key: vertex of the submitted dag, Value: vertex of the execution dag
     final Map<ConfigVertex, ExecutionVertex> vertexMap = new HashMap<>();
@@ -69,7 +66,7 @@ final class DfsCommonSubDagFinder implements CommonSubDagFinder {
    * @param vertexMap a map that holds vertices of the sub-dag
    * @param visited a set for checking visited vertices
    */
-  private void dfsSearch(final DAG<ExecutionVertex, MISTEdge> executionDag,
+  private void dfsSearch(final ExecutionDag executionDag,
                          final DAG<ConfigVertex, MISTEdge> submittedDag,
                          final Set<ConfigVertex> markedVertices,
                          final ExecutionVertex currExecutionDagVertex,

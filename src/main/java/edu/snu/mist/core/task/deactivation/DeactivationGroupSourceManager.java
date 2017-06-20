@@ -16,7 +16,6 @@
 package edu.snu.mist.core.task.deactivation;
 
 import edu.snu.mist.common.SerializeUtils;
-import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.common.operators.StateHandler;
@@ -39,7 +38,10 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -96,7 +98,7 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
    * The map for the reference to the ExecutionDag that corresponds to the deactivated source's id.
    * This is used to find the dag that the deactivated source originally belonged to.
    */
-  private final Map<String, DAG<ExecutionVertex, MISTEdge>> deactivatedSourceDagMap;
+  private final Map<String, ExecutionDag> deactivatedSourceDagMap;
 
   @Inject
   private DeactivationGroupSourceManager(@Parameter(GroupId.class) final String groupId,
@@ -122,9 +124,9 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
   public void deactivateBasedOnSource(final String queryId, final String sourceId)
       throws AvroRemoteException {
     try {
-      final Tuple<ExecutionVertex, DAG<ExecutionVertex, MISTEdge>> tuple = findSourceAndDag(sourceId);
+      final Tuple<ExecutionVertex, ExecutionDag> tuple = findSourceAndDag(sourceId);
       final ExecutionVertex root = tuple.getKey();
-      final DAG<ExecutionVertex, MISTEdge> executionDag = tuple.getValue();
+      final ExecutionDag executionDag = tuple.getValue();
       if (!(root == null || executionDag == null)) {
         // TODO: [MIST-771] Synchronization between source deactivation/activation and query merging
         synchronized (executionDag) {
@@ -150,9 +152,9 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
    * @param sourceId the source id of the source to be deactivated
    * @return Tuple of the source and the dag
    */
-  private Tuple<ExecutionVertex, DAG<ExecutionVertex, MISTEdge>> findSourceAndDag(final String sourceId) {
+  private Tuple<ExecutionVertex, ExecutionDag> findSourceAndDag(final String sourceId) {
     // Search executionDags to find the source to deactivate.
-    for (final DAG<ExecutionVertex, MISTEdge> dag : executionDags.values()) {
+    for (final ExecutionDag dag : executionDags.values()) {
       for (final ExecutionVertex root : dag.getRootVertices()) {
         if (root.getIdentifier().equals(sourceId)) {
           return new Tuple<>(root, dag);
@@ -168,7 +170,7 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
    * Recursively conducts DFS throughout the executionDag.
    * It saves the ExecutionVertices which have inDegree of 0.
    */
-  private void dfsAndSaveExecutionVertices(final DAG<ExecutionVertex, MISTEdge> executionDag,
+  private void dfsAndSaveExecutionVertices(final ExecutionDag executionDag,
                                            final ExecutionVertex currentVertex,
                                            final Map<ExecutionVertex, MISTEdge> needWatermarkVertices)
       throws IOException {
@@ -308,7 +310,7 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
       if (activeExecutionVertexIdMap.get(sourceId) == null) {
         LOG.log(Level.INFO, "Wrong sourceId has been input. It does not exist.");
       } else {
-        final DAG<ExecutionVertex, MISTEdge> executionDag = deactivatedSourceDagMap.get(sourceId);
+        final ExecutionDag executionDag = deactivatedSourceDagMap.get(sourceId);
         if (executionDag == null) {
           LOG.log(Level.INFO, "Source is already activated");
         } else {
@@ -346,7 +348,7 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
    * @param currentVertexIdToActivate the id of the current executionVertex to be activated
    */
   private void dfsAndLoadExecutionVertices(final Tuple<URL[], ClassLoader> urlsAndClassLoader,
-                                           final DAG<ExecutionVertex, MISTEdge> executionDag,
+                                           final ExecutionDag executionDag,
                                            final String currentVertexIdToActivate)
       throws IOException, InjectionException, ClassNotFoundException, InterruptedException {
     // The outgoingEdgeMap holds the edges' indexes and directions for each edge connected to executionVertex.

@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 
@@ -37,8 +36,8 @@ public final class QueryStarterUtils {
    * @param submittedDag the dag of the submitted query
    */
   public static void setUpOutputEmitters(final OperatorChainManager operatorChainManager,
-                                         final DAG<ExecutionVertex, MISTEdge> submittedDag) {
-    final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(submittedDag);
+                                         final ExecutionDag submittedDag) {
+    final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(submittedDag.getDag());
     while (iterator.hasNext()) {
       final ExecutionVertex executionVertex = iterator.next();
       switch (executionVertex.getType()) {

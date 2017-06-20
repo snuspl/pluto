@@ -15,9 +15,6 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
-
 import javax.inject.Inject;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,26 +27,26 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class ExecutionPlanDagMap {
 
-  private final ConcurrentHashMap<String, DAG<ExecutionVertex, MISTEdge>> map;
+  private final ConcurrentHashMap<String, ExecutionDag> map;
 
   @Inject
   private ExecutionPlanDagMap() {
     this.map = new ConcurrentHashMap<>();
   }
 
-  public DAG<ExecutionVertex, MISTEdge> get(final String queryId) {
+  public ExecutionDag get(final String queryId) {
     return map.get(queryId);
   }
 
-  public void put(final String queryId, final DAG<ExecutionVertex, MISTEdge> dag) {
+  public void put(final String queryId, final ExecutionDag dag) {
     map.put(queryId, dag);
   }
 
-  public DAG<ExecutionVertex, MISTEdge> remove(final String queryId) {
+  public ExecutionDag remove(final String queryId) {
     return map.remove(queryId);
   }
 
-  public Collection<DAG<ExecutionVertex, MISTEdge>> getExecutionDags() {
+  public Collection<ExecutionDag> getExecutionDags() {
     return map.values();
   }
 }

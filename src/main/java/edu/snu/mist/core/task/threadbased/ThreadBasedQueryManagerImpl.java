@@ -111,7 +111,7 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
       planStore.saveAvroOpChainDag(tuple);
 
       final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
-      final DAG<ExecutionVertex, MISTEdge> executionDag =
+      final ExecutionDag executionDag =
           dagGenerator.generate(configDag, tuple.getValue().getJarFilePaths());
 
       // Execute the execution dag
@@ -164,9 +164,9 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
    * and starts to receive input data stream from the sources.
    * @param physicalPlan physical plan of the query
    */
-  private void start(final DAG<ExecutionVertex, MISTEdge> physicalPlan) {
+  private void start(final ExecutionDag physicalPlan) {
     final List<PhysicalSource> sources = new LinkedList<>();
-    final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(physicalPlan);
+    final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(physicalPlan.getDag());
     while (iterator.hasNext()) {
       final ExecutionVertex executionVertex = iterator.next();
       switch (executionVertex.getType()) {

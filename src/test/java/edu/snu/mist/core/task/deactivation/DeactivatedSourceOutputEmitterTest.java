@@ -16,7 +16,6 @@
 package edu.snu.mist.core.task.deactivation;
 
 import edu.snu.mist.common.graph.AdjacentListDAG;
-import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.UnionOperator;
 import edu.snu.mist.common.sources.EventGenerator;
@@ -43,14 +42,14 @@ public class DeactivatedSourceOutputEmitterTest {
    * Construct execution dag.
    * Creates operators and adds source, dag vertices, edges and sinks to dag.
    */
-  private DAG<ExecutionVertex, MISTEdge> constructExecutionDag(final PhysicalSource src1,
+  private ExecutionDag constructExecutionDag(final PhysicalSource src1,
                                                                final OperatorChain chain,
                                                                final PhysicalSink sink) {
 
     // Create the following execution dag for the test.
     // src1 --------------> union(= chain) -> sink
     // src2(deactivated) ->
-    final DAG<ExecutionVertex, MISTEdge> dag = new AdjacentListDAG<>();
+    final ExecutionDag dag = new ExecutionDag(new AdjacentListDAG<>());
 
     dag.addVertex(src1);
     dag.addVertex(chain);
@@ -106,7 +105,7 @@ public class DeactivatedSourceOutputEmitterTest {
         null, new TestWithCountDownSink<>(sinkResult, countDownAllOutputs));
 
     // Construct execution dag.
-    final DAG<ExecutionVertex, MISTEdge> dag = constructExecutionDag(src1, chain, sink1);
+    final ExecutionDag dag = constructExecutionDag(src1, chain, sink1);
 
     // Set outputEmitters.
     src1.setOutputEmitter(new SourceOutputEmitter<>(dag.getEdges(src1)));

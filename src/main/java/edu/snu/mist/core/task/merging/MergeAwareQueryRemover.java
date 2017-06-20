@@ -95,7 +95,7 @@ public final class MergeAwareQueryRemover implements QueryRemover {
         final int refCount = executionVertexCountMap.get(executionVertex);
         if (refCount == 1) {
           // Delete it from the execution dag
-          final DAG<ExecutionVertex, MISTEdge> executionDag = executionVertexDagMap.remove(executionVertex);
+          final ExecutionDag executionDag = executionVertexDagMap.remove(executionVertex);
           executionDag.removeVertex(executionVertex);
           executionVertexCountMap.remove(executionVertex);
 

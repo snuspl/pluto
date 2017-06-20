@@ -103,7 +103,7 @@ public final class DefaultDagGeneratorImplTest {
     final DagGenerator dagGenerator = injector.getInstance(DagGenerator.class);
     final Tuple<String, AvroOperatorChainDag> tuple = new Tuple<>("query-test", avroChainedDag);
     final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
-    final DAG<ExecutionVertex, MISTEdge> executionDag =
+    final ExecutionDag executionDag =
         dagGenerator.generate(configDag, avroChainedDag.getJarFilePaths());
 
     // Test execution dag

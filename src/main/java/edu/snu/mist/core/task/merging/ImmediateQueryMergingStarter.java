@@ -131,11 +131,11 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
     // TODO:[MIST-590] We need to improve this code for concurrent modification
     synchronized (srcAndDagMap) {
       // Find mergeable DAGs from the execution dags
-      final Map<String, DAG<ExecutionVertex, MISTEdge>> mergeableDags = findMergeableDags(submittedDag);
+      final Map<String, ExecutionDag> mergeableDags = findMergeableDags(submittedDag);
 
       // Exit the merging process if there is no mergeable dag
       if (mergeableDags.size() == 0) {
-        final DAG<ExecutionVertex, MISTEdge> executionDag = generate(submittedDag, jarFilePaths);
+        final ExecutionDag executionDag = generate(submittedDag, jarFilePaths);
         // Set up the output emitters of the submitted DAG
         QueryStarterUtils.setUpOutputEmitters(operatorChainManager, executionDag);
 
@@ -162,12 +162,12 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
 
       // If there exist mergeable execution dags,
       // Select the DAG that has the largest number of vertices and merge all of the DAG to the largest DAG
-      final DAG<ExecutionVertex, MISTEdge> sharableDag = selectLargestDag(mergeableDags.values());
+      final ExecutionDag sharableDag = selectLargestDag(mergeableDags.values());
       // Merge all dag into one execution dag
       // We suppose that all of the dags has no same vertices
-      for (final DAG<ExecutionVertex, MISTEdge> sd : mergeableDags.values()) {
+      for (final ExecutionDag sd : mergeableDags.values()) {
         if (sd != sharableDag) {
-          GraphUtils.copy(sd, sharableDag);
+          GraphUtils.copy(sd.getDag(), sharableDag.getDag());
           // Remove the execution dag
           executionDags.remove(sd);
 
@@ -236,7 +236,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
                            final ConfigVertex currVertex,
                            final Map<ConfigVertex, ExecutionVertex> created,
                            final DAG<ConfigVertex, MISTEdge> configDag,
-                           final DAG<ExecutionVertex, MISTEdge> executionDag,
+                           final ExecutionDag executionDag,
                            final URL[] urls,
                            final ClassLoader classLoader) throws IOException, InjectionException {
     final ExecutionVertex currExecutionVertex;
@@ -262,11 +262,11 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
   /**
    * This generates a new execution dag from the configuration dag.
    */
-  private DAG<ExecutionVertex, MISTEdge> generate(final DAG<ConfigVertex, MISTEdge> configDag,
+  private ExecutionDag generate(final DAG<ConfigVertex, MISTEdge> configDag,
                                                   final List<String> jarFilePaths)
       throws IOException, ClassNotFoundException, InjectionException {
     // For execution dag
-    final DAG<ExecutionVertex, MISTEdge> executionDag = new AdjacentListConcurrentMapDAG<>();
+    final ExecutionDag executionDag = new ExecutionDag(new AdjacentListConcurrentMapDAG<>());
 
     // Get a class loader
     final URL[] urls = SerializeUtils.getJarFileURLs(jarFilePaths);
@@ -308,7 +308,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
                         final ExecutionVertex parent,
                         final MISTEdge parentEdge,
                         final ConfigVertex currentVertex,
-                        final DAG<ExecutionVertex, MISTEdge> executionDag,
+                        final ExecutionDag executionDag,
                         final DAG<ConfigVertex, MISTEdge> submittedDag,
                         final URL[] urls,
                         final ClassLoader classLoader) throws IOException, InjectionException {
@@ -369,11 +369,11 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
    * @param dags mergeable dags
    * @return a dag where all of the dags will be merged
    */
-  private DAG<ExecutionVertex, MISTEdge> selectLargestDag(
-      final Collection<DAG<ExecutionVertex, MISTEdge>> dags) {
+  private ExecutionDag selectLargestDag(
+      final Collection<ExecutionDag> dags) {
     int count = 0;
-    DAG<ExecutionVertex, MISTEdge> largestDag = null;
-    for (final DAG<ExecutionVertex, MISTEdge> dag : dags) {
+    ExecutionDag largestDag = null;
+    for (final ExecutionDag dag : dags) {
       if (dag.numberOfVertices() > count) {
         count = dag.numberOfVertices();
         largestDag = dag;
@@ -387,13 +387,13 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
    * @param configDag the configuration dag of the submitted query
    * @return mergeable dags
    */
-  private Map<String, DAG<ExecutionVertex, MISTEdge>> findMergeableDags(
+  private Map<String, ExecutionDag> findMergeableDags(
       final DAG<ConfigVertex, MISTEdge> configDag) {
     final Set<ConfigVertex> sources = configDag.getRootVertices();
-    final Map<String, DAG<ExecutionVertex, MISTEdge>> mergeableDags = new HashMap<>(sources.size());
+    final Map<String, ExecutionDag> mergeableDags = new HashMap<>(sources.size());
     for (final ConfigVertex source : sources) {
       final String srcConf = source.getConfiguration().get(0);
-      final DAG<ExecutionVertex, MISTEdge> dag = srcAndDagMap.get(srcConf);
+      final ExecutionDag dag = srcAndDagMap.get(srcConf);
       if (dag != null) {
         // Mergeable source
         mergeableDags.put(srcConf, dag);

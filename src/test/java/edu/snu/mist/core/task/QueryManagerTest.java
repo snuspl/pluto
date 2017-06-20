@@ -147,7 +147,7 @@ public final class QueryManagerTest {
     final CountDownLatch countDownAllOutputs = new CountDownLatch(intermediateResult.size() * 2);
 
     // Create the execution DAG of the query
-    final DAG<ExecutionVertex, MISTEdge> dag = new AdjacentListDAG<>();
+    final ExecutionDag dag = new ExecutionDag(new AdjacentListDAG<>());
 
     // Create source
     final TestDataGenerator dataGenerator = new TestDataGenerator(inputs);
@@ -222,7 +222,7 @@ public final class QueryManagerTest {
    * Creates operators and adds source, dag vertices, edges and sinks to dag.
    */
   private void constructExecutionDag(final Tuple<String, AvroOperatorChainDag> tuple,
-                                     final DAG<ExecutionVertex, MISTEdge> dag,
+                                     final ExecutionDag dag,
                                      final PhysicalSource src,
                                      final PhysicalSink sink1,
                                      final PhysicalSink sink2) {

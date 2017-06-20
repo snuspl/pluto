@@ -51,7 +51,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
                            final ConfigVertex currVertex,
                            final Map<ConfigVertex, ExecutionVertex> created,
                            final DAG<ConfigVertex, MISTEdge> configDag,
-                           final DAG<ExecutionVertex, MISTEdge> executionDag,
+                           final ExecutionDag executionDag,
                            final URL[] urls,
                            final ClassLoader classLoader) throws IOException, InjectionException {
     final ExecutionVertex currExecutionVertex;
@@ -79,11 +79,11 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
    * @return the logical and execution dag
    */
   @Override
-  public DAG<ExecutionVertex, MISTEdge> generate(final DAG<ConfigVertex, MISTEdge> configDag,
+  public ExecutionDag generate(final DAG<ConfigVertex, MISTEdge> configDag,
                                                  final List<String> jarFilePaths)
       throws IOException, ClassNotFoundException, InjectionException {
     // For execution dag
-    final DAG<ExecutionVertex, MISTEdge> executionDag = new AdjacentListConcurrentMapDAG<>();
+    final ExecutionDag executionDag = new ExecutionDag(new AdjacentListConcurrentMapDAG<>());
 
     // Get a class loader
     final URL[] urls = SerializeUtils.getJarFileURLs(jarFilePaths);

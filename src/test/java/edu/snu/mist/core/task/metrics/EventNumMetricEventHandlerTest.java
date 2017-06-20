@@ -16,7 +16,6 @@
 package edu.snu.mist.core.task.metrics;
 
 import edu.snu.mist.common.graph.AdjacentListDAG;
-import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.*;
@@ -74,14 +73,14 @@ public final class EventNumMetricEventHandlerTest {
     final PhysicalSink sinkA1 = generateTestSink(idAndConfGenerator);
     final PhysicalSink sinkA2 = generateTestSink(idAndConfGenerator);
 
-    final DAG<ExecutionVertex, MISTEdge> dagA1 = new AdjacentListDAG<>();
+    final ExecutionDag dagA1 = new ExecutionDag(new AdjacentListDAG<>());
     dagA1.addVertex(srcA1);
     dagA1.addVertex(opA1);
     dagA1.addVertex(sinkA1);
     dagA1.addEdge(srcA1, opA1, new MISTEdge(Direction.LEFT));
     dagA1.addEdge(opA1, sinkA1, new MISTEdge(Direction.LEFT));
 
-    final DAG<ExecutionVertex, MISTEdge> dagA2 = new AdjacentListDAG<>();
+    final ExecutionDag dagA2 = new ExecutionDag(new AdjacentListDAG<>());
     dagA2.addVertex(srcA2);
     dagA2.addVertex(opA2);
     dagA2.addVertex(sinkA2);
@@ -102,7 +101,7 @@ public final class EventNumMetricEventHandlerTest {
     final PhysicalSink sinkB1 = generateTestSink(idAndConfGenerator);
     final PhysicalSink sinkB2 = generateTestSink(idAndConfGenerator);
 
-    final DAG<ExecutionVertex, MISTEdge> dagB = new AdjacentListDAG<>();
+    final ExecutionDag dagB = new ExecutionDag(new AdjacentListDAG<>());
     dagB.addVertex(srcB1);
     dagB.addVertex(srcB2);
     dagB.addVertex(opB1);

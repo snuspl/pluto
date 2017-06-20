@@ -15,8 +15,6 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.Collection;
@@ -31,18 +29,18 @@ public interface ExecutionDags {
    * Add the physical execution dag.
    * @param executionDag physical execution dag
    */
-  void add(DAG<ExecutionVertex, MISTEdge> executionDag);
+  void add(ExecutionDag executionDag);
 
   /**
    * Remove the physical execution dag.
    * @param executionDag physical execution dag
    * @return true if it is removed
    */
-  boolean remove(DAG<ExecutionVertex, MISTEdge> executionDag);
+  boolean remove(ExecutionDag executionDag);
 
   /**
    * Get all of the physical execution dags that are currently running.
    * @return physical execution dags.
    */
-  Collection<DAG<ExecutionVertex, MISTEdge>> values();
+  Collection<ExecutionDag> values();
 }

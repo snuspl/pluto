@@ -15,12 +15,16 @@
  */
 package edu.snu.mist.core.task.globalsched.metrics;
 
-import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.ExecutionDag;
+import edu.snu.mist.core.task.ExecutionVertex;
+import edu.snu.mist.core.task.MistPubSubEventHandler;
+import edu.snu.mist.core.task.OperatorChain;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfoMap;
-import edu.snu.mist.core.task.metrics.*;
+import edu.snu.mist.core.task.metrics.EWMAMetric;
+import edu.snu.mist.core.task.metrics.GlobalMetrics;
+import edu.snu.mist.core.task.metrics.MetricTrackEvent;
+import edu.snu.mist.core.task.metrics.MetricTrackEventHandler;
 
 import javax.inject.Inject;
 import java.util.Collection;
@@ -59,7 +63,7 @@ public final class EventNumAndWeightMetricEventHandler implements MetricTrackEve
     for (final GlobalSchedGroupInfo groupInfo : groupInfos) {
       // Track the number of event per each group
       long groupNumEvent = 0;
-      for (final DAG<ExecutionVertex, MISTEdge> dag : groupInfo.getExecutionDags().values()) {
+      for (final ExecutionDag dag : groupInfo.getExecutionDags().values()) {
         final Collection<ExecutionVertex> vertices = dag.getVertices();
         for (final ExecutionVertex ev : vertices) {
           if (ev.getType() == ExecutionVertex.Type.OPERATOR_CHAIN) {

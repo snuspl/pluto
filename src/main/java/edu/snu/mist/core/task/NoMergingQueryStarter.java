@@ -70,7 +70,7 @@ public final class NoMergingQueryStarter implements QueryStarter {
                     final DAG<ConfigVertex, MISTEdge> configDag,
                     final List<String> jarFilePaths)
       throws InjectionException, IOException, ClassNotFoundException {
-    final DAG<ExecutionVertex, MISTEdge> submittedDag = dagGenerator.generate(configDag, jarFilePaths);
+    final ExecutionDag submittedDag = dagGenerator.generate(configDag, jarFilePaths);
     executionPlanDagMap.put(queryId, submittedDag);
     QueryStarterUtils.setUpOutputEmitters(operatorChainManager, submittedDag);
     // starts to receive input data stream from the sources
