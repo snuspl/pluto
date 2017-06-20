@@ -21,6 +21,7 @@ import org.apache.reef.tang.annotations.NamedParameter;
 /**
  * TODO[REMOVE]: this class is for test.
  */
-@NamedParameter(doc = "Parameter for test group unaware execution model", short_name = "group_aware", default_value = "true")
+@NamedParameter(doc = "Parameter for test group unaware execution model",
+    short_name = "group_aware", default_value = "true")
 public final class GroupAware implements Name<Boolean> {
 }
