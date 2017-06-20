@@ -19,9 +19,8 @@ import edu.snu.mist.core.task.OperatorChain;
 import edu.snu.mist.core.task.OperatorChainManager;
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This is an event processor that can change the operator chain manager.
@@ -63,50 +62,30 @@ final class GlobalSchedNonBlockingEventProcessor extends Thread implements Event
   public void run() {
     try {
       while (!Thread.currentThread().isInterrupted() && !closed) {
-        boolean miss = false;
+        // Pick an active group
         final GlobalSchedGroupInfo groupInfo = nextGroupSelector.getNextExecutableGroup();
         final OperatorChainManager operatorChainManager = groupInfo.getOperatorChainManager();
-        final long schedulingPeriod = schedPeriodCalculator.calculateSchedulingPeriod(groupInfo);
 
-        if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "{0}: Selected group {1}, Period: {2}",
-              new Object[]{Thread.currentThread().getName(), groupInfo, schedulingPeriod});
-        }
-
-        final long startTime = System.nanoTime();
-
-        long procsesedEvent = 0;
-        while (TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) < schedulingPeriod && !closed) {
-          // This is a blocking operator chain manager
-          // So it should not be null
+        while (groupInfo.isActive()) {
+          //Pick an active operator event queue
           final OperatorChain operatorChain = operatorChainManager.pickOperatorChain();
-          // If it has no active operator chain, choose another group
-          if (operatorChain == null) {
-            miss = true;
-            break;
-          } else {
-            procsesedEvent += 1;
-            operatorChain.processNextEvent();
+          while (operatorChain.processNextEvent()) {
+            // Process next event
           }
         }
 
         if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "{0} Process Group {1}, Event: {2}, Period: {3}, ActualTime: {4}",
-              new Object[]{Thread.currentThread().getName(), groupInfo, procsesedEvent, schedulingPeriod,
-                  TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime)});
-
-          LOG.log(Level.FINE, "{0}: Reschedule group {1}",
+          LOG.log(Level.FINE, "{0} Process Group {1}",
               new Object[]{Thread.currentThread().getName(), groupInfo});
         }
-
-        nextGroupSelector.reschedule(groupInfo, miss);
+        nextGroupSelector.reschedule(groupInfo, true);
       }
     } catch (final InterruptedException e) {
       // Interrupt occurs while sleeping, so just finishes the process...
       e.printStackTrace();
     } catch (final Exception e) {
       e.printStackTrace();
-      throw new RuntimeException(e);
+      throw new RuntimeException(e + ", OperatorChainManager should not return null");
     }
   }
 
