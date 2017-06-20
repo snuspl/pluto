@@ -16,6 +16,7 @@
 package edu.snu.mist.core.driver;
 
 import edu.snu.mist.core.driver.parameters.EventProcessorNumAssignerType;
+import edu.snu.mist.core.driver.parameters.GroupAware;
 import edu.snu.mist.core.task.QueryManager;
 import edu.snu.mist.core.task.eventProcessors.DefaultEventProcessorManager;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorFactory;
@@ -62,6 +63,8 @@ public final class MistGroupSchedulingTaskConfigs {
   private final long minSchedulingPeriod;
   private final int eventProcessorIncreaseNum;
   private final String groupSchedModelType;
+  // TODO[REMOVE]
+  private final boolean groupAware;
 
   @Inject
   private MistGroupSchedulingTaskConfigs(
@@ -74,7 +77,8 @@ public final class MistGroupSchedulingTaskConfigs {
       @Parameter(CfsSchedulingPeriod.class) final long cfsSchedulingPeriod,
       @Parameter(MinSchedulingPeriod.class) final long minSchedulingPeriod,
       @Parameter(EventProcessorIncreaseNum.class) final int eventProcessorIncreaseNum,
-      @Parameter(GroupSchedModelType.class) final String groupSchedModelType) {
+      @Parameter(GroupSchedModelType.class) final String groupSchedModelType,
+      @Parameter(GroupAware.class) final boolean groupAware) {
     this.epaType = epaType;
     this.cpuUtilLowThreshold = cpuUtilLowThreshold;
     this.eventNumHighThreshold = eventNumHighThreshold;
@@ -85,6 +89,7 @@ public final class MistGroupSchedulingTaskConfigs {
     this.minSchedulingPeriod = minSchedulingPeriod;
     this.eventProcessorIncreaseNum = eventProcessorIncreaseNum;
     this.groupSchedModelType = groupSchedModelType;
+    this.groupAware = groupAware;
   }
 
   /**
@@ -105,17 +110,12 @@ public final class MistGroupSchedulingTaskConfigs {
 
   /**
    * Get the configuration for execution model.
-   * - blocking: round-robin with blocking
    * - nonblocking: round-robin without blocking
    * - polling: round-robin without blocking + activate/deactivate group in polling approach
    */
   private Configuration getConfigurationForExecutionModel() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     switch (groupSchedModelType) {
-      case "blocking":
-        jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedEventProcessorFactory.class);
-        jcb.bindImplementation(NextGroupSelectorFactory.class, WeightedRRNextGroupSelectorFactory.class);
-        break;
       case "nonblocking":
         jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedNonBlockingEventProcessorFactory.class);
         jcb.bindImplementation(NextGroupSelectorFactory.class, WeightedRRNextGroupSelectorFactory.class);
@@ -156,6 +156,7 @@ public final class MistGroupSchedulingTaskConfigs {
     jcb.bindNamedParameter(MinSchedulingPeriod.class, Long.toString(minSchedulingPeriod));
     jcb.bindNamedParameter(EventProcessorIncreaseNum.class, Integer.toString(eventProcessorIncreaseNum));
     jcb.bindNamedParameter(GroupSchedModelType.class, groupSchedModelType);
+    jcb.bindNamedParameter(GroupAware.class, Boolean.toString(groupAware));
 
     return Configurations.merge(getConfigurationForExecutionModel(), jcb.build());
   }
@@ -175,6 +176,7 @@ public final class MistGroupSchedulingTaskConfigs {
         .registerShortNameOfClass(CfsSchedulingPeriod.class)
         .registerShortNameOfClass(MinSchedulingPeriod.class)
         .registerShortNameOfClass(EventProcessorIncreaseNum.class)
-        .registerShortNameOfClass(GroupSchedModelType.class);
+        .registerShortNameOfClass(GroupSchedModelType.class)
+        .registerShortNameOfClass(GroupAware.class);
   }
 }
