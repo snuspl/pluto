@@ -19,7 +19,9 @@ import com.rits.cloning.Cloner;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.api.datastreams.ContinuousStream;
+import edu.snu.mist.api.datastreams.configurations.PeriodicWatermarkConfiguration;
 import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
+import edu.snu.mist.api.datastreams.configurations.WatermarkConfiguration;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.graph.DAG;
@@ -128,17 +130,22 @@ public class DefaultGroupSourceManagerTest {
 
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("testGroup");
 
-    final ContinuousStream sourceStream1 = queryBuilder.socketTextStream(localTextSocketSource1Conf)
+    final int defaultWatermarkPeriod = 100;
+    final WatermarkConfiguration testConf = PeriodicWatermarkConfiguration.newBuilder()
+        .setWatermarkPeriod(defaultWatermarkPeriod)
+        .build();
+
+    final ContinuousStream sourceStream1 = queryBuilder.socketTextStream(localTextSocketSource1Conf, testConf)
         .map(toTupleMapFunc)
         .reduceByKey(0, String.class, countFunc)
         .flatMap(mapToListFunc);
-    final ContinuousStream sourceStream2 = queryBuilder.socketTextStream(localTextSocketSource2Conf)
+    final ContinuousStream sourceStream2 = queryBuilder.socketTextStream(localTextSocketSource2Conf, testConf)
         .map(toTupleMapFunc)
         .reduceByKey(0, String.class, countFunc)
         .flatMap(mapToListFunc);
     final ContinuousStream<Tuple2<String, Integer>> unionStream1 = sourceStream1.union(sourceStream2);
 
-    final ContinuousStream sourceStream3 = queryBuilder.socketTextStream(localTextSocketSource3Conf)
+    final ContinuousStream sourceStream3 = queryBuilder.socketTextStream(localTextSocketSource3Conf, testConf)
         .map(toTupleMapFunc)
         .reduceByKey(0, String.class, countFunc)
         .flatMap(mapToListFunc);
@@ -157,7 +164,7 @@ public class DefaultGroupSourceManagerTest {
    * There is only one group, one query, one ExecutionDag for this test's test query.
    * @throws Exception
    */
-  @Test(timeout = 40000)
+  @Test(timeout = 5000)
   public void testDeactivation() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(GroupId.class, "testGroup");
