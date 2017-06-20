@@ -27,7 +27,6 @@ import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.stream.NettyChannelHandler;
 import edu.snu.mist.common.stream.textmessage.NettyTextMessageStreamGenerator;
@@ -37,10 +36,6 @@ import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorFactory;
 import edu.snu.mist.core.task.globalsched.GlobalSchedNonBlockingEventProcessorFactory;
 import edu.snu.mist.core.task.globalsched.GroupAwareGlobalSchedQueryManagerImpl;
-import edu.snu.mist.core.task.globalsched.NextGroupSelectorFactory;
-import edu.snu.mist.core.task.globalsched.roundrobin.polling.InactiveGroupCheckerFactory;
-import edu.snu.mist.core.task.globalsched.roundrobin.polling.NaiveInactiveGroupCheckerFactory;
-import edu.snu.mist.core.task.globalsched.roundrobin.polling.WrrPollingNextGroupSelectorFactory;
 import edu.snu.mist.core.task.utils.TestSinkConfiguration;
 import edu.snu.mist.examples.MISTExampleUtils;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
@@ -167,12 +162,9 @@ public class DefaultGroupSourceManagerTest {
   @Test(timeout = 5000)
   public void testDeactivation() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(GroupId.class, "testGroup");
     jcb.bindNamedParameter(DeactivationEnabled.class, "true");
     jcb.bindImplementation(QueryManager.class, GroupAwareGlobalSchedQueryManagerImpl.class);
     jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedNonBlockingEventProcessorFactory.class);
-    jcb.bindImplementation(NextGroupSelectorFactory.class, WrrPollingNextGroupSelectorFactory.class);
-    jcb.bindImplementation(InactiveGroupCheckerFactory.class, NaiveInactiveGroupCheckerFactory.class);
     jcb.bindImplementation(QueryStarter.class, NoMergingQueryStarter.class);
 
     // Start source servers.
@@ -194,9 +186,10 @@ public class DefaultGroupSourceManagerTest {
     // Generate avro chained dag : needed parts from MISTExamplesUtils.submit()
     final Tuple<List<AvroVertexChain>, List<Edge>> initialAvroOpChainDag = query.getAvroOperatorChainDag();
 
+    final String groupId = "deactiveTestGroup";
     final AvroOperatorChainDag.Builder chainedDagBuilder = AvroOperatorChainDag.newBuilder();
     final AvroOperatorChainDag avroChainedDag = chainedDagBuilder
-        .setGroupId("testGroup")
+        .setGroupId(groupId)
         .setJarFilePaths(new LinkedList<>())
         .setAvroVertices(initialAvroOpChainDag.getKey())
         .setEdges(initialAvroOpChainDag.getValue())
@@ -216,7 +209,7 @@ public class DefaultGroupSourceManagerTest {
     sourceCountDownLatch2.await();
     sourceCountDownLatch3.await();
 
-    final ExecutionDags executionDags = queryManager.getGroupSourceManager("testGroup").getExecutionDags();
+    final ExecutionDags executionDags = queryManager.getGroupSourceManager(groupId).getExecutionDags();
     Assert.assertEquals(executionDags.values().size(), 1);
     final DAG<ExecutionVertex, MISTEdge> executionDag = executionDags.values().iterator().next();
     final TestSink testSink = (TestSink)findSink(executionDag);
@@ -234,7 +227,7 @@ public class DefaultGroupSourceManagerTest {
     // 2nd stage. Deactivate SRC1, input from all SRCs, and check the input.
     // Inputs from all SRCs will ensure the activation of the deactivated SRC1.
     final DAG<ExecutionVertex, MISTEdge> dagCopy1 = copyDag(executionDag);
-    queryManager.getGroupSourceManager("testGroup").deactivateBasedOnSource("query-0", "source-1");
+    queryManager.getGroupSourceManager(groupId).deactivateBasedOnSource("query-0", "source-1");
     final DAG<ExecutionVertex, MISTEdge> expectedDag1 = deactivateSourceExpectedResult(dagCopy1, "source-1");
     GraphUtils.compareTwoDag(expectedDag1, executionDag);
 
@@ -251,8 +244,8 @@ public class DefaultGroupSourceManagerTest {
     // 3rd stage. Deactivate SRC0 and SRC2, input from all SRCs, and check the input.
     // Inputs from all SRCs will ensure the activation of the deactivated SRC0 and SRC2.
     final DAG<ExecutionVertex, MISTEdge> dagCopy2 = copyDag(executionDag);
-    queryManager.getGroupSourceManager("testGroup").deactivateBasedOnSource("query-0", "source-0");
-    queryManager.getGroupSourceManager("testGroup").deactivateBasedOnSource("query-0", "source-2");
+    queryManager.getGroupSourceManager(groupId).deactivateBasedOnSource("query-0", "source-0");
+    queryManager.getGroupSourceManager(groupId).deactivateBasedOnSource("query-0", "source-2");
     final DAG<ExecutionVertex, MISTEdge> expectedDag2 = deactivateSourceExpectedResult(dagCopy2, "source-0");
     final DAG<ExecutionVertex, MISTEdge> expectedDag3 = deactivateSourceExpectedResult(expectedDag2, "source-2");
     GraphUtils.compareTwoDag(expectedDag3, executionDag);
@@ -270,8 +263,8 @@ public class DefaultGroupSourceManagerTest {
     // 4th stage. Deactivate SRC0 and SRC1, input from all SRCs, and check the input.
     // Inputs from all SRCs will ensure the activation of the deactivated SRC0 and SRC1.
     final DAG<ExecutionVertex, MISTEdge> dagCopy3 = copyDag(executionDag);
-    queryManager.getGroupSourceManager("testGroup").deactivateBasedOnSource("query-0", "source-0");
-    queryManager.getGroupSourceManager("testGroup").deactivateBasedOnSource("query-0", "source-1");
+    queryManager.getGroupSourceManager(groupId).deactivateBasedOnSource("query-0", "source-0");
+    queryManager.getGroupSourceManager(groupId).deactivateBasedOnSource("query-0", "source-1");
     final DAG<ExecutionVertex, MISTEdge> expectedDag4 = deactivateSourceExpectedResult(dagCopy3, "source-0");
     final DAG<ExecutionVertex, MISTEdge> expectedDag5 = deactivateSourceExpectedResult(expectedDag4, "source-1");
     GraphUtils.compareTwoDag(expectedDag5, executionDag);
