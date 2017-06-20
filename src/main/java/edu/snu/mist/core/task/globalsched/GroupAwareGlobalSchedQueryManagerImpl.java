@@ -120,7 +120,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   private final ConfigDagGenerator configDagGenerator;
 
   /**
-   * The execution model of event processor (blocking/nonblocking).
+   * The execution model of event processor (dispatching).
    */
   private final String executionModel;
 
@@ -237,8 +237,6 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
         }
 
         switch (executionModel) {
-          case "nonblocking":
-          case "polling":
           case "dispatching":
             jcb.bindImplementation(OperatorChainManager.class, NonBlockingActiveOperatorChainPickManager.class);
             break;

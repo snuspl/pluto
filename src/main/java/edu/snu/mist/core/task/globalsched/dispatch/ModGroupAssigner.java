@@ -77,7 +77,6 @@ public final class ModGroupAssigner implements GroupAssigner {
 
     // Modular operation to assign a selector
     NextGroupSelector selector = selectors.get(index % selectors.size());
-
     if (!selectorStampedLock.validate(stamp)) {
       stamp = selectorStampedLock.readLock();
       selector = selectors.get(index % selectors.size());

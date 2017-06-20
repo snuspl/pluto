@@ -18,7 +18,10 @@ package edu.snu.mist.core.task.globalsched.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The type of group scheduling execution model (blocking/nonblocking)",
-    short_name = "group_sched_model", default_value = "polling")
+/**
+ * TODO[REMOVE]: This is parameter for test.
+ */
+@NamedParameter(doc = "The type of group scheduling execution model",
+    short_name = "group_sched_model", default_value = "dispatching")
 public final class GroupSchedModelType implements Name<String> {
 }
