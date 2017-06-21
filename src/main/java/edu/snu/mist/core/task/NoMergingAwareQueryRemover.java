@@ -40,7 +40,7 @@ public final class NoMergingAwareQueryRemover implements QueryRemover {
   @Override
   public synchronized void deleteQuery(final String queryId) {
     final ExecutionDag executionDag = executionPlanDagMap.remove(queryId);
-    for (final ExecutionVertex vertex : executionDag.getRootVertices()) {
+    for (final ExecutionVertex vertex : executionDag.getDag().getRootVertices()) {
       final PhysicalSource src = (PhysicalSource)vertex;
       try {
         src.close();

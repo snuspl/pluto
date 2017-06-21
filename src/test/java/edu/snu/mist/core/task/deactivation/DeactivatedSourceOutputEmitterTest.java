@@ -43,21 +43,21 @@ public class DeactivatedSourceOutputEmitterTest {
    * Creates operators and adds source, dag vertices, edges and sinks to dag.
    */
   private ExecutionDag constructExecutionDag(final PhysicalSource src1,
-                                                               final OperatorChain chain,
-                                                               final PhysicalSink sink) {
+                                             final OperatorChain chain,
+                                             final PhysicalSink sink) {
 
     // Create the following execution dag for the test.
     // src1 --------------> union(= chain) -> sink
     // src2(deactivated) ->
-    final ExecutionDag dag = new ExecutionDag(new AdjacentListDAG<>());
+    final ExecutionDag executionDag = new ExecutionDag(new AdjacentListDAG<>());
 
-    dag.addVertex(src1);
-    dag.addVertex(chain);
-    dag.addVertex(sink);
-    dag.addEdge(src1, chain, new MISTEdge(Direction.LEFT));
-    dag.addEdge(chain, sink, new MISTEdge(Direction.LEFT));
+    executionDag.getDag().addVertex(src1);
+    executionDag.getDag().addVertex(chain);
+    executionDag.getDag().addVertex(sink);
+    executionDag.getDag().addEdge(src1, chain, new MISTEdge(Direction.LEFT));
+    executionDag.getDag().addEdge(chain, sink, new MISTEdge(Direction.LEFT));
 
-    return dag;
+    return executionDag;
   }
 
   @Test
@@ -105,14 +105,14 @@ public class DeactivatedSourceOutputEmitterTest {
         null, new TestWithCountDownSink<>(sinkResult, countDownAllOutputs));
 
     // Construct execution dag.
-    final ExecutionDag dag = constructExecutionDag(src1, chain, sink1);
+    final ExecutionDag executionDag = constructExecutionDag(src1, chain, sink1);
 
     // Set outputEmitters.
-    src1.setOutputEmitter(new SourceOutputEmitter<>(dag.getEdges(src1)));
+    src1.setOutputEmitter(new SourceOutputEmitter<>(executionDag.getDag().getEdges(src1)));
     final Map<ExecutionVertex, MISTEdge> needWatermarkVertices = new HashMap<>();
     needWatermarkVertices.put(chain, new MISTEdge(Direction.RIGHT, 1));
     src2.setOutputEmitter(new DeactivatedSourceOutputEmitter("testQuery", needWatermarkVertices, null, src2));
-    chain.setOutputEmitter(new OperatorOutputEmitter(dag.getEdges(chain)));
+    chain.setOutputEmitter(new OperatorOutputEmitter(executionDag.getDag().getEdges(chain)));
 
     // Start dag.
     src1.start();

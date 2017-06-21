@@ -45,7 +45,7 @@ final class DfsCommonSubDagFinder implements CommonSubDagFinder {
     final Set<ConfigVertex> visited = new HashSet<>(submittedDag.numberOfVertices());
     final Set<ConfigVertex> markedVertices = new HashSet<>();
 
-    final Set<ExecutionVertex> sourcesInExecutionDag = executionDag.getRootVertices();
+    final Set<ExecutionVertex> sourcesInExecutionDag = executionDag.getDag().getRootVertices();
     for (final ConfigVertex submitVertex : submittedDag.getRootVertices()) {
       final ExecutionVertex sameVertex = findSameVertex(sourcesInExecutionDag, submitVertex);
       if (sameVertex != null) {
@@ -93,7 +93,7 @@ final class DfsCommonSubDagFinder implements CommonSubDagFinder {
     for (final Map.Entry<ConfigVertex, MISTEdge> entry :
         submittedDag.getEdges(currSubmitDagVertex).entrySet()) {
       final Map<ExecutionVertex, MISTEdge> childNodesOfExecutionDag =
-          executionDag.getEdges(currExecutionDagVertex);
+          executionDag.getDag().getEdges(currExecutionDagVertex);
       final ExecutionVertex sameVertex =
           findSameVertex(childNodesOfExecutionDag.keySet(), entry.getKey());
       if (sameVertex != null) {

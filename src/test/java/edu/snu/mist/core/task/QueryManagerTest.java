@@ -222,7 +222,7 @@ public final class QueryManagerTest {
    * Creates operators and adds source, dag vertices, edges and sinks to dag.
    */
   private void constructExecutionDag(final Tuple<String, AvroOperatorChainDag> tuple,
-                                     final ExecutionDag dag,
+                                     final ExecutionDag executionDag,
                                      final PhysicalSource src,
                                      final PhysicalSink sink1,
                                      final PhysicalSink sink2) {
@@ -258,22 +258,22 @@ public final class QueryManagerTest {
     chain3.insertToTail(totalCountMap);
 
     // Add Source
-    dag.addVertex(src);
+    executionDag.getDag().addVertex(src);
 
     // Add dag vertices and edges
-    dag.addVertex(chain1);
-    dag.addEdge(src, chain1, new MISTEdge(Direction.LEFT));
-    dag.addVertex(chain2);
-    dag.addEdge(chain1, chain2, new MISTEdge(Direction.LEFT));
-    dag.addVertex(chain3);
-    dag.addEdge(chain1, chain3, new MISTEdge(Direction.LEFT));
+    executionDag.getDag().addVertex(chain1);
+    executionDag.getDag().addEdge(src, chain1, new MISTEdge(Direction.LEFT));
+    executionDag.getDag().addVertex(chain2);
+    executionDag.getDag().addEdge(chain1, chain2, new MISTEdge(Direction.LEFT));
+    executionDag.getDag().addVertex(chain3);
+    executionDag.getDag().addEdge(chain1, chain3, new MISTEdge(Direction.LEFT));
 
 
     // Add Sink
-    dag.addVertex(sink1);
-    dag.addEdge(chain2, sink1, new MISTEdge(Direction.LEFT));
-    dag.addVertex(sink2);
-    dag.addEdge(chain3, sink2, new MISTEdge(Direction.LEFT));
+    executionDag.getDag().addVertex(sink1);
+    executionDag.getDag().addEdge(chain2, sink1, new MISTEdge(Direction.LEFT));
+    executionDag.getDag().addVertex(sink2);
+    executionDag.getDag().addEdge(chain3, sink2, new MISTEdge(Direction.LEFT));
   }
 
   /**

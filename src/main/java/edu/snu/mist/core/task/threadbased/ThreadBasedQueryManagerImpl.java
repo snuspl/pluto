@@ -172,7 +172,7 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
       switch (executionVertex.getType()) {
         case SOURCE: {
           final PhysicalSource source = (PhysicalSource)executionVertex;
-          final Map<ExecutionVertex, MISTEdge> nextOps = physicalPlan.getEdges(source);
+          final Map<ExecutionVertex, MISTEdge> nextOps = physicalPlan.getDag().getEdges(source);
           // 3) Sets output emitters
           source.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
           sources.add(source);
@@ -182,7 +182,7 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
           // 2) Inserts the OperatorChain to OperatorChainManager.
           final OperatorChain operatorChain = (OperatorChain)executionVertex;
           final Map<ExecutionVertex, MISTEdge> edges =
-              physicalPlan.getEdges(operatorChain);
+              physicalPlan.getDag().getEdges(operatorChain);
 
           // Create a thread per operator chain
           final Thread thread = new Thread(new Runnable() {

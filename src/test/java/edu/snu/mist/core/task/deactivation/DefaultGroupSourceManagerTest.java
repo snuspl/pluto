@@ -312,8 +312,8 @@ public class DefaultGroupSourceManagerTest {
     return opChainDagClone;
   }
 
-  private Sink findSink(final ExecutionDag dag) {
-    for (final ExecutionVertex vertex : dag.getVertices()) {
+  private Sink findSink(final ExecutionDag executionDag) {
+    for (final ExecutionVertex vertex : executionDag.getDag().getVertices()) {
       if (vertex.getType() == ExecutionVertex.Type.SINK) {
         return ((PhysicalSinkImpl)vertex).getSink();
       }
@@ -331,7 +331,7 @@ public class DefaultGroupSourceManagerTest {
   private ExecutionDag deactivateSourceExpectedResult(final ExecutionDag dag,
                                                       final String sourceId) {
     final ExecutionDag result = copyDag(dag);
-    for (final ExecutionVertex source : result.getRootVertices()) {
+    for (final ExecutionVertex source : result.getDag().getRootVertices()) {
       if (source.getIdentifier().equals(sourceId)) {
         deactivateSourceDFS(result, source);
       }
@@ -342,13 +342,13 @@ public class DefaultGroupSourceManagerTest {
   /**
    * This is an auxiliary method used for DFS in the above deactivateSourceExpectedResult function.
    */
-  private void deactivateSourceDFS(final ExecutionDag dag, final ExecutionVertex source) {
-    for (final ExecutionVertex vertex : dag.getEdges(source).keySet()) {
-      if (dag.getInDegree(vertex) == 1) {
-        deactivateSourceDFS(dag, vertex);
+  private void deactivateSourceDFS(final ExecutionDag executionDag, final ExecutionVertex source) {
+    for (final ExecutionVertex vertex : executionDag.getDag().getEdges(source).keySet()) {
+      if (executionDag.getDag().getInDegree(vertex) == 1) {
+        deactivateSourceDFS(executionDag, vertex);
       }
     }
-    dag.removeVertex(source);
+    executionDag.getDag().removeVertex(source);
   }
 
   /**
@@ -356,8 +356,8 @@ public class DefaultGroupSourceManagerTest {
    */
   private ExecutionDag copyDag(final ExecutionDag dag) {
     final ExecutionDag newDag = new ExecutionDag(new AdjacentListConcurrentMapDAG<>());
-    for (final ExecutionVertex root : dag.getRootVertices()) {
-      newDag.addVertex(root);
+    for (final ExecutionVertex root : dag.getDag().getRootVertices()) {
+      newDag.getDag().addVertex(root);
       copyDagDFS(dag, root, newDag, new HashSet<>());
     }
     return newDag;
@@ -366,15 +366,15 @@ public class DefaultGroupSourceManagerTest {
   /**
    * This is an auxiliary method used for DFS in the above copyDag function.
    */
-  private void copyDagDFS(final ExecutionDag oldDag, final ExecutionVertex currentVertex,
+  private void copyDagDFS(final ExecutionDag oldExDag, final ExecutionVertex currentVertex,
                           final ExecutionDag newDag, final Set<ExecutionVertex> visited) {
-    for (final Map.Entry<ExecutionVertex, MISTEdge> entry : oldDag.getEdges(currentVertex).entrySet()) {
+    for (final Map.Entry<ExecutionVertex, MISTEdge> entry : oldExDag.getDag().getEdges(currentVertex).entrySet()) {
       final ExecutionVertex nextVertex = entry.getKey();
       if (!visited.contains(nextVertex)) {
-        newDag.addVertex(nextVertex);
-        newDag.addEdge(currentVertex, nextVertex, entry.getValue());
+        newDag.getDag().addVertex(nextVertex);
+        newDag.getDag().addEdge(currentVertex, nextVertex, entry.getValue());
         visited.add(nextVertex);
-        copyDagDFS(oldDag, nextVertex, newDag, visited);
+        copyDagDFS(oldExDag, nextVertex, newDag, visited);
       }
     }
   }

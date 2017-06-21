@@ -155,7 +155,7 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
   private Tuple<ExecutionVertex, ExecutionDag> findSourceAndDag(final String sourceId) {
     // Search executionDags to find the source to deactivate.
     for (final ExecutionDag dag : executionDags.values()) {
-      for (final ExecutionVertex root : dag.getRootVertices()) {
+      for (final ExecutionVertex root : dag.getDag().getRootVertices()) {
         if (root.getIdentifier().equals(sourceId)) {
           return new Tuple<>(root, dag);
         }
@@ -175,12 +175,12 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
                                            final Map<ExecutionVertex, MISTEdge> needWatermarkVertices)
       throws IOException {
     if (activeExecutionVertexIdMap.containsKey(currentVertex.getIdentifier())) {
-      final Map<ExecutionVertex, MISTEdge> nextVertices = executionDag.getEdges(currentVertex);
+      final Map<ExecutionVertex, MISTEdge> nextVertices = executionDag.getDag().getEdges(currentVertex);
       try {
         switch (currentVertex.getType()) {
           case SOURCE: {
             // For the outgoingEdges of the source(to be deactivated), save the index and direction information.
-            final Map<ExecutionVertex, MISTEdge> outgoingEdges = executionDag.getEdges(currentVertex);
+            final Map<ExecutionVertex, MISTEdge> outgoingEdges = executionDag.getDag().getEdges(currentVertex);
             final Map<String, AvroMISTEdge> avroOutgoingEdges = convertToAvroOutgoingEdges(outgoingEdges);
             final AvroPhysicalSourceOutgoingEdgesInfo.Builder avroPhysicalSourceOutgoingEdgesInfoBuilder =
                 AvroPhysicalSourceOutgoingEdgesInfo.newBuilder()
@@ -192,18 +192,18 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
             avroExecutionVertexStore.saveAvroPhysicalSourceOutgoingEdgesInfo(new Tuple<>(currentVertex.getIdentifier(),
                 avroPhysicalSourceOutgoingEdgesInfo));
             // Remove the source from the executionDag.
-            executionDag.removeVertex(currentVertex);
+            executionDag.getDag().removeVertex(currentVertex);
             break;
           }
           case OPERATOR_CHAIN: {
             // Save the physicalVertices if the operator chain is dependent on only the source to be deactivated.
-            if (executionDag.getInDegree(currentVertex) == 0) {
+            if (executionDag.getDag().getInDegree(currentVertex) == 0) {
               avroExecutionVertexStore.saveAvroPhysicalOperatorChain(
                   new Tuple<>(currentVertex.getIdentifier(), getAvroPhysicalOperatorChain((OperatorChain) currentVertex,
-                      executionDag.getEdges(currentVertex))));
+                      executionDag.getDag().getEdges(currentVertex))));
               activeExecutionVertexIdMap.remove(currentVertex.getIdentifier());
               // Remove the vertex from executionDag.
-              executionDag.removeVertex(currentVertex);
+              executionDag.getDag().removeVertex(currentVertex);
               // Set the OutputEmitter to null.
               ((OperatorChain) currentVertex).setOutputEmitter(null);
               // Remove the chain from the operatorChainManager.
@@ -214,7 +214,7 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
           case SINK: {
             activeExecutionVertexIdMap.remove(currentVertex.getIdentifier());
             // Remove the vertex from executionDag.
-            executionDag.removeVertex(currentVertex);
+            executionDag.getDag().removeVertex(currentVertex);
             // TODO: [MIST-459] Policy of Sink closing. Currently, the sink is left open.
             break;
           }
@@ -231,7 +231,7 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
           final ExecutionVertex nextVertex = nextVertexAndEdge.getKey();
           // If nextVertex is the first OperatorChain that still has an active incoming edge,
           // DFS must be stopped and vertex must be saved in needWatermarkVertices for the DeactivatedSourceEmitter.
-          if (executionDag.getInDegree(nextVertex) >= 1) {
+          if (executionDag.getDag().getInDegree(nextVertex) >= 1) {
             needWatermarkVertices.put(nextVertex, nextVertexAndEdge.getValue());
           } else {
             dfsAndSaveExecutionVertices(executionDag, nextVertex, needWatermarkVertices);
@@ -427,10 +427,10 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
         // Set output emitter
         source.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
         // Add vertex and edges to executionDag
-        executionDag.addVertex(revivedExecutionVertex);
+        executionDag.getDag().addVertex(revivedExecutionVertex);
         for (final ExecutionVertex adjacentVertex : nextOps.keySet()) {
-          executionDag.addVertex(adjacentVertex);
-          executionDag.addEdge(revivedExecutionVertex, adjacentVertex, nextOps.get(adjacentVertex));
+          executionDag.getDag().addVertex(adjacentVertex);
+          executionDag.getDag().addEdge(revivedExecutionVertex, adjacentVertex, nextOps.get(adjacentVertex));
         }
         LOG.log(Level.INFO, revivedExecutionVertex.getIdentifier() + " has been activated.");
         activeExecutionVertexIdMap.put(currentVertexIdToActivate, revivedExecutionVertex);
@@ -442,10 +442,10 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
         // Set output emitter
         operatorChain.setOutputEmitter(new OperatorOutputEmitter(nextOps));
         // Add vertex and edges to executionDag.
-        executionDag.addVertex(revivedExecutionVertex);
+        executionDag.getDag().addVertex(revivedExecutionVertex);
         for (final ExecutionVertex adjacentVertex : nextOps.keySet()) {
-          executionDag.addVertex(adjacentVertex);
-          executionDag.addEdge(revivedExecutionVertex, adjacentVertex, nextOps.get(adjacentVertex));
+          executionDag.getDag().addVertex(adjacentVertex);
+          executionDag.getDag().addEdge(revivedExecutionVertex, adjacentVertex, nextOps.get(adjacentVertex));
         }
         LOG.log(Level.INFO, revivedExecutionVertex.getIdentifier() + " has been activated.");
         activeExecutionVertexIdMap.put(currentVertexIdToActivate, revivedExecutionVertex);

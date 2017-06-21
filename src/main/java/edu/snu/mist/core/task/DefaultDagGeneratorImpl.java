@@ -58,7 +58,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
     if (created.get(currVertex) == null) {
       currExecutionVertex = executionVertexGenerator.generate(currVertex, urls, classLoader);
       created.put(currVertex, currExecutionVertex);
-      executionDag.addVertex(currExecutionVertex);
+      executionDag.getDag().addVertex(currExecutionVertex);
       // do dfs creation
       for (final Map.Entry<ConfigVertex, MISTEdge> edges : configDag.getEdges(currVertex).entrySet()) {
         final ConfigVertex childVertex = edges.getKey();
@@ -68,7 +68,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
     } else {
       currExecutionVertex = created.get(currVertex);
     }
-    executionDag.addEdge(parent, currExecutionVertex, parentEdge);
+    executionDag.getDag().addEdge(parent, currExecutionVertex, parentEdge);
   }
 
   /**
@@ -93,7 +93,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
     for (final ConfigVertex source : configDag.getRootVertices()) {
       final ExecutionVertex currExecutionVertex =
           executionVertexGenerator.generate(source, urls, classLoader);
-      executionDag.addVertex(currExecutionVertex);
+      executionDag.getDag().addVertex(currExecutionVertex);
       created.put(source, currExecutionVertex);
       // do dfs creation
       for (final Map.Entry<ConfigVertex, MISTEdge> edges : configDag.getEdges(source).entrySet()) {

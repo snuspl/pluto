@@ -50,8 +50,8 @@ public final class EventNumMetricEventHandler implements MetricTrackEventHandler
     for (final GroupInfo groupInfo : groupInfoMap.values()) {
       // Track the number of event per each group
       long groupNumEvent = 0;
-      for (final ExecutionDag dag : groupInfo.getExecutionDags().values()) {
-        final Collection<ExecutionVertex> vertices = dag.getVertices();
+      for (final ExecutionDag executionDag : groupInfo.getExecutionDags().values()) {
+        final Collection<ExecutionVertex> vertices = executionDag.getDag().getVertices();
         for (final ExecutionVertex ev : vertices) {
           if (ev.getType() == ExecutionVertex.Type.OPERATOR_CHAIN) {
             groupNumEvent += ((OperatorChain) ev).numberOfEvents();

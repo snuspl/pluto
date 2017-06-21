@@ -33,17 +33,17 @@ public final class QueryStarterUtils {
   /**
    * Sets the OutputEmitters of the sources, operators and sinks.
    * @param operatorChainManager operator chain manager
-   * @param submittedDag the dag of the submitted query
+   * @param submittedExecutionDag the dag of the submitted query
    */
   public static void setUpOutputEmitters(final OperatorChainManager operatorChainManager,
-                                         final ExecutionDag submittedDag) {
-    final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(submittedDag.getDag());
+                                         final ExecutionDag submittedExecutionDag) {
+    final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(submittedExecutionDag.getDag());
     while (iterator.hasNext()) {
       final ExecutionVertex executionVertex = iterator.next();
       switch (executionVertex.getType()) {
         case SOURCE: {
           final PhysicalSource source = (PhysicalSource)executionVertex;
-          final Map<ExecutionVertex, MISTEdge> nextOps = submittedDag.getEdges(source);
+          final Map<ExecutionVertex, MISTEdge> nextOps = submittedExecutionDag.getDag().getEdges(source);
           // Sets output emitters
           source.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
           break;
@@ -51,7 +51,7 @@ public final class QueryStarterUtils {
         case OPERATOR_CHAIN: {
           final OperatorChain operatorChain = (OperatorChain)executionVertex;
           final Map<ExecutionVertex, MISTEdge> edges =
-              submittedDag.getEdges(operatorChain);
+              submittedExecutionDag.getDag().getEdges(operatorChain);
           // Sets output emitters and operator chain manager for operator chain.
           operatorChain.setOutputEmitter(new OperatorOutputEmitter(edges));
           operatorChain.setOperatorChainManager(operatorChainManager);

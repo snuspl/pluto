@@ -165,12 +165,12 @@ public final class MergeAwareQueryRemoverTest {
     dag.addEdge(ocVertex, sinkVertex, new MISTEdge(Direction.LEFT));
 
     final ExecutionDag executionDag = new ExecutionDag(new AdjacentListDAG<>());
-    executionDag.addVertex(source);
-    executionDag.addVertex(operatorChain);
-    executionDag.addVertex(sink);
+    executionDag.getDag().addVertex(source);
+    executionDag.getDag().addVertex(operatorChain);
+    executionDag.getDag().addVertex(sink);
 
-    executionDag.addEdge(source, operatorChain, new MISTEdge(Direction.LEFT));
-    executionDag.addEdge(operatorChain, sink, new MISTEdge(Direction.LEFT));
+    executionDag.getDag().addEdge(source, operatorChain, new MISTEdge(Direction.LEFT));
+    executionDag.getDag().addEdge(operatorChain, sink, new MISTEdge(Direction.LEFT));
 
     return new Tuple<>(dag, executionDag);
   }
@@ -445,12 +445,12 @@ public final class MergeAwareQueryRemoverTest {
     final String query2Id = "q2";
 
     // Merged dag
-    final ExecutionDag mergedDag = dagTuple1.getValue();
-    mergedDag.addVertex(sink2);
-    mergedDag.addEdge(operatorChain1, sink2, new MISTEdge(Direction.LEFT));
+    final ExecutionDag mergedExecutionDag = dagTuple1.getValue();
+    mergedExecutionDag.getDag().addVertex(sink2);
+    mergedExecutionDag.getDag().addEdge(operatorChain1, sink2, new MISTEdge(Direction.LEFT));
 
     // Add execution dag to srcAndDagMap
-    srcAndDagMap.put(sourceConf, mergedDag);
+    srcAndDagMap.put(sourceConf, mergedExecutionDag);
 
     // Add execution dag to queryIdConfigDagMap
     queryIdConfigDagMap.put(query1Id, dagTuple1.getKey());
@@ -464,17 +464,17 @@ public final class MergeAwareQueryRemoverTest {
     configExecutionVertexMap.put(ocVertex2, operatorChain1);
     configExecutionVertexMap.put(sinkVertex2, sink2);
     // ExecutionDags
-    executionDags.add(mergedDag);
+    executionDags.add(mergedExecutionDag);
     // ExecutionVertexCountMap
     executionVertexCountMap.put(src1, 2);
     executionVertexCountMap.put(operatorChain1, 2);
     executionVertexCountMap.put(sink1, 1);
     executionVertexCountMap.put(sink2, 1);
     // ExecutionVertexDagMap
-    executionVertexDagMap.put(src1, mergedDag);
-    executionVertexDagMap.put(operatorChain1, mergedDag);
-    executionVertexDagMap.put(sink1, mergedDag);
-    executionVertexDagMap.put(sink2, mergedDag);
+    executionVertexDagMap.put(src1, mergedExecutionDag);
+    executionVertexDagMap.put(operatorChain1, mergedExecutionDag);
+    executionVertexDagMap.put(sink1, mergedExecutionDag);
+    executionVertexDagMap.put(sink2, mergedExecutionDag);
 
     // Remove query2
     queryRemover.deleteQuery(query2Id);
@@ -513,7 +513,7 @@ public final class MergeAwareQueryRemoverTest {
     Assert.assertNull(executionVertexDagMap.get(sink2));
 
     // Check if the execution dag is changed correctly
-    final Map<ExecutionVertex, MISTEdge> oc1Edges = mergedDag.getEdges(operatorChain1);
+    final Map<ExecutionVertex, MISTEdge> oc1Edges = mergedExecutionDag.getDag().getEdges(operatorChain1);
     Assert.assertEquals(1, oc1Edges.size());
     Assert.assertEquals(sink1, oc1Edges.keySet().iterator().next());
   }

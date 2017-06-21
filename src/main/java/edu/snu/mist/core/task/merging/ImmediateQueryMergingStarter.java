@@ -139,7 +139,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
         // Set up the output emitters of the submitted DAG
         QueryStarterUtils.setUpOutputEmitters(operatorChainManager, executionDag);
 
-        for (final ExecutionVertex source : executionDag.getRootVertices()) {
+        for (final ExecutionVertex source : executionDag.getDag().getRootVertices()) {
           // Start the source
           final PhysicalSource src = (PhysicalSource) source;
           srcAndDagMap.put(src.getConfiguration(), executionDag);
@@ -147,14 +147,14 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
         }
 
         // Update the execution dag of the execution vertex
-        for (final ExecutionVertex ev : executionDag.getVertices()) {
+        for (final ExecutionVertex ev : executionDag.getDag().getVertices()) {
           executionVertexDagMap.put(ev, executionDag);
         }
 
         executionDags.add(executionDag);
 
         // Add the execution vertices to the ActiveExecutionVertexIdMap.
-        for (final ExecutionVertex executionVertex : executionDag.getVertices()) {
+        for (final ExecutionVertex executionVertex : executionDag.getDag().getVertices()) {
           activeExecutionVertexIdMap.put(executionVertex.getIdentifier(), executionVertex);
         }
         return;
@@ -162,30 +162,30 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
 
       // If there exist mergeable execution dags,
       // Select the DAG that has the largest number of vertices and merge all of the DAG to the largest DAG
-      final ExecutionDag sharableDag = selectLargestDag(mergeableDags.values());
+      final ExecutionDag sharableExecutionDag = selectLargestDag(mergeableDags.values());
       // Merge all dag into one execution dag
       // We suppose that all of the dags has no same vertices
-      for (final ExecutionDag sd : mergeableDags.values()) {
-        if (sd != sharableDag) {
-          GraphUtils.copy(sd.getDag(), sharableDag.getDag());
+      for (final ExecutionDag executionDag : mergeableDags.values()) {
+        if (executionDag != sharableExecutionDag) {
+          GraphUtils.copy(executionDag.getDag(), sharableExecutionDag.getDag());
           // Remove the execution dag
-          executionDags.remove(sd);
+          executionDags.remove(executionDag);
 
           // Update all of the sources in the execution Dag
-          for (final ExecutionVertex source : sd.getRootVertices()) {
-            srcAndDagMap.replace(((PhysicalSource) source).getConfiguration(), sharableDag);
+          for (final ExecutionVertex source : executionDag.getDag().getRootVertices()) {
+            srcAndDagMap.replace(((PhysicalSource) source).getConfiguration(), sharableExecutionDag);
           }
 
           // Update the execution dag of the execution vertex
-          for (final ExecutionVertex ev : sd.getVertices()) {
-            executionVertexDagMap.put(ev, sharableDag);
+          for (final ExecutionVertex ev : executionDag.getDag().getVertices()) {
+            executionVertexDagMap.put(ev, sharableExecutionDag);
           }
         }
       }
 
       // After that, find the sub-dag between the sharableDAG and the submitted dag
       final Map<ConfigVertex, ExecutionVertex> subDagMap =
-          commonSubDagFinder.findSubDag(sharableDag, submittedDag);
+          commonSubDagFinder.findSubDag(sharableExecutionDag, submittedDag);
 
       // After that, we should merge the sharable dag with the submitted dag
       // and update the output emitters of the sharable dag
@@ -195,9 +195,9 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
         ExecutionVertex executionVertex;
         if (subDagMap.get(source) == null) {
           executionVertex = executionVertexGenerator.generate(source, urls, classLoader);
-          sharableDag.addVertex(executionVertex);
+          sharableExecutionDag.getDag().addVertex(executionVertex);
           executionVertexCountMap.put(executionVertex, 1);
-          executionVertexDagMap.put(executionVertex, sharableDag);
+          executionVertexDagMap.put(executionVertex, sharableExecutionDag);
         } else {
           executionVertex = subDagMap.get(source);
           executionVertexCountMap.put(executionVertex, executionVertexCountMap.get(executionVertex) + 1);
@@ -206,20 +206,20 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
 
         for (final Map.Entry<ConfigVertex, MISTEdge> child : submittedDag.getEdges(source).entrySet()) {
           dfsMerge(subDagMap, visited, executionVertex,
-              child.getValue(), child.getKey(), sharableDag, submittedDag, urls, classLoader);
+              child.getValue(), child.getKey(), sharableExecutionDag, submittedDag, urls, classLoader);
         }
       }
 
       // If there are sources that are not shared, start them
       for (final ConfigVertex source : submittedDag.getRootVertices()) {
         if (!subDagMap.containsKey(source)) {
-          srcAndDagMap.put(source.getConfiguration().get(0), sharableDag);
+          srcAndDagMap.put(source.getConfiguration().get(0), sharableExecutionDag);
           ((PhysicalSource)configExecutionVertexMap.get(source)).start();
         }
       }
 
       // Add the execution vertices to the ActiveExecutionVertexIdMap.
-      for (final ExecutionVertex executionVertex : sharableDag.getVertices()) {
+      for (final ExecutionVertex executionVertex : sharableExecutionDag.getDag().getVertices()) {
         final String vertexId = executionVertex.getIdentifier();
         if (!activeExecutionVertexIdMap.containsKey(vertexId)) {
           activeExecutionVertexIdMap.put(executionVertex.getIdentifier(), executionVertex);
@@ -245,7 +245,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
       created.put(currVertex, currExecutionVertex);
       executionVertexCountMap.put(currExecutionVertex, 1);
       executionVertexDagMap.put(currExecutionVertex, executionDag);
-      executionDag.addVertex(currExecutionVertex);
+      executionDag.getDag().addVertex(currExecutionVertex);
       // do dfs creation
       for (final Map.Entry<ConfigVertex, MISTEdge> edges : configDag.getEdges(currVertex).entrySet()) {
         final ConfigVertex childVertex = edges.getKey();
@@ -256,7 +256,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
       currExecutionVertex = created.get(currVertex);
     }
     configExecutionVertexMap.put(currVertex, currExecutionVertex);
-    executionDag.addEdge(parent, currExecutionVertex, parentEdge);
+    executionDag.getDag().addEdge(parent, currExecutionVertex, parentEdge);
   }
 
   /**
@@ -279,7 +279,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
       configExecutionVertexMap.put(source, currExecutionVertex);
       executionVertexCountMap.put(currExecutionVertex, 1);
       executionVertexDagMap.put(currExecutionVertex, executionDag);
-      executionDag.addVertex(currExecutionVertex);
+      executionDag.getDag().addVertex(currExecutionVertex);
       // do dfs creation
       for (final Map.Entry<ConfigVertex, MISTEdge> edges : configDag.getEdges(source).entrySet()) {
         final ConfigVertex childVertex = edges.getKey();
@@ -313,7 +313,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
                         final URL[] urls,
                         final ClassLoader classLoader) throws IOException, InjectionException {
     if (visited.contains(currentVertex)) {
-      executionDag.addEdge(parent, configExecutionVertexMap.get(currentVertex), parentEdge);
+      executionDag.getDag().addEdge(parent, configExecutionVertexMap.get(currentVertex), parentEdge);
       return;
     }
 
@@ -326,7 +326,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
     if (correspondingVertex == null) {
       // it is not shared, so we need to create it
       correspondingVertex = executionVertexGenerator.generate(currentVertex, urls, classLoader);
-      executionDag.addVertex(correspondingVertex);
+      executionDag.getDag().addVertex(correspondingVertex);
       executionVertexCountMap.put(correspondingVertex, 1);
       executionVertexDagMap.put(correspondingVertex, executionDag);
     } else {
@@ -353,14 +353,14 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
     if (outputEmitterUpdateNeeded) {
       if (correspondingVertex.getType() == ExecutionVertex.Type.SOURCE) {
         ((PhysicalSource)correspondingVertex)
-            .setOutputEmitter(new SourceOutputEmitter<>(executionDag.getEdges(correspondingVertex)));
+            .setOutputEmitter(new SourceOutputEmitter<>(executionDag.getDag().getEdges(correspondingVertex)));
       } else if (correspondingVertex.getType() == ExecutionVertex.Type.OPERATOR_CHAIN) {
         ((OperatorChain)correspondingVertex).setOutputEmitter(
-            new OperatorOutputEmitter(executionDag.getEdges(correspondingVertex)));
+            new OperatorOutputEmitter(executionDag.getDag().getEdges(correspondingVertex)));
       }
     }
 
-    executionDag.addEdge(parent, correspondingVertex, parentEdge);
+    executionDag.getDag().addEdge(parent, correspondingVertex, parentEdge);
   }
 
   /**
@@ -373,10 +373,10 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
       final Collection<ExecutionDag> dags) {
     int count = 0;
     ExecutionDag largestDag = null;
-    for (final ExecutionDag dag : dags) {
-      if (dag.numberOfVertices() > count) {
-        count = dag.numberOfVertices();
-        largestDag = dag;
+    for (final ExecutionDag executionDag : dags) {
+      if (executionDag.getDag().numberOfVertices() > count) {
+        count = executionDag.getDag().numberOfVertices();
+        largestDag = executionDag;
       }
     }
     return largestDag;
