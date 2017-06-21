@@ -55,10 +55,11 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
                            final URL[] urls,
                            final ClassLoader classLoader) throws IOException, InjectionException {
     final ExecutionVertex currExecutionVertex;
+    final DAG<ExecutionVertex, MISTEdge> dag = executionDag.getDag();
     if (created.get(currVertex) == null) {
       currExecutionVertex = executionVertexGenerator.generate(currVertex, urls, classLoader);
       created.put(currVertex, currExecutionVertex);
-      executionDag.getDag().addVertex(currExecutionVertex);
+      dag.addVertex(currExecutionVertex);
       // do dfs creation
       for (final Map.Entry<ConfigVertex, MISTEdge> edges : configDag.getEdges(currVertex).entrySet()) {
         final ConfigVertex childVertex = edges.getKey();
@@ -68,7 +69,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
     } else {
       currExecutionVertex = created.get(currVertex);
     }
-    executionDag.getDag().addEdge(parent, currExecutionVertex, parentEdge);
+    dag.addEdge(parent, currExecutionVertex, parentEdge);
   }
 
   /**

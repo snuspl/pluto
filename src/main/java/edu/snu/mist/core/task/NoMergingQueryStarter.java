@@ -74,12 +74,13 @@ public final class NoMergingQueryStarter implements QueryStarter {
     executionPlanDagMap.put(queryId, submittedExecutionDag);
     QueryStarterUtils.setUpOutputEmitters(operatorChainManager, submittedExecutionDag);
     // starts to receive input data stream from the sources
-    for (final ExecutionVertex source : submittedExecutionDag.getDag().getRootVertices()) {
+    final DAG<ExecutionVertex, MISTEdge> dag = submittedExecutionDag.getDag();
+    for (final ExecutionVertex source : dag.getRootVertices()) {
       final PhysicalSource ps = (PhysicalSource)source;
       ps.start();
     }
     // Add the execution vertices to the ActiveExecutionVertexIdMap.
-    for (final ExecutionVertex executionVertex : submittedExecutionDag.getDag().getVertices()) {
+    for (final ExecutionVertex executionVertex : dag.getVertices()) {
       activeExecutionVertexIdMap.put(executionVertex.getIdentifier(), executionVertex);
     }
   }

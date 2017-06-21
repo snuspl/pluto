@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
+import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 
@@ -37,13 +38,14 @@ public final class QueryStarterUtils {
    */
   public static void setUpOutputEmitters(final OperatorChainManager operatorChainManager,
                                          final ExecutionDag submittedExecutionDag) {
-    final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(submittedExecutionDag.getDag());
+    final DAG<ExecutionVertex, MISTEdge> dag = submittedExecutionDag.getDag();
+    final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(dag);
     while (iterator.hasNext()) {
       final ExecutionVertex executionVertex = iterator.next();
       switch (executionVertex.getType()) {
         case SOURCE: {
           final PhysicalSource source = (PhysicalSource)executionVertex;
-          final Map<ExecutionVertex, MISTEdge> nextOps = submittedExecutionDag.getDag().getEdges(source);
+          final Map<ExecutionVertex, MISTEdge> nextOps = dag.getEdges(source);
           // Sets output emitters
           source.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
           break;
@@ -51,7 +53,7 @@ public final class QueryStarterUtils {
         case OPERATOR_CHAIN: {
           final OperatorChain operatorChain = (OperatorChain)executionVertex;
           final Map<ExecutionVertex, MISTEdge> edges =
-              submittedExecutionDag.getDag().getEdges(operatorChain);
+              dag.getEdges(operatorChain);
           // Sets output emitters and operator chain manager for operator chain.
           operatorChain.setOutputEmitter(new OperatorOutputEmitter(edges));
           operatorChain.setOperatorChainManager(operatorChainManager);

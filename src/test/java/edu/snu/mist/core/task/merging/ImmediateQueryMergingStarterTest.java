@@ -137,13 +137,13 @@ public final class ImmediateQueryMergingStarterTest {
     dag.addEdge(srcVertex, ocVertex, new MISTEdge(Direction.LEFT));
     dag.addEdge(ocVertex, sinkVertex, new MISTEdge(Direction.LEFT));
 
-    final ExecutionDag executionDag = new ExecutionDag(new AdjacentListConcurrentMapDAG<>());
-    executionDag.getDag().addVertex(source);
-    executionDag.getDag().addVertex(operatorChain);
-    executionDag.getDag().addVertex(sink);
+    final DAG<ExecutionVertex, MISTEdge> exDag = new AdjacentListConcurrentMapDAG<>();
+    exDag.addVertex(source);
+    exDag.addVertex(operatorChain);
+    exDag.addVertex(sink);
 
-    executionDag.getDag().addEdge(source, operatorChain, new MISTEdge(Direction.LEFT));
-    executionDag.getDag().addEdge(operatorChain, sink, new MISTEdge(Direction.LEFT));
+    exDag.addEdge(source, operatorChain, new MISTEdge(Direction.LEFT));
+    exDag.addEdge(operatorChain, sink, new MISTEdge(Direction.LEFT));
 
     when(executionVertexGenerator.generate(eq(srcVertex), any(URL[].class), any(ClassLoader.class)))
         .thenReturn(source);
@@ -152,6 +152,7 @@ public final class ImmediateQueryMergingStarterTest {
     when(executionVertexGenerator.generate(eq(sinkVertex), any(URL[].class), any(ClassLoader.class)))
         .thenReturn(sink);
 
+    final ExecutionDag executionDag = new ExecutionDag(exDag);
     return new Tuple<>(dag, executionDag);
   }
 
@@ -209,14 +210,15 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(dagTuple.getKey(), queryIdConfigDagMap.get("q1"));
 
     // Check srcAndDagMap
-    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple.getValue().getDag(), srcAndDagMap.get(sourceConf).getDag()));
+    final DAG<ExecutionVertex, MISTEdge> executionDag = dagTuple.getValue().getDag();
+    Assert.assertTrue(GraphUtils.compareTwoDag(executionDag, srcAndDagMap.get(sourceConf).getDag()));
 
     // Check executionVertexDagMap
-    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple.getValue().getDag(),
+    Assert.assertTrue(GraphUtils.compareTwoDag(executionDag,
         executionVertexDagMap.get(source).getDag()));
-    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple.getValue().getDag(),
+    Assert.assertTrue(GraphUtils.compareTwoDag(executionDag,
         executionVertexDagMap.get(operatorChain).getDag()));
-    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple.getValue().getDag(),
+    Assert.assertTrue(GraphUtils.compareTwoDag(executionDag,
         executionVertexDagMap.get(sink).getDag()));
 
     // Check configExecutionVertexMap
@@ -314,22 +316,24 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(dagTuple2.getKey(), queryIdConfigDagMap.get(query2Id));
 
     // Check srcAndDagMap
-    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple1.getValue().getDag(), srcAndDagMap.get(sourceConf1).getDag()));
-    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple2.getValue().getDag(), srcAndDagMap.get(sourceConf2).getDag()));
+    final DAG<ExecutionVertex, MISTEdge> dag1 = dagTuple1.getValue().getDag();
+    Assert.assertTrue(GraphUtils.compareTwoDag(dag1, srcAndDagMap.get(sourceConf1).getDag()));
+    final DAG<ExecutionVertex, MISTEdge> dag2 = dagTuple2.getValue().getDag();
+    Assert.assertTrue(GraphUtils.compareTwoDag(dag2, srcAndDagMap.get(sourceConf2).getDag()));
 
     // Check executionVertexDagMap
-    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple1.getValue().getDag(),
+    Assert.assertTrue(GraphUtils.compareTwoDag(dag1,
         executionVertexDagMap.get(src1).getDag()));
-    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple1.getValue().getDag(),
+    Assert.assertTrue(GraphUtils.compareTwoDag(dag1,
         executionVertexDagMap.get(operatorChain1).getDag()));
-    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple1.getValue().getDag(),
+    Assert.assertTrue(GraphUtils.compareTwoDag(dag1,
         executionVertexDagMap.get(sink1).getDag()));
 
-    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple2.getValue().getDag(),
+    Assert.assertTrue(GraphUtils.compareTwoDag(dag2,
         executionVertexDagMap.get(src2).getDag()));
-    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple2.getValue().getDag(),
+    Assert.assertTrue(GraphUtils.compareTwoDag(dag2,
         executionVertexDagMap.get(operatorChain2).getDag()));
-    Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple2.getValue().getDag(),
+    Assert.assertTrue(GraphUtils.compareTwoDag(dag2,
         executionVertexDagMap.get(sink2).getDag()));
 
     // Check configExecutionVertexMap
@@ -435,24 +439,24 @@ public final class ImmediateQueryMergingStarterTest {
 
     // Check execution dags
     final Collection<ExecutionDag> expectedDags = new HashSet<>();
-    final ExecutionDag mergedDag = dagTuple1.getValue();
-    mergedDag.getDag().addVertex(sink2);
-    mergedDag.getDag().addEdge(operatorChain1, sink2, new MISTEdge(Direction.LEFT));
+    final DAG<ExecutionVertex, MISTEdge> mergedDag = dagTuple1.getValue().getDag();
+    mergedDag.addVertex(sink2);
+    mergedDag.addEdge(operatorChain1, sink2, new MISTEdge(Direction.LEFT));
     expectedDags.add(srcAndDagMap.get(sourceConf));
     Assert.assertEquals(expectedDags, executionDags.values());
 
     // Check srcAndDagMap
-    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag.getDag(), srcAndDagMap.get(sourceConf).getDag()));
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, srcAndDagMap.get(sourceConf).getDag()));
 
     // Check executionVertexDagMap
-    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag.getDag(), executionVertexDagMap.get(src1).getDag()));
-    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag.getDag(), executionVertexDagMap.get(operatorChain1).getDag()));
-    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag.getDag(), executionVertexDagMap.get(sink1).getDag()));
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, executionVertexDagMap.get(src1).getDag()));
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, executionVertexDagMap.get(operatorChain1).getDag()));
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, executionVertexDagMap.get(sink1).getDag()));
 
     // They are merged, so src2, oc2 and sink2 should be included in dag1
     Assert.assertNull(executionVertexDagMap.get(src2));
     Assert.assertNull(executionVertexDagMap.get(operatorChain2));
-    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag.getDag(), executionVertexDagMap.get(sink2).getDag()));
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, executionVertexDagMap.get(sink2).getDag()));
 
     // Check configExecutionVertexMap
     Assert.assertEquals(src1, configExecutionVertexMap.get(srcVertex1));
@@ -563,11 +567,11 @@ public final class ImmediateQueryMergingStarterTest {
 
     // Check execution dags
     final Collection<ExecutionDag> expectedDags = new HashSet<>();
-    final ExecutionDag mergedExecutionDag = dagTuple1.getValue();
-    mergedExecutionDag.getDag().addVertex(operatorChain2);
-    mergedExecutionDag.getDag().addVertex(sink2);
-    mergedExecutionDag.getDag().addEdge(src1, operatorChain2, new MISTEdge(Direction.LEFT));
-    mergedExecutionDag.getDag().addEdge(operatorChain2, sink2, new MISTEdge(Direction.LEFT));
+    final DAG<ExecutionVertex, MISTEdge> mergedDag = dagTuple1.getValue().getDag();
+    mergedDag.addVertex(operatorChain2);
+    mergedDag.addVertex(sink2);
+    mergedDag.addEdge(src1, operatorChain2, new MISTEdge(Direction.LEFT));
+    mergedDag.addEdge(operatorChain2, sink2, new MISTEdge(Direction.LEFT));
     expectedDags.add(srcAndDagMap.get(sourceConf));
     Assert.assertEquals(expectedDags, executionDags.values());
 
@@ -576,21 +580,21 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(dagTuple2.getKey(), queryIdConfigDagMap.get(query2Id));
 
     // Check srcAndDagMap
-    Assert.assertTrue(GraphUtils.compareTwoDag(mergedExecutionDag.getDag(), srcAndDagMap.get(sourceConf).getDag()));
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, srcAndDagMap.get(sourceConf).getDag()));
 
     // Check executionVertexDagMap
-    Assert.assertTrue(GraphUtils.compareTwoDag(mergedExecutionDag.getDag(),
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag,
         executionVertexDagMap.get(src1).getDag()));
-    Assert.assertTrue(GraphUtils.compareTwoDag(mergedExecutionDag.getDag(),
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag,
         executionVertexDagMap.get(operatorChain1).getDag()));
-    Assert.assertTrue(GraphUtils.compareTwoDag(mergedExecutionDag.getDag(),
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag,
         executionVertexDagMap.get(sink1).getDag()));
 
     // They are merged, so src2, oc2 and sink2 should be included in dag1
     Assert.assertEquals(null, executionVertexDagMap.get(src2));
-    Assert.assertTrue(GraphUtils.compareTwoDag(mergedExecutionDag.getDag(),
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag,
         executionVertexDagMap.get(operatorChain2).getDag()));
-    Assert.assertTrue(GraphUtils.compareTwoDag(mergedExecutionDag.getDag(),
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag,
         executionVertexDagMap.get(sink2).getDag()));
 
     // Check configExecutionVertexMap

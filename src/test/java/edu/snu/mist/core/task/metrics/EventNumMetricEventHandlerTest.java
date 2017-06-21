@@ -16,6 +16,7 @@
 package edu.snu.mist.core.task.metrics;
 
 import edu.snu.mist.common.graph.AdjacentListDAG;
+import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.*;
@@ -73,20 +74,22 @@ public final class EventNumMetricEventHandlerTest {
     final PhysicalSink sinkA1 = generateTestSink(idAndConfGenerator);
     final PhysicalSink sinkA2 = generateTestSink(idAndConfGenerator);
 
-    final ExecutionDag executionDagA1 = new ExecutionDag(new AdjacentListDAG<>());
-    executionDagA1.getDag().addVertex(srcA1);
-    executionDagA1.getDag().addVertex(opA1);
-    executionDagA1.getDag().addVertex(sinkA1);
-    executionDagA1.getDag().addEdge(srcA1, opA1, new MISTEdge(Direction.LEFT));
-    executionDagA1.getDag().addEdge(opA1, sinkA1, new MISTEdge(Direction.LEFT));
+    final DAG<ExecutionVertex, MISTEdge> dagA1 = new AdjacentListDAG<>();
+    dagA1.addVertex(srcA1);
+    dagA1.addVertex(opA1);
+    dagA1.addVertex(sinkA1);
+    dagA1.addEdge(srcA1, opA1, new MISTEdge(Direction.LEFT));
+    dagA1.addEdge(opA1, sinkA1, new MISTEdge(Direction.LEFT));
 
-    final ExecutionDag executionDagA2 = new ExecutionDag(new AdjacentListDAG<>());
-    executionDagA2.getDag().addVertex(srcA2);
-    executionDagA2.getDag().addVertex(opA2);
-    executionDagA2.getDag().addVertex(sinkA2);
-    executionDagA2.getDag().addEdge(srcA2, opA2, new MISTEdge(Direction.LEFT));
-    executionDagA2.getDag().addEdge(opA2, sinkA2, new MISTEdge(Direction.LEFT));
+    final DAG<ExecutionVertex, MISTEdge> dagA2 = new AdjacentListDAG<>();
+    dagA2.addVertex(srcA2);
+    dagA2.addVertex(opA2);
+    dagA2.addVertex(sinkA2);
+    dagA2.addEdge(srcA2, opA2, new MISTEdge(Direction.LEFT));
+    dagA2.addEdge(opA2, sinkA2, new MISTEdge(Direction.LEFT));
 
+    final ExecutionDag executionDagA1 = new ExecutionDag(dagA1);
+    final ExecutionDag executionDagA2 = new ExecutionDag(dagA2);
     executionDagsA.add(executionDagA1);
     executionDagsA.add(executionDagA2);
 
@@ -101,22 +104,22 @@ public final class EventNumMetricEventHandlerTest {
     final PhysicalSink sinkB1 = generateTestSink(idAndConfGenerator);
     final PhysicalSink sinkB2 = generateTestSink(idAndConfGenerator);
 
-    final ExecutionDag executionDagB = new ExecutionDag(new AdjacentListDAG<>());
-    executionDagB.getDag().addVertex(srcB1);
-    executionDagB.getDag().addVertex(srcB2);
-    executionDagB.getDag().addVertex(opB1);
-    executionDagB.getDag().addVertex(opB2);
-    executionDagB.getDag().addVertex(union);
-    executionDagB.getDag().addVertex(sinkB1);
-    executionDagB.getDag().addVertex(sinkB2);
-    executionDagB.getDag().addEdge(srcB1, opB1, new MISTEdge(Direction.LEFT));
-    executionDagB.getDag().addEdge(srcB2, opB2, new MISTEdge(Direction.LEFT));
-    executionDagB.getDag().addEdge(opB1, union, new MISTEdge(Direction.LEFT));
-    executionDagB.getDag().addEdge(opB2, union, new MISTEdge(Direction.RIGHT));
-    executionDagB.getDag().addEdge(union, sinkB1, new MISTEdge(Direction.LEFT));
-    executionDagB.getDag().addEdge(union, sinkB2, new MISTEdge(Direction.LEFT));
+    final DAG<ExecutionVertex, MISTEdge> dagB = new AdjacentListDAG<>();
+    dagB.addVertex(srcB1);
+    dagB.addVertex(srcB2);
+    dagB.addVertex(opB1);
+    dagB.addVertex(opB2);
+    dagB.addVertex(union);
+    dagB.addVertex(sinkB1);
+    dagB.addVertex(sinkB2);
+    dagB.addEdge(srcB1, opB1, new MISTEdge(Direction.LEFT));
+    dagB.addEdge(srcB2, opB2, new MISTEdge(Direction.LEFT));
+    dagB.addEdge(opB1, union, new MISTEdge(Direction.LEFT));
+    dagB.addEdge(opB2, union, new MISTEdge(Direction.RIGHT));
+    dagB.addEdge(union, sinkB1, new MISTEdge(Direction.LEFT));
+    dagB.addEdge(union, sinkB2, new MISTEdge(Direction.LEFT));
 
-    executionDagsB.add(executionDagB);
+    final ExecutionDag executionDagB = new ExecutionDag(dagB);
     executionDagsB.add(executionDagB);
 
     // the event number should be zero in each group

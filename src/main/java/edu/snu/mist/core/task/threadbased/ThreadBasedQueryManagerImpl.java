@@ -166,13 +166,14 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
    */
   private void start(final ExecutionDag physicalPlan) {
     final List<PhysicalSource> sources = new LinkedList<>();
-    final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(physicalPlan.getDag());
+    final DAG<ExecutionVertex, MISTEdge> dag = physicalPlan.getDag();
+    final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(dag);
     while (iterator.hasNext()) {
       final ExecutionVertex executionVertex = iterator.next();
       switch (executionVertex.getType()) {
         case SOURCE: {
           final PhysicalSource source = (PhysicalSource)executionVertex;
-          final Map<ExecutionVertex, MISTEdge> nextOps = physicalPlan.getDag().getEdges(source);
+          final Map<ExecutionVertex, MISTEdge> nextOps = dag.getEdges(source);
           // 3) Sets output emitters
           source.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
           sources.add(source);
@@ -182,7 +183,7 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
           // 2) Inserts the OperatorChain to OperatorChainManager.
           final OperatorChain operatorChain = (OperatorChain)executionVertex;
           final Map<ExecutionVertex, MISTEdge> edges =
-              physicalPlan.getDag().getEdges(operatorChain);
+              dag.getEdges(operatorChain);
 
           // Create a thread per operator chain
           final Thread thread = new Thread(new Runnable() {

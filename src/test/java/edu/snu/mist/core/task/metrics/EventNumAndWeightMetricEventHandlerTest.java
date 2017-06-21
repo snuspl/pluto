@@ -16,6 +16,7 @@
 package edu.snu.mist.core.task.metrics;
 
 import edu.snu.mist.common.graph.AdjacentListDAG;
+import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.*;
@@ -80,13 +81,14 @@ public final class EventNumAndWeightMetricEventHandlerTest {
     final OperatorChain opA = generateFilterOperatorChain(idAndConfGenerator);
     final PhysicalSink sinkA = generateTestSink(idAndConfGenerator);
 
-    final ExecutionDag executionDagA = new ExecutionDag(new AdjacentListDAG<>());
-    executionDagA.getDag().addVertex(srcA);
-    executionDagA.getDag().addVertex(opA);
-    executionDagA.getDag().addVertex(sinkA);
-    executionDagA.getDag().addEdge(srcA, opA, new MISTEdge(Direction.LEFT));
-    executionDagA.getDag().addEdge(opA, sinkA, new MISTEdge(Direction.LEFT));
+    final DAG<ExecutionVertex, MISTEdge> dag = new AdjacentListDAG<>();
+    dag.addVertex(srcA);
+    dag.addVertex(opA);
+    dag.addVertex(sinkA);
+    dag.addEdge(srcA, opA, new MISTEdge(Direction.LEFT));
+    dag.addEdge(opA, sinkA, new MISTEdge(Direction.LEFT));
 
+    final ExecutionDag executionDagA = new ExecutionDag(dag);
     executionDagsA.add(executionDagA);
 
     // one dag in group B:
@@ -99,20 +101,22 @@ public final class EventNumAndWeightMetricEventHandlerTest {
     final PhysicalSink sinkB1 = generateTestSink(idAndConfGenerator);
     final PhysicalSink sinkB2 = generateTestSink(idAndConfGenerator);
 
-    final ExecutionDag executionDagB1 = new ExecutionDag(new AdjacentListDAG<>());
-    final ExecutionDag executionDagB2 = new ExecutionDag(new AdjacentListDAG<>());
-    executionDagB1.getDag().addVertex(srcB1);
-    executionDagB1.getDag().addVertex(opB1);
-    executionDagB1.getDag().addVertex(sinkB1);
-    executionDagB1.getDag().addEdge(srcB1, opB1, new MISTEdge(Direction.LEFT));
-    executionDagB1.getDag().addEdge(opB1, sinkB1, new MISTEdge(Direction.LEFT));
+    final DAG<ExecutionVertex, MISTEdge> dagB1 = new AdjacentListDAG<>();
+    dagB1.addVertex(srcB1);
+    dagB1.addVertex(opB1);
+    dagB1.addVertex(sinkB1);
+    dagB1.addEdge(srcB1, opB1, new MISTEdge(Direction.LEFT));
+    dagB1.addEdge(opB1, sinkB1, new MISTEdge(Direction.LEFT));
 
-    executionDagB2.getDag().addVertex(srcB2);
-    executionDagB2.getDag().addVertex(opB2);
-    executionDagB2.getDag().addVertex(sinkB2);
-    executionDagB2.getDag().addEdge(srcB2, opB2, new MISTEdge(Direction.LEFT));
-    executionDagB2.getDag().addEdge(opB2, sinkB2, new MISTEdge(Direction.RIGHT));
+    final DAG<ExecutionVertex, MISTEdge> dagB2 = new AdjacentListDAG<>();
+    dagB2.addVertex(srcB2);
+    dagB2.addVertex(opB2);
+    dagB2.addVertex(sinkB2);
+    dagB2.addEdge(srcB2, opB2, new MISTEdge(Direction.LEFT));
+    dagB2.addEdge(opB2, sinkB2, new MISTEdge(Direction.RIGHT));
 
+    final ExecutionDag executionDagB1 = new ExecutionDag(dagB1);
+    final ExecutionDag executionDagB2 = new ExecutionDag(dagB2);
     executionDagsB.add(executionDagB1);
     executionDagsB.add(executionDagB2);
 

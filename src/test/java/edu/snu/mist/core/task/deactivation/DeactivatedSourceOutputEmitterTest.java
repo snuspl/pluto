@@ -16,6 +16,7 @@
 package edu.snu.mist.core.task.deactivation;
 
 import edu.snu.mist.common.graph.AdjacentListDAG;
+import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.UnionOperator;
 import edu.snu.mist.common.sources.EventGenerator;
@@ -49,13 +50,14 @@ public class DeactivatedSourceOutputEmitterTest {
     // Create the following execution dag for the test.
     // src1 --------------> union(= chain) -> sink
     // src2(deactivated) ->
-    final ExecutionDag executionDag = new ExecutionDag(new AdjacentListDAG<>());
+    final DAG<ExecutionVertex, MISTEdge> dag = new AdjacentListDAG<>();
+    final ExecutionDag executionDag = new ExecutionDag(dag);
 
-    executionDag.getDag().addVertex(src1);
-    executionDag.getDag().addVertex(chain);
-    executionDag.getDag().addVertex(sink);
-    executionDag.getDag().addEdge(src1, chain, new MISTEdge(Direction.LEFT));
-    executionDag.getDag().addEdge(chain, sink, new MISTEdge(Direction.LEFT));
+    dag.addVertex(src1);
+    dag.addVertex(chain);
+    dag.addVertex(sink);
+    dag.addEdge(src1, chain, new MISTEdge(Direction.LEFT));
+    dag.addEdge(chain, sink, new MISTEdge(Direction.LEFT));
 
     return executionDag;
   }
@@ -106,13 +108,14 @@ public class DeactivatedSourceOutputEmitterTest {
 
     // Construct execution dag.
     final ExecutionDag executionDag = constructExecutionDag(src1, chain, sink1);
+    final DAG<ExecutionVertex, MISTEdge> dag = executionDag.getDag();
 
     // Set outputEmitters.
-    src1.setOutputEmitter(new SourceOutputEmitter<>(executionDag.getDag().getEdges(src1)));
+    src1.setOutputEmitter(new SourceOutputEmitter<>(dag.getEdges(src1)));
     final Map<ExecutionVertex, MISTEdge> needWatermarkVertices = new HashMap<>();
     needWatermarkVertices.put(chain, new MISTEdge(Direction.RIGHT, 1));
     src2.setOutputEmitter(new DeactivatedSourceOutputEmitter("testQuery", needWatermarkVertices, null, src2));
-    chain.setOutputEmitter(new OperatorOutputEmitter(executionDag.getDag().getEdges(chain)));
+    chain.setOutputEmitter(new OperatorOutputEmitter(dag.getEdges(chain)));
 
     // Start dag.
     src1.start();

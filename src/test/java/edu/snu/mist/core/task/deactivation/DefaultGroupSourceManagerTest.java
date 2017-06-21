@@ -24,6 +24,7 @@ import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.api.datastreams.configurations.WatermarkConfiguration;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.sinks.Sink;
@@ -336,20 +337,22 @@ public class DefaultGroupSourceManagerTest {
    * This is an auxiliary method used for DFS in the above deactivateSourceExpectedResult function.
    */
   private void deactivateSourceDFS(final ExecutionDag executionDag, final ExecutionVertex source) {
-    for (final ExecutionVertex vertex : executionDag.getDag().getEdges(source).keySet()) {
-      if (executionDag.getDag().getInDegree(vertex) == 1) {
+    final DAG<ExecutionVertex, MISTEdge> dag = executionDag.getDag();
+    for (final ExecutionVertex vertex : dag.getEdges(source).keySet()) {
+      if (dag.getInDegree(vertex) == 1) {
         deactivateSourceDFS(executionDag, vertex);
       }
     }
-    executionDag.getDag().removeVertex(source);
+    dag.removeVertex(source);
   }
 
   /**
    * This method returns a copy of a given ExecutionDag.
    */
   private ExecutionDag copyDag(final ExecutionDag executionDag) {
+    final DAG<ExecutionVertex, MISTEdge> dag = executionDag.getDag();
     final ExecutionDag newDag = new ExecutionDag(new AdjacentListConcurrentMapDAG<>());
-    for (final ExecutionVertex root : executionDag.getDag().getRootVertices()) {
+    for (final ExecutionVertex root : dag.getRootVertices()) {
       newDag.getDag().addVertex(root);
       copyDagDFS(executionDag, root, newDag, new HashSet<>());
     }
