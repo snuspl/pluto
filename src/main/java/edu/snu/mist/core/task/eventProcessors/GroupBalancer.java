@@ -15,25 +15,23 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
-import edu.snu.mist.core.task.globalsched.NextGroupSelector;
+import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import org.apache.reef.io.Tuple;
+import org.apache.reef.tang.annotations.DefaultImplementation;
+
+import java.util.List;
 
 /**
- * This is an interface of EventProcessor that processes events of queries.
+ * GrouBalancer assigns a group to an event processor.
  */
-public interface EventProcessor extends AutoCloseable {
+@DefaultImplementation(RoundRobinGroupBalancerImpl.class)
+public interface GroupBalancer {
 
   /**
-   * Start to execute the events of queries.
+   * Assign a group to an event processor.
+   * @param newGroup new group
+   * @param epGroups event processors and the assigned groups.
    */
-  void start();
-
-  /**
-   * Get next group selector.
-   */
-  NextGroupSelector getNextGroupSelector();
-
-  /**
-   * Interrupt the event processing.
-   */
-  void interrupt();
+  void assignGroup(GlobalSchedGroupInfo newGroup,
+                   List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> epGroups);
 }

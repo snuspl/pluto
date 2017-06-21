@@ -15,16 +15,20 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
-import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
-import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorLowerBound;
-import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorUpperBound;
-import edu.snu.mist.core.task.eventProcessors.parameters.GracePeriod;
+import edu.snu.mist.core.task.eventProcessors.parameters.*;
+import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.NextGroupSelector;
+import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.LinkedList;
-import java.util.Queue;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.StampedLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,11 +51,6 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
   private final int eventProcessorUpperBound;
 
   /**
-   * A set of EventProcessor.
-   */
-  private final Queue<EventProcessor> eventProcessors;
-
-  /**
    * Event processor factory.
    */
   private final EventProcessorFactory eventProcessorFactory;
@@ -66,31 +65,93 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
    */
   private long prevAdjustTime;
 
+  /**
+   * EvenProcessor and Groups map.
+   */
+  private final List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> epGroupList;
+
+  /**
+   * Group balancer that assigns a group to an event processor.
+   */
+  private final GroupBalancer groupBalancer;
+
+  /**
+   * Group rebalancer that reassigns groups from an event processor to other event processors.
+   */
+  private final GroupRebalancer groupRebalancer;
+
+  /**
+   * The number of dispatcher threads.
+   */
+  private final int dispatcherThreadNum;
+
+  /**
+   * A lock for the event processors.
+   */
+  private final StampedLock epStampedLock;
+
+  /**
+   * Dispatcher threads.
+   */
+  private final ExecutorService dispatcherService;
+
+  /**
+   * True if this class is closed.
+   */
+  private final AtomicBoolean closed = new AtomicBoolean(false);
+
   @Inject
   private DefaultEventProcessorManager(@Parameter(DefaultNumEventProcessors.class) final int defaultNumEventProcessors,
                                        @Parameter(EventProcessorLowerBound.class) final int eventProcessorLowerBound,
                                        @Parameter(EventProcessorUpperBound.class) final int eventProcessorUpperBound,
                                        @Parameter(GracePeriod.class) final int gracePeriod,
+                                       @Parameter(DispatcherThreadNum.class) final int dispatcherThreadNum,
+                                       final GroupBalancer groupBalancer,
+                                       final GroupRebalancer groupRebalancer,
                                        final EventProcessorFactory eventProcessorFactory) {
     this.eventProcessorLowerBound = eventProcessorLowerBound;
     this.eventProcessorUpperBound = eventProcessorUpperBound;
-    this.eventProcessors = new LinkedList<>();
+    this.groupBalancer = groupBalancer;
+    this.groupRebalancer = groupRebalancer;
+    this.dispatcherThreadNum = dispatcherThreadNum;
+    this.epStampedLock = new StampedLock();
+    this.epGroupList = new LinkedList<>();
     this.eventProcessorFactory = eventProcessorFactory;
     this.gracePeriod = gracePeriod;
-    addNewThreadsToSet(defaultNumEventProcessors);
+    this.dispatcherService = Executors.newFixedThreadPool(dispatcherThreadNum);
+    initialize(defaultNumEventProcessors);
     this.prevAdjustTime = System.nanoTime();
   }
 
   /**
-   * Create new event processors and add them to event processor set.
+   * Create new dispatchers and event processors and add them to event processor set.
    * @param numToCreate the number of processors to create
    */
-  private void addNewThreadsToSet(final long numToCreate) {
+  private void initialize(final long numToCreate) {
+    // Create dispatchers
+    for (int i = 0; i < dispatcherThreadNum; i++) {
+      this.dispatcherService.submit(new GroupDispatcher(i));
+    }
+
+    // Create event processors
     for (int i = 0; i < numToCreate; i++) {
       final EventProcessor eventProcessor = eventProcessorFactory.newEventProcessor();
-      eventProcessors.add(eventProcessor);
+      epGroupList.add(new Tuple<>(eventProcessor, new LinkedList<>()));
       eventProcessor.start();
     }
+  }
+
+  /**
+   * Create new event processors.
+   */
+  private List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> createNewEventProcessors(final long numToCreate) {
+    final List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> newEpGroups = new LinkedList<>();
+    for (int i = 0; i < numToCreate; i++) {
+      final EventProcessor eventProcessor = eventProcessorFactory.newEventProcessor();
+      newEpGroups.add(new Tuple<>(eventProcessor, new LinkedList<>()));
+      eventProcessor.start();
+    }
+    return newEpGroups;
   }
 
   @Override
@@ -99,21 +160,31 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
       throw new RuntimeException("The delta value should be greater than zero, but " + delta);
     }
 
-    synchronized (eventProcessors) {
-      if (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - prevAdjustTime) >= gracePeriod) {
-        final int currNum = eventProcessors.size();
-        final int increaseNum = Math.min(delta, eventProcessorUpperBound - currNum);
-        if (increaseNum != 0) {
+    if (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - prevAdjustTime) >= gracePeriod) {
+      long stamp = epStampedLock.writeLock();
 
-          if (LOG.isLoggable(Level.FINE)) {
-            LOG.log(Level.FINE, "Increase event processors from {0} to {1}",
-                new Object[]{currNum, currNum + increaseNum});
-          }
+      final int currNum = epGroupList.size();
+      final int increaseNum = Math.min(delta, eventProcessorUpperBound - currNum);
+      if (increaseNum != 0) {
 
-          addNewThreadsToSet(increaseNum);
-          prevAdjustTime = System.nanoTime();
+        if (LOG.isLoggable(Level.FINE)) {
+          LOG.log(Level.FINE, "Increase event processors from {0} to {1}",
+              new Object[]{currNum, currNum + increaseNum});
         }
+
+        final List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> newEventProcessors =
+            createNewEventProcessors(increaseNum);
+        // Rebalance
+        groupRebalancer.reassignGroupsForNewEps(newEventProcessors, epGroupList);
+        // Add new event processors to the list
+        for (final Tuple<EventProcessor, List<GlobalSchedGroupInfo>> newEp : newEventProcessors) {
+          epGroupList.add(newEp);
+        }
+
+        prevAdjustTime = System.nanoTime();
       }
+
+      epStampedLock.unlockWrite(stamp);
     }
   }
 
@@ -123,29 +194,65 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
       throw new RuntimeException("The delta value should be greater than zero, but " + delta);
     }
 
-    synchronized (eventProcessors) {
-      if (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - prevAdjustTime) >= gracePeriod) {
-        final int currNum = eventProcessors.size();
-        final int decreaseNum = Math.min(delta, currNum - eventProcessorLowerBound);
-        if (decreaseNum != 0) {
+    if (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - prevAdjustTime) >= gracePeriod) {
+      long stamp = epStampedLock.writeLock();
 
-          if (LOG.isLoggable(Level.FINE)) {
-            LOG.log(Level.FINE, "Decrease event processors from {0} to {1}",
-                new Object[]{currNum, currNum - decreaseNum});
-          }
+      final int currNum = epGroupList.size();
+      final int decreaseNum = Math.min(delta, currNum - eventProcessorLowerBound);
+      if (decreaseNum != 0) {
 
-          for (int i = 0; i < decreaseNum; i++) {
-            final EventProcessor eventProcessor = eventProcessors.poll();
-            try {
-              eventProcessor.close();
-            } catch (final Exception e) {
-              e.printStackTrace();
-            }
+        if (LOG.isLoggable(Level.FINE)) {
+          LOG.log(Level.FINE, "Decrease event processors from {0} to {1}",
+              new Object[]{currNum, currNum - decreaseNum});
+        }
+
+        final List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> removedEps = new LinkedList<>();
+        for (int i = 0; i < decreaseNum; i++) {
+          final Tuple<EventProcessor, List<GlobalSchedGroupInfo>> ep = epGroupList.get(i);
+          removedEps.add(ep);
+
+          try {
+            ep.getKey().close();
+          } catch (final Exception e) {
+            e.printStackTrace();
           }
-          prevAdjustTime = System.nanoTime();
+        }
+
+        groupRebalancer.reassignGroupsForRemovedEps(removedEps, epGroupList);
+
+        for (final Tuple<EventProcessor, List<GlobalSchedGroupInfo>> removedEp : removedEps) {
+          epGroupList.remove(removedEp);
+        }
+
+        prevAdjustTime = System.nanoTime();
+      }
+
+      epStampedLock.unlockWrite(stamp);
+    }
+  }
+
+  @Override
+  public void addGroup(final GlobalSchedGroupInfo newGroup) {
+    long stamp = epStampedLock.writeLock();
+    groupBalancer.assignGroup(newGroup, epGroupList);
+    epStampedLock.unlockWrite(stamp);
+  }
+
+  @Override
+  public void removeGroup(final GlobalSchedGroupInfo removedGroup) {
+    long stamp = epStampedLock.writeLock();
+
+    for (final Tuple<EventProcessor, List<GlobalSchedGroupInfo>> entry : epGroupList) {
+      final List<GlobalSchedGroupInfo> list = entry.getValue();
+      if (list.remove(removedGroup)) {
+        // deleted
+        if (LOG.isLoggable(Level.FINE)) {
+          LOG.log(Level.FINE, "Group {0} is removed from {1}", new Object[] {removedGroup, entry.getKey()});
         }
       }
     }
+
+    epStampedLock.unlockWrite(stamp);
   }
 
   @Override
@@ -154,33 +261,84 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
       throw new RuntimeException("The adjustNum value should be greater than zero, but " + adjustNum);
     }
 
-    synchronized (eventProcessors) {
-      final int currSize = eventProcessors.size();
-      if (adjustNum < currSize) {
-        decreaseEventProcessors(currSize - adjustNum);
-      } else if (adjustNum > currSize) {
-        increaseEventProcessors(adjustNum - currSize);
-      }
+    final int currSize = epGroupList.size();
+    if (adjustNum < currSize) {
+      decreaseEventProcessors(currSize - adjustNum);
+    } else if (adjustNum > currSize) {
+      increaseEventProcessors(adjustNum - currSize);
     }
   }
 
   @Override
   public int size() {
-    synchronized (eventProcessors) {
-      return eventProcessors.size();
-    }
+    long stamp = epStampedLock.readLock();
+    final int size = epGroupList.size();
+    epStampedLock.unlockRead(stamp);
+    return size;
+  }
+
+  @Override
+  public List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> getEventProcessorAndAssignedGroups() {
+    return epGroupList;
   }
 
   @Override
   public void close() throws Exception {
-    synchronized (eventProcessors) {
-      eventProcessors.forEach(eventProcessor -> {
-        try {
-          eventProcessor.close();
-        } catch (final Exception e) {
-          e.printStackTrace();
+    closed.set(true);
+    long stamp = epStampedLock.readLock();
+    for (final Tuple<EventProcessor, List<GlobalSchedGroupInfo>> tuple : epGroupList) {
+      tuple.getKey().close();
+    }
+    epStampedLock.unlockRead(stamp);
+  }
+
+  final class GroupDispatcher implements Runnable {
+    private final int index;
+
+    GroupDispatcher(final int index) {
+      this.index = index;
+    }
+    @Override
+    public void run() {
+      while (!closed.get()) {
+        long timestamp = epStampedLock.tryOptimisticRead();
+
+        // Optimistic lock
+        for (int i = index; i < epGroupList.size(); i += dispatcherThreadNum) {
+          final Tuple<EventProcessor, List<GlobalSchedGroupInfo>> entry = epGroupList.get(i);
+          final NextGroupSelector nextGroupSelector = entry.getKey().getNextGroupSelector();
+          final List<GlobalSchedGroupInfo> groups = entry.getValue();
+          for (final GlobalSchedGroupInfo group : groups) {
+            if (!group.isAssigned() && group.isActive()) {
+              // dispatch the inactive group
+              // Mark this group is being processed
+              group.setAssigned(true);
+              // And reschedule it
+              nextGroupSelector.reschedule(group, false);
+            }
+          }
         }
-      });
+
+        // Read lock
+        if (!epStampedLock.validate(timestamp)) {
+          timestamp = epStampedLock.readLock();
+          for (int i = index; i < epGroupList.size(); i += dispatcherThreadNum) {
+            final Tuple<EventProcessor, List<GlobalSchedGroupInfo>> entry = epGroupList.get(i);
+            final NextGroupSelector nextGroupSelector = entry.getKey().getNextGroupSelector();
+            final List<GlobalSchedGroupInfo> groups = entry.getValue();
+            for (final GlobalSchedGroupInfo group : groups) {
+              if (!group.isAssigned() && group.isActive()) {
+                // dispatch the inactive group
+                // Mark this group is being processed
+                group.setAssigned(true);
+                // And reschedule it
+                nextGroupSelector.reschedule(group, false);
+              }
+            }
+          }
+          epStampedLock.unlockRead(timestamp);
+        }
+      }
     }
   }
 }
