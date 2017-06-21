@@ -39,13 +39,13 @@ final class SrcAndDagHashMap implements SrcAndDagMap<String> {
   }
 
   @Override
-  public void put(final String conf, final ExecutionDag dag) {
-    map.put(conf, dag);
+  public void put(final String conf, final ExecutionDag executionDag) {
+    map.put(conf, executionDag);
   }
 
   @Override
-  public void replace(final String conf, final ExecutionDag dag) {
-    map.replace(conf, dag);
+  public void replace(final String conf, final ExecutionDag executionDag) {
+    map.replace(conf, executionDag);
   }
 
   @Override

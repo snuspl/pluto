@@ -372,14 +372,14 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
   private ExecutionDag selectLargestDag(
       final Collection<ExecutionDag> dags) {
     int count = 0;
-    ExecutionDag largestDag = null;
+    ExecutionDag largestExecutionDag = null;
     for (final ExecutionDag executionDag : dags) {
       if (executionDag.getDag().numberOfVertices() > count) {
         count = executionDag.getDag().numberOfVertices();
-        largestDag = executionDag;
+        largestExecutionDag = executionDag;
       }
     }
-    return largestDag;
+    return largestExecutionDag;
   }
 
   /**
@@ -393,10 +393,10 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
     final Map<String, ExecutionDag> mergeableDags = new HashMap<>(sources.size());
     for (final ConfigVertex source : sources) {
       final String srcConf = source.getConfiguration().get(0);
-      final ExecutionDag dag = srcAndDagMap.get(srcConf);
-      if (dag != null) {
+      final ExecutionDag executionDag = srcAndDagMap.get(srcConf);
+      if (executionDag != null) {
         // Mergeable source
-        mergeableDags.put(srcConf, dag);
+        mergeableDags.put(srcConf, executionDag);
       }
     }
     return mergeableDags;

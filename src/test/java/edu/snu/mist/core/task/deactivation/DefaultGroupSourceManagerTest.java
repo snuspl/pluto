@@ -318,12 +318,12 @@ public class DefaultGroupSourceManagerTest {
    * This method removes part of the dag that can be deactivated when a source is deactivated.
    * If the dag does not have the source we are looking for, it returns the original dag.
    * This is used to see the validity of deactivateBasedOnSource().
-   * @param dag the given ExecutionDag
+   * @param executionDag the given ExecutionDag
    * @param sourceId the id of the source to be deactivated
    */
-  private ExecutionDag deactivateSourceExpectedResult(final ExecutionDag dag,
+  private ExecutionDag deactivateSourceExpectedResult(final ExecutionDag executionDag,
                                                       final String sourceId) {
-    final ExecutionDag result = copyDag(dag);
+    final ExecutionDag result = copyDag(executionDag);
     for (final ExecutionVertex source : result.getDag().getRootVertices()) {
       if (source.getIdentifier().equals(sourceId)) {
         deactivateSourceDFS(result, source);
@@ -347,11 +347,11 @@ public class DefaultGroupSourceManagerTest {
   /**
    * This method returns a copy of a given ExecutionDag.
    */
-  private ExecutionDag copyDag(final ExecutionDag dag) {
+  private ExecutionDag copyDag(final ExecutionDag executionDag) {
     final ExecutionDag newDag = new ExecutionDag(new AdjacentListConcurrentMapDAG<>());
-    for (final ExecutionVertex root : dag.getDag().getRootVertices()) {
+    for (final ExecutionVertex root : executionDag.getDag().getRootVertices()) {
       newDag.getDag().addVertex(root);
-      copyDagDFS(dag, root, newDag, new HashSet<>());
+      copyDagDFS(executionDag, root, newDag, new HashSet<>());
     }
     return newDag;
   }

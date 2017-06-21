@@ -37,16 +37,16 @@ interface SrcAndDagMap<K> {
   /**
    * Put the execution dag that has the source configuration.
    * @param conf source configuration
-   * @param dag execution dag
+   * @param executionDag execution dag
    */
-  void put(K conf, ExecutionDag dag);
+  void put(K conf, ExecutionDag executionDag);
 
   /**
    * Replace the dag that has the source configuration.
    * @param conf source configuration
-   * @param dag execution dag to be updated
+   * @param executionDag execution dag to be updated
    */
-  void replace(K conf, ExecutionDag dag);
+  void replace(K conf, ExecutionDag executionDag);
 
   /**
    * Remove the value (dag) that has the source configuration.

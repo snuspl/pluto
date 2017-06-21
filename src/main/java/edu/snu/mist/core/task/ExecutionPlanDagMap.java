@@ -38,8 +38,8 @@ public final class ExecutionPlanDagMap {
     return map.get(queryId);
   }
 
-  public void put(final String queryId, final ExecutionDag dag) {
-    map.put(queryId, dag);
+  public void put(final String queryId, final ExecutionDag executionDag) {
+    map.put(queryId, executionDag);
   }
 
   public ExecutionDag remove(final String queryId) {

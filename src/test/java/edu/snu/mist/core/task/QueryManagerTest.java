@@ -147,7 +147,7 @@ public final class QueryManagerTest {
     final CountDownLatch countDownAllOutputs = new CountDownLatch(intermediateResult.size() * 2);
 
     // Create the execution DAG of the query
-    final ExecutionDag dag = new ExecutionDag(new AdjacentListDAG<>());
+    final ExecutionDag executionDag = new ExecutionDag(new AdjacentListDAG<>());
 
     // Create source
     final TestDataGenerator dataGenerator = new TestDataGenerator(inputs);
@@ -172,14 +172,14 @@ public final class QueryManagerTest {
     final Tuple<String, AvroOperatorChainDag> tuple = new Tuple<>(queryId, fakeOperatorChainDag);
 
     // Construct execution dag
-    constructExecutionDag(tuple, dag, src, sink1, sink2);
+    constructExecutionDag(tuple, executionDag, src, sink1, sink2);
 
     // Create mock DagGenerator. It returns the above  execution dag
     final ConfigDagGenerator configDagGenerator = mock(ConfigDagGenerator.class);
     final DAG<ConfigVertex, MISTEdge> configDag = mock(DAG.class);
     when(configDagGenerator.generate(tuple.getValue())).thenReturn(configDag);
     final DagGenerator dagGenerator = mock(DagGenerator.class);
-    when(dagGenerator.generate(configDag, tuple.getValue().getJarFilePaths())).thenReturn(dag);
+    when(dagGenerator.generate(configDag, tuple.getValue().getJarFilePaths())).thenReturn(executionDag);
 
     // Build QueryManager
     final QueryManager queryManager = queryManagerBuild(tuple, configDagGenerator, dagGenerator, injector);

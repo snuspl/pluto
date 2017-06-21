@@ -39,8 +39,8 @@ public final class ExecutionVertexDagMap {
     return map.get(executionVertex);
   }
 
-  public void put(final ExecutionVertex executionVertex, final ExecutionDag dag) {
-    map.put(executionVertex, dag);
+  public void put(final ExecutionVertex executionVertex, final ExecutionDag executionDag) {
+    map.put(executionVertex, executionDag);
   }
 
   public ExecutionDag remove(final ExecutionVertex executionVertex) {

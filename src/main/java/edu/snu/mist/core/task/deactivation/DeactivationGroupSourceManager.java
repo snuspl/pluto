@@ -154,10 +154,10 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
    */
   private Tuple<ExecutionVertex, ExecutionDag> findSourceAndDag(final String sourceId) {
     // Search executionDags to find the source to deactivate.
-    for (final ExecutionDag dag : executionDags.values()) {
-      for (final ExecutionVertex root : dag.getDag().getRootVertices()) {
+    for (final ExecutionDag executionDag : executionDags.values()) {
+      for (final ExecutionVertex root : executionDag.getDag().getRootVertices()) {
         if (root.getIdentifier().equals(sourceId)) {
-          return new Tuple<>(root, dag);
+          return new Tuple<>(root, executionDag);
         }
       }
     }
