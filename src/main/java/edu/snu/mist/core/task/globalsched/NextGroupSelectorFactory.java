@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 package edu.snu.mist.core.task.globalsched;
-import edu.snu.mist.core.task.globalsched.roundrobin.WeightedRRNextGroupSelectorFactory;
+import edu.snu.mist.core.task.globalsched.dispatch.DispatcherGroupSelectorFactory;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
  * This is a factory class for NextGroupSelector.
  */
-@DefaultImplementation(WeightedRRNextGroupSelectorFactory.class)
+@DefaultImplementation(DispatcherGroupSelectorFactory.class)
 public interface NextGroupSelectorFactory {
   /**
    * Creates a new next group selector.

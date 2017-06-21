@@ -26,9 +26,7 @@ import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.mockito.Mockito.*;
@@ -43,44 +41,66 @@ public final class GlobalSchedNonBlockingEventProcessorTest {
    *  when the event processor tries to retrieve an operator chain
    *  - group3: has an operator chain manager that returns operator chain every time
    * EventProcessor first selects group1 from the next group selector, and executes events from the group1.
-   * After scheduling period, the event processor selects group2, but the processor wil pick another group
-   * because the operator chain manager of the group2 returns null when calling .pickOperatorChain()
+   * After processing all of the events within the group,
+   * the event processor selects group2, but the processor wil pick another group
+   * because the group has no event to be processed.
    * This test verifies if the event processor retrieves
    * the next group correctly from the next group selector.
    */
   @Test(timeout = 5000L)
-  public void testGlobalSchedNonBlockingEventProcessorSchedulingPeriod()
+  public void testGlobalSchedNonBlockingEventProcessor()
       throws Exception {
     final List<GlobalSchedGroupInfo> groups = new ArrayList<>(3);
 
     // This is a group that returns an operator chain manager that returns an operator chain
-    final AtomicInteger ocm1Count = new AtomicInteger(0);
-    final GlobalSchedGroupInfo group1 = mock(GlobalSchedGroupInfo.class);
-    final OperatorChainManager ocm1 = mock(OperatorChainManager.class);
-    when(group1.getOperatorChainManager()).thenReturn(ocm1);
+    final Queue<OperatorChain> ocQueue1 = new LinkedList<>();
+    final AtomicInteger oc1EventCount = new AtomicInteger(10);
     final OperatorChain operatorChain1 = mock(OperatorChain.class);
-    when(operatorChain1.processNextEvent()).thenReturn(true);
-    when(ocm1.pickOperatorChain()).thenAnswer((iom) -> {
-      ocm1Count.incrementAndGet();
-      return operatorChain1;
+    when(operatorChain1.processNextEvent()).thenAnswer((iom) -> {
+      return oc1EventCount.decrementAndGet() != 0;
+    });
+    ocQueue1.add(operatorChain1);
+
+    final GlobalSchedGroupInfo group1 = mock(GlobalSchedGroupInfo.class);
+    when(group1.isActive()).thenAnswer((icm) -> {
+      return ocQueue1.size() != 0;
     });
 
-    // This is a group that returns an operator chain manager that returns null
-    final GlobalSchedGroupInfo group2 = mock(GlobalSchedGroupInfo.class);
-    final OperatorChainManager ocm2 = mock(OperatorChainManager.class);
-    when(group2.getOperatorChainManager()).thenReturn(ocm2);
-    when(ocm2.pickOperatorChain()).thenReturn(null);
+    final OperatorChainManager ocm1 = mock(OperatorChainManager.class);
+    when(group1.getOperatorChainManager()).thenReturn(ocm1);
+    when(ocm1.pickOperatorChain()).thenAnswer((iom) -> {
+      return ocQueue1.poll();
+    });
 
-    // This is a group that returns an operator chain manager that returns an operator chain
-    final AtomicInteger ocm3Count = new AtomicInteger(0);
+    // This is an inactive group
+    final GlobalSchedGroupInfo group2 = mock(GlobalSchedGroupInfo.class);
+    when(group2.isActive()).thenReturn(false);
+
+    // This is a group that has two operator chains
+    final Queue<OperatorChain> ocQueue2 = new LinkedList<>();
+    final AtomicInteger oc2EventCount = new AtomicInteger(10);
+    final OperatorChain operatorChain2 = mock(OperatorChain.class);
+    final AtomicInteger oc3EventCount = new AtomicInteger(10);
+    final OperatorChain operatorChain3 = mock(OperatorChain.class);
+    when(operatorChain2.processNextEvent()).thenAnswer((iom) -> {
+      return oc2EventCount.decrementAndGet() != 0;
+    });
+    when(operatorChain3.processNextEvent()).thenAnswer((iom) -> {
+      return oc3EventCount.decrementAndGet() != 0;
+    });
+
+    ocQueue2.add(operatorChain2);
+    ocQueue2.add(operatorChain3);
+
     final GlobalSchedGroupInfo group3 = mock(GlobalSchedGroupInfo.class);
+    when(group3.isActive()).thenAnswer((icm) -> {
+      return ocQueue2.size() != 0;
+    });
+
     final OperatorChainManager ocm3 = mock(OperatorChainManager.class);
     when(group3.getOperatorChainManager()).thenReturn(ocm3);
-    final OperatorChain operatorChain3 = mock(OperatorChain.class);
-    when(operatorChain3.processNextEvent()).thenReturn(true);
     when(ocm3.pickOperatorChain()).thenAnswer((iom) -> {
-      ocm3Count.incrementAndGet();
-      return operatorChain3;
+      return ocQueue2.poll();
     });
 
     groups.add(group1);
@@ -108,11 +128,11 @@ public final class GlobalSchedNonBlockingEventProcessorTest {
     eventProcessor.close();
 
     // Check
-    Assert.assertTrue(ocm1Count.get() > 1);
-    Assert.assertTrue(ocm3Count.get() > 1);
-    verify(ocm1, times(ocm1Count.get())).pickOperatorChain();
-    verify(ocm2, times(1)).pickOperatorChain();
-    verify(ocm3, times(ocm3Count.get())).pickOperatorChain();
+    Assert.assertTrue(oc1EventCount.get() == 0);
+    Assert.assertTrue(oc2EventCount.get() == 0);
+    Assert.assertTrue(oc3EventCount.get() == 0);
+    Assert.assertTrue(ocQueue1.size() == 0);
+    Assert.assertTrue(ocQueue2.size() == 0);
   }
 
   /**
