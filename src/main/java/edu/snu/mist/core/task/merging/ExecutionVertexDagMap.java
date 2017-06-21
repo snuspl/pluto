@@ -15,8 +15,7 @@
  */
 package edu.snu.mist.core.task.merging;
 
-import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.core.task.ExecutionDag;
 import edu.snu.mist.core.task.ExecutionVertex;
 
 import javax.inject.Inject;
@@ -29,22 +28,22 @@ import java.util.Map;
  */
 public final class ExecutionVertexDagMap {
 
-  private final Map<ExecutionVertex, DAG<ExecutionVertex, MISTEdge>> map;
+  private final Map<ExecutionVertex, ExecutionDag> map;
 
   @Inject
   private ExecutionVertexDagMap() {
     this.map = new HashMap<>();
   }
 
-  public DAG<ExecutionVertex, MISTEdge> get(final ExecutionVertex executionVertex) {
+  public ExecutionDag get(final ExecutionVertex executionVertex) {
     return map.get(executionVertex);
   }
 
-  public void put(final ExecutionVertex executionVertex, final DAG<ExecutionVertex, MISTEdge> dag) {
-    map.put(executionVertex, dag);
+  public void put(final ExecutionVertex executionVertex, final ExecutionDag executionDag) {
+    map.put(executionVertex, executionDag);
   }
 
-  public DAG<ExecutionVertex, MISTEdge> remove(final ExecutionVertex executionVertex) {
+  public ExecutionDag remove(final ExecutionVertex executionVertex) {
     return map.remove(executionVertex);
   }
 }

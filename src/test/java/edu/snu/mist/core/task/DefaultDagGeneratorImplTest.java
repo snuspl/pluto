@@ -103,19 +103,20 @@ public final class DefaultDagGeneratorImplTest {
     final DagGenerator dagGenerator = injector.getInstance(DagGenerator.class);
     final Tuple<String, AvroOperatorChainDag> tuple = new Tuple<>("query-test", avroChainedDag);
     final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
-    final DAG<ExecutionVertex, MISTEdge> executionDag =
+    final ExecutionDag executionDag =
         dagGenerator.generate(configDag, avroChainedDag.getJarFilePaths());
 
     // Test execution dag
-    final Set<ExecutionVertex> sources = executionDag.getRootVertices();
+    final DAG<ExecutionVertex, MISTEdge> dag = executionDag.getDag();
+    final Set<ExecutionVertex> sources = dag.getRootVertices();
     Assert.assertEquals(1, sources.size());
     Assert.assertTrue(sources.iterator().next() instanceof PhysicalSource);
     final PhysicalSource source = (PhysicalSource)sources.iterator().next();
-    final Map<ExecutionVertex, MISTEdge> nextOps = executionDag.getEdges(source);
+    final Map<ExecutionVertex, MISTEdge> nextOps = dag.getEdges(source);
     Assert.assertEquals(1, nextOps.size());
 
     final OperatorChain pq1 = (OperatorChain)nextOps.entrySet().iterator().next().getKey();
-    final Map<ExecutionVertex, MISTEdge> sinks = executionDag.getEdges(pq1);
+    final Map<ExecutionVertex, MISTEdge> sinks = dag.getEdges(pq1);
     Assert.assertEquals(4, pq1.size());
     final PhysicalOperator mapOperator = pq1.removeFromHead();
     final PhysicalOperator filterOperator = pq1.removeFromHead();

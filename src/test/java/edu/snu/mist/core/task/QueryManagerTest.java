@@ -147,7 +147,7 @@ public final class QueryManagerTest {
     final CountDownLatch countDownAllOutputs = new CountDownLatch(intermediateResult.size() * 2);
 
     // Create the execution DAG of the query
-    final DAG<ExecutionVertex, MISTEdge> dag = new AdjacentListDAG<>();
+    final ExecutionDag executionDag = new ExecutionDag(new AdjacentListDAG<>());
 
     // Create source
     final TestDataGenerator dataGenerator = new TestDataGenerator(inputs);
@@ -172,14 +172,14 @@ public final class QueryManagerTest {
     final Tuple<String, AvroOperatorChainDag> tuple = new Tuple<>(queryId, fakeOperatorChainDag);
 
     // Construct execution dag
-    constructExecutionDag(tuple, dag, src, sink1, sink2);
+    constructExecutionDag(tuple, executionDag, src, sink1, sink2);
 
     // Create mock DagGenerator. It returns the above  execution dag
     final ConfigDagGenerator configDagGenerator = mock(ConfigDagGenerator.class);
     final DAG<ConfigVertex, MISTEdge> configDag = mock(DAG.class);
     when(configDagGenerator.generate(tuple.getValue())).thenReturn(configDag);
     final DagGenerator dagGenerator = mock(DagGenerator.class);
-    when(dagGenerator.generate(configDag, tuple.getValue().getJarFilePaths())).thenReturn(dag);
+    when(dagGenerator.generate(configDag, tuple.getValue().getJarFilePaths())).thenReturn(executionDag);
 
     // Build QueryManager
     final QueryManager queryManager = queryManagerBuild(tuple, configDagGenerator, dagGenerator, injector);
@@ -222,7 +222,7 @@ public final class QueryManagerTest {
    * Creates operators and adds source, dag vertices, edges and sinks to dag.
    */
   private void constructExecutionDag(final Tuple<String, AvroOperatorChainDag> tuple,
-                                     final DAG<ExecutionVertex, MISTEdge> dag,
+                                     final ExecutionDag executionDag,
                                      final PhysicalSource src,
                                      final PhysicalSink sink1,
                                      final PhysicalSink sink2) {
@@ -256,6 +256,8 @@ public final class QueryManagerTest {
     chain1.insertToTail(reduceByKey);
     chain2.insertToTail(toStringMap);
     chain3.insertToTail(totalCountMap);
+
+    final DAG<ExecutionVertex, MISTEdge> dag = executionDag.getDag();
 
     // Add Source
     dag.addVertex(src);

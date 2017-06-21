@@ -88,8 +88,10 @@ public final class EventNumMetricEventHandlerTest {
     dagA2.addEdge(srcA2, opA2, new MISTEdge(Direction.LEFT));
     dagA2.addEdge(opA2, sinkA2, new MISTEdge(Direction.LEFT));
 
-    executionDagsA.add(dagA1);
-    executionDagsA.add(dagA2);
+    final ExecutionDag executionDagA1 = new ExecutionDag(dagA1);
+    final ExecutionDag executionDagA2 = new ExecutionDag(dagA2);
+    executionDagsA.add(executionDagA1);
+    executionDagsA.add(executionDagA2);
 
     // one dag in group B:
     // srcB1 -> opB1 -> union -> sinkB1
@@ -117,8 +119,8 @@ public final class EventNumMetricEventHandlerTest {
     dagB.addEdge(union, sinkB1, new MISTEdge(Direction.LEFT));
     dagB.addEdge(union, sinkB2, new MISTEdge(Direction.LEFT));
 
-    executionDagsB.add(dagB);
-    executionDagsB.add(dagB);
+    final ExecutionDag executionDagB = new ExecutionDag(dagB);
+    executionDagsB.add(executionDagB);
 
     // the event number should be zero in each group
     Assert.assertEquals(0, getNumEvents(groupInfoA), 0.00001);

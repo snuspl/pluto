@@ -211,10 +211,10 @@ public class DefaultGroupSourceManagerTest {
 
     final ExecutionDags executionDags = queryManager.getGroupSourceManager(groupId).getExecutionDags();
     Assert.assertEquals(executionDags.values().size(), 1);
-    final DAG<ExecutionVertex, MISTEdge> executionDag = executionDags.values().iterator().next();
+    final ExecutionDag executionDag = executionDags.values().iterator().next();
     final TestSink testSink = (TestSink)findSink(executionDag);
     // Create a copy of the original fully active dag.
-    final DAG<ExecutionVertex, MISTEdge> originalDagCopy = copyDag(executionDag);
+    final ExecutionDag originalDagCopy = copyDag(executionDag);
 
     // 1st stage. Push inputs to all sources and see if the results are proper.
     SRC0INPUT1.forEach(textMessageStreamGenerator1::write);
@@ -226,10 +226,10 @@ public class DefaultGroupSourceManagerTest {
 
     // 2nd stage. Deactivate SRC1, input from all SRCs, and check the input.
     // Inputs from all SRCs will ensure the activation of the deactivated SRC1.
-    final DAG<ExecutionVertex, MISTEdge> dagCopy1 = copyDag(executionDag);
+    final ExecutionDag dagCopy1 = copyDag(executionDag);
     queryManager.getGroupSourceManager(groupId).deactivateBasedOnSource("query-0", "source-1");
-    final DAG<ExecutionVertex, MISTEdge> expectedDag1 = deactivateSourceExpectedResult(dagCopy1, "source-1");
-    GraphUtils.compareTwoDag(expectedDag1, executionDag);
+    final ExecutionDag expectedDag1 = deactivateSourceExpectedResult(dagCopy1, "source-1");
+    GraphUtils.compareTwoDag(expectedDag1.getDag(), executionDag.getDag());
 
     SRC0INPUT2.forEach(textMessageStreamGenerator1::write);
     SRC1INPUT2.forEach(textMessageStreamGenerator2::write);
@@ -239,16 +239,16 @@ public class DefaultGroupSourceManagerTest {
     // Compare the outputs with the expected results.
     Assert.assertEquals("{first=6, second=6, third=6}",
         testSink.getResults().get(testSink.getResults().size() - 1));
-    GraphUtils.compareTwoDag(originalDagCopy, executionDag);
+    GraphUtils.compareTwoDag(originalDagCopy.getDag(), executionDag.getDag());
 
     // 3rd stage. Deactivate SRC0 and SRC2, input from all SRCs, and check the input.
     // Inputs from all SRCs will ensure the activation of the deactivated SRC0 and SRC2.
-    final DAG<ExecutionVertex, MISTEdge> dagCopy2 = copyDag(executionDag);
+    final ExecutionDag dagCopy2 = copyDag(executionDag);
     queryManager.getGroupSourceManager(groupId).deactivateBasedOnSource("query-0", "source-0");
     queryManager.getGroupSourceManager(groupId).deactivateBasedOnSource("query-0", "source-2");
-    final DAG<ExecutionVertex, MISTEdge> expectedDag2 = deactivateSourceExpectedResult(dagCopy2, "source-0");
-    final DAG<ExecutionVertex, MISTEdge> expectedDag3 = deactivateSourceExpectedResult(expectedDag2, "source-2");
-    GraphUtils.compareTwoDag(expectedDag3, executionDag);
+    final ExecutionDag expectedDag2 = deactivateSourceExpectedResult(dagCopy2, "source-0");
+    final ExecutionDag expectedDag3 = deactivateSourceExpectedResult(expectedDag2, "source-2");
+    GraphUtils.compareTwoDag(expectedDag3.getDag(), executionDag.getDag());
 
     SRC0INPUT3.forEach(textMessageStreamGenerator1::write);
     SRC1INPUT3.forEach(textMessageStreamGenerator2::write);
@@ -258,16 +258,16 @@ public class DefaultGroupSourceManagerTest {
     // Compare the outputs with the expected results.
     Assert.assertEquals("{first=10, second=10, third=10}",
         testSink.getResults().get(testSink.getResults().size() - 1));
-    GraphUtils.compareTwoDag(originalDagCopy, executionDag);
+    GraphUtils.compareTwoDag(originalDagCopy.getDag(), executionDag.getDag());
 
     // 4th stage. Deactivate SRC0 and SRC1, input from all SRCs, and check the input.
     // Inputs from all SRCs will ensure the activation of the deactivated SRC0 and SRC1.
-    final DAG<ExecutionVertex, MISTEdge> dagCopy3 = copyDag(executionDag);
+    final ExecutionDag dagCopy3 = copyDag(executionDag);
     queryManager.getGroupSourceManager(groupId).deactivateBasedOnSource("query-0", "source-0");
     queryManager.getGroupSourceManager(groupId).deactivateBasedOnSource("query-0", "source-1");
-    final DAG<ExecutionVertex, MISTEdge> expectedDag4 = deactivateSourceExpectedResult(dagCopy3, "source-0");
-    final DAG<ExecutionVertex, MISTEdge> expectedDag5 = deactivateSourceExpectedResult(expectedDag4, "source-1");
-    GraphUtils.compareTwoDag(expectedDag5, executionDag);
+    final ExecutionDag expectedDag4 = deactivateSourceExpectedResult(dagCopy3, "source-0");
+    final ExecutionDag expectedDag5 = deactivateSourceExpectedResult(expectedDag4, "source-1");
+    GraphUtils.compareTwoDag(expectedDag5.getDag(), executionDag.getDag());
 
     SRC0INPUT4.forEach(textMessageStreamGenerator1::write);
     SRC1INPUT4.forEach(textMessageStreamGenerator2::write);
@@ -277,7 +277,7 @@ public class DefaultGroupSourceManagerTest {
     // Compare the outputs with the expected results.
     Assert.assertEquals("{first=15, second=15, third=15}",
         testSink.getResults().get(testSink.getResults().size() - 1));
-    GraphUtils.compareTwoDag(originalDagCopy, executionDag);
+    GraphUtils.compareTwoDag(originalDagCopy.getDag(), executionDag.getDag());
 
     // Close the generators.
     textMessageStreamGenerator1.close();
@@ -306,8 +306,8 @@ public class DefaultGroupSourceManagerTest {
     return opChainDagClone;
   }
 
-  private Sink findSink(final DAG<ExecutionVertex, MISTEdge> dag) {
-    for (final ExecutionVertex vertex : dag.getVertices()) {
+  private Sink findSink(final ExecutionDag executionDag) {
+    for (final ExecutionVertex vertex : executionDag.getDag().getVertices()) {
       if (vertex.getType() == ExecutionVertex.Type.SINK) {
         return ((PhysicalSinkImpl)vertex).getSink();
       }
@@ -319,13 +319,13 @@ public class DefaultGroupSourceManagerTest {
    * This method removes part of the dag that can be deactivated when a source is deactivated.
    * If the dag does not have the source we are looking for, it returns the original dag.
    * This is used to see the validity of deactivateBasedOnSource().
-   * @param dag the given ExecutionDag
+   * @param executionDag the given ExecutionDag
    * @param sourceId the id of the source to be deactivated
    */
-  private DAG<ExecutionVertex, MISTEdge> deactivateSourceExpectedResult(final DAG<ExecutionVertex, MISTEdge> dag,
-                                                                        final String sourceId) {
-    final DAG<ExecutionVertex, MISTEdge> result = copyDag(dag);
-    for (final ExecutionVertex source : result.getRootVertices()) {
+  private ExecutionDag deactivateSourceExpectedResult(final ExecutionDag executionDag,
+                                                      final String sourceId) {
+    final ExecutionDag result = copyDag(executionDag);
+    for (final ExecutionVertex source : result.getDag().getRootVertices()) {
       if (source.getIdentifier().equals(sourceId)) {
         deactivateSourceDFS(result, source);
       }
@@ -336,10 +336,11 @@ public class DefaultGroupSourceManagerTest {
   /**
    * This is an auxiliary method used for DFS in the above deactivateSourceExpectedResult function.
    */
-  private void deactivateSourceDFS(final DAG<ExecutionVertex, MISTEdge> dag, final ExecutionVertex source) {
+  private void deactivateSourceDFS(final ExecutionDag executionDag, final ExecutionVertex source) {
+    final DAG<ExecutionVertex, MISTEdge> dag = executionDag.getDag();
     for (final ExecutionVertex vertex : dag.getEdges(source).keySet()) {
       if (dag.getInDegree(vertex) == 1) {
-        deactivateSourceDFS(dag, vertex);
+        deactivateSourceDFS(executionDag, vertex);
       }
     }
     dag.removeVertex(source);
@@ -348,11 +349,12 @@ public class DefaultGroupSourceManagerTest {
   /**
    * This method returns a copy of a given ExecutionDag.
    */
-  private DAG<ExecutionVertex, MISTEdge> copyDag(final DAG<ExecutionVertex, MISTEdge> dag) {
-    final DAG<ExecutionVertex, MISTEdge> newDag = new AdjacentListConcurrentMapDAG<>();
+  private ExecutionDag copyDag(final ExecutionDag executionDag) {
+    final DAG<ExecutionVertex, MISTEdge> dag = executionDag.getDag();
+    final ExecutionDag newDag = new ExecutionDag(new AdjacentListConcurrentMapDAG<>());
     for (final ExecutionVertex root : dag.getRootVertices()) {
-      newDag.addVertex(root);
-      copyDagDFS(dag, root, newDag, new HashSet<>());
+      newDag.getDag().addVertex(root);
+      copyDagDFS(executionDag, root, newDag, new HashSet<>());
     }
     return newDag;
   }
@@ -360,15 +362,15 @@ public class DefaultGroupSourceManagerTest {
   /**
    * This is an auxiliary method used for DFS in the above copyDag function.
    */
-  private void copyDagDFS(final DAG<ExecutionVertex, MISTEdge> oldDag, final ExecutionVertex currentVertex,
-                          final DAG<ExecutionVertex, MISTEdge> newDag, final Set<ExecutionVertex> visited) {
-    for (final Map.Entry<ExecutionVertex, MISTEdge> entry : oldDag.getEdges(currentVertex).entrySet()) {
+  private void copyDagDFS(final ExecutionDag oldExDag, final ExecutionVertex currentVertex,
+                          final ExecutionDag newDag, final Set<ExecutionVertex> visited) {
+    for (final Map.Entry<ExecutionVertex, MISTEdge> entry : oldExDag.getDag().getEdges(currentVertex).entrySet()) {
       final ExecutionVertex nextVertex = entry.getKey();
       if (!visited.contains(nextVertex)) {
-        newDag.addVertex(nextVertex);
-        newDag.addEdge(currentVertex, nextVertex, entry.getValue());
+        newDag.getDag().addVertex(nextVertex);
+        newDag.getDag().addEdge(currentVertex, nextVertex, entry.getValue());
         visited.add(nextVertex);
-        copyDagDFS(oldDag, nextVertex, newDag, visited);
+        copyDagDFS(oldExDag, nextVertex, newDag, visited);
       }
     }
   }

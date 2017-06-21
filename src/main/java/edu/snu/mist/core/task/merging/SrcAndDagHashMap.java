@@ -15,9 +15,7 @@
  */
 package edu.snu.mist.core.task.merging;
 
-import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.core.task.ExecutionVertex;
+import edu.snu.mist.core.task.ExecutionDag;
 
 import javax.inject.Inject;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 final class SrcAndDagHashMap implements SrcAndDagMap<String> {
 
-  private final ConcurrentHashMap<String, DAG<ExecutionVertex, MISTEdge>> map;
+  private final ConcurrentHashMap<String, ExecutionDag> map;
 
   @Inject
   private SrcAndDagHashMap() {
@@ -36,22 +34,22 @@ final class SrcAndDagHashMap implements SrcAndDagMap<String> {
   }
 
   @Override
-  public DAG<ExecutionVertex, MISTEdge> get(final String conf) {
+  public ExecutionDag get(final String conf) {
     return map.get(conf);
   }
 
   @Override
-  public void put(final String conf, final DAG<ExecutionVertex, MISTEdge> dag) {
-    map.put(conf, dag);
+  public void put(final String conf, final ExecutionDag executionDag) {
+    map.put(conf, executionDag);
   }
 
   @Override
-  public void replace(final String conf, final DAG<ExecutionVertex, MISTEdge> dag) {
-    map.replace(conf, dag);
+  public void replace(final String conf, final ExecutionDag executionDag) {
+    map.replace(conf, executionDag);
   }
 
   @Override
-  public DAG<ExecutionVertex, MISTEdge> remove(final String conf) {
+  public ExecutionDag remove(final String conf) {
     return map.remove(conf);
   }
 

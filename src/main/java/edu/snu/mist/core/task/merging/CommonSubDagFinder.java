@@ -18,6 +18,7 @@ package edu.snu.mist.core.task.merging;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.ConfigVertex;
+import edu.snu.mist.core.task.ExecutionDag;
 import edu.snu.mist.core.task.ExecutionVertex;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
@@ -37,6 +38,6 @@ interface CommonSubDagFinder {
    * @param submittedDag submitted dag that is newly submitted (src of merging)
    * @return map that holds the common sub-dag vertices
    */
-  Map<ConfigVertex, ExecutionVertex> findSubDag(DAG<ExecutionVertex, MISTEdge> executionDag,
+  Map<ConfigVertex, ExecutionVertex> findSubDag(ExecutionDag executionDag,
                                                 DAG<ConfigVertex, MISTEdge> submittedDag);
 }

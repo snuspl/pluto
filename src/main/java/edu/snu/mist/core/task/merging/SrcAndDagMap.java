@@ -15,9 +15,7 @@
  */
 package edu.snu.mist.core.task.merging;
 
-import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.core.task.ExecutionVertex;
+import edu.snu.mist.core.task.ExecutionDag;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
@@ -34,28 +32,28 @@ interface SrcAndDagMap<K> {
    * @param conf source configuration
    * @return execution dag that contains the source of corresponding configuration
    */
-  DAG<ExecutionVertex, MISTEdge> get(K conf);
+  ExecutionDag get(K conf);
 
   /**
    * Put the execution dag that has the source configuration.
    * @param conf source configuration
-   * @param dag execution dag
+   * @param executionDag execution dag
    */
-  void put(K conf, DAG<ExecutionVertex, MISTEdge> dag);
+  void put(K conf, ExecutionDag executionDag);
 
   /**
    * Replace the dag that has the source configuration.
    * @param conf source configuration
-   * @param dag execution dag to be updated
+   * @param executionDag execution dag to be updated
    */
-  void replace(K conf, DAG<ExecutionVertex, MISTEdge> dag);
+  void replace(K conf, ExecutionDag executionDag);
 
   /**
    * Remove the value (dag) that has the source configuration.
    * @param conf source configuration
    * @return execution dag that contains the source
    */
-  DAG<ExecutionVertex, MISTEdge> remove(K conf);
+  ExecutionDag remove(K conf);
 
   /**
    * Get the number of execution dags.

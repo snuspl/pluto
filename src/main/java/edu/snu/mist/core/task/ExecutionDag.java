@@ -17,23 +17,28 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import org.apache.reef.tang.annotations.DefaultImplementation;
-import org.apache.reef.tang.exceptions.InjectionException;
-
-import java.io.IOException;
-import java.util.List;
 
 /**
- * This interface is for generating the execution dag from avro operator chain dag.
+ * This class represents the execution dag.
+ * It contains the dag and its current status(merging, deactivating or activating)
  */
-@DefaultImplementation(DefaultDagGeneratorImpl.class)
-public interface DagGenerator {
+public final class ExecutionDag {
+
+  private final DAG<ExecutionVertex, MISTEdge> dag;
+
   /**
-   * Generates the execution dag from the configuration dag.
-   * @param configDag the dag that has configuration of each vertices
-   * @param jarFilePaths jar file path for creating udf instances
-   * @return execution dag
+   * TODO[MIST-771] Implement status for ExecutionDag.
    */
-  ExecutionDag generate(DAG<ConfigVertex, MISTEdge> configDag, List<String> jarFilePaths)
-      throws IOException, ClassNotFoundException, InjectionException;
+
+  public ExecutionDag(final DAG<ExecutionVertex, MISTEdge> dag) {
+    this.dag = dag;
+  }
+
+  /**
+   * Gets the actual DAG implementation.
+   * @return dag
+   */
+  public DAG<ExecutionVertex, MISTEdge> getDag() {
+    return dag;
+  }
 }

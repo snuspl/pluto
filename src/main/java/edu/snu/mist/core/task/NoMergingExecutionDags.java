@@ -15,9 +15,6 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
-
 import javax.inject.Inject;
 import java.util.Collection;
 
@@ -37,18 +34,18 @@ public final class NoMergingExecutionDags implements ExecutionDags {
   }
 
   @Override
-  public void add(final DAG<ExecutionVertex, MISTEdge> executionDag) {
+  public void add(final ExecutionDag executionDag) {
     // do nothing
   }
 
   @Override
-  public boolean remove(final DAG<ExecutionVertex, MISTEdge> executionDag) {
+  public boolean remove(final ExecutionDag executionDag) {
     // do nothing
     return true;
   }
 
   @Override
-  public Collection<DAG<ExecutionVertex, MISTEdge>> values() {
+  public Collection<ExecutionDag> values() {
     return executionPlanDagMap.getExecutionDags();
   }
 }

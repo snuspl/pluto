@@ -111,7 +111,7 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
       planStore.saveAvroOpChainDag(tuple);
 
       final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
-      final DAG<ExecutionVertex, MISTEdge> executionDag =
+      final ExecutionDag executionDag =
           dagGenerator.generate(configDag, tuple.getValue().getJarFilePaths());
 
       // Execute the execution dag
@@ -164,15 +164,16 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
    * and starts to receive input data stream from the sources.
    * @param physicalPlan physical plan of the query
    */
-  private void start(final DAG<ExecutionVertex, MISTEdge> physicalPlan) {
+  private void start(final ExecutionDag physicalPlan) {
     final List<PhysicalSource> sources = new LinkedList<>();
-    final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(physicalPlan);
+    final DAG<ExecutionVertex, MISTEdge> dag = physicalPlan.getDag();
+    final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(dag);
     while (iterator.hasNext()) {
       final ExecutionVertex executionVertex = iterator.next();
       switch (executionVertex.getType()) {
         case SOURCE: {
           final PhysicalSource source = (PhysicalSource)executionVertex;
-          final Map<ExecutionVertex, MISTEdge> nextOps = physicalPlan.getEdges(source);
+          final Map<ExecutionVertex, MISTEdge> nextOps = dag.getEdges(source);
           // 3) Sets output emitters
           source.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
           sources.add(source);
@@ -182,7 +183,7 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
           // 2) Inserts the OperatorChain to OperatorChainManager.
           final OperatorChain operatorChain = (OperatorChain)executionVertex;
           final Map<ExecutionVertex, MISTEdge> edges =
-              physicalPlan.getEdges(operatorChain);
+              dag.getEdges(operatorChain);
 
           // Create a thread per operator chain
           final Thread thread = new Thread(new Runnable() {

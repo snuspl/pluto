@@ -43,14 +43,15 @@ public class DeactivatedSourceOutputEmitterTest {
    * Construct execution dag.
    * Creates operators and adds source, dag vertices, edges and sinks to dag.
    */
-  private DAG<ExecutionVertex, MISTEdge> constructExecutionDag(final PhysicalSource src1,
-                                                               final OperatorChain chain,
-                                                               final PhysicalSink sink) {
+  private ExecutionDag constructExecutionDag(final PhysicalSource src1,
+                                             final OperatorChain chain,
+                                             final PhysicalSink sink) {
 
     // Create the following execution dag for the test.
     // src1 --------------> union(= chain) -> sink
     // src2(deactivated) ->
     final DAG<ExecutionVertex, MISTEdge> dag = new AdjacentListDAG<>();
+    final ExecutionDag executionDag = new ExecutionDag(dag);
 
     dag.addVertex(src1);
     dag.addVertex(chain);
@@ -58,7 +59,7 @@ public class DeactivatedSourceOutputEmitterTest {
     dag.addEdge(src1, chain, new MISTEdge(Direction.LEFT));
     dag.addEdge(chain, sink, new MISTEdge(Direction.LEFT));
 
-    return dag;
+    return executionDag;
   }
 
   @Test
@@ -106,7 +107,8 @@ public class DeactivatedSourceOutputEmitterTest {
         null, new TestWithCountDownSink<>(sinkResult, countDownAllOutputs));
 
     // Construct execution dag.
-    final DAG<ExecutionVertex, MISTEdge> dag = constructExecutionDag(src1, chain, sink1);
+    final ExecutionDag executionDag = constructExecutionDag(src1, chain, sink1);
+    final DAG<ExecutionVertex, MISTEdge> dag = executionDag.getDag();
 
     // Set outputEmitters.
     src1.setOutputEmitter(new SourceOutputEmitter<>(dag.getEdges(src1)));

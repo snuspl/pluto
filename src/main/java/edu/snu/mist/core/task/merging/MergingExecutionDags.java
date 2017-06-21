@@ -15,10 +15,8 @@
  */
 package edu.snu.mist.core.task.merging;
 
-import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.core.task.ExecutionDag;
 import edu.snu.mist.core.task.ExecutionDags;
-import edu.snu.mist.core.task.ExecutionVertex;
 
 import javax.inject.Inject;
 import java.util.Collection;
@@ -32,7 +30,7 @@ public final class MergingExecutionDags implements ExecutionDags {
   /**
    * A collection for physical execution dags.
    */
-  private final Collection<DAG<ExecutionVertex, MISTEdge>> dagCollection;
+  private final Collection<ExecutionDag> dagCollection;
 
   @Inject
   private MergingExecutionDags() {
@@ -40,18 +38,18 @@ public final class MergingExecutionDags implements ExecutionDags {
   }
 
   @Override
-  public synchronized void add(final DAG<ExecutionVertex, MISTEdge> executionDag) {
+  public synchronized void add(final ExecutionDag executionDag) {
     dagCollection.add(executionDag);
   }
 
   @Override
   public synchronized boolean remove(
-      final DAG<ExecutionVertex, MISTEdge> executionDag) {
+      final ExecutionDag executionDag) {
     return dagCollection.remove(executionDag);
   }
 
   @Override
-  public synchronized Collection<DAG<ExecutionVertex, MISTEdge>> values() {
+  public synchronized Collection<ExecutionDag> values() {
     return dagCollection;
   }
 }

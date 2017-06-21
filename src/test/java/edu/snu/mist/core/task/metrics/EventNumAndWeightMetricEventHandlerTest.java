@@ -81,14 +81,15 @@ public final class EventNumAndWeightMetricEventHandlerTest {
     final OperatorChain opA = generateFilterOperatorChain(idAndConfGenerator);
     final PhysicalSink sinkA = generateTestSink(idAndConfGenerator);
 
-    final DAG<ExecutionVertex, MISTEdge> dagA = new AdjacentListDAG<>();
-    dagA.addVertex(srcA);
-    dagA.addVertex(opA);
-    dagA.addVertex(sinkA);
-    dagA.addEdge(srcA, opA, new MISTEdge(Direction.LEFT));
-    dagA.addEdge(opA, sinkA, new MISTEdge(Direction.LEFT));
+    final DAG<ExecutionVertex, MISTEdge> dag = new AdjacentListDAG<>();
+    dag.addVertex(srcA);
+    dag.addVertex(opA);
+    dag.addVertex(sinkA);
+    dag.addEdge(srcA, opA, new MISTEdge(Direction.LEFT));
+    dag.addEdge(opA, sinkA, new MISTEdge(Direction.LEFT));
 
-    executionDagsA.add(dagA);
+    final ExecutionDag executionDagA = new ExecutionDag(dag);
+    executionDagsA.add(executionDagA);
 
     // one dag in group B:
     // srcB1 -> opB1 -> sinkB1
@@ -101,21 +102,23 @@ public final class EventNumAndWeightMetricEventHandlerTest {
     final PhysicalSink sinkB2 = generateTestSink(idAndConfGenerator);
 
     final DAG<ExecutionVertex, MISTEdge> dagB1 = new AdjacentListDAG<>();
-    final DAG<ExecutionVertex, MISTEdge> dagB2 = new AdjacentListDAG<>();
     dagB1.addVertex(srcB1);
     dagB1.addVertex(opB1);
     dagB1.addVertex(sinkB1);
     dagB1.addEdge(srcB1, opB1, new MISTEdge(Direction.LEFT));
     dagB1.addEdge(opB1, sinkB1, new MISTEdge(Direction.LEFT));
 
+    final DAG<ExecutionVertex, MISTEdge> dagB2 = new AdjacentListDAG<>();
     dagB2.addVertex(srcB2);
     dagB2.addVertex(opB2);
     dagB2.addVertex(sinkB2);
     dagB2.addEdge(srcB2, opB2, new MISTEdge(Direction.LEFT));
     dagB2.addEdge(opB2, sinkB2, new MISTEdge(Direction.RIGHT));
 
-    executionDagsB.add(dagB1);
-    executionDagsB.add(dagB2);
+    final ExecutionDag executionDagB1 = new ExecutionDag(dagB1);
+    final ExecutionDag executionDagB2 = new ExecutionDag(dagB2);
+    executionDagsB.add(executionDagB1);
+    executionDagsB.add(executionDagB2);
 
     // the total and per-group event number should be zero
     Assert.assertEquals(
