@@ -19,9 +19,7 @@ import edu.snu.mist.core.task.MistTask;
 import org.apache.avro.ipc.Server;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.driver.context.ContextConfiguration;
-import org.apache.reef.driver.evaluator.AllocatedEvaluator;
-import org.apache.reef.driver.evaluator.EvaluatorRequest;
-import org.apache.reef.driver.evaluator.EvaluatorRequestor;
+import org.apache.reef.driver.evaluator.*;
 import org.apache.reef.driver.task.RunningTask;
 import org.apache.reef.driver.task.TaskConfiguration;
 import org.apache.reef.io.network.naming.NameResolverConfiguration;
@@ -104,8 +102,14 @@ public final class MistDriver {
    */
   private final MistTaskConfigs mistTaskConfigs;
 
+  /**
+   * A JVM process factory for configuring parameters.
+   */
+  private final JVMProcessFactory jvmProcessFactory;
+
   @Inject
   private MistDriver(final EvaluatorRequestor requestor,
+                     final JVMProcessFactory jvmProcessFactory,
                      final NameServer nameServer,
                      final LocalAddressProvider localAddressProvider,
                      final TaskSelector taskSelector,
@@ -115,6 +119,7 @@ public final class MistDriver {
     this.nameServer = nameServer;
     this.localAddressProvider = localAddressProvider;
     this.requestor = requestor;
+    this.jvmProcessFactory = jvmProcessFactory;
     this.taskIndex = new AtomicInteger(0);
     this.taskSelector = taskSelector;
     this.mistDriverConfigs = mistDriverConfigs;
@@ -138,6 +143,11 @@ public final class MistDriver {
     public void onNext(final AllocatedEvaluator allocatedEvaluator) {
       LOG.log(Level.INFO, "Submitting Context to AllocatedEvaluator: {0}", allocatedEvaluator);
       final String taskId = "MistTask-" + taskIndex.getAndIncrement();
+      final JVMProcess jvmProcess = jvmProcessFactory.newEvaluatorProcess()
+          .setMemory(mistDriverConfigs.getTaskMemSize())
+          .addOption("-XX:NewRatio=1")
+          .addOption("-XX:ReservedCodeCacheSize=2048m");
+      allocatedEvaluator.setProcess(jvmProcess);
       allocatedEvaluator.submitContext(ContextConfiguration.CONF
           .set(ContextConfiguration.IDENTIFIER, taskId)
           .build());
