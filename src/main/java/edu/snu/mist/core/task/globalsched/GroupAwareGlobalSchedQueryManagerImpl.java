@@ -18,7 +18,9 @@ package edu.snu.mist.core.task.globalsched;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.common.shared.KafkaSharedResource;
 import edu.snu.mist.common.shared.MQTTSharedResource;
+import edu.snu.mist.common.shared.NettySharedResource;
 import edu.snu.mist.core.driver.parameters.DeactivationEnabled;
 import edu.snu.mist.core.driver.parameters.GroupAware;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
@@ -115,9 +117,19 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   private final String executionModel;
 
   /**
-   * A globaally shared MQTTSharedResource.
+   * A globally shared MQTTSharedResource.
    */
   private final MQTTSharedResource mqttSharedResource;
+
+  /**
+   * A globally shared KafkaSharedResource.
+   */
+  private final KafkaSharedResource kafkaSharedResource;
+
+  /**
+   * A globally shared NettySharedResource.
+   */
+  private final NettySharedResource nettySharedResource;
 
   /**
    * TODO[REMOVE]: false if group unaware execution model.
@@ -148,6 +160,8 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 final EventProcessorNumAssigner assigner,
                                                 final BatchQueryCreator batchQueryCreator,
                                                 final MQTTSharedResource mqttSharedResource,
+                                                final KafkaSharedResource kafkaSharedResource,
+                                                final NettySharedResource nettySharedResource,
                                                 final DagGenerator dagGenerator,
                                                 @Parameter(GroupAware.class) final boolean groupAware,
                                                 @Parameter(GroupSchedModelType.class) final String executionModel) {
@@ -162,6 +176,8 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     this.batchQueryCreator = batchQueryCreator;
     this.executionModel = executionModel;
     this.mqttSharedResource = mqttSharedResource;
+    this.kafkaSharedResource = kafkaSharedResource;
+    this.nettySharedResource = nettySharedResource;
     this.dagGenerator = dagGenerator;
     this.groupAware = groupAware;
     metricTracker.start();
@@ -234,6 +250,8 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
 
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
         injector.bindVolatileInstance(MQTTSharedResource.class, mqttSharedResource);
+        injector.bindVolatileInstance(KafkaSharedResource.class, kafkaSharedResource);
+        injector.bindVolatileInstance(NettySharedResource.class, nettySharedResource);
         injector.bindVolatileInstance(QueryInfoStore.class, planStore);
         injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
         final GlobalSchedGroupInfo groupInfo = injector.getInstance(GlobalSchedGroupInfo.class);
