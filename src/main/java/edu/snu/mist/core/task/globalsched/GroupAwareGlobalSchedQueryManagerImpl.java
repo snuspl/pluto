@@ -18,6 +18,7 @@ package edu.snu.mist.core.task.globalsched;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.common.shared.MQTTSharedResource;
 import edu.snu.mist.core.driver.parameters.DeactivationEnabled;
 import edu.snu.mist.core.driver.parameters.GroupAware;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
@@ -119,6 +120,11 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   private final String executionModel;
 
   /**
+   * A globaally shared MQTTSharedResource.
+   */
+  private final MQTTSharedResource mqttSharedResource;
+
+  /**
    * TODO[REMOVE]: false if group unaware execution model.
    */
   private final boolean groupAware;
@@ -146,6 +152,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 final MemoryUsageMetricEventHandler memUsageHandler,
                                                 final EventProcessorNumAssigner assigner,
                                                 final BatchQueryCreator batchQueryCreator,
+                                                final MQTTSharedResource mqttSharedResource,
                                                 @Parameter(GroupAware.class) final boolean groupAware,
                                                 @Parameter(GroupSchedModelType.class) final String executionModel) {
     this.dagGenerator = dagGenerator;
@@ -159,6 +166,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     this.configDagGenerator = configDagGenerator;
     this.batchQueryCreator = batchQueryCreator;
     this.executionModel = executionModel;
+    this.mqttSharedResource = mqttSharedResource;
     this.groupAware = groupAware;
     metricTracker.start();
   }
@@ -230,6 +238,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
 
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
         injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
+        injector.bindVolatileInstance(MQTTSharedResource.class, mqttSharedResource);
         injector.bindVolatileInstance(QueryInfoStore.class, planStore);
         final GlobalSchedGroupInfo groupInfo = injector.getInstance(GlobalSchedGroupInfo.class);
         if (groupInfoMap.putIfAbsent(groupId, groupInfo) == null) {
