@@ -21,6 +21,6 @@ import org.apache.reef.tang.annotations.NamedParameter;
 /**
  * The number of maximum Mqtt Sinks per Client.
  */
-@NamedParameter(doc = "The maximum number of Mqtt sources per Client", default_value = "200")
-public final class MaxMqttSourceNumPerClient implements Name<Integer> {
+@NamedParameter(doc = "The number of Mqtt source clients per broker", default_value = "100")
+public final class MqttSourceClientNumPerBroker implements Name<Integer> {
 }
