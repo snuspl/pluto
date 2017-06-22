@@ -72,4 +72,13 @@ public final class NonBlockingActiveOperatorChainPickManager implements Operator
   public int size() {
     return activeQueryQueue.size();
   }
+
+  @Override
+  public long numEvents() {
+    long sum = 0;
+    for (final OperatorChain operatorChain : activeQueryQueue) {
+      sum += operatorChain.numberOfEvents();
+    }
+    return sum;
+  }
 }

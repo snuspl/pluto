@@ -30,21 +30,14 @@ public final class GlobalSchedNonBlockingEventProcessorFactory implements EventP
    */
   private final NextGroupSelectorFactory nextGroupSelectorFactory;
 
-  /**
-   * Scheduling period calculator.
-   */
-  private final SchedulingPeriodCalculator schedulingPeriodCalculator;
-
   @Inject
-  private GlobalSchedNonBlockingEventProcessorFactory(final NextGroupSelectorFactory nextGroupSelectorFactory,
-                                                      final SchedulingPeriodCalculator schedulingPeriodCalculator) {
+  private GlobalSchedNonBlockingEventProcessorFactory(final NextGroupSelectorFactory nextGroupSelectorFactory) {
     this.nextGroupSelectorFactory = nextGroupSelectorFactory;
-    this.schedulingPeriodCalculator = schedulingPeriodCalculator;
   }
 
   @Override
   public EventProcessor newEventProcessor() {
     final NextGroupSelector nextGroupSelector = nextGroupSelectorFactory.newInstance();
-    return new GlobalSchedNonBlockingEventProcessor(schedulingPeriodCalculator, nextGroupSelector);
+    return new GlobalSchedNonBlockingEventProcessor(nextGroupSelector);
   }
 }

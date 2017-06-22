@@ -18,6 +18,7 @@ package edu.snu.mist.core.task.globalsched;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.deactivation.GroupSourceManager;
+import edu.snu.mist.core.task.metrics.EWMAMetric;
 import edu.snu.mist.core.task.metrics.GroupMetrics;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -62,14 +63,14 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   private final QueryRemover queryRemover;
 
   /**
-   * The latest scheduled time of the group.
+   * The latest inactive time of the group.
    */
-  private long latestScheduledTime;
+  private long latestInactiveTime;
 
   /**
-   * The vruntime of the group.
+   * The load of the group.
    */
-  private double vruntime;
+  private final EWMAMetric load;
 
   /**
    * A metric holder that contains weight and the number of events in the group, which will be updated periodically.
@@ -100,8 +101,8 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
     this.queryStarter = queryStarter;
     this.operatorChainManager = operatorChainManager;
     this.queryRemover = queryRemover;
-    this.latestScheduledTime = 0;
-    this.vruntime = 0;
+    this.latestInactiveTime = System.currentTimeMillis();
+    this.load = new EWMAMetric(0, 0.7);
     this.metricHolder = metricHolder;
     this.groupSourceManager = groupSourceManager;
   }
@@ -160,28 +161,33 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   }
 
   @Override
-  public long getLatestScheduledTime() {
-    return latestScheduledTime;
+  public void setLatestInactiveTime(final long time) {
+    latestInactiveTime = time;
   }
 
   @Override
-  public void setLatestScheduledTime(final long time) {
-    latestScheduledTime = time;
+  public long getLatestInactiveTime() {
+    return latestInactiveTime;
+  }
+
+  @Override
+  public long numberOfRemainingEvents() {
+    return operatorChainManager.numEvents();
+  }
+
+  @Override
+  public double getEWMALoad() {
+    return load.getEwmaValue();
+  }
+
+  @Override
+  public void setLoad(final double value) {
+    load.updateValue(value);
   }
 
   @Override
   public GroupMetrics getMetricHolder() {
     return metricHolder;
-  }
-
-  @Override
-  public double getVRuntime() {
-    return vruntime;
-  }
-
-  @Override
-  public void setVRuntime(final double vrt) {
-    vruntime = vrt;
   }
 
   @Override
