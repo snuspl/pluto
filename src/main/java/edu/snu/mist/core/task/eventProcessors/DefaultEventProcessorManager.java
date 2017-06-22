@@ -292,12 +292,19 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
     epStampedLock.unlockRead(stamp);
   }
 
+  /**
+   * Active group dispatcher that dispatches active groups to the assigned event processors.
+   */
   final class GroupDispatcher implements Runnable {
+    /**
+     * Index for accessing event processors.
+     */
     private final int index;
 
     GroupDispatcher(final int index) {
       this.index = index;
     }
+
     @Override
     public void run() {
       while (!closed.get()) {
