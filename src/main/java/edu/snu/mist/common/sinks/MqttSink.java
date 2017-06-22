@@ -46,9 +46,8 @@ public final class MqttSink implements Sink<MqttMessage> {
       @Parameter(MQTTBrokerURI.class) final String brokerURI,
       @Parameter(MQTTTopic.class) final String topic,
       final MQTTSharedResource sharedResource) throws IOException, MqttException {
-
     this.topic = topic;
-    this.mqttClient = sharedResource.getMqttSinkClient(brokerURI);
+    this.mqttClient = sharedResource.getMqttSinkClient(brokerURI, topic);
   }
 
   @Override
