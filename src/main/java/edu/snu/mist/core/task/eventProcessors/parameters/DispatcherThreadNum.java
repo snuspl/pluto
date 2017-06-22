@@ -13,27 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.eventProcessors;
+package edu.snu.mist.core.task.eventProcessors.parameters;
 
-import edu.snu.mist.core.task.globalsched.NextGroupSelector;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-/**
- * This is an interface of EventProcessor that processes events of queries.
- */
-public interface EventProcessor extends AutoCloseable {
-
-  /**
-   * Start to execute the events of queries.
-   */
-  void start();
-
-  /**
-   * Get next group selector.
-   */
-  NextGroupSelector getNextGroupSelector();
-
-  /**
-   * Interrupt the event processing.
-   */
-  void interrupt();
+@NamedParameter(doc = "The number of dispatcher threads.",
+    short_name = "dispatcher_threads", default_value = "1")
+public final class DispatcherThreadNum implements Name<Integer> {
 }
