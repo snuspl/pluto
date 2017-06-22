@@ -22,5 +22,5 @@ import org.apache.reef.tang.annotations.NamedParameter;
  * The reserved code cache size for each MIST JVM process in megabytes.
  */
 @NamedParameter(doc="The reserved code cache size for JVM", short_name = "rcc_size", default_value = "2048")
-public class ReservedCodeCacheSize implements Name<Integer> {
+public final class ReservedCodeCacheSize implements Name<Integer> {
 }

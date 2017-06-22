@@ -22,5 +22,5 @@ import org.apache.reef.tang.annotations.NamedParameter;
  * The ratio of the old area to the new area.
  */
 @NamedParameter(doc = "The ratio of the old area to the new area", short_name = "new_ratio", default_value = "1")
-public class NewRatio implements Name<Integer> {
+public final class NewRatio implements Name<Integer> {
 }
