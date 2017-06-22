@@ -16,6 +16,8 @@
 package edu.snu.mist.core.driver;
 
 import edu.snu.mist.common.rpc.RPCServerPort;
+import edu.snu.mist.core.driver.parameters.NewRatio;
+import edu.snu.mist.core.driver.parameters.ReservedCodeCacheSize;
 import edu.snu.mist.core.parameters.NumTaskCores;
 import edu.snu.mist.core.parameters.NumTasks;
 import edu.snu.mist.core.parameters.TaskMemorySize;
@@ -51,15 +53,29 @@ public final class MistDriverConfigs {
    */
   private final int rpcServerPort;
 
+  /**
+   * The new ratio of the JVM process.
+   */
+  private final int newRatio;
+
+  /**
+   * The reserved code cache size of the JVM process.
+   */
+  private final int reservedCodeCacheSize;
+
   @Inject
   private MistDriverConfigs(@Parameter(NumTasks.class) final int numTasks,
                             @Parameter(TaskMemorySize.class) final int taskMemSize,
                             @Parameter(NumTaskCores.class) final int numTaskCores,
-                            @Parameter(RPCServerPort.class) final int rpcServerPort) {
+                            @Parameter(RPCServerPort.class) final int rpcServerPort,
+                            @Parameter(NewRatio.class) final int newRatio,
+                            @Parameter(ReservedCodeCacheSize.class) final int reservedCodeCacheSize) {
     this.numTasks = numTasks;
     this.taskMemSize = taskMemSize;
     this.numTaskCores = numTaskCores;
     this.rpcServerPort = rpcServerPort + 10 > MAX_PORT_NUM ? rpcServerPort - 10 : rpcServerPort + 10;
+    this.newRatio = newRatio;
+    this.reservedCodeCacheSize = reservedCodeCacheSize;
   }
 
   public int getNumTasks() {
@@ -78,6 +94,14 @@ public final class MistDriverConfigs {
     return rpcServerPort;
   }
 
+  public int getNewRatio() {
+    return this.newRatio;
+  }
+
+  public int getReservedCodeCacheSize() {
+    return this.reservedCodeCacheSize;
+  }
+
   /**
    * Add parameters to the command line.
    * @param commandLine command line
@@ -87,6 +111,8 @@ public final class MistDriverConfigs {
     return commandLine.registerShortNameOfClass(NumTaskCores.class)
         .registerShortNameOfClass(NumTasks.class)
         .registerShortNameOfClass(RPCServerPort.class)
-        .registerShortNameOfClass(TaskMemorySize.class);
+        .registerShortNameOfClass(TaskMemorySize.class)
+        .registerShortNameOfClass(NewRatio.class)
+        .registerShortNameOfClass(ReservedCodeCacheSize.class);
   }
 }
