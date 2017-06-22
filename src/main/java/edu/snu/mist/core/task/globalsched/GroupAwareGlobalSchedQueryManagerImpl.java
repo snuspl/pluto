@@ -28,7 +28,6 @@ import edu.snu.mist.core.task.deactivation.DeactivationGroupSourceManager;
 import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.deactivation.NoDeactivationGroupSourceManager;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
-import edu.snu.mist.core.task.globalsched.dispatch.GroupDispatcher;
 import edu.snu.mist.core.task.globalsched.metrics.CpuUtilMetricEventHandler;
 import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetricEventHandler;
 import edu.snu.mist.core.task.globalsched.metrics.NumGroupsMetricEventHandler;
@@ -76,11 +75,6 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   private final QueryInfoStore planStore;
 
   /**
-   * A execution and logical dag generator.
-   */
-  private final DagGenerator dagGenerator;
-
-  /**
    * A map which contains groups and their information.
    */
   private final GlobalSchedGroupInfoMap groupInfoMap;
@@ -89,11 +83,6 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
    * A tracker measures global metrics such as total events number or cpu utilization.
    */
   private final MetricTracker metricTracker;
-
-  /**
-   * The pub/sub event handler for control flow.
-   */
-  private final MistPubSubEventHandler pubSubEventHandler;
 
   /**
    * Merging enabled or not.
@@ -126,11 +115,6 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   private final String executionModel;
 
   /**
-   * Group dispatcher that loops and dispaches active groups that are not assigned.
-   */
-  private final GroupDispatcher groupDispatcher;
-
-  /**
    * A globaally shared MQTTSharedResource.
    */
   private final MQTTSharedResource mqttSharedResource;
@@ -142,13 +126,13 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
 
   // TODO[REMOVE]
   private final AtomicLong groupIdCounter = new AtomicLong(0);
+  private final DagGenerator dagGenerator;
 
   /**
    * Default query manager in MistTask.
    */
   @Inject
-  private GroupAwareGlobalSchedQueryManagerImpl(final DagGenerator dagGenerator,
-                                                final ScheduledExecutorServiceWrapper schedulerWrapper,
+  private GroupAwareGlobalSchedQueryManagerImpl(final ScheduledExecutorServiceWrapper schedulerWrapper,
                                                 final GlobalSchedGroupInfoMap groupInfoMap,
                                                 final QueryInfoStore planStore,
                                                 final MistPubSubEventHandler pubSubEventHandler,
@@ -162,30 +146,25 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 final NumGroupsMetricEventHandler numGroupsHandler,
                                                 final MemoryUsageMetricEventHandler memUsageHandler,
                                                 final EventProcessorNumAssigner assigner,
-                                                final GroupDispatcher groupDispatcher,
                                                 final BatchQueryCreator batchQueryCreator,
                                                 final MQTTSharedResource mqttSharedResource,
+                                                final DagGenerator dagGenerator,
                                                 @Parameter(GroupAware.class) final boolean groupAware,
                                                 @Parameter(GroupSchedModelType.class) final String executionModel) {
-    this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.groupInfoMap = groupInfoMap;
     this.metricTracker = metricTracker;
-    this.pubSubEventHandler = pubSubEventHandler;
     this.mergingEnabled = mergingEnabled;
     this.deactivationEnabled = deactivateEnabled;
     this.eventProcessorManager = eventProcessorManager;
     this.configDagGenerator = configDagGenerator;
     this.batchQueryCreator = batchQueryCreator;
     this.executionModel = executionModel;
-    this.groupDispatcher = groupDispatcher;
     this.mqttSharedResource = mqttSharedResource;
+    this.dagGenerator = dagGenerator;
     this.groupAware = groupAware;
     metricTracker.start();
-    if (executionModel.equals("dispatching")) {
-      groupDispatcher.start();
-    }
   }
 
   /**
@@ -254,10 +233,9 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
         // TODO[DELETE] end: for test
 
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-        injector.bindVolatileInstance(MistPubSubEventHandler.class, pubSubEventHandler);
-        injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
         injector.bindVolatileInstance(MQTTSharedResource.class, mqttSharedResource);
         injector.bindVolatileInstance(QueryInfoStore.class, planStore);
+        injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
         final GlobalSchedGroupInfo groupInfo = injector.getInstance(GlobalSchedGroupInfo.class);
         if (groupInfoMap.putIfAbsent(groupId, groupInfo) == null) {
 
@@ -265,8 +243,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
             LOG.log(Level.FINE, "Create Group: {0}", new Object[]{groupId});
           }
 
-          pubSubEventHandler.getPubSubEventHandler().onNext(new GroupEvent(groupInfo,
-              GroupEvent.GroupEventType.ADDITION));
+          eventProcessorManager.addGroup(groupInfo);
         }
       }
       // Add the query into the group

@@ -93,4 +93,9 @@ final class GlobalSchedNonBlockingEventProcessor extends Thread implements Event
     closed = true;
     nextGroupSelector.close();
   }
+
+  @Override
+  public NextGroupSelector getNextGroupSelector() {
+    return nextGroupSelector;
+  }
 }

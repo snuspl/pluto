@@ -21,6 +21,7 @@ import edu.snu.mist.core.task.QueryManager;
 import edu.snu.mist.core.task.eventProcessors.DefaultEventProcessorManager;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorFactory;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
+import edu.snu.mist.core.task.eventProcessors.parameters.DispatcherThreadNum;
 import edu.snu.mist.core.task.globalsched.*;
 import edu.snu.mist.core.task.globalsched.cfs.CfsSchedulingPeriodCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsSchedulingPeriod;
@@ -61,6 +62,7 @@ public final class MistGroupSchedulingTaskConfigs {
   private final long minSchedulingPeriod;
   private final int eventProcessorIncreaseNum;
   private final String groupSchedModelType;
+  private final int dispatcherThreadNum;
   // TODO[REMOVE]
   private final boolean groupAware;
 
@@ -76,6 +78,7 @@ public final class MistGroupSchedulingTaskConfigs {
       @Parameter(MinSchedulingPeriod.class) final long minSchedulingPeriod,
       @Parameter(EventProcessorIncreaseNum.class) final int eventProcessorIncreaseNum,
       @Parameter(GroupSchedModelType.class) final String groupSchedModelType,
+      @Parameter(DispatcherThreadNum.class) final int dispatcherThreadNum,
       @Parameter(GroupAware.class) final boolean groupAware) {
     this.epaType = epaType;
     this.cpuUtilLowThreshold = cpuUtilLowThreshold;
@@ -88,6 +91,7 @@ public final class MistGroupSchedulingTaskConfigs {
     this.eventProcessorIncreaseNum = eventProcessorIncreaseNum;
     this.groupSchedModelType = groupSchedModelType;
     this.groupAware = groupAware;
+    this.dispatcherThreadNum = dispatcherThreadNum;
   }
 
   /**
@@ -146,6 +150,7 @@ public final class MistGroupSchedulingTaskConfigs {
     jcb.bindNamedParameter(EventProcessorIncreaseNum.class, Integer.toString(eventProcessorIncreaseNum));
     jcb.bindNamedParameter(GroupSchedModelType.class, groupSchedModelType);
     jcb.bindNamedParameter(GroupAware.class, Boolean.toString(groupAware));
+    jcb.bindNamedParameter(DispatcherThreadNum.class, Integer.toString(dispatcherThreadNum));
 
     return Configurations.merge(getConfigurationForExecutionModel(), jcb.build());
   }
@@ -166,6 +171,7 @@ public final class MistGroupSchedulingTaskConfigs {
         .registerShortNameOfClass(MinSchedulingPeriod.class)
         .registerShortNameOfClass(EventProcessorIncreaseNum.class)
         .registerShortNameOfClass(GroupSchedModelType.class)
+        .registerShortNameOfClass(DispatcherThreadNum.class)
         .registerShortNameOfClass(GroupAware.class);
   }
 }

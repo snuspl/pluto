@@ -15,7 +15,11 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
+import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
+
+import java.util.List;
 
 /**
  * This interface is for event processor management.
@@ -28,6 +32,16 @@ public interface EventProcessorManager extends AutoCloseable {
    * @param delta the increase number of event processors.
    */
   void increaseEventProcessors(int delta);
+
+  /**
+   * Add and assign the group to an event processor.
+   */
+  void addGroup(GlobalSchedGroupInfo groupInfo);
+
+  /**
+   * Remove the group from the assigned event processor.
+   */
+  void removeGroup(GlobalSchedGroupInfo groupInfo);
 
   /**
    * Decrease the number of event processors.
@@ -45,4 +59,9 @@ public interface EventProcessorManager extends AutoCloseable {
    * The number of event processors.
    */
   int size();
+
+  /**
+   * Get the list of event processors and the assigned groups.
+   */
+  List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> getEventProcessorAndAssignedGroups();
 }

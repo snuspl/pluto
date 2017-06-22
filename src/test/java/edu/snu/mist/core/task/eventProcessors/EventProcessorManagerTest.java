@@ -19,6 +19,7 @@ import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcesso
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorLowerBound;
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorUpperBound;
 import edu.snu.mist.core.task.eventProcessors.parameters.GracePeriod;
+import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -29,10 +30,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.inject.Inject;
-
 import java.util.concurrent.TimeUnit;
 
-import static org.mockito.Mockito.mock;
+import static org.mockito.Matchers.anyList;
+import static org.mockito.Mockito.*;
 
 public class EventProcessorManagerTest {
 
@@ -40,6 +41,8 @@ public class EventProcessorManagerTest {
   private static final int DEFAULT_NUM_THREADS = 5;
   private static final int MAX_NUM_THREADS = 10;
   private static final int MIN_NUM_THREADS = 2;
+  private GroupRebalancer groupRebalancer;
+  private GroupBalancer groupBalancer;
 
   @Before
   public void setUp() throws InjectionException {
@@ -49,13 +52,24 @@ public class EventProcessorManagerTest {
     jcb.bindNamedParameter(EventProcessorLowerBound.class, Integer.toString(MIN_NUM_THREADS));
     jcb.bindNamedParameter(GracePeriod.class, Integer.toString(0));
     jcb.bindImplementation(EventProcessorFactory.class, TestEventProcessorFactory.class);
+    groupRebalancer = mock(GroupRebalancer.class);
+    groupBalancer = mock(GroupBalancer.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    injector.bindVolatileInstance(GroupRebalancer.class, groupRebalancer);
+    injector.bindVolatileInstance(GroupBalancer.class, groupBalancer);
     eventProcessorManager = injector.getInstance(DefaultEventProcessorManager.class);
   }
 
   @After
   public void tearDown() throws Exception {
     eventProcessorManager.close();
+  }
+
+  @Test
+  public void addGroupTest() {
+    final GlobalSchedGroupInfo groupInfo = mock(GlobalSchedGroupInfo.class);
+    eventProcessorManager.addGroup(groupInfo);
+    verify(groupBalancer).assignGroup(groupInfo, eventProcessorManager.getEventProcessorAndAssignedGroups());
   }
 
   /**
@@ -78,6 +92,9 @@ public class EventProcessorManagerTest {
     // upper bound test
     eventProcessorManager.increaseEventProcessors(5);
     Assert.assertEquals(MAX_NUM_THREADS, eventProcessorManager.size());
+
+    verify(groupRebalancer, times(1)).reassignGroupsForNewEps(anyList(),
+        eq(eventProcessorManager.getEventProcessorAndAssignedGroups()));
   }
 
   /**
@@ -92,6 +109,9 @@ public class EventProcessorManagerTest {
     // lower bound test
     eventProcessorManager.decreaseEventProcessors(5);
     Assert.assertEquals(MIN_NUM_THREADS, eventProcessorManager.size());
+
+    verify(groupRebalancer, times(1)).reassignGroupsForRemovedEps(anyList(),
+        eq(eventProcessorManager.getEventProcessorAndAssignedGroups()));
   }
 
   /**

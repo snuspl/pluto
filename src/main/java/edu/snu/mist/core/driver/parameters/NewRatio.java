@@ -13,27 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.eventProcessors;
+package edu.snu.mist.core.driver.parameters;
 
-import edu.snu.mist.core.task.globalsched.NextGroupSelector;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * This is an interface of EventProcessor that processes events of queries.
+ * The ratio of the old area to the new area.
  */
-public interface EventProcessor extends AutoCloseable {
-
-  /**
-   * Start to execute the events of queries.
-   */
-  void start();
-
-  /**
-   * Get next group selector.
-   */
-  NextGroupSelector getNextGroupSelector();
-
-  /**
-   * Interrupt the event processing.
-   */
-  void interrupt();
+@NamedParameter(doc = "The ratio of the old area to the new area", short_name = "new_ratio", default_value = "1")
+public final class NewRatio implements Name<Integer> {
 }
