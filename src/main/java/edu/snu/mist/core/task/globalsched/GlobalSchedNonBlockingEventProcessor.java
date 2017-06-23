@@ -92,7 +92,7 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
 
         // Update load
         final double load = processingTimeRate * incomingEventRate;
-        groupInfo.setLoad(load);
+        groupInfo.updateLoad(load);
         groupInfo.setLatestInactiveTime(endProcessingTime);
 
         if (LOG.isLoggable(Level.FINE)) {

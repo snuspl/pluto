@@ -181,7 +181,7 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   }
 
   @Override
-  public void setLoad(final double value) {
+  public void updateLoad(final double value) {
     load.updateValue(value);
   }
 

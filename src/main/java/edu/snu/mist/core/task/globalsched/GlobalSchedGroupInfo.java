@@ -65,15 +65,34 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
    */
   QueryRemover getQueryRemover();
 
+  /**
+   * Set the latest inactive time of this group.
+   * @param time inactivated time
+   */
   void setLatestInactiveTime(long time);
 
+  /**
+   * Get the latest inactive time of this group.
+   * @return latest inactivated time
+   */
   long getLatestInactiveTime();
 
+  /**
+   * Get the number of remaining events.
+   * @return the number of remaining events.
+   */
   long numberOfRemainingEvents();
 
+  /**
+   * Get the EMA load of this group.
+   */
   double getEWMALoad();
 
-  void setLoad(double load);
+  /**
+   * Update the load.
+   * @param load current load
+   */
+  void updateLoad(double load);
 
   /**
    * Get the metric holder contains the number of events and weight metric of this group.

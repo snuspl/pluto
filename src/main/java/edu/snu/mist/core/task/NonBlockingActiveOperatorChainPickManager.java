@@ -16,6 +16,7 @@
 package edu.snu.mist.core.task;
 
 import javax.inject.Inject;
+import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -76,7 +77,9 @@ public final class NonBlockingActiveOperatorChainPickManager implements Operator
   @Override
   public long numEvents() {
     long sum = 0;
-    for (final OperatorChain operatorChain : activeQueryQueue) {
+    final Iterator<OperatorChain> iterator = activeQueryQueue.iterator();
+    while (iterator.hasNext()) {
+      final OperatorChain operatorChain = iterator.next();
       sum += operatorChain.numberOfEvents();
     }
     return sum;
