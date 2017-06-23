@@ -20,7 +20,7 @@ import edu.snu.mist.core.task.ExecutionDags;
 
 import javax.inject.Inject;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class holds the physical execution dags that are merged.
@@ -34,7 +34,7 @@ public final class MergingExecutionDags implements ExecutionDags {
 
   @Inject
   private MergingExecutionDags() {
-    this.dagCollection = new HashSet<>();
+    this.dagCollection = new ConcurrentHashMap<>().newKeySet();
   }
 
   @Override
