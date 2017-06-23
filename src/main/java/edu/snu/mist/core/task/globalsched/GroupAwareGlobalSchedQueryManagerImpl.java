@@ -30,16 +30,10 @@ import edu.snu.mist.core.task.deactivation.DeactivationGroupSourceManager;
 import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.deactivation.NoDeactivationGroupSourceManager;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
-import edu.snu.mist.core.task.globalsched.metrics.CpuUtilMetricEventHandler;
-import edu.snu.mist.core.task.globalsched.metrics.EventNumAndWeightMetricEventHandler;
-import edu.snu.mist.core.task.globalsched.metrics.NumGroupsMetricEventHandler;
 import edu.snu.mist.core.task.globalsched.parameters.GroupSchedModelType;
 import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
 import edu.snu.mist.core.task.merging.MergeAwareQueryRemover;
 import edu.snu.mist.core.task.merging.MergingExecutionDags;
-import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
-import edu.snu.mist.core.task.metrics.MemoryUsageMetricEventHandler;
-import edu.snu.mist.core.task.metrics.MetricTracker;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
@@ -80,11 +74,6 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
    * A map which contains groups and their information.
    */
   private final GlobalSchedGroupInfoMap groupInfoMap;
-
-  /**
-   * A tracker measures global metrics such as total events number or cpu utilization.
-   */
-  private final MetricTracker metricTracker;
 
   /**
    * Merging enabled or not.
@@ -147,17 +136,10 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   private GroupAwareGlobalSchedQueryManagerImpl(final ScheduledExecutorServiceWrapper schedulerWrapper,
                                                 final GlobalSchedGroupInfoMap groupInfoMap,
                                                 final QueryInfoStore planStore,
-                                                final MistPubSubEventHandler pubSubEventHandler,
                                                 final EventProcessorManager eventProcessorManager,
                                                 @Parameter(MergingEnabled.class) final boolean mergingEnabled,
                                                 @Parameter(DeactivationEnabled.class) final boolean deactivateEnabled,
-                                                final MetricTracker metricTracker,
                                                 final ConfigDagGenerator configDagGenerator,
-                                                final EventNumAndWeightMetricEventHandler eventNumHandler,
-                                                final CpuUtilMetricEventHandler cpuUtilHandler,
-                                                final NumGroupsMetricEventHandler numGroupsHandler,
-                                                final MemoryUsageMetricEventHandler memUsageHandler,
-                                                final EventProcessorNumAssigner assigner,
                                                 final BatchQueryCreator batchQueryCreator,
                                                 final MQTTSharedResource mqttSharedResource,
                                                 final KafkaSharedResource kafkaSharedResource,
@@ -168,7 +150,6 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.groupInfoMap = groupInfoMap;
-    this.metricTracker = metricTracker;
     this.mergingEnabled = mergingEnabled;
     this.deactivationEnabled = deactivateEnabled;
     this.eventProcessorManager = eventProcessorManager;
@@ -180,7 +161,6 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     this.nettySharedResource = nettySharedResource;
     this.dagGenerator = dagGenerator;
     this.groupAware = groupAware;
-    metricTracker.start();
   }
 
   /**
@@ -324,7 +304,6 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   public void close() throws Exception {
     scheduler.shutdown();
     planStore.close();
-    metricTracker.close();
     for (final GlobalSchedGroupInfo groupInfo : groupInfoMap.values()) {
       groupInfo.close();
     }
