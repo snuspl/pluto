@@ -308,9 +308,8 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
     @Override
     public void run() {
       while (!closed.get()) {
-        long timestamp = epStampedLock.tryOptimisticRead();
-
-        // Optimistic lock
+        // Read lock
+        long timestamp = epStampedLock.readLock();
         for (int i = index; i < epGroupList.size(); i += dispatcherThreadNum) {
           final Tuple<EventProcessor, List<GlobalSchedGroupInfo>> entry = epGroupList.get(i);
           final NextGroupSelector nextGroupSelector = entry.getKey().getNextGroupSelector();
@@ -325,26 +324,7 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
             }
           }
         }
-
-        // Read lock
-        if (!epStampedLock.validate(timestamp)) {
-          timestamp = epStampedLock.readLock();
-          for (int i = index; i < epGroupList.size(); i += dispatcherThreadNum) {
-            final Tuple<EventProcessor, List<GlobalSchedGroupInfo>> entry = epGroupList.get(i);
-            final NextGroupSelector nextGroupSelector = entry.getKey().getNextGroupSelector();
-            final List<GlobalSchedGroupInfo> groups = entry.getValue();
-            for (final GlobalSchedGroupInfo group : groups) {
-              if (!group.isAssigned() && group.isActive()) {
-                // dispatch the inactive group
-                // Mark this group is being processed
-                group.setAssigned(true);
-                // And reschedule it
-                nextGroupSelector.reschedule(group, false);
-              }
-            }
-          }
-          epStampedLock.unlockRead(timestamp);
-        }
+        epStampedLock.unlockRead(timestamp);
       }
     }
   }
