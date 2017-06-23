@@ -326,6 +326,11 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
     if (correspondingVertex == null) {
       // it is not shared, so we need to create it
       correspondingVertex = executionVertexGenerator.generate(currentVertex, urls, classLoader);
+      if (correspondingVertex.getType() == ExecutionVertex.Type.OPERATOR_CHAIN) {
+        // set operator chain manager
+        final OperatorChain operatorChain = (OperatorChain)correspondingVertex;
+        operatorChain.setOperatorChainManager(operatorChainManager);
+      }
       executionDag.getDag().addVertex(correspondingVertex);
       executionVertexCountMap.put(correspondingVertex, 1);
       executionVertexDagMap.put(correspondingVertex, executionDag);
