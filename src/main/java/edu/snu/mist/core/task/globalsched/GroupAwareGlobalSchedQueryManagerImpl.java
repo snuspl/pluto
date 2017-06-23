@@ -253,7 +253,11 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
         injector.bindVolatileInstance(KafkaSharedResource.class, kafkaSharedResource);
         injector.bindVolatileInstance(NettySharedResource.class, nettySharedResource);
         injector.bindVolatileInstance(QueryInfoStore.class, planStore);
-        injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
+
+        if (!mergingEnabled) {
+          injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
+        }
+
         final GlobalSchedGroupInfo groupInfo = injector.getInstance(GlobalSchedGroupInfo.class);
         if (groupInfoMap.putIfAbsent(groupId, groupInfo) == null) {
 
