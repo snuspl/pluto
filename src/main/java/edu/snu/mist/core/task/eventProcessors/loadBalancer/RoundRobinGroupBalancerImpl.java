@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.eventProcessors;
+package edu.snu.mist.core.task.eventProcessors.loadBalancer;
 
+import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import org.apache.reef.io.Tuple;
 
@@ -43,5 +44,11 @@ public final class RoundRobinGroupBalancerImpl implements GroupBalancer {
     final int index = (int)(counter.getAndIncrement() % currEpGroups.size());
     final Tuple<EventProcessor, List<GlobalSchedGroupInfo>> tuple = currEpGroups.get(index);
     tuple.getValue().add(groupInfo);
+  }
+
+  @Override
+  public void initialize(
+      final List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> epGroups) {
+    // do nothing
   }
 }

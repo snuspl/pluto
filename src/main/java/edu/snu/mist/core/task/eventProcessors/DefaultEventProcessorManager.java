@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
+import edu.snu.mist.core.task.eventProcessors.loadBalancer.GroupBalancer;
 import edu.snu.mist.core.task.eventProcessors.parameters.*;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.NextGroupSelector;
