@@ -66,34 +66,39 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
   QueryRemover getQueryRemover();
 
   /**
-   * Get the latest scheduled time of the group.
-   * @return the latest scheduled time
+   * Set the latest inactive time of this group.
+   * @param time inactivated time
    */
-  long getLatestScheduledTime();
+  void setLatestInactiveTime(long time);
 
   /**
-   * Set the latest scheduled time of the group.
-   * @param time the latest scheduled time
+   * Get the latest inactive time of this group.
+   * @return latest inactivated time
    */
-  void setLatestScheduledTime(long time);
+  long getLatestInactiveTime();
+
+  /**
+   * Get the number of remaining events.
+   * @return the number of remaining events.
+   */
+  long numberOfRemainingEvents();
+
+  /**
+   * Get the EMA load of this group.
+   */
+  double getEWMALoad();
+
+  /**
+   * Update the load.
+   * @param load current load
+   */
+  void updateLoad(double load);
 
   /**
    * Get the metric holder contains the number of events and weight metric of this group.
    * @return the metric holder of this group
    */
   GroupMetrics getMetricHolder();
-
-  /**
-   * Get the vruntime of the group.
-   * @return vruntime
-   */
-  double getVRuntime();
-
-  /**
-   * Set the vruntime of the group.
-   * @param vruntime vruntime
-   */
-  void setVRuntime(double vruntime);
 
   /**
    * Check whether the group has events to be processed.

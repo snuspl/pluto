@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  * It also selects another operator chain manager when there are no active operator chain,
  * which means it does not block when the group has no active operator chain.
  */
-final class GlobalSchedNonBlockingEventProcessor extends Thread implements EventProcessor {
+public final class GlobalSchedNonBlockingEventProcessor extends Thread implements EventProcessor {
 
   private static final Logger LOG = Logger.getLogger(GlobalSchedNonBlockingEventProcessor.class.getName());
 
@@ -39,19 +39,12 @@ final class GlobalSchedNonBlockingEventProcessor extends Thread implements Event
   private volatile boolean closed;
 
   /**
-   * The scheduling period calculator.
-   */
-  private final SchedulingPeriodCalculator schedPeriodCalculator;
-
-  /**
    * Selector of the executable group.
    */
   private final NextGroupSelector nextGroupSelector;
 
-  public GlobalSchedNonBlockingEventProcessor(final SchedulingPeriodCalculator schedPeriodCalculator,
-                                              final NextGroupSelector nextGroupSelector) {
+  public GlobalSchedNonBlockingEventProcessor(final NextGroupSelector nextGroupSelector) {
     super();
-    this.schedPeriodCalculator = schedPeriodCalculator;
     this.nextGroupSelector = nextGroupSelector;
   }
 
@@ -64,20 +57,50 @@ final class GlobalSchedNonBlockingEventProcessor extends Thread implements Event
       while (!Thread.currentThread().isInterrupted() && !closed) {
         // Pick an active group
         final GlobalSchedGroupInfo groupInfo = nextGroupSelector.getNextExecutableGroup();
+
+        // Incoming rates of events
+        double incomingEventRate;
+        try {
+          incomingEventRate = groupInfo.numberOfRemainingEvents() /
+              (double)(System.currentTimeMillis() - groupInfo.getLatestInactiveTime());
+        } catch (final ArithmeticException e) {
+          incomingEventRate = 0;
+        }
+
         final OperatorChainManager operatorChainManager = groupInfo.getOperatorChainManager();
 
+        final long startProcessingTime = System.currentTimeMillis();
+        long numProcessedEvents = 0;
         while (groupInfo.isActive()) {
           //Pick an active operator event queue
           final OperatorChain operatorChain = operatorChainManager.pickOperatorChain();
           while (operatorChain.processNextEvent()) {
             // Process next event
+            numProcessedEvents += 1;
           }
         }
+        final long endProcessingTime = System.currentTimeMillis();
+
+        // Processing time / events
+        double processingTimeRate;
+        try {
+          processingTimeRate = (double)(endProcessingTime - startProcessingTime) /
+              numProcessedEvents;
+        } catch (final ArithmeticException e) {
+          processingTimeRate = 0;
+        }
+
+        // Update load
+        final double load = processingTimeRate * incomingEventRate;
+        groupInfo.updateLoad(load);
+        groupInfo.setLatestInactiveTime(endProcessingTime);
 
         if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "{0} Process Group {1}",
-              new Object[]{Thread.currentThread().getName(), groupInfo});
+          LOG.log(Level.FINE, "{0} Process Group {1}, Load: {2}",
+              new Object[]{Thread.currentThread().getName(), groupInfo, load});
         }
+
+        // Reschedule
         nextGroupSelector.reschedule(groupInfo, true);
       }
     } catch (final InterruptedException e) {

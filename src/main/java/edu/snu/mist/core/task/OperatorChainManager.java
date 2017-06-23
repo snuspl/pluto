@@ -45,4 +45,10 @@ public interface OperatorChainManager {
    * @return active operator chain
    */
   int size();
+
+  /**
+   * The number of remaining events.
+   * @return remaining events
+   */
+  long numEvents();
 }
