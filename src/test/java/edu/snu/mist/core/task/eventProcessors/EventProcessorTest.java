@@ -59,17 +59,21 @@ public final class EventProcessorTest {
     final GlobalSchedGroupInfo group1 = createGroup("group1");
     final GlobalSchedGroupInfo group2 = createGroup("group2");
 
-    final AtomicInteger numEvent1 = new AtomicInteger(10000);
+    final double defaultLoad = group1.getEWMALoad();
+
+    final AtomicInteger numEvent1 = new AtomicInteger(10);
     final OperatorChain oc1 = mock(OperatorChain.class);
-    final AtomicInteger numEvent2 = new AtomicInteger(20000);
+    final AtomicInteger numEvent2 = new AtomicInteger(20);
     final OperatorChain oc2 = mock(OperatorChain.class);
 
     when(oc1.numberOfEvents()).thenReturn(numEvent1.get());
     when(oc1.processNextEvent()).thenAnswer((icm) -> {
+      Thread.sleep(10);
       return numEvent1.getAndDecrement() != 0;
     });
     when(oc2.numberOfEvents()).thenReturn(numEvent2.get());
     when(oc2.processNextEvent()).thenAnswer((icm) -> {
+      Thread.sleep(10);
       return numEvent2.getAndDecrement() != 0;
     });
 
@@ -88,7 +92,7 @@ public final class EventProcessorTest {
     }
 
     LOG.info("Group1 Load: " + group1.getEWMALoad());
-    Assert.assertTrue(group1.getEWMALoad() != 0);
+    Assert.assertTrue(group1.getEWMALoad() > defaultLoad);
   }
 
   /**

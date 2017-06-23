@@ -18,6 +18,7 @@ package edu.snu.mist.core.task.globalsched;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.deactivation.GroupSourceManager;
+import edu.snu.mist.core.task.globalsched.parameters.DefaultGroupLoad;
 import edu.snu.mist.core.task.metrics.EWMAMetric;
 import edu.snu.mist.core.task.metrics.GroupMetrics;
 import org.apache.reef.tang.annotations.Parameter;
@@ -87,8 +88,14 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
    */
   private final GroupSourceManager groupSourceManager;
 
+  /**
+   * Default load of the group.
+   */
+  private final double defaultLoad;
+
   @Inject
   private DefaultGlobalSchedGroupInfo(@Parameter(GroupId.class) final String groupId,
+                                      @Parameter(DefaultGroupLoad.class) final double defaultLoad,
                                       final ExecutionDags executionDags,
                                       final QueryStarter queryStarter,
                                       final OperatorChainManager operatorChainManager,
@@ -96,13 +103,14 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
                                       final GroupMetrics metricHolder,
                                       final GroupSourceManager groupSourceManager) {
     this.groupId = groupId;
+    this.defaultLoad = defaultLoad;
     this.queryIdList = new ArrayList<>();
     this.executionDags = executionDags;
     this.queryStarter = queryStarter;
     this.operatorChainManager = operatorChainManager;
     this.queryRemover = queryRemover;
     this.latestInactiveTime = System.currentTimeMillis();
-    this.load = new EWMAMetric(0, 0.7);
+    this.load = new EWMAMetric(defaultLoad, 0.7);
     this.metricHolder = metricHolder;
     this.groupSourceManager = groupSourceManager;
   }

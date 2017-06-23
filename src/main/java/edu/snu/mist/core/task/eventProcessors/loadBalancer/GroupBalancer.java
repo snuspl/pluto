@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.eventProcessors;
+package edu.snu.mist.core.task.eventProcessors.loadBalancer;
 
+import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
@@ -34,4 +35,9 @@ public interface GroupBalancer {
    */
   void assignGroup(GlobalSchedGroupInfo newGroup,
                    List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> epGroups);
+
+  /**
+   * This should be called once when the initial event processors are created.
+   */
+  void initialize(List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> epGroups);
 }

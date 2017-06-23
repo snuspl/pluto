@@ -17,10 +17,14 @@ package edu.snu.mist.core.driver;
 
 import edu.snu.mist.core.driver.parameters.EventProcessorNumAssignerType;
 import edu.snu.mist.core.driver.parameters.GroupAware;
+import edu.snu.mist.core.driver.parameters.LoadBalancerType;
 import edu.snu.mist.core.task.QueryManager;
 import edu.snu.mist.core.task.eventProcessors.DefaultEventProcessorManager;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorFactory;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
+import edu.snu.mist.core.task.eventProcessors.loadBalancer.GroupBalancer;
+import edu.snu.mist.core.task.eventProcessors.loadBalancer.MinLoadGroupBalancerImpl;
+import edu.snu.mist.core.task.eventProcessors.loadBalancer.RoundRobinGroupBalancerImpl;
 import edu.snu.mist.core.task.eventProcessors.parameters.DispatcherThreadNum;
 import edu.snu.mist.core.task.globalsched.*;
 import edu.snu.mist.core.task.globalsched.cfs.CfsSchedulingPeriodCalculator;
@@ -65,6 +69,7 @@ public final class MistGroupSchedulingTaskConfigs {
   private final int dispatcherThreadNum;
   // TODO[REMOVE]
   private final boolean groupAware;
+  private final String lbType;
 
   @Inject
   private MistGroupSchedulingTaskConfigs(
@@ -79,7 +84,8 @@ public final class MistGroupSchedulingTaskConfigs {
       @Parameter(EventProcessorIncreaseNum.class) final int eventProcessorIncreaseNum,
       @Parameter(GroupSchedModelType.class) final String groupSchedModelType,
       @Parameter(DispatcherThreadNum.class) final int dispatcherThreadNum,
-      @Parameter(GroupAware.class) final boolean groupAware) {
+      @Parameter(GroupAware.class) final boolean groupAware,
+      @Parameter(LoadBalancerType.class) final String lbType) {
     this.epaType = epaType;
     this.cpuUtilLowThreshold = cpuUtilLowThreshold;
     this.eventNumHighThreshold = eventNumHighThreshold;
@@ -92,6 +98,7 @@ public final class MistGroupSchedulingTaskConfigs {
     this.groupSchedModelType = groupSchedModelType;
     this.groupAware = groupAware;
     this.dispatcherThreadNum = dispatcherThreadNum;
+    this.lbType = lbType;
   }
 
   /**
@@ -107,6 +114,17 @@ public final class MistGroupSchedulingTaskConfigs {
         return AIADEventProcessorNumAssigner.class;
       default:
         throw new RuntimeException("No event processor num assigner type: " + epaType);
+    }
+  }
+
+  private Class<? extends GroupBalancer> getGroupBalancer() {
+    switch (lbType) {
+      case "rr":
+        return RoundRobinGroupBalancerImpl.class;
+      case "ml":
+        return MinLoadGroupBalancerImpl.class;
+      default:
+        throw new RuntimeException("Invalid group balancer: " + lbType);
     }
   }
 
@@ -139,6 +157,7 @@ public final class MistGroupSchedulingTaskConfigs {
     jcb.bindImplementation(EventProcessorNumAssigner.class, getEpaClass());
     jcb.bindImplementation(EventProcessorManager.class, DefaultEventProcessorManager.class);
     jcb.bindImplementation(SchedulingPeriodCalculator.class, CfsSchedulingPeriodCalculator.class);
+    jcb.bindImplementation(GroupBalancer.class, getGroupBalancer());
 
     jcb.bindNamedParameter(CpuUtilLowThreshold.class, Double.toString(cpuUtilLowThreshold));
     jcb.bindNamedParameter(EventNumHighThreshold.class, Double.toString(eventNumHighThreshold));
@@ -172,6 +191,7 @@ public final class MistGroupSchedulingTaskConfigs {
         .registerShortNameOfClass(EventProcessorIncreaseNum.class)
         .registerShortNameOfClass(GroupSchedModelType.class)
         .registerShortNameOfClass(DispatcherThreadNum.class)
-        .registerShortNameOfClass(GroupAware.class);
+        .registerShortNameOfClass(GroupAware.class)
+        .registerShortNameOfClass(LoadBalancerType.class);
   }
 }
