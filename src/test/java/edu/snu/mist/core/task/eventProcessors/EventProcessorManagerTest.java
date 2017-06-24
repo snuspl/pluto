@@ -32,6 +32,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.inject.Inject;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Mockito.*;
@@ -43,7 +45,7 @@ public class EventProcessorManagerTest {
   private static final int MAX_NUM_THREADS = 10;
   private static final int MIN_NUM_THREADS = 2;
   private GroupRebalancer groupRebalancer;
-  private GroupBalancer groupBalancer;
+  private TestGroupBalancer groupBalancer;
   private GroupAllocationTableModifier groupAllocationTableModifier;
 
   @Before
@@ -55,7 +57,7 @@ public class EventProcessorManagerTest {
     jcb.bindNamedParameter(GracePeriod.class, Integer.toString(0));
     jcb.bindImplementation(EventProcessorFactory.class, TestEventProcessorFactory.class);
     groupRebalancer = mock(GroupRebalancer.class);
-    groupBalancer = mock(GroupBalancer.class);
+    groupBalancer = new TestGroupBalancer();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     injector.bindVolatileInstance(GroupRebalancer.class, groupRebalancer);
     injector.bindVolatileInstance(GroupBalancer.class, groupBalancer);
@@ -68,14 +70,12 @@ public class EventProcessorManagerTest {
     eventProcessorManager.close();
   }
 
-  @Test
-  public void addGroupTest() {
+  @Test(timeout = 5000)
+  public void addGroupTest() throws InterruptedException {
     final GlobalSchedGroupInfo groupInfo = mock(GlobalSchedGroupInfo.class);
     eventProcessorManager.addGroup(groupInfo);
-    while (!groupAllocationTableModifier.getWritingEventQueue().isEmpty()) {
-      // wait
-    }
-    verify(groupBalancer).assignGroup(groupInfo);
+    final GlobalSchedGroupInfo assignedGroup = groupBalancer.groups.take();
+    Assert.assertEquals(groupInfo, assignedGroup);
   }
 
   /**
@@ -192,6 +192,25 @@ public class EventProcessorManagerTest {
     @Override
     public EventProcessor newEventProcessor() {
       return mock(EventProcessor.class);
+    }
+  }
+
+  final class TestGroupBalancer implements GroupBalancer {
+
+    public BlockingQueue<GlobalSchedGroupInfo> groups;
+
+    public TestGroupBalancer() {
+      this.groups = new LinkedBlockingQueue<>();
+    }
+
+    @Override
+    public void assignGroup(final GlobalSchedGroupInfo newGroup) {
+      groups.add(newGroup);
+    }
+
+    @Override
+    public void initialize() {
+
     }
   }
 }
