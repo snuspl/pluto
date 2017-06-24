@@ -89,7 +89,7 @@ public final class QueryManagerTest {
   private final MISTFunction<Map<String, Integer>, Integer> totalCountMapFunc =
       (input) -> input.values().stream().reduce(0, (x, y) -> x + y);
 
-  @Test(timeout = 5000)
+  @Test(timeout = 10000)
   public void testSubmitComplexQueryInOption2Dispatching() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(RPCServerPort.class, "20338");
@@ -101,7 +101,7 @@ public final class QueryManagerTest {
     testSubmitComplexQueryHelper(taskConfigs.getConfiguration());
   }
 
-  @Test(timeout = 5000)
+  @Test(timeout = 10000)
   public void testSubmitComplexQueryInOption2GroupUnaware() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(RPCServerPort.class, "20339");
@@ -114,7 +114,7 @@ public final class QueryManagerTest {
     testSubmitComplexQueryHelper(taskConfigs.getConfiguration());
   }
 
-  @Test(timeout = 5000)
+  @Test(timeout = 10000)
   public void testSubmitComplexQueryInOption3() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(RPCServerPort.class, "20334");

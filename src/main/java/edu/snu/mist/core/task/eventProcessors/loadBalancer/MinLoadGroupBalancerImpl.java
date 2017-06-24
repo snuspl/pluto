@@ -16,13 +16,13 @@
 package edu.snu.mist.core.task.eventProcessors.loadBalancer;
 
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
+import edu.snu.mist.core.task.eventProcessors.GroupAllocationTable;
 import edu.snu.mist.core.task.eventProcessors.parameters.GroupBalancerGracePeriod;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
-import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.List;
+import java.util.Collection;
 
 /**
  * A load balancer that assigns a new group to the event processor that has the minimum load.
@@ -34,7 +34,7 @@ public final class MinLoadGroupBalancerImpl implements GroupBalancer {
   /**
    * The event processor that has the minimum load.
    */
-  private Tuple<EventProcessor, List<GlobalSchedGroupInfo>> latestMinLoadEventProcessor;
+  private EventProcessor latestMinLoadEventProcessor;
 
   /**
    * The latest pick time of the event processor that has the minimum load.
@@ -46,9 +46,16 @@ public final class MinLoadGroupBalancerImpl implements GroupBalancer {
    */
   private final long gracePeriod;
 
+  /**
+   * Group allocation table.
+   */
+  private final GroupAllocationTable groupAllocationTable;
+
   @Inject
-  private MinLoadGroupBalancerImpl(@Parameter(GroupBalancerGracePeriod.class) final long gracePeriod) {
+  private MinLoadGroupBalancerImpl(@Parameter(GroupBalancerGracePeriod.class) final long gracePeriod,
+                                   final GroupAllocationTable groupAllocationTable) {
     this.gracePeriod = gracePeriod;
+    this.groupAllocationTable = groupAllocationTable;
   }
 
   /**
@@ -56,7 +63,7 @@ public final class MinLoadGroupBalancerImpl implements GroupBalancer {
    * @param groups groups
    * @return total load
    */
-  private double calculateLoadOfGroups(final List<GlobalSchedGroupInfo> groups) {
+  private double calculateLoadOfGroups(final Collection<GlobalSchedGroupInfo> groups) {
     double sum = 0;
     for (final GlobalSchedGroupInfo group : groups) {
       sum += group.getEWMALoad();
@@ -66,17 +73,15 @@ public final class MinLoadGroupBalancerImpl implements GroupBalancer {
 
   /**
    * Find the event processor that has the minimum load.
-   * @param currEpGroups current event processors
    */
-  private Tuple<EventProcessor, List<GlobalSchedGroupInfo>> findMinLoadEventProcessor(
-      final List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> currEpGroups) {
-    Tuple<EventProcessor, List<GlobalSchedGroupInfo>> minEventProcessor = null;
+  private EventProcessor findMinLoadEventProcessor() {
+    EventProcessor minEventProcessor = null;
     double minLoad = Double.MAX_VALUE;
 
-    for (final Tuple<EventProcessor, List<GlobalSchedGroupInfo>> tuple : currEpGroups) {
-      final double load = calculateLoadOfGroups(tuple.getValue());
+    for (final EventProcessor eventProcessor : groupAllocationTable.getKeys()) {
+      final double load = calculateLoadOfGroups(groupAllocationTable.getValue(eventProcessor));
       if (load < minLoad) {
-        minEventProcessor = tuple;
+        minEventProcessor = eventProcessor;
         minLoad = load;
       }
     }
@@ -86,29 +91,27 @@ public final class MinLoadGroupBalancerImpl implements GroupBalancer {
   /**
    * Assign the new group to the event processor that has the latest minimum load.
    * @param groupInfo new group
-   * @param currEpGroups current event processors
    */
   @Override
-  public void assignGroup(final GlobalSchedGroupInfo groupInfo,
-                          final List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> currEpGroups) {
+  public void assignGroup(final GlobalSchedGroupInfo groupInfo) {
     if (System.currentTimeMillis() - latestPickTime < gracePeriod
-        && currEpGroups.contains(latestMinLoadEventProcessor)) {
+        && groupAllocationTable.getKeys().contains(latestMinLoadEventProcessor)) {
       // Use the cached event processor
-      latestMinLoadEventProcessor.getValue().add(groupInfo);
+      groupAllocationTable.getValue(latestMinLoadEventProcessor).add(groupInfo);
     } else {
       // Reselect the event processor that has the minimum load and
       // Update the latest pick time and the latest min load event processor
-      final Tuple<EventProcessor, List<GlobalSchedGroupInfo>> tuple = findMinLoadEventProcessor(currEpGroups);
+      final EventProcessor minLoadEventProcessor = findMinLoadEventProcessor();
       latestPickTime = System.currentTimeMillis();
-      latestMinLoadEventProcessor = tuple;
-      latestMinLoadEventProcessor.getValue().add(groupInfo);
+      latestMinLoadEventProcessor = minLoadEventProcessor;
+      groupAllocationTable.getValue(latestMinLoadEventProcessor).add(groupInfo);
     }
   }
 
   @Override
-  public void initialize(final List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> epGroups) {
+  public void initialize() {
     // Initialize the latest pick time and the minimum load event processor
-    latestMinLoadEventProcessor = findMinLoadEventProcessor(epGroups);
+    latestMinLoadEventProcessor = findMinLoadEventProcessor();
     latestPickTime = System.currentTimeMillis();
   }
 }

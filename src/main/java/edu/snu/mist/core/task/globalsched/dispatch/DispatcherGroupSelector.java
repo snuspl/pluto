@@ -58,7 +58,7 @@ public final class DispatcherGroupSelector implements NextGroupSelector {
   @Override
   public void reschedule(final GlobalSchedGroupInfo groupInfo, final boolean miss) {
     if (miss) {
-      groupInfo.setAssigned(false);
+      groupInfo.compareAndSetAssigned(true, false);
     } else {
       queue.add(groupInfo);
     }

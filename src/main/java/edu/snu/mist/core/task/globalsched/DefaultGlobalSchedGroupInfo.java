@@ -209,8 +209,8 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   }
 
   @Override
-  public void setAssigned(final boolean value) {
-    assigned.set(value);
+  public boolean compareAndSetAssigned(final boolean cmp, final boolean value) {
+    return assigned.compareAndSet(cmp, value);
   }
 
   @Override

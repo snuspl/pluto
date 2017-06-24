@@ -17,19 +17,19 @@ package edu.snu.mist.core.task.eventProcessors;
 
 import edu.snu.mist.core.task.eventProcessors.loadBalancer.GroupBalancer;
 import edu.snu.mist.core.task.eventProcessors.parameters.*;
+import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupRebalancer;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
-import edu.snu.mist.core.task.globalsched.NextGroupSelector;
-import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.StampedLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,9 +67,24 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
   private long prevAdjustTime;
 
   /**
-   * EvenProcessor and Groups map.
+   * Group allocation table.
    */
-  private final List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> epGroupList;
+  private final GroupAllocationTable groupAllocationTable;
+
+  /**
+   * Dispatcher threads.
+   */
+  private final GroupDispatcher groupDispatcher;
+
+  /**
+   * Group rebalancer thread.
+   */
+  private final ScheduledExecutorService groupRebalancerService;
+
+  /**
+   * Group allocation table modifier.
+   */
+  private final GroupAllocationTableModifier groupAllocationTableModifier;
 
   /**
    * Group balancer that assigns a group to an event processor.
@@ -82,45 +97,34 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
   private final GroupRebalancer groupRebalancer;
 
   /**
-   * The number of dispatcher threads.
-   */
-  private final int dispatcherThreadNum;
-
-  /**
-   * A lock for the event processors.
-   */
-  private final StampedLock epStampedLock;
-
-  /**
-   * Dispatcher threads.
-   */
-  private final ExecutorService dispatcherService;
-
-  /**
    * True if this class is closed.
    */
   private final AtomicBoolean closed = new AtomicBoolean(false);
+
 
   @Inject
   private DefaultEventProcessorManager(@Parameter(DefaultNumEventProcessors.class) final int defaultNumEventProcessors,
                                        @Parameter(EventProcessorLowerBound.class) final int eventProcessorLowerBound,
                                        @Parameter(EventProcessorUpperBound.class) final int eventProcessorUpperBound,
                                        @Parameter(GracePeriod.class) final int gracePeriod,
-                                       @Parameter(DispatcherThreadNum.class) final int dispatcherThreadNum,
+                                       @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
+                                       final GroupAllocationTable groupAllocationTable,
                                        final GroupBalancer groupBalancer,
                                        final GroupRebalancer groupRebalancer,
+                                       final GroupAllocationTableModifier groupAllocationTableModifier,
+                                       final GroupDispatcher groupDispatcher,
                                        final EventProcessorFactory eventProcessorFactory) {
     this.eventProcessorLowerBound = eventProcessorLowerBound;
     this.eventProcessorUpperBound = eventProcessorUpperBound;
+    this.groupDispatcher = groupDispatcher;
     this.groupBalancer = groupBalancer;
     this.groupRebalancer = groupRebalancer;
-    this.dispatcherThreadNum = dispatcherThreadNum;
-    this.epStampedLock = new StampedLock();
-    this.epGroupList = new LinkedList<>();
+    this.groupAllocationTable = groupAllocationTable;
+    this.groupAllocationTableModifier = groupAllocationTableModifier;
     this.eventProcessorFactory = eventProcessorFactory;
     this.gracePeriod = gracePeriod;
-    this.dispatcherService = Executors.newFixedThreadPool(dispatcherThreadNum);
-    initialize(defaultNumEventProcessors);
+    this.groupRebalancerService = Executors.newSingleThreadScheduledExecutor();
+    initialize(defaultNumEventProcessors, rebalancingPeriod);
     this.prevAdjustTime = System.nanoTime();
   }
 
@@ -128,31 +132,26 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
    * Create new dispatchers and event processors and add them to event processor set.
    * @param numToCreate the number of processors to create
    */
-  private void initialize(final long numToCreate) {
-    // Create dispatchers
-    for (int i = 0; i < dispatcherThreadNum; i++) {
-      this.dispatcherService.submit(new GroupDispatcher(i));
-    }
-
+  private void initialize(final long numToCreate, final long rebalancingPeriod) {
     // Create event processors
     for (int i = 0; i < numToCreate; i++) {
       final EventProcessor eventProcessor = eventProcessorFactory.newEventProcessor();
-      epGroupList.add(new Tuple<>(eventProcessor, new LinkedList<>()));
+      groupAllocationTable.put(eventProcessor, new ConcurrentLinkedQueue<>());
       eventProcessor.start();
     }
-  }
+    groupBalancer.initialize();
 
-  /**
-   * Create new event processors.
-   */
-  private List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> createNewEventProcessors(final long numToCreate) {
-    final List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> newEpGroups = new LinkedList<>();
-    for (int i = 0; i < numToCreate; i++) {
-      final EventProcessor eventProcessor = eventProcessorFactory.newEventProcessor();
-      newEpGroups.add(new Tuple<>(eventProcessor, new LinkedList<>()));
-      eventProcessor.start();
-    }
-    return newEpGroups;
+
+    // Create a rebalancer thread
+    groupRebalancerService.scheduleAtFixedRate(() -> {
+      // TODO[MIST-XX]: Increase and decrease the number of event processors
+
+      // Add a rebalancing event
+      groupAllocationTableModifier.addEvent(
+          new WritingEvent(WritingEvent.EventType.REBALANCE, System.currentTimeMillis()));
+
+    }, rebalancingPeriod, rebalancingPeriod, TimeUnit.MILLISECONDS);
+
   }
 
   @Override
@@ -162,9 +161,8 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
     }
 
     if (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - prevAdjustTime) >= gracePeriod) {
-      long stamp = epStampedLock.writeLock();
 
-      final int currNum = epGroupList.size();
+      final int currNum = groupAllocationTable.size();
       final int increaseNum = Math.min(delta, eventProcessorUpperBound - currNum);
       if (increaseNum != 0) {
 
@@ -173,19 +171,16 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
               new Object[]{currNum, currNum + increaseNum});
         }
 
-        final List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> newEventProcessors =
-            createNewEventProcessors(increaseNum);
-        // Rebalance
-        groupRebalancer.reassignGroupsForNewEps(newEventProcessors, epGroupList);
-        // Add new event processors to the list
-        for (final Tuple<EventProcessor, List<GlobalSchedGroupInfo>> newEp : newEventProcessors) {
-          epGroupList.add(newEp);
+        for (int i = 0; i < increaseNum; i++) {
+          final EventProcessor eventProcessor = eventProcessorFactory.newEventProcessor();
+          groupAllocationTable.put(eventProcessor, new ConcurrentLinkedQueue<>());
+          eventProcessor.start();
         }
 
+        // Rebalance
+        groupRebalancer.triggerRebalancing();
         prevAdjustTime = System.nanoTime();
       }
-
-      epStampedLock.unlockWrite(stamp);
     }
   }
 
@@ -196,9 +191,8 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
     }
 
     if (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - prevAdjustTime) >= gracePeriod) {
-      long stamp = epStampedLock.writeLock();
 
-      final int currNum = epGroupList.size();
+      final int currNum = groupAllocationTable.size();
       final int decreaseNum = Math.min(delta, currNum - eventProcessorLowerBound);
       if (decreaseNum != 0) {
 
@@ -207,53 +201,25 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
               new Object[]{currNum, currNum - decreaseNum});
         }
 
-        final List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> removedEps = new LinkedList<>();
+
+        final List<EventProcessor> eventProcessors = groupAllocationTable.getKeys();
+        final List<EventProcessor> removedEventProcessors = new LinkedList<>();
+        final EventProcessor lastEventProcessor = eventProcessors.get(eventProcessors.size()-1);
         for (int i = 0; i < decreaseNum; i++) {
-          final Tuple<EventProcessor, List<GlobalSchedGroupInfo>> ep = epGroupList.get(i);
-          removedEps.add(ep);
-
-          try {
-            ep.getKey().close();
-          } catch (final Exception e) {
-            e.printStackTrace();
-          }
+          final EventProcessor ep = eventProcessors.get(i);
+          final Collection<GlobalSchedGroupInfo> srcGroups = groupAllocationTable.getValue(ep);
+          final Collection<GlobalSchedGroupInfo> dstGroups = groupAllocationTable.getValue(lastEventProcessor);
+          dstGroups.addAll(srcGroups);
+          srcGroups.clear();
+          removedEventProcessors.add(eventProcessors.get(i));
         }
 
-        groupRebalancer.reassignGroupsForRemovedEps(removedEps, epGroupList);
-
-        for (final Tuple<EventProcessor, List<GlobalSchedGroupInfo>> removedEp : removedEps) {
-          epGroupList.remove(removedEp);
-        }
+        groupAllocationTable.getKeys().removeAll(removedEventProcessors);
+        groupRebalancer.triggerRebalancing();
 
         prevAdjustTime = System.nanoTime();
       }
-
-      epStampedLock.unlockWrite(stamp);
     }
-  }
-
-  @Override
-  public void addGroup(final GlobalSchedGroupInfo newGroup) {
-    long stamp = epStampedLock.writeLock();
-    groupBalancer.assignGroup(newGroup, epGroupList);
-    epStampedLock.unlockWrite(stamp);
-  }
-
-  @Override
-  public void removeGroup(final GlobalSchedGroupInfo removedGroup) {
-    long stamp = epStampedLock.writeLock();
-
-    for (final Tuple<EventProcessor, List<GlobalSchedGroupInfo>> entry : epGroupList) {
-      final List<GlobalSchedGroupInfo> list = entry.getValue();
-      if (list.remove(removedGroup)) {
-        // deleted
-        if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "Group {0} is removed from {1}", new Object[] {removedGroup, entry.getKey()});
-        }
-      }
-    }
-
-    epStampedLock.unlockWrite(stamp);
   }
 
   @Override
@@ -262,7 +228,7 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
       throw new RuntimeException("The adjustNum value should be greater than zero, but " + adjustNum);
     }
 
-    final int currSize = epGroupList.size();
+    final int currSize = groupAllocationTable.size();
     if (adjustNum < currSize) {
       decreaseEventProcessors(currSize - adjustNum);
     } else if (adjustNum > currSize) {
@@ -271,62 +237,38 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
   }
 
   @Override
+  public void addGroup(final GlobalSchedGroupInfo newGroup) {
+    groupAllocationTableModifier.addEvent(new WritingEvent(WritingEvent.EventType.GROUP_ADD, newGroup));
+  }
+
+  @Override
+  public void removeGroup(final GlobalSchedGroupInfo removedGroup) {
+    groupAllocationTableModifier.addEvent(new WritingEvent<>(WritingEvent.EventType.GROUP_REMOVE, removedGroup));
+  }
+
+  @Override
   public int size() {
-    long stamp = epStampedLock.readLock();
-    final int size = epGroupList.size();
-    epStampedLock.unlockRead(stamp);
+    final int size = groupAllocationTable.size();
     return size;
   }
 
   @Override
-  public List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> getEventProcessorAndAssignedGroups() {
-    return epGroupList;
+  public GroupAllocationTable getGroupAllocationTable() {
+    return groupAllocationTable;
   }
 
   @Override
   public void close() throws Exception {
     closed.set(true);
-    long stamp = epStampedLock.readLock();
-    for (final Tuple<EventProcessor, List<GlobalSchedGroupInfo>> tuple : epGroupList) {
-      tuple.getKey().close();
+    for (final EventProcessor eventProcessor : groupAllocationTable.getKeys()) {
+      eventProcessor.close();
     }
-    epStampedLock.unlockRead(stamp);
+
+    groupDispatcher.close();
+    groupAllocationTableModifier.close();
+    groupRebalancerService.shutdown();
+    groupRebalancerService.awaitTermination(5L, TimeUnit.SECONDS);
   }
 
-  /**
-   * Active group dispatcher that dispatches active groups to the assigned event processors.
-   */
-  final class GroupDispatcher implements Runnable {
-    /**
-     * Index for accessing event processors.
-     */
-    private final int index;
 
-    GroupDispatcher(final int index) {
-      this.index = index;
-    }
-
-    @Override
-    public void run() {
-      while (!closed.get()) {
-        // Read lock
-        long timestamp = epStampedLock.readLock();
-        for (int i = index; i < epGroupList.size(); i += dispatcherThreadNum) {
-          final Tuple<EventProcessor, List<GlobalSchedGroupInfo>> entry = epGroupList.get(i);
-          final NextGroupSelector nextGroupSelector = entry.getKey().getNextGroupSelector();
-          final List<GlobalSchedGroupInfo> groups = entry.getValue();
-          for (final GlobalSchedGroupInfo group : groups) {
-            if (!group.isAssigned() && group.isActive()) {
-              // dispatch the inactive group
-              // Mark this group is being processed
-              group.setAssigned(true);
-              // And reschedule it
-              nextGroupSelector.reschedule(group, false);
-            }
-          }
-        }
-        epStampedLock.unlockRead(timestamp);
-      }
-    }
-  }
 }

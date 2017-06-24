@@ -21,7 +21,6 @@ import edu.snu.mist.core.task.eventProcessors.loadBalancer.RoundRobinGroupBalanc
 import edu.snu.mist.core.task.eventProcessors.parameters.GroupBalancerGracePeriod;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import junit.framework.Assert;
-import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -31,26 +30,25 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.LinkedList;
-import java.util.List;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public final class GroupBalancerTest {
 
-  private List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> currEpGroups;
+  private GroupAllocationTable groupAllocationTable;
   private EventProcessor ep1;
   private EventProcessor ep2;
 
   @Before
   public void setUp() throws InjectionException {
-    currEpGroups = new LinkedList<>();
+    final Injector injector = Tang.Factory.getTang().newInjector();
+    groupAllocationTable = injector.getInstance(GroupAllocationTable.class);
     ep1 = mock(EventProcessor.class);
     ep2 = mock(EventProcessor.class);
 
-    currEpGroups.add(new Tuple<>(ep1, new LinkedList<>()));
-    currEpGroups.add(new Tuple<>(ep2, new LinkedList<>()));
-
+    groupAllocationTable.put(ep1, new LinkedList<>());
+    groupAllocationTable.put(ep2, new LinkedList<>());
   }
 
   /**
@@ -60,20 +58,21 @@ public final class GroupBalancerTest {
   public void roundRobinGroupBalancerTest() throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    injector.bindVolatileInstance(GroupAllocationTable.class, groupAllocationTable);
     final GroupBalancer groupBalancer = injector.getInstance(RoundRobinGroupBalancerImpl.class);
 
     final GlobalSchedGroupInfo group1 = mock(GlobalSchedGroupInfo.class);
     final GlobalSchedGroupInfo group2 = mock(GlobalSchedGroupInfo.class);
 
-    groupBalancer.initialize(currEpGroups);
+    groupBalancer.initialize();
 
-    groupBalancer.assignGroup(group1, currEpGroups);
+    groupBalancer.assignGroup(group1);
 
-    Assert.assertEquals(Arrays.asList(group1), currEpGroups.get(0).getValue());
-    Assert.assertEquals(Arrays.asList(), currEpGroups.get(1).getValue());
+    Assert.assertEquals(Arrays.asList(group1), groupAllocationTable.getValue(ep1));
+    Assert.assertEquals(Arrays.asList(), groupAllocationTable.getValue(ep2));
 
-    groupBalancer.assignGroup(group2, currEpGroups);
-    Assert.assertEquals(Arrays.asList(group2), currEpGroups.get(1).getValue());
+    groupBalancer.assignGroup(group2);
+    Assert.assertEquals(Arrays.asList(group2), groupAllocationTable.getValue(ep2));
 
   }
 
@@ -84,6 +83,7 @@ public final class GroupBalancerTest {
   public void minLoadBalancerTest() throws InjectionException, InterruptedException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     final long gracePeriod = injector.getNamedInstance(GroupBalancerGracePeriod.class);
+    injector.bindVolatileInstance(GroupAllocationTable.class, groupAllocationTable);
     final MinLoadGroupBalancerImpl groupBalancer = injector.getInstance(MinLoadGroupBalancerImpl.class);
 
     final GlobalSchedGroupInfo group1 = mock(GlobalSchedGroupInfo.class);
@@ -92,17 +92,17 @@ public final class GroupBalancerTest {
     final GlobalSchedGroupInfo group2 = mock(GlobalSchedGroupInfo.class);
     when(group2.getEWMALoad()).thenReturn(20.0);
 
-    groupBalancer.initialize(currEpGroups);
+    groupBalancer.initialize();
 
     // ep1: [group1]
     // ep2: []
-    groupBalancer.assignGroup(group1, currEpGroups);
-    Assert.assertEquals(Arrays.asList(group1), currEpGroups.get(0).getValue());
+    groupBalancer.assignGroup(group1);
+    Assert.assertEquals(Arrays.asList(group1), groupAllocationTable.getValue(ep1));
 
     // ep1: [group1, group2] (load 30.0) -> because of the cached assignment policy
     // ep2: []
-    groupBalancer.assignGroup(group2, currEpGroups);
-    Assert.assertEquals(Arrays.asList(group1, group2), currEpGroups.get(0).getValue());
+    groupBalancer.assignGroup(group2);
+    Assert.assertEquals(Arrays.asList(group1, group2), groupAllocationTable.getValue(ep1));
 
     Thread.sleep(gracePeriod * 2);
     final GlobalSchedGroupInfo group3 = mock(GlobalSchedGroupInfo.class);
@@ -110,8 +110,8 @@ public final class GroupBalancerTest {
 
     // ep1: [group1, group2] (load 30.0)
     // ep2: [group3] (load 40.0)
-    groupBalancer.assignGroup(group3, currEpGroups);
-    Assert.assertEquals(Arrays.asList(group3), currEpGroups.get(1).getValue());
+    groupBalancer.assignGroup(group3);
+    Assert.assertEquals(Arrays.asList(group3), groupAllocationTable.getValue(ep2));
 
     Thread.sleep(gracePeriod * 2);
     final GlobalSchedGroupInfo group4 = mock(GlobalSchedGroupInfo.class);
@@ -119,7 +119,7 @@ public final class GroupBalancerTest {
 
     // ep1: [group1, group2, group4] (load 50.0)
     // ep2: [group3] (load 40.0)
-    groupBalancer.assignGroup(group4, currEpGroups);
-    Assert.assertEquals(Arrays.asList(group1, group2, group4), currEpGroups.get(0).getValue());
+    groupBalancer.assignGroup(group4);
+    Assert.assertEquals(Arrays.asList(group1, group2, group4), groupAllocationTable.getValue(ep1));
   }
 }

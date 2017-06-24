@@ -20,6 +20,7 @@ import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcesso
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorLowerBound;
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorUpperBound;
 import edu.snu.mist.core.task.eventProcessors.parameters.GracePeriod;
+import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupRebalancer;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
@@ -33,7 +34,6 @@ import org.junit.Test;
 import javax.inject.Inject;
 import java.util.concurrent.TimeUnit;
 
-import static org.mockito.Matchers.anyList;
 import static org.mockito.Mockito.*;
 
 public class EventProcessorManagerTest {
@@ -44,6 +44,7 @@ public class EventProcessorManagerTest {
   private static final int MIN_NUM_THREADS = 2;
   private GroupRebalancer groupRebalancer;
   private GroupBalancer groupBalancer;
+  private GroupAllocationTableModifier groupAllocationTableModifier;
 
   @Before
   public void setUp() throws InjectionException {
@@ -59,6 +60,7 @@ public class EventProcessorManagerTest {
     injector.bindVolatileInstance(GroupRebalancer.class, groupRebalancer);
     injector.bindVolatileInstance(GroupBalancer.class, groupBalancer);
     eventProcessorManager = injector.getInstance(DefaultEventProcessorManager.class);
+    groupAllocationTableModifier = injector.getInstance(GroupAllocationTableModifier.class);
   }
 
   @After
@@ -70,7 +72,10 @@ public class EventProcessorManagerTest {
   public void addGroupTest() {
     final GlobalSchedGroupInfo groupInfo = mock(GlobalSchedGroupInfo.class);
     eventProcessorManager.addGroup(groupInfo);
-    verify(groupBalancer).assignGroup(groupInfo, eventProcessorManager.getEventProcessorAndAssignedGroups());
+    while (!groupAllocationTableModifier.getWritingEventQueue().isEmpty()) {
+      // wait
+    }
+    verify(groupBalancer).assignGroup(groupInfo);
   }
 
   /**
@@ -94,8 +99,7 @@ public class EventProcessorManagerTest {
     eventProcessorManager.increaseEventProcessors(5);
     Assert.assertEquals(MAX_NUM_THREADS, eventProcessorManager.size());
 
-    verify(groupRebalancer, times(1)).reassignGroupsForNewEps(anyList(),
-        eq(eventProcessorManager.getEventProcessorAndAssignedGroups()));
+    verify(groupRebalancer, times(1)).triggerRebalancing();
   }
 
   /**
@@ -110,9 +114,6 @@ public class EventProcessorManagerTest {
     // lower bound test
     eventProcessorManager.decreaseEventProcessors(5);
     Assert.assertEquals(MIN_NUM_THREADS, eventProcessorManager.size());
-
-    verify(groupRebalancer, times(1)).reassignGroupsForRemovedEps(anyList(),
-        eq(eventProcessorManager.getEventProcessorAndAssignedGroups()));
   }
 
   /**

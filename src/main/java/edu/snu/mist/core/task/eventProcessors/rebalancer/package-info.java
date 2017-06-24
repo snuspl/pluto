@@ -13,25 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.eventProcessors.loadBalancer;
-
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
-import org.apache.reef.tang.annotations.DefaultImplementation;
-
 /**
- * GrouBalancer assigns a group to an event processor.
+ * A package related to group rebalancer.
  */
-@DefaultImplementation(RoundRobinGroupBalancerImpl.class)
-public interface GroupBalancer {
-
-  /**
-   * Assign a group to an event processor.
-   * @param newGroup new group
-   */
-  void assignGroup(GlobalSchedGroupInfo newGroup);
-
-  /**
-   * This should be called once when the groupAllocationTable is initialized.
-   */
-  void initialize();
-}
+package edu.snu.mist.core.task.eventProcessors.rebalancer;
