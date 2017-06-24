@@ -74,7 +74,7 @@ public class EventProcessorManagerTest {
   public void addGroupTest() throws InterruptedException {
     final GlobalSchedGroupInfo groupInfo = mock(GlobalSchedGroupInfo.class);
     eventProcessorManager.addGroup(groupInfo);
-    final GlobalSchedGroupInfo assignedGroup = groupBalancer.groups.take();
+    final GlobalSchedGroupInfo assignedGroup = groupBalancer.assignedGroups().take();
     Assert.assertEquals(groupInfo, assignedGroup);
   }
 
@@ -197,10 +197,14 @@ public class EventProcessorManagerTest {
 
   final class TestGroupBalancer implements GroupBalancer {
 
-    public BlockingQueue<GlobalSchedGroupInfo> groups;
+    private final BlockingQueue<GlobalSchedGroupInfo> groups;
 
     public TestGroupBalancer() {
       this.groups = new LinkedBlockingQueue<>();
+    }
+
+    public BlockingQueue<GlobalSchedGroupInfo> assignedGroups() {
+      return groups;
     }
 
     @Override
