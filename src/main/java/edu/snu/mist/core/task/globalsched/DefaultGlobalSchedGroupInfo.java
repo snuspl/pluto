@@ -93,6 +93,11 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
    */
   private final double defaultLoad;
 
+  /**
+   * For load balancing.
+   */
+  private double fixedLoad;
+
   @Inject
   private DefaultGlobalSchedGroupInfo(@Parameter(GroupId.class) final String groupId,
                                       @Parameter(DefaultGroupLoad.class) final double defaultLoad,
@@ -186,6 +191,16 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   @Override
   public double getEWMALoad() {
     return load.getEwmaValue();
+  }
+
+  @Override
+  public double getFixedLoad() {
+    return fixedLoad;
+  }
+
+  @Override
+  public void setFixedLoad(final double val) {
+    fixedLoad = val;
   }
 
   @Override

@@ -89,6 +89,16 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
   double getEWMALoad();
 
   /**
+   * This is for the load rebalancing.
+   */
+  double getFixedLoad();
+
+  /**
+   *  This is for the load rebalancing.
+   */
+  void setFixedLoad(double load);
+
+  /**
    * Update the load.
    * @param load current load
    */
