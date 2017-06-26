@@ -60,4 +60,9 @@ public final class DefaultGroupAllocationTable implements GroupAllocationTable {
   public Collection<GlobalSchedGroupInfo> remove(final EventProcessor key) {
     return table.remove(key);
   }
+
+  @Override
+  public String toString() {
+    return table.toString();
+  }
 }

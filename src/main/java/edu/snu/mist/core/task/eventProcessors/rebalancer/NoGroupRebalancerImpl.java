@@ -15,17 +15,18 @@
  */
 package edu.snu.mist.core.task.eventProcessors.rebalancer;
 
-import org.apache.reef.tang.annotations.DefaultImplementation;
-
+import javax.inject.Inject;
 
 /**
- * GroupRebalancer modifies the group allocation table.
+ * No group rebalancer.
  */
-@DefaultImplementation(NoGroupRebalancerImpl.class)
-public interface GroupRebalancer {
+public final class NoGroupRebalancerImpl implements GroupRebalancer {
 
-  /**
-   * Trigger the rebalancing of groups.
-   */
-  void triggerRebalancing();
+  @Inject
+  private NoGroupRebalancerImpl() {
+  }
+
+  @Override
+  public void triggerRebalancing() {
+  }
 }
