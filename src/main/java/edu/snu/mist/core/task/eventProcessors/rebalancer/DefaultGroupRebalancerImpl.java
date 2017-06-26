@@ -13,25 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.eventProcessors.loadBalancer;
+package edu.snu.mist.core.task.eventProcessors.rebalancer;
 
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
-import org.apache.reef.tang.annotations.DefaultImplementation;
+import edu.snu.mist.core.task.eventProcessors.GroupAllocationTable;
+
+import javax.inject.Inject;
 
 /**
- * GrouBalancer assigns a group to an event processor.
+ * Default group rebalancer.
  */
-@DefaultImplementation(RoundRobinGroupBalancerImpl.class)
-public interface GroupBalancer {
+public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
 
-  /**
-   * Assign a group to an event processor.
-   * @param newGroup new group
-   */
-  void assignGroup(GlobalSchedGroupInfo newGroup);
+  private final GroupAllocationTable groupAllocationTable;
 
-  /**
-   * This should be called once when the groupAllocationTable is initialized.
-   */
-  void initialize();
+  @Inject
+  private DefaultGroupRebalancerImpl(final GroupAllocationTable groupAllocationTable) {
+    this.groupAllocationTable = groupAllocationTable;
+  }
+
+  @Override
+  public void triggerRebalancing() {
+    // TODO[MIST-824] Implement a group rebalancer that rebalances groups dynamically
+  }
 }

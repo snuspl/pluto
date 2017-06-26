@@ -20,6 +20,7 @@ import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcesso
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorLowerBound;
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorUpperBound;
 import edu.snu.mist.core.task.eventProcessors.parameters.GracePeriod;
+import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupRebalancer;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
@@ -31,9 +32,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.inject.Inject;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static org.mockito.Matchers.anyList;
 import static org.mockito.Mockito.*;
 
 public class EventProcessorManagerTest {
@@ -43,7 +45,8 @@ public class EventProcessorManagerTest {
   private static final int MAX_NUM_THREADS = 10;
   private static final int MIN_NUM_THREADS = 2;
   private GroupRebalancer groupRebalancer;
-  private GroupBalancer groupBalancer;
+  private TestGroupBalancer groupBalancer;
+  private GroupAllocationTableModifier groupAllocationTableModifier;
 
   @Before
   public void setUp() throws InjectionException {
@@ -54,11 +57,12 @@ public class EventProcessorManagerTest {
     jcb.bindNamedParameter(GracePeriod.class, Integer.toString(0));
     jcb.bindImplementation(EventProcessorFactory.class, TestEventProcessorFactory.class);
     groupRebalancer = mock(GroupRebalancer.class);
-    groupBalancer = mock(GroupBalancer.class);
+    groupBalancer = new TestGroupBalancer();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     injector.bindVolatileInstance(GroupRebalancer.class, groupRebalancer);
     injector.bindVolatileInstance(GroupBalancer.class, groupBalancer);
     eventProcessorManager = injector.getInstance(DefaultEventProcessorManager.class);
+    groupAllocationTableModifier = injector.getInstance(GroupAllocationTableModifier.class);
   }
 
   @After
@@ -66,11 +70,12 @@ public class EventProcessorManagerTest {
     eventProcessorManager.close();
   }
 
-  @Test
-  public void addGroupTest() {
+  @Test(timeout = 5000)
+  public void addGroupTest() throws InterruptedException {
     final GlobalSchedGroupInfo groupInfo = mock(GlobalSchedGroupInfo.class);
     eventProcessorManager.addGroup(groupInfo);
-    verify(groupBalancer).assignGroup(groupInfo, eventProcessorManager.getEventProcessorAndAssignedGroups());
+    final GlobalSchedGroupInfo assignedGroup = groupBalancer.assignedGroups().take();
+    Assert.assertEquals(groupInfo, assignedGroup);
   }
 
   /**
@@ -94,8 +99,7 @@ public class EventProcessorManagerTest {
     eventProcessorManager.increaseEventProcessors(5);
     Assert.assertEquals(MAX_NUM_THREADS, eventProcessorManager.size());
 
-    verify(groupRebalancer, times(1)).reassignGroupsForNewEps(anyList(),
-        eq(eventProcessorManager.getEventProcessorAndAssignedGroups()));
+    verify(groupRebalancer, times(1)).triggerRebalancing();
   }
 
   /**
@@ -110,9 +114,6 @@ public class EventProcessorManagerTest {
     // lower bound test
     eventProcessorManager.decreaseEventProcessors(5);
     Assert.assertEquals(MIN_NUM_THREADS, eventProcessorManager.size());
-
-    verify(groupRebalancer, times(1)).reassignGroupsForRemovedEps(anyList(),
-        eq(eventProcessorManager.getEventProcessorAndAssignedGroups()));
   }
 
   /**
@@ -191,6 +192,29 @@ public class EventProcessorManagerTest {
     @Override
     public EventProcessor newEventProcessor() {
       return mock(EventProcessor.class);
+    }
+  }
+
+  final class TestGroupBalancer implements GroupBalancer {
+
+    private final BlockingQueue<GlobalSchedGroupInfo> groups;
+
+    public TestGroupBalancer() {
+      this.groups = new LinkedBlockingQueue<>();
+    }
+
+    public BlockingQueue<GlobalSchedGroupInfo> assignedGroups() {
+      return groups;
+    }
+
+    @Override
+    public void assignGroup(final GlobalSchedGroupInfo newGroup) {
+      groups.add(newGroup);
+    }
+
+    @Override
+    public void initialize() {
+
     }
   }
 }

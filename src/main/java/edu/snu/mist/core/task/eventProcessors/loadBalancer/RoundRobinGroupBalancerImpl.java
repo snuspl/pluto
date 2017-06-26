@@ -16,11 +16,10 @@
 package edu.snu.mist.core.task.eventProcessors.loadBalancer;
 
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
+import edu.snu.mist.core.task.eventProcessors.GroupAllocationTable;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
-import org.apache.reef.io.Tuple;
 
 import javax.inject.Inject;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -33,22 +32,26 @@ public final class RoundRobinGroupBalancerImpl implements GroupBalancer {
    */
   private final AtomicLong counter;
 
+  /**
+   * Group allocation table.
+   */
+  private final GroupAllocationTable groupAllocationTable;
+
   @Inject
-  private RoundRobinGroupBalancerImpl() {
+  private RoundRobinGroupBalancerImpl(final GroupAllocationTable groupAllocationTable) {
     this.counter = new AtomicLong(0);
+    this.groupAllocationTable = groupAllocationTable;
   }
 
   @Override
-  public void assignGroup(final GlobalSchedGroupInfo groupInfo,
-                          final List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> currEpGroups) {
-    final int index = (int)(counter.getAndIncrement() % currEpGroups.size());
-    final Tuple<EventProcessor, List<GlobalSchedGroupInfo>> tuple = currEpGroups.get(index);
-    tuple.getValue().add(groupInfo);
+  public void assignGroup(final GlobalSchedGroupInfo newGroup) {
+    final int index = (int)(counter.getAndIncrement() % groupAllocationTable.size());
+    final EventProcessor eventProcessor = groupAllocationTable.getKeys().get(index);
+    groupAllocationTable.getValue(eventProcessor).add(newGroup);
   }
 
   @Override
-  public void initialize(
-      final List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> epGroups) {
-    // do nothing
+  public void initialize() {
+
   }
 }

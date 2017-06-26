@@ -96,8 +96,8 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
         groupInfo.setLatestInactiveTime(endProcessingTime);
 
         if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "{0} Process Group {1}, Load: {2}",
-              new Object[]{Thread.currentThread().getName(), groupInfo, load});
+          LOG.log(Level.FINE, "{0} Process Group {1}, # Processed Events: {2}, Load: {3}",
+              new Object[]{Thread.currentThread().getName(), groupInfo,  numProcessedEvents, load});
         }
 
         // Reschedule
