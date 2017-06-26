@@ -18,10 +18,7 @@ package edu.snu.mist.core.driver.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The type of the load balancer " +
-    "rr: RoundRobinGroupBalancerImpl" +
-    "ml: MinLoadGroupBalancerImpl",
-    short_name = "lb", default_value = "rr")
-public final class LoadBalancerType implements Name<String> {
+@NamedParameter(doc = "Enable (disable) load balancing", short_name = "lb", default_value = "false")
+public final class LoadBalancing implements Name<Boolean> {
   // empty
 }

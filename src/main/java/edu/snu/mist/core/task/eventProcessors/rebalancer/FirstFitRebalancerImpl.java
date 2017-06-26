@@ -22,17 +22,49 @@ import org.apache.reef.io.Tuple;
 
 import javax.inject.Inject;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This is the first-fit group balancer.
  */
 public final class FirstFitRebalancerImpl implements GroupRebalancer {
+  private static final Logger LOG = Logger.getLogger(FirstFitRebalancerImpl.class.getName());
 
   private final GroupAllocationTable groupAllocationTable;
 
   @Inject
   private FirstFitRebalancerImpl(final GroupAllocationTable groupAllocationTable) {
     this.groupAllocationTable = groupAllocationTable;
+  }
+
+  /**
+   * This is for logging.
+   * @param loadTable loadTable
+   */
+  private String printMap(final Map<EventProcessor, Double> loadTable) {
+    final StringBuilder sb = new StringBuilder();
+    for (final Map.Entry<EventProcessor, Double> entry : loadTable.entrySet()) {
+      sb.append(entry.getKey());
+      sb.append(" -> ");
+      sb.append(entry.getValue());
+      sb.append("\n");
+    }
+    return sb.toString();
+  }
+
+  /**
+   * Calculate the load of groups.
+   * @param groups groups
+   * @return total load
+   */
+  private double calculateLoadOfGroupsForLogging(final Collection<GlobalSchedGroupInfo> groups) {
+    double sum = 0;
+    for (final GlobalSchedGroupInfo group : groups) {
+      final double fixedLoad = group.getFixedLoad();
+      sum += fixedLoad;
+    }
+    return sum;
   }
 
   @Override
@@ -71,6 +103,18 @@ public final class FirstFitRebalancerImpl implements GroupRebalancer {
           dest.add(group);
         }
       }
+    }
+
+    if (LOG.isLoggable(Level.FINE)) {
+      final Map<EventProcessor, Double> afterRebalancingLoadTable = new HashMap<>();
+      for (final EventProcessor ep : groupAllocationTable.getKeys()) {
+        afterRebalancingLoadTable.put(ep, calculateLoadOfGroupsForLogging(groupAllocationTable.getValue(ep)));
+      }
+
+      LOG.log(Level.FINE, "Rebalanacing Groups (Desirable load={0}) \n"
+          + "=========== Before LB ==========\n {1} \n"
+          + "=========== After  LB ==========\n {2} \n",
+          new Object[] {desirableLoad, printMap(loadTable), printMap(afterRebalancingLoadTable)});
     }
   }
 

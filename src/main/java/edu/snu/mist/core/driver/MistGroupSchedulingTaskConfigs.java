@@ -17,7 +17,7 @@ package edu.snu.mist.core.driver;
 
 import edu.snu.mist.core.driver.parameters.EventProcessorNumAssignerType;
 import edu.snu.mist.core.driver.parameters.GroupAware;
-import edu.snu.mist.core.driver.parameters.LoadBalancerType;
+import edu.snu.mist.core.driver.parameters.LoadBalancing;
 import edu.snu.mist.core.task.QueryManager;
 import edu.snu.mist.core.task.eventProcessors.DefaultEventProcessorManager;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorFactory;
@@ -26,6 +26,9 @@ import edu.snu.mist.core.task.eventProcessors.loadBalancer.GroupBalancer;
 import edu.snu.mist.core.task.eventProcessors.loadBalancer.MinLoadGroupBalancerImpl;
 import edu.snu.mist.core.task.eventProcessors.loadBalancer.RoundRobinGroupBalancerImpl;
 import edu.snu.mist.core.task.eventProcessors.parameters.DispatcherThreadNum;
+import edu.snu.mist.core.task.eventProcessors.rebalancer.FirstFitRebalancerImpl;
+import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupRebalancer;
+import edu.snu.mist.core.task.eventProcessors.rebalancer.NoGroupRebalancerImpl;
 import edu.snu.mist.core.task.globalsched.*;
 import edu.snu.mist.core.task.globalsched.cfs.CfsSchedulingPeriodCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsSchedulingPeriod;
@@ -69,7 +72,7 @@ public final class MistGroupSchedulingTaskConfigs {
   private final int dispatcherThreadNum;
   // TODO[REMOVE]
   private final boolean groupAware;
-  private final String lbType;
+  private final Boolean loadBalancing;
 
   @Inject
   private MistGroupSchedulingTaskConfigs(
@@ -85,7 +88,7 @@ public final class MistGroupSchedulingTaskConfigs {
       @Parameter(GroupSchedModelType.class) final String groupSchedModelType,
       @Parameter(DispatcherThreadNum.class) final int dispatcherThreadNum,
       @Parameter(GroupAware.class) final boolean groupAware,
-      @Parameter(LoadBalancerType.class) final String lbType) {
+      @Parameter(LoadBalancing.class) final Boolean loadBalancing) {
     this.epaType = epaType;
     this.cpuUtilLowThreshold = cpuUtilLowThreshold;
     this.eventNumHighThreshold = eventNumHighThreshold;
@@ -98,7 +101,7 @@ public final class MistGroupSchedulingTaskConfigs {
     this.groupSchedModelType = groupSchedModelType;
     this.groupAware = groupAware;
     this.dispatcherThreadNum = dispatcherThreadNum;
-    this.lbType = lbType;
+    this.loadBalancing = loadBalancing;
   }
 
   /**
@@ -114,17 +117,6 @@ public final class MistGroupSchedulingTaskConfigs {
         return AIADEventProcessorNumAssigner.class;
       default:
         throw new RuntimeException("No event processor num assigner type: " + epaType);
-    }
-  }
-
-  private Class<? extends GroupBalancer> getGroupBalancer() {
-    switch (lbType) {
-      case "rr":
-        return RoundRobinGroupBalancerImpl.class;
-      case "ml":
-        return MinLoadGroupBalancerImpl.class;
-      default:
-        throw new RuntimeException("Invalid group balancer: " + lbType);
     }
   }
 
@@ -157,7 +149,14 @@ public final class MistGroupSchedulingTaskConfigs {
     jcb.bindImplementation(EventProcessorNumAssigner.class, getEpaClass());
     jcb.bindImplementation(EventProcessorManager.class, DefaultEventProcessorManager.class);
     jcb.bindImplementation(SchedulingPeriodCalculator.class, CfsSchedulingPeriodCalculator.class);
-    jcb.bindImplementation(GroupBalancer.class, getGroupBalancer());
+
+    if (loadBalancing) {
+      jcb.bindImplementation(GroupBalancer.class, MinLoadGroupBalancerImpl.class);
+      jcb.bindImplementation(GroupRebalancer.class, FirstFitRebalancerImpl.class);
+    } else {
+      jcb.bindImplementation(GroupBalancer.class, RoundRobinGroupBalancerImpl.class);
+      jcb.bindImplementation(GroupRebalancer.class, NoGroupRebalancerImpl.class);
+    }
 
     jcb.bindNamedParameter(CpuUtilLowThreshold.class, Double.toString(cpuUtilLowThreshold));
     jcb.bindNamedParameter(EventNumHighThreshold.class, Double.toString(eventNumHighThreshold));
@@ -192,6 +191,6 @@ public final class MistGroupSchedulingTaskConfigs {
         .registerShortNameOfClass(GroupSchedModelType.class)
         .registerShortNameOfClass(DispatcherThreadNum.class)
         .registerShortNameOfClass(GroupAware.class)
-        .registerShortNameOfClass(LoadBalancerType.class);
+        .registerShortNameOfClass(LoadBalancing.class);
   }
 }

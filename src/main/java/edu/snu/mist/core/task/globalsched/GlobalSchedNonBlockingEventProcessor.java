@@ -59,13 +59,9 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
         final GlobalSchedGroupInfo groupInfo = nextGroupSelector.getNextExecutableGroup();
 
         // Incoming rates of events
-        double incomingEventRate;
-        try {
-          incomingEventRate = groupInfo.numberOfRemainingEvents() /
-              (double)(System.currentTimeMillis() - groupInfo.getLatestInactiveTime());
-        } catch (final ArithmeticException e) {
-          incomingEventRate = 0;
-        }
+        double incomingEventRate = groupInfo.numberOfRemainingEvents() /
+            Math.max(1.0, (double)(System.currentTimeMillis() - groupInfo.getLatestInactiveTime()));
+
 
         final OperatorChainManager operatorChainManager = groupInfo.getOperatorChainManager();
 
@@ -82,13 +78,8 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
         final long endProcessingTime = System.currentTimeMillis();
 
         // Processing time / events
-        double processingTimeRate;
-        try {
-          processingTimeRate = (double)(endProcessingTime - startProcessingTime) /
-              numProcessedEvents;
-        } catch (final ArithmeticException e) {
-          processingTimeRate = 0;
-        }
+        double processingTimeRate = (double)(endProcessingTime - startProcessingTime) /
+              Math.max(1, numProcessedEvents);
 
         // Update load
         final double load = processingTimeRate * incomingEventRate;
@@ -96,8 +87,10 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
         groupInfo.setLatestInactiveTime(endProcessingTime);
 
         if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "{0} Process Group {1}, # Processed Events: {2}, Load: {3}",
-              new Object[]{Thread.currentThread().getName(), groupInfo,  numProcessedEvents, load});
+          LOG.log(Level.FINE, "{0} Process Group {1}, # Processed Events: {2}, " +
+                  "IncomingRate: {3}, ProcessingRate: {4}, Load: {5}, EWMALoad: {6}",
+              new Object[]{Thread.currentThread().getName(), groupInfo,  numProcessedEvents,
+                  incomingEventRate, processingTimeRate, load, groupInfo.getEWMALoad()});
         }
 
         // Reschedule
