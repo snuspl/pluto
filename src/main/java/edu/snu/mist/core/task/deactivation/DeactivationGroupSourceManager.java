@@ -129,17 +129,18 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
       final ExecutionVertex root = tuple.getKey();
       final ExecutionDag executionDag = tuple.getValue();
       if (!(root == null || executionDag == null)) {
-        // TODO: [MIST-771] Synchronization between source deactivation/activation and query merging
-        synchronized (executionDag) {
-          final Map<ExecutionVertex, MISTEdge> needWatermarkVertices = new HashMap<>();
-          // Update physical plan and save the deactivated execution vertices.
-          dfsAndSaveExecutionVertices(executionDag, root, needWatermarkVertices);
-          // Set the source's output emitter to the active vertices that need watermarks to continue processing.
-          ((PhysicalSource) root).setOutputEmitter(
-              new DeactivatedSourceOutputEmitter(queryId, needWatermarkVertices, this, (PhysicalSource) root));
-          // Change the PhysicalSource's state to be deactivated.
-          deactivatedSourceDagMap.put(sourceId, executionDag);
-        }
+        // Set the execution dag to the deactivating state.
+        executionDag.setToDeactivatingState();
+        final Map<ExecutionVertex, MISTEdge> needWatermarkVertices = new HashMap<>();
+        // Update physical plan and save the deactivated execution vertices.
+        dfsAndSaveExecutionVertices(executionDag, root, needWatermarkVertices);
+        // Set the source's output emitter to the active vertices that need watermarks to continue processing.
+        ((PhysicalSource) root).setOutputEmitter(
+            new DeactivatedSourceOutputEmitter(queryId, needWatermarkVertices, this, (PhysicalSource) root));
+        // Change the PhysicalSource's state to be deactivated.
+        deactivatedSourceDagMap.put(sourceId, executionDag);
+        // Set the execution dag to the default state and notify other threads that may be waiting for this dag.
+        executionDag.resetStateAndNotify();
       } else {
         LOG.log(Level.INFO, "Could not find the source to deactivate.");
       }
@@ -316,10 +317,11 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
         if (executionDag == null) {
           LOG.log(Level.INFO, "Source is already activated");
         } else {
-          // TODO: [MIST-771] Synchronization between source deactivation/activation and query merging
-          synchronized (executionDag) {
-            dfsAndLoadExecutionVertices(urlsAndClassLoader, executionDag, sourceId);
-          }
+          // Set the execution dag to the deactivating state.
+          executionDag.setToActivatingState();
+          dfsAndLoadExecutionVertices(urlsAndClassLoader, executionDag, sourceId);
+          // Set the execution dag to the default state and notify other threads that may be waiting for this dag.
+          executionDag.resetStateAndNotify();
         }
       }
     } catch (final Exception e) {

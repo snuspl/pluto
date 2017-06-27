@@ -167,17 +167,18 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
       // We suppose that all of the dags has no same vertices
       for (final ExecutionDag executionDag : mergeableDags.values()) {
         if (executionDag != sharableExecutionDag) {
-          GraphUtils.copy(executionDag.getDag(), sharableExecutionDag.getDag());
+          final DAG<ExecutionVertex, MISTEdge> dag = executionDag.getDag();
+          GraphUtils.copy(dag, sharableExecutionDag.getDag());
           // Remove the execution dag
           executionDags.remove(executionDag);
 
           // Update all of the sources in the execution Dag
-          for (final ExecutionVertex source : executionDag.getDag().getRootVertices()) {
+          for (final ExecutionVertex source : dag.getRootVertices()) {
             srcAndDagMap.replace(((PhysicalSource) source).getConfiguration(), sharableExecutionDag);
           }
 
           // Update the execution dag of the execution vertex
-          for (final ExecutionVertex ev : executionDag.getDag().getVertices()) {
+          for (final ExecutionVertex ev : dag.getVertices()) {
             executionVertexDagMap.put(ev, sharableExecutionDag);
           }
         }
@@ -225,6 +226,9 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
           activeExecutionVertexIdMap.put(executionVertex.getIdentifier(), executionVertex);
         }
       }
+
+      // Set the execution dag to the default state and notify other threads that may be waiting for this dag.
+      sharableExecutionDag.resetStateAndNotify();
     }
   }
 
@@ -384,6 +388,12 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
         largestExecutionDag = executionDag;
       }
     }
+    if (largestExecutionDag != null) {
+      synchronized (largestExecutionDag) {
+        largestExecutionDag.resetState();
+        largestExecutionDag.setToMergingState();
+      }
+    }
     return largestExecutionDag;
   }
 
@@ -402,6 +412,8 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
       if (executionDag != null) {
         // Mergeable source
         mergeableDags.put(srcConf, executionDag);
+        // Set execution dag to DELETE state.
+        executionDag.setToDeleteState();
       }
     }
     return mergeableDags;
