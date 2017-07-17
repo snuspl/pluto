@@ -15,12 +15,13 @@
  */
 package edu.snu.mist.common.types;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * This class contains the implementation of common methods necessary for Tuples.
  */
-public abstract class TupleImpl implements Tuple {
+public abstract class TupleImpl implements Tuple, Serializable {
 
   /**
    * The number of fields for this tuple.
