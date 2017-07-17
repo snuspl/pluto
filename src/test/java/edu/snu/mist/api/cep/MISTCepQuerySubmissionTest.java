@@ -17,7 +17,6 @@ package edu.snu.mist.api.cep;
 
 import edu.snu.mist.api.cep.conditions.ComparisonCondition;
 import edu.snu.mist.common.types.Tuple2;
-import org.apache.reef.io.Tuple;
 import org.junit.Assert;
 import org.junit.Test;
 
