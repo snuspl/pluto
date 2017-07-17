@@ -18,13 +18,16 @@ package edu.snu.mist.core.task.eventProcessors;
 import edu.snu.mist.core.task.eventProcessors.groupAssigner.GroupAssigner;
 import edu.snu.mist.core.task.eventProcessors.groupAssigner.MinLoadGroupAssignerImpl;
 import edu.snu.mist.core.task.eventProcessors.groupAssigner.RoundRobinGroupAssignerImpl;
+import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.eventProcessors.parameters.GroupBalancerGracePeriod;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.GlobalSchedNonBlockingEventProcessorFactory;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -39,16 +42,28 @@ public final class GroupAssignerTest {
   private GroupAllocationTable groupAllocationTable;
   private EventProcessor ep1;
   private EventProcessor ep2;
+  private double ep1Load = 0.0;
+  private double ep2Load = 0.0;
 
   @Before
   public void setUp() throws InjectionException {
-    final Injector injector = Tang.Factory.getTang().newInjector();
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(DefaultNumEventProcessors.class, "0");
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final EventProcessorFactory epFactory = injector.getInstance(GlobalSchedNonBlockingEventProcessorFactory.class);
     groupAllocationTable = injector.getInstance(GroupAllocationTable.class);
-    ep1 = mock(EventProcessor.class);
-    ep2 = mock(EventProcessor.class);
+
+    ep1 = epFactory.newEventProcessor();
+    ep2 = epFactory.newEventProcessor();
 
     groupAllocationTable.put(ep1, new LinkedList<>());
     groupAllocationTable.put(ep2, new LinkedList<>());
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    ep1.close();
+    ep2.close();
   }
 
   /**
@@ -87,10 +102,10 @@ public final class GroupAssignerTest {
     final MinLoadGroupAssignerImpl groupBalancer = injector.getInstance(MinLoadGroupAssignerImpl.class);
 
     final GlobalSchedGroupInfo group1 = mock(GlobalSchedGroupInfo.class);
-    when(group1.getEWMALoad()).thenReturn(10.0);
+    when(group1.getLoad()).thenReturn(10.0);
 
     final GlobalSchedGroupInfo group2 = mock(GlobalSchedGroupInfo.class);
-    when(group2.getEWMALoad()).thenReturn(20.0);
+    when(group2.getLoad()).thenReturn(20.0);
 
     groupBalancer.initialize();
 
@@ -99,27 +114,25 @@ public final class GroupAssignerTest {
     groupBalancer.assignGroup(group1);
     Assert.assertEquals(Arrays.asList(group1), groupAllocationTable.getValue(ep1));
 
-    // ep1: [group1, group2] (load 30.0) -> because of the cached assignment policy
-    // ep2: []
+    // ep1: [group1] (load 10.0)
+    // ep2: [group2] (load 20.0)
     groupBalancer.assignGroup(group2);
-    Assert.assertEquals(Arrays.asList(group1, group2), groupAllocationTable.getValue(ep1));
+    Assert.assertEquals(Arrays.asList(group2), groupAllocationTable.getValue(ep2));
 
-    Thread.sleep(gracePeriod * 2);
     final GlobalSchedGroupInfo group3 = mock(GlobalSchedGroupInfo.class);
-    when(group3.getEWMALoad()).thenReturn(40.0);
+    when(group3.getLoad()).thenReturn(40.0);
 
-    // ep1: [group1, group2] (load 30.0)
-    // ep2: [group3] (load 40.0)
+    // ep1: [group1, group3] (load 50.0)
+    // ep2: [group2] (load 20.0)
     groupBalancer.assignGroup(group3);
-    Assert.assertEquals(Arrays.asList(group3), groupAllocationTable.getValue(ep2));
+    Assert.assertEquals(Arrays.asList(group1, group3), groupAllocationTable.getValue(ep1));
 
-    Thread.sleep(gracePeriod * 2);
     final GlobalSchedGroupInfo group4 = mock(GlobalSchedGroupInfo.class);
-    when(group4.getEWMALoad()).thenReturn(20.0);
+    when(group4.getLoad()).thenReturn(20.0);
 
-    // ep1: [group1, group2, group4] (load 50.0)
-    // ep2: [group3] (load 40.0)
+    // ep1: [group1, group3] (load 50.0)
+    // ep2: [group2, group4] (load 40.0)
     groupBalancer.assignGroup(group4);
-    Assert.assertEquals(Arrays.asList(group1, group2, group4), groupAllocationTable.getValue(ep1));
+    Assert.assertEquals(Arrays.asList(group2, group4), groupAllocationTable.getValue(ep2));
   }
 }

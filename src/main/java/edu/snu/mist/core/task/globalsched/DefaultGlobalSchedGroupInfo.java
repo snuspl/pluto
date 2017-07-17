@@ -16,22 +16,33 @@
 package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.common.parameters.GroupId;
-import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.ExecutionDags;
+import edu.snu.mist.core.task.OperatorChainManager;
+import edu.snu.mist.core.task.QueryRemover;
+import edu.snu.mist.core.task.QueryStarter;
 import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.globalsched.parameters.DefaultGroupLoad;
-import edu.snu.mist.core.task.metrics.EWMAMetric;
-import edu.snu.mist.core.task.metrics.GroupMetrics;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * This is the default implementation of the GlobalSchedGroupInfo.
  */
 final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
+
+  /**
+   * Group status.
+   */
+  private enum GroupStatus {
+    READY,
+    DISPACTHED,
+    PROCESSING
+  }
 
   /**
    * Group id.
@@ -64,39 +75,26 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   private final QueryRemover queryRemover;
 
   /**
-   * The latest inactive time of the group.
-   */
-  private long latestInactiveTime;
-
-  /**
-   * The load of the group.
-   */
-  private final EWMAMetric load;
-
-  /**
-   * A metric holder that contains weight and the number of events in the group, which will be updated periodically.
-   */
-  private final GroupMetrics metricHolder;
-
-  /**
-   * Assigned value whether this group is assigned to an event processor or not.
-   */
-  private final AtomicBoolean assigned = new AtomicBoolean(false);
-
-  /**
    * GroupSourceManager for this group.
    */
   private final GroupSourceManager groupSourceManager;
 
   /**
-   * Default load of the group.
+   * The load of the group.
    */
-  private final double defaultLoad;
+  private double groupLoad;
 
   /**
-   * For load balancing.
+   * The event processing time of the group.
    */
-  private double fixedLoad;
+  private final AtomicLong totalProcessingTime;
+
+  /**
+   * The number of processed events in the group.
+   */
+  private final AtomicLong totalProcessingEvent;
+
+  private final AtomicReference<GroupStatus> atomicStatus;
 
   @Inject
   private DefaultGlobalSchedGroupInfo(@Parameter(GroupId.class) final String groupId,
@@ -105,19 +103,18 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
                                       final QueryStarter queryStarter,
                                       final OperatorChainManager operatorChainManager,
                                       final QueryRemover queryRemover,
-                                      final GroupMetrics metricHolder,
                                       final GroupSourceManager groupSourceManager) {
     this.groupId = groupId;
-    this.defaultLoad = defaultLoad;
+    this.groupLoad = defaultLoad;
     this.queryIdList = new ArrayList<>();
     this.executionDags = executionDags;
     this.queryStarter = queryStarter;
     this.operatorChainManager = operatorChainManager;
     this.queryRemover = queryRemover;
-    this.latestInactiveTime = System.currentTimeMillis();
-    this.load = new EWMAMetric(defaultLoad, 0.7);
-    this.metricHolder = metricHolder;
     this.groupSourceManager = groupSourceManager;
+    this.totalProcessingTime = new AtomicLong(0);
+    this.totalProcessingEvent = new AtomicLong(0);
+    this.atomicStatus = new AtomicReference<>(GroupStatus.READY);
   }
 
   /**
@@ -174,43 +171,18 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   }
 
   @Override
-  public void setLatestInactiveTime(final long time) {
-    latestInactiveTime = time;
-  }
-
-  @Override
-  public long getLatestInactiveTime() {
-    return latestInactiveTime;
-  }
-
-  @Override
   public long numberOfRemainingEvents() {
     return operatorChainManager.numEvents();
   }
 
   @Override
-  public double getEWMALoad() {
-    return load.getEwmaValue();
+  public double getLoad() {
+    return groupLoad;
   }
 
   @Override
-  public double getFixedLoad() {
-    return fixedLoad;
-  }
-
-  @Override
-  public void setFixedLoad(final double val) {
-    fixedLoad = val;
-  }
-
-  @Override
-  public void updateLoad(final double value) {
-    load.updateValue(value);
-  }
-
-  @Override
-  public GroupMetrics getMetricHolder() {
-    return metricHolder;
+  public void setLoad(final double load) {
+    groupLoad = load;
   }
 
   @Override
@@ -219,18 +191,58 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   }
 
   @Override
-  public boolean isAssigned() {
-    return assigned.get();
-  }
-
-  @Override
-  public boolean compareAndSetAssigned(final boolean cmp, final boolean value) {
-    return assigned.compareAndSet(cmp, value);
-  }
-
-  @Override
   public GroupSourceManager getGroupSourceManager() {
     return groupSourceManager;
+  }
+
+  @Override
+  public String getGroupId() {
+    return groupId;
+  }
+
+  @Override
+  public AtomicLong getProcessingTime() {
+    return totalProcessingTime;
+  }
+
+  @Override
+  public AtomicLong getProcessingEvent() {
+    return totalProcessingEvent;
+  }
+
+  @Override
+  public boolean setDispatched() {
+    return atomicStatus.compareAndSet(GroupStatus.READY, GroupStatus.DISPACTHED);
+  }
+
+  @Override
+  public boolean setProcessing() {
+    return atomicStatus.compareAndSet(GroupStatus.DISPACTHED, GroupStatus.PROCESSING);
+  }
+
+  @Override
+  public boolean setReadyFromProcessing() {
+    return atomicStatus.compareAndSet(GroupStatus.PROCESSING, GroupStatus.READY);
+  }
+
+  @Override
+  public boolean setReadyFromDispatched() {
+    return atomicStatus.compareAndSet(GroupStatus.DISPACTHED, GroupStatus.READY);
+  }
+
+  @Override
+  public boolean isProcessing() {
+    return atomicStatus.get() == GroupStatus.PROCESSING;
+  }
+
+  @Override
+  public boolean isReady() {
+    return atomicStatus.get() == GroupStatus.READY;
+  }
+
+  @Override
+  public boolean isDispatched() {
+    return atomicStatus.get() == GroupStatus.DISPACTHED;
   }
 
   @Override
@@ -239,6 +251,14 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
 
   @Override
   public String toString() {
-    return groupId;
+    final StringBuilder sb = new StringBuilder();
+    sb.append("{");
+    sb.append(groupId);
+    sb.append(", ");
+    sb.append(atomicStatus.get());
+    sb.append(", ");
+    sb.append(numberOfRemainingEvents());
+    sb.append("}");
+    return sb.toString();
   }
 }
