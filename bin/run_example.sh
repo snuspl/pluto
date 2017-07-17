@@ -38,6 +38,8 @@ case $1 in
   KafkaSource) ;;
   MQTTNoiseSensing) ;;
   SessionWindow) ;;
+  CepHelloMist) ;;
+  CepWeatherInfo) ;;
   *)
     echo "Invalid input. Here is an example for using this script."
     echo "If you want to run HelloMIST with sink source option, please type like below."

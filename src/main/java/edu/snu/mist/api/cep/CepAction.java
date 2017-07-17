@@ -15,31 +15,34 @@
  */
 package edu.snu.mist.api.cep;
 
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
  * An immutable action which does something (or nothing) to its sink.
  */
-public final class CepAction {
+public final class CepAction implements Serializable {
 
   private final CepActionType actionType;
   private final CepSink cepSink;
   private final List<Object> params;
 
   // Should not be public!
-  private CepAction(final CepActionType actionType, final CepSink cepSink, final Object... params) {
+  private CepAction(final CepActionType actionType, final CepSink cepSink, final List<Object> params) {
     this.actionType = actionType;
     this.cepSink = cepSink;
-    this.params = Arrays.asList(params);
+    this.params = params;
+
   }
 
   /**
    * @return A pre-define action which does nothing!
    */
   public static CepAction doNothingAction() {
-    return new CepAction(CepActionType.DO_NOTHING, null, "dummy");
+      List<Object> list = new ArrayList<>();
+      list.add("dummy");
+      return new CepAction(CepActionType.DO_NOTHING, null, list);
   }
 
   /**
@@ -51,7 +54,7 @@ public final class CepAction {
    */
   private CepAction newAction(final CepActionType actionTypeArg,
                               final CepSink cepSinkArg,
-                              final Object... paramsArg) {
+                              final List<Object> paramsArg) {
     if (cepSinkArg == null) {
       throw new IllegalStateException("CepSink cannot be null!");
     }
