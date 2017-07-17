@@ -19,7 +19,6 @@ import edu.snu.mist.core.task.OperatorChain;
 import edu.snu.mist.core.task.OperatorChainManager;
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorFactory;
-import edu.snu.mist.core.task.globalsched.parameters.SchedulingPeriod;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -28,8 +27,10 @@ import org.junit.Test;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public final class GlobalSchedNonBlockingEventProcessorTest {
 
@@ -47,7 +48,7 @@ public final class GlobalSchedNonBlockingEventProcessorTest {
    * This test verifies if the event processor retrieves
    * the next group correctly from the next group selector.
    */
-  @Test(timeout = 5000L)
+  @Test()
   public void testGlobalSchedNonBlockingEventProcessor()
       throws Exception {
     final List<GlobalSchedGroupInfo> groups = new ArrayList<>(3);
@@ -97,6 +98,13 @@ public final class GlobalSchedNonBlockingEventProcessorTest {
       return ocQueue2.size() != 0;
     });
 
+    when(group1.getProcessingEvent()).thenReturn(new AtomicLong(0));
+    when(group1.getProcessingTime()).thenReturn(new AtomicLong(0));
+    when(group2.getProcessingEvent()).thenReturn(new AtomicLong(0));
+    when(group2.getProcessingTime()).thenReturn(new AtomicLong(0));
+    when(group3.getProcessingEvent()).thenReturn(new AtomicLong(0));
+    when(group3.getProcessingTime()).thenReturn(new AtomicLong(0));
+
     final OperatorChainManager ocm3 = mock(OperatorChainManager.class);
     when(group3.getOperatorChainManager()).thenReturn(ocm3);
     when(ocm3.pickOperatorChain()).thenAnswer((iom) -> {
@@ -113,8 +121,6 @@ public final class GlobalSchedNonBlockingEventProcessorTest {
     when(testNextGroupSelectorFactory.newInstance()).thenReturn(nextGroupSelector);
 
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(SchedulingPeriod.class, "100");
-    jcb.bindImplementation(SchedulingPeriodCalculator.class, FixedSchedulingPeriodCalculator.class);
 
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     injector.bindVolatileInstance(NextGroupSelectorFactory.class, testNextGroupSelectorFactory);
@@ -182,6 +188,11 @@ public final class GlobalSchedNonBlockingEventProcessorTest {
     @Override
     public void reschedule(final Collection<GlobalSchedGroupInfo> groupInfos) {
       // do nothing
+    }
+
+    @Override
+    public boolean removeDispatchedGroup(final GlobalSchedGroupInfo group) {
+      return false;
     }
 
     @Override

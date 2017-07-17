@@ -15,9 +15,11 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
+import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.eventProcessors.rebalancer.FirstFitRebalancerImpl;
 import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupRebalancer;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.GlobalSchedNonBlockingEventProcessorFactory;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -57,13 +59,15 @@ public final class GroupRebalancerTest {
   @Test
   public void firstFitRebalancerTest1() throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(DefaultNumEventProcessors.class, "0");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final GroupAllocationTable groupAllocationTable = injector.getInstance(GroupAllocationTable.class);
     final GroupRebalancer rebalancer = injector.getInstance(FirstFitRebalancerImpl.class);
 
+    final EventProcessorFactory epFactory = injector.getInstance(GlobalSchedNonBlockingEventProcessorFactory.class);
     final List<EventProcessor> eventProcessors = new LinkedList<>();
     for (int i = 0; i < 4; i++) {
-      eventProcessors.add(mock(EventProcessor.class));
+      eventProcessors.add(epFactory.newEventProcessor());
       groupAllocationTable.put(eventProcessors.get(i), new ConcurrentLinkedQueue<>());
     }
 
@@ -79,8 +83,7 @@ public final class GroupRebalancerTest {
       final List<Double> loadList = loads.get(i);
       for (final Double load : loadList) {
         final GlobalSchedGroupInfo group = mock(GlobalSchedGroupInfo.class);
-        when(group.getEWMALoad()).thenReturn(load);
-        when(group.getFixedLoad()).thenReturn(load);
+        when(group.getLoad()).thenReturn(load);
         when(group.toString()).thenReturn(Double.toString(load));
         groupAllocationTable.getValue(eventProcessor).add(group);
       }
@@ -116,6 +119,7 @@ public final class GroupRebalancerTest {
   @Test
   public void firstFitRebalancerTest2() throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(DefaultNumEventProcessors.class, "0");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final GroupAllocationTable groupAllocationTable = injector.getInstance(GroupAllocationTable.class);
     final GroupRebalancer rebalancer = injector.getInstance(FirstFitRebalancerImpl.class);
@@ -138,8 +142,7 @@ public final class GroupRebalancerTest {
       final List<Double> loadList = loads.get(i);
       for (final Double load : loadList) {
         final GlobalSchedGroupInfo group = mock(GlobalSchedGroupInfo.class);
-        when(group.getEWMALoad()).thenReturn(load);
-        when(group.getFixedLoad()).thenReturn(load);
+        when(group.getLoad()).thenReturn(load);
         when(group.toString()).thenReturn(Double.toString(load));
         groupAllocationTable.getValue(eventProcessor).add(group);
       }
@@ -162,7 +165,7 @@ public final class GroupRebalancerTest {
   private double calculateLoadOfGroups(final Collection<GlobalSchedGroupInfo> groups) {
     double sum = 0;
     for (final GlobalSchedGroupInfo group : groups) {
-      final double fixedLoad = group.getEWMALoad();
+      final double fixedLoad = group.getLoad();
       sum += fixedLoad;
     }
     return sum;

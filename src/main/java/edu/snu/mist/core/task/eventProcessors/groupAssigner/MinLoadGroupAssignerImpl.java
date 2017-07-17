@@ -22,7 +22,6 @@ import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.Collection;
 
 /**
  * A group assigner that assigns a new group to the event processor that has the minimum load.
@@ -59,19 +58,6 @@ public final class MinLoadGroupAssignerImpl implements GroupAssigner {
   }
 
   /**
-   * Calculate the load of groups.
-   * @param groups groups
-   * @return total load
-   */
-  private double calculateLoadOfGroups(final Collection<GlobalSchedGroupInfo> groups) {
-    double sum = 0;
-    for (final GlobalSchedGroupInfo group : groups) {
-      sum += group.getEWMALoad();
-    }
-    return sum;
-  }
-
-  /**
    * Find the event processor that has the minimum load.
    */
   private EventProcessor findMinLoadEventProcessor() {
@@ -79,13 +65,25 @@ public final class MinLoadGroupAssignerImpl implements GroupAssigner {
     double minLoad = Double.MAX_VALUE;
 
     for (final EventProcessor eventProcessor : groupAllocationTable.getKeys()) {
-      final double load = calculateLoadOfGroups(groupAllocationTable.getValue(eventProcessor));
+      final double load = eventProcessor.getLoad();
       if (load < minLoad) {
         minEventProcessor = eventProcessor;
         minLoad = load;
+      } else if (load == minLoad) {
+        if (groupAllocationTable.getValue(eventProcessor).size()
+            < groupAllocationTable.getValue(minEventProcessor).size()) {
+          minEventProcessor = eventProcessor;
+          minLoad = load;
+        }
       }
     }
     return minEventProcessor;
+  }
+
+  private double getDefaultLoad(final EventProcessor eventProcessor) {
+    final double defaultLoad = eventProcessor.getLoad();
+    final int groupnum = Math.max(1, groupAllocationTable.getValue(eventProcessor).size());
+    return defaultLoad / groupnum;
   }
 
   /**
@@ -94,18 +92,15 @@ public final class MinLoadGroupAssignerImpl implements GroupAssigner {
    */
   @Override
   public void assignGroup(final GlobalSchedGroupInfo groupInfo) {
-    if (System.currentTimeMillis() - latestPickTime < gracePeriod
-        && groupAllocationTable.getKeys().contains(latestMinLoadEventProcessor)) {
-      // Use the cached event processor
-      groupAllocationTable.getValue(latestMinLoadEventProcessor).add(groupInfo);
-    } else {
-      // Reselect the event processor that has the minimum load and
-      // Update the latest pick time and the latest min load event processor
-      final EventProcessor minLoadEventProcessor = findMinLoadEventProcessor();
-      latestPickTime = System.currentTimeMillis();
-      latestMinLoadEventProcessor = minLoadEventProcessor;
-      groupAllocationTable.getValue(latestMinLoadEventProcessor).add(groupInfo);
-    }
+    // Reselect the event processor that has the minimum
+    final EventProcessor minLoadEventProcessor = findMinLoadEventProcessor();
+    //latestPickTime = System.currentTimeMillis();
+    latestMinLoadEventProcessor = minLoadEventProcessor;
+
+    final double defaultLoad = getDefaultLoad(latestMinLoadEventProcessor);
+    groupInfo.setLoad(defaultLoad);
+    groupAllocationTable.getValue(latestMinLoadEventProcessor).add(groupInfo);
+    latestMinLoadEventProcessor.setLoad(latestMinLoadEventProcessor.getLoad() + groupInfo.getLoad());
   }
 
   @Override

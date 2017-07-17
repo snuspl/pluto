@@ -48,4 +48,11 @@ public interface NextGroupSelector extends EventHandler<GroupEvent>, AutoCloseab
    * @param groupInfos group infos
    */
   void reschedule(Collection<GlobalSchedGroupInfo> groupInfos);
+
+  /**
+   * Remove the dispatched group.
+   * @param group dispatched group
+   * @return true if the dispatched group is removed
+   */
+  boolean removeDispatchedGroup(GlobalSchedGroupInfo group);
 }
