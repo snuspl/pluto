@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.eventProcessors.loadBalancer;
+package edu.snu.mist.core.task.eventProcessors.groupAssigner;
 
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.GroupAllocationTable;
@@ -23,9 +23,9 @@ import javax.inject.Inject;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Round-robin group balancer that assigns the new group in a round-robin way.
+ * Round-robin group assigner that assigns the new group in a round-robin way.
  */
-public final class RoundRobinGroupBalancerImpl implements GroupBalancer {
+public final class RoundRobinGroupAssignerImpl implements GroupAssigner {
 
   /**
    * Counter for round-robin. 
@@ -38,7 +38,7 @@ public final class RoundRobinGroupBalancerImpl implements GroupBalancer {
   private final GroupAllocationTable groupAllocationTable;
 
   @Inject
-  private RoundRobinGroupBalancerImpl(final GroupAllocationTable groupAllocationTable) {
+  private RoundRobinGroupAssignerImpl(final GroupAllocationTable groupAllocationTable) {
     this.counter = new AtomicLong(0);
     this.groupAllocationTable = groupAllocationTable;
   }

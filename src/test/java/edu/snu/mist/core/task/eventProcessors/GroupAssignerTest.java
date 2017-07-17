@@ -15,9 +15,9 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
-import edu.snu.mist.core.task.eventProcessors.loadBalancer.GroupBalancer;
-import edu.snu.mist.core.task.eventProcessors.loadBalancer.MinLoadGroupBalancerImpl;
-import edu.snu.mist.core.task.eventProcessors.loadBalancer.RoundRobinGroupBalancerImpl;
+import edu.snu.mist.core.task.eventProcessors.groupAssigner.GroupAssigner;
+import edu.snu.mist.core.task.eventProcessors.groupAssigner.MinLoadGroupAssignerImpl;
+import edu.snu.mist.core.task.eventProcessors.groupAssigner.RoundRobinGroupAssignerImpl;
 import edu.snu.mist.core.task.eventProcessors.parameters.GroupBalancerGracePeriod;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import junit.framework.Assert;
@@ -34,7 +34,7 @@ import java.util.LinkedList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public final class GroupBalancerTest {
+public final class GroupAssignerTest {
 
   private GroupAllocationTable groupAllocationTable;
   private EventProcessor ep1;
@@ -59,19 +59,19 @@ public final class GroupBalancerTest {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     injector.bindVolatileInstance(GroupAllocationTable.class, groupAllocationTable);
-    final GroupBalancer groupBalancer = injector.getInstance(RoundRobinGroupBalancerImpl.class);
+    final GroupAssigner groupAssigner = injector.getInstance(RoundRobinGroupAssignerImpl.class);
 
     final GlobalSchedGroupInfo group1 = mock(GlobalSchedGroupInfo.class);
     final GlobalSchedGroupInfo group2 = mock(GlobalSchedGroupInfo.class);
 
-    groupBalancer.initialize();
+    groupAssigner.initialize();
 
-    groupBalancer.assignGroup(group1);
+    groupAssigner.assignGroup(group1);
 
     Assert.assertEquals(Arrays.asList(group1), groupAllocationTable.getValue(ep1));
     Assert.assertEquals(Arrays.asList(), groupAllocationTable.getValue(ep2));
 
-    groupBalancer.assignGroup(group2);
+    groupAssigner.assignGroup(group2);
     Assert.assertEquals(Arrays.asList(group2), groupAllocationTable.getValue(ep2));
 
   }
@@ -84,7 +84,7 @@ public final class GroupBalancerTest {
     final Injector injector = Tang.Factory.getTang().newInjector();
     final long gracePeriod = injector.getNamedInstance(GroupBalancerGracePeriod.class);
     injector.bindVolatileInstance(GroupAllocationTable.class, groupAllocationTable);
-    final MinLoadGroupBalancerImpl groupBalancer = injector.getInstance(MinLoadGroupBalancerImpl.class);
+    final MinLoadGroupAssignerImpl groupBalancer = injector.getInstance(MinLoadGroupAssignerImpl.class);
 
     final GlobalSchedGroupInfo group1 = mock(GlobalSchedGroupInfo.class);
     when(group1.getEWMALoad()).thenReturn(10.0);

@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
-import edu.snu.mist.core.task.eventProcessors.loadBalancer.GroupBalancer;
+import edu.snu.mist.core.task.eventProcessors.groupAssigner.GroupAssigner;
 import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupRebalancer;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 
@@ -61,7 +61,7 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
   /**
    * Group balancer that assigns a group to an event processor.
    */
-  private final GroupBalancer groupBalancer;
+  private final GroupAssigner groupAssigner;
 
   /**
    * Group rebalancer that reassigns groups from an event processor to other event processors.
@@ -71,10 +71,10 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
 
   @Inject
   private GroupAllocationTableModifier(final GroupAllocationTable groupAllocationTable,
-                                       final GroupBalancer groupBalancer,
+                                       final GroupAssigner groupAssigner,
                                        final GroupRebalancer groupRebalancer) {
     this.groupAllocationTable = groupAllocationTable;
-    this.groupBalancer = groupBalancer;
+    this.groupAssigner = groupAssigner;
     this.groupRebalancer = groupRebalancer;
     this.writingEventQueue = new LinkedBlockingQueue<>();
     this.singleWriter = Executors.newSingleThreadExecutor();
@@ -122,7 +122,7 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
           switch (event.getEventType()) {
             case GROUP_ADD: {
               final GlobalSchedGroupInfo group = (GlobalSchedGroupInfo) event.getValue();
-              groupBalancer.assignGroup(group);
+              groupAssigner.assignGroup(group);
               break;
             }
             case GROUP_REMOVE: {
