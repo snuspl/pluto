@@ -68,6 +68,11 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
   private OperatorChainManager operatorChainManager;
 
   /**
+   * The number of events.
+   */
+  private int numEvents = 0;
+
+  /**
    * The id of this operator chain.
    */
   private String operatorChainId;
@@ -142,6 +147,7 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
       if (operatorChainManager != null && !queue.isEmpty()) {
         operatorChainManager.insert(this);
       }
+      numEvents -= 1;
       return true;
     } else {
       return false;
@@ -161,6 +167,7 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
         isAdded = queue.add(new Tuple<>(event, direction));
       }
     }
+    numEvents += 1;
     return isAdded;
   }
 
@@ -171,7 +178,7 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
 
   @Override
   public int numberOfEvents() {
-    return queue.size();
+    return numEvents;
   }
 
   @Override
