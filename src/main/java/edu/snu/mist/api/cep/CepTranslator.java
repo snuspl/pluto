@@ -80,41 +80,6 @@ public final class CepTranslator {
     }
 
     /**
-     * For Socket Text Sink, convert parameters into string with separator.
-     * For example, if the list of parameters is ["Hello", "MIST"]
-     * and the seperator is ",", then the return value is "Hello, Mist"
-     * @param input Input map
-     * @param param List of parameters
-     * @param separator Parameter separator for Sink string
-     * @return String type of parameters
-     */
-    private static String parameterToString(final Map<String, Object> input,
-                                            final List<Object> param, final String separator) {
-        final StringBuilder strBuilder = new StringBuilder();
-
-        for(final Object iter : param) {
-            strBuilder.append(iter.toString());
-            strBuilder.append(separator);
-        }
-
-        if(strBuilder.length() == 0) {
-            throw new NullPointerException("No Parameters for cepSink!");
-        }
-
-        strBuilder.delete(strBuilder.length()-separator.length(), strBuilder.length());
-
-        final Iterator<String> iter = input.keySet().iterator();
-        String resultStr = strBuilder.toString();
-        while(iter.hasNext()) {
-            final String field = iter.next();
-            if(resultStr.matches(".*"+"[$]"+field+".*")) {
-                resultStr = resultStr.replaceAll("[$]"+field, input.get(field).toString());
-            }
-        }
-        return resultStr;
-    }
-
-    /**
      * Check type of compared object and return the int for comparison condition.
      * @param eventObj input stream object
      * @param queryObj query object(compared object)
@@ -242,7 +207,9 @@ public final class CepTranslator {
             if(sink.getCepSinkType() == CepSinkType.TEXT_SOCKET_OUTPUT) {
                 final List<Object> params = action.getParams();
                 final String separator = sink.getSeparator();
-                temp.map(s -> parameterToString(s, params, separator))
+                final MISTFunction<Map<String, Object>, String> mapFunction =
+                        s -> CepTuple.mapToString(s, params, separator);
+                temp.map(mapFunction)
                     .textSocketOutput((String)sink.getSinkConfigs().get("SOCKET_SINK_ADDRESS"),
                             (int)sink.getSinkConfigs().get("SOCKET_SINK_PORT"));
             } else {

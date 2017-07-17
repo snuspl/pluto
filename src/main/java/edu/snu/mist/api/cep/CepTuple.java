@@ -18,6 +18,7 @@ package edu.snu.mist.api.cep;
 import edu.snu.mist.common.types.*;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -71,6 +72,41 @@ public final class CepTuple {
         }
 
         return result;
+    }
+
+    /**
+     * For Socket Text Sink, convert parameters into string with separator.
+     * For example, if the list of parameters is ["Hello", "MIST"]
+     * and the seperator is ",", then the return value is "Hello, Mist"
+     * @param input Input map
+     * @param param List of parameters
+     * @param separator Parameter separator for Sink string
+     * @return String type of parameters
+     */
+    public static String mapToString(final Map<String, Object> input,
+                                            final List<Object> param, final String separator) {
+        final StringBuilder strBuilder = new StringBuilder();
+
+        for(final Object iter : param) {
+            strBuilder.append(iter.toString());
+            strBuilder.append(separator);
+        }
+
+        if(strBuilder.length() == 0) {
+            throw new NullPointerException("No Parameters for cepSink!");
+        }
+
+        strBuilder.delete(strBuilder.length()-separator.length(), strBuilder.length());
+
+        final Iterator<String> iter = input.keySet().iterator();
+        String resultStr = strBuilder.toString();
+        while(iter.hasNext()) {
+            final String field = iter.next();
+            if(resultStr.matches(".*"+"[$]"+field+".*")) {
+                resultStr = resultStr.replaceAll("[$]"+field, input.get(field).toString());
+            }
+        }
+        return resultStr;
     }
 
     private CepTuple(){}
