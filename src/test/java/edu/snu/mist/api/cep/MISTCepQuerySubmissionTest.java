@@ -16,6 +16,7 @@
 package edu.snu.mist.api.cep;
 
 import edu.snu.mist.api.cep.conditions.ComparisonCondition;
+import edu.snu.mist.common.types.Tuple2;
 import org.apache.reef.io.Tuple;
 import org.junit.Assert;
 import org.junit.Test;
@@ -65,10 +66,10 @@ public class MISTCepQuerySubmissionTest {
       put("SOCKET_INPUT_PORT", cepInputPort);
     }};
     Assert.assertEquals(expectedCepInputConf, exampleCepInput.getSourceConfiguration());
-    final List<Tuple<String, CepValueType>> expectedCepInputFields
-        = new ArrayList<Tuple<String, CepValueType>>() {{
-      add(new Tuple<>(firstFieldName, firstFieldType));
-      add(new Tuple<>(secondFieldName, secondFieldType));
+    final List<Tuple2<String, CepValueType>> expectedCepInputFields
+        = new ArrayList<Tuple2<String, CepValueType>>() {{
+      add(new Tuple2<>(firstFieldName, firstFieldType));
+      add(new Tuple2<>(secondFieldName, secondFieldType));
     }};
     Assert.assertEquals(expectedCepInputFields, exampleCepInput.getFields());
   }
