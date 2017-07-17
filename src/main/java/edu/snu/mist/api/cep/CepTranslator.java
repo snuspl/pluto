@@ -53,7 +53,6 @@ public final class CepTranslator {
         return queryBuilder.build();
     }
 
-
     /**
      * Translate cepInput into DAG and the data is Fields Map.
      * @param cepInput cep input stream

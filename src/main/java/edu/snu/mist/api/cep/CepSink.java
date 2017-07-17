@@ -165,11 +165,11 @@ public final class CepSink implements Serializable {
       return this;
     }
 
-      /**
-       * Sets the separator.
-       * @param separatorParam separator parameter
-       * @return builder
-       */
+    /**
+     * Sets the separator.
+     * @param separatorParam separator parameter
+     * @return builder
+     */
     public TextSocketBuilder setSeparator(final String separatorParam) {
         this.builder.setSeparator(separatorParam);
         return this;
