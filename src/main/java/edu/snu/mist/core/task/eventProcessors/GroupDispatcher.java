@@ -63,7 +63,6 @@ public final class GroupDispatcher implements AutoCloseable {
     for (int i = 0; i < dispatcherThreadNum; i++) {
       this.dispatcherService.submit(new DispatcherThread(i));
     }
-
   }
 
   @Override

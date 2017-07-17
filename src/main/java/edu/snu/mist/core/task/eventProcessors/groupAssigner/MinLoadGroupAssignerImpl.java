@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.eventProcessors.loadBalancer;
+package edu.snu.mist.core.task.eventProcessors.groupAssigner;
 
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.GroupAllocationTable;
@@ -25,11 +25,11 @@ import javax.inject.Inject;
 import java.util.Collection;
 
 /**
- * A load balancer that assigns a new group to the event processor that has the minimum load.
+ * A group assigner that assigns a new group to the event processor that has the minimum load.
  * This caches the event processor that is picked latest and assigns new groups
  * when they are created within the grace period.
  */
-public final class MinLoadGroupBalancerImpl implements GroupBalancer {
+public final class MinLoadGroupAssignerImpl implements GroupAssigner {
 
   /**
    * The event processor that has the minimum load.
@@ -52,7 +52,7 @@ public final class MinLoadGroupBalancerImpl implements GroupBalancer {
   private final GroupAllocationTable groupAllocationTable;
 
   @Inject
-  private MinLoadGroupBalancerImpl(@Parameter(GroupBalancerGracePeriod.class) final long gracePeriod,
+  private MinLoadGroupAssignerImpl(@Parameter(GroupBalancerGracePeriod.class) final long gracePeriod,
                                    final GroupAllocationTable groupAllocationTable) {
     this.gracePeriod = gracePeriod;
     this.groupAllocationTable = groupAllocationTable;

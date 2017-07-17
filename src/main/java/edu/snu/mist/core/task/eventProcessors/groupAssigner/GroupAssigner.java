@@ -13,12 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.eventProcessors.parameters;
+package edu.snu.mist.core.task.eventProcessors.groupAssigner;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
-@NamedParameter(doc = "The period of the group rebalancing (ms)",
-    short_name = "rp", default_value = "30000")
-public final class GroupRebalancingPeriod implements Name<Long> {
+/**
+ * It assigns a group to an event processor.
+ */
+@DefaultImplementation(RoundRobinGroupAssignerImpl.class)
+public interface GroupAssigner {
+
+  /**
+   * Assign a group to an event processor.
+   * @param newGroup new group
+   */
+  void assignGroup(GlobalSchedGroupInfo newGroup);
+
+  /**
+   * This should be called once when the groupAllocationTable is initialized.
+   */
+  void initialize();
 }

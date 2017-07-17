@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
-import edu.snu.mist.core.task.eventProcessors.loadBalancer.GroupBalancer;
+import edu.snu.mist.core.task.eventProcessors.groupAssigner.GroupAssigner;
 import edu.snu.mist.core.task.eventProcessors.parameters.*;
 import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupRebalancer;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
@@ -84,9 +84,9 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
   private final GroupAllocationTableModifier groupAllocationTableModifier;
 
   /**
-   * Group balancer that assigns a group to an event processor.
+   * Group assigner that assigns a group to an event processor.
    */
-  private final GroupBalancer groupBalancer;
+  private final GroupAssigner groupAssigner;
 
   /**
    * Group rebalancer that reassigns groups from an event processor to other event processors.
@@ -105,7 +105,7 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
                                        @Parameter(GracePeriod.class) final int gracePeriod,
                                        @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
                                        final GroupAllocationTable groupAllocationTable,
-                                       final GroupBalancer groupBalancer,
+                                       final GroupAssigner groupAssigner,
                                        final GroupRebalancer groupRebalancer,
                                        final GroupAllocationTableModifier groupAllocationTableModifier,
                                        final GroupDispatcher groupDispatcher,
@@ -113,7 +113,7 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
     this.eventProcessorLowerBound = eventProcessorLowerBound;
     this.eventProcessorUpperBound = eventProcessorUpperBound;
     this.groupDispatcher = groupDispatcher;
-    this.groupBalancer = groupBalancer;
+    this.groupAssigner = groupAssigner;
     this.groupRebalancer = groupRebalancer;
     this.groupAllocationTable = groupAllocationTable;
     this.groupAllocationTableModifier = groupAllocationTableModifier;
@@ -135,7 +135,7 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
       groupAllocationTable.put(eventProcessor, new ConcurrentLinkedQueue<>());
       eventProcessor.start();
     }
-    groupBalancer.initialize();
+    groupAssigner.initialize();
 
 
     // Create a rebalancer thread

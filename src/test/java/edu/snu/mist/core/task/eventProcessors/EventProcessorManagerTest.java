@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
-import edu.snu.mist.core.task.eventProcessors.loadBalancer.GroupBalancer;
+import edu.snu.mist.core.task.eventProcessors.groupAssigner.GroupAssigner;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorLowerBound;
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorUpperBound;
@@ -45,7 +45,7 @@ public class EventProcessorManagerTest {
   private static final int MAX_NUM_THREADS = 10;
   private static final int MIN_NUM_THREADS = 2;
   private GroupRebalancer groupRebalancer;
-  private TestGroupBalancer groupBalancer;
+  private TestGroupAssigner groupBalancer;
   private GroupAllocationTableModifier groupAllocationTableModifier;
 
   @Before
@@ -57,10 +57,10 @@ public class EventProcessorManagerTest {
     jcb.bindNamedParameter(GracePeriod.class, Integer.toString(0));
     jcb.bindImplementation(EventProcessorFactory.class, TestEventProcessorFactory.class);
     groupRebalancer = mock(GroupRebalancer.class);
-    groupBalancer = new TestGroupBalancer();
+    groupBalancer = new TestGroupAssigner();
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     injector.bindVolatileInstance(GroupRebalancer.class, groupRebalancer);
-    injector.bindVolatileInstance(GroupBalancer.class, groupBalancer);
+    injector.bindVolatileInstance(GroupAssigner.class, groupBalancer);
     eventProcessorManager = injector.getInstance(DefaultEventProcessorManager.class);
     groupAllocationTableModifier = injector.getInstance(GroupAllocationTableModifier.class);
   }
@@ -195,11 +195,11 @@ public class EventProcessorManagerTest {
     }
   }
 
-  final class TestGroupBalancer implements GroupBalancer {
+  final class TestGroupAssigner implements GroupAssigner {
 
     private final BlockingQueue<GlobalSchedGroupInfo> groups;
 
-    public TestGroupBalancer() {
+    public TestGroupAssigner() {
       this.groups = new LinkedBlockingQueue<>();
     }
 

@@ -18,7 +18,6 @@ package edu.snu.mist.core.task.eventProcessors.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The period of the group rebalancing (ms)",
-    short_name = "rp", default_value = "30000")
-public final class GroupRebalancingPeriod implements Name<Long> {
+@NamedParameter(doc = "The type of group assigner (min/rr)", short_name = "ga", default_value = "min")
+public final class GroupAssignerType implements Name<String> {
 }
