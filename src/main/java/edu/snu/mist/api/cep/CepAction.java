@@ -15,14 +15,13 @@
  */
 package edu.snu.mist.api.cep;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * An immutable action which does something (or nothing) to its sink.
  */
-public final class CepAction implements Serializable {
+public final class CepAction {
 
   private final CepActionType actionType;
   private final CepSink cepSink;
@@ -40,7 +39,7 @@ public final class CepAction implements Serializable {
    * @return A pre-define action which does nothing!
    */
   public static CepAction doNothingAction() {
-      List<Object> list = new ArrayList<>();
+      final List<Object> list = new ArrayList<>();
       list.add("dummy");
       return new CepAction(CepActionType.DO_NOTHING, null, list);
   }

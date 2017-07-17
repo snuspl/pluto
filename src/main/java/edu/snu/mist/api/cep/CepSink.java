@@ -27,6 +27,7 @@ public final class CepSink implements Serializable {
   private final CepSinkType cepSinkType;
   private final Map<String, Object> sinkConfigs;
   private final String separator;
+  private static final String DEFUALT_SEPARATOR = ",";
 
   /**
    * Creates an immutable sink called from ActionBuilder.
@@ -37,11 +38,11 @@ public final class CepSink implements Serializable {
   private CepSink(final CepSinkType cepSinkType, final Map<String, Object> sinkConfigs, final String separator) {
     this.cepSinkType = cepSinkType;
     this.sinkConfigs = sinkConfigs;
-    if(separator == null) {
-      this.separator = ",";
-    } else {
-      this.separator = separator;
-    }
+    this.separator = separator;
+  }
+
+  private CepSink(final CepSinkType cepSinkType, final Map<String, Object> sinkConfigs) {
+      this(cepSinkType, sinkConfigs, DEFUALT_SEPARATOR);
   }
 
   /**
@@ -88,9 +89,11 @@ public final class CepSink implements Serializable {
     private CepSinkType cepSinkType;
     private Map<String, Object> actionConfigurations;
     private String separator;
+    private static final String DEFAULT_SEPARATOR = ",";
 
     private InnerBuilder() {
       this.actionConfigurations = new HashMap<>();
+      this.separator = DEFAULT_SEPARATOR;
     }
 
     /**

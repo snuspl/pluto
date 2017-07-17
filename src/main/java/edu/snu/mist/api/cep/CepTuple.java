@@ -17,16 +17,14 @@ package edu.snu.mist.api.cep;
 
 import edu.snu.mist.common.types.*;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
-
-import static edu.snu.mist.api.cep.CepValueType.*;
+import java.util.Map;
 
 /**
  * Class for using Tuple in Cep.
  */
-public final class CepTuple implements Serializable{
+public final class CepTuple {
 
     /**
      * Translate input String into HashMap.
@@ -35,7 +33,7 @@ public final class CepTuple implements Serializable{
      * @param separator cep input separator
      * @return hash map of field name and its value
      */
-    public static HashMap<String, Tuple2<Object, CepValueType>> stringToMap(
+    public static Map<String, Object> stringToMap(
             final String input,
             final List<Tuple2<String, CepValueType>> fields,
             final String separator) {
@@ -46,7 +44,7 @@ public final class CepTuple implements Serializable{
             throw new IllegalStateException("Cannot match input string to tuple since the size is different!");
         }
 
-        final HashMap<String, Tuple2<Object, CepValueType>> result = new HashMap<>();
+        final Map<String, Object> result = new HashMap<>();
 
         Object value;
 
@@ -69,7 +67,7 @@ public final class CepTuple implements Serializable{
                 default:
                     throw new IllegalStateException("Fields value type is wrong!");
             }
-            result.put((String)tuple.get(0), new Tuple2(value, tuple.get(1)));
+            result.put((String)tuple.get(0), value);
         }
 
         return result;

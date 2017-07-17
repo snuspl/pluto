@@ -24,15 +24,13 @@ import edu.snu.mist.api.cep.conditions.UnionCondition;
 import edu.snu.mist.api.datastreams.ContinuousStream;
 import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
+import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.types.Tuple2;
 //import edu.snu.mist.common.graph.DAG;
 //import edu.snu.mist.common.graph.MISTEdge;
 //import org.apache.reef.io.Tuple;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * Class for translate cep into datastream.
@@ -45,11 +43,11 @@ public final class CepTranslator {
      * @return translated Mist datastream query
      */
     public static MISTQuery cepStatelessTranslator(final MISTCepStatelessQuery query) {
-        CepInput cepInput = query.getCepInput();
-        List<CepStatelessRule> cepStatelessRules = query.getCepStatelessRules();
+        final CepInput cepInput = query.getCepInput();
+        final List<CepStatelessRule> cepStatelessRules = query.getCepStatelessRules();
 
-        MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group");
-        ContinuousStream<HashMap<String, Tuple2<Object, CepValueType>>> inputMapStream =
+        final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(query.getGroupId());
+        final ContinuousStream<Map<String, Object>> inputMapStream =
                 cepInputTranslator(queryBuilder, cepInput);
         cepStatelessRulesTranslator(inputMapStream, cepStatelessRules);
         return queryBuilder.build();
@@ -61,18 +59,22 @@ public final class CepTranslator {
      * @param cepInput cep input stream
      * @return input stream into Map of fields
      */
-    private static ContinuousStream<HashMap<String, Tuple2<Object, CepValueType>>> cepInputTranslator(
+    private static ContinuousStream<Map<String, Object>> cepInputTranslator(
             final MISTQueryBuilder queryBuilder, final CepInput cepInput) {
         if (cepInput.getInputType() == CepInputType.TEXT_SOCKET_SOURCE) {
-            String sourceHostname = cepInput.getSourceConfiguration().get("SOCKET_INPUT_ADDRESS").toString();
+            final String sourceHostname = cepInput.getSourceConfiguration().get("SOCKET_INPUT_ADDRESS").toString();
             int sourcePort = (int) cepInput.getSourceConfiguration().get("SOCKET_INPUT_PORT");
-            SourceConfiguration sourceConf =
+            final SourceConfiguration sourceConf =
                     new TextSocketSourceConfiguration().newBuilder()
                             .setHostAddress(sourceHostname)
                             .setHostPort(sourcePort)
                             .build();
+            final List<Tuple2<String, CepValueType>> fields = cepInput.getFields();
+            final String separator = cepInput.getSeparator();
+            final MISTFunction<String, Map<String, Object>> mapFunction =
+                    s -> CepTuple.stringToMap(s, fields, separator);
             return queryBuilder.socketTextStream(sourceConf)
-                    .map(s -> CepTuple.stringToMap(s, cepInput.getFields(), cepInput.getSeparator()));
+                    .map(mapFunction);
         } else {
             throw new IllegalStateException("No other source is ready yet!");
         }
@@ -80,78 +82,72 @@ public final class CepTranslator {
 
     /**
      * For Socket Text Sink, convert parameters into string with separator.
-     * @param input Input hashmap
+     * For example, if the list of parameters is ["Hello", "MIST"]
+     * and the seperator is ",", then the return value is "Hello, Mist"
+     * @param input Input map
      * @param param List of parameters
      * @param separator Parameter separator for Sink string
      * @return String type of parameters
      */
-    private static String parameterToString(final HashMap<String, Tuple2<Object, CepValueType>> input,
+    private static String parameterToString(final Map<String, Object> input,
                                             final List<Object> param, final String separator) {
-        String str = new String();
+        final StringBuilder strBuilder = new StringBuilder();
 
-        for(Object iter : param) {
-            str = str.concat(iter.toString()).concat(separator);
+        for(final Object iter : param) {
+            strBuilder.append(iter.toString());
+            strBuilder.append(separator);
         }
 
-        if(str==null) {
+        if(strBuilder.length() == 0) {
             throw new NullPointerException("No Parameters for cepSink!");
         }
 
-        str = str.substring(0, str.length()-separator.length());
+        strBuilder.delete(strBuilder.length()-separator.length(), strBuilder.length());
 
-        Iterator<String> iter = input.keySet().iterator();
+        final Iterator<String> iter = input.keySet().iterator();
+        String resultStr = strBuilder.toString();
         while(iter.hasNext()) {
-            String field = iter.next();
-            if(str.matches(".*"+"[$]"+field+".*")) {
-                str = str.replaceAll("[$]"+field, input.get(field).get(0).toString());
+            final String field = iter.next();
+            if(resultStr.matches(".*"+"[$]"+field+".*")) {
+                resultStr = resultStr.replaceAll("[$]"+field, input.get(field).toString());
             }
         }
-
-        return str;
+        return resultStr;
     }
 
     /**
      * Check type of compared object and return the int for comparison condition.
-     * @param tuple input stream data
-     * @param obj compared object
+     * @param eventObj input stream object
+     * @param queryObj query object(compared object)
      * @return the result of compare method of each type
      */
-    private static int cepCompare(final Tuple2<Object, CepValueType> tuple, final Object obj) {
-        System.out.println(obj.getClass().toString());
-        switch((CepValueType)tuple.get(1)){
-            case DOUBLE:
-                if(obj instanceof Double) {
-                    return Double.compare((double)tuple.get(0), (double)obj);
-                }
-                break;
-            case INTEGER:
-                if(obj instanceof Integer) {
-                    return Integer.compare((int)tuple.get(0), (int)obj);
-                }
-                break;
-            case LONG:
-                if(obj instanceof Long) {
-                    return Long.compare((Long)tuple.get(0), (Long)obj);
-                }
-                break;
-            case STRING:
-                if(obj instanceof String) {
-                    return ((String)tuple.get(0)).compareTo((String)obj);
-                }
-                break;
-            default:
+    private static int cepCompare(final Object eventObj, final Object queryObj) {
+        if(!(eventObj.getClass().equals(queryObj.getClass()))) {
+            throw new IllegalArgumentException(
+                    "Event object (" + eventObj.getClass().toString()+") and query object types (" +
+                            queryObj.getClass().toString()+ ") are different!");
         }
-        throw new IllegalArgumentException("The wrong type of condition object!");
+        if(queryObj instanceof Double) {
+            return Double.compare((double)eventObj, (double)queryObj);
+        } else if(queryObj instanceof Integer) {
+           return Integer.compare((int)eventObj, (int)queryObj);
+        } else if(queryObj instanceof Long){
+            return Long.compare((Long)eventObj, (Long)queryObj);
+        } else if(queryObj instanceof String) {
+            return ((String)eventObj).compareTo((String)queryObj);
+        } else{
+            throw new IllegalArgumentException("The wrong type of condition object!");
+        }
     }
 
     /**
      * Make ContinuousStream with cepCondition.
      * @param input input ContinuousStream
      * @param condition input condition
-     * @return ContinuousStream with added vertex of condiiton
+     * @return ContinuousStream with added vertex of condition
      */
-    private static ContinuousStream<HashMap<String, Tuple2<Object, CepValueType>>> cepConditionTranslator(
-            final ContinuousStream<HashMap<String, Tuple2<Object, CepValueType>>> input,
+    private static ContinuousStream<Map<String, Object>> cepConditionTranslator(
+            final ContinuousStream<Map<String, Object>> input,
             final AbstractCondition condition) {
         if(condition instanceof ComparisonCondition) {
             return cepCCTranslator(input, (ComparisonCondition)condition);
@@ -168,8 +164,8 @@ public final class CepTranslator {
      * @param condition input Comparision Condition
      * @return ContinuousStream with added vertex of Comparison Condition
      */
-    private static ContinuousStream<HashMap<String, Tuple2<Object, CepValueType>>> cepCCTranslator(
-            final ContinuousStream<HashMap<String, Tuple2<Object, CepValueType>>> input,
+    private static ContinuousStream<Map<String, Object>> cepCCTranslator(
+            final ContinuousStream<Map<String, Object>> input,
             final ComparisonCondition condition) {
 
         String field = condition.getFieldName();
@@ -180,7 +176,7 @@ public final class CepTranslator {
             case GT:
                 return input.filter(s -> cepCompare(s.get(field), value) > 0);
             case EQ:
-                return input.filter(s -> s.get(field).get(0).equals(value));
+                return input.filter(s -> s.get(field).equals(value));
             default:
                 throw new IllegalStateException("Wrong comparison condition type!");
         }
@@ -192,26 +188,26 @@ public final class CepTranslator {
      * @param condition Union Condition
      * @return ContinuousStream with added vertex of Union Condition
      */
-    private static ContinuousStream<HashMap<String, Tuple2<Object, CepValueType>>> cepUCTranslator(
-            final ContinuousStream<HashMap<String, Tuple2<Object, CepValueType>>> input,
+    private static ContinuousStream<Map<String, Object>> cepUCTranslator(
+            final ContinuousStream<Map<String, Object>> input,
             final UnionCondition condition) {
         //AND Union Condition
         if(condition.getConditionType().equals(ConditionType.AND)) {
-            ContinuousStream<HashMap<String, Tuple2<Object, CepValueType>>> iterInput = input;
+            ContinuousStream<Map<String, Object>> iterInput = input;
             for(AbstractCondition iterCond : condition.getConditions()) {
                 iterInput = cepConditionTranslator(iterInput, iterCond);
             }
             return iterInput;
         } else if(condition.getConditionType().equals(ConditionType.OR)) {
             int unionSize = condition.getConditions().size();
-            ContinuousStream<HashMap<String, Tuple2<Object, CepValueType>>> result = input;
-            List<ContinuousStream<HashMap<String, Tuple2<Object, CepValueType>>>> unionInputList =
+            ContinuousStream<Map<String, Object>> result = input;
+            List<ContinuousStream<Map<String, Object>>> unionInputList =
                     new ArrayList<>();
             for(AbstractCondition iterCond : condition.getConditions()) {
                 unionInputList.add(cepConditionTranslator(result, iterCond));
             }
             result = unionInputList.get(0);
-            for(int i=1; i<unionSize; i++) {
+            for(int i = 1; i < unionSize; i++) {
                 result = result.union(unionInputList.get(i));
             }
             return result;
@@ -226,9 +222,9 @@ public final class CepTranslator {
      * @param cepStatelessRules list of statelessRules.
      * @return output stream data
      */
-    private static ContinuousStream<HashMap<String, Tuple2<Object, CepValueType>>>
+    private static ContinuousStream<Map<String, Object>>
         cepStatelessRulesTranslator(
-            final ContinuousStream<HashMap<String, Tuple2<Object, CepValueType>>> inputMap,
+            final ContinuousStream<Map<String, Object>> inputMap,
                       final List<CepStatelessRule> cepStatelessRules) {
 
         int ruleNum = cepStatelessRules.size();
@@ -237,7 +233,7 @@ public final class CepTranslator {
             CepStatelessRule rule = cepStatelessRules.get(i);
             CepAction action = rule.getAction();
             CepSink sink = action.getCepSink();
-            ContinuousStream<HashMap<String, Tuple2<Object, CepValueType>>> temp = inputMap;
+            ContinuousStream<Map<String, Object>> temp = inputMap;
             if(action.getCepActionType() == CepActionType.TEXT_WRITE) {
                 temp = cepConditionTranslator(temp, rule.getCondition());
             } else { //else DO_NOTHING
@@ -245,7 +241,9 @@ public final class CepTranslator {
             }
 
             if(sink.getCepSinkType() == CepSinkType.TEXT_SOCKET_OUTPUT) {
-                temp.map(s -> parameterToString(s, action.getParams(), sink.getSeparator()))
+                final List<Object> params = action.getParams();
+                final String separator = sink.getSeparator();
+                temp.map(s -> parameterToString(s, params, separator))
                     .textSocketOutput((String)sink.getSinkConfigs().get("SOCKET_SINK_ADDRESS"),
                             (int)sink.getSinkConfigs().get("SOCKET_SINK_PORT"));
             } else {

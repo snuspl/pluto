@@ -91,7 +91,7 @@ public class MISTCepQuerySubmissionTest {
    */
   @Test
   public void testStatelessCepQuery() {
-    final MISTCepStatelessQuery exampleQuery = new MISTCepStatelessQuery.Builder()
+    final MISTCepStatelessQuery exampleQuery = new MISTCepStatelessQuery.Builder("test-group")
         .input(exampleCepInput)
         .addStatelessRule(new CepStatelessRule.Builder()
             .setCondition(ComparisonCondition.gt("Temperature", 25))

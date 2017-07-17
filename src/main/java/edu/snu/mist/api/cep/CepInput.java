@@ -17,18 +17,18 @@ package edu.snu.mist.api.cep;
 
 import edu.snu.mist.common.types.*;
 
-import java.io.Serializable;
 import java.util.*;
 
 /**
  * Default implementation class for CepInput.
  */
-public final class CepInput implements Serializable{
+public final class CepInput {
 
   private final CepInputType cepInputType;
   private final Map<String, Object> cepInputConfiguration;
   private final List<Tuple2<String, CepValueType>> fields;
   private final String separator;
+  private static final String DEFAULT_SEPARATOR = ",";
 
   /**
    * Makes an immutable CepInput from InnerBuilder. Should not be exposed to public.
@@ -57,10 +57,8 @@ public final class CepInput implements Serializable{
   private CepInput(final CepInputType cepInputTypeParam,
                    final Map<String, Object> cepInputConfigurationParam,
                    final List<Tuple2<String, CepValueType>> fieldsParam){
-    this.cepInputType = cepInputTypeParam;
-    this.cepInputConfiguration = cepInputConfigurationParam;
-    this.fields = fieldsParam;
-    this.separator = ",";
+      this(cepInputTypeParam, cepInputConfigurationParam, fieldsParam, DEFAULT_SEPARATOR);
+
   }
 
   /**
@@ -84,6 +82,9 @@ public final class CepInput implements Serializable{
     return fields;
   }
 
+  /**
+   * @return separator of this input
+   */
   public String getSeparator(){
       return separator;
   }
@@ -117,11 +118,13 @@ public final class CepInput implements Serializable{
     private String separator;
     private final Set<String> propertyNames;
 
+    private static final String DEFUALT_SEPARATOR = ",";
+
     private InnerBuilder() {
       this.cepInputType = null;
       this.cepInputConfiguration = new HashMap<>();
       this.fields = new ArrayList<>();
-      this.separator = ",";
+      this.separator = DEFUALT_SEPARATOR;
       this.propertyNames = new HashSet<>();
     }
 
@@ -141,7 +144,7 @@ public final class CepInput implements Serializable{
       /**
        * Set separator information (, : blank ...).
        * @param separatorParam
-       * @return
+       * @return cep input builder
        */
     private InnerBuilder setSeparator(final String separatorParam) {
         this.separator = separatorParam;
@@ -237,7 +240,6 @@ public final class CepInput implements Serializable{
       builder.addField(fieldName, valueType);
       return this;
     }
-
 
     /**
      * @return a new CepInput

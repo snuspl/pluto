@@ -84,7 +84,7 @@ public final class CepWeatherInfo {
         /**
          * Make a cepQuery.
          */
-        final MISTCepStatelessQuery cepQuery = new MISTCepStatelessQuery.Builder()
+        final MISTCepStatelessQuery cepQuery = new MISTCepStatelessQuery.Builder("example-group")
                 .input(cepInput)
                 .addStatelessRule(new CepStatelessRule.Builder()
                         .setCondition(
