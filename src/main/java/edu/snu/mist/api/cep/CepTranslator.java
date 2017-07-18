@@ -24,11 +24,7 @@ import edu.snu.mist.api.cep.conditions.UnionCondition;
 import edu.snu.mist.api.datastreams.ContinuousStream;
 import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
-import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.types.Tuple2;
-//import edu.snu.mist.common.graph.DAG;
-//import edu.snu.mist.common.graph.MISTEdge;
-//import org.apache.reef.io.Tuple;
 
 import java.util.*;
 
@@ -60,22 +56,21 @@ public final class CepTranslator {
      */
     private static ContinuousStream<Map<String, Object>> cepInputTranslator(
             final MISTQueryBuilder queryBuilder, final CepInput cepInput) {
-        if (cepInput.getInputType() == CepInputType.TEXT_SOCKET_SOURCE) {
-            final String sourceHostname = cepInput.getSourceConfiguration().get("SOCKET_INPUT_ADDRESS").toString();
-            int sourcePort = (int) cepInput.getSourceConfiguration().get("SOCKET_INPUT_PORT");
-            final SourceConfiguration sourceConf =
-                    new TextSocketSourceConfiguration().newBuilder()
-                            .setHostAddress(sourceHostname)
-                            .setHostPort(sourcePort)
-                            .build();
-            final List<Tuple2<String, CepValueType>> fields = cepInput.getFields();
-            final String separator = cepInput.getSeparator();
-            final MISTFunction<String, Map<String, Object>> mapFunction =
-                    s -> CepTuple.stringToMap(s, fields, separator);
-            return queryBuilder.socketTextStream(sourceConf)
-                    .map(mapFunction);
-        } else {
-            throw new IllegalStateException("No other source is ready yet!");
+        switch(cepInput.getInputType()){
+            case TEXT_SOCKET_SOURCE:
+                final String sourceHostname = cepInput.getSourceConfiguration().get("SOCKET_INPUT_ADDRESS").toString();
+                final int sourcePort = (int) cepInput.getSourceConfiguration().get("SOCKET_INPUT_PORT");
+                final SourceConfiguration sourceConf =
+                        new TextSocketSourceConfiguration().newBuilder()
+                                .setHostAddress(sourceHostname)
+                                .setHostPort(sourcePort)
+                                .build();
+                final List<Tuple2<String, CepValueType>> fields = cepInput.getFields();
+                final String separator = cepInput.getSeparator();
+                return queryBuilder.socketTextStream(sourceConf)
+                        .map(new CepStringToMap(fields, separator));
+            default:
+                throw new IllegalStateException("No other source is ready yet!");
         }
     }
 
@@ -190,30 +185,33 @@ public final class CepTranslator {
         cepStatelessRulesTranslator(
             final ContinuousStream<Map<String, Object>> inputMap,
                       final List<CepStatelessRule> cepStatelessRules) {
+        final int ruleNum = cepStatelessRules.size();
 
-        int ruleNum = cepStatelessRules.size();
         //connect cepInput to cepRules
-        for(int i=0; i<ruleNum; i++){
-            CepStatelessRule rule = cepStatelessRules.get(i);
-            CepAction action = rule.getAction();
-            CepSink sink = action.getCepSink();
+        for(int i = 0; i < ruleNum; i++){
+            final CepStatelessRule rule = cepStatelessRules.get(i);
+            final CepAction action = rule.getAction();
+            final CepSink sink = action.getCepSink();
             ContinuousStream<Map<String, Object>> temp = inputMap;
-            if(action.getCepActionType() == CepActionType.TEXT_WRITE) {
-                temp = cepConditionTranslator(temp, rule.getCondition());
-            } else { //else DO_NOTHING
-                continue;
+
+            switch(action.getCepActionType()){
+                case TEXT_WRITE:
+                    temp = cepConditionTranslator(temp, rule.getCondition());
+                    break;
+                default:
+                    continue;
             }
 
-            if(sink.getCepSinkType() == CepSinkType.TEXT_SOCKET_OUTPUT) {
-                final List<Object> params = action.getParams();
-                final String separator = sink.getSeparator();
-                final MISTFunction<Map<String, Object>, String> mapFunction =
-                        s -> CepTuple.mapToString(s, params, separator);
-                temp.map(mapFunction)
-                    .textSocketOutput((String)sink.getSinkConfigs().get("SOCKET_SINK_ADDRESS"),
-                            (int)sink.getSinkConfigs().get("SOCKET_SINK_PORT"));
-            } else {
-                throw new IllegalStateException("Only TEXT_SOCKET_OUTPUT is supported now!");
+            switch(sink.getCepSinkType()){
+                case TEXT_SOCKET_OUTPUT:
+                    final List<Object> params = action.getParams();
+                    final String separator = sink.getSeparator();
+                    temp.map(new CepMapToString(params, separator))
+                            .textSocketOutput((String)sink.getSinkConfigs().get("SOCKET_SINK_ADDRESS"),
+                                    (int)sink.getSinkConfigs().get("SOCKET_SINK_PORT"));
+                    break;
+                default:
+                    throw new IllegalStateException("Only TEXT_SOCKET_OUTPUT is supported now!");
             }
         }
 

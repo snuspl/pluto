@@ -15,14 +15,13 @@
  */
 package edu.snu.mist.api.cep;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * An immutable sink. It corresponds to Sink in MIST stream query.
  */
-public final class CepSink implements Serializable {
+public final class CepSink {
 
   private final CepSinkType cepSinkType;
   private final Map<String, Object> sinkConfigs;
