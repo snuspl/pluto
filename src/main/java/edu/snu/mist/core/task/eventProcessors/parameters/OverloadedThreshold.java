@@ -13,25 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.eventProcessors.groupAssigner;
+package edu.snu.mist.core.task.eventProcessors.parameters;
 
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
-import org.apache.reef.tang.annotations.DefaultImplementation;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-/**
- * It assigns a group to an event processor.
- */
-@DefaultImplementation(MinLoadGroupAssignerImpl.class)
-public interface GroupAssigner {
-
-  /**
-   * Assign a group to an event processor.
-   * @param newGroup new group
-   */
-  void assignGroup(GlobalSchedGroupInfo newGroup);
-
-  /**
-   * This should be called once when the groupAllocationTable is initialized.
-   */
-  void initialize();
+@NamedParameter(doc = "The threshold of utilization factor to determine overloaded threads (beta)",
+    short_name = "beta", default_value = "0.95")
+public final class OverloadedThreshold implements Name<Double> {
 }

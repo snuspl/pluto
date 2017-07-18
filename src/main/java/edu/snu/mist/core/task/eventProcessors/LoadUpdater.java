@@ -13,25 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.eventProcessors.groupAssigner;
+package edu.snu.mist.core.task.eventProcessors;
 
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * It assigns a group to an event processor.
+ * Load updater for updating loads of groups and event processors.
  */
-@DefaultImplementation(MinLoadGroupAssignerImpl.class)
-public interface GroupAssigner {
+@DefaultImplementation(UtilizationLoadUpdater.class)
+public interface LoadUpdater {
 
   /**
-   * Assign a group to an event processor.
-   * @param newGroup new group
+   * Update loads.
    */
-  void assignGroup(GlobalSchedGroupInfo newGroup);
-
-  /**
-   * This should be called once when the groupAllocationTable is initialized.
-   */
-  void initialize();
+  void update();
 }

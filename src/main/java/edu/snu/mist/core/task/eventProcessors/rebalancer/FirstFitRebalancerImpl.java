@@ -74,7 +74,7 @@ public final class FirstFitRebalancerImpl implements GroupRebalancer {
     final Map<EventProcessor, Double> loadTable = new HashMap<>();
     double totalLoad = 0.0;
     for (final EventProcessor eventProcessor : eventProcessors) {
-      final double load = calculateLoadOfGroups(groupAllocationTable.getValue(eventProcessor));
+      final double load = eventProcessor.getLoad();
       totalLoad += load;
       eventProcessor.setLoad(load);
       loadTable.put(eventProcessor, load);
@@ -202,20 +202,5 @@ public final class FirstFitRebalancerImpl implements GroupRebalancer {
     }
 
     return new Tuple<>(bins, items);
-  }
-
-  /**
-   * Calculate the load of groups.
-   * @param groups groups
-   * @return total load
-   */
-  private double calculateLoadOfGroups(final Collection<GlobalSchedGroupInfo> groups) {
-    double sum = 0;
-    for (final GlobalSchedGroupInfo group : groups) {
-      final double fixedLoad = group.getLoad();
-      group.setLoad(fixedLoad);
-      sum += fixedLoad;
-    }
-    return sum;
   }
 }

@@ -28,7 +28,7 @@ import edu.snu.mist.core.task.eventProcessors.parameters.DispatcherThreadNum;
 import edu.snu.mist.core.task.eventProcessors.parameters.GroupAssignerType;
 import edu.snu.mist.core.task.eventProcessors.parameters.GroupRebalancingPeriod;
 import edu.snu.mist.core.task.eventProcessors.parameters.Rebalancing;
-import edu.snu.mist.core.task.eventProcessors.rebalancer.FirstFitRebalancerImpl;
+import edu.snu.mist.core.task.eventProcessors.rebalancer.DefaultGroupRebalancerImpl;
 import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupRebalancer;
 import edu.snu.mist.core.task.eventProcessors.rebalancer.NoGroupRebalancerImpl;
 import edu.snu.mist.core.task.globalsched.*;
@@ -174,7 +174,7 @@ public final class MistGroupSchedulingTaskConfigs {
     }
 
     if (rebalancing) {
-      jcb.bindImplementation(GroupRebalancer.class, FirstFitRebalancerImpl.class);
+      jcb.bindImplementation(GroupRebalancer.class, DefaultGroupRebalancerImpl.class);
     } else {
       jcb.bindImplementation(GroupRebalancer.class, NoGroupRebalancerImpl.class);
     }
