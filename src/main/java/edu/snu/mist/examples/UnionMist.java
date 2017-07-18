@@ -100,6 +100,6 @@ public final class UnionMist {
     System.out.println("Query submission result: " + result.getQueryId());
   }
 
-  private UnionMist(){
+  private UnionMist() {
   }
 }

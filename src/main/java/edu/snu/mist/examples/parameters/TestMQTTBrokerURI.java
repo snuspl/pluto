@@ -22,6 +22,6 @@ import org.apache.reef.tang.annotations.NamedParameter;
 /**
  * Parameter for MQTT source socket configuration.
  */
-@NamedParameter(doc="MQTT broker URI for test", short_name = "bu", default_value = "tcp://127.0.0.1:1883")
+@NamedParameter(doc = "MQTT broker URI for test", short_name = "bu", default_value = "tcp://127.0.0.1:1883")
 public final class TestMQTTBrokerURI implements Name<String> {
 }

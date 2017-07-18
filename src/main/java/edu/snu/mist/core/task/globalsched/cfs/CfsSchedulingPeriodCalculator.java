@@ -79,6 +79,6 @@ public final class CfsSchedulingPeriodCalculator implements SchedulingPeriodCalc
           new Object[]{numGroups, totalWeight, groupWeight, adjustCfsSchedPeriod * (groupWeight / totalWeight)});
     }
 
-    return Math.max(minSchedPeriod, (long)(adjustCfsSchedPeriod * (groupWeight /totalWeight)));
+    return Math.max(minSchedPeriod, (long)(adjustCfsSchedPeriod * (groupWeight / totalWeight)));
   }
 }

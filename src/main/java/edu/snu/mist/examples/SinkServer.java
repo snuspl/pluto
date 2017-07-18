@@ -28,12 +28,12 @@ import java.net.Socket;
 public final class SinkServer implements Runnable {
   private final int port;
 
-  SinkServer(final int port){
+  SinkServer(final int port) {
     this.port = port;
   }
 
   @Override
-  public void run(){
+  public void run() {
     try {
       System.out.println("SinkServer running");
       final ServerSocket serverSocket = new ServerSocket(port);

@@ -89,10 +89,10 @@ public final class MqttSinkTest {
     // Create sinks
     final List<Sink<MqttMessage>> sinks = new LinkedList<>();
     for (int i = 0; i < numSinks; i++) {
-      final Sink<MqttMessage> publisher = new MqttSink(MqttUtils.BROKER_URI, topic+i, mqttSharedResource);
-      topicListMap.put(topic+i, new LinkedList<>());
+      final Sink<MqttMessage> publisher = new MqttSink(MqttUtils.BROKER_URI, topic + i, mqttSharedResource);
+      topicListMap.put(topic + i, new LinkedList<>());
       sinks.add(publisher);
-      subscriber.subscribe(topic+i);
+      subscriber.subscribe(topic + i);
     }
 
     outputStream.forEach((output) -> {

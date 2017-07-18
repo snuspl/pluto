@@ -69,6 +69,6 @@ public final class Mist {
   /**
    * Empty private constructor to prohibit instantiation of utility class.
    */
-  private Mist(){
+  private Mist() {
   }
 }

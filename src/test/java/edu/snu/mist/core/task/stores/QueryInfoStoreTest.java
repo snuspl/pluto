@@ -100,7 +100,7 @@ public class QueryInfoStoreTest {
     // Store the chained dag
     store.saveAvroOpChainDag(new Tuple<>(queryId1, avroOpChainDag1));
     store.saveAvroOpChainDag(new Tuple<>(queryId2, avroOpChainDag2));
-    while(!(store.isStored(queryId1) && store.isStored(queryId2))) {
+    while (!(store.isStored(queryId1) && store.isStored(queryId2))) {
       // Wait until the plan is stored
     }
     Assert.assertTrue(new File(tmpFolderPath, queryId1 + ".plan").exists());

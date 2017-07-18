@@ -58,7 +58,7 @@ public final class MISTQueryControl {
     return apiQueryControlResult;
   }
 
-  private static ClientToTaskMessage getProxy(final IPAddress taskAddress) throws IOException{
+  private static ClientToTaskMessage getProxy(final IPAddress taskAddress) throws IOException {
     ClientToTaskMessage proxyToTask = TASK_PROXY_MAP.get(taskAddress);
     if (proxyToTask == null) {
       final NettyTransceiver clientToTask = new NettyTransceiver(

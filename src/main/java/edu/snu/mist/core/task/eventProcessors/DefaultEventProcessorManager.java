@@ -189,7 +189,7 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
 
         final List<EventProcessor> eventProcessors = groupAllocationTable.getKeys();
         final List<EventProcessor> removedEventProcessors = new LinkedList<>();
-        final EventProcessor lastEventProcessor = eventProcessors.get(eventProcessors.size()-1);
+        final EventProcessor lastEventProcessor = eventProcessors.get(eventProcessors.size() - 1);
         for (int i = 0; i < decreaseNum; i++) {
           final EventProcessor ep = eventProcessors.get(i);
           final Collection<GlobalSchedGroupInfo> srcGroups = groupAllocationTable.getValue(ep);
