@@ -94,7 +94,15 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
    */
   private final AtomicLong totalProcessingEvent;
 
+  /**
+   * Group status.
+   */
   private final AtomicReference<GroupStatus> atomicStatus;
+
+  /**
+   * The latest rebalance time.
+   */
+  private long latestRebalanceTime;
 
   @Inject
   private DefaultGlobalSchedGroupInfo(@Parameter(GroupId.class) final String groupId,
@@ -115,6 +123,7 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
     this.totalProcessingTime = new AtomicLong(0);
     this.totalProcessingEvent = new AtomicLong(0);
     this.atomicStatus = new AtomicReference<>(GroupStatus.READY);
+    this.latestRebalanceTime = System.nanoTime();
   }
 
   /**
@@ -183,6 +192,16 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   @Override
   public void setLoad(final double load) {
     groupLoad = load;
+  }
+
+  @Override
+  public void setLatestRebalanceTime(final long rebalanceTime) {
+    latestRebalanceTime = rebalanceTime;
+  }
+
+  @Override
+  public long getLatestRebalanceTime() {
+    return latestRebalanceTime;
   }
 
   @Override

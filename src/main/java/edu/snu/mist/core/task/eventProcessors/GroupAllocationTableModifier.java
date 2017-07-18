@@ -68,16 +68,22 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
    */
   private final GroupRebalancer groupRebalancer;
 
+  /**
+   * Load updater.
+   */
+  private final LoadUpdater loadUpdater;
 
   @Inject
   private GroupAllocationTableModifier(final GroupAllocationTable groupAllocationTable,
                                        final GroupAssigner groupAssigner,
-                                       final GroupRebalancer groupRebalancer) {
+                                       final GroupRebalancer groupRebalancer,
+                                       final LoadUpdater loadUpdater) {
     this.groupAllocationTable = groupAllocationTable;
     this.groupAssigner = groupAssigner;
     this.groupRebalancer = groupRebalancer;
     this.writingEventQueue = new LinkedBlockingQueue<>();
     this.singleWriter = Executors.newSingleThreadExecutor();
+    this.loadUpdater = loadUpdater;
     // Create a writer thread
     singleWriter.submit(new SingleWriterThread());
   }
@@ -137,6 +143,7 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
               // TODO
               break;
             case REBALANCE:
+              loadUpdater.update();
               groupRebalancer.triggerRebalancing();
               break;
             default:

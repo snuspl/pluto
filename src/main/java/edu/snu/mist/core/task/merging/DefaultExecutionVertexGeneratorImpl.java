@@ -37,19 +37,16 @@ final class DefaultExecutionVertexGeneratorImpl implements ExecutionVertexGenera
   private static final Logger LOG = Logger.getLogger(DefaultExecutionVertexGeneratorImpl.class.getName());
 
   private final IdGenerator idGenerator;
-  private final ClassLoaderProvider classLoaderProvider;
   private final PhysicalObjectGenerator physicalObjectGenerator;
   private final AvroConfigurationSerializer avroConfigurationSerializer;
   private final OperatorChainFactory operatorChainFactory;
 
   @Inject
   private DefaultExecutionVertexGeneratorImpl(final IdGenerator idGenerator,
-                                              final ClassLoaderProvider classLoaderProvider,
                                               final AvroConfigurationSerializer avroConfigurationSerializer,
                                               final PhysicalObjectGenerator physicalObjectGenerator,
                                               final OperatorChainFactory operatorChainFactory) {
     this.idGenerator = idGenerator;
-    this.classLoaderProvider = classLoaderProvider;
     this.avroConfigurationSerializer = avroConfigurationSerializer;
     this.physicalObjectGenerator = physicalObjectGenerator;
     this.operatorChainFactory = operatorChainFactory;

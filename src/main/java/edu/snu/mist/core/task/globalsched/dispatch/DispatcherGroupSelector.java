@@ -32,11 +32,8 @@ public final class DispatcherGroupSelector implements NextGroupSelector {
   private static final Logger LOG = Logger.getLogger(DispatcherGroupSelector.class.getName());
 
   private final BlockingQueue<GlobalSchedGroupInfo> queue;
-  private final GroupAssigner groupAssigner;
 
-  DispatcherGroupSelector(final GroupAssigner groupAssigner) {
-    this.groupAssigner = groupAssigner;
-    groupAssigner.addGroupSelector(this);
+  DispatcherGroupSelector() {
     this.queue = new LinkedBlockingQueue<>();
   }
 
@@ -85,6 +82,6 @@ public final class DispatcherGroupSelector implements NextGroupSelector {
 
   @Override
   public void close() throws Exception {
-    groupAssigner.removeGroupSelector(this);
+    //groupAssigner.removeGroupSelector(this);
   }
 }

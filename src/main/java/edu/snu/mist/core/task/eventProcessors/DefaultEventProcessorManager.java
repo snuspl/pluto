@@ -127,6 +127,8 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
    * Create new dispatchers and add them to event processor set.
    */
   private void initialize(final long rebalancingPeriod) {
+    groupAssigner.initialize();
+
     // Create a rebalancer thread
     groupRebalancerService.scheduleAtFixedRate(() -> {
       // TODO[MIST-XX]: Increase and decrease the number of event processors

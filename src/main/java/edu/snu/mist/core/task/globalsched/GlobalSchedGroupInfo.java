@@ -85,6 +85,17 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
   void setLoad(double load);
 
   /**
+   * Set the rebalance time.
+   */
+  void setLatestRebalanceTime(long rebalanceTime);
+
+  /**
+   * Get the latest rebalance time.
+   * @return rebalance time
+   */
+  long getLatestRebalanceTime();
+
+  /**
    * Check whether the group has events to be processed.
    * @return true if it has events to be processed.
    */

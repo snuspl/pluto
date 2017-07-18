@@ -25,15 +25,12 @@ import javax.inject.Inject;
  */
 public final class DispatcherGroupSelectorFactory implements NextGroupSelectorFactory {
 
-  private final GroupAssigner groupAssigner;
-
   @Inject
-  private DispatcherGroupSelectorFactory(final GroupAssigner groupAssigner) {
-    this.groupAssigner = groupAssigner;
+  private DispatcherGroupSelectorFactory() {
   }
 
   @Override
   public NextGroupSelector newInstance() {
-    return new DispatcherGroupSelector(groupAssigner);
+    return new DispatcherGroupSelector();
   }
 }

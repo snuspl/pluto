@@ -21,7 +21,7 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
 /**
  * GroupRebalancer modifies the group allocation table.
  */
-@DefaultImplementation(NoGroupRebalancerImpl.class)
+@DefaultImplementation(DefaultGroupRebalancerImpl.class)
 public interface GroupRebalancer {
 
   /**
