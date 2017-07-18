@@ -60,16 +60,16 @@ public class MISTCepQuerySubmissionTest {
   @Test
   public void testCepInputBuilder() {
     Assert.assertEquals(CepInputType.TEXT_SOCKET_SOURCE, exampleCepInput.getInputType());
-    final Map<String, Object> expectedCepInputConf = new HashMap<String, Object>() {{
+    final Map<String, Object> expectedCepInputConf = new HashMap<String, Object>() { {
       put("SOCKET_INPUT_ADDRESS", cepInputAddress);
       put("SOCKET_INPUT_PORT", cepInputPort);
-    }};
+    } };
     Assert.assertEquals(expectedCepInputConf, exampleCepInput.getSourceConfiguration());
     final List<Tuple<String, CepValueType>> expectedCepInputFields
-        = new ArrayList<Tuple<String, CepValueType>>() {{
+        = new ArrayList<Tuple<String, CepValueType>>() { {
       add(new Tuple<>(firstFieldName, firstFieldType));
       add(new Tuple<>(secondFieldName, secondFieldType));
-    }};
+    } };
     Assert.assertEquals(expectedCepInputFields, exampleCepInput.getFields());
   }
 
@@ -79,10 +79,10 @@ public class MISTCepQuerySubmissionTest {
   @Test
   public void testCepSinkBuilder() {
     Assert.assertEquals(CepSinkType.TEXT_SOCKET_OUTPUT, exampleCepSink.getCepSinkType());
-    final Map<String, Object> expectedCepOutputConf = new HashMap<String, Object>() {{
+    final Map<String, Object> expectedCepOutputConf = new HashMap<String, Object>() { {
       put("SOCKET_SINK_ADDRESS", cepOutputAddress);
       put("SOCKET_SINK_PORT", cepOutputPort);
-    }};
+    } };
     Assert.assertEquals(expectedCepOutputConf, exampleCepSink.getSinkConfigs());
   }
 

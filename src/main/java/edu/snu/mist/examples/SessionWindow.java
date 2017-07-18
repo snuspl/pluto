@@ -100,6 +100,6 @@ public final class SessionWindow {
   /**
    * Must not be instantiated.
    */
-  private SessionWindow(){
+  private SessionWindow() {
   }
 }

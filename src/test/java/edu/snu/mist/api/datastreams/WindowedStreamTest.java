@@ -195,7 +195,7 @@ public class WindowedStreamTest {
     public String apply(final WindowData<Tuple2<String, Integer>> windowData) {
       String result = "";
       final Iterator<Tuple2<String, Integer>> itr = windowData.getDataCollection().iterator();
-      while(itr.hasNext()) {
+      while (itr.hasNext()) {
         final Tuple2<String, Integer> tuple = itr.next();
         result = result.concat("{" + tuple.get(0) + ", " + tuple.get(1).toString() + "}, ");
       }

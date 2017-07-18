@@ -34,7 +34,7 @@ public final class CacheStorageImpl implements CacheStorage {
   private final ConcurrentHashMap<Identifier, Map<Identifier, OperatorState>> queryStateMap;
 
   @Inject
-  CacheStorageImpl(){
+  CacheStorageImpl() {
     queryStateMap = new ConcurrentHashMap<>();
   }
 

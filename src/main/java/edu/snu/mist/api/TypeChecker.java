@@ -48,7 +48,7 @@ public final class TypeChecker {
       return false;
     }
 
-    for (int i=0; i<types1.length; i++) {
+    for (int i = 0; i < types1.length; i++) {
       if (!types1[i].equals(types2[i])) {
         return false;
       }

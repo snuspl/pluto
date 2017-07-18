@@ -67,7 +67,7 @@ public final class PhysicalObjectGeneratorTest {
    * Test if the physical object generator throws an InjectionException
    * when a wrong configuration is injected.
    */
-  @Test(expected=InjectionException.class)
+  @Test(expected = InjectionException.class)
   public void testInjectionExceptionOfDataGenerator() throws IOException, InjectionException {
     final Configuration conf = UnionOperatorConfiguration.CONF.build();
     generator.newDataGenerator(conf, classLoader);
@@ -148,7 +148,7 @@ public final class PhysicalObjectGeneratorTest {
     Assert.assertTrue(dataGenerator instanceof MQTTDataGenerator);
   }
 
-  @Test(expected=InjectionException.class)
+  @Test(expected = InjectionException.class)
   public void testInjectionExceptionOfEventGenerator() throws IOException, InjectionException {
     final Configuration conf = UnionOperatorConfiguration.CONF.build();
     generator.newEventGenerator(conf, classLoader);
@@ -195,7 +195,7 @@ public final class PhysicalObjectGeneratorTest {
    * Test if the physical object generator throws an InjectionException
    * when a wrong configuration is injected.
    */
-  @Test(expected=InjectionException.class)
+  @Test(expected = InjectionException.class)
   public void testInjectionExceptionOfOperator() throws IOException, InjectionException {
     final Configuration conf = TextSocketSourceConfiguration.newBuilder()
         .setHostAddress("localhost")
@@ -394,7 +394,7 @@ public final class PhysicalObjectGeneratorTest {
    * Test if the physical object generator throws an InjectionException
    * when a wrong configuration is injected.
    */
-  @Test(expected=InjectionException.class)
+  @Test(expected = InjectionException.class)
   public void testInjectionExceptionOfSink() throws IOException, InjectionException {
     final Configuration conf = TextSocketSourceConfiguration.newBuilder()
         .setHostAddress("localhost")

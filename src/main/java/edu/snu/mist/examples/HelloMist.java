@@ -86,6 +86,6 @@ public final class HelloMist {
   /**
    * Must not be instantiated.
    */
-  private HelloMist(){
+  private HelloMist() {
   }
 }

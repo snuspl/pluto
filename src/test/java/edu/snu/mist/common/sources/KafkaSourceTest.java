@@ -241,7 +241,7 @@ public final class KafkaSourceTest {
     /**
      * Stop the broker.
      */
-    void stop(){
+    void stop() {
       kafkaServer.shutdown();
       zkFactory.closeAll();
       zkFactory.shutdown();

@@ -116,7 +116,7 @@ public final class KafkaDataGenerator<K, V> implements DataGenerator<ConsumerRec
             @Override
             public void run() {
               try {
-                while(!closed.get()) {
+                while (!closed.get()) {
                   final ConsumerRecords<K, V> consumerRecords = consumer.poll(pollTimeout);
                   for (final ConsumerRecord<K, V> record : consumerRecords) {
                     eventGenerator.emitData(record);

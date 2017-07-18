@@ -412,7 +412,7 @@ public class DefaultGroupSourceManagerTest {
     private final List<String> sinkResult;
 
     @Inject
-    private TestSink(){
+    private TestSink() {
       sinkResult = new CopyOnWriteArrayList<>();
     }
 
@@ -432,7 +432,7 @@ public class DefaultGroupSourceManagerTest {
         runStage(input, LATCH2);
       } else if (LATCH3.getCount() > 0) {
         runStage(input, LATCH3);
-      } else if (LATCH4.getCount() > 0){
+      } else if (LATCH4.getCount() > 0) {
         runStage(input, LATCH4);
       } else {
         throw new RuntimeException("There should not be any more inputs in this test.");

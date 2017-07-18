@@ -119,7 +119,7 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
               storedQuerySet.add(queryId);
             }
           }
-        } catch(final Exception e){
+        } catch (final Exception e) {
           e.printStackTrace();
         }
       }

@@ -92,6 +92,6 @@ public final class WordCount {
     System.out.println("Query submission result: " + result.getQueryId());
   }
 
-  private WordCount(){
+  private WordCount() {
   }
 }

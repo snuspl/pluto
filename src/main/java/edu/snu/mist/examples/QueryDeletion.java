@@ -100,6 +100,6 @@ public final class QueryDeletion {
 
   }
 
-  private QueryDeletion(){
+  private QueryDeletion() {
   }
 }
