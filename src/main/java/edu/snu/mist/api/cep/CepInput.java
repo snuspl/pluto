@@ -56,9 +56,8 @@ public final class CepInput {
    */
   private CepInput(final CepInputType cepInputTypeParam,
                    final Map<String, Object> cepInputConfigurationParam,
-                   final List<Tuple2<String, CepValueType>> fieldsParam){
+                   final List<Tuple2<String, CepValueType>> fieldsParam) {
       this(cepInputTypeParam, cepInputConfigurationParam, fieldsParam, DEFAULT_SEPARATOR);
-
   }
 
   /**
@@ -85,7 +84,7 @@ public final class CepInput {
   /**
    * @return separator of this input
    */
-  public String getSeparator(){
+  public String getSeparator() {
       return separator;
   }
 
@@ -104,7 +103,7 @@ public final class CepInput {
   @Override
   public int hashCode() {
     return cepInputType.hashCode() * 1000 + cepInputConfiguration.hashCode() * 100
-            + fields.hashCode()*10+separator.hashCode();
+            + fields.hashCode() * 10 + separator.hashCode();
   }
 
   /**
@@ -118,13 +117,13 @@ public final class CepInput {
     private String separator;
     private final Set<String> propertyNames;
 
-    private static final String DEFUALT_SEPARATOR = ",";
+    private static final String DEFAULT_SEPARATOR = ",";
 
     private InnerBuilder() {
       this.cepInputType = null;
       this.cepInputConfiguration = new HashMap<>();
       this.fields = new ArrayList<>();
-      this.separator = DEFUALT_SEPARATOR;
+      this.separator = DEFAULT_SEPARATOR;
       this.propertyNames = new HashSet<>();
     }
 

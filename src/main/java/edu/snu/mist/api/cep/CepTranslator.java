@@ -29,7 +29,12 @@ import edu.snu.mist.common.types.Tuple2;
 import java.util.*;
 
 /**
- * Class for translate cep into datastream.
+ * Class for translate cep into data-flow DAG.
+ * First, convert CepInput into socketTextStream, and add map vertex that parse string to the map of fields.
+ * Then, translate all the comparison conditions into filter vertex.
+ * Each comparison condition is converted into one filter vertex.
+ * For union conditions, AND is translated into filter vertex, and OR is translated into union vertex.
+ * Finally, convert CepAction into socketTextStream, with mapping the fields map into string.
  */
 public final class CepTranslator {
 
@@ -50,14 +55,14 @@ public final class CepTranslator {
     }
 
     /**
-     * Translate cepInput into DAG and the data is Fields Map.
+     * Translate cepInput into DAG and the streaming data is the map of fields.
      * @param cepInput cep input stream
      * @return input stream into Map of fields
      */
     private static ContinuousStream<Map<String, Object>> cepInputTranslator(
             final MISTQueryBuilder queryBuilder, final CepInput cepInput) {
-        switch(cepInput.getInputType()){
-            case TEXT_SOCKET_SOURCE:
+        switch (cepInput.getInputType()) {
+            case TEXT_SOCKET_SOURCE: {
                 final String sourceHostname = cepInput.getSourceConfiguration().get("SOCKET_INPUT_ADDRESS").toString();
                 final int sourcePort = (int) cepInput.getSourceConfiguration().get("SOCKET_INPUT_PORT");
                 final SourceConfiguration sourceConf =
@@ -69,6 +74,7 @@ public final class CepTranslator {
                 final String separator = cepInput.getSeparator();
                 return queryBuilder.socketTextStream(sourceConf)
                         .map(new CepStringToMap(fields, separator));
+            }
             default:
                 throw new IllegalStateException("No other source is ready yet!");
         }
@@ -81,20 +87,20 @@ public final class CepTranslator {
      * @return the result of compare method of each type
      */
     private static int cepCompare(final Object eventObj, final Object queryObj) {
-        if(!(eventObj.getClass().equals(queryObj.getClass()))) {
+        if (!(eventObj.getClass().equals(queryObj.getClass()))) {
             throw new IllegalArgumentException(
-                    "Event object (" + eventObj.getClass().toString()+") and query object types (" +
-                            queryObj.getClass().toString()+ ") are different!");
+                    "Event object (" + eventObj.getClass().toString() + ") and query object types (" +
+                            queryObj.getClass().toString() + ") are different!");
         }
-        if(queryObj instanceof Double) {
+        if (queryObj instanceof Double) {
             return Double.compare((double)eventObj, (double)queryObj);
-        } else if(queryObj instanceof Integer) {
+        } else if (queryObj instanceof Integer) {
            return Integer.compare((int)eventObj, (int)queryObj);
-        } else if(queryObj instanceof Long){
+        } else if (queryObj instanceof Long) {
             return Long.compare((Long)eventObj, (Long)queryObj);
-        } else if(queryObj instanceof String) {
+        } else if (queryObj instanceof String) {
             return ((String)eventObj).compareTo((String)queryObj);
-        } else{
+        } else {
             throw new IllegalArgumentException("The wrong type of condition object!");
         }
     }
@@ -108,9 +114,9 @@ public final class CepTranslator {
     private static ContinuousStream<Map<String, Object>> cepConditionTranslator(
             final ContinuousStream<Map<String, Object>> input,
             final AbstractCondition condition) {
-        if(condition instanceof ComparisonCondition) {
+        if (condition instanceof ComparisonCondition) {
             return cepCCTranslator(input, (ComparisonCondition)condition);
-        } else if(condition instanceof UnionCondition) {
+        } else if (condition instanceof UnionCondition) {
             return cepUCTranslator(input, (UnionCondition)condition);
         } else {
             throw new IllegalStateException("Condition type is wrong!");
@@ -126,10 +132,9 @@ public final class CepTranslator {
     private static ContinuousStream<Map<String, Object>> cepCCTranslator(
             final ContinuousStream<Map<String, Object>> input,
             final ComparisonCondition condition) {
-
-        String field = condition.getFieldName();
-        Object value = condition.getComparisonValue();
-        switch(condition.getConditionType()){
+        final String field = condition.getFieldName();
+        final Object value = condition.getComparisonValue();
+        switch (condition.getConditionType()) {
             case LT:
                 return input.filter(s -> cepCompare(s.get(field), value) < 0);
             case GT:
@@ -151,22 +156,23 @@ public final class CepTranslator {
             final ContinuousStream<Map<String, Object>> input,
             final UnionCondition condition) {
         //AND Union Condition
-        if(condition.getConditionType().equals(ConditionType.AND)) {
+        if (condition.getConditionType().equals(ConditionType.AND)) {
             ContinuousStream<Map<String, Object>> iterInput = input;
-            for(AbstractCondition iterCond : condition.getConditions()) {
+            for (final AbstractCondition iterCond : condition.getConditions()) {
                 iterInput = cepConditionTranslator(iterInput, iterCond);
             }
             return iterInput;
-        } else if(condition.getConditionType().equals(ConditionType.OR)) {
-            int unionSize = condition.getConditions().size();
+        } else if (condition.getConditionType().equals(ConditionType.OR)) {
+            final int unionSize = condition.getConditions().size();
             ContinuousStream<Map<String, Object>> result = input;
-            List<ContinuousStream<Map<String, Object>>> unionInputList =
-                    new ArrayList<>();
-            for(AbstractCondition iterCond : condition.getConditions()) {
+            final List<ContinuousStream<Map<String, Object>>> unionInputList = new ArrayList<>();
+
+            for (final AbstractCondition iterCond : condition.getConditions()) {
                 unionInputList.add(cepConditionTranslator(result, iterCond));
             }
             result = unionInputList.get(0);
-            for(int i = 1; i < unionSize; i++) {
+
+            for (int i = 1; i < unionSize; i++) {
                 result = result.union(unionInputList.get(i));
             }
             return result;
@@ -181,42 +187,43 @@ public final class CepTranslator {
      * @param cepStatelessRules list of statelessRules.
      * @return output stream data
      */
-    private static ContinuousStream<Map<String, Object>>
-        cepStatelessRulesTranslator(
+    private static ContinuousStream<Map<String, Object>> cepStatelessRulesTranslator(
             final ContinuousStream<Map<String, Object>> inputMap,
-                      final List<CepStatelessRule> cepStatelessRules) {
+            final List<CepStatelessRule> cepStatelessRules) {
         final int ruleNum = cepStatelessRules.size();
 
         //connect cepInput to cepRules
-        for(int i = 0; i < ruleNum; i++){
+        for (int i = 0; i < ruleNum; i++) {
             final CepStatelessRule rule = cepStatelessRules.get(i);
             final CepAction action = rule.getAction();
             final CepSink sink = action.getCepSink();
             ContinuousStream<Map<String, Object>> temp = inputMap;
 
-            switch(action.getCepActionType()){
-                case TEXT_WRITE:
-                    temp = cepConditionTranslator(temp, rule.getCondition());
+            switch (action.getCepActionType()) {
+                case TEXT_WRITE: {
+                    switch (sink.getCepSinkType()) {
+                        case TEXT_SOCKET_OUTPUT: {
+                            temp = cepConditionTranslator(temp, rule.getCondition());
+                            final List<Object> params = action.getParams();
+                            final String separator = sink.getSeparator();
+                            temp.map(new CepMapToString(params, separator))
+                                    .textSocketOutput((String)sink.getSinkConfigs().get("SOCKET_SINK_ADDRESS"),
+                                            (int)sink.getSinkConfigs().get("SOCKET_SINK_PORT"));
+                            break;
+                        }
+                        default:
+                            throw new IllegalStateException("Only TEXT_SOCKET_OUTPUT is supported now!");
+                    }
                     break;
+                }
                 default:
                     continue;
-            }
-
-            switch(sink.getCepSinkType()){
-                case TEXT_SOCKET_OUTPUT:
-                    final List<Object> params = action.getParams();
-                    final String separator = sink.getSeparator();
-                    temp.map(new CepMapToString(params, separator))
-                            .textSocketOutput((String)sink.getSinkConfigs().get("SOCKET_SINK_ADDRESS"),
-                                    (int)sink.getSinkConfigs().get("SOCKET_SINK_PORT"));
-                    break;
-                default:
-                    throw new IllegalStateException("Only TEXT_SOCKET_OUTPUT is supported now!");
             }
         }
 
         return inputMap;
     }
 
-    private CepTranslator(){};
+    private CepTranslator() {
+    };
 }

@@ -32,7 +32,6 @@ public final class CepAction {
     this.actionType = actionType;
     this.cepSink = cepSink;
     this.params = params;
-
   }
 
   /**

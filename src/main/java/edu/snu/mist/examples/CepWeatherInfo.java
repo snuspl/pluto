@@ -49,7 +49,6 @@ public final class CepWeatherInfo {
     public static APIQueryControlResult submitQuery(final Configuration configuration)
             throws IOException, InjectionException, URISyntaxException {
 
-
         final String sourceSocket =
                 Tang.Factory.getTang().newInjector(configuration).getNamedInstance(NettySourceAddress.class);
         final String[] source = sourceSocket.split(":");
@@ -150,6 +149,6 @@ public final class CepWeatherInfo {
     /**
      * Must not be instantiated.
      */
-    private CepWeatherInfo(){
+    private CepWeatherInfo() {
     }
 }

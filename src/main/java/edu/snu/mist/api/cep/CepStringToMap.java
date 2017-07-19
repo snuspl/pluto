@@ -29,7 +29,7 @@ public final class CepStringToMap implements MISTFunction<String, Map<String, Ob
     private final List<Tuple2<String, CepValueType>> fields;
     private final String separator;
 
-    public CepStringToMap(final List<Tuple2<String, CepValueType>> fieldsParam, final String separatorParam){
+    public CepStringToMap(final List<Tuple2<String, CepValueType>> fieldsParam, final String separatorParam) {
         this.fields = fieldsParam;
         this.separator = separatorParam;
     }
@@ -39,18 +39,17 @@ public final class CepStringToMap implements MISTFunction<String, Map<String, Ob
         final String[] inputParse = s.split(separator);
         final int inputSize = inputParse.length;
 
-        if(inputSize < fields.size()){
+        if (inputSize < fields.size()) {
             throw new IllegalStateException("Cannot match input string to tuple since the size is different!");
         }
 
         final Map<String, Object> result = new HashMap<>();
-
         Object value;
 
         //if inputSize is larger than fields size, then the spare parts are eliminated.
-        for(int i = 0; i < fields.size(); i++) {
-            Tuple2<String, CepValueType> tuple = fields.get(i);
-            switch((CepValueType)tuple.get(1)){
+        for (int i = 0; i < fields.size(); i++) {
+            final Tuple2<String, CepValueType> tuple = fields.get(i);
+            switch ((CepValueType)tuple.get(1)) {
                 case DOUBLE:
                     value = Double.parseDouble(inputParse[i].trim());
                     break;

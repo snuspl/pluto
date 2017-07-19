@@ -22,38 +22,38 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by sungwoo on 17. 7. 18.
+ * Class for Translate input Map into String.
  */
 public final class CepMapToString implements MISTFunction<Map<String, Object>, String> {
     private final List<Object> fields;
     private final String separator;
 
-    public CepMapToString(final List<Object> fieldsParam, final String separatorParam){
+    public CepMapToString(final List<Object> fieldsParam, final String separatorParam) {
         this.fields = fieldsParam;
         this.separator = separatorParam;
     }
 
     @Override
-    public String apply(final Map<String, Object> s){
+    public String apply(final Map<String, Object> s) {
         final StringBuilder strBuilder = new StringBuilder();
 
-        for(final Object iter : fields) {
+        for (final Object iter : fields) {
             strBuilder.append(iter.toString());
             strBuilder.append(separator);
         }
 
-        if(strBuilder.length() == 0) {
+        if (strBuilder.length() == 0) {
             throw new NullPointerException("No Parameters for cepSink!");
         }
 
-        strBuilder.delete(strBuilder.length()-separator.length(), strBuilder.length());
+        strBuilder.delete(strBuilder.length() - separator.length(), strBuilder.length());
 
         final Iterator<String> iter = s.keySet().iterator();
         String resultStr = strBuilder.toString();
-        while(iter.hasNext()) {
+        while (iter.hasNext()) {
             final String field = iter.next();
-            if(resultStr.matches(".*"+"[$]"+field+".*")) {
-                resultStr = resultStr.replaceAll("[$]"+field, s.get(field).toString());
+            if (resultStr.matches(".*" + "[$]" + field + ".*")) {
+                resultStr = resultStr.replaceAll("[$]" + field, s.get(field).toString());
             }
         }
         return resultStr;

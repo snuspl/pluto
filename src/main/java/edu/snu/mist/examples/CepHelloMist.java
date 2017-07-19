@@ -47,7 +47,6 @@ public final class CepHelloMist {
     public static APIQueryControlResult submitQuery(final Configuration configuration)
             throws IOException, InjectionException, URISyntaxException {
 
-
         final String sourceSocket =
                 Tang.Factory.getTang().newInjector(configuration).getNamedInstance(NettySourceAddress.class);
         final String[] source = sourceSocket.split(":");
@@ -128,6 +127,6 @@ public final class CepHelloMist {
     /**
      * Must not be instantiated.
      */
-    private CepHelloMist(){
+    private CepHelloMist() {
     }
 }

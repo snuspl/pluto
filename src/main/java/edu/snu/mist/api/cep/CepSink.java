@@ -26,7 +26,7 @@ public final class CepSink {
   private final CepSinkType cepSinkType;
   private final Map<String, Object> sinkConfigs;
   private final String separator;
-  private static final String DEFUALT_SEPARATOR = ",";
+  private static final String DEFAULT_SEPARATOR = ",";
 
   /**
    * Creates an immutable sink called from ActionBuilder.
@@ -41,7 +41,7 @@ public final class CepSink {
   }
 
   private CepSink(final CepSinkType cepSinkType, final Map<String, Object> sinkConfigs) {
-      this(cepSinkType, sinkConfigs, DEFUALT_SEPARATOR);
+      this(cepSinkType, sinkConfigs, DEFAULT_SEPARATOR);
   }
 
   /**
