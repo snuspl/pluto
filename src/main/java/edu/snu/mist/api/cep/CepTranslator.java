@@ -17,10 +17,7 @@ package edu.snu.mist.api.cep;
 
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
-import edu.snu.mist.api.cep.conditions.AbstractCondition;
-import edu.snu.mist.api.cep.conditions.ComparisonCondition;
-import edu.snu.mist.api.cep.conditions.ConditionType;
-import edu.snu.mist.api.cep.conditions.UnionCondition;
+import edu.snu.mist.api.cep.conditions.*;
 import edu.snu.mist.api.datastreams.ContinuousStream;
 import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
@@ -81,31 +78,6 @@ public final class CepTranslator {
     }
 
     /**
-     * Check type of compared object and return the int for comparison condition.
-     * @param eventObj input stream object
-     * @param queryObj query object(compared object)
-     * @return the result of compare method of each type
-     */
-    private static int cepCompare(final Object eventObj, final Object queryObj) {
-        if (!(eventObj.getClass().equals(queryObj.getClass()))) {
-            throw new IllegalArgumentException(
-                    "Event object (" + eventObj.getClass().toString() + ") and query object types (" +
-                            queryObj.getClass().toString() + ") are different!");
-        }
-        if (queryObj instanceof Double) {
-            return Double.compare((double)eventObj, (double)queryObj);
-        } else if (queryObj instanceof Integer) {
-           return Integer.compare((int)eventObj, (int)queryObj);
-        } else if (queryObj instanceof Long) {
-            return Long.compare((Long)eventObj, (Long)queryObj);
-        } else if (queryObj instanceof String) {
-            return ((String)eventObj).compareTo((String)queryObj);
-        } else {
-            throw new IllegalArgumentException("The wrong type of condition object!");
-        }
-    }
-
-    /**
      * Make ContinuousStream with cepCondition.
      * @param input input ContinuousStream
      * @param condition input condition
@@ -134,16 +106,7 @@ public final class CepTranslator {
             final ComparisonCondition condition) {
         final String field = condition.getFieldName();
         final Object value = condition.getComparisonValue();
-        switch (condition.getConditionType()) {
-            case LT:
-                return input.filter(s -> cepCompare(s.get(field), value) < 0);
-            case GT:
-                return input.filter(s -> cepCompare(s.get(field), value) > 0);
-            case EQ:
-                return input.filter(s -> s.get(field).equals(value));
-            default:
-                throw new IllegalStateException("Wrong comparison condition type!");
-        }
+        return input.filter(new CepCCPredicate(condition.getConditionType(), field, value));
     }
 
     /**
@@ -225,5 +188,5 @@ public final class CepTranslator {
     }
 
     private CepTranslator() {
-    };
+    }
 }

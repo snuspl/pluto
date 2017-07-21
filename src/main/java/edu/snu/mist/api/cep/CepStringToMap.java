@@ -29,9 +29,34 @@ public final class CepStringToMap implements MISTFunction<String, Map<String, Ob
     private final List<Tuple2<String, CepValueType>> fields;
     private final String separator;
 
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        final CepStringToMap that = (CepStringToMap) o;
+
+        if (fields != null ? !fields.equals(that.fields) : that.fields != null) {
+            return false;
+        }
+        return separator != null ? separator.equals(that.separator) : that.separator == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = fields != null ? fields.hashCode() : 0;
+        result = 31 * result + (separator != null ? separator.hashCode() : 0);
+        return result;
+    }
+
     public CepStringToMap(final List<Tuple2<String, CepValueType>> fieldsParam, final String separatorParam) {
         this.fields = fieldsParam;
         this.separator = separatorParam;
+
     }
 
     @Override

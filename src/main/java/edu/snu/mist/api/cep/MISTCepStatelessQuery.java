@@ -58,7 +58,36 @@ public final class MISTCepStatelessQuery {
       return this.groupId;
   }
 
-  /**
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        final MISTCepStatelessQuery that = (MISTCepStatelessQuery) o;
+
+        if (cepInput != null ? !cepInput.equals(that.cepInput) : that.cepInput != null) {
+            return false;
+        }
+        if (cepStatelessRules != null ? !cepStatelessRules.equals(that.cepStatelessRules) :
+                that.cepStatelessRules != null) {
+            return false;
+        }
+        return groupId != null ? groupId.equals(that.groupId) : that.groupId == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = cepInput != null ? cepInput.hashCode() : 0;
+        result = 31 * result + (cepStatelessRules != null ? cepStatelessRules.hashCode() : 0);
+        result = 31 * result + (groupId != null ? groupId.hashCode() : 0);
+        return result;
+    }
+
+    /**
    * Builder for MISTCepStatelessQuery.
    */
   public static class Builder {

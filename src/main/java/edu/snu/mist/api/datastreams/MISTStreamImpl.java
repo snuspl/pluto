@@ -33,8 +33,29 @@ class MISTStreamImpl<OUT> implements MISTStream<OUT> {
    * DAG of the query.
    */
   protected final DAG<MISTStream, MISTEdge> dag;
-  /**
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        final MISTStreamImpl<?> that = (MISTStreamImpl<?>) o;
+
+        return conf != null ? conf.equals(that.conf) : that.conf == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return conf != null ? conf.hashCode() : 0;
+    }
+
+    /**
    * Configuration of the stream.
+
    */
   protected final Configuration conf;
 
