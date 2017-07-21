@@ -14,68 +14,34 @@
  * limitations under the License.
  */
 
-package edu.snu.mist.api.cep;
+package edu.snu.mist.api.cep.predicates;
 
-import edu.snu.mist.api.cep.conditions.ConditionType;
 import edu.snu.mist.common.functions.MISTPredicate;
 
 import java.util.Map;
 
 /**
- * MISTPredicate for filtering Cep Comparison Condition.
+ * Abstract class for filtering Cep Comparison Condition.
  */
-public final class CepCCPredicate implements MISTPredicate<Map<String, Object>> {
-    private final ConditionType conditionType;
+public abstract class CepCCPredicate implements MISTPredicate<Map<String, Object>> {
     private final String field;
     private final Object value;
 
-    public CepCCPredicate(final ConditionType conditionType, final String field, final Object value) {
-        this.conditionType = conditionType;
+    public CepCCPredicate(final String field, final Object value) {
         this.field = field;
         this.value = value;
     }
 
-    @Override
-    public boolean test(final Map<String, Object> stringObjectMap) {
-        switch (conditionType) {
-            case LT:
-                return cepCompare(stringObjectMap.get(field), value) < 0;
-            case GT:
-                return cepCompare(stringObjectMap.get(field), value) > 0;
-            case EQ:
-                return stringObjectMap.get(field).equals(value);
-            default:
-                throw new IllegalStateException("Wrong comparison condition type!");
-        }
+    public String getField() {
+        return field;
+    }
+
+    public Object getValue() {
+        return value;
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        final CepCCPredicate that = (CepCCPredicate) o;
-
-        if (conditionType != that.conditionType) {
-            return false;
-        }
-        if (!field.equals(that.field)) {
-            return false;
-        }
-        return value.equals(that.value);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = conditionType.hashCode();
-        result = 31 * result + field.hashCode();
-        result = 31 * result + value.hashCode();
-        return result;
-    }
+    public abstract boolean test(final Map<String, Object> stringObjectMap);
 
     /**
      * Check type of compared object and return the int for comparison condition.
@@ -83,7 +49,7 @@ public final class CepCCPredicate implements MISTPredicate<Map<String, Object>> 
      * @param queryObj query object(compared object)
      * @return the result of compare method of each type
      */
-    private static int cepCompare(final Object eventObj, final Object queryObj) {
+    public int cepCompare(final Object eventObj, final Object queryObj) {
         if (!(eventObj.getClass().equals(queryObj.getClass()))) {
             throw new IllegalArgumentException(
                     "Event object (" + eventObj.getClass().toString() + ") and query object types (" +
@@ -100,5 +66,29 @@ public final class CepCCPredicate implements MISTPredicate<Map<String, Object>> 
         } else {
             throw new IllegalArgumentException("The wrong type of condition object!");
         }
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        final CepCCPredicate that = (CepCCPredicate) o;
+
+        if (!field.equals(that.field)) {
+            return false;
+        }
+        return value.equals(that.value);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = field.hashCode();
+        result = 31 * result + value.hashCode();
+        return result;
     }
 }

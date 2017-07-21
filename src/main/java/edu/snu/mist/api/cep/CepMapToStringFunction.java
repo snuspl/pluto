@@ -24,11 +24,11 @@ import java.util.Map;
 /**
  * Class for Translate input Map into String.
  */
-public final class CepMapToString implements MISTFunction<Map<String, Object>, String> {
+public final class CepMapToStringFunction implements MISTFunction<Map<String, Object>, String> {
     private final List<Object> fields;
     private final String separator;
 
-    public CepMapToString(final List<Object> fieldsParam, final String separatorParam) {
+    public CepMapToStringFunction(final List<Object> fieldsParam, final String separatorParam) {
         this.fields = fieldsParam;
         this.separator = separatorParam;
     }
@@ -42,7 +42,7 @@ public final class CepMapToString implements MISTFunction<Map<String, Object>, S
             return false;
         }
 
-        final CepMapToString that = (CepMapToString) o;
+        final CepMapToStringFunction that = (CepMapToStringFunction) o;
 
         if (fields != null ? !fields.equals(that.fields) : that.fields != null) {
             return false;

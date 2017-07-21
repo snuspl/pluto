@@ -18,6 +18,7 @@ package edu.snu.mist.api.cep;
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.api.cep.conditions.*;
+import edu.snu.mist.api.cep.predicates.*;
 import edu.snu.mist.api.datastreams.ContinuousStream;
 import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
@@ -70,7 +71,7 @@ public final class CepTranslator {
                 final List<Tuple2<String, CepValueType>> fields = cepInput.getFields();
                 final String separator = cepInput.getSeparator();
                 return queryBuilder.socketTextStream(sourceConf)
-                        .map(new CepStringToMap(fields, separator));
+                        .map(new CepStringToMapFunction(fields, separator));
             }
             default:
                 throw new IllegalStateException("No other source is ready yet!");
@@ -106,7 +107,18 @@ public final class CepTranslator {
             final ComparisonCondition condition) {
         final String field = condition.getFieldName();
         final Object value = condition.getComparisonValue();
-        return input.filter(new CepCCPredicate(condition.getConditionType(), field, value));
+        final ConditionType conditionType = condition.getConditionType();
+
+        switch (conditionType) {
+            case GT:
+                return input.filter(new CepGTPredicate(field, value));
+            case LT:
+                return input.filter(new CepLTPredicate(field, value));
+            case EQ:
+                return input.filter(new CepEQPredicate(field, value));
+            default:
+                throw new IllegalStateException("Wrong comparison condition type!");
+        }
     }
 
     /**
@@ -126,7 +138,6 @@ public final class CepTranslator {
             }
             return iterInput;
         } else if (condition.getConditionType().equals(ConditionType.OR)) {
-            final int unionSize = condition.getConditions().size();
             ContinuousStream<Map<String, Object>> result = input;
             final List<ContinuousStream<Map<String, Object>>> unionInputList = new ArrayList<>();
 
@@ -135,7 +146,7 @@ public final class CepTranslator {
             }
             result = unionInputList.get(0);
 
-            for (int i = 1; i < unionSize; i++) {
+            for (int i = 1; i < unionInputList.size(); i++) {
                 result = result.union(unionInputList.get(i));
             }
             return result;
@@ -169,7 +180,7 @@ public final class CepTranslator {
                             temp = cepConditionTranslator(temp, rule.getCondition());
                             final List<Object> params = action.getParams();
                             final String separator = sink.getSeparator();
-                            temp.map(new CepMapToString(params, separator))
+                            temp.map(new CepMapToStringFunction(params, separator))
                                     .textSocketOutput((String)sink.getSinkConfigs().get("SOCKET_SINK_ADDRESS"),
                                             (int)sink.getSinkConfigs().get("SOCKET_SINK_PORT"));
                             break;
