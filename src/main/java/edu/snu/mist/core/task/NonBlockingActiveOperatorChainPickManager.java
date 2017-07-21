@@ -32,10 +32,13 @@ public final class NonBlockingActiveOperatorChainPickManager implements Operator
    */
   private final Queue<OperatorChain> activeQueryQueue;
 
+  private int numAcitveOperators;
+
   @Inject
   private NonBlockingActiveOperatorChainPickManager() {
     // ConcurrentLinkedQueue is used to assure concurrency as well as maintain exactly-once query picking.
     this.activeQueryQueue = new ConcurrentLinkedQueue<>();
+    this.numAcitveOperators = 0;
   }
 
   /**
@@ -47,6 +50,7 @@ public final class NonBlockingActiveOperatorChainPickManager implements Operator
   @Override
   public void insert(final OperatorChain operatorChain) {
     activeQueryQueue.add(operatorChain);
+    numAcitveOperators += 1;
   }
 
   /**
@@ -57,7 +61,9 @@ public final class NonBlockingActiveOperatorChainPickManager implements Operator
    */
   @Override
   public void delete(final OperatorChain operatorChain) {
-    activeQueryQueue.remove(operatorChain);
+    if (activeQueryQueue.remove(operatorChain)) {
+      numAcitveOperators -= 1;
+    }
   }
 
   /**
@@ -66,12 +72,16 @@ public final class NonBlockingActiveOperatorChainPickManager implements Operator
    */
   @Override
   public OperatorChain pickOperatorChain() {
-    return activeQueryQueue.poll();
+    final OperatorChain operatorChain = activeQueryQueue.poll();
+    if (operatorChain != null) {
+      numAcitveOperators -= 1;
+    }
+    return operatorChain;
   }
 
   @Override
   public int size() {
-    return activeQueryQueue.size();
+    return numAcitveOperators;
   }
 
   @Override

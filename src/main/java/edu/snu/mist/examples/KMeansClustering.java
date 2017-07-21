@@ -117,7 +117,7 @@ public final class KMeansClustering {
     System.out.println("Query submission result: " + result.getQueryId());
   }
 
-  private KMeansClustering(){
+  private KMeansClustering() {
   }
 
   /**
@@ -159,7 +159,7 @@ public final class KMeansClustering {
       switch (n) {
         case 2: {
           final Point firstP = clusters.iterator().next().getClusteredPoints().iterator().next();
-          fr = newPoint.distPowTwo(firstP)/2;
+          fr = newPoint.distPowTwo(firstP) / 2;
         }
         case 1: {
           clusters.add(new Cluster(newPoint, n));

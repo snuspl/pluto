@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
-import edu.snu.mist.core.task.eventProcessors.loadBalancer.GroupBalancer;
+import edu.snu.mist.core.task.eventProcessors.groupAssigner.GroupAssigner;
 import edu.snu.mist.core.task.eventProcessors.parameters.*;
 import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupRebalancer;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
@@ -84,9 +84,9 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
   private final GroupAllocationTableModifier groupAllocationTableModifier;
 
   /**
-   * Group balancer that assigns a group to an event processor.
+   * Group assigner that assigns a group to an event processor.
    */
-  private final GroupBalancer groupBalancer;
+  private final GroupAssigner groupAssigner;
 
   /**
    * Group rebalancer that reassigns groups from an event processor to other event processors.
@@ -99,13 +99,12 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
   private final AtomicBoolean closed = new AtomicBoolean(false);
 
   @Inject
-  private DefaultEventProcessorManager(@Parameter(DefaultNumEventProcessors.class) final int defaultNumEventProcessors,
-                                       @Parameter(EventProcessorLowerBound.class) final int eventProcessorLowerBound,
+  private DefaultEventProcessorManager(@Parameter(EventProcessorLowerBound.class) final int eventProcessorLowerBound,
                                        @Parameter(EventProcessorUpperBound.class) final int eventProcessorUpperBound,
                                        @Parameter(GracePeriod.class) final int gracePeriod,
                                        @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
                                        final GroupAllocationTable groupAllocationTable,
-                                       final GroupBalancer groupBalancer,
+                                       final GroupAssigner groupAssigner,
                                        final GroupRebalancer groupRebalancer,
                                        final GroupAllocationTableModifier groupAllocationTableModifier,
                                        final GroupDispatcher groupDispatcher,
@@ -113,30 +112,22 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
     this.eventProcessorLowerBound = eventProcessorLowerBound;
     this.eventProcessorUpperBound = eventProcessorUpperBound;
     this.groupDispatcher = groupDispatcher;
-    this.groupBalancer = groupBalancer;
+    this.groupAssigner = groupAssigner;
     this.groupRebalancer = groupRebalancer;
     this.groupAllocationTable = groupAllocationTable;
     this.groupAllocationTableModifier = groupAllocationTableModifier;
     this.eventProcessorFactory = eventProcessorFactory;
     this.gracePeriod = gracePeriod;
     this.groupRebalancerService = Executors.newSingleThreadScheduledExecutor();
-    initialize(defaultNumEventProcessors, rebalancingPeriod);
+    initialize(rebalancingPeriod);
     this.prevAdjustTime = System.nanoTime();
   }
 
   /**
-   * Create new dispatchers and event processors and add them to event processor set.
-   * @param numToCreate the number of processors to create
+   * Create new dispatchers and add them to event processor set.
    */
-  private void initialize(final long numToCreate, final long rebalancingPeriod) {
-    // Create event processors
-    for (int i = 0; i < numToCreate; i++) {
-      final EventProcessor eventProcessor = eventProcessorFactory.newEventProcessor();
-      groupAllocationTable.put(eventProcessor, new ConcurrentLinkedQueue<>());
-      eventProcessor.start();
-    }
-    groupBalancer.initialize();
-
+  private void initialize(final long rebalancingPeriod) {
+    groupAssigner.initialize();
 
     // Create a rebalancer thread
     groupRebalancerService.scheduleAtFixedRate(() -> {
@@ -200,7 +191,7 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
 
         final List<EventProcessor> eventProcessors = groupAllocationTable.getKeys();
         final List<EventProcessor> removedEventProcessors = new LinkedList<>();
-        final EventProcessor lastEventProcessor = eventProcessors.get(eventProcessors.size()-1);
+        final EventProcessor lastEventProcessor = eventProcessors.get(eventProcessors.size() - 1);
         for (int i = 0; i < decreaseNum; i++) {
           final EventProcessor ep = eventProcessors.get(i);
           final Collection<GlobalSchedGroupInfo> srcGroups = groupAllocationTable.getValue(ep);

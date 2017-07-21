@@ -126,6 +126,11 @@ public final class WeightedRRNextGroupSelector implements NextGroupSelector {
   }
 
   @Override
+  public boolean removeDispatchedGroup(final GlobalSchedGroupInfo group) {
+    return false;
+  }
+
+  @Override
   public void onNext(final GroupEvent groupEvent) {
     switch (groupEvent.getGroupEventType()) {
       case ADDITION:

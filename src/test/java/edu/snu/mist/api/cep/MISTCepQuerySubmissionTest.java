@@ -20,10 +20,7 @@ import edu.snu.mist.common.types.Tuple2;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * A collection of tests for MIST Cep query submission.
@@ -60,16 +57,14 @@ public class MISTCepQuerySubmissionTest {
   @Test
   public void testCepInputBuilder() {
     Assert.assertEquals(CepInputType.TEXT_SOCKET_SOURCE, exampleCepInput.getInputType());
-    final Map<String, Object> expectedCepInputConf = new HashMap<String, Object>() {{
+    final Map<String, Object> expectedCepInputConf = new HashMap<String, Object>() { {
       put("SOCKET_INPUT_ADDRESS", cepInputAddress);
       put("SOCKET_INPUT_PORT", cepInputPort);
-    }};
+    } };
     Assert.assertEquals(expectedCepInputConf, exampleCepInput.getSourceConfiguration());
     final List<Tuple2<String, CepValueType>> expectedCepInputFields
-        = new ArrayList<Tuple2<String, CepValueType>>() {{
-      add(new Tuple2<>(firstFieldName, firstFieldType));
-      add(new Tuple2<>(secondFieldName, secondFieldType));
-    }};
+        = Arrays.asList(new Tuple2<>(firstFieldName, firstFieldType),
+            new Tuple2<>(secondFieldName, secondFieldType));
     Assert.assertEquals(expectedCepInputFields, exampleCepInput.getFields());
   }
 
@@ -79,10 +74,10 @@ public class MISTCepQuerySubmissionTest {
   @Test
   public void testCepSinkBuilder() {
     Assert.assertEquals(CepSinkType.TEXT_SOCKET_OUTPUT, exampleCepSink.getCepSinkType());
-    final Map<String, Object> expectedCepOutputConf = new HashMap<String, Object>() {{
+    final Map<String, Object> expectedCepOutputConf = new HashMap<String, Object>() { {
       put("SOCKET_SINK_ADDRESS", cepOutputAddress);
       put("SOCKET_SINK_PORT", cepOutputPort);
-    }};
+    } };
     Assert.assertEquals(expectedCepOutputConf, exampleCepSink.getSinkConfigs());
   }
 

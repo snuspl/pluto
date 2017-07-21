@@ -15,12 +15,15 @@
  */
 package edu.snu.mist.core.task.globalsched;
 
-import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.ExecutionDags;
+import edu.snu.mist.core.task.OperatorChainManager;
+import edu.snu.mist.core.task.QueryRemover;
+import edu.snu.mist.core.task.QueryStarter;
 import edu.snu.mist.core.task.deactivation.GroupSourceManager;
-import edu.snu.mist.core.task.metrics.GroupMetrics;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A class which contains query and metric information about query group.
@@ -66,49 +69,31 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
   QueryRemover getQueryRemover();
 
   /**
-   * Set the latest inactive time of this group.
-   * @param time inactivated time
-   */
-  void setLatestInactiveTime(long time);
-
-  /**
-   * Get the latest inactive time of this group.
-   * @return latest inactivated time
-   */
-  long getLatestInactiveTime();
-
-  /**
    * Get the number of remaining events.
    * @return the number of remaining events.
    */
   long numberOfRemainingEvents();
 
   /**
-   * Get the EMA load of this group.
+   * Get the load of the group.
    */
-  double getEWMALoad();
+  double getLoad();
 
   /**
-   * This is for the load rebalancing.
+   *  Set the load of the group.
    */
-  double getFixedLoad();
+  void setLoad(double load);
 
   /**
-   *  This is for the load rebalancing.
+   * Set the rebalance time.
    */
-  void setFixedLoad(double load);
+  void setLatestRebalanceTime(long rebalanceTime);
 
   /**
-   * Update the load.
-   * @param load current load
+   * Get the latest rebalance time.
+   * @return rebalance time
    */
-  void updateLoad(double load);
-
-  /**
-   * Get the metric holder contains the number of events and weight metric of this group.
-   * @return the metric holder of this group
-   */
-  GroupMetrics getMetricHolder();
+  long getLatestRebalanceTime();
 
   /**
    * Check whether the group has events to be processed.
@@ -117,18 +102,64 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
   boolean isActive();
 
   /**
-   * Check whether this group is assigned to an event processor.
-   * @return true if it is assigned.
-   */
-  boolean isAssigned();
-
-  /**
-   * Compare and set the assigned value.
-   */
-  boolean compareAndSetAssigned(boolean cmp, boolean value);
-
-  /**
    * Get the GroupSourceManager.
    */
   GroupSourceManager getGroupSourceManager();
+
+  /**
+   * Get group id.
+   * @return group id
+   */
+  String getGroupId();
+
+  /**
+   * Get the event processing time in the group.
+   * @return event processing time
+   */
+  AtomicLong getProcessingTime();
+
+  /**
+   * Get the number of processed events in the group.
+   * @return numb er of processed events
+   */
+  AtomicLong getProcessingEvent();
+
+  /**
+   * Set the group status to dispatched.
+   * @return true if it changes from Ready -> Dispatched state
+   */
+  boolean setDispatched();
+
+  /**
+   * Set the group status to processing.
+   * @return true if it changes from Dispatched -> Processing.
+   */
+  boolean setProcessing();
+
+  /**
+   * Set the group status to ready from processing status.
+   * @return true if it changes from Processing -> Ready
+   */
+  boolean setReadyFromProcessing();
+
+  /**
+   * Set the group status to ready from Dispatched status.
+   * @return true if it changes from Dispatched -> Ready
+   */
+  boolean setReadyFromDispatched();
+
+  /**
+   * Check whether it is in processing status.
+   */
+  boolean isProcessing();
+
+  /**
+   * Check whether it is in ready status.
+   */
+  boolean isReady();
+
+  /**
+   * Check whether it is in dispatched status.
+   */
+  boolean isDispatched();
 }

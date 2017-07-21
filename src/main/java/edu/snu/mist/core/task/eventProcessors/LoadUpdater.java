@@ -13,15 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.parameters;
+package edu.snu.mist.core.task.eventProcessors;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * MQTT topic name.
+ * Load updater for updating loads of groups and event processors.
  */
-@NamedParameter(doc = "MQTT topic")
-public final class MQTTTopic implements Name<String> {
-  // empty
+@DefaultImplementation(UtilizationLoadUpdater.class)
+public interface LoadUpdater {
+
+  /**
+   * Update loads.
+   */
+  void update();
 }

@@ -104,6 +104,6 @@ public final class MQTTNoiseSensing {
   /**
    * Must not be instantiated.
    */
-  private MQTTNoiseSensing(){
+  private MQTTNoiseSensing()  {
   }
 }

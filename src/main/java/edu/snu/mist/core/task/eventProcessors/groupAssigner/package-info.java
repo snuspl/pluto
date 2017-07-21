@@ -16,4 +16,4 @@
 /**
  * A package related to group load balancer.
  */
-package edu.snu.mist.core.task.eventProcessors.loadBalancer;
+package edu.snu.mist.core.task.eventProcessors.groupAssigner;

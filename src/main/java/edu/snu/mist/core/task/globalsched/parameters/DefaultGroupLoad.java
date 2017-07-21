@@ -18,6 +18,6 @@ package edu.snu.mist.core.task.globalsched.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "Default load of the group", short_name = "default_group_load", default_value = "0.1")
+@NamedParameter(doc = "Default load of the group", short_name = "default_group_load", default_value = "0.000001")
 public final class DefaultGroupLoad implements Name<Double> {
 }

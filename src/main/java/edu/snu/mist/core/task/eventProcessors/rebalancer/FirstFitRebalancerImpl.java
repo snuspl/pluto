@@ -61,7 +61,7 @@ public final class FirstFitRebalancerImpl implements GroupRebalancer {
   private double calculateLoadOfGroupsForLogging(final Collection<GlobalSchedGroupInfo> groups) {
     double sum = 0;
     for (final GlobalSchedGroupInfo group : groups) {
-      final double fixedLoad = group.getFixedLoad();
+      final double fixedLoad = group.getLoad();
       sum += fixedLoad;
     }
     return sum;
@@ -74,8 +74,9 @@ public final class FirstFitRebalancerImpl implements GroupRebalancer {
     final Map<EventProcessor, Double> loadTable = new HashMap<>();
     double totalLoad = 0.0;
     for (final EventProcessor eventProcessor : eventProcessors) {
-      final double load = calculateLoadOfGroups(groupAllocationTable.getValue(eventProcessor));
+      final double load = eventProcessor.getLoad();
       totalLoad += load;
+      eventProcessor.setLoad(load);
       loadTable.put(eventProcessor, load);
     }
 
@@ -130,7 +131,7 @@ public final class FirstFitRebalancerImpl implements GroupRebalancer {
       // find the first bin that can hold the item
       for (final EventProcessor eventProcessor : eventProcessors) {
         final double size = bins.get(eventProcessor);
-        final double itemSize = item.getFixedLoad();
+        final double itemSize = item.getLoad();
         if (size >= itemSize) {
           // This is the first bin that can hold the item!
           iterator.remove();
@@ -149,7 +150,7 @@ public final class FirstFitRebalancerImpl implements GroupRebalancer {
         // find the first bin that can hold the item
         for (final EventProcessor eventProcessor : eventProcessors) {
           final double size = bins.get(eventProcessor);
-          final double itemSize = item.getFixedLoad();
+          final double itemSize = item.getLoad();
           if (size > 0) {
             // This is the first bin that can hold the item!
             secondIter.remove();
@@ -192,7 +193,7 @@ public final class FirstFitRebalancerImpl implements GroupRebalancer {
         while (load > desirableLoad && iterator.hasNext()) {
           final GlobalSchedGroupInfo group = iterator.next();
           items.add(group);
-          load -= group.getFixedLoad();
+          load -= group.getLoad();
         }
       }
 
@@ -201,20 +202,5 @@ public final class FirstFitRebalancerImpl implements GroupRebalancer {
     }
 
     return new Tuple<>(bins, items);
-  }
-
-  /**
-   * Calculate the load of groups.
-   * @param groups groups
-   * @return total load
-   */
-  private double calculateLoadOfGroups(final Collection<GlobalSchedGroupInfo> groups) {
-    double sum = 0;
-    for (final GlobalSchedGroupInfo group : groups) {
-      final double fixedLoad = group.getEWMALoad();
-      group.setFixedLoad(fixedLoad);
-      sum += fixedLoad;
-    }
-    return sum;
   }
 }

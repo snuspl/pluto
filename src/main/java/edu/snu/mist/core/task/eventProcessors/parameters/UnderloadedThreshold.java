@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.parameters;
+package edu.snu.mist.core.task.eventProcessors.parameters;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-/**
- * MQTT topic name.
- */
-@NamedParameter(doc = "MQTT topic")
-public final class MQTTTopic implements Name<String> {
-  // empty
+@NamedParameter(doc = "The threshold of utilization factor to determine underloaded threads (beta)",
+    short_name = "alpha", default_value = "0.8")
+public final class UnderloadedThreshold implements Name<Double> {
 }

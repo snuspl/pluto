@@ -66,7 +66,7 @@ public abstract class EventGeneratorImpl<I, V> implements EventGenerator<I> {
   }
 
   @Override
-  public void start(){
+  public void start() {
     if (started.compareAndSet(false, true)) {
       if (outputEmitter != null) {
         startRemain();

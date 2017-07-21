@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
-import edu.snu.mist.core.task.eventProcessors.loadBalancer.GroupBalancer;
+import edu.snu.mist.core.task.eventProcessors.groupAssigner.GroupAssigner;
 import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupRebalancer;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 
@@ -61,23 +61,29 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
   /**
    * Group balancer that assigns a group to an event processor.
    */
-  private final GroupBalancer groupBalancer;
+  private final GroupAssigner groupAssigner;
 
   /**
    * Group rebalancer that reassigns groups from an event processor to other event processors.
    */
   private final GroupRebalancer groupRebalancer;
 
+  /**
+   * Load updater.
+   */
+  private final LoadUpdater loadUpdater;
 
   @Inject
   private GroupAllocationTableModifier(final GroupAllocationTable groupAllocationTable,
-                                       final GroupBalancer groupBalancer,
-                                       final GroupRebalancer groupRebalancer) {
+                                       final GroupAssigner groupAssigner,
+                                       final GroupRebalancer groupRebalancer,
+                                       final LoadUpdater loadUpdater) {
     this.groupAllocationTable = groupAllocationTable;
-    this.groupBalancer = groupBalancer;
+    this.groupAssigner = groupAssigner;
     this.groupRebalancer = groupRebalancer;
     this.writingEventQueue = new LinkedBlockingQueue<>();
     this.singleWriter = Executors.newSingleThreadExecutor();
+    this.loadUpdater = loadUpdater;
     // Create a writer thread
     singleWriter.submit(new SingleWriterThread());
   }
@@ -122,7 +128,7 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
           switch (event.getEventType()) {
             case GROUP_ADD: {
               final GlobalSchedGroupInfo group = (GlobalSchedGroupInfo) event.getValue();
-              groupBalancer.assignGroup(group);
+              groupAssigner.assignGroup(group);
               break;
             }
             case GROUP_REMOVE: {
@@ -137,6 +143,7 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
               // TODO
               break;
             case REBALANCE:
+              loadUpdater.update();
               groupRebalancer.triggerRebalancing();
               break;
             default:

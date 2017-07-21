@@ -43,9 +43,15 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
    */
   private final NextGroupSelector nextGroupSelector;
 
+  /**
+   * The load of the event processor.
+   */
+  private double load;
+
   public GlobalSchedNonBlockingEventProcessor(final NextGroupSelector nextGroupSelector) {
     super();
     this.nextGroupSelector = nextGroupSelector;
+    this.load = 0.0;
   }
 
   /**
@@ -57,15 +63,11 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
       while (!Thread.currentThread().isInterrupted() && !closed) {
         // Pick an active group
         final GlobalSchedGroupInfo groupInfo = nextGroupSelector.getNextExecutableGroup();
-
-        // Incoming rates of events
-        double incomingEventRate = groupInfo.numberOfRemainingEvents() /
-            Math.max(1.0, (double)(System.currentTimeMillis() - groupInfo.getLatestInactiveTime()));
-
-
+        // Active operator queue
         final OperatorChainManager operatorChainManager = groupInfo.getOperatorChainManager();
 
-        final long startProcessingTime = System.currentTimeMillis();
+        // Start time
+        final long startProcessingTime = System.nanoTime();
         long numProcessedEvents = 0;
         while (groupInfo.isActive()) {
           //Pick an active operator event queue
@@ -75,26 +77,26 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
             numProcessedEvents += 1;
           }
         }
-        final long endProcessingTime = System.currentTimeMillis();
+        // End time
+        final long endProcessingTime = System.nanoTime();
 
-        // Processing time / events
-        double processingTimeRate = (double)(endProcessingTime - startProcessingTime) /
-              Math.max(1, numProcessedEvents);
-
-        // Update load
-        final double load = processingTimeRate * incomingEventRate;
-        groupInfo.updateLoad(load);
-        groupInfo.setLatestInactiveTime(endProcessingTime);
-
-        if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "{0} Process Group {1}, # Processed Events: {2}, " +
-                  "IncomingRate: {3}, ProcessingRate: {4}, Load: {5}, EWMALoad: {6}",
-              new Object[]{Thread.currentThread().getName(), groupInfo,  numProcessedEvents,
-                  incomingEventRate, processingTimeRate, load, groupInfo.getEWMALoad()});
+        // Update processing time and # of events
+        final long processingTime = endProcessingTime - startProcessingTime;
+        if (numProcessedEvents != 0) {
+          groupInfo.getProcessingTime().getAndAdd(endProcessingTime - startProcessingTime);
+          groupInfo.getProcessingEvent().getAndAdd(numProcessedEvents);
         }
 
-        // Reschedule
-        nextGroupSelector.reschedule(groupInfo, true);
+
+        if (LOG.isLoggable(Level.FINE)) {
+          LOG.log(Level.FINE, "{0} Process Group {1}, # Processed Events: {2}, ProcessingTime: {3}",
+              new Object[]{Thread.currentThread().getName(), groupInfo,  numProcessedEvents,
+                  processingTime});
+        }
+
+        // Change the group status
+        groupInfo.setReadyFromProcessing();
+        //nextGroupSelector.reschedule(groupInfo, true);
       }
     } catch (final InterruptedException e) {
       // Interrupt occurs while sleeping, so just finishes the process...
@@ -111,7 +113,22 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
   }
 
   @Override
-  public NextGroupSelector getNextGroupSelector() {
-    return nextGroupSelector;
+  public double getLoad() {
+    return load;
+  }
+
+  @Override
+  public void setLoad(final double l) {
+    load = l;
+  }
+
+  @Override
+  public void addActiveGroup(final GlobalSchedGroupInfo group) {
+    nextGroupSelector.reschedule(group, false);
+  }
+
+  @Override
+  public boolean removeActiveGroup(final GlobalSchedGroupInfo group) {
+    return nextGroupSelector.removeDispatchedGroup(group);
   }
 }

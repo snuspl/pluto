@@ -15,12 +15,15 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
+import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -30,9 +33,17 @@ public final class DefaultGroupAllocationTable implements GroupAllocationTable {
   private final ConcurrentMap<EventProcessor, Collection<GlobalSchedGroupInfo>> table;
 
   @Inject
-  private DefaultGroupAllocationTable() {
+  private DefaultGroupAllocationTable(
+      @Parameter(DefaultNumEventProcessors.class) final int defaultNumEventProcessors,
+      final EventProcessorFactory eventProcessorFactory) {
     this.eventProcessors = new CopyOnWriteArrayList<>();
     this.table = new ConcurrentHashMap<>();
+    // Create event processors
+    for (int i = 0; i < defaultNumEventProcessors; i++) {
+      final EventProcessor eventProcessor = eventProcessorFactory.newEventProcessor();
+      put(eventProcessor, new ConcurrentLinkedQueue<>());
+      eventProcessor.start();
+    }
   }
 
   @Override
@@ -63,6 +74,16 @@ public final class DefaultGroupAllocationTable implements GroupAllocationTable {
 
   @Override
   public String toString() {
-    return table.toString();
+    final StringBuilder sb = new StringBuilder();
+    for (final EventProcessor eventProcessor : eventProcessors) {
+      final Collection<GlobalSchedGroupInfo> groups = table.get(eventProcessor);
+      sb.append(eventProcessor);
+      sb.append(" -> [");
+      sb.append(groups.size());
+      sb.append("], ");
+      sb.append(table.get(eventProcessor));
+      sb.append("\n");
+    }
+    return sb.toString();
   }
 }

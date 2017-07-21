@@ -32,7 +32,7 @@ public final class OperatorState <S> implements Serializable {
     this.state = state;
   }
 
-  public S getState(){
+  public S getState() {
     return this.state;
   }
 }

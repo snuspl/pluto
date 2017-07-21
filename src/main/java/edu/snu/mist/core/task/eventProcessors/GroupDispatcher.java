@@ -17,7 +17,6 @@ package edu.snu.mist.core.task.eventProcessors;
 
 import edu.snu.mist.core.task.eventProcessors.parameters.DispatcherThreadNum;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
-import edu.snu.mist.core.task.globalsched.NextGroupSelector;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -63,7 +62,6 @@ public final class GroupDispatcher implements AutoCloseable {
     for (int i = 0; i < dispatcherThreadNum; i++) {
       this.dispatcherService.submit(new DispatcherThread(i));
     }
-
   }
 
   @Override
@@ -85,15 +83,14 @@ public final class GroupDispatcher implements AutoCloseable {
         final List<EventProcessor> eventProcessors = groupAllocationTable.getKeys();
         for (int i = index; i < eventProcessors.size(); i += dispatcherThreadNum) {
           final EventProcessor eventProcessor = eventProcessors.get(i);
-          final NextGroupSelector nextGroupSelector = eventProcessor.getNextGroupSelector();
           final Collection<GlobalSchedGroupInfo> groups = groupAllocationTable.getValue(eventProcessor);
           for (final GlobalSchedGroupInfo group : groups) {
-            if (!group.isAssigned() && group.isActive()) {
-              // dispatch the inactive group
+            if (group.isActive()) {
+              // Dispatch the inactive group
               // Mark this group is being processed
-              if (group.compareAndSetAssigned(false, true)) {
+              if (group.setDispatched()) {
                 // This could be False when the group is reassigned from another event processor.
-                nextGroupSelector.reschedule(group, false);
+                eventProcessor.addActiveGroup(group);
               }
             }
           }

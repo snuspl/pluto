@@ -32,19 +32,20 @@ public final class DispatcherGroupSelector implements NextGroupSelector {
   private static final Logger LOG = Logger.getLogger(DispatcherGroupSelector.class.getName());
 
   private final BlockingQueue<GlobalSchedGroupInfo> queue;
-  private final GroupAssigner groupAssigner;
 
-  DispatcherGroupSelector(final GroupAssigner groupAssigner) {
-    this.groupAssigner = groupAssigner;
-    groupAssigner.addGroupSelector(this);
+  DispatcherGroupSelector() {
     this.queue = new LinkedBlockingQueue<>();
   }
 
   @Override
   public GlobalSchedGroupInfo getNextExecutableGroup() {
     try {
-      final GlobalSchedGroupInfo groupInfo = queue.take();
-      return groupInfo;
+      while (true) {
+        final GlobalSchedGroupInfo groupInfo = queue.take();
+        if (groupInfo.setProcessing()) {
+          return groupInfo;
+        }
+      }
     } catch (InterruptedException e) {
       e.printStackTrace();
       throw new RuntimeException(e);
@@ -58,10 +59,16 @@ public final class DispatcherGroupSelector implements NextGroupSelector {
   @Override
   public void reschedule(final GlobalSchedGroupInfo groupInfo, final boolean miss) {
     if (miss) {
-      groupInfo.compareAndSetAssigned(true, false);
+      //groupInfo.compareAndSetAssigned(true, false);
     } else {
       queue.add(groupInfo);
     }
+  }
+
+  @Override
+  public boolean removeDispatchedGroup(final GlobalSchedGroupInfo group) {
+    queue.remove(group);
+    return group.setReadyFromDispatched();
   }
 
   @Override
@@ -75,6 +82,6 @@ public final class DispatcherGroupSelector implements NextGroupSelector {
 
   @Override
   public void close() throws Exception {
-    groupAssigner.removeGroupSelector(this);
+    //groupAssigner.removeGroupSelector(this);
   }
 }

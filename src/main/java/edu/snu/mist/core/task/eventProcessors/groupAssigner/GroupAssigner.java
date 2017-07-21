@@ -13,33 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched.dispatch;
+package edu.snu.mist.core.task.eventProcessors.groupAssigner;
 
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
-import edu.snu.mist.core.task.globalsched.GroupEvent;
-import edu.snu.mist.core.task.globalsched.NextGroupSelector;
 import org.apache.reef.tang.annotations.DefaultImplementation;
-import org.apache.reef.wake.EventHandler;
 
 /**
- * This is an interface that assigns groups to next group selectors.
+ * It assigns a group to an event processor.
  */
-@DefaultImplementation(ModGroupAssigner.class)
-public interface GroupAssigner extends EventHandler<GroupEvent> {
+@DefaultImplementation(MinLoadGroupAssignerImpl.class)
+public interface GroupAssigner {
 
   /**
-   * Assign the group to a next group selector (event processor).
-   * @param groupInfo group info
+   * Assign a group to an event processor.
+   * @param newGroup new group
    */
-  void assign(GlobalSchedGroupInfo groupInfo);
+  void assignGroup(GlobalSchedGroupInfo newGroup);
 
   /**
-   * Add a new group selector (event processor).
+   * This should be called once when the groupAllocationTable is initialized.
    */
-  void addGroupSelector(NextGroupSelector groupSelector);
-
-  /**
-   * Remove the existing group selector (event processor).
-   */
-  void removeGroupSelector(NextGroupSelector groupSelector);
+  void initialize();
 }
