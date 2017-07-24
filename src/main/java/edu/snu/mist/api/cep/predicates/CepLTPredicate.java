@@ -33,26 +33,4 @@ public final class CepLTPredicate extends CepCCPredicate implements MISTPredicat
     public boolean test(final Map<String, Object> stringObjectMap) {
         return cepCompare(stringObjectMap.get(this.getField()), this.getValue()) < 0;
     }
-
-    @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        final CepCCPredicate that = (CepCCPredicate) o;
-
-        if (!this.getField().equals(that.getField())) {
-            return false;
-        }
-        return this.getValue().equals(that.getValue());
-    }
-
-    @Override
-    public int hashCode() {
-        return super.hashCode();
-    }
 }
