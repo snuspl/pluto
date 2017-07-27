@@ -100,4 +100,14 @@ public final class ComparisonCondition extends AbstractCondition {
   public static AbstractCondition eq(final String fieldName, final Object value) {
     return new ComparisonCondition(ConditionType.EQ, fieldName, value);
   }
+
+  /**
+   * Creates an immutable not equal condition by given inputs.
+   * @param fieldName the data field name
+   * @param value comparison value
+   * @return neq condition
+   */
+    public static AbstractCondition neq(final String fieldName, final Object value) {
+        return new ComparisonCondition(ConditionType.NEQ, fieldName, value);
+    }
 }

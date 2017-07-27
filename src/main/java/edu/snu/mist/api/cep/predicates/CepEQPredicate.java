@@ -13,23 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.cep.conditions;
+
+package edu.snu.mist.api.cep.predicates;
+
+import edu.snu.mist.common.functions.MISTPredicate;
+
+import java.util.Map;
 
 /**
- * Enum class for condition types.
+ * MISTPredicate for filtering Cep Comparison EQ Condition.
  */
+public final class CepEQPredicate extends CepCCPredicate implements MISTPredicate<Map<String, Object>> {
 
-public enum ConditionType {
-  // Less than
-  LT,
-  // Greater than
-  GT,
-  // Equals
-  EQ,
-  // Not equals
-  NEQ,
-  // And
-  AND,
-  // Or
-  OR
+    public CepEQPredicate(final String field, final Object value) {
+        super(field, value);
+    }
+
+    @Override
+    public boolean test(final Map<String, Object> stringObjectMap) {
+        return stringObjectMap.get(this.getField()).equals(this.getValue());
+    }
 }

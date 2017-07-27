@@ -16,14 +16,11 @@
 package edu.snu.mist.api.cep;
 
 import edu.snu.mist.api.cep.conditions.ComparisonCondition;
-import org.apache.reef.io.Tuple;
+import edu.snu.mist.common.types.Tuple2;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * A collection of tests for MIST Cep query submission.
@@ -65,11 +62,9 @@ public class MISTCepQuerySubmissionTest {
       put("SOCKET_INPUT_PORT", cepInputPort);
     } };
     Assert.assertEquals(expectedCepInputConf, exampleCepInput.getSourceConfiguration());
-    final List<Tuple<String, CepValueType>> expectedCepInputFields
-        = new ArrayList<Tuple<String, CepValueType>>() { {
-      add(new Tuple<>(firstFieldName, firstFieldType));
-      add(new Tuple<>(secondFieldName, secondFieldType));
-    } };
+    final List<Tuple2<String, CepValueType>> expectedCepInputFields
+        = Arrays.asList(new Tuple2<>(firstFieldName, firstFieldType),
+            new Tuple2<>(secondFieldName, secondFieldType));
     Assert.assertEquals(expectedCepInputFields, exampleCepInput.getFields());
   }
 
@@ -91,7 +86,7 @@ public class MISTCepQuerySubmissionTest {
    */
   @Test
   public void testStatelessCepQuery() {
-    final MISTCepStatelessQuery exampleQuery = new MISTCepStatelessQuery.Builder()
+    final MISTCepStatelessQuery exampleQuery = new MISTCepStatelessQuery.Builder("test-group")
         .input(exampleCepInput)
         .addStatelessRule(new CepStatelessRule.Builder()
             .setCondition(ComparisonCondition.gt("Temperature", 25))

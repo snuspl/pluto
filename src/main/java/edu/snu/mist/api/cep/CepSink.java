@@ -25,15 +25,23 @@ public final class CepSink {
 
   private final CepSinkType cepSinkType;
   private final Map<String, Object> sinkConfigs;
+  private final String separator;
+  private static final String DEFAULT_SEPARATOR = ",";
 
   /**
    * Creates an immutable sink called from ActionBuilder.
    * @param cepSinkType
    * @param sinkConfigs
+   * @param separator
    */
-  private CepSink(final CepSinkType cepSinkType, final Map<String, Object> sinkConfigs) {
+  private CepSink(final CepSinkType cepSinkType, final Map<String, Object> sinkConfigs, final String separator) {
     this.cepSinkType = cepSinkType;
     this.sinkConfigs = sinkConfigs;
+    this.separator = separator;
+  }
+
+  private CepSink(final CepSinkType cepSinkType, final Map<String, Object> sinkConfigs) {
+      this(cepSinkType, sinkConfigs, DEFAULT_SEPARATOR);
   }
 
   /**
@@ -50,18 +58,27 @@ public final class CepSink {
     return sinkConfigs;
   }
 
+  /**
+   * @return Sink separator
+   */
+  public String getSeparator() {
+      return separator;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (!(o instanceof CepSink)) {
       return false;
     }
     final CepSink sink = (CepSink) o;
-    return this.cepSinkType == sink.cepSinkType && this.sinkConfigs.equals(sink.sinkConfigs);
+    return this.cepSinkType == sink.cepSinkType
+            && this.sinkConfigs.equals(sink.sinkConfigs)
+            && this.separator.equals(sink.separator);
   }
 
   @Override
   public int hashCode() {
-    return cepSinkType.hashCode() * 100 + sinkConfigs.hashCode() * 100;
+    return cepSinkType.hashCode() * 100 + sinkConfigs.hashCode() * 10 + separator.hashCode();
   }
 
   /**
@@ -70,9 +87,12 @@ public final class CepSink {
   private static final class InnerBuilder {
     private CepSinkType cepSinkType;
     private Map<String, Object> actionConfigurations;
+    private String separator;
+    private static final String DEFAULT_SEPARATOR = ",";
 
     private InnerBuilder() {
       this.actionConfigurations = new HashMap<>();
+      this.separator = DEFAULT_SEPARATOR;
     }
 
     /**
@@ -85,6 +105,11 @@ public final class CepSink {
       }
       this.cepSinkType = cepSinkType;
       return this;
+    }
+
+    private InnerBuilder setSeparator(final String separator) {
+        this.separator = separator;
+        return this;
     }
 
     /**
@@ -101,7 +126,7 @@ public final class CepSink {
     }
 
     private CepSink build() {
-      return new CepSink(cepSinkType, actionConfigurations);
+      return new CepSink(cepSinkType, actionConfigurations, separator);
     }
   }
 
@@ -137,6 +162,16 @@ public final class CepSink {
     public TextSocketBuilder setSocketPort(final int socketPort) {
       this.builder.addSinkConfigValue(socketSinkPortKey, socketPort);
       return this;
+    }
+
+    /**
+     * Sets the separator.
+     * @param separatorParam separator parameter
+     * @return builder
+     */
+    public TextSocketBuilder setSeparator(final String separatorParam) {
+        this.builder.setSeparator(separatorParam);
+        return this;
     }
 
     /**

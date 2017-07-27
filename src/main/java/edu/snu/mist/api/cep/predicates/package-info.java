@@ -13,23 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.cep.conditions;
-
 /**
- * Enum class for condition types.
+ * Predicates used for translating cep queries.
  */
-
-public enum ConditionType {
-  // Less than
-  LT,
-  // Greater than
-  GT,
-  // Equals
-  EQ,
-  // Not equals
-  NEQ,
-  // And
-  AND,
-  // Or
-  OR
-}
+package edu.snu.mist.api.cep.predicates;

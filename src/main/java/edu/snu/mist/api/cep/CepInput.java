@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.api.cep;
 
-import org.apache.reef.io.Tuple;
+import edu.snu.mist.common.types.*;
 
 import java.util.*;
 
@@ -26,20 +26,38 @@ public final class CepInput {
 
   private final CepInputType cepInputType;
   private final Map<String, Object> cepInputConfiguration;
-  private final List<Tuple<String, CepValueType>> fields;
+  private final List<Tuple2<String, CepValueType>> fields;
+  private final String separator;
+  private static final String DEFAULT_SEPARATOR = ",";
 
   /**
    * Makes an immutable CepInput from InnerBuilder. Should not be exposed to public.
    * @param cepInputTypeParam cep input type given by builder
    * @param cepInputConfigurationParam eep input configuration given by builder
    * @param fieldsParam properties given by builder
+   * @param separatorParam cep input separator
    */
   private CepInput(final CepInputType cepInputTypeParam,
                    final Map<String, Object> cepInputConfigurationParam,
-                   final List<Tuple<String, CepValueType>> fieldsParam) {
+                   final List<Tuple2<String, CepValueType>> fieldsParam,
+                   final String separatorParam) {
     this.cepInputType = cepInputTypeParam;
     this.cepInputConfiguration = cepInputConfigurationParam;
     this.fields = fieldsParam;
+    this.separator = separatorParam;
+  }
+
+  /**
+   * Makes an immutable CepInput from InnerBuilder. Should not be exposed to public.
+   * The default separator is comma.
+   * @param cepInputTypeParam cep input type given by builder
+   * @param cepInputConfigurationParam eep input configuration given by builder
+   * @param fieldsParam properties given by builder
+   */
+  private CepInput(final CepInputType cepInputTypeParam,
+                   final Map<String, Object> cepInputConfigurationParam,
+                   final List<Tuple2<String, CepValueType>> fieldsParam) {
+      this(cepInputTypeParam, cepInputConfigurationParam, fieldsParam, DEFAULT_SEPARATOR);
   }
 
   /**
@@ -59,8 +77,15 @@ public final class CepInput {
   /**
    * @return input field fields name and their types
    */
-  public List<Tuple<String, CepValueType>> getFields() {
+  public List<Tuple2<String, CepValueType>> getFields() {
     return fields;
+  }
+
+  /**
+   * @return separator of this input
+   */
+  public String getSeparator() {
+      return separator;
   }
 
   @Override
@@ -71,12 +96,14 @@ public final class CepInput {
     final CepInput input = (CepInput) o;
     return this.cepInputType.equals(input.cepInputType)
         && this.cepInputConfiguration.equals(input.cepInputConfiguration)
-        && this.fields.equals(input.fields);
+        && this.fields.equals(input.fields)
+        && this.separator.equals(input.separator);
   }
 
   @Override
   public int hashCode() {
-    return cepInputType.hashCode() * 100 + cepInputConfiguration.hashCode() * 100 + fields.hashCode();
+    return cepInputType.hashCode() * 1000 + cepInputConfiguration.hashCode() * 100
+            + fields.hashCode() * 10 + separator.hashCode();
   }
 
   /**
@@ -86,13 +113,17 @@ public final class CepInput {
 
     private CepInputType cepInputType;
     private final Map<String, Object> cepInputConfiguration;
-    private final List<Tuple<String, CepValueType>> fields;
+    private final List<Tuple2<String, CepValueType>> fields;
+    private String separator;
     private final Set<String> propertyNames;
+
+    private static final String DEFAULT_SEPARATOR = ",";
 
     private InnerBuilder() {
       this.cepInputType = null;
       this.cepInputConfiguration = new HashMap<>();
       this.fields = new ArrayList<>();
+      this.separator = DEFAULT_SEPARATOR;
       this.propertyNames = new HashSet<>();
     }
 
@@ -107,6 +138,16 @@ public final class CepInput {
       }
       this.cepInputType = cepInputTypeParam;
       return this;
+    }
+
+      /**
+       * Set separator information (, : blank ...).
+       * @param separatorParam
+       * @return cep input builder
+       */
+    private InnerBuilder setSeparator(final String separatorParam) {
+        this.separator = separatorParam;
+        return this;
     }
 
     /**
@@ -133,7 +174,7 @@ public final class CepInput {
       if (propertyNames.contains(fieldName)) {
         throw new IllegalStateException("Duplicated property name");
       }
-      fields.add(new Tuple<>(fieldName, valueType));
+      fields.add(new Tuple2<>(fieldName, valueType));
       return this;
     }
 
@@ -142,7 +183,7 @@ public final class CepInput {
      * @return new cep input
      */
     private CepInput build() {
-      return new CepInput(this.cepInputType, this.cepInputConfiguration, this.fields);
+      return new CepInput(this.cepInputType, this.cepInputConfiguration, this.fields, this.separator);
     }
   }
 
@@ -177,6 +218,11 @@ public final class CepInput {
      */
     public TextSocketBuilder setSocketPort(final int socketStreamPort) {
       builder.addInputConfigValue(socketInputPortKey, socketStreamPort);
+      return this;
+    }
+
+    public TextSocketBuilder setSeparator(final String separator) {
+      builder.setSeparator(separator);
       return this;
     }
 
