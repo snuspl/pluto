@@ -116,6 +116,8 @@ public final class CepTranslator {
                 return input.filter(new CepLTPredicate(field, value));
             case EQ:
                 return input.filter(new CepEQPredicate(field, value));
+            case NEQ:
+                return input.filter(new CepNEQPredicate(field, value));
             default:
                 throw new IllegalStateException("Wrong comparison condition type!");
         }
