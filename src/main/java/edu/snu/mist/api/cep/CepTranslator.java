@@ -112,8 +112,12 @@ public final class CepTranslator {
         switch (conditionType) {
             case GT:
                 return input.filter(new CepGTPredicate(field, value));
+            case GE:
+                return input.filter(new CepGEPredicate(field, value));
             case LT:
                 return input.filter(new CepLTPredicate(field, value));
+            case LE:
+                return input.filter(new CepLEPredicate(field, value));
             case EQ:
                 return input.filter(new CepEQPredicate(field, value));
             case NEQ:
