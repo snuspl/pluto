@@ -82,6 +82,16 @@ public final class ComparisonCondition extends AbstractCondition {
   }
 
   /**
+   * Creates an immutable less-than or equal-to condition by given inputs.
+   * @param fieldName the data field name
+   * @param value comparison value
+   * @return neq condition
+   */
+  public static AbstractCondition le(final String fieldName, final Object value) {
+    return new ComparisonCondition(ConditionType.LE, fieldName, value);
+  }
+
+  /**
    * Creates an immutable greater-than condition by given inputs.
    * @param fieldName the data field name
    * @param value comparison value
@@ -89,6 +99,16 @@ public final class ComparisonCondition extends AbstractCondition {
    */
   public static AbstractCondition gt(final String fieldName, final Object value) {
     return new ComparisonCondition(ConditionType.GT, fieldName, value);
+  }
+
+  /**
+   * Creates an immutable less-than or equal-to condition by given inputs.
+   * @param fieldName the data field name
+   * @param value comparison value
+   * @return neq condition
+   */
+  public static AbstractCondition ge(final String fieldName, final Object value) {
+    return new ComparisonCondition(ConditionType.GE, fieldName, value);
   }
 
   /**
