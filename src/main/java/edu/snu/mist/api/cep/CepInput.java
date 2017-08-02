@@ -221,6 +221,11 @@ public final class CepInput {
       return this;
     }
 
+    /**
+     * A helper method for setting separator.
+     * @param separator
+     * @return cep socket input builder
+     */
     public TextSocketBuilder setSeparator(final String separator) {
       builder.setSeparator(separator);
       return this;
@@ -247,4 +252,70 @@ public final class CepInput {
       return builder.build();
     }
   }
+
+    /*
+     * A builder class for Inputs using MQTT as inputs.
+     */
+    public static final class MqttBuilder {
+
+        private final String mqttInputBrokerURI = "MQTT_INPUT_BROKER_URI";
+        private final String mqttInputTopic = "MQTT_INPUT_TOPIC";
+        private InnerBuilder builder;
+
+        public MqttBuilder() {
+            this.builder = new InnerBuilder()
+                    .setSourceType(CepInputType.MQTT_SOURCE);
+        }
+
+        /**
+         * A helper method for setting mqtt broker URI configuration.
+         * @param mqttBrokerURI mqtt broker URI
+         * @return cep mqtt input builder
+         */
+        public MqttBuilder setMqttBrokerURI(final String mqttBrokerURI) {
+            builder.addInputConfigValue(mqttInputBrokerURI, mqttBrokerURI);
+            return this;
+        }
+
+        /**
+         * A helper method for setting mqtt topic configuration.
+         * @param mqttTopic mqtt topic
+         * @return cep mqtt input builder
+         */
+        public MqttBuilder setMqttTopic(final String mqttTopic) {
+            builder.addInputConfigValue(mqttInputTopic, mqttTopic);
+            return this;
+        }
+
+        /**
+         * A helper method for setting separator.
+         * @param separator
+         * @return cep mqtt input builder
+         */
+        public MqttBuilder setSeparator(final String separator) {
+            builder.setSeparator(separator);
+            return this;
+        }
+
+        /**
+         * Add property information for inputs.
+         * @param fieldName name of the field
+         * @param valueType type of the field value
+         * @return cep input builder
+         */
+        public MqttBuilder addField(final String fieldName, final CepValueType valueType) {
+            if (builder.propertyNames.contains(fieldName)) {
+                throw new IllegalStateException("Duplicated property name");
+            }
+            builder.addField(fieldName, valueType);
+            return this;
+        }
+
+        /**
+         * @return a new CepInput
+         */
+        public CepInput build() {
+            return builder.build();
+        }
+    }
 }

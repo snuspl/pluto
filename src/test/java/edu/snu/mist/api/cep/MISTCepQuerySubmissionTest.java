@@ -27,72 +27,127 @@ import java.util.*;
  */
 public class MISTCepQuerySubmissionTest {
 
-  private final String cepInputAddress = "some.inputaddress.com";
+  //Socket source information.
+  private final String cepSocketInputAddress = "some.inputaddress.com";
+  private final Integer cepSocketInputPort = 8080;
 
-  private final Integer cepInputPort = 8080;
+  //Mqtt source information.
+  private final String cepMqttInputURI = "tcp://example.cep.mqtt.input:uri";
+  private final String cepMqttInputTopic = "test-sub";
+
   private final String firstFieldName = "Temperature";
   private final String secondFieldName = "Location";
   private final CepValueType firstFieldType = CepValueType.INTEGER;
   private final CepValueType secondFieldType = CepValueType.DOUBLE;
 
-  private final String cepOutputAddress = "some.outputaddress.com";
-  private final CepSinkType cepSinkType = CepSinkType.TEXT_SOCKET_OUTPUT;
-  private final Integer cepOutputPort = 8088;
+  //Socket sink information.
+  private final String cepSocketOutputAddress = "some.outputaddress.com";
+  private final Integer cepSocketOutputPort = 8088;
 
-  private final CepInput exampleCepInput = new CepInput.TextSocketBuilder()
-      .setSocketAddress(cepInputAddress)
-      .setSocketPort(cepInputPort)
+  //Mqtt sink information.
+  private final String cepMqttOutputURI = "tcp://example.cep.mqtt.output:uri";
+  private final String cepMqttOutputTopic = "test-pub";
+
+  //Build a socket source.
+  private final CepInput exampleCepSocketInput = new CepInput.TextSocketBuilder()
+      .setSocketAddress(cepSocketInputAddress)
+      .setSocketPort(cepSocketInputPort)
       .addField(firstFieldName, firstFieldType)
       .addField(secondFieldName, secondFieldType)
       .build();
 
-  private final CepSink exampleCepSink = new CepSink.TextSocketBuilder()
-      .setSocketAddress(cepOutputAddress)
-      .setSocketPort(cepOutputPort)
+  //Build a mqtt source.
+  private final CepInput exampleCepMqttInput = new CepInput.MqttBuilder()
+      .setMqttBrokerURI(cepMqttInputURI)
+      .setMqttTopic(cepMqttInputTopic)
+      .addField(firstFieldName, firstFieldType)
+      .addField(secondFieldName, secondFieldType)
+      .build();
+
+  //Build a socket sink.
+  private final CepSink exampleCepSocketSink = new CepSink.TextSocketBuilder()
+      .setSocketAddress(cepSocketOutputAddress)
+      .setSocketPort(cepSocketOutputPort)
+      .build();
+
+  //Build a mqtt sink
+  private final CepSink exampleCepMqttSink = new CepSink.MqttBuilder()
+      .setMqttBrokerURI(cepMqttOutputURI)
+      .setMqttTopic(cepMqttOutputTopic)
       .build();
 
   /**
-   * Tests whether cep input builder makes a cep input correctly.
+   * Tests whether cep socket input builder makes a cep input correctly.
    */
   @Test
-  public void testCepInputBuilder() {
-    Assert.assertEquals(CepInputType.TEXT_SOCKET_SOURCE, exampleCepInput.getInputType());
-    final Map<String, Object> expectedCepInputConf = new HashMap<String, Object>() { {
-      put("SOCKET_INPUT_ADDRESS", cepInputAddress);
-      put("SOCKET_INPUT_PORT", cepInputPort);
+  public void testCepSocketInputBuilder() {
+    Assert.assertEquals(CepInputType.TEXT_SOCKET_SOURCE, exampleCepSocketInput.getInputType());
+    final Map<String, Object> expectedCepSocketInputConf = new HashMap<String, Object>() { {
+      put("SOCKET_INPUT_ADDRESS", cepSocketInputAddress);
+      put("SOCKET_INPUT_PORT", cepSocketInputPort);
     } };
-    Assert.assertEquals(expectedCepInputConf, exampleCepInput.getSourceConfiguration());
-    final List<Tuple2<String, CepValueType>> expectedCepInputFields
+    Assert.assertEquals(expectedCepSocketInputConf, exampleCepSocketInput.getSourceConfiguration());
+    final List<Tuple2<String, CepValueType>> expectedCepSocketInputFields
         = Arrays.asList(new Tuple2<>(firstFieldName, firstFieldType),
             new Tuple2<>(secondFieldName, secondFieldType));
-    Assert.assertEquals(expectedCepInputFields, exampleCepInput.getFields());
+    Assert.assertEquals(expectedCepSocketInputFields, exampleCepSocketInput.getFields());
   }
 
   /**
-   * Tests whether cep action builder makes a cep action correctly.
+   * Test whether cep mqtt input builder makes a cep input correctly.
    */
   @Test
-  public void testCepSinkBuilder() {
-    Assert.assertEquals(CepSinkType.TEXT_SOCKET_OUTPUT, exampleCepSink.getCepSinkType());
-    final Map<String, Object> expectedCepOutputConf = new HashMap<String, Object>() { {
-      put("SOCKET_SINK_ADDRESS", cepOutputAddress);
-      put("SOCKET_SINK_PORT", cepOutputPort);
+  public void testCepMqttInputBuilder() {
+    Assert.assertEquals(CepInputType.MQTT_SOURCE, exampleCepMqttInput.getInputType());
+    final Map<String, Object> expectedCepMqttInputConf = new HashMap<String, Object>() { {
+      put("MQTT_INPUT_BROKER_URI", cepMqttInputURI);
+      put("MQTT_INPUT_TOPIC", cepMqttInputTopic);
     } };
-    Assert.assertEquals(expectedCepOutputConf, exampleCepSink.getSinkConfigs());
+    Assert.assertEquals(expectedCepMqttInputConf, exampleCepMqttInput.getSourceConfiguration());
+    final List<Tuple2<String, CepValueType>> expectedCepMqttInputFields
+            = Arrays.asList(new Tuple2<>(firstFieldName, firstFieldType),
+            new Tuple2<>(secondFieldName, secondFieldType));
+    Assert.assertEquals(expectedCepMqttInputFields, exampleCepMqttInput.getFields());
   }
 
   /**
-   * Tests whether cep stateless query is built correctly.
+   * Tests whether cep socket action builder makes a cep action correctly.
    */
   @Test
-  public void testStatelessCepQuery() {
+  public void testCepSocketSinkBuilder() {
+    Assert.assertEquals(CepSinkType.TEXT_SOCKET_OUTPUT, exampleCepSocketSink.getCepSinkType());
+    final Map<String, Object> expectedCepSocketOutputConf = new HashMap<String, Object>() { {
+      put("SOCKET_SINK_ADDRESS", cepSocketOutputAddress);
+      put("SOCKET_SINK_PORT", cepSocketOutputPort);
+    } };
+    Assert.assertEquals(expectedCepSocketOutputConf, exampleCepSocketSink.getSinkConfigs());
+  }
+
+  /**
+   * Tests whether cep mqtt action builder makes a cep action correctly.
+   */
+  @Test
+  public void testCepMqttSinkBuilder() {
+    Assert.assertEquals(CepSinkType.MQTT_OUTPUT, exampleCepMqttSink.getCepSinkType());
+    final Map<String, Object> expectedCepMqttOutputConf = new HashMap<String, Object>() { {
+      put("MQTT_SINK_BROKER_URI", cepMqttOutputURI);
+      put("MQTT_SINK_TOPIC", cepMqttOutputTopic);
+    } };
+    Assert.assertEquals(expectedCepMqttOutputConf, exampleCepMqttSink.getSinkConfigs());
+  }
+
+  /**
+   * Tests whether cep stateless query with socket source and sink is built correctly.
+   */
+  @Test
+  public void testSocketStatelessCepQuery() {
     final MISTCepStatelessQuery exampleQuery = new MISTCepStatelessQuery.Builder("test-group")
-        .input(exampleCepInput)
+        .input(exampleCepSocketInput)
         .addStatelessRule(new CepStatelessRule.Builder()
             .setCondition(ComparisonCondition.gt("Temperature", 25))
             .setAction(new CepAction.Builder()
                 .setActionType(CepActionType.TEXT_WRITE)
-                .setCepSink(exampleCepSink)
+                .setCepSink(exampleCepSocketSink)
                 .setParams("Hot")
                 .build())
             .build()
@@ -101,29 +156,74 @@ public class MISTCepQuerySubmissionTest {
             .setCondition(ComparisonCondition.lt("Temperature", 10))
             .setAction(new CepAction.Builder()
                 .setActionType(CepActionType.TEXT_WRITE)
-                .setCepSink(exampleCepSink)
+                .setCepSink(exampleCepSocketSink)
                 .setParams("Cold")
                 .build())
             .build()
         )
         .build();
-    Assert.assertEquals(exampleCepInput, exampleQuery.getCepInput());
+    Assert.assertEquals(exampleCepSocketInput, exampleQuery.getCepInput());
     final List<CepStatelessRule> statelessRules = exampleQuery.getCepStatelessRules();
     Assert.assertEquals(statelessRules.size(), 2);
     final CepStatelessRule rule0 = statelessRules.get(0);
     Assert.assertEquals(rule0.getCondition(), ComparisonCondition.gt("Temperature", 25));
     Assert.assertEquals(rule0.getAction(), new CepAction.Builder()
         .setActionType(CepActionType.TEXT_WRITE)
-        .setCepSink(exampleCepSink)
+        .setCepSink(exampleCepSocketSink)
         .setParams("Hot")
         .build());
     final CepStatelessRule rule1 = statelessRules.get(1);
     Assert.assertEquals(rule1.getCondition(), ComparisonCondition.lt("Temperature", 10));
     Assert.assertEquals(rule1.getAction(), new CepAction.Builder()
         .setActionType(CepActionType.TEXT_WRITE)
-        .setCepSink(exampleCepSink)
+        .setCepSink(exampleCepSocketSink)
         .setParams("Cold")
         .build());
+  }
+
+  /**
+   * Tests whether cep stateless query with mqtt source and sink is built correctly.
+   */
+  @Test
+  public void testMqttStatelessCepQuery() {
+    final MISTCepStatelessQuery exampleQuery = new MISTCepStatelessQuery.Builder("test-group")
+            .input(exampleCepMqttInput)
+            .addStatelessRule(new CepStatelessRule.Builder()
+                    .setCondition(ComparisonCondition.gt("Temperature", 25))
+                    .setAction(new CepAction.Builder()
+                            .setActionType(CepActionType.TEXT_WRITE)
+                            .setCepSink(exampleCepMqttSink)
+                            .setParams("Hot")
+                            .build())
+                    .build()
+            )
+            .addStatelessRule(new CepStatelessRule.Builder()
+                    .setCondition(ComparisonCondition.lt("Temperature", 10))
+                    .setAction(new CepAction.Builder()
+                            .setActionType(CepActionType.TEXT_WRITE)
+                            .setCepSink(exampleCepMqttSink)
+                            .setParams("Cold")
+                            .build())
+                    .build()
+            )
+            .build();
+    Assert.assertEquals(exampleCepMqttInput, exampleQuery.getCepInput());
+    final List<CepStatelessRule> statelessRules = exampleQuery.getCepStatelessRules();
+    Assert.assertEquals(statelessRules.size(), 2);
+    final CepStatelessRule rule0 = statelessRules.get(0);
+    Assert.assertEquals(rule0.getCondition(), ComparisonCondition.gt("Temperature", 25));
+    Assert.assertEquals(rule0.getAction(), new CepAction.Builder()
+            .setActionType(CepActionType.TEXT_WRITE)
+            .setCepSink(exampleCepMqttSink)
+            .setParams("Hot")
+            .build());
+    final CepStatelessRule rule1 = statelessRules.get(1);
+    Assert.assertEquals(rule1.getCondition(), ComparisonCondition.lt("Temperature", 10));
+    Assert.assertEquals(rule1.getAction(), new CepAction.Builder()
+            .setActionType(CepActionType.TEXT_WRITE)
+            .setCepSink(exampleCepMqttSink)
+            .setParams("Cold")
+            .build());
   }
 
   /**
@@ -132,7 +232,7 @@ public class MISTCepQuerySubmissionTest {
   @Test
   public void testStatefulCepQuery() {
     final MISTCepStatefulQuery exampleQuery = new MISTCepStatefulQuery.Builder()
-        .input(exampleCepInput)
+        .input(exampleCepSocketInput)
         .initialState("OUTSIDE")
         .addStatefulRule(new CepStatefulRule.Builder()
             .setCurrentState("OUTSIDE")
@@ -145,7 +245,7 @@ public class MISTCepQuerySubmissionTest {
             .setCondition(ComparisonCondition.gt("Temperature", 25))
             .setAction(new CepAction.Builder()
                 .setActionType(CepActionType.TEXT_WRITE)
-                .setCepSink(exampleCepSink)
+                .setCepSink(exampleCepSocketSink)
                 .setParams("Hot")
                 .build())
             .build())
@@ -154,12 +254,12 @@ public class MISTCepQuerySubmissionTest {
             .setCondition(ComparisonCondition.lt("Temperature", 10))
             .setAction(new CepAction.Builder()
                 .setActionType(CepActionType.TEXT_WRITE)
-                .setCepSink(exampleCepSink)
+                .setCepSink(exampleCepSocketSink)
                 .setParams("Cold")
                 .build())
             .build())
         .build();
-    Assert.assertEquals(exampleCepInput, exampleQuery.getCepInput());
+    Assert.assertEquals(exampleCepSocketInput, exampleQuery.getCepInput());
     final List<CepStatefulRule> statefulRules = exampleQuery.getCepStatefulRules();
     Assert.assertEquals(3, exampleQuery.getCepStatefulRules().size());
 
@@ -174,7 +274,7 @@ public class MISTCepQuerySubmissionTest {
     Assert.assertEquals(rule1.getCondition(), ComparisonCondition.gt("Temperature", 25));
     Assert.assertEquals(rule1.getAction(), new CepAction.Builder()
         .setActionType(CepActionType.TEXT_WRITE)
-        .setCepSink(exampleCepSink)
+        .setCepSink(exampleCepSocketSink)
         .setParams("Hot")
         .build());
     Assert.assertEquals(rule1.getNextState(), "INSIDE");
@@ -184,7 +284,7 @@ public class MISTCepQuerySubmissionTest {
     Assert.assertEquals(rule2.getCondition(), ComparisonCondition.lt("Temperature", 10));
     Assert.assertEquals(rule2.getAction(), new CepAction.Builder()
         .setActionType(CepActionType.TEXT_WRITE)
-        .setCepSink(exampleCepSink)
+        .setCepSink(exampleCepSocketSink)
         .setParams("Cold")
         .build());
     Assert.assertEquals(rule2.getNextState(), "INSIDE");

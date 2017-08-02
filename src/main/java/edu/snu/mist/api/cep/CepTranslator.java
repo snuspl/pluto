@@ -20,9 +20,11 @@ import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.api.cep.conditions.*;
 import edu.snu.mist.api.cep.predicates.*;
 import edu.snu.mist.api.datastreams.ContinuousStream;
+import edu.snu.mist.api.datastreams.configurations.MQTTSourceConfiguration;
 import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
 import edu.snu.mist.common.types.Tuple2;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.util.*;
 
@@ -71,6 +73,21 @@ public final class CepTranslator {
                 final List<Tuple2<String, CepValueType>> fields = cepInput.getFields();
                 final String separator = cepInput.getSeparator();
                 return queryBuilder.socketTextStream(sourceConf)
+                        .map(new CepStringToMapFunction(fields, separator));
+            }
+            case MQTT_SOURCE: {
+                final String topic = cepInput.getSourceConfiguration().get("MQTT_INPUT_TOPIC").toString();
+                final String brokerURI = cepInput.getSourceConfiguration().get("MQTT_INPUT_BROKER_URI").toString();
+                final SourceConfiguration sourceConf =
+                        new MQTTSourceConfiguration().newBuilder()
+                            .setTopic(topic)
+                            .setBrokerURI(brokerURI)
+                            .build();
+                final List<Tuple2<String, CepValueType>> fields = cepInput.getFields();
+                final String separator = cepInput.getSeparator();
+                return queryBuilder.mqttStream(sourceConf)
+                        //TODO: make a new mqtt map function.
+                        .map(mqttMessage -> new String(mqttMessage.getPayload()))
                         .map(new CepStringToMapFunction(fields, separator));
             }
             default:
@@ -191,8 +208,19 @@ public final class CepTranslator {
                                             (int)sink.getSinkConfigs().get("SOCKET_SINK_PORT"));
                             break;
                         }
+                        case MQTT_OUTPUT: {
+                            temp = cepConditionTranslator(temp, rule.getCondition());
+                            final List<Object> params = action.getParams();
+                            final String separator = sink.getSeparator();
+                            temp.map(new CepMapToStringFunction(params, separator))
+                                    //TODO: make a new mqtt map function
+                                    .map(value -> new MqttMessage(value.getBytes()))
+                                    .mqttOutput((String) sink.getSinkConfigs().get("MQTT_SINK_BROKER_URI"),
+                                            (String) sink.getSinkConfigs().get("MQTT_SINK_TOPIC"));
+                            break;
+                        }
                         default:
-                            throw new IllegalStateException("Only TEXT_SOCKET_OUTPUT is supported now!");
+                            throw new IllegalStateException("Wrong sink type!");
                     }
                     break;
                 }
@@ -200,7 +228,6 @@ public final class CepTranslator {
                     continue;
             }
         }
-
         return inputMap;
     }
 
