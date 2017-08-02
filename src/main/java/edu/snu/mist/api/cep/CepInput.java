@@ -260,7 +260,7 @@ public final class CepInput {
 
         private final String mqttInputBrokerURI = "MQTT_INPUT_BROKER_URI";
         private final String mqttInputTopic = "MQTT_INPUT_TOPIC";
-        private InnerBuilder builder;
+        private final InnerBuilder builder;
 
         public MqttBuilder() {
             this.builder = new InnerBuilder()

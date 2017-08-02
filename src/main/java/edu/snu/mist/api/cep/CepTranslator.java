@@ -220,7 +220,7 @@ public final class CepTranslator {
                             break;
                         }
                         default:
-                            throw new IllegalStateException("Wrong sink type!");
+                            throw new IllegalStateException("TEXT_SOCKET_OUTPUT, MQTT_OUTPUT are available!");
                     }
                     break;
                 }
