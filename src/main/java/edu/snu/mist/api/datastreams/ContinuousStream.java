@@ -136,6 +136,25 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    */
   <OUT> ContinuousStream<OUT> applyStateful(Class<? extends ApplyStatefulFunction<T, OUT>> clazz,
                                             Configuration funcConf);
+
+  /**
+   * Applies user-defined nfa operator to the current stream.
+   * @param nfaFunction the user-defined NFAFunction
+   * @param <OUT> the type of stream output
+   * @return new transformed stream after applying nfa operation
+   */
+  <OUT> ContinuousStream<OUT> nfa(NFAFunction<T, OUT> nfaFunction);
+
+  /**
+   * Applies user-defined nfa operator to the current stream.
+   * @param clazz the user-defined NFAFunction
+   * @param funcConf a configuration to instantiate the nfa function
+   * @param <OUT> the type of stream output
+   * @return new transformed stream after applying nfa operation
+   */
+  <OUT> ContinuousStream<OUT> nfa(Class<? extends NFAFunction<T, OUT>> clazz,
+                                  Configuration funcConf);
+
   /**
    * Applies union operation to the current stream and input continuous stream passed as a parameter.
    * Both two streams for union should be continuous stream type.

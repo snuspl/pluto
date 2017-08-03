@@ -215,6 +215,21 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
   }
 
   @Override
+  public <OUT> ContinuousStream<OUT> nfa(final NFAFunction<T, OUT> nfaFunction) {
+    return transformWithSingleUdfOperator(nfaFunction, NFAOperator.class);
+  }
+
+  @Override
+  public <OUT> ContinuousStream<OUT> nfa(final Class<? extends NFAFunction<T, OUT>> clazz,
+                                         final Configuration funcConf) {
+    final Configuration conf = Configurations.merge(NFAOperatorConfiguration.CONF
+        .set(NFAOperatorConfiguration.UDF, clazz)
+        .set(NFAOperatorConfiguration.OPERATOR, NFAOperator.class)
+        .build(), funcConf);
+    return checkUdfAndTransform(clazz, conf, this);
+  }
+
+  @Override
   public <K, V> ContinuousStream<Map<K, V>> reduceByKey(final int keyFieldNum,
                                                         final Class<K> keyType,
                                                         final MISTBiFunction<V, V, V> reduceFunc) {
