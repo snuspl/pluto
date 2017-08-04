@@ -35,6 +35,7 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -219,13 +220,15 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
   public ContinuousStream<T> nfa(
           final String initialState,
           final Set<String> finalState,
-          final Map<String, List<Tuple2<MISTPredicate, String>>> stateTable) throws IOException {
-    final Configuration opConf = NFAOperatorConfiguration.CONF
+          final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable) throws IOException {
+    final ConfigurationModule opConfModule = NFAOperatorConfiguration.CONF
         .set(NFAOperatorConfiguration.INITIAL_STATE, initialState)
-        .set(NFAOperatorConfiguration.FINAL_STATE, SerializeUtils.serializeToString((Serializable) finalState))
-        .set(NFAOperatorConfiguration.STATE_TABLE, SerializeUtils.serializeToString((Serializable) stateTable))
-        .build();
+        .set(NFAOperatorConfiguration.STATE_TABLE, SerializeUtils.serializeToString((Serializable) stateTable));
 
+    for (final String iterState : finalState) {
+      opConfModule.set(NFAOperatorConfiguration.FINAL_STATE, iterState);
+    }
+    final Configuration opConf = opConfModule.build();
     return transformToSingleInputContinuousStream(opConf, this);
   }
 

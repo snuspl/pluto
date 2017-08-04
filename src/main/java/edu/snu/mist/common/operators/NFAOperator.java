@@ -17,14 +17,17 @@ package edu.snu.mist.common.operators;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTPredicate;
+import edu.snu.mist.common.parameters.FinalState;
+import edu.snu.mist.common.parameters.InitialState;
+import edu.snu.mist.common.parameters.StateTable;
 import edu.snu.mist.common.types.Tuple2;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.io.IOException;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,13 +52,23 @@ public class NFAOperator extends OneStreamOperator implements StateHandler {
     private Map<String, Object> eventValue;
 
     // changing state table: Map<current state, Tuple2<condition, next state>>
-    private final Map<String, List<Tuple2<MISTPredicate, String>>> stateTable;
+    private final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable;
 
     @Inject
+    private NFAOperator(
+        @Parameter(InitialState.class) final String initialState,
+        @Parameter(FinalState.class) final String finalState,
+        @Parameter(StateTable.class) final String stateTable,
+        final ClassLoader classLoader) throws IOException, ClassNotFoundException {
+        this(SerializeUtils.deserializeFromString(initialState, classLoader),
+            SerializeUtils.deserializeFromString(finalState, classLoader),
+            SerializeUtils.deserializeFromString(stateTable, classLoader));
+    }
+
     public NFAOperator(
             final String initialState,
             final Set<String> finalState,
-            final Map<String, List<Tuple2<MISTPredicate, String>>> stateTable) {
+            final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable) {
         this.initialState = initialState;
         this.state = initialState;
         this.finalState = finalState;
@@ -65,7 +78,7 @@ public class NFAOperator extends OneStreamOperator implements StateHandler {
     // update state with input data
     private void dataUpdate(final Map<String, Object> inputData) {
         // possible transition list in current state
-        final List<Tuple2<MISTPredicate, String>> transitionList = stateTable.get(state);
+        final Collection<Tuple2<MISTPredicate, String>> transitionList = stateTable.get(state);
 
         for (final Tuple2<MISTPredicate, String> transition : transitionList) {
             final MISTPredicate<Map<String, Object>> predicate = (MISTPredicate<Map<String, Object>>) transition.get(0);
@@ -110,33 +123,5 @@ public class NFAOperator extends OneStreamOperator implements StateHandler {
     @Override
     public void setState(final Map<String, Object> loadedState) {
         state = (String) loadedState.get("nfaOperatorState");
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        final NFAOperator that = (NFAOperator) o;
-
-        if (!initialState.equals(that.initialState)) {
-            return false;
-        }
-        if (!finalState.equals(that.finalState)) {
-            return false;
-        }
-        return stateTable.equals(that.stateTable);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = initialState.hashCode();
-        result = 31 * result + finalState.hashCode();
-        result = 31 * result + stateTable.hashCode();
-        return result;
     }
 }

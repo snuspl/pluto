@@ -22,6 +22,7 @@ import org.apache.reef.tang.Configuration;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -149,7 +150,7 @@ public interface ContinuousStream<T> extends MISTStream<T> {
   ContinuousStream<T> nfa(
           final String initialState,
           final Set<String> finalState,
-          final Map<String, List<Tuple2<MISTPredicate, String>>> stateTable) throws IOException;
+          final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable) throws IOException;
 
   /**
    * Applies union operation to the current stream and input continuous stream passed as a parameter.

@@ -60,16 +60,16 @@ public class NFAOperatorTest {
         finalSet.add("4");
 
         // make a state table
-        final Map<String, List<Tuple2<MISTPredicate, String>>> stateTable = new HashMap<>();
+        final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable = new HashMap<>();
 
-        final List<Tuple2<MISTPredicate, String>> list0 = new ArrayList<>();
+        final Collection<Tuple2<MISTPredicate, String>> list0 = new ArrayList<>();
         list0.add(new Tuple2<>(new CepEQPredicate("number", 1), "1"));
         list0.add(new Tuple2<>(new CepEQPredicate("number", 3), "3"));
 
-        final List<Tuple2<MISTPredicate, String>> list1 = new ArrayList<>();
+        final Collection<Tuple2<MISTPredicate, String>> list1 = new ArrayList<>();
         list1.add(new Tuple2<>(new CepEQPredicate("number", 2), "0"));
 
-        final List<Tuple2<MISTPredicate, String>> list3 = new ArrayList<>();
+        final Collection<Tuple2<MISTPredicate, String>> list3 = new ArrayList<>();
         list3.add(new Tuple2<>(new CepEQPredicate("number", 4), "4"));
         stateTable.put("0", list0);
         stateTable.put("1", list1);
@@ -125,12 +125,12 @@ public class NFAOperatorTest {
         finalSet.add("2");
 
         // generate a state table
-        final Map<String, List<Tuple2<MISTPredicate, String>>> stateTable = new HashMap<>();
+        final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable = new HashMap<>();
 
-        final List<Tuple2<MISTPredicate, String>> list0 = new ArrayList<>();
+        final Collection<Tuple2<MISTPredicate, String>> list0 = new ArrayList<>();
         list0.add(new Tuple2<>(new CepEQPredicate("number", 1), "1"));
 
-        final List<Tuple2<MISTPredicate, String>> list1 = new ArrayList<>();
+        final Collection<Tuple2<MISTPredicate, String>> list1 = new ArrayList<>();
         list1.add(new Tuple2<>(new CepEQPredicate("number", 2), "2"));
 
         stateTable.put("0", list0);
@@ -168,12 +168,12 @@ public class NFAOperatorTest {
         finalSet.add("3");
 
         // generate a state table
-        final Map<String, List<Tuple2<MISTPredicate, String>>> stateTable = new HashMap<>();
+        final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable = new HashMap<>();
 
-        final List<Tuple2<MISTPredicate, String>> list1 = new ArrayList<>();
+        final Collection<Tuple2<MISTPredicate, String>> list1 = new ArrayList<>();
         list1.add(new Tuple2<>(new CepEQPredicate("number", 2), "2"));
 
-        final List<Tuple2<MISTPredicate, String>> list2 = new ArrayList<>();
+        final Collection<Tuple2<MISTPredicate, String>> list2 = new ArrayList<>();
         list2.add(new Tuple2<>(new CepEQPredicate("number", 3), "3"));
 
         stateTable.put("1", list1);
