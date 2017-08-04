@@ -23,7 +23,7 @@
   [
     {
       "type": "record",
-      "name": "AvroOperatorChainDag",
+      "name": "AvroDag",
       "fields":
       [
         {
@@ -68,37 +68,22 @@
             "type": "array",
             "items":
             {
-              "name": "AvroVertexChain",
+              "name": "AvroVertex",
               "type": "record",
               "fields":
               [
                 {
-                  "name": "AvroVertexChainType",
+                  "name": "AvroVertexType",
                   "type":
                   {
                     "name": "AvroVertexTypeEnum",
                     "type": "enum",
-                    "symbols": ["SOURCE", "OPERATOR_CHAIN", "SINK"]
+                    "symbols": ["SOURCE", "OPERATOR", "SINK"]
                   }
                 },
                 {
-                  "name": "VertexChain",
-                  "type":
-                  {
-                    "type": "array",
-                    "items":
-                    {
-                      "name": "Vertex",
-                      "type": "record",
-                      "fields":
-                      [
-                        {
-                          "name": "Configuration", /* Configuration that is serialized using Tang */
-                          "type": "string"
-                        }
-                      ]
-                    }
-                  }
+                  "name": "Configuration", /* Configuration that is serialized using Tang */
+                  "type": "string"
                 }
               ]
             }
@@ -205,8 +190,8 @@
       "request":
       [
         {
-          "name": "operatorChainDag",
-          "type": "AvroOperatorChainDag"
+          "name": "dag",
+          "type": "AvroDag"
         }
       ],
       "response": "QueryControlResult"
@@ -216,8 +201,8 @@
       "request":
       [
         {
-          "name": "operatorChainDag",
-          "type": "AvroOperatorChainDag"
+          "name": "dag",
+          "type": "AvroDag"
         },
         {
           "name": "batchSize", /* TODO[DELETE] this code is for test */

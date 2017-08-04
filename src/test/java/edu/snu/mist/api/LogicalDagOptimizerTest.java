@@ -34,7 +34,7 @@ public final class LogicalDagOptimizerTest {
   private static final Logger LOG = Logger.getLogger(LogicalDagOptimizerTest.class.getName());
 
   /**
-   * Test conditional branch chaining.
+   * Test conditional branch.
    * logical dag:
    *                            -> op2 -> sink1
    *             -> cbr1 (idx 0)-> op3 -> sink2

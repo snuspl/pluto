@@ -31,10 +31,7 @@ import edu.snu.mist.common.parameters.MergeFakeParameter;
 import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
 import edu.snu.mist.core.task.ClassLoaderProvider;
 import edu.snu.mist.core.task.QueryManager;
-import edu.snu.mist.formats.avro.AvroOperatorChainDag;
-import edu.snu.mist.formats.avro.AvroVertexChain;
-import edu.snu.mist.formats.avro.QueryControlResult;
-import edu.snu.mist.formats.avro.Vertex;
+import edu.snu.mist.formats.avro.*;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.*;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -80,21 +77,21 @@ public final class BatchQueryCreator {
    * @param tuple a pair of query id list and the operator chain dag
    * @param manager a query manager
    */
-  public void duplicate(final Tuple<List<String>, AvroOperatorChainDag> tuple,
+  public void duplicate(final Tuple<List<String>, AvroDag> tuple,
                         final QueryManager manager) throws Exception {
     final List<String> queryIdList = tuple.getKey();
-    final AvroOperatorChainDag operatorChainDag = tuple.getValue();
+    final AvroDag avroDag = tuple.getValue();
 
     // Get classloader
-    final URL[] urls = SerializeUtils.getJarFileURLs(operatorChainDag.getJarFilePaths());
+    final URL[] urls = SerializeUtils.getJarFileURLs(avroDag.getJarFilePaths());
     final ClassLoader classLoader = classLoaderProvider.newInstance(urls);
 
     // Load the batch submission configuration
     final MISTBiFunction<String, String, String> pubTopicFunc = SerializeUtils.deserializeFromString(
-        operatorChainDag.getPubTopicGenerateFunc(), classLoader);
+        avroDag.getPubTopicGenerateFunc(), classLoader);
     final MISTBiFunction<String, String, Set<String>> subTopicFunc = SerializeUtils.deserializeFromString(
-        operatorChainDag.getSubTopicGenerateFunc(), classLoader);
-    final List<String> groupIdList = operatorChainDag.getGroupIdList();
+        avroDag.getSubTopicGenerateFunc(), classLoader);
+    final List<String> groupIdList = avroDag.getGroupIdList();
 
     // Parallelize the submission process
     final int batchThreads = groupIdList.size() / 100 + ((groupIdList.size() % 100 == 0) ? 0 : 1);
@@ -110,13 +107,13 @@ public final class BatchQueryCreator {
 
     for (int i = 0; i < batchThreads; i++) {
       final int threadNum = i;
-      final List<Configuration> originConfs = new ArrayList<>(operatorChainDag.getAvroVertices().size());
-      for (final AvroVertexChain avroVertexChain: operatorChainDag.getAvroVertices()) {
-        originConfs.add(avroConfigurationSerializer.fromString(avroVertexChain.getVertexChain()
-            .get(0).getConfiguration(), new ClassHierarchyImpl(urls)));
+      final List<Configuration> originConfs = new ArrayList<>(avroDag.getAvroVertices().size());
+      for (final AvroVertex avroVertex : avroDag.getAvroVertices()) {
+        originConfs.add(avroConfigurationSerializer.fromString(
+            avroVertex.getConfiguration(), new ClassHierarchyImpl(urls)));
       }
-      // Do a deep copy for operatorChainDag
-      final AvroOperatorChainDag opChainDagClone = new Cloner().deepClone(operatorChainDag);
+      // Do a deep copy for avroDag
+      final AvroDag avroDagClone = new Cloner().deepClone(avroDag);
       futures.add(executorService.submit(new Runnable() {
         @Override
         public void run() {
@@ -130,16 +127,15 @@ public final class BatchQueryCreator {
               final String fakeMergeId = fakeMergeIdList.get(j);
 
               // Overwrite the group id
-              opChainDagClone.setGroupId(groupId);
+              avroDagClone.setGroupId(groupId);
               // Insert the topic information to a copied AvroOperatorChainDag
               int vertexIndex = 0;
-              for (final AvroVertexChain avroVertexChain : opChainDagClone.getAvroVertices()) {
-                switch (avroVertexChain.getAvroVertexChainType()) {
+              for (final AvroVertex avroVertex : avroDagClone.getAvroVertices()) {
+                switch (avroVertex.getAvroVertexType()) {
                   case SOURCE: {
                     // It have to be MQTT source at now
-                    final Vertex vertex = avroVertexChain.getVertexChain().get(0);
-                    final Configuration originConf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
-                        new ClassHierarchyImpl(urls));
+                    final Configuration originConf = avroConfigurationSerializer.fromString(
+                        avroVertex.getConfiguration(), new ClassHierarchyImpl(urls));
 
                     // Restore the original configuration and inject the overriding topic
                     final Injector injector = Tang.Factory.getTang().newInjector(originConf);
@@ -182,23 +178,21 @@ public final class BatchQueryCreator {
                     final Configuration modifiedConf =
                         Configurations.merge(modifiedDataGeneratorConf, defaultWatermarkConfig.getConfiguration());
 
-                    vertex.setConfiguration(avroConfigurationSerializer.toString(modifiedConf));
+                    avroVertex.setConfiguration(avroConfigurationSerializer.toString(modifiedConf));
                     break;
                   }
-                  case OPERATOR_CHAIN: {
+                  case OPERATOR: {
                     // Configure fake parameter to
-                    final Vertex vertex = avroVertexChain.getVertexChain().get(0);
                     final Configuration originConf = originConfs.get(vertexIndex);
                     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
                     jcb.bindNamedParameter(MergeFakeParameter.class, fakeMergeId);
                     final Configuration mergedConf = Configurations.merge(originConf, jcb.build());
-                    vertex.setConfiguration(avroConfigurationSerializer.toString(mergedConf));
+                    avroVertex.setConfiguration(avroConfigurationSerializer.toString(mergedConf));
                     break;
                   }
                   case SINK: {
-                    final Vertex vertex = avroVertexChain.getVertexChain().get(0);
-                    final Configuration originConf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
-                        new ClassHierarchyImpl(urls));
+                    final Configuration originConf = avroConfigurationSerializer.fromString(
+                        avroVertex.getConfiguration(), new ClassHierarchyImpl(urls));
 
                     // Restore the original configuration and inject the overriding topic
                     final Injector injector = Tang.Factory.getTang().newInjector(originConf);
@@ -207,7 +201,7 @@ public final class BatchQueryCreator {
                         .set(MqttSinkConfiguration.MQTT_BROKER_URI, mqttBrokerURI)
                         .set(MqttSinkConfiguration.MQTT_TOPIC, pubTopic)
                         .build();
-                    vertex.setConfiguration(avroConfigurationSerializer.toString(modifiedConf));
+                    avroVertex.setConfiguration(avroConfigurationSerializer.toString(modifiedConf));
                     break;
                   }
                   default: {
@@ -217,7 +211,7 @@ public final class BatchQueryCreator {
                 vertexIndex += 1;
               }
 
-              final Tuple<String, AvroOperatorChainDag> newTuple = new Tuple<>(queryIdList.get(j), opChainDagClone);
+              final Tuple<String, AvroDag> newTuple = new Tuple<>(queryIdList.get(j), avroDagClone);
               final QueryControlResult result = manager.create(newTuple);
               if (!result.getIsSuccess()) {
                 throw new RuntimeException(j + "'th duplicated query creation failed: " + result.getMsg());

@@ -25,44 +25,42 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * This prevents picking queries which have no events, thus saving CPU cycles compared to RandomlyPickManager.
  * This class uses queues to provide maximum concurrency and efficiency.
  */
-public final class NonBlockingActiveOperatorChainPickManager implements OperatorChainManager {
+public final class DefaultActiveQueryManagerImpl implements ActiveQueryManager {
 
   /**
    * A working queue which contains queries that will be processed soon.
    */
-  private final Queue<OperatorChain> activeQueryQueue;
+  private final Queue<Query> activeQueryQueue;
 
-  private int numAcitveOperators;
+  private int numActiveQueries;
 
   @Inject
-  private NonBlockingActiveOperatorChainPickManager() {
+  private DefaultActiveQueryManagerImpl() {
     // ConcurrentLinkedQueue is used to assure concurrency as well as maintain exactly-once query picking.
     this.activeQueryQueue = new ConcurrentLinkedQueue<>();
-    this.numAcitveOperators = 0;
+    this.numActiveQueries = 0;
   }
 
   /**
    * Insert a new operator chain into the manager. This method is called when the
    * queue of a operatorChain just becomes not empty by getting an event, or the queue is still not empty
    * after thread's processing an event.
-   * @param operatorChain a operatorChain to be inserted
    */
   @Override
-  public void insert(final OperatorChain operatorChain) {
-    numAcitveOperators += 1;
-    activeQueryQueue.add(operatorChain);
+  public void insert(final Query query) {
+    numActiveQueries += 1;
+    activeQueryQueue.add(query);
   }
 
   /**
    * Delete an operator from the manager.
    * This method should be only called when the queue is permanently removed from the system,
    * because this method traverses along the whole queue, thus takes O(n) time to complete.
-   * @param operatorChain a operatorChain to be deleted.
    */
   @Override
-  public void delete(final OperatorChain operatorChain) {
-    if (activeQueryQueue.remove(operatorChain)) {
-      numAcitveOperators -= 1;
+  public void delete(final Query query) {
+    if (activeQueryQueue.remove(query)) {
+      numActiveQueries -= 1;
     }
   }
 
@@ -71,24 +69,24 @@ public final class NonBlockingActiveOperatorChainPickManager implements Operator
    * @return picked operator chain if there is. null when there is no active queries to be processed.
    */
   @Override
-  public OperatorChain pickOperatorChain() {
-    numAcitveOperators -= 1;
-    final OperatorChain operatorChain = activeQueryQueue.poll();
-    return operatorChain;
+  public Query pickActiveQuery() {
+    numActiveQueries -= 1;
+    final Query query = activeQueryQueue.poll();
+    return query;
   }
 
   @Override
   public int size() {
-    return numAcitveOperators;
+    return numActiveQueries;
   }
 
   @Override
   public long numEvents() {
     long sum = 0;
-    final Iterator<OperatorChain> iterator = activeQueryQueue.iterator();
+    final Iterator<Query> iterator = activeQueryQueue.iterator();
     while (iterator.hasNext()) {
-      final OperatorChain operatorChain = iterator.next();
-      sum += operatorChain.numberOfEvents();
+      final Query query = iterator.next();
+      sum += query.numEvents();
     }
     return sum;
   }

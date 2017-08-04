@@ -33,11 +33,10 @@ public final class QueryStarterUtils {
 
   /**
    * Sets the OutputEmitters of the sources, operators and sinks.
-   * @param operatorChainManager operator chain manager
    * @param submittedExecutionDag the dag of the submitted query
    */
-  public static void setUpOutputEmitters(final OperatorChainManager operatorChainManager,
-                                         final ExecutionDag submittedExecutionDag) {
+  public static void setUpOutputEmitters(final ExecutionDag submittedExecutionDag,
+                                         final Query query) {
     final DAG<ExecutionVertex, MISTEdge> dag = submittedExecutionDag.getDag();
     final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(dag);
     while (iterator.hasNext()) {
@@ -47,16 +46,15 @@ public final class QueryStarterUtils {
           final PhysicalSource source = (PhysicalSource)executionVertex;
           final Map<ExecutionVertex, MISTEdge> nextOps = dag.getEdges(source);
           // Sets output emitters
-          source.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
+          source.setOutputEmitter(new NonBlockingQueueSourceOutputEmitter<>(nextOps, query));
           break;
         }
-        case OPERATOR_CHAIN: {
-          final OperatorChain operatorChain = (OperatorChain)executionVertex;
+        case OPERATOR: {
+          final PhysicalOperator operator = (PhysicalOperator)executionVertex;
           final Map<ExecutionVertex, MISTEdge> edges =
-              dag.getEdges(operatorChain);
-          // Sets output emitters and operator chain manager for operator chain.
-          operatorChain.setOutputEmitter(new OperatorOutputEmitter(edges));
-          operatorChain.setOperatorChainManager(operatorChainManager);
+              dag.getEdges(operator);
+          // Sets output emitters and operator chain manager for operator.
+          operator.getOperator().setOutputEmitter(new OperatorOutputEmitter(edges));
           break;
         }
         case SINK: {

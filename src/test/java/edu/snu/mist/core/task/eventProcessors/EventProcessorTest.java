@@ -16,7 +16,9 @@
 package edu.snu.mist.core.task.eventProcessors;
 
 import edu.snu.mist.common.parameters.GroupId;
-import edu.snu.mist.core.task.OperatorChain;
+import edu.snu.mist.core.task.DefaultQueryImpl;
+import edu.snu.mist.core.task.Query;
+import edu.snu.mist.core.task.SourceOutputEmitter;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.GlobalSchedNonBlockingEventProcessor;
 import edu.snu.mist.core.task.globalsched.GroupEvent;
@@ -30,6 +32,7 @@ import org.junit.Test;
 
 import java.util.Collection;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -53,33 +56,62 @@ public final class EventProcessorTest {
   }
 
   @Test
-  public void eventProcessorProcessingTest() throws InjectionException {
+  public void eventProcessorProcessingTest() throws InjectionException, InterruptedException {
     final BlockingQueue<GlobalSchedGroupInfo> queue = new LinkedBlockingQueue<>();
 
     final GlobalSchedGroupInfo group1 = createGroup("group1");
     final GlobalSchedGroupInfo group2 = createGroup("group2");
+    final GlobalSchedGroupInfo group3 = createGroup("group3");
 
     group1.setDispatched();
     group2.setDispatched();
+    group3.setDispatched();
 
+    final CountDownLatch countDownLatch = new CountDownLatch(31);
     final AtomicInteger numEvent1 = new AtomicInteger(10);
-    final OperatorChain oc1 = mock(OperatorChain.class);
+    final SourceOutputEmitter oc1 = mock(SourceOutputEmitter.class);
     final AtomicInteger numEvent2 = new AtomicInteger(20);
-    final OperatorChain oc2 = mock(OperatorChain.class);
+    final SourceOutputEmitter oc2 = mock(SourceOutputEmitter.class);
+    final AtomicInteger numEvent3 = new AtomicInteger(1);
+    final SourceOutputEmitter oc3 = mock(SourceOutputEmitter.class);
 
     when(oc1.numberOfEvents()).thenReturn(numEvent1.get());
     when(oc1.processNextEvent()).thenAnswer((icm) -> {
       Thread.sleep(10);
-      return numEvent1.getAndDecrement() != 0;
+      if (numEvent1.getAndDecrement() != 0) {
+        countDownLatch.countDown();
+        return true;
+      } else {
+        return false;
+      }
     });
     when(oc2.numberOfEvents()).thenReturn(numEvent2.get());
     when(oc2.processNextEvent()).thenAnswer((icm) -> {
       Thread.sleep(10);
-      return numEvent2.getAndDecrement() != 0;
+      if (numEvent2.getAndDecrement() != 0) {
+        countDownLatch.countDown();
+        return true;
+      } else {
+        return false;
+      }
+    });
+    when(oc3.numberOfEvents()).thenReturn(numEvent3.get());
+    when(oc3.processNextEvent()).thenAnswer((icm) -> {
+      Thread.sleep(10);
+      if (numEvent3.getAndDecrement() != 0) {
+        countDownLatch.countDown();
+        return true;
+      } else {
+        return false;
+      }
     });
 
-    group1.getOperatorChainManager().insert(oc1);
-    group1.getOperatorChainManager().insert(oc2);
+    final Query query1 = new DefaultQueryImpl(group1.getActiveQueryManager());
+    query1.insert(oc1);
+    final Query query2 = new DefaultQueryImpl(group2.getActiveQueryManager());
+    query2.insert(oc2);
+    final Query query3 = new DefaultQueryImpl(group3.getActiveQueryManager());
+    query3.insert(oc3);
 
     final NextGroupSelector nextGroupSelector = new TestNextGroupSelector(queue);
 
@@ -87,15 +119,15 @@ public final class EventProcessorTest {
     eventProcessor.start();
     queue.add(group1);
     queue.add(group2);
+    queue.add(group3);
 
-    while (!queue.isEmpty()) {
-      // wait
-    }
+    countDownLatch.await();
 
     LOG.info("Group1 processing time: " + group1.getProcessingTime()
         + ", processed events: " + group1.getProcessingEvent());
     Assert.assertTrue(group1.getProcessingTime().get() > 0);
-    Assert.assertEquals(30, group1.getProcessingEvent().get());
+    Assert.assertEquals(10, group1.getProcessingEvent().get());
+    Assert.assertEquals(20, group2.getProcessingEvent().get());
   }
 
   /**

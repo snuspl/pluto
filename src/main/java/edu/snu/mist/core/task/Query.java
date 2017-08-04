@@ -15,20 +15,18 @@
  */
 package edu.snu.mist.core.task;
 
-import javax.inject.Inject;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
-/**
- * This is a default implementation of operator chain factory.
- */
-public final class DefaultOperatorChainFactory implements OperatorChainFactory {
+@DefaultImplementation(DefaultQueryImpl.class)
+public interface Query {
 
-  @Inject
-  private DefaultOperatorChainFactory() {
-    // empty
-  }
+  void insert(SourceOutputEmitter sourceOutputEmitter);
 
-  @Override
-  public OperatorChain newInstance(final String id) {
-    return new DefaultOperatorChainImpl(id);
-  }
+  void delete(SourceOutputEmitter sourceOutputEmitter);
+
+  SourceOutputEmitter pickNextEventQueue();
+
+  int size();
+
+  int numEvents();
 }

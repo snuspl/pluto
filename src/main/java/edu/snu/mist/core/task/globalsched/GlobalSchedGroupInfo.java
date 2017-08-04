@@ -15,10 +15,7 @@
  */
 package edu.snu.mist.core.task.globalsched;
 
-import edu.snu.mist.core.task.ExecutionDags;
-import edu.snu.mist.core.task.OperatorChainManager;
-import edu.snu.mist.core.task.QueryRemover;
-import edu.snu.mist.core.task.QueryStarter;
+import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
@@ -33,11 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @DefaultImplementation(DefaultGlobalSchedGroupInfo.class)
 public interface GlobalSchedGroupInfo extends AutoCloseable {
 
-  /**
-   * Get the operator chain manager.
-   * @return operator chain manager
-   */
-  OperatorChainManager getOperatorChainManager();
+  ActiveQueryManager getActiveQueryManager();
 
   /**
    * Add query id to the group.

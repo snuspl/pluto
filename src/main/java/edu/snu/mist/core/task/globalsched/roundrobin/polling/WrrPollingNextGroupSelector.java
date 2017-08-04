@@ -88,9 +88,9 @@ public final class WrrPollingNextGroupSelector implements NextGroupSelector {
         final Set<Map.Entry<GlobalSchedGroupInfo, AtomicBoolean>> entries = groupStatusMap.entrySet();
         for (final Map.Entry<GlobalSchedGroupInfo, AtomicBoolean> entry : entries) {
           final GlobalSchedGroupInfo groupInfo = entry.getKey();
-          if (groupInfo.getOperatorChainManager().size() > 0 && entry.getValue().compareAndSet(false, true)) {
+          //if (groupInfo.getOperatorChainManager().size() > 0 && entry.getValue().compareAndSet(false, true)) {
             activeQueue.add(entry.getKey());
-          }
+          //}
         }
       } catch (final Exception e) {
         e.printStackTrace();

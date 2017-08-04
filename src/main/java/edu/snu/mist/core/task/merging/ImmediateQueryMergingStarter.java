@@ -36,11 +36,6 @@ import java.util.*;
 public final class ImmediateQueryMergingStarter implements QueryStarter {
 
   /**
-   * Operator chain manager that manages the operator chains.
-   */
-  private final OperatorChainManager operatorChainManager;
-
-  /**
    * An algorithm for finding the sub-dag between the execution and submitted dag.
    */
   private final CommonSubDagFinder commonSubDagFinder;
@@ -92,8 +87,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
   private final ActiveExecutionVertexIdMap activeExecutionVertexIdMap;
 
   @Inject
-  private ImmediateQueryMergingStarter(final OperatorChainManager operatorChainManager,
-                                       final CommonSubDagFinder commonSubDagFinder,
+  private ImmediateQueryMergingStarter(final CommonSubDagFinder commonSubDagFinder,
                                        final SrcAndDagMap<String> srcAndDagMap,
                                        final QueryIdConfigDagMap queryIdConfigDagMap,
                                        final ExecutionDags executionDags,
@@ -103,7 +97,6 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
                                        final ExecutionVertexGenerator executionVertexGenerator,
                                        final ExecutionVertexDagMap executionVertexDagMap,
                                        final ActiveExecutionVertexIdMap activeExecutionVertexIdMap) {
-    this.operatorChainManager = operatorChainManager;
     this.commonSubDagFinder = commonSubDagFinder;
     this.srcAndDagMap = srcAndDagMap;
     this.queryIdConfigDagMap = queryIdConfigDagMap;
@@ -118,6 +111,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
 
   @Override
   public synchronized void start(final String queryId,
+                                 final Query query,
                                  final DAG<ConfigVertex, MISTEdge> submittedDag,
                                  final List<String> jarFilePaths)
       throws InjectionException, IOException, ClassNotFoundException {
@@ -137,7 +131,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
       if (mergeableDags.size() == 0) {
         final ExecutionDag executionDag = generate(submittedDag, jarFilePaths);
         // Set up the output emitters of the submitted DAG
-        QueryStarterUtils.setUpOutputEmitters(operatorChainManager, executionDag);
+        QueryStarterUtils.setUpOutputEmitters(executionDag, query);
 
         for (final ExecutionVertex source : executionDag.getDag().getRootVertices()) {
           // Start the source
@@ -213,7 +207,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
       // If there are sources that are not shared, start them
       for (final ConfigVertex source : submittedDag.getRootVertices()) {
         if (!subDagMap.containsKey(source)) {
-          srcAndDagMap.put(source.getConfiguration().get(0), sharableExecutionDag);
+          srcAndDagMap.put(source.getConfiguration(), sharableExecutionDag);
           ((PhysicalSource)configExecutionVertexMap.get(source)).start();
         }
       }
@@ -326,11 +320,6 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
     if (correspondingVertex == null) {
       // it is not shared, so we need to create it
       correspondingVertex = executionVertexGenerator.generate(currentVertex, urls, classLoader);
-      if (correspondingVertex.getType() == ExecutionVertex.Type.OPERATOR_CHAIN) {
-        // set operator chain manager
-        final OperatorChain operatorChain = (OperatorChain)correspondingVertex;
-        operatorChain.setOperatorChainManager(operatorChainManager);
-      }
       executionDag.getDag().addVertex(correspondingVertex);
       executionVertexCountMap.put(correspondingVertex, 1);
       executionVertexDagMap.put(correspondingVertex, executionDag);
@@ -357,10 +346,12 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
     // The output emitter of the current vertex of the execution dag needs to be updated
     if (outputEmitterUpdateNeeded) {
       if (correspondingVertex.getType() == ExecutionVertex.Type.SOURCE) {
-        ((PhysicalSource)correspondingVertex)
-            .setOutputEmitter(new SourceOutputEmitter<>(executionDag.getDag().getEdges(correspondingVertex)));
-      } else if (correspondingVertex.getType() == ExecutionVertex.Type.OPERATOR_CHAIN) {
-        ((OperatorChain)correspondingVertex).setOutputEmitter(
+        final PhysicalSource s = (PhysicalSource) correspondingVertex;
+        final SourceOutputEmitter sourceOutputEmitter = s.getSourceOutputEmitter();
+        s.setOutputEmitter(new NonBlockingQueueSourceOutputEmitter<>(
+            executionDag.getDag().getEdges(correspondingVertex), sourceOutputEmitter.getQuery()));
+      } else if (correspondingVertex.getType() == ExecutionVertex.Type.OPERATOR) {
+        ((PhysicalOperator)correspondingVertex).getOperator().setOutputEmitter(
             new OperatorOutputEmitter(executionDag.getDag().getEdges(correspondingVertex)));
       }
     }
@@ -397,7 +388,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
     final Set<ConfigVertex> sources = configDag.getRootVertices();
     final Map<String, ExecutionDag> mergeableDags = new HashMap<>(sources.size());
     for (final ConfigVertex source : sources) {
-      final String srcConf = source.getConfiguration().get(0);
+      final String srcConf = source.getConfiguration();
       final ExecutionDag executionDag = srcAndDagMap.get(srcConf);
       if (executionDag != null) {
         // Mergeable source

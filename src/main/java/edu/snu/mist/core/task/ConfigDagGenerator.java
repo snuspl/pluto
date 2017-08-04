@@ -17,7 +17,7 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.formats.avro.AvroOperatorChainDag;
+import edu.snu.mist.formats.avro.AvroDag;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
@@ -29,8 +29,8 @@ public interface ConfigDagGenerator {
    * Generates the configuration dag from the avro dag.
    * It extracts configurations of vertices from the avro dag and creates a dag that contains the configuration.
    * By doing this, we can decouple the generation logic of execution dag from the avro dag.
-   * @param avroOpChainDag the dag that is serialized by Avro
+   * @param avroDag the dag that is serialized by Avro
    * @return configuration dag
    */
-  DAG<ConfigVertex, MISTEdge> generate(AvroOperatorChainDag avroOpChainDag);
+  DAG<ConfigVertex, MISTEdge> generate(AvroDag avroDag);
 }

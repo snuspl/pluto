@@ -15,60 +15,25 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.MistDataEvent;
-import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.OutputEmitter;
-import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.formats.avro.Direction;
-
-import java.util.Map;
 
 /**
- * This emitter emits the outputs to the next OperatorChains that get inputs from the sources.
- * It always submits jobs to MistExecutors.
- *  @param <I>
+ * This interface forwards the emitted output as a input of next operators.
  */
-public final class SourceOutputEmitter<I> implements OutputEmitter {
+public interface SourceOutputEmitter extends OutputEmitter {
 
   /**
-   * Next OperatorChains.
+   * Process the next event from the queue.
+   * @return true if there exists an event.
+   * If the queue is empty or running an event, it returns false.
    */
-  private final Map<ExecutionVertex, MISTEdge> nextOperatorChains;
+  boolean processNextEvent();
 
-  public SourceOutputEmitter(final Map<ExecutionVertex, MISTEdge> nextOperatorChains) {
-    this.nextOperatorChains = nextOperatorChains;
-  }
+  /**
+   * Get the number of events that are in the queue.
+   * @return the number of events in the queue
+   */
+  int numberOfEvents();
 
-  @Override
-  public void emitData(final MistDataEvent data) {
-    if (nextOperatorChains.size() == 1) {
-      for (final Map.Entry<ExecutionVertex, MISTEdge> nextQuery :
-          nextOperatorChains.entrySet()) {
-        final Direction direction = nextQuery.getValue().getDirection();
-        ((OperatorChain)nextQuery.getKey()).addNextEvent(data, direction);
-      }
-    } else {
-      for (final Map.Entry<ExecutionVertex, MISTEdge> nextQuery :
-          nextOperatorChains.entrySet()) {
-        final Direction direction = nextQuery.getValue().getDirection();
-        final MistDataEvent event = new MistDataEvent(data.getValue(), data.getTimestamp());
-        ((OperatorChain)nextQuery.getKey()).addNextEvent(event, direction);
-      }
-    }
-  }
-
-  @Override
-  public void emitData(final MistDataEvent data, final int index) {
-    // source output emitter does not emit data according to the index
-    this.emitData(data);
-  }
-
-  @Override
-  public void emitWatermark(final MistWatermarkEvent watermark) {
-    for (final Map.Entry<ExecutionVertex, MISTEdge> nextQuery :
-        nextOperatorChains.entrySet()) {
-      final Direction direction = nextQuery.getValue().getDirection();
-      ((OperatorChain)nextQuery.getKey()).addNextEvent(watermark, direction);
-    }
-  }
+  Query getQuery();
 }

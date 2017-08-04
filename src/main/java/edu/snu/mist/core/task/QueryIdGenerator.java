@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.formats.avro.AvroOperatorChainDag;
+import edu.snu.mist.formats.avro.AvroDag;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
@@ -25,8 +25,8 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
 public interface QueryIdGenerator {
   /**
    * Generates the query id.
-   * @param avroOpChainDag the submitted query that is represented as a operator chain dag.
+   * @param avroDag the submitted query that is represented as an avro dag.
    * @return query id
    */
-  String generate(AvroOperatorChainDag avroOpChainDag);
+  String generate(AvroDag avroDag);
 }
