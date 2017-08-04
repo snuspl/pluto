@@ -123,7 +123,7 @@ public final class BatchSubQueryManagerTest {
       groupIdList.add(String.valueOf(i));
     }
     final BatchSubmissionConfiguration batchSubConfig = new BatchSubmissionConfiguration(
-        SUB_TOPIC_FUNCTION, PUB_TOPIC_FUNCTION, groupIdList);
+        SUB_TOPIC_FUNCTION, PUB_TOPIC_FUNCTION, groupIdList, 1);
 
     // Create MQTT query having original configuration
     final SourceConfiguration sourceConfiguration1 = MQTTSourceConfiguration.newBuilder()

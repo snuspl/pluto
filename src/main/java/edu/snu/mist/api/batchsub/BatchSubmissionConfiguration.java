@@ -44,6 +44,21 @@ public final class BatchSubmissionConfiguration {
    */
   private final List<String> groupIdList;
 
+  /**
+   * The factor value which indicates how many queries can be merged into one.
+   */
+  private int mergeFactor;
+
+  public BatchSubmissionConfiguration(final MISTBiFunction<String, String, Set<String>> subTopicGenerateFunc,
+                                      final MISTBiFunction<String, String, String> pubTopicGenerateFunc,
+                                      final List<String> groupIdList,
+                                      final int mergeFactor) {
+    this.subTopicGenerateFunc = subTopicGenerateFunc;
+    this.pubTopicGenerateFunc = pubTopicGenerateFunc;
+    this.groupIdList = groupIdList;
+    this.mergeFactor = mergeFactor;
+  }
+
   public BatchSubmissionConfiguration(final MISTBiFunction<String, String, Set<String>> subTopicGenerateFunc,
                                       final MISTBiFunction<String, String, String> pubTopicGenerateFunc,
                                       final List<String> groupIdList) {
@@ -62,5 +77,10 @@ public final class BatchSubmissionConfiguration {
 
   public List<String> getGroupIdList() {
     return groupIdList;
+  }
+
+  // TODO:
+  public int getMergeFactor() {
+    return mergeFactor;
   }
 }

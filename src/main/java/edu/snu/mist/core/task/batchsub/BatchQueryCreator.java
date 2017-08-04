@@ -17,13 +17,17 @@
 package edu.snu.mist.core.task.batchsub;
 
 import com.rits.cloning.Cloner;
-import edu.snu.mist.api.datastreams.configurations.*;
+import edu.snu.mist.api.datastreams.configurations.MQTTSourceConfiguration;
+import edu.snu.mist.api.datastreams.configurations.MqttSinkConfiguration;
+import edu.snu.mist.api.datastreams.configurations.PunctuatedWatermarkConfiguration;
+import edu.snu.mist.api.datastreams.configurations.WatermarkConfiguration;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.common.functions.WatermarkTimestampFunction;
 import edu.snu.mist.common.parameters.MQTTBrokerURI;
+import edu.snu.mist.common.parameters.MergeFakeParameter;
 import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
 import edu.snu.mist.core.task.ClassLoaderProvider;
 import edu.snu.mist.core.task.QueryManager;
@@ -32,10 +36,7 @@ import edu.snu.mist.formats.avro.AvroVertexChain;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import edu.snu.mist.formats.avro.Vertex;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.tang.Configuration;
-import org.apache.reef.tang.Configurations;
-import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.Tang;
+import org.apache.reef.tang.*;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
 import org.apache.reef.tang.implementation.java.ClassHierarchyImpl;
@@ -43,10 +44,7 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import javax.inject.Inject;
 import java.net.URL;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -104,8 +102,19 @@ public final class BatchQueryCreator {
     final List<Future> futures = new LinkedList<>();
     final boolean[] success = new boolean[batchThreads];
 
+    final int mergeFactor = tuple.getValue().getMergeFactor();
+    final List<String> fakeMergeIdList = new ArrayList<>(groupIdList.size());
+    for (int i = 0; i < groupIdList.size(); i++) {
+      fakeMergeIdList.add(String.valueOf(i % mergeFactor));
+    }
+
     for (int i = 0; i < batchThreads; i++) {
       final int threadNum = i;
+      final List<Configuration> originConfs = new ArrayList<>(operatorChainDag.getAvroVertices().size());
+      for (final AvroVertexChain avroVertexChain: operatorChainDag.getAvroVertices()) {
+        originConfs.add(avroConfigurationSerializer.fromString(avroVertexChain.getVertexChain()
+            .get(0).getConfiguration(), new ClassHierarchyImpl(urls)));
+      }
       // Do a deep copy for operatorChainDag
       final AvroOperatorChainDag opChainDagClone = new Cloner().deepClone(operatorChainDag);
       futures.add(executorService.submit(new Runnable() {
@@ -118,10 +127,12 @@ public final class BatchQueryCreator {
               final String queryId = queryIdList.get(j);
               final String pubTopic = pubTopicFunc.apply(groupId, queryId);
               final Iterator<String> subTopicItr = subTopicFunc.apply(groupId, queryId).iterator();
+              final String fakeMergeId = fakeMergeIdList.get(j);
 
               // Overwrite the group id
               opChainDagClone.setGroupId(groupId);
               // Insert the topic information to a copied AvroOperatorChainDag
+              int vertexIndex = 0;
               for (final AvroVertexChain avroVertexChain : opChainDagClone.getAvroVertices()) {
                 switch (avroVertexChain.getAvroVertexChainType()) {
                   case SOURCE: {
@@ -175,7 +186,13 @@ public final class BatchQueryCreator {
                     break;
                   }
                   case OPERATOR_CHAIN: {
-                    // Do nothing
+                    // Configure fake parameter to
+                    final Vertex vertex = avroVertexChain.getVertexChain().get(0);
+                    final Configuration originConf = originConfs.get(vertexIndex);
+                    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+                    jcb.bindNamedParameter(MergeFakeParameter.class, fakeMergeId);
+                    final Configuration mergedConf = Configurations.merge(originConf, jcb.build());
+                    vertex.setConfiguration(avroConfigurationSerializer.toString(mergedConf));
                     break;
                   }
                   case SINK: {
@@ -197,6 +214,7 @@ public final class BatchQueryCreator {
                     throw new IllegalArgumentException("MISTTask: Invalid vertex detected in AvroLogicalPlan!");
                   }
                 }
+                vertexIndex += 1;
               }
 
               final Tuple<String, AvroOperatorChainDag> newTuple = new Tuple<>(queryIdList.get(j), opChainDagClone);
