@@ -22,6 +22,6 @@ import org.apache.reef.tang.annotations.NamedParameter;
  * Fake parameter for merging factor experiment.
  * TODO[Delete]: this code is for test.
  */
-@NamedParameter(doc="Fake parameter for merging factor experiments")
+@NamedParameter(doc = "Fake parameter for merging factor experiments")
 public class MergeFakeParameter implements Name<String> {
 }
