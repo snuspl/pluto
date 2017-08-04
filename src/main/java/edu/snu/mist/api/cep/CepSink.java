@@ -182,4 +182,57 @@ public final class CepSink {
       return builder.build();
     }
   }
+
+    /**
+     * A builder for CepSink which uses MQTT as its output.
+     */
+    public static final class MqttBuilder {
+
+        private final String mqttSinkBrokerURI = "MQTT_SINK_BROKER_URI";
+        private final String mqttSinkTopic = "MQTT_SINK_TOPIC";
+        private InnerBuilder builder;
+
+        public MqttBuilder() {
+            this.builder = new InnerBuilder()
+                    .setCepSinkType(CepSinkType.MQTT_OUTPUT);
+        }
+
+        /**
+         * Sets mqtt broker URI.
+         * @param mqttBrokerURI mqtt broker URI
+         * @return builder
+         */
+        public MqttBuilder setMqttBrokerURI(final String mqttBrokerURI) {
+            this.builder.addSinkConfigValue(mqttSinkBrokerURI, mqttBrokerURI);
+            return this;
+        }
+
+        /**
+         * Sets mqtt topic.
+         * @param mqttTopic mqtt topic
+         * @return builder
+         */
+        public MqttBuilder setMqttTopic(final String mqttTopic) {
+            this.builder.addSinkConfigValue(mqttSinkTopic, mqttTopic);
+            return this;
+        }
+
+        /**
+         * Sets the separator.
+         * @param separatorParam separator parameter
+         * @return builder
+         */
+        public MqttBuilder setSeparator(final String separatorParam) {
+            this.builder.setSeparator(separatorParam);
+            return this;
+        }
+
+        /**
+         * Creates an immutable CepSink.
+         * @return a new CepSink
+         */
+        public CepSink build() {
+            return builder.build();
+        }
+    }
 }

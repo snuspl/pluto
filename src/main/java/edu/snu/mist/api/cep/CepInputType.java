@@ -20,5 +20,6 @@ package edu.snu.mist.api.cep;
  */
 public enum CepInputType {
   KAFKA_SOURCE,
-  TEXT_SOCKET_SOURCE
+  TEXT_SOCKET_SOURCE,
+  MQTT_SOURCE
 }
