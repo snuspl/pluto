@@ -215,18 +215,19 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
   }
 
   @Override
-  public <OUT> ContinuousStream<OUT> nfa(final NFAFunction<T, OUT> nfaFunction) {
-    return transformWithSingleUdfOperator(nfaFunction, NFAOperator.class);
-  }
+  public ContinuousStream<T> nfa(
+          final String initialState,
+          final String finalState,
+          final long timeout,
+          final Map<String, Tuple2<MISTPredicate, String>> stateTable) throws IOException {
+    final Configuration opConf = NFAOperatorConfiguration.CONF
+        .set(NFAOperatorConfiguration.INITIAL_STATE, initialState)
+        .set(NFAOperatorConfiguration.FINAL_STATE, finalState)
+        .set(NFAOperatorConfiguration.TIMEOUT, timeout)
+        .set(NFAOperatorConfiguration.STATE_TABLE, SerializeUtils.serializeToString((Serializable) stateTable))
+        .build();
 
-  @Override
-  public <OUT> ContinuousStream<OUT> nfa(final Class<? extends NFAFunction<T, OUT>> clazz,
-                                         final Configuration funcConf) {
-    final Configuration conf = Configurations.merge(NFAOperatorConfiguration.CONF
-        .set(NFAOperatorConfiguration.UDF, clazz)
-        .set(NFAOperatorConfiguration.OPERATOR, NFAOperator.class)
-        .build(), funcConf);
-    return checkUdfAndTransform(clazz, conf, this);
+    return transformToSingleInputContinuousStream(opConf, this);
   }
 
   @Override

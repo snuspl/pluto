@@ -21,6 +21,7 @@ import edu.snu.mist.common.windows.WindowInformation;
 import org.apache.reef.tang.Configuration;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -138,22 +139,18 @@ public interface ContinuousStream<T> extends MISTStream<T> {
                                             Configuration funcConf);
 
   /**
-   * Applies user-defined nfa operator to the current stream.
-   * @param nfaFunction the user-defined NFAFunction
-   * @param <OUT> the type of stream output
+   * Applies nfa operator to the current stream.
+   * @param initialState initial state of nfa
+   * @param finalState final state of nfa
+   * @param timeout timeout value
+   * @param stateTable state table to transition state
    * @return new transformed stream after applying nfa operation
    */
-  <OUT> ContinuousStream<OUT> nfa(NFAFunction<T, OUT> nfaFunction);
-
-  /**
-   * Applies user-defined nfa operator to the current stream.
-   * @param clazz the user-defined NFAFunction
-   * @param funcConf a configuration to instantiate the nfa function
-   * @param <OUT> the type of stream output
-   * @return new transformed stream after applying nfa operation
-   */
-  <OUT> ContinuousStream<OUT> nfa(Class<? extends NFAFunction<T, OUT>> clazz,
-                                  Configuration funcConf);
+  ContinuousStream<T> nfa(
+          final String initialState,
+          final String finalState,
+          final long timeout,
+          final Map<String, Tuple2<MISTPredicate, String>> stateTable) throws IOException;
 
   /**
    * Applies union operation to the current stream and input continuous stream passed as a parameter.

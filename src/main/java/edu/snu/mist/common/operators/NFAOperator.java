@@ -17,13 +17,10 @@ package edu.snu.mist.common.operators;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
-import edu.snu.mist.common.SerializeUtils;
-import edu.snu.mist.common.functions.NFAFunction;
-import edu.snu.mist.common.parameters.SerializedUdf;
-import org.apache.reef.tang.annotations.Parameter;
+import edu.snu.mist.common.functions.MISTPredicate;
+import edu.snu.mist.common.types.Tuple2;
 
 import javax.inject.Inject;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -33,44 +30,77 @@ import java.util.logging.Logger;
  * This operator applies the user-defined operation which is used in cep stateful query.
  *
  */
-public class NFAOperator<IN, OUT> extends OneStreamOperator implements StateHandler {
+public class NFAOperator extends OneStreamOperator implements StateHandler {
 
     private static final Logger LOG = Logger.getLogger(NFAOperator.class.getName());
 
-    /**
-     * The user-defined NFAFunction.
-     */
-    private final NFAFunction<IN, OUT> nfaFunction;
+    // initial state
+    private final String initialState;
+
+    // current state
+    private String state;
+
+    // final state
+    private final String finalState;
+
+    // event data
+    private Map<String, Object> eventValue;
+
+    // the event time of first state changed.
+    private final long timeout;
+
+    // the time when the initial state is changed
+    private long startTime;
+
+    // changing state table: Map<current state, Tuple2<condition, next state>>
+    private final Map<String, Tuple2<MISTPredicate, String>> stateTable;
+
+
 
     @Inject
-    private NFAOperator(
-        @Parameter(SerializedUdf.class) final String serializedObject,
-        final ClassLoader classLoader) throws IOException, ClassNotFoundException {
-        this(SerializeUtils.deserializeFromString(serializedObject, classLoader));
+    public NFAOperator(
+            final String initialState,
+            final String finalState,
+            final long timeout,
+            final Map<String, Tuple2<MISTPredicate, String>> stateTable) {
+        this.initialState = initialState;
+        this.state = initialState;
+        this.finalState = finalState;
+        this.timeout = timeout;
+        this.stateTable = stateTable;
     }
 
-    public NFAOperator(final NFAFunction<IN, OUT> nfaFunction) {
-        this.nfaFunction = nfaFunction;
-        this.nfaFunction.initialize();
+    public void dataUpdate(final Map<String, Object> inputData, final long inputTime) {
+        final Tuple2<MISTPredicate, String> transition = stateTable.get(state);
+        final MISTPredicate<Map<String, Object>> predicate = (MISTPredicate<Map<String, Object>>) transition.get(0);
+
+        if (predicate.test(inputData)) {
+            if (state.equals(initialState)) {
+                startTime = inputTime;
+            }
+            state = (String) transition.get(1);
+            eventValue = inputData;
+        }
+
+    }
+
+    public void watermarkUpdate(final long inputTime) {
+        if (inputTime - startTime > timeout) {
+            state = initialState;
+        }
     }
 
     @Override
     public void processLeftData(final MistDataEvent input) {
-        Object prevState = nfaFunction.getCurrentState();
-        nfaFunction.update((IN)input.getValue());
-        Object currentState = nfaFunction.getCurrentState();
+        dataUpdate((Map<String, Object>)input.getValue(), input.getTimestamp());
 
-        //when the state is changed, set the last changed time to current input's timestamp.
-        if (!prevState.equals(currentState)) {
-            nfaFunction.setLastChangedTime(input.getTimestamp());
-        }
-        if (nfaFunction.isEmitable()) {
-            final OUT output = nfaFunction.produceResult();
-
+        // emit when the state is final state
+        if (state.equals(finalState)) {
+            final Tuple2<Map<String, Object>, Object> output = new Tuple2(eventValue, state);
             if (LOG.isLoggable(Level.FINE)) {
                 LOG.log(Level.FINE, "{0} updates the state to {1} with input {2}, and generates {3}",
                         new Object[]{this.getClass().getName(),
-                                nfaFunction.getCurrentState(), input, output});
+                                getOperatorState(), input, output});
             }
 
             input.setValue(output);
@@ -84,39 +114,19 @@ public class NFAOperator<IN, OUT> extends OneStreamOperator implements StateHand
      */
     @Override
     public void processLeftWatermark(final MistWatermarkEvent input) {
-        Object prevState = nfaFunction.getCurrentState();
-        nfaFunction.update(input.getTimestamp());
-        Object currentState = nfaFunction.getCurrentState();
-
-        //when the state is changed, set the last changed time to current input's timestamp.
-        if (!prevState.equals(currentState)) {
-            nfaFunction.setLastChangedTime(input.getTimestamp());
-        }
-
-        if (nfaFunction.isEmitable()) {
-            final OUT output = nfaFunction.produceResult();
-
-            if (LOG.isLoggable(Level.FINE)) {
-                LOG.log(Level.FINE, "{0} updates the state to {1} with input {2}, and generates {3}",
-                        new Object[]{this.getClass().getName(),
-                                nfaFunction.getCurrentState(), input, output});
-            }
-
-            final MistDataEvent dataEvent = new MistDataEvent(output, input.getTimestamp());
-            outputEmitter.emitData(dataEvent);
-        }
+        watermarkUpdate(input.getTimestamp());
         outputEmitter.emitWatermark(input);
     }
 
     @Override
     public Map<String, Object> getOperatorState() {
         final Map<String, Object> stateMap = new HashMap<>();
-        stateMap.put("nfaFunctionState", nfaFunction.getCurrentState());
+        stateMap.put("nfaOperatorState", state);
         return stateMap;
     }
 
     @Override
     public void setState(final Map<String, Object> loadedState) {
-        nfaFunction.setFunctionState(loadedState.get("nfaFunctionState"));
+        state = (String) loadedState.get("nfaOperatorState");
     }
 }

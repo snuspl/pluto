@@ -15,21 +15,45 @@
  */
 package edu.snu.mist.api.datastreams.configurations;
 
-import edu.snu.mist.common.functions.NFAFunction;
+import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.common.operators.Operator;
+import edu.snu.mist.common.parameters.FinalState;
+import edu.snu.mist.common.parameters.InitialState;
+import edu.snu.mist.common.parameters.StateTable;
+import edu.snu.mist.common.parameters.Timeout;
+import edu.snu.mist.common.types.Tuple2;
 import org.apache.reef.tang.formats.ConfigurationModule;
 import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
 import org.apache.reef.tang.formats.RequiredImpl;
+import org.apache.reef.tang.formats.RequiredParameter;
+
+import java.util.Map;
 
 /**
- * A configuration for the operators that use NFAFunction as a udf.
+ * A configuration for the operators that use NFAOperator.
  */
 public class NFAOperatorConfiguration extends ConfigurationModuleBuilder {
 
     /**
-     * Required Implementation of NFAFunction.
+     * Required initial state.
      */
-    public static final RequiredImpl<NFAFunction> UDF = new RequiredImpl<>();
+    public static final RequiredParameter<String> INITIAL_STATE = new RequiredParameter<>();
+
+    /**
+     * Required final state.
+     */
+    public static final RequiredParameter<String> FINAL_STATE = new RequiredParameter<>();
+
+    /**
+     * Required timeout value.
+     */
+    public static final RequiredParameter<Long> TIMEOUT = new RequiredParameter<>();
+
+    /**
+     * Required state table.
+     */
+    public static final RequiredParameter<Map<String, Tuple2<MISTPredicate, String>>> STATE_TABLE =
+            new RequiredParameter<>();
 
     /**
      * Required operator class.
@@ -40,7 +64,10 @@ public class NFAOperatorConfiguration extends ConfigurationModuleBuilder {
      * A configuration for binding the class of the user-defined function.
      */
     public static final ConfigurationModule CONF = new NFAOperatorConfiguration()
-        .bindImplementation(NFAFunction.class, UDF)
+        .bindNamedParameter(InitialState.class, INITIAL_STATE)
+        .bindNamedParameter(FinalState.class, FINAL_STATE)
+        .bindNamedParameter(Timeout.class, TIMEOUT)
+        .bindNamedParameter(StateTable.class, STATE_TABLE)
         .bindImplementation(Operator.class, OPERATOR)
         .build();
 }
