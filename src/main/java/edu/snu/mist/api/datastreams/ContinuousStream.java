@@ -24,6 +24,7 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Continuous Stream is a normal Stream used inside MIST. It emits one stream data (typed T) for one time.
@@ -140,17 +141,15 @@ public interface ContinuousStream<T> extends MISTStream<T> {
 
   /**
    * Applies nfa operator to the current stream.
-   * @param initialState initial state of nfa
-   * @param finalState final state of nfa
-   * @param timeout timeout value
+   * @param initialState initial state in nfa
+   * @param finalState set of final state in nfa
    * @param stateTable state table to transition state
    * @return new transformed stream after applying nfa operation
    */
   ContinuousStream<T> nfa(
           final String initialState,
-          final String finalState,
-          final long timeout,
-          final Map<String, Tuple2<MISTPredicate, String>> stateTable) throws IOException;
+          final Set<String> finalState,
+          final Map<String, List<Tuple2<MISTPredicate, String>>> stateTable) throws IOException;
 
   /**
    * Applies union operation to the current stream and input continuous stream passed as a parameter.

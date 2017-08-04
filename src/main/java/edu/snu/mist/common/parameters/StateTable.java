@@ -20,8 +20,9 @@ import edu.snu.mist.common.types.Tuple2;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
+import java.util.List;
 import java.util.Map;
 
 @NamedParameter(doc = "State table with its transition condition")
-public class StateTable implements Name<Map<String, Tuple2<MISTPredicate, String>>> {
+public class StateTable implements Name<Map<String, List<Tuple2<MISTPredicate, String>>>> {
 }

@@ -18,6 +18,8 @@ package edu.snu.mist.common.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
+import java.util.Set;
+
 @NamedParameter(doc = "Final state")
-public final class FinalState implements Name<String> {
+public final class FinalState implements Name<Set<String>> {
 }

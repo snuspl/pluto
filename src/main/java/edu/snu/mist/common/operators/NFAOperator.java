@@ -22,7 +22,9 @@ import edu.snu.mist.common.types.Tuple2;
 
 import javax.inject.Inject;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,61 +43,46 @@ public class NFAOperator extends OneStreamOperator implements StateHandler {
     private String state;
 
     // final state
-    private final String finalState;
+    private final Set<String> finalState;
 
     // event data
     private Map<String, Object> eventValue;
 
-    // the event time of first state changed.
-    private final long timeout;
-
-    // the time when the initial state is changed
-    private long startTime;
-
     // changing state table: Map<current state, Tuple2<condition, next state>>
-    private final Map<String, Tuple2<MISTPredicate, String>> stateTable;
-
-
+    private final Map<String, List<Tuple2<MISTPredicate, String>>> stateTable;
 
     @Inject
     public NFAOperator(
             final String initialState,
-            final String finalState,
-            final long timeout,
-            final Map<String, Tuple2<MISTPredicate, String>> stateTable) {
+            final Set<String> finalState,
+            final Map<String, List<Tuple2<MISTPredicate, String>>> stateTable) {
         this.initialState = initialState;
         this.state = initialState;
         this.finalState = finalState;
-        this.timeout = timeout;
         this.stateTable = stateTable;
     }
 
-    public void dataUpdate(final Map<String, Object> inputData, final long inputTime) {
-        final Tuple2<MISTPredicate, String> transition = stateTable.get(state);
-        final MISTPredicate<Map<String, Object>> predicate = (MISTPredicate<Map<String, Object>>) transition.get(0);
+    // update state with input data
+    private void dataUpdate(final Map<String, Object> inputData) {
+        // possible transition list in current state
+        final List<Tuple2<MISTPredicate, String>> transitionList = stateTable.get(state);
 
-        if (predicate.test(inputData)) {
-            if (state.equals(initialState)) {
-                startTime = inputTime;
+        for (final Tuple2<MISTPredicate, String> transition : transitionList) {
+            final MISTPredicate<Map<String, Object>> predicate = (MISTPredicate<Map<String, Object>>) transition.get(0);
+            if (predicate.test(inputData)) {
+                state = (String) transition.get(1);
+                eventValue = inputData;
+                break;
             }
-            state = (String) transition.get(1);
-            eventValue = inputData;
-        }
-
-    }
-
-    public void watermarkUpdate(final long inputTime) {
-        if (inputTime - startTime > timeout) {
-            state = initialState;
         }
     }
 
     @Override
     public void processLeftData(final MistDataEvent input) {
-        dataUpdate((Map<String, Object>)input.getValue(), input.getTimestamp());
+        dataUpdate((Map<String, Object>)input.getValue());
 
         // emit when the state is final state
-        if (state.equals(finalState)) {
+        if (finalState.contains(state)) {
             final Tuple2<Map<String, Object>, Object> output = new Tuple2(eventValue, state);
             if (LOG.isLoggable(Level.FINE)) {
                 LOG.log(Level.FINE, "{0} updates the state to {1} with input {2}, and generates {3}",
@@ -108,13 +95,8 @@ public class NFAOperator extends OneStreamOperator implements StateHandler {
         }
     }
 
-    /**
-     * If the watermark event makes data, then emit it.
-     * @param input mist watermark event
-     */
     @Override
     public void processLeftWatermark(final MistWatermarkEvent input) {
-        watermarkUpdate(input.getTimestamp());
         outputEmitter.emitWatermark(input);
     }
 
@@ -128,5 +110,33 @@ public class NFAOperator extends OneStreamOperator implements StateHandler {
     @Override
     public void setState(final Map<String, Object> loadedState) {
         state = (String) loadedState.get("nfaOperatorState");
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        final NFAOperator that = (NFAOperator) o;
+
+        if (!initialState.equals(that.initialState)) {
+            return false;
+        }
+        if (!finalState.equals(that.finalState)) {
+            return false;
+        }
+        return stateTable.equals(that.stateTable);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = initialState.hashCode();
+        result = 31 * result + finalState.hashCode();
+        result = 31 * result + stateTable.hashCode();
+        return result;
     }
 }

@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This class implements ContinuousStream by configuring operations using Tang.
@@ -217,13 +218,11 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
   @Override
   public ContinuousStream<T> nfa(
           final String initialState,
-          final String finalState,
-          final long timeout,
-          final Map<String, Tuple2<MISTPredicate, String>> stateTable) throws IOException {
+          final Set<String> finalState,
+          final Map<String, List<Tuple2<MISTPredicate, String>>> stateTable) throws IOException {
     final Configuration opConf = NFAOperatorConfiguration.CONF
         .set(NFAOperatorConfiguration.INITIAL_STATE, initialState)
-        .set(NFAOperatorConfiguration.FINAL_STATE, finalState)
-        .set(NFAOperatorConfiguration.TIMEOUT, timeout)
+        .set(NFAOperatorConfiguration.FINAL_STATE, SerializeUtils.serializeToString((Serializable) finalState))
         .set(NFAOperatorConfiguration.STATE_TABLE, SerializeUtils.serializeToString((Serializable) stateTable))
         .build();
 
