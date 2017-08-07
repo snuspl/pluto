@@ -150,6 +150,7 @@ public final class MistTaskConfigs {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindImplementation(QueryManager.class, ThreadBasedQueryManagerImpl.class);
     jcb.bindImplementation(OperatorChainFactory.class, ThreadBasedOperatorChainFactory.class);
+    jcb.bindImplementation(ClassLoaderProvider.class, NoSharingURLClassLoaderProvider.class);
     return jcb.build();
   }
   /**
