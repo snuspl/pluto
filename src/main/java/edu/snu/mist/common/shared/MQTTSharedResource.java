@@ -132,7 +132,6 @@ public final class MQTTSharedResource implements AutoCloseable {
     this.maxInflightMqttEventNum = maxInflightMqttEventNumParam;
     this.mqttSourceKeepAliveSec = mqttSourceKeepAliveSec;
     this.mqttSinkKeepAliveSec = mqttSinkKeepAliveSec;
-    System.err.println("Hi: " + mqttSourceKeepAliveSec + ", " + mqttSinkKeepAliveSec);
   }
 
   /**
