@@ -48,20 +48,18 @@ public class NFAOperator extends OneStreamOperator implements StateHandler {
     // final state
     private final Set<String> finalState;
 
-    // event data
-    private Map<String, Object> eventValue;
-
     // changing state table: Map<current state, Tuple2<condition, next state>>
     private final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable;
 
     @Inject
     private NFAOperator(
         @Parameter(InitialState.class) final String initialState,
-        @Parameter(FinalState.class) final String finalState,
+        @Parameter(FinalState.class) final Set<String> finalState,
         @Parameter(StateTable.class) final String stateTable,
         final ClassLoader classLoader) throws IOException, ClassNotFoundException {
-        this(SerializeUtils.deserializeFromString(initialState, classLoader),
-            SerializeUtils.deserializeFromString(finalState, classLoader),
+        this(
+            initialState,
+            finalState,
             SerializeUtils.deserializeFromString(stateTable, classLoader));
     }
 
@@ -84,7 +82,6 @@ public class NFAOperator extends OneStreamOperator implements StateHandler {
             final MISTPredicate<Map<String, Object>> predicate = (MISTPredicate<Map<String, Object>>) transition.get(0);
             if (predicate.test(inputData)) {
                 state = (String) transition.get(1);
-                eventValue = inputData;
                 break;
             }
         }
@@ -96,7 +93,7 @@ public class NFAOperator extends OneStreamOperator implements StateHandler {
 
         // emit when the state is final state
         if (finalState.contains(state)) {
-            final Tuple2<Map<String, Object>, Object> output = new Tuple2(eventValue, state);
+            final Tuple2<Map<String, Object>, Object> output = new Tuple2(input.getValue(), state);
             if (LOG.isLoggable(Level.FINE)) {
                 LOG.log(Level.FINE, "{0} updates the state to {1} with input {2}, and generates {3}",
                         new Object[]{this.getClass().getName(),
