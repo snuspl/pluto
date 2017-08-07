@@ -243,31 +243,25 @@ public class MISTCepQuerySubmissionTest {
             .addTransition(ComparisonCondition.gt("Temperature", 25), "INSIDE_HOT")
             .addTransition(ComparisonCondition.lt("Temperature", 10), "INSIDE_COLD")
             .build())
-        .addFinalState(new CepFinalState.Builder()
-            .setFinalState("INSIDE_HOT")
-            .setAction(new CepAction.Builder()
+        .addFinalState("INSIDE_HOT", new CepAction.Builder()
                 .setActionType(CepActionType.TEXT_WRITE)
                 .setCepSink(exampleCepSocketSink)
                 .setParams("Hot")
                 .build())
-            .build())
-        .addFinalState(new CepFinalState.Builder()
-            .setFinalState("INSIDE_COLD")
-            .setAction(new CepAction.Builder()
+        .addFinalState("INSIDE_COLD", new CepAction.Builder()
                 .setActionType(CepActionType.TEXT_WRITE)
                 .setCepSink(exampleCepSocketSink)
                 .setParams("Cold")
                 .build())
-            .build())
         .build();
 
     Assert.assertEquals("OUTSIDE", exampleQuery.getInitialState());
     Assert.assertEquals(exampleCepSocketInput, exampleQuery.getCepInput());
 
     final List<CepStatefulRule> statefulRules = exampleQuery.getCepStatefulRules();
-    final List<CepFinalState> finalStates = exampleQuery.getCepFinalStates();
+    final Map<String, CepAction> finalState = exampleQuery.getFinalState();
     Assert.assertEquals(2, exampleQuery.getCepStatefulRules().size());
-    Assert.assertEquals(2, exampleQuery.getCepFinalStates().size());
+    Assert.assertEquals(2, exampleQuery.getFinalState().size());
 
     final CepStatefulRule rule0 = statefulRules.get(0);
     Assert.assertEquals(rule0.getCurrentState(), "OUTSIDE");
@@ -281,17 +275,15 @@ public class MISTCepQuerySubmissionTest {
     Assert.assertEquals(rule1.getTransitionMap().get("INSIDE_COLD"),
             ComparisonCondition.lt("Temperature", 10));
 
-    final CepFinalState finalState0 = finalStates.get(0);
-    Assert.assertEquals(finalState0.getState(), "INSIDE_HOT");
-    Assert.assertEquals(finalState0.getAction(), new CepAction.Builder()
+    final CepAction action0 = finalState.get("INSIDE_HOT");
+    Assert.assertEquals(action0, new CepAction.Builder()
             .setActionType(CepActionType.TEXT_WRITE)
             .setCepSink(exampleCepSocketSink)
             .setParams("Hot")
             .build());
 
-    final CepFinalState finalState1 = finalStates.get(1);
-    Assert.assertEquals(finalState1.getState(), "INSIDE_COLD");
-    Assert.assertEquals(finalState1.getAction(), new CepAction.Builder()
+    final CepAction action1 = finalState.get("INSIDE_COLD");
+    Assert.assertEquals(action1, new CepAction.Builder()
             .setActionType(CepActionType.TEXT_WRITE)
             .setCepSink(exampleCepSocketSink)
             .setParams("Cold")
