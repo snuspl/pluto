@@ -103,7 +103,7 @@ public final class JoinAndApplyStateful {
     System.out.println("Query submission result: " + result.getQueryId());
   }
 
-  private JoinAndApplyStateful(){
+  private JoinAndApplyStateful() {
   }
 
   /**

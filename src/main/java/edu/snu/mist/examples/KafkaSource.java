@@ -86,6 +86,6 @@ public final class KafkaSource {
   /**
    * Must not be instantiated.
    */
-  private KafkaSource(){
+  private KafkaSource() {
   }
 }

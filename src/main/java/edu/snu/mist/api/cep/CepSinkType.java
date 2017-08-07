@@ -19,5 +19,6 @@ package edu.snu.mist.api.cep;
  * Types for Sinks.
  */
 public enum CepSinkType {
-  TEXT_SOCKET_OUTPUT
+  TEXT_SOCKET_OUTPUT,
+  MQTT_OUTPUT
 }

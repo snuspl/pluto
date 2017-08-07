@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
-import edu.snu.mist.core.task.globalsched.NextGroupSelector;
+import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 
 /**
  * This is an interface of EventProcessor that processes events of queries.
@@ -28,12 +28,32 @@ public interface EventProcessor extends AutoCloseable {
   void start();
 
   /**
-   * Get next group selector.
-   */
-  NextGroupSelector getNextGroupSelector();
-
-  /**
    * Interrupt the event processing.
    */
   void interrupt();
+
+  /**
+   * Get the load of the event processor.
+   * @return load
+   */
+  double getLoad();
+
+  /**
+   * Set the load of the event processor.
+   * @param l
+   */
+  void setLoad(double l);
+
+  /**
+   * Add the active groups to the active queue of the event processor.
+   * @param group active group
+   */
+  void addActiveGroup(GlobalSchedGroupInfo group);
+
+  /**
+   * Remove the active group from the active group queue.
+   * @param group active group
+   * @return true if there exists the active group in the queue
+   */
+  boolean removeActiveGroup(GlobalSchedGroupInfo group);
 }

@@ -22,10 +22,16 @@ package edu.snu.mist.api.cep.conditions;
 public enum ConditionType {
   // Less than
   LT,
+  // Less than or equal to
+  LE,
   // Greater than
   GT,
+  // Greater than or equal to
+  GE,
   // Equals
   EQ,
+  // Not equals
+  NEQ,
   // And
   AND,
   // Or

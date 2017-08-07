@@ -21,7 +21,16 @@ import edu.snu.mist.core.task.QueryManager;
 import edu.snu.mist.core.task.eventProcessors.DefaultEventProcessorManager;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorFactory;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
+import edu.snu.mist.core.task.eventProcessors.groupAssigner.GroupAssigner;
+import edu.snu.mist.core.task.eventProcessors.groupAssigner.MinLoadGroupAssignerImpl;
+import edu.snu.mist.core.task.eventProcessors.groupAssigner.RoundRobinGroupAssignerImpl;
 import edu.snu.mist.core.task.eventProcessors.parameters.DispatcherThreadNum;
+import edu.snu.mist.core.task.eventProcessors.parameters.GroupAssignerType;
+import edu.snu.mist.core.task.eventProcessors.parameters.GroupRebalancingPeriod;
+import edu.snu.mist.core.task.eventProcessors.parameters.Rebalancing;
+import edu.snu.mist.core.task.eventProcessors.rebalancer.DefaultGroupRebalancerImpl;
+import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupRebalancer;
+import edu.snu.mist.core.task.eventProcessors.rebalancer.NoGroupRebalancerImpl;
 import edu.snu.mist.core.task.globalsched.*;
 import edu.snu.mist.core.task.globalsched.cfs.CfsSchedulingPeriodCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsSchedulingPeriod;
@@ -63,8 +72,12 @@ public final class MistGroupSchedulingTaskConfigs {
   private final int eventProcessorIncreaseNum;
   private final String groupSchedModelType;
   private final int dispatcherThreadNum;
+  private final long rebalancingPeriod;
+
   // TODO[REMOVE]
   private final boolean groupAware;
+  private final String groupAssignerType;
+  private final boolean rebalancing;
 
   @Inject
   private MistGroupSchedulingTaskConfigs(
@@ -79,7 +92,10 @@ public final class MistGroupSchedulingTaskConfigs {
       @Parameter(EventProcessorIncreaseNum.class) final int eventProcessorIncreaseNum,
       @Parameter(GroupSchedModelType.class) final String groupSchedModelType,
       @Parameter(DispatcherThreadNum.class) final int dispatcherThreadNum,
-      @Parameter(GroupAware.class) final boolean groupAware) {
+      @Parameter(GroupAware.class) final boolean groupAware,
+      @Parameter(GroupAssignerType.class) final String groupAssignerType,
+      @Parameter(Rebalancing.class) final boolean rebalancing,
+      @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod) {
     this.epaType = epaType;
     this.cpuUtilLowThreshold = cpuUtilLowThreshold;
     this.eventNumHighThreshold = eventNumHighThreshold;
@@ -92,6 +108,9 @@ public final class MistGroupSchedulingTaskConfigs {
     this.groupSchedModelType = groupSchedModelType;
     this.groupAware = groupAware;
     this.dispatcherThreadNum = dispatcherThreadNum;
+    this.groupAssignerType = groupAssignerType;
+    this.rebalancing = rebalancing;
+    this.rebalancingPeriod = rebalancingPeriod;
   }
 
   /**
@@ -140,6 +159,26 @@ public final class MistGroupSchedulingTaskConfigs {
     jcb.bindImplementation(EventProcessorManager.class, DefaultEventProcessorManager.class);
     jcb.bindImplementation(SchedulingPeriodCalculator.class, CfsSchedulingPeriodCalculator.class);
 
+    switch (groupAssignerType) {
+      case "min": {
+        jcb.bindImplementation(GroupAssigner.class, MinLoadGroupAssignerImpl.class);
+        break;
+      }
+      case "rr": {
+        jcb.bindImplementation(GroupAssigner.class, RoundRobinGroupAssignerImpl.class);
+        break;
+      }
+      default: {
+        throw new RuntimeException("Undefined group assigner: " + groupAssignerType);
+      }
+    }
+
+    if (rebalancing) {
+      jcb.bindImplementation(GroupRebalancer.class, DefaultGroupRebalancerImpl.class);
+    } else {
+      jcb.bindImplementation(GroupRebalancer.class, NoGroupRebalancerImpl.class);
+    }
+
     jcb.bindNamedParameter(CpuUtilLowThreshold.class, Double.toString(cpuUtilLowThreshold));
     jcb.bindNamedParameter(EventNumHighThreshold.class, Double.toString(eventNumHighThreshold));
     jcb.bindNamedParameter(EventNumLowThreshold.class, Double.toString(eventNumLowThreshold));
@@ -151,6 +190,7 @@ public final class MistGroupSchedulingTaskConfigs {
     jcb.bindNamedParameter(GroupSchedModelType.class, groupSchedModelType);
     jcb.bindNamedParameter(GroupAware.class, Boolean.toString(groupAware));
     jcb.bindNamedParameter(DispatcherThreadNum.class, Integer.toString(dispatcherThreadNum));
+    jcb.bindNamedParameter(GroupRebalancingPeriod.class, Long.toString(rebalancingPeriod));
 
     return Configurations.merge(getConfigurationForExecutionModel(), jcb.build());
   }
@@ -172,6 +212,9 @@ public final class MistGroupSchedulingTaskConfigs {
         .registerShortNameOfClass(EventProcessorIncreaseNum.class)
         .registerShortNameOfClass(GroupSchedModelType.class)
         .registerShortNameOfClass(DispatcherThreadNum.class)
-        .registerShortNameOfClass(GroupAware.class);
+        .registerShortNameOfClass(GroupAware.class)
+        .registerShortNameOfClass(Rebalancing.class)
+        .registerShortNameOfClass(GroupAssignerType.class)
+        .registerShortNameOfClass(GroupRebalancingPeriod.class);
   }
 }

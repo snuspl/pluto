@@ -98,6 +98,6 @@ public final class WindowAndAggregate {
   /**
    * Must not be instantiated.
    */
-  private WindowAndAggregate(){
+  private WindowAndAggregate() {
   }
 }

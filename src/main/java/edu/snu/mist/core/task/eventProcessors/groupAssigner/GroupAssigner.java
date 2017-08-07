@@ -13,25 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.eventProcessors;
+package edu.snu.mist.core.task.eventProcessors.groupAssigner;
 
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
-import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
-import java.util.List;
-
 /**
- * GrouBalancer assigns a group to an event processor.
+ * It assigns a group to an event processor.
  */
-@DefaultImplementation(RoundRobinGroupBalancerImpl.class)
-public interface GroupBalancer {
+@DefaultImplementation(MinLoadGroupAssignerImpl.class)
+public interface GroupAssigner {
 
   /**
    * Assign a group to an event processor.
    * @param newGroup new group
-   * @param epGroups event processors and the assigned groups.
    */
-  void assignGroup(GlobalSchedGroupInfo newGroup,
-                   List<Tuple<EventProcessor, List<GlobalSchedGroupInfo>>> epGroups);
+  void assignGroup(GlobalSchedGroupInfo newGroup);
+
+  /**
+   * This should be called once when the groupAllocationTable is initialized.
+   */
+  void initialize();
 }
