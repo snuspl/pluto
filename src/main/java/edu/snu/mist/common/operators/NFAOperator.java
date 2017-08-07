@@ -35,7 +35,7 @@ import java.util.logging.Logger;
  * This operator applies the user-defined operation which is used in cep stateful query.
  *
  */
-public class NFAOperator extends OneStreamOperator implements StateHandler {
+public final class NFAOperator extends OneStreamOperator implements StateHandler {
 
     private static final Logger LOG = Logger.getLogger(NFAOperator.class.getName());
 
@@ -43,7 +43,7 @@ public class NFAOperator extends OneStreamOperator implements StateHandler {
     private final String initialState;
 
     // current state
-    private String state;
+    private String currState;
 
     // final state
     private final Set<String> finalState;
@@ -68,20 +68,20 @@ public class NFAOperator extends OneStreamOperator implements StateHandler {
             final Set<String> finalState,
             final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable) {
         this.initialState = initialState;
-        this.state = initialState;
+        this.currState = initialState;
         this.finalState = finalState;
         this.stateTable = stateTable;
     }
 
     // update state with input data
-    private void dataUpdate(final Map<String, Object> inputData) {
+    private void stateTransition(final Map<String, Object> inputData) {
         // possible transition list in current state
-        final Collection<Tuple2<MISTPredicate, String>> transitionList = stateTable.get(state);
+        final Collection<Tuple2<MISTPredicate, String>> transitionList = stateTable.get(currState);
 
         for (final Tuple2<MISTPredicate, String> transition : transitionList) {
             final MISTPredicate<Map<String, Object>> predicate = (MISTPredicate<Map<String, Object>>) transition.get(0);
             if (predicate.test(inputData)) {
-                state = (String) transition.get(1);
+                currState = (String) transition.get(1);
                 break;
             }
         }
@@ -89,11 +89,11 @@ public class NFAOperator extends OneStreamOperator implements StateHandler {
 
     @Override
     public void processLeftData(final MistDataEvent input) {
-        dataUpdate((Map<String, Object>)input.getValue());
+        stateTransition((Map<String, Object>)input.getValue());
 
         // emit when the state is final state
-        if (finalState.contains(state)) {
-            final Tuple2<Map<String, Object>, Object> output = new Tuple2(input.getValue(), state);
+        if (finalState.contains(currState)) {
+            final Tuple2<Map<String, Object>, Object> output = new Tuple2(input.getValue(), currState);
             if (LOG.isLoggable(Level.FINE)) {
                 LOG.log(Level.FINE, "{0} updates the state to {1} with input {2}, and generates {3}",
                         new Object[]{this.getClass().getName(),
@@ -113,12 +113,12 @@ public class NFAOperator extends OneStreamOperator implements StateHandler {
     @Override
     public Map<String, Object> getOperatorState() {
         final Map<String, Object> stateMap = new HashMap<>();
-        stateMap.put("nfaOperatorState", state);
+        stateMap.put("nfaOperatorState", currState);
         return stateMap;
     }
 
     @Override
     public void setState(final Map<String, Object> loadedState) {
-        state = (String) loadedState.get("nfaOperatorState");
+        currState = (String) loadedState.get("nfaOperatorState");
     }
 }

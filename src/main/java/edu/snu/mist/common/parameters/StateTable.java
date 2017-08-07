@@ -19,5 +19,5 @@ import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 @NamedParameter(doc = "State table with its transition condition")
-public class StateTable implements Name<String> {
+public final class StateTable implements Name<String> {
 }

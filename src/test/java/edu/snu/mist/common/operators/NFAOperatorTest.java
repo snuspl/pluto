@@ -35,7 +35,7 @@ public class NFAOperatorTest {
     @Test
     public void testNFAOperator() throws InterruptedException {
         // input events
-        // expected results: 0 -- 1 -- 0 -- 3 -- 4, "1" and "4" are emitted.
+        // expected state transitions: 0 -- 1 -- 0 -- 3 -- 4, "1" and "4" are emitted.
         final Map<String, Integer> value1 = new HashMap<>();
         value1.put("number", 1);
         final MistDataEvent data1 = new MistDataEvent(value1, 0L);
@@ -108,7 +108,7 @@ public class NFAOperatorTest {
      * Test getting state of NFAOperator.
      */
     @Test
-    public void testNFAOperatorGetSTate() throws InterruptedException {
+    public void testNFAOperatorGetState() throws InterruptedException {
 
         // generate input data event
         final Map<String, Integer> value1 = new HashMap<>();

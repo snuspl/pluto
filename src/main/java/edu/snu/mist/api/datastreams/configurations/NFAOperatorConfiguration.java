@@ -27,7 +27,7 @@ import org.apache.reef.tang.formats.RequiredParameter;
 /**
  * A configuration for the operators that use NFAOperator.
  */
-public class NFAOperatorConfiguration extends ConfigurationModuleBuilder {
+public final class NFAOperatorConfiguration extends ConfigurationModuleBuilder {
 
     /**
      * Required initial state.
