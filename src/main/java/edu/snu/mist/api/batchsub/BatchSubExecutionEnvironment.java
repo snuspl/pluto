@@ -123,6 +123,7 @@ public final class BatchSubExecutionEnvironment {
         .setSubTopicGenerateFunc(
             SerializeUtils.serializeToString(batchSubConfig.getSubTopicGenerateFunc()))
         .setGroupIdList(batchSubConfig.getGroupIdList())
+        .setMergeFactor(batchSubConfig.getMergeFactor())
         .build();
     final QueryControlResult queryControlResult =
         proxyToTask.sendBatchQueries(operatorChainDag, batchSubConfig.getGroupIdList().size());

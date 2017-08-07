@@ -45,6 +45,11 @@
           "default": []
         },
         {
+          "name": "MergeFactor", /* TODO[DELETE] this code is for test */
+          "type": "int",
+          "default": 1
+        },
+        {
           "name": "GroupId",
           "type": "string"
         },
