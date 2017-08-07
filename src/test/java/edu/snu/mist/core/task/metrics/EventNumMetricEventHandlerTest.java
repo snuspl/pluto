@@ -56,7 +56,7 @@ public final class EventNumMetricEventHandlerTest {
   /**
    * Test that a metric track event handler can track the total event number metric properly.
    */
-  @Test(timeout = 1000L)
+  @Test(timeout = 5000L)
   public void testEventNumMetricTracking() throws Exception {
 
     final GroupInfo groupInfoA = generateGroupInfo("GroupA");
