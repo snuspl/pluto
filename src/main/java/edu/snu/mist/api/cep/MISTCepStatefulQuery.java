@@ -26,6 +26,7 @@ public final class MISTCepStatefulQuery {
   private final CepInput cepInput;
   private final String initialState;
   private final List<CepStatefulRule> cepStatefulRules;
+  private final List<CepFinalState> cepFinalStates;
 
   /**
    * Creates an immutable MISTCepStatefulQuery using given parameters.
@@ -36,10 +37,12 @@ public final class MISTCepStatefulQuery {
   private MISTCepStatefulQuery(
       final CepInput cepInput,
       final String initialState,
-      final List<CepStatefulRule> cepStatefulRules) {
+      final List<CepStatefulRule> cepStatefulRules,
+      final List<CepFinalState> cepFinalStates) {
     this.cepInput = cepInput;
     this.initialState = initialState;
     this.cepStatefulRules = cepStatefulRules;
+    this.cepFinalStates = cepFinalStates;
   }
 
   /**
@@ -50,6 +53,13 @@ public final class MISTCepStatefulQuery {
   }
 
   /**
+   * @return initial state of this query
+   */
+  public String getInitialState() {
+    return initialState;
+  }
+
+  /**
    * @return list of rules
    */
   public List<CepStatefulRule> getCepStatefulRules() {
@@ -57,10 +67,10 @@ public final class MISTCepStatefulQuery {
   }
 
   /**
-   * @return initial state of this query
+   * @return list of final states and actions.
    */
-  public String getInitialState() {
-    return initialState;
+  public List<CepFinalState> getCepFinalStates() {
+    return cepFinalStates;
   }
 
   /**
@@ -71,6 +81,7 @@ public final class MISTCepStatefulQuery {
     private CepInput cepInput;
     private String initialState;
     private final List<CepStatefulRule> cepStatefulRules;
+    private final List<CepFinalState> cepFinalStates;
 
     /**
      * Creates a new builder.
@@ -79,6 +90,7 @@ public final class MISTCepStatefulQuery {
       this.cepInput = null;
       this.initialState = null;
       this.cepStatefulRules = new ArrayList<>();
+      this.cepFinalStates = new ArrayList<>();
     }
 
     /**
@@ -118,14 +130,24 @@ public final class MISTCepStatefulQuery {
     }
 
     /**
-     * Creates an immutable stateful CEP query with.
+     * Add final state.
+     * @param finalState cep fianl state
      * @return builder
      */
+    public Builder addFinalState(final CepFinalState finalState) {
+      cepFinalStates.add(finalState);
+      return this;
+    }
+
+    /**
+     * Creates an immutable stateful CEP query.
+     * @return MIST Query
+     */
     public MISTCepStatefulQuery build() {
-      if (cepInput == null || initialState == null || cepStatefulRules.size() == 0) {
-        throw new IllegalStateException("One of cep input, initial state or rules are not set!");
+      if (cepInput == null || initialState == null || cepStatefulRules.size() == 0 || cepFinalStates.size() == 0) {
+        throw new IllegalStateException("One of cep input, initial state, rules, or final states are not set!");
       }
-      return new MISTCepStatefulQuery(cepInput, initialState, cepStatefulRules);
+      return new MISTCepStatefulQuery(cepInput, initialState, cepStatefulRules, cepFinalStates);
     }
   }
 }
