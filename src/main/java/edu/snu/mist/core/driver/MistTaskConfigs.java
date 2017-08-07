@@ -20,6 +20,8 @@ import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.core.driver.parameters.DeactivationEnabled;
 import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
+import edu.snu.mist.core.parameters.MqttSinkKeepAliveSec;
+import edu.snu.mist.core.parameters.MqttSourceKeepAliveSec;
 import edu.snu.mist.core.parameters.NumPeriodicSchedulerThreads;
 import edu.snu.mist.core.parameters.TempFolderPath;
 import edu.snu.mist.core.task.*;
@@ -103,6 +105,16 @@ public final class MistTaskConfigs {
    */
   private final int gracePeriod;
 
+  /**
+   * The mqtt keep alive time for sources in seconds.
+   */
+  private final int mqttSourceKeepAliveSec;
+
+  /**
+   * The mqtt keep alive time for sinks in seconds.
+   */
+  private final int mqttSinkKeepAliveSec;
+
   @Inject
   private MistTaskConfigs(@Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
                           @Parameter(RPCServerPort.class) final int rpcServerPort,
@@ -114,6 +126,8 @@ public final class MistTaskConfigs {
                           @Parameter(EventProcessorLowerBound.class) final int eventProcessorLowerBound,
                           @Parameter(EventProcessorUpperBound.class) final int eventProcessorUpperBound,
                           @Parameter(GracePeriod.class) final int gracePeriod,
+                          @Parameter(MqttSourceKeepAliveSec.class) final int mqttSourceKeepAliveSec,
+                          @Parameter(MqttSinkKeepAliveSec.class) final int mqttSinkKeepAliveSec,
                           final MistGroupSchedulingTaskConfigs option2TaskConfigs) {
     this.numEventProcessors = numEventProcessors;
     this.tempFolderPath = tempFolderPath;
@@ -126,6 +140,8 @@ public final class MistTaskConfigs {
     this.executionModelOption = executionModelOption;
     this.gracePeriod = gracePeriod;
     this.option2TaskConfigs = option2TaskConfigs;
+    this.mqttSourceKeepAliveSec = mqttSourceKeepAliveSec;
+    this.mqttSinkKeepAliveSec = mqttSinkKeepAliveSec;
   }
 
   /**
@@ -170,6 +186,8 @@ public final class MistTaskConfigs {
     jcb.bindNamedParameter(EventProcessorLowerBound.class, Integer.toString(eventProcessorLowerBound));
     jcb.bindNamedParameter(EventProcessorUpperBound.class, Integer.toString(eventProcessorUpperBound));
     jcb.bindNamedParameter(GracePeriod.class, Integer.toString(gracePeriod));
+    jcb.bindNamedParameter(MqttSourceKeepAliveSec.class, Integer.toString(mqttSourceKeepAliveSec));
+    jcb.bindNamedParameter(MqttSinkKeepAliveSec.class, Integer.toString(mqttSinkKeepAliveSec));
 
     // Implementation
     jcb.bindImplementation(ClientToTaskMessage.class, DefaultClientToTaskMessageImpl.class);
@@ -193,7 +211,9 @@ public final class MistTaskConfigs {
         .registerShortNameOfClass(EventProcessorLowerBound.class)
         .registerShortNameOfClass(EventProcessorUpperBound.class)
         .registerShortNameOfClass(ExecutionModelOption.class)
-        .registerShortNameOfClass(GracePeriod.class);
+        .registerShortNameOfClass(GracePeriod.class)
+        .registerShortNameOfClass(MqttSourceKeepAliveSec.class)
+        .registerShortNameOfClass(MqttSinkKeepAliveSec.class);
     return MistGroupSchedulingTaskConfigs.addCommandLineConf(cmd);
   }
 }

@@ -17,9 +17,7 @@ package edu.snu.mist.common.shared;
 
 import edu.snu.mist.common.sources.MQTTDataGenerator;
 import edu.snu.mist.common.sources.MQTTSubscribeClient;
-import edu.snu.mist.core.parameters.MaxInflightMqttEventNum;
-import edu.snu.mist.core.parameters.MqttSinkClientNumPerBroker;
-import edu.snu.mist.core.parameters.MqttSourceClientNumPerBroker;
+import edu.snu.mist.core.parameters.*;
 import org.apache.reef.tang.annotations.Parameter;
 import org.eclipse.paho.client.mqttv3.*;
 
@@ -104,11 +102,23 @@ public final class MQTTSharedResource implements AutoCloseable {
    */
   private final Lock publisherLock;
 
+  /**
+   * Mqtt source keep-alive time in seconds.
+   */
+  private final int mqttSourceKeepAliveSec;
+
+  /**
+   * Mqtt sink keep-alive time in seconds.
+   */
+  private final int mqttSinkKeepAliveSec;
+
   @Inject
   private MQTTSharedResource(
       @Parameter(MqttSourceClientNumPerBroker.class) final int mqttSourceClientNumPerBrokerParam,
       @Parameter(MqttSinkClientNumPerBroker.class) final int mqttSinkClientNumPerBrokerParam,
-      @Parameter(MaxInflightMqttEventNum.class) final int maxInflightMqttEventNumParam) {
+      @Parameter(MaxInflightMqttEventNum.class) final int maxInflightMqttEventNumParam,
+      @Parameter(MqttSourceKeepAliveSec.class) final int mqttSourceKeepAliveSec,
+      @Parameter(MqttSinkKeepAliveSec.class) final int mqttSinkKeepAliveSec) {
     this.brokerSubscriberMap = new HashMap<>();
     this.subscriberSourceNumMap = new HashMap<>();
     this.brokerPublisherMap = new HashMap<>();
@@ -120,6 +130,9 @@ public final class MQTTSharedResource implements AutoCloseable {
     this.mqttSourceClientNumPerBroker = mqttSourceClientNumPerBrokerParam;
     this.mqttSinkClientNumPerBroker = mqttSinkClientNumPerBrokerParam;
     this.maxInflightMqttEventNum = maxInflightMqttEventNumParam;
+    this.mqttSourceKeepAliveSec = mqttSourceKeepAliveSec;
+    this.mqttSinkKeepAliveSec = mqttSinkKeepAliveSec;
+    System.err.println("Hi: " + mqttSourceKeepAliveSec + ", " + mqttSinkKeepAliveSec);
   }
 
   /**
@@ -189,6 +202,7 @@ public final class MQTTSharedResource implements AutoCloseable {
         mqttAsyncClientList.size());
     final MqttConnectOptions connectOptions = new MqttConnectOptions();
     connectOptions.setMaxInflight(maxInflightMqttEventNum);
+    connectOptions.setKeepAliveInterval(mqttSinkKeepAliveSec);
     client.connect(connectOptions).waitForCompletion();
     mqttAsyncClientList.add(client);
     publisherSinkNumMap.put(client, 0);
@@ -221,7 +235,7 @@ public final class MQTTSharedResource implements AutoCloseable {
       final List<MQTTSubscribeClient> newSubscribeClientList = new ArrayList<>();
       for (int i = 0; i < this.mqttSourceClientNumPerBroker; i++) {
         final MQTTSubscribeClient subscribeClient = new MQTTSubscribeClient(brokerURI, MQTT_SUBSCRIBER_ID_PREFIX +
-            brokerURI + "_" + i);
+            brokerURI + "_" + i, mqttSourceKeepAliveSec);
         subscriberSourceNumMap.put(subscribeClient, 0);
         newSubscribeClientList.add(subscribeClient);
       }
