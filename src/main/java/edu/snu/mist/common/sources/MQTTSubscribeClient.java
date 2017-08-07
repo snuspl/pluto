@@ -53,16 +53,23 @@ public final class MQTTSubscribeClient implements MqttCallback {
   private final Object subscribeLock;
 
   /**
+   * Mqtt sink keep-alive time in seconds.
+   */
+  private final int mqttSourceKeepAliveSec;
+
+  /**
    * Construct a client connected with target MQTT broker.
    * @param brokerURI the URI of broker to connect
    */
   public MQTTSubscribeClient(final String brokerURI,
-                             final String clientId) {
+                             final String clientId,
+                             final int mqttSourceKeepAliveSec) {
     this.started = false;
     this.brokerURI = brokerURI;
     this.clientId = clientId;
     this.dataGeneratorListMap = new ConcurrentHashMap<>();
     this.subscribeLock = new Object();
+    this.mqttSourceKeepAliveSec = mqttSourceKeepAliveSec;
   }
 
   /**
@@ -91,6 +98,8 @@ public final class MQTTSubscribeClient implements MqttCallback {
     synchronized (subscribeLock) {
       if (!started) {
         client = new MqttAsyncClient(brokerURI, clientId);
+        final MqttConnectOptions mqttConnectOptions = new MqttConnectOptions();
+        mqttConnectOptions.setKeepAliveInterval(mqttSourceKeepAliveSec);
         client.connect().waitForCompletion();
         client.setCallback(this);
         started = true;
