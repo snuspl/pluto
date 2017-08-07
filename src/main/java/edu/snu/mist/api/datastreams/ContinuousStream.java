@@ -21,8 +21,11 @@ import edu.snu.mist.common.windows.WindowInformation;
 import org.apache.reef.tang.Configuration;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
+import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Continuous Stream is a normal Stream used inside MIST. It emits one stream data (typed T) for one time.
@@ -136,6 +139,19 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    */
   <OUT> ContinuousStream<OUT> applyStateful(Class<? extends ApplyStatefulFunction<T, OUT>> clazz,
                                             Configuration funcConf);
+
+  /**
+   * Applies nfa operator to the current stream.
+   * @param initialState initial state in nfa
+   * @param finalState set of final state in nfa
+   * @param stateTable state table to transition state
+   * @return new transformed stream after applying nfa operation
+   */
+  ContinuousStream<T> nfa(
+          final String initialState,
+          final Set<String> finalState,
+          final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable) throws IOException;
+
   /**
    * Applies union operation to the current stream and input continuous stream passed as a parameter.
    * Both two streams for union should be continuous stream type.

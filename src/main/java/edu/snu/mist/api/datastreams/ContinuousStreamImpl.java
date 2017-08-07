@@ -35,8 +35,10 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This class implements ContinuousStream by configuring operations using Tang.
@@ -212,6 +214,22 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
         .set(ApplyStatefulOperatorConfiguration.OPERATOR, ApplyStatefulOperator.class)
         .build(), funcConf);
     return checkUdfAndTransform(clazz, conf, this);
+  }
+
+  @Override
+  public ContinuousStream<T> nfa(
+          final String initialState,
+          final Set<String> finalState,
+          final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable) throws IOException {
+    final ConfigurationModule opConfModule = NFAOperatorConfiguration.CONF
+        .set(NFAOperatorConfiguration.INITIAL_STATE, initialState)
+        .set(NFAOperatorConfiguration.STATE_TABLE, SerializeUtils.serializeToString((Serializable) stateTable));
+
+    for (final String iterState : finalState) {
+      opConfModule.set(NFAOperatorConfiguration.FINAL_STATE, iterState);
+    }
+    final Configuration opConf = opConfModule.build();
+    return transformToSingleInputContinuousStream(opConf, this);
   }
 
   @Override
