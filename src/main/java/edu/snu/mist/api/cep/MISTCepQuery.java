@@ -23,9 +23,9 @@ import java.util.List;
  */
 public final class MISTCepQuery {
     private final String groupId;
-    private final CepInput cepInput;
-    private final List<CepEvent> cepEventList;
-    private final CepQualification cepQualification;
+    private final CepNewInput cepInput;
+    private final List<CepEvent> cepEventSequence;
+    private final CepQualifier cepQualifier;
     private final long windowTime;
     private final CepAction cepAction;
 
@@ -33,21 +33,21 @@ public final class MISTCepQuery {
      * Creates an immutable MISTCepQuery using given parameters.
      * @param groupId group id
      * @param cepInput cep input
-     * @param cepEventList sequence of event
-     * @param cepQualification pattern qualification
+     * @param cepEventSequence sequence of event
+     * @param cepQualifier pattern qualification
      * @param cepAction cep action
      */
     private MISTCepQuery(
             final String groupId,
-            final CepInput cepInput,
-            final List<CepEvent> cepEventList,
-            final CepQualification cepQualification,
+            final CepNewInput cepInput,
+            final List<CepEvent> cepEventSequence,
+            final CepQualifier cepQualifier,
             final long windowTime,
             final CepAction cepAction) {
         this.groupId = groupId;
         this.cepInput = cepInput;
-        this.cepEventList = cepEventList;
-        this.cepQualification = cepQualification;
+        this.cepEventSequence = cepEventSequence;
+        this.cepQualifier = cepQualifier;
         this.windowTime = windowTime;
         this.cepAction = cepAction;
     }
@@ -56,16 +56,16 @@ public final class MISTCepQuery {
         return groupId;
     }
 
-    public CepInput getCepInput() {
+    public CepNewInput getCepInput() {
         return cepInput;
     }
 
-    public List<CepEvent> getCepEventList() {
-        return cepEventList;
+    public List<CepEvent> getCepEventSequence() {
+        return cepEventSequence;
     }
 
-    public CepQualification getCepQualification() {
-        return cepQualification;
+    public CepQualifier getCepQualifier() {
+        return cepQualifier;
     }
 
     public CepAction getCepAction() {
@@ -77,9 +77,9 @@ public final class MISTCepQuery {
      */
     public static class Builder {
         private final String groupId;
-        private CepInput cepInput;
+        private CepNewInput cepInput;
         private List<CepEvent> cepEventSequence;
-        private CepQualification cepQualification;
+        private CepQualifier cepQualifier;
         private long windowTime;
         private CepAction cepAction;
 
@@ -87,7 +87,7 @@ public final class MISTCepQuery {
             this.groupId = groupId;
             this.cepInput = null;
             this.cepEventSequence = null;
-            this.cepQualification = null;
+            this.cepQualifier = null;
             this.windowTime = Long.MAX_VALUE;
             this.cepAction = null;
         }
@@ -97,7 +97,7 @@ public final class MISTCepQuery {
          * @param input input for this query
          * @return builder
          */
-        public Builder input(final CepInput input) {
+        public Builder input(final CepNewInput input) {
             if (this.cepInput != null) {
                 throw new IllegalStateException("Input couldn't be declared twice!");
             }
@@ -117,11 +117,11 @@ public final class MISTCepQuery {
 
         /**
          * Define an qualification of the candidate sequences.
-         * @param qualification input qualification
+         * @param cepQualifierParam input qualification
          * @return builder
          */
-        public Builder setQualification(final CepQualification qualification) {
-            cepQualification = qualification;
+        public Builder setQualifier(final CepQualifier cepQualifierParam) {
+            cepQualifier = cepQualifierParam;
             return this;
         }
 
@@ -143,6 +143,10 @@ public final class MISTCepQuery {
         public Builder setAction(final CepAction action) {
             cepAction = action;
             return this;
+        }
+
+        public MISTCepQuery build() {
+            return new MISTCepQuery(groupId, cepInput, cepEventSequence, cepQualifier, windowTime, cepAction);
         }
     }
 }

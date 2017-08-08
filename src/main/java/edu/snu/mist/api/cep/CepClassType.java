@@ -15,19 +15,17 @@
  */
 package edu.snu.mist.api.cep;
 
-import edu.snu.mist.common.functions.MISTPredicate;
-
 /**
- * Event of cep query, consists of event name and condition.
+ * Class used in cep query.
  */
-public final class CepEvent {
-    private final String eventName;
-    private final MISTPredicate condition;
+public interface CepClassType {
+    /**
+     * User-defined parser that translates string to User-defined Class.
+     * @return this class
+     */
+    CepClassType stringParser(final String input);
 
-    public CepEvent(
-            final String eventName,
-            final MISTPredicate condition) {
-        this.eventName = eventName;
-        this.condition = condition;
-    }
+    boolean equals(final Object o);
+
+    int hashCode();
 }

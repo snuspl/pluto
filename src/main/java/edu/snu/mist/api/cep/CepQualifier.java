@@ -17,17 +17,10 @@ package edu.snu.mist.api.cep;
 
 import edu.snu.mist.common.functions.MISTPredicate;
 
-/**
- * Event of cep query, consists of event name and condition.
- */
-public final class CepEvent {
-    private final String eventName;
-    private final MISTPredicate condition;
+import java.util.Map;
 
-    public CepEvent(
-            final String eventName,
-            final MISTPredicate condition) {
-        this.eventName = eventName;
-        this.condition = condition;
-    }
+/**
+ * Cep Qualification to define MISTCepQuery.
+ */
+public interface CepQualifier extends MISTPredicate<Map<String, CepClassType>> {
 }

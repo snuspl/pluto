@@ -13,14 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.cep;
+package edu.snu.mist.api.utils;
 
-import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.api.cep.CepClassType;
+import edu.snu.mist.api.cep.CepQualifier;
 
 import java.util.Map;
 
-/**
- * Cep Qualification to define MISTCepQuery.
- */
-public interface CepQualification extends MISTFunction<Map<String, Map<String, Object>>, Boolean> {
+public final class CepExampleQualifier implements CepQualifier {
+    @Override
+    public boolean test(final Map<String, CepClassType> stringCepClassTypeMap) {
+        return true;
+    }
+
+    public CepExampleQualifier() {
+    }
 }
