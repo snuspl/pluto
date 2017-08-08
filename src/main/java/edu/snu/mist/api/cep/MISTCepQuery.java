@@ -19,7 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Default Implementation for MISTCepQuery
+ * Default Implementation for MISTCepQuery.
  */
 public final class MISTCepQuery {
     private final String groupId;
