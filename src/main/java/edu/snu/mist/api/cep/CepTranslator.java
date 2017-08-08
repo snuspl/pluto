@@ -23,9 +23,12 @@ import edu.snu.mist.api.datastreams.ContinuousStream;
 import edu.snu.mist.api.datastreams.configurations.MQTTSourceConfiguration;
 import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.api.datastreams.configurations.TextSocketSourceConfiguration;
+import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.common.types.Tuple2;
+import org.apache.commons.lang.NotImplementedException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -39,9 +42,9 @@ import java.util.*;
 public final class CepTranslator {
 
     /**
-     * Translate cep stateless query into datastream query.
+     * Translate cep stateless query into MIST query.
      * @param query CepStatelessQuery
-     * @return translated Mist datastream query
+     * @return translated Mist query
      */
     public static MISTQuery cepStatelessTranslator(final MISTCepStatelessQuery query) {
         final CepInput cepInput = query.getCepInput();
@@ -51,6 +54,24 @@ public final class CepTranslator {
         final ContinuousStream<Map<String, Object>> inputMapStream =
                 cepInputTranslator(queryBuilder, cepInput);
         cepStatelessRulesTranslator(inputMapStream, cepStatelessRules);
+        return queryBuilder.build();
+    }
+
+    /**
+     * Translate cep stateful query into MIST query.
+     * @param query CepStatefulQuery
+     * @return translated MIST query
+     */
+    public static MISTQuery cepStatefulTranslator(final MISTCepStatefulQuery query) {
+        final CepInput cepInput = query.getCepInput();
+        final String initialState = query.getInitialState();
+        final List<CepStatefulRule> cepStatefulRules = query.getCepStatefulRules();
+        final Map<String, CepAction> cepFinalStates = query.getFinalState();
+
+        final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(query.getGroupId());
+        final ContinuousStream<Map<String, Object>> inputMapStream =
+                cepInputTranslator(queryBuilder, cepInput);
+        cepStatefulRulesTranslator(inputMapStream, initialState, cepStatefulRules, cepFinalStates);
         return queryBuilder.build();
     }
 
@@ -231,6 +252,64 @@ public final class CepTranslator {
         return inputMap;
     }
 
+    /**
+     * Translate cepStatefulRules into vertices of DAG.
+     * Send compiled stateful rule and final state information to nfa operator to make a vertex.
+     * @param inputMapStream input stream data
+     * @param cepStatefulRules list of cepStatefulRule
+     * @param initialState initial state of cepStatefulQuery
+     */
+    private static void cepStatefulRulesTranslator(
+            final ContinuousStream<Map<String, Object>> inputMapStream,
+            final String initialState,
+            final List<CepStatefulRule> cepStatefulRules,
+            final Map<String, CepAction> cepFinalState) {
+
+        final Set<String> nfaFinalState = cepFinalState.keySet();
+        final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable = new HashMap<>();
+
+        for (final CepStatefulRule iterRule : cepStatefulRules) {
+            final String currState = iterRule.getCurrentState();
+            final Collection<Tuple2<MISTPredicate, String>> nextTransitions = new HashSet<>();
+            final Map<String, AbstractCondition> transitionMap = iterRule.getTransitionMap();
+
+            for (final Map.Entry<String, AbstractCondition> nextState : transitionMap.entrySet()) {
+                nextTransitions.add(
+                        new Tuple2<>(CepConditionUtils.cepConditionToPredicate(nextState.getValue()),
+                                nextState.getKey()));
+            }
+            stateTable.put(currState, nextTransitions);
+        }
+
+        ContinuousStream<Tuple2<Map<String, Object>, String>> nfaStream = null;
+        try {
+            nfaStream = inputMapStream.nfa(initialState, nfaFinalState, stateTable);
+        } catch (final IOException e) {
+            e.printStackTrace();
+        }
+
+        for (final Map.Entry<String, CepAction> iterAction : cepFinalState.entrySet()) {
+            final String state = iterAction.getKey();
+            final CepAction action = iterAction.getValue();
+            final List<Object> param = action.getParams();
+            final CepSink sink = action.getCepSink();
+
+            switch (sink.getCepSinkType()) {
+                case TEXT_SOCKET_OUTPUT: {
+                    nfaStream
+                            .filter(s -> s.get(1).equals(state))
+                            .map(s -> (Map<String, Object>)s.get(0))
+                            .map(new CepMapToStringFunction(action.getParams(), sink.getSeparator()))
+                            .textSocketOutput((String)sink.getSinkConfigs().get("SOCKET_SINK_ADDRESS"),
+                                    (int)sink.getSinkConfigs().get("SOCKET_SINK_PORT"));
+                    break;
+                }
+                default :
+                    throw new NotImplementedException("Only TEXT_SOCKET_OUTPUT is supported now! : " +
+                        sink.getCepSinkType().toString());
+            }
+        }
+    }
     private CepTranslator() {
     }
 }

@@ -40,6 +40,7 @@ case $1 in
   SessionWindow) ;;
   CepHelloMist) ;;
   CepWeatherInfo) ;;
+  CepStatefulExample) ;;
   CepMQTTHelloMist) ;;
   CepMQTTNoiseSensing) ;;
   *)
