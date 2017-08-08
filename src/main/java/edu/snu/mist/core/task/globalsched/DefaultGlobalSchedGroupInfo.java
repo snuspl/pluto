@@ -40,8 +40,9 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
    */
   private enum GroupStatus {
     READY,
-    DISPACTHED,
-    PROCESSING
+    DISPATCHED,
+    PROCESSING,
+    ISOLATED,
   }
 
   /**
@@ -231,12 +232,17 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
 
   @Override
   public boolean setDispatched() {
-    return atomicStatus.compareAndSet(GroupStatus.READY, GroupStatus.DISPACTHED);
+    return atomicStatus.compareAndSet(GroupStatus.READY, GroupStatus.DISPATCHED);
   }
 
   @Override
   public boolean setProcessing() {
-    return atomicStatus.compareAndSet(GroupStatus.DISPACTHED, GroupStatus.PROCESSING);
+    return atomicStatus.compareAndSet(GroupStatus.DISPATCHED, GroupStatus.PROCESSING);
+  }
+
+  @Override
+  public boolean setIsolated() {
+    return atomicStatus.compareAndSet(GroupStatus.PROCESSING, GroupStatus.ISOLATED);
   }
 
   @Override
@@ -246,7 +252,12 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
 
   @Override
   public boolean setReadyFromDispatched() {
-    return atomicStatus.compareAndSet(GroupStatus.DISPACTHED, GroupStatus.READY);
+    return atomicStatus.compareAndSet(GroupStatus.DISPATCHED, GroupStatus.READY);
+  }
+
+  @Override
+  public boolean setReadyFromIsolated() {
+    return atomicStatus.compareAndSet(GroupStatus.ISOLATED, GroupStatus.READY);
   }
 
   @Override
@@ -261,7 +272,12 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
 
   @Override
   public boolean isDispatched() {
-    return atomicStatus.get() == GroupStatus.DISPACTHED;
+    return atomicStatus.get() == GroupStatus.DISPATCHED;
+  }
+
+  @Override
+  public boolean isIsolated() {
+    return atomicStatus.get() == GroupStatus.ISOLATED;
   }
 
   @Override

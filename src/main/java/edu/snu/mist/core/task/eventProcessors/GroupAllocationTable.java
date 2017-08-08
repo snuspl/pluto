@@ -53,6 +53,18 @@ public interface GroupAllocationTable {
   int size();
 
   /**
+   * Add a new event processor.
+   * @param eventProcessor a new event processor
+   */
+  void addEventProcessor(EventProcessor eventProcessor);
+
+  /**
+   * Remove an existing event processor.
+   * @param eventProcessor event processor to be removed
+   */
+  void removeEventProcessor(EventProcessor eventProcessor);
+
+  /**
    * Remove the event processor from the allocation table.
    */
   Collection<GlobalSchedGroupInfo> remove(EventProcessor key);

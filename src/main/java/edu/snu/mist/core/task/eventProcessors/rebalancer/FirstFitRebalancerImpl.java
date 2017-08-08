@@ -67,9 +67,24 @@ public final class FirstFitRebalancerImpl implements GroupRebalancer {
     return sum;
   }
 
+  /**
+   * Get event processors except for isolated event processors.
+   * @return normal event processors
+   */
+  private List<EventProcessor> getNormalEventProcessors() {
+    final List<EventProcessor> eventProcessors = groupAllocationTable.getKeys();
+    final ArrayList<EventProcessor> normalEventProcessors = new ArrayList<>();
+    for (final EventProcessor ep : eventProcessors) {
+      if (!ep.isIsolatedProcessor()) {
+        normalEventProcessors.add(ep);
+      }
+    }
+    return normalEventProcessors;
+  }
+
   @Override
   public void triggerRebalancing() {
-    final List<EventProcessor> eventProcessors = groupAllocationTable.getKeys();
+    final List<EventProcessor> eventProcessors = getNormalEventProcessors();
     // Calculate each load and total load
     final Map<EventProcessor, Double> loadTable = new HashMap<>();
     double totalLoad = 0.0;

@@ -79,6 +79,11 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
   private final ScheduledExecutorService groupRebalancerService;
 
   /**
+   * Group isolation thread.
+   */
+  private final ScheduledExecutorService groupIsolationService;
+
+  /**
    * Group allocation table modifier.
    */
   private final GroupAllocationTableModifier groupAllocationTableModifier;
@@ -103,6 +108,7 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
                                        @Parameter(EventProcessorUpperBound.class) final int eventProcessorUpperBound,
                                        @Parameter(GracePeriod.class) final int gracePeriod,
                                        @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
+                                       @Parameter(IsolationTriggerPeriod.class) final long isolationTriggerPeriod,
                                        final GroupAllocationTable groupAllocationTable,
                                        final GroupAssigner groupAssigner,
                                        final GroupRebalancer groupRebalancer,
@@ -119,15 +125,22 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
     this.eventProcessorFactory = eventProcessorFactory;
     this.gracePeriod = gracePeriod;
     this.groupRebalancerService = Executors.newSingleThreadScheduledExecutor();
-    initialize(rebalancingPeriod);
+    this.groupIsolationService = Executors.newSingleThreadScheduledExecutor();
+    initialize(rebalancingPeriod, isolationTriggerPeriod);
     this.prevAdjustTime = System.nanoTime();
   }
 
   /**
    * Create new dispatchers and add them to event processor set.
    */
-  private void initialize(final long rebalancingPeriod) {
+  private void initialize(final long rebalancingPeriod, final long isolationPeriod) {
     groupAssigner.initialize();
+
+    // Group isolation thread
+    groupIsolationService.scheduleAtFixedRate(() -> {
+      groupAllocationTableModifier.addEvent(
+          new WritingEvent(WritingEvent.EventType.ISOLATION, System.currentTimeMillis()));
+    }, isolationPeriod, isolationPeriod, TimeUnit.MILLISECONDS);
 
     // Create a rebalancer thread
     groupRebalancerService.scheduleAtFixedRate(() -> {

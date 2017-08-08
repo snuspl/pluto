@@ -68,6 +68,18 @@ public final class DefaultGroupAllocationTable implements GroupAllocationTable {
   }
 
   @Override
+  public void addEventProcessor(final EventProcessor eventProcessor) {
+    table.put(eventProcessor, new ConcurrentLinkedQueue<>());
+    eventProcessors.add(eventProcessor);
+  }
+
+  @Override
+  public void removeEventProcessor(final EventProcessor eventProcessor) {
+    eventProcessors.remove(eventProcessor);
+    table.remove(eventProcessor);
+  }
+
+  @Override
   public Collection<GlobalSchedGroupInfo> remove(final EventProcessor key) {
     return table.remove(key);
   }

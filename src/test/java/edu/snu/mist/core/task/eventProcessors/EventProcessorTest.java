@@ -59,6 +59,9 @@ public final class EventProcessorTest {
     final GlobalSchedGroupInfo group1 = createGroup("group1");
     final GlobalSchedGroupInfo group2 = createGroup("group2");
 
+    group1.setDispatched();
+    group2.setDispatched();
+
     final AtomicInteger numEvent1 = new AtomicInteger(10);
     final OperatorChain oc1 = mock(OperatorChain.class);
     final AtomicInteger numEvent2 = new AtomicInteger(20);
@@ -109,7 +112,9 @@ public final class EventProcessorTest {
     @Override
     public GlobalSchedGroupInfo getNextExecutableGroup() {
       try {
-        return groups.take();
+        final GlobalSchedGroupInfo group =  groups.take();
+        group.setProcessing();
+        return group;
       } catch (InterruptedException e) {
         e.printStackTrace();
         return null;

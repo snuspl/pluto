@@ -121,6 +121,7 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
   /**
    * Get the number of processed events in the group.
    * @return numb er of processed events
+   * @return number of processed events
    */
   AtomicLong getProcessingEvent();
 
@@ -137,6 +138,12 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
   boolean setProcessing();
 
   /**
+   * Set the group status to isolated.
+   * @return true if it changes from Processing -> Isolated.
+   */
+  boolean setIsolated();
+
+  /**
    * Set the group status to ready from processing status.
    * @return true if it changes from Processing -> Ready
    */
@@ -147,6 +154,12 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
    * @return true if it changes from Dispatched -> Ready
    */
   boolean setReadyFromDispatched();
+
+  /**
+   * Set the group status to ready from Isolated status.
+   * @return true if it changes from Isolated -> Ready
+   */
+  boolean setReadyFromIsolated();
 
   /**
    * Check whether it is in processing status.
@@ -162,4 +175,9 @@ public interface GlobalSchedGroupInfo extends AutoCloseable {
    * Check whether it is in dispatched status.
    */
   boolean isDispatched();
+
+  /**
+   * Check whether it is in preempted status.
+   */
+  boolean isIsolated();
 }

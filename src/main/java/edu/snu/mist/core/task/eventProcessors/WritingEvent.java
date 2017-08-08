@@ -27,7 +27,8 @@ public final class WritingEvent<V> {
     GROUP_REMOVE,
     EP_ADD,
     EP_REMOVE,
-    REBALANCE
+    REBALANCE,
+    ISOLATION,
   }
 
   private final EventType eventType;
