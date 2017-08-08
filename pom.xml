@@ -22,8 +22,8 @@ limitations under the License.
     <packaging>jar</packaging>
 
     <properties>
-        <reef.version>0.13.0-incubating</reef.version>
-        <hadoop.version>2.6.0</hadoop.version>
+        <reef.version>0.15.0</reef.version>
+        <hadoop.version>2.7.0</hadoop.version>
         <project.build.directory>target</project.build.directory>
         <maven-checkstyle-plugin.version>2.15</maven-checkstyle-plugin.version>
         <checkstyle.version>6.6</checkstyle.version>
