@@ -148,6 +148,7 @@ public final class MISTCepStatefulQuery {
      * @return MIST Query
      */
     public MISTCepStatefulQuery build() {
+      //TODO[MIST-864]: Check validation of state transition diagram.
       if (cepInput == null || initialState == null || cepStatefulRules.size() == 0 || cepFinalState.size() == 0) {
         throw new IllegalStateException("One of cep input, initial state, rules, or final states are not set!");
       }
