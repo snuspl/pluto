@@ -16,7 +16,9 @@
 package edu.snu.mist.api.cep;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Default Implementation for MISTCepStatefulQuery.
@@ -26,20 +28,24 @@ public final class MISTCepStatefulQuery {
   private final CepInput cepInput;
   private final String initialState;
   private final List<CepStatefulRule> cepStatefulRules;
+  private final Map<String, CepAction> cepFinalState;
 
   /**
    * Creates an immutable MISTCepStatefulQuery using given parameters.
    * @param cepInput cep input
    * @param initialState initial state
    * @param cepStatefulRules a list of stateful rules
+   * @param cepFinalState a map of final states and its action
    */
   private MISTCepStatefulQuery(
       final CepInput cepInput,
       final String initialState,
-      final List<CepStatefulRule> cepStatefulRules) {
+      final List<CepStatefulRule> cepStatefulRules,
+      final Map<String, CepAction> cepFinalState) {
     this.cepInput = cepInput;
     this.initialState = initialState;
     this.cepStatefulRules = cepStatefulRules;
+    this.cepFinalState = cepFinalState;
   }
 
   /**
@@ -50,6 +56,13 @@ public final class MISTCepStatefulQuery {
   }
 
   /**
+   * @return initial state of this query
+   */
+  public String getInitialState() {
+    return initialState;
+  }
+
+  /**
    * @return list of rules
    */
   public List<CepStatefulRule> getCepStatefulRules() {
@@ -57,10 +70,10 @@ public final class MISTCepStatefulQuery {
   }
 
   /**
-   * @return initial state of this query
+   * @return list of final states and actions.
    */
-  public String getInitialState() {
-    return initialState;
+  public Map<String, CepAction> getFinalState() {
+    return cepFinalState;
   }
 
   /**
@@ -71,6 +84,7 @@ public final class MISTCepStatefulQuery {
     private CepInput cepInput;
     private String initialState;
     private final List<CepStatefulRule> cepStatefulRules;
+    private final Map<String, CepAction> cepFinalState;
 
     /**
      * Creates a new builder.
@@ -79,6 +93,7 @@ public final class MISTCepStatefulQuery {
       this.cepInput = null;
       this.initialState = null;
       this.cepStatefulRules = new ArrayList<>();
+      this.cepFinalState = new HashMap<>();
     }
 
     /**
@@ -118,14 +133,26 @@ public final class MISTCepStatefulQuery {
     }
 
     /**
-     * Creates an immutable stateful CEP query with.
+     * Add final state.
+     * @param finalState cep final state
+     * @param action cep action related to final state
      * @return builder
      */
+    public Builder addFinalState(final String finalState, final CepAction action) {
+      cepFinalState.put(finalState, action);
+      return this;
+    }
+
+    /**
+     * Creates an immutable stateful CEP query.
+     * @return MIST Query
+     */
     public MISTCepStatefulQuery build() {
-      if (cepInput == null || initialState == null || cepStatefulRules.size() == 0) {
-        throw new IllegalStateException("One of cep input, initial state or rules are not set!");
+      //TODO[MIST-864]: Check validation of state transition diagram.
+      if (cepInput == null || initialState == null || cepStatefulRules.size() == 0 || cepFinalState.size() == 0) {
+        throw new IllegalStateException("One of cep input, initial state, rules, or final states are not set!");
       }
-      return new MISTCepStatefulQuery(cepInput, initialState, cepStatefulRules);
+      return new MISTCepStatefulQuery(cepInput, initialState, cepStatefulRules, cepFinalState);
     }
   }
 }

@@ -236,57 +236,57 @@ public class MISTCepQuerySubmissionTest {
         .initialState("OUTSIDE")
         .addStatefulRule(new CepStatefulRule.Builder()
             .setCurrentState("OUTSIDE")
-            .setCondition(ComparisonCondition.eq("Location", 4.89))
-            .setAction(CepAction.doNothingAction())
-            .setNextState("INSIDE")
+            .addTransition(ComparisonCondition.eq("Location", 4.89), "INSIDE")
             .build())
         .addStatefulRule(new CepStatefulRule.Builder()
             .setCurrentState("INSIDE")
-            .setCondition(ComparisonCondition.gt("Temperature", 25))
-            .setAction(new CepAction.Builder()
+            .addTransition(ComparisonCondition.gt("Temperature", 25), "INSIDE_HOT")
+            .addTransition(ComparisonCondition.lt("Temperature", 10), "INSIDE_COLD")
+            .build())
+        .addFinalState("INSIDE_HOT", new CepAction.Builder()
                 .setActionType(CepActionType.TEXT_WRITE)
                 .setCepSink(exampleCepSocketSink)
                 .setParams("Hot")
                 .build())
-            .build())
-        .addStatefulRule(new CepStatefulRule.Builder()
-            .setCurrentState("INSIDE")
-            .setCondition(ComparisonCondition.lt("Temperature", 10))
-            .setAction(new CepAction.Builder()
+        .addFinalState("INSIDE_COLD", new CepAction.Builder()
                 .setActionType(CepActionType.TEXT_WRITE)
                 .setCepSink(exampleCepSocketSink)
                 .setParams("Cold")
                 .build())
-            .build())
         .build();
+
+    Assert.assertEquals("OUTSIDE", exampleQuery.getInitialState());
     Assert.assertEquals(exampleCepSocketInput, exampleQuery.getCepInput());
+
     final List<CepStatefulRule> statefulRules = exampleQuery.getCepStatefulRules();
-    Assert.assertEquals(3, exampleQuery.getCepStatefulRules().size());
+    final Map<String, CepAction> finalState = exampleQuery.getFinalState();
+    Assert.assertEquals(2, exampleQuery.getCepStatefulRules().size());
+    Assert.assertEquals(2, exampleQuery.getFinalState().size());
 
     final CepStatefulRule rule0 = statefulRules.get(0);
     Assert.assertEquals(rule0.getCurrentState(), "OUTSIDE");
-    Assert.assertEquals(rule0.getCondition(), ComparisonCondition.eq("Location", 4.89));
-    Assert.assertEquals(rule0.getAction(), CepAction.doNothingAction());
-    Assert.assertEquals(rule0.getNextState(), "INSIDE");
+    Assert.assertEquals(rule0.getTransitionMap().get("INSIDE"),
+            ComparisonCondition.eq("Location", 4.89));
 
     final CepStatefulRule rule1 = statefulRules.get(1);
     Assert.assertEquals(rule1.getCurrentState(), "INSIDE");
-    Assert.assertEquals(rule1.getCondition(), ComparisonCondition.gt("Temperature", 25));
-    Assert.assertEquals(rule1.getAction(), new CepAction.Builder()
-        .setActionType(CepActionType.TEXT_WRITE)
-        .setCepSink(exampleCepSocketSink)
-        .setParams("Hot")
-        .build());
-    Assert.assertEquals(rule1.getNextState(), "INSIDE");
+    Assert.assertEquals(rule1.getTransitionMap().get("INSIDE_HOT"),
+            ComparisonCondition.gt("Temperature", 25));
+    Assert.assertEquals(rule1.getTransitionMap().get("INSIDE_COLD"),
+            ComparisonCondition.lt("Temperature", 10));
 
-    final CepStatefulRule rule2 = statefulRules.get(2);
-    Assert.assertEquals(rule2.getCurrentState(), "INSIDE");
-    Assert.assertEquals(rule2.getCondition(), ComparisonCondition.lt("Temperature", 10));
-    Assert.assertEquals(rule2.getAction(), new CepAction.Builder()
-        .setActionType(CepActionType.TEXT_WRITE)
-        .setCepSink(exampleCepSocketSink)
-        .setParams("Cold")
-        .build());
-    Assert.assertEquals(rule2.getNextState(), "INSIDE");
+    final CepAction action0 = finalState.get("INSIDE_HOT");
+    Assert.assertEquals(action0, new CepAction.Builder()
+            .setActionType(CepActionType.TEXT_WRITE)
+            .setCepSink(exampleCepSocketSink)
+            .setParams("Hot")
+            .build());
+
+    final CepAction action1 = finalState.get("INSIDE_COLD");
+    Assert.assertEquals(action1, new CepAction.Builder()
+            .setActionType(CepActionType.TEXT_WRITE)
+            .setCepSink(exampleCepSocketSink)
+            .setParams("Cold")
+            .build());
   }
 }

@@ -17,68 +17,72 @@ package edu.snu.mist.api.cep;
 
 import edu.snu.mist.api.cep.conditions.AbstractCondition;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * CepRule which should be used in stateful rule,
- * consisting of prevState, condition, nextState, action.
+ * consisting of currState, transitionMap.
  */
-public final class CepStatefulRule extends CepStatelessRule {
+public final class CepStatefulRule {
 
   /**
    * The current state.
    */
-  private final String currentState;
+  private final String currState;
 
   /**
-   * The next state.
+   * the transition map which contains all possible next states with conditions.
    */
-  private final String nextState;
+  private final Map<String, AbstractCondition> transitionMap;
 
   /**
    * Produces immutable rules which would have its internal states.
    * @param currentState the current state
-   * @param condition the condition for state transition and action
-   * @param nextState the next state
-   * @param action the action to be done
    */
   private CepStatefulRule(
-      final String currentState,
-      final AbstractCondition condition,
-      final String nextState,
-      final CepAction action) {
-    super(condition, action);
-    this.currentState = currentState;
-    this.nextState = nextState;
+          final String currentState,
+          final Map<String, AbstractCondition> transitionMap) {
+    this.currState = currentState;
+    this.transitionMap = transitionMap;
   }
 
   /**
    * @return the current state
    */
   public String getCurrentState() {
-    return currentState;
+    return currState;
   }
 
   /**
-   * @return the next state
+   * @return the transition map
    */
-  public String getNextState() {
-    return nextState;
+  public Map<String, AbstractCondition> getTransitionMap() {
+    return transitionMap;
   }
 
   @Override
   public boolean equals(final Object o) {
-    if (!(o instanceof CepStatefulRule)) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final CepStatefulRule rule = (CepStatefulRule) o;
-    return this.getCondition().equals(rule.getCondition())
-        && this.getAction().equals(rule.getAction())
-        && this.currentState.equals(rule.currentState)
-        && this.nextState.equals(rule.nextState);
+
+    final CepStatefulRule that = (CepStatefulRule) o;
+
+    if (!currState.equals(that.currState)) {
+      return false;
+    }
+    return transitionMap.equals(that.transitionMap);
   }
 
   @Override
   public int hashCode() {
-    return super.hashCode() * 100 + this.currentState.hashCode() * 10 + this.nextState.hashCode();
+    int result = currState.hashCode();
+    result = 31 * result + transitionMap.hashCode();
+    return result;
   }
 
   /**
@@ -86,26 +90,22 @@ public final class CepStatefulRule extends CepStatelessRule {
    */
   public static final class Builder {
 
-    private AbstractCondition condition;
-    private CepAction action;
     /**
      * The current state.
      */
     private String currentState;
 
     /**
-     * The next state.
+     * The transition map.
      */
-    private String nextState;
+    private Map<String, AbstractCondition> transitionMap;
 
     /**
      * Creates a new builder.
      */
     public Builder() {
-      this.condition = null;
-      this.action = null;
       this.currentState = null;
-      this.nextState = null;
+      this.transitionMap = new HashMap<>();
     }
 
     /**
@@ -122,57 +122,24 @@ public final class CepStatefulRule extends CepStatelessRule {
     }
 
     /**
-     * Sets the next state.
-     * @param nextState the next state
-     * @return Builder
+     * Add the transition rule from current state.
+     * @param condition
+     * @param nextState
+     * @return
      */
-    public Builder setNextState(final String nextState) {
-      if (this.nextState != null) {
-        throw new IllegalStateException("Next state cannot be set twice!");
+    public Builder addTransition(final AbstractCondition condition, final String nextState) {
+      if (transitionMap.containsKey(nextState)) {
+        throw new IllegalStateException("Transition to the next state cannot be set twice!");
       }
-      this.nextState = nextState;
-      return this;
-    }
-
-    /**
-     * Sets the condition.
-     * @param condition condition
-     * @return builder
-     */
-    public Builder setCondition(final AbstractCondition condition) {
-      if (this.condition != null) {
-        throw new IllegalStateException("Condition cannot be declared twice!");
-      }
-      this.condition = condition;
-      return this;
-    }
-
-    /**
-     * Sets the action.
-     * @param action action
-     * @return builder
-     */
-    public Builder setAction(final CepAction action) {
-      if (this.action != null) {
-        throw new IllegalStateException("Action cannot be declared twice!");
-      }
-      this.action = action;
+      transitionMap.put(nextState, condition);
       return this;
     }
 
     public CepStatefulRule build() {
-      if (currentState == null || condition == null) {
-        throw new IllegalStateException("One of current state or condition is not set!");
+      if (currentState == null || transitionMap == null) {
+        throw new IllegalStateException("One of current state or transition rule is not set!");
       }
-      // When next state is emitted, it is considered as the current state.
-      if (nextState == null) {
-        nextState = currentState;
-      }
-      // When action is emitted, it is considered as do nothing.
-      if (action == null) {
-        action = CepAction.doNothingAction();
-      }
-      return new CepStatefulRule(currentState, condition, nextState, action);
+      return new CepStatefulRule(currentState, transitionMap);
     }
   }
 }
