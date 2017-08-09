@@ -28,7 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MISTCepNewQueryTest {
+public final class MISTCepNewQueryTest {
     //Socket source information.
     private final String cepSocketInputAddress = "some.inputaddress.com";
     private final Integer cepSocketInputPort = 8080;

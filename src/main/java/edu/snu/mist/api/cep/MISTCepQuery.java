@@ -88,7 +88,7 @@ public final class MISTCepQuery<T> {
             this.cepInput = null;
             this.cepEventSequence = null;
             this.cepQualifier = null;
-            this.windowTime = Long.MAX_VALUE;
+            this.windowTime = -1L;
             this.cepAction = null;
         }
 
@@ -146,6 +146,15 @@ public final class MISTCepQuery<T> {
         }
 
         public MISTCepQuery<T> build() {
+            if (groupId == null
+                    || cepInput == null
+                    || cepEventSequence == null
+                    || cepQualifier == null
+                    || windowTime < 0
+                    || cepAction == null) {
+                throw new IllegalStateException(
+                        "One of group id, input, event sequence, qualifier, window, or action is not set!");
+            }
             return new MISTCepQuery(groupId, cepInput, cepEventSequence, cepQualifier, windowTime, cepAction);
         }
     }
