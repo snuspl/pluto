@@ -231,7 +231,7 @@ public class MISTCepQuerySubmissionTest {
    */
   @Test
   public void testStatefulCepQuery() {
-    final MISTCepStatefulQuery exampleQuery = new MISTCepStatefulQuery.Builder()
+    final MISTCepStatefulQuery exampleQuery = new MISTCepStatefulQuery.Builder("test-group")
         .input(exampleCepSocketInput)
         .initialState("OUTSIDE")
         .addStatefulRule(new CepStatefulRule.Builder()
