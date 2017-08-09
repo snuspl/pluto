@@ -50,6 +50,12 @@ public final class DefaultGroupIsolatorImpl implements GroupIsolator {
     this.isolationTriggerPeriod = isolationTriggerPeriod;
   }
 
+  /**
+   * Check whether the group is preemptible.
+   * We decide the group is preemtible if the number of processed events > 0.
+   * @param runtimeProcessingInfo runtime processing info
+   * @return True if it is preemptible
+   */
   private boolean isPreemptible(final RuntimeProcessingInfo runtimeProcessingInfo) {
     final long numProcessedEvents = runtimeProcessingInfo.getNumProcessedEvents();
     return numProcessedEvents > 0;
@@ -102,8 +108,6 @@ public final class DefaultGroupIsolatorImpl implements GroupIsolator {
 
           // End of the isolation
           groupInfo.setReadyFromIsolated();
-
-          // TODO[MIST-870] Remove isolated threads when the isolated groups are not overloaded
         }
       }
     }

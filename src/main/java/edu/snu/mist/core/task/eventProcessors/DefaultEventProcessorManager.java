@@ -144,7 +144,7 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
 
     // Create a rebalancer thread
     groupRebalancerService.scheduleAtFixedRate(() -> {
-      // TODO[MIST-XX]: Increase and decrease the number of event processors
+      // TODO[MIST-870] Remove isolated threads when the isolated groups are not overloaded
 
       // Add a rebalancing event
       groupAllocationTableModifier.addEvent(
