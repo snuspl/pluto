@@ -70,7 +70,7 @@ public class MISTCepNewQueryTest {
             .build();
 
     private final MISTPredicate examplePredicate = s -> true;
-    private final CepEvent exampleEvent = new CepEvent("test-event", examplePredicate);
+    private final CepEvent exampleEvent = new CepEvent("test-event", examplePredicate, new CepExampleClass());
     private final CepQualifier exampleQualifier = new CepExampleQualifier();
 
     /**

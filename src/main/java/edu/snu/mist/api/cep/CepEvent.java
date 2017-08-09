@@ -23,11 +23,14 @@ import edu.snu.mist.common.functions.MISTPredicate;
 public final class CepEvent {
     private final String eventName;
     private final MISTPredicate condition;
+    private final CepClassType classType;
 
     public CepEvent(
             final String eventName,
-            final MISTPredicate condition) {
+            final MISTPredicate condition,
+            final CepClassType classType) {
         this.eventName = eventName;
         this.condition = condition;
+        this.classType = classType;
     }
 }
