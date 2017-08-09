@@ -20,6 +20,7 @@ import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,12 +32,14 @@ public final class DefaultGroupAllocationTable implements GroupAllocationTable {
 
   private final List<EventProcessor> eventProcessors;
   private final ConcurrentMap<EventProcessor, Collection<GlobalSchedGroupInfo>> table;
+  private final int defaultNumEventProcessors;
 
   @Inject
   private DefaultGroupAllocationTable(
       @Parameter(DefaultNumEventProcessors.class) final int defaultNumEventProcessors,
       final EventProcessorFactory eventProcessorFactory) {
     this.eventProcessors = new CopyOnWriteArrayList<>();
+    this.defaultNumEventProcessors = defaultNumEventProcessors;
     this.table = new ConcurrentHashMap<>();
     // Create event processors
     for (int i = 0; i < defaultNumEventProcessors; i++) {
@@ -77,6 +80,21 @@ public final class DefaultGroupAllocationTable implements GroupAllocationTable {
   public void removeEventProcessor(final EventProcessor eventProcessor) {
     eventProcessors.remove(eventProcessor);
     table.remove(eventProcessor);
+  }
+
+  @Override
+  public List<EventProcessor> getNormalEventProcessors() {
+    if (defaultNumEventProcessors == eventProcessors.size()) {
+      return eventProcessors;
+    }
+
+    final ArrayList<EventProcessor> normalEventProcessors = new ArrayList<>(defaultNumEventProcessors);
+    for (final EventProcessor ep : eventProcessors) {
+      if (!ep.isIsolatedProcessor()) {
+        normalEventProcessors.add(ep);
+      }
+    }
+    return normalEventProcessors;
   }
 
   @Override

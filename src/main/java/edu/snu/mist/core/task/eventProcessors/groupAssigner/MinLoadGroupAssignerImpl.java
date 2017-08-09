@@ -64,7 +64,7 @@ public final class MinLoadGroupAssignerImpl implements GroupAssigner {
     EventProcessor minEventProcessor = null;
     double minLoad = Double.MAX_VALUE;
 
-    for (final EventProcessor eventProcessor : groupAllocationTable.getKeys()) {
+    for (final EventProcessor eventProcessor : groupAllocationTable.getNormalEventProcessors()) {
       final double load = eventProcessor.getLoad();
       if (load < minLoad) {
         minEventProcessor = eventProcessor;

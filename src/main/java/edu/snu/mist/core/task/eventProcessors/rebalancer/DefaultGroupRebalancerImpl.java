@@ -110,21 +110,6 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
     LOG.info(sb.toString());
   }
 
-  /**
-   * Get event processors except for isolated event processors.
-   * @return normal event processors
-   */
-  private List<EventProcessor> getNormalEventProcessors() {
-    final List<EventProcessor> eventProcessors = groupAllocationTable.getKeys();
-    final ArrayList<EventProcessor> normalEventProcessors = new ArrayList<>();
-    for (final EventProcessor ep : eventProcessors) {
-      if (!ep.isIsolatedProcessor()) {
-        normalEventProcessors.add(ep);
-      }
-    }
-    return normalEventProcessors;
-  }
-
   @Override
   public void triggerRebalancing() {
     LOG.info("REBALANCING START");
@@ -132,7 +117,7 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
 
     try {
       // Skip if it is an isolated processor that runs an isolated group
-      final List<EventProcessor> eventProcessors = getNormalEventProcessors();
+      final List<EventProcessor> eventProcessors = groupAllocationTable.getNormalEventProcessors();
       // Overloaded threads
       final List<EventProcessor> overloadedThreads = new LinkedList<>();
 

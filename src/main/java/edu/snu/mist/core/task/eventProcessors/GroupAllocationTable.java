@@ -33,6 +33,11 @@ public interface GroupAllocationTable {
   List<EventProcessor> getKeys();
 
   /**
+   * Get the event processors except for isolated event processors.
+   */
+  List<EventProcessor> getNormalEventProcessors();
+
+  /**
    * Get the allocated groups for the event processor.
    * @param eventProcessor event processor
    * @return allocated groups.
