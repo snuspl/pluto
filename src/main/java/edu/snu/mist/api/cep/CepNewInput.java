@@ -32,15 +32,15 @@ public final class CepNewInput<T> {
      * Makes an immutable CepInput from InnerBuilder. Should not be exposed to public.
      * @param cepInputTypeParam cep input type given by builder
      * @param cepInputConfigurationParam cep input configuration given by builder
-     * @param cepClassGenFunc User-defined function that constructs user-defined class
+     * @param cepClassGenFuncParam User-defined function that constructs user-defined class
      */
     private CepNewInput(
             final CepInputType cepInputTypeParam,
             final Map<String, Object> cepInputConfigurationParam,
-            final MISTFunction<String, T> cepClassGenFunc) {
+            final MISTFunction<String, T> cepClassGenFuncParam) {
         this.cepInputType = cepInputTypeParam;
         this.cepInputConfiguration = cepInputConfigurationParam;
-        this.cepClassGenFunc = cepClassGenFunc;
+        this.cepClassGenFunc = cepClassGenFuncParam;
     }
     /**
      * @return input type of this input
