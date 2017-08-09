@@ -68,6 +68,10 @@ public final class MISTCepQuery<T> {
         return cepQualifier;
     }
 
+    public long getWindowTime() {
+        return windowTime;
+    }
+
     public CepAction getCepAction() {
         return cepAction;
     }
