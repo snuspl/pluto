@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.cep;
+package edu.snu.mist.api.utils;
 
-/**
- * Class used in cep query.
- */
-public interface CepClassType {
-    /**
-     * User-defined parser that translates string to User-defined Class.
-     * @return this class
-     */
-    CepClassType stringParser(final String input);
+import edu.snu.mist.common.functions.MISTFunction;
 
-    boolean equals(final Object o);
+public final class CepExampleClassGenFunc implements MISTFunction<String, CepExampleClass> {
 
-    int hashCode();
+    @Override
+    public CepExampleClass apply(final String s) {
+        final String[] parseString = s.split(",");
+        return new CepExampleClass(parseString[0], Integer.parseInt(parseString[1]));
+    }
+
+    public CepExampleClassGenFunc() {
+    }
 }

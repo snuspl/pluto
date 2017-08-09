@@ -20,15 +20,15 @@ import edu.snu.mist.common.functions.MISTPredicate;
 /**
  * Event of cep query, consists of event name and condition.
  */
-public final class CepEvent {
+public final class CepEvent<T> {
     private final String eventName;
-    private final MISTPredicate condition;
-    private final CepClassType classType;
+    private final MISTPredicate<T> condition;
+    private final Class<T> classType;
 
     public CepEvent(
             final String eventName,
-            final MISTPredicate condition,
-            final CepClassType classType) {
+            final MISTPredicate<T> condition,
+            final Class<T> classType) {
         this.eventName = eventName;
         this.condition = condition;
         this.classType = classType;

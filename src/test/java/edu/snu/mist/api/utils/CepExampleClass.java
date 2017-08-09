@@ -15,19 +15,12 @@
  */
 package edu.snu.mist.api.utils;
 
-import edu.snu.mist.api.cep.CepClassType;
-
-public final class CepExampleClass implements CepClassType {
+public final class CepExampleClass {
 
     private final String name;
     private final int age;
 
-    public CepExampleClass() {
-        this.name = null;
-        this.age = 0;
-    }
-
-    private CepExampleClass(final String name, final int age) {
+    public CepExampleClass(final String name, final int age) {
         this.name = name;
         this.age = age;
     }
@@ -38,12 +31,6 @@ public final class CepExampleClass implements CepClassType {
 
     public int getAge() {
         return age;
-    }
-
-    @Override
-    public CepClassType stringParser(final String input) {
-        final String[] parseString = input.split(",");
-        return new CepExampleClass(parseString[0], Integer.parseInt(parseString[1]));
     }
 
     @Override

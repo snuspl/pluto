@@ -21,11 +21,11 @@ import java.util.List;
 /**
  * Default Implementation for MISTCepQuery.
  */
-public final class MISTCepQuery {
+public final class MISTCepQuery<T> {
     private final String groupId;
-    private final CepNewInput cepInput;
+    private final CepNewInput<T> cepInput;
     private final List<CepEvent> cepEventSequence;
-    private final CepQualifier cepQualifier;
+    private final CepQualifier<T> cepQualifier;
     private final long windowTime;
     private final CepAction cepAction;
 
@@ -39,9 +39,9 @@ public final class MISTCepQuery {
      */
     private MISTCepQuery(
             final String groupId,
-            final CepNewInput cepInput,
+            final CepNewInput<T> cepInput,
             final List<CepEvent> cepEventSequence,
-            final CepQualifier cepQualifier,
+            final CepQualifier<T> cepQualifier,
             final long windowTime,
             final CepAction cepAction) {
         this.groupId = groupId;
@@ -56,7 +56,7 @@ public final class MISTCepQuery {
         return groupId;
     }
 
-    public CepNewInput getCepInput() {
+    public CepNewInput<T> getCepInput() {
         return cepInput;
     }
 
@@ -64,7 +64,7 @@ public final class MISTCepQuery {
         return cepEventSequence;
     }
 
-    public CepQualifier getCepQualifier() {
+    public CepQualifier<T> getCepQualifier() {
         return cepQualifier;
     }
 
@@ -75,11 +75,11 @@ public final class MISTCepQuery {
     /**
      * A builder class for MISTCepQuery.
      */
-    public static class Builder {
+    public static class Builder<T> {
         private final String groupId;
-        private CepNewInput cepInput;
+        private CepNewInput<T> cepInput;
         private List<CepEvent> cepEventSequence;
-        private CepQualifier cepQualifier;
+        private CepQualifier<T> cepQualifier;
         private long windowTime;
         private CepAction cepAction;
 
@@ -97,7 +97,7 @@ public final class MISTCepQuery {
          * @param input input for this query
          * @return builder
          */
-        public Builder input(final CepNewInput input) {
+        public Builder input(final CepNewInput<T> input) {
             if (this.cepInput != null) {
                 throw new IllegalStateException("Input couldn't be declared twice!");
             }
@@ -145,7 +145,7 @@ public final class MISTCepQuery {
             return this;
         }
 
-        public MISTCepQuery build() {
+        public MISTCepQuery<T> build() {
             return new MISTCepQuery(groupId, cepInput, cepEventSequence, cepQualifier, windowTime, cepAction);
         }
     }

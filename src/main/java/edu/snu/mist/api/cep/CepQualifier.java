@@ -22,5 +22,5 @@ import java.util.Map;
 /**
  * Cep Qualification to define MISTCepQuery.
  */
-public interface CepQualifier extends MISTPredicate<Map<String, CepClassType>> {
+public interface CepQualifier<T> extends MISTPredicate<Map<String, T>> {
 }

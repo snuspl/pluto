@@ -15,30 +15,32 @@
  */
 package edu.snu.mist.api.cep;
 
+import edu.snu.mist.common.functions.MISTFunction;
+
 import java.util.*;
 
 /**
  * Default implementation class for CepInput.
  */
-public final class CepNewInput {
+public final class CepNewInput<T> {
 
     private final CepInputType cepInputType;
     private final Map<String, Object> cepInputConfiguration;
-    private final CepClassType cepClass;
+    private final MISTFunction<String, T> cepClassGenFunc;
 
     /**
      * Makes an immutable CepInput from InnerBuilder. Should not be exposed to public.
      * @param cepInputTypeParam cep input type given by builder
      * @param cepInputConfigurationParam cep input configuration given by builder
-     * @param cepClass User-defined cep class
+     * @param cepClassGenFunc User-defined function that constructs user-defined class
      */
     private CepNewInput(
             final CepInputType cepInputTypeParam,
             final Map<String, Object> cepInputConfigurationParam,
-            final CepClassType cepClass) {
+            final MISTFunction<String, T> cepClassGenFunc) {
         this.cepInputType = cepInputTypeParam;
         this.cepInputConfiguration = cepInputConfigurationParam;
-        this.cepClass = cepClass;
+        this.cepClassGenFunc = cepClassGenFunc;
     }
     /**
      * @return input type of this input
@@ -57,8 +59,8 @@ public final class CepNewInput {
     /**
      * @return User-defined class
      */
-    public CepClassType getCepClass() {
-        return cepClass;
+    public MISTFunction<String, T> getClassGenFunc() {
+        return cepClassGenFunc;
     }
 
     @Override
@@ -78,30 +80,30 @@ public final class CepNewInput {
         if (!cepInputConfiguration.equals(that.cepInputConfiguration)) {
             return false;
         }
-        return cepClass.equals(that.cepClass);
+        return cepClassGenFunc.equals(that.cepClassGenFunc);
     }
 
     @Override
     public int hashCode() {
         int result = cepInputType.hashCode();
         result = 31 * result + cepInputConfiguration.hashCode();
-        result = 31 * result + cepClass.hashCode();
+        result = 31 * result + cepClassGenFunc.hashCode();
         return result;
     }
 
     /**
      * A builder class for CepInput.
      */
-    private static final class InnerBuilder {
+    private static final class InnerBuilder<T> {
 
         private CepInputType cepInputType;
         private final Map<String, Object> cepInputConfiguration;
-        private CepClassType cepClass;
+        private MISTFunction<String, T> cepClassGenFunc;
 
         private InnerBuilder() {
             this.cepInputType = null;
             this.cepInputConfiguration = new HashMap<>();
-            this.cepClass = null;
+            this.cepClassGenFunc = null;
         }
 
         /**
@@ -132,15 +134,15 @@ public final class CepNewInput {
         }
 
         /**
-         * Set user-defined cep class.
-         * @param cepClassParam user-defined class
+         * Set user-defined function.
+         * @param cepClassGenFuncParam user-defined function
          * @return cep input builder
          */
-        private InnerBuilder setClass(final CepClassType cepClassParam) {
-            if (cepClass != null) {
+        private InnerBuilder setClassGenFunc(final MISTFunction<String, T> cepClassGenFuncParam) {
+            if (cepClassGenFunc != null) {
                 throw new IllegalStateException("Cep class cannot be declared twice!");
             }
-            cepClass = cepClassParam;
+            cepClassGenFunc = cepClassGenFuncParam;
             return this;
         }
 
@@ -148,15 +150,15 @@ public final class CepNewInput {
          * Creates an immutable Cep input.
          * @return new cep input
          */
-        private CepNewInput build() {
-            return new CepNewInput(cepInputType, cepInputConfiguration, cepClass);
+        private CepNewInput<T> build() {
+            return new CepNewInput(cepInputType, cepInputConfiguration, cepClassGenFunc);
         }
     }
 
     /*
      * A builder class for Inputs using Text Sockets as inputs.
      */
-    public static final class TextSocketBuilder {
+    public static final class TextSocketBuilder<T> {
 
         private final String socketInputAddressKey = "SOCKET_INPUT_ADDRESS";
         private final String socketInputPortKey = "SOCKET_INPUT_PORT";
@@ -187,15 +189,15 @@ public final class CepNewInput {
             return this;
         }
 
-        public TextSocketBuilder setClass(final CepClassType cepClass) {
-            builder.setClass(cepClass);
+        public TextSocketBuilder setClassGenFunc(final MISTFunction<String, T> cepClassGenFunc) {
+            builder.setClassGenFunc(cepClassGenFunc);
             return this;
         }
 
         /**
          * @return a new CepInput
          */
-        public CepNewInput build() {
+        public CepNewInput<T> build() {
             return builder.build();
         }
     }
@@ -203,7 +205,7 @@ public final class CepNewInput {
     /*
      * A builder class for Inputs using MQTT as inputs.
      */
-    public static final class MqttBuilder {
+    public static final class MqttBuilder<T> {
 
         private final String mqttInputBrokerURI = "MQTT_INPUT_BROKER_URI";
         private final String mqttInputTopic = "MQTT_INPUT_TOPIC";
@@ -234,15 +236,15 @@ public final class CepNewInput {
             return this;
         }
 
-        public MqttBuilder setClass(final CepClassType cepClass) {
-            builder.setClass(cepClass);
+        public MqttBuilder setClassGenFunc(final MISTFunction<String, T> cepClassGenFunc) {
+            builder.setClassGenFunc(cepClassGenFunc);
             return this;
         }
 
         /**
          * @return a new CepInput
          */
-        public CepNewInput build() {
+        public CepNewInput<T> build() {
             return builder.build();
         }
     }

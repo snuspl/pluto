@@ -16,7 +16,9 @@
 package edu.snu.mist.api.cep;
 
 import edu.snu.mist.api.utils.CepExampleClass;
+import edu.snu.mist.api.utils.CepExampleClassGenFunc;
 import edu.snu.mist.api.utils.CepExampleQualifier;
+import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
 import org.junit.Assert;
 import org.junit.Test;
@@ -43,18 +45,20 @@ public class MISTCepNewQueryTest {
     private final String cepMqttOutputURI = "tcp://example.cep.mqtt.output:uri";
     private final String cepMqttOutputTopic = "test-pub";
 
+    private final MISTFunction<String, CepExampleClass> exampleClassGenFunc = new CepExampleClassGenFunc();
+
     //Build a socket source.
     private final CepNewInput exampleCepSocketInput = new CepNewInput.TextSocketBuilder()
         .setSocketAddress(cepSocketInputAddress)
         .setSocketPort(cepSocketInputPort)
-        .setClass(new CepExampleClass())
+        .setClassGenFunc(exampleClassGenFunc)
         .build();
 
     //Build a mqtt source.
     private final CepNewInput exampleCepMqttInput = new CepNewInput.MqttBuilder()
         .setMqttBrokerURI(cepMqttInputURI)
         .setMqttTopic(cepMqttInputTopic)
-        .setClass(new CepExampleClass())
+        .setClassGenFunc(exampleClassGenFunc)
         .build();
 
     //Build a socket sink.
@@ -70,7 +74,7 @@ public class MISTCepNewQueryTest {
             .build();
 
     private final MISTPredicate examplePredicate = s -> true;
-    private final CepEvent exampleEvent = new CepEvent("test-event", examplePredicate, new CepExampleClass());
+    private final CepEvent exampleEvent = new CepEvent("test-event", examplePredicate, CepExampleClass.class);
     private final CepQualifier exampleQualifier = new CepExampleQualifier();
 
     /**
@@ -84,8 +88,7 @@ public class MISTCepNewQueryTest {
             put("SOCKET_INPUT_PORT", cepSocketInputPort);
         } };
         Assert.assertEquals(expectedCepSocketInputConf, exampleCepSocketInput.getSourceConfiguration());
-        final CepExampleClass expectedCepSocketInputClass = new CepExampleClass();
-        Assert.assertEquals(expectedCepSocketInputClass, exampleCepSocketInput.getCepClass());
+        Assert.assertEquals(exampleClassGenFunc, exampleCepSocketInput.getClassGenFunc());
     }
 
     /**
@@ -99,8 +102,7 @@ public class MISTCepNewQueryTest {
             put("MQTT_INPUT_TOPIC", cepMqttInputTopic);
         } };
         Assert.assertEquals(expectedCepMqttInputConf, exampleCepMqttInput.getSourceConfiguration());
-        final CepExampleClass expectedCepMqttInputClass = new CepExampleClass();
-        Assert.assertEquals(expectedCepMqttInputClass, exampleCepMqttInput.getCepClass());
+        Assert.assertEquals(exampleClassGenFunc, exampleCepMqttInput.getClassGenFunc());
     }
 
     /**
