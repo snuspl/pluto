@@ -33,4 +33,16 @@ public final class CepEvent<T> {
         this.condition = condition;
         this.classType = classType;
     }
+
+    public String getEventName() {
+        return eventName;
+    }
+
+    public MISTPredicate<T> getCondition() {
+        return condition;
+    }
+
+    public Class<T> getClassType() {
+        return classType;
+    }
 }
