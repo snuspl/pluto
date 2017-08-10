@@ -90,6 +90,8 @@ public final class DefaultGroupIsolatorImpl implements GroupIsolator {
             destGroups.add(groupInfo);
             // Remove the group from the previous thread
             srcGroups.remove(groupInfo);
+            eventProcessor.removeActiveGroup(groupInfo);
+
           } else {
             // The new thread is a normal, but the current thread should be an isolated thread
             eventProcessor.setToIsolatedProcessor();
@@ -102,6 +104,7 @@ public final class DefaultGroupIsolatorImpl implements GroupIsolator {
               if (!groupToMove.equals(groupInfo)) {
                 destGroups.add(groupToMove);
                 iterator.remove();
+                eventProcessor.removeActiveGroup(groupInfo);
               }
             }
           }
