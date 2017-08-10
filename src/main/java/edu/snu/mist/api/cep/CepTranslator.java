@@ -254,7 +254,7 @@ public final class CepTranslator {
 
     /**
      * Translate cepStatefulRules into vertices of DAG.
-     * Send compiled stateful rule and final state information to nfa operator to make a vertex.
+     * Send compiled stateful rule and final state information to state transition operator to make a vertex.
      * @param inputMapStream input stream data
      * @param cepStatefulRules list of cepStatefulRule
      * @param initialState initial state of cepStatefulQuery
@@ -265,7 +265,7 @@ public final class CepTranslator {
             final List<CepStatefulRule> cepStatefulRules,
             final Map<String, CepAction> cepFinalState) {
 
-        final Set<String> nfaFinalState = cepFinalState.keySet();
+        final Set<String> finalState = cepFinalState.keySet();
         final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable = new HashMap<>();
 
         for (final CepStatefulRule iterRule : cepStatefulRules) {
@@ -281,9 +281,9 @@ public final class CepTranslator {
             stateTable.put(currState, nextTransitions);
         }
 
-        ContinuousStream<Tuple2<Map<String, Object>, String>> nfaStream = null;
+        ContinuousStream<Tuple2<Map<String, Object>, String>> stateTransStream = null;
         try {
-            nfaStream = inputMapStream.nfa(initialState, nfaFinalState, stateTable);
+            stateTransStream = inputMapStream.stateTransition(initialState, finalState, stateTable);
         } catch (final IOException e) {
             e.printStackTrace();
         }
@@ -296,7 +296,7 @@ public final class CepTranslator {
 
             switch (sink.getCepSinkType()) {
                 case TEXT_SOCKET_OUTPUT: {
-                    nfaStream
+                    stateTransStream
                             .filter(s -> s.get(1).equals(state))
                             .map(s -> (Map<String, Object>)s.get(0))
                             .map(new CepMapToStringFunction(action.getParams(), sink.getSeparator()))

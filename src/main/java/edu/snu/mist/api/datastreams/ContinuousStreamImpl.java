@@ -217,17 +217,18 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
   }
 
   @Override
-  public ContinuousStream<Tuple2<T, String>> nfa(
+  public ContinuousStream<Tuple2<T, String>> stateTransition(
           final String initialState,
           final Set<String> finalState,
           final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable) throws IOException {
-    ConfigurationModule opConfModule = NFAOperatorConfiguration.CONF
-        .set(NFAOperatorConfiguration.INITIAL_STATE, initialState)
-        .set(NFAOperatorConfiguration.STATE_TABLE, SerializeUtils.serializeToString((Serializable) stateTable))
-        .set(NFAOperatorConfiguration.OPERATOR, NFAOperator.class);
+    ConfigurationModule opConfModule = StateTransitionOperatorConfiguration.CONF
+        .set(StateTransitionOperatorConfiguration.INITIAL_STATE, initialState)
+        .set(StateTransitionOperatorConfiguration.STATE_TABLE,
+                SerializeUtils.serializeToString((Serializable) stateTable))
+        .set(StateTransitionOperatorConfiguration.OPERATOR, StateTransitionOperator.class);
 
     for (final String iterState : finalState) {
-      opConfModule = opConfModule.set(NFAOperatorConfiguration.FINAL_STATE, iterState);
+      opConfModule = opConfModule.set(StateTransitionOperatorConfiguration.FINAL_STATE, iterState);
     }
     final Configuration opConf = opConfModule.build();
     return transformToSingleInputContinuousStream(opConf, this);

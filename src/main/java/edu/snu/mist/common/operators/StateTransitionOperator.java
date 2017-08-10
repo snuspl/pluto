@@ -32,12 +32,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * This operator applies the user-defined operation which is used in cep stateful query.
+ * This operator applies the user-defined state machine which is used in cep stateful query.
  *
  */
-public final class NFAOperator extends OneStreamOperator implements StateHandler {
+public final class StateTransitionOperator extends OneStreamOperator implements StateHandler {
 
-    private static final Logger LOG = Logger.getLogger(NFAOperator.class.getName());
+    private static final Logger LOG = Logger.getLogger(StateTransitionOperator.class.getName());
 
     // initial state
     private final String initialState;
@@ -52,7 +52,7 @@ public final class NFAOperator extends OneStreamOperator implements StateHandler
     private final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable;
 
     @Inject
-    private NFAOperator(
+    private StateTransitionOperator(
         @Parameter(InitialState.class) final String initialState,
         @Parameter(FinalState.class) final Set<String> finalState,
         @Parameter(StateTable.class) final String stateTable,
@@ -63,7 +63,7 @@ public final class NFAOperator extends OneStreamOperator implements StateHandler
             SerializeUtils.deserializeFromString(stateTable, classLoader));
     }
 
-    public NFAOperator(
+    public StateTransitionOperator(
             final String initialState,
             final Set<String> finalState,
             final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable) {
@@ -115,12 +115,12 @@ public final class NFAOperator extends OneStreamOperator implements StateHandler
     @Override
     public Map<String, Object> getOperatorState() {
         final Map<String, Object> stateMap = new HashMap<>();
-        stateMap.put("nfaOperatorState", currState);
+        stateMap.put("stateTransitionOperatorState", currState);
         return stateMap;
     }
 
     @Override
     public void setState(final Map<String, Object> loadedState) {
-        currState = (String) loadedState.get("nfaOperatorState");
+        currState = (String) loadedState.get("stateTransitionOperatorState");
     }
 }
