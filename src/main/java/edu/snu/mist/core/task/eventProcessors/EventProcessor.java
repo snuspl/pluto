@@ -28,11 +28,6 @@ public interface EventProcessor extends AutoCloseable {
   void start();
 
   /**
-   * Interrupt the event processing.
-   */
-  void interrupt();
-
-  /**
    * Get the load of the event processor.
    * @return load
    */
@@ -56,4 +51,20 @@ public interface EventProcessor extends AutoCloseable {
    * @return true if there exists the active group in the queue
    */
   boolean removeActiveGroup(GlobalSchedGroupInfo group);
+
+  /**
+   * Get the information of current runtime.
+   */
+  RuntimeProcessingInfo getCurrentRuntimeInfo();
+
+  /**
+   * Set whether it is running an isolated group.
+   */
+  void setRunningIsolatedGroup(boolean val);
+
+  /**
+   * Is running an isolated group or not.
+   * @return true if it is running an isolated group.
+   */
+  boolean isRunningIsolatedGroup();
 }

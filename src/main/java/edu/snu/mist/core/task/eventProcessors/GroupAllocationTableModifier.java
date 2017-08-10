@@ -73,17 +73,24 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
    */
   private final LoadUpdater loadUpdater;
 
+  /**
+   * Group isolator that isolates bursty or overloaded groups.
+   */
+  private final GroupIsolator groupIsolator;
+
   @Inject
   private GroupAllocationTableModifier(final GroupAllocationTable groupAllocationTable,
                                        final GroupAssigner groupAssigner,
                                        final GroupRebalancer groupRebalancer,
-                                       final LoadUpdater loadUpdater) {
+                                       final LoadUpdater loadUpdater,
+                                       final GroupIsolator groupIsolator) {
     this.groupAllocationTable = groupAllocationTable;
     this.groupAssigner = groupAssigner;
     this.groupRebalancer = groupRebalancer;
     this.writingEventQueue = new LinkedBlockingQueue<>();
     this.singleWriter = Executors.newSingleThreadExecutor();
     this.loadUpdater = loadUpdater;
+    this.groupIsolator = groupIsolator;
     // Create a writer thread
     singleWriter.submit(new SingleWriterThread());
   }
@@ -145,6 +152,9 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
             case REBALANCE:
               loadUpdater.update();
               groupRebalancer.triggerRebalancing();
+              break;
+            case ISOLATION:
+              groupIsolator.triggerIsolation();
               break;
             default:
               throw new RuntimeException("Not supported event type: " + event.getEventType());

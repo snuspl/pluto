@@ -33,6 +33,11 @@ public interface GroupAllocationTable {
   List<EventProcessor> getKeys();
 
   /**
+   * Get the event processors that do not run isolated group.
+   */
+  List<EventProcessor> getEventProcessorsNotRunningIsolatedGroup();
+
+  /**
    * Get the allocated groups for the event processor.
    * @param eventProcessor event processor
    * @return allocated groups.
@@ -51,6 +56,18 @@ public interface GroupAllocationTable {
    * @return size of the table.
    */
   int size();
+
+  /**
+   * Add a new event processor.
+   * @param eventProcessor a new event processor
+   */
+  void addEventProcessor(EventProcessor eventProcessor);
+
+  /**
+   * Remove an existing event processor.
+   * @param eventProcessor event processor to be removed
+   */
+  void removeEventProcessor(EventProcessor eventProcessor);
 
   /**
    * Remove the event processor from the allocation table.

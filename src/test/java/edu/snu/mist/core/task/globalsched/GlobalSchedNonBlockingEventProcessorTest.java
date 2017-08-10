@@ -66,6 +66,7 @@ public final class GlobalSchedNonBlockingEventProcessorTest {
     when(group1.isActive()).thenAnswer((icm) -> {
       return ocQueue1.size() != 0;
     });
+    when(group1.isProcessing()).thenReturn(true);
 
     final OperatorChainManager ocm1 = mock(OperatorChainManager.class);
     when(group1.getOperatorChainManager()).thenReturn(ocm1);
@@ -76,6 +77,7 @@ public final class GlobalSchedNonBlockingEventProcessorTest {
     // This is an inactive group
     final GlobalSchedGroupInfo group2 = mock(GlobalSchedGroupInfo.class);
     when(group2.isActive()).thenReturn(false);
+    when(group2.isProcessing()).thenReturn(true);
 
     // This is a group that has two operator chains
     final Queue<OperatorChain> ocQueue2 = new LinkedList<>();
@@ -97,6 +99,7 @@ public final class GlobalSchedNonBlockingEventProcessorTest {
     when(group3.isActive()).thenAnswer((icm) -> {
       return ocQueue2.size() != 0;
     });
+    when(group3.isProcessing()).thenReturn(true);
 
     when(group1.getProcessingEvent()).thenReturn(new AtomicLong(0));
     when(group1.getProcessingTime()).thenReturn(new AtomicLong(0));

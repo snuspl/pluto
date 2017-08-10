@@ -69,7 +69,7 @@ public final class FirstFitRebalancerImpl implements GroupRebalancer {
 
   @Override
   public void triggerRebalancing() {
-    final List<EventProcessor> eventProcessors = groupAllocationTable.getKeys();
+    final List<EventProcessor> eventProcessors = groupAllocationTable.getEventProcessorsNotRunningIsolatedGroup();
     // Calculate each load and total load
     final Map<EventProcessor, Double> loadTable = new HashMap<>();
     double totalLoad = 0.0;

@@ -79,7 +79,8 @@ public final class RoundRobinGroupAssignerImpl implements GroupAssigner {
       index = index % groupAllocationTable.size();
 
       //final int index = (int)(Integer.valueOf(newGroup.getGroupId()) % groupAllocationTable.size());
-      final EventProcessor eventProcessor = groupAllocationTable.getKeys().get(index);
+      final EventProcessor eventProcessor = groupAllocationTable
+          .getEventProcessorsNotRunningIsolatedGroup().get(index);
       final double defaultLoad = getDefaultLoad(eventProcessor);
       newGroup.setLoad(defaultLoad);
       groupAllocationTable.getValue(eventProcessor).add(newGroup);

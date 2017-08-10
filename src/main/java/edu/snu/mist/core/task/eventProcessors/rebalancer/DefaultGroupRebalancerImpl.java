@@ -116,7 +116,8 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
     long rebalanceStart = System.currentTimeMillis();
 
     try {
-      final List<EventProcessor> eventProcessors = groupAllocationTable.getKeys();
+      // Skip if it is an isolated processor that runs an isolated group
+      final List<EventProcessor> eventProcessors = groupAllocationTable.getEventProcessorsNotRunningIsolatedGroup();
       // Overloaded threads
       final List<EventProcessor> overloadedThreads = new LinkedList<>();
 
@@ -138,9 +139,9 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
         final double load = eventProcessor.getLoad();
         loadTable.put(eventProcessor, load);
         if (load > beta) {
-            overloadedThreads.add(eventProcessor);
+          overloadedThreads.add(eventProcessor);
         } else if (load < alpha) {
-            underloadedThreads.add(new Tuple<>(eventProcessor, load));
+          underloadedThreads.add(new Tuple<>(eventProcessor, load));
         }
       }
 
