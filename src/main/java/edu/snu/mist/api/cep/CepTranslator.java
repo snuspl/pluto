@@ -281,9 +281,9 @@ public final class CepTranslator {
             stateTable.put(currState, nextTransitions);
         }
 
-        ContinuousStream<Tuple2<Map<String, Object>, String>> nfaStream = null;
+        ContinuousStream<Tuple2<Map<String, Object>, String>> stateTransStream = null;
         try {
-            nfaStream = inputMapStream.stateTransition(initialState, nfaFinalState, stateTable);
+            stateTransStream = inputMapStream.stateTransition(initialState, nfaFinalState, stateTable);
         } catch (final IOException e) {
             e.printStackTrace();
         }
@@ -296,7 +296,7 @@ public final class CepTranslator {
 
             switch (sink.getCepSinkType()) {
                 case TEXT_SOCKET_OUTPUT: {
-                    nfaStream
+                    stateTransStream
                             .filter(s -> s.get(1).equals(state))
                             .map(s -> (Map<String, Object>)s.get(0))
                             .map(new CepMapToStringFunction(action.getParams(), sink.getSeparator()))

@@ -142,8 +142,8 @@ public interface ContinuousStream<T> extends MISTStream<T> {
 
   /**
    * Applies state transition operator to the current stream.
-   * @param initialState initial state in nfa
-   * @param finalState set of final state in nfa
+   * @param initialState initial state
+   * @param finalState set of final state
    * @param stateTable state table to transition state
    * @return new transformed stream after applying state transition operation
    */

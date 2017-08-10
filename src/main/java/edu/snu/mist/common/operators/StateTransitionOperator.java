@@ -115,12 +115,12 @@ public final class StateTransitionOperator extends OneStreamOperator implements 
     @Override
     public Map<String, Object> getOperatorState() {
         final Map<String, Object> stateMap = new HashMap<>();
-        stateMap.put("nfaOperatorState", currState);
+        stateMap.put("stateTransitionOperatorState", currState);
         return stateMap;
     }
 
     @Override
     public void setState(final Map<String, Object> loadedState) {
-        currState = (String) loadedState.get("nfaOperatorState");
+        currState = (String) loadedState.get("stateTransitionOperatorState");
     }
 }
