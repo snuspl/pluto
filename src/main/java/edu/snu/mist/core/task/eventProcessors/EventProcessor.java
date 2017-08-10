@@ -58,18 +58,13 @@ public interface EventProcessor extends AutoCloseable {
   RuntimeProcessingInfo getCurrentRuntimeInfo();
 
   /**
-   * Change the processor to isolated processor.
+   * Set whether it is running an isolated group.
    */
-  void setToIsolatedProcessor();
+  void setRunningIsolatedGroup(boolean val);
 
   /**
-   * Change the processor to normal processor.
+   * Is running an isolated group or not.
+   * @return true if it is running an isolated group.
    */
-  void setToNormalProcessor();
-
-  /**
-   * Is isolated processor or not.
-   * @return true if it is isolated processor.
-   */
-  boolean isIsolatedProcessor();
+  boolean isRunningIsolatedGroup();
 }

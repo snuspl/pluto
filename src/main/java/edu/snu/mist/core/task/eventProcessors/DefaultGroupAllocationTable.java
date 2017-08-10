@@ -83,14 +83,14 @@ public final class DefaultGroupAllocationTable implements GroupAllocationTable {
   }
 
   @Override
-  public List<EventProcessor> getNormalEventProcessors() {
+  public List<EventProcessor> getEventProcessorsNotRunningIsolatedGroup() {
     if (defaultNumEventProcessors == eventProcessors.size()) {
       return eventProcessors;
     }
 
     final ArrayList<EventProcessor> normalEventProcessors = new ArrayList<>(defaultNumEventProcessors);
     for (final EventProcessor ep : eventProcessors) {
-      if (!ep.isIsolatedProcessor()) {
+      if (!ep.isRunningIsolatedGroup()) {
         normalEventProcessors.add(ep);
       }
     }

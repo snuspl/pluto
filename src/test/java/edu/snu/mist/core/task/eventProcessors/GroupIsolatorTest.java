@@ -84,8 +84,8 @@ public final class GroupIsolatorTest {
 
     // Check
     final List<EventProcessor> eventProcessors = groupAllocationTable.getKeys();
-    Assert.assertEquals(false, eventProcessors.get(0).isIsolatedProcessor());
-    Assert.assertEquals(true, eventProcessors.get(1).isIsolatedProcessor());
+    Assert.assertEquals(false, eventProcessors.get(0).isRunningIsolatedGroup());
+    Assert.assertEquals(true, eventProcessors.get(1).isRunningIsolatedGroup());
     Assert.assertEquals(Arrays.asList(group2),
         collectionToList(groupAllocationTable.getValue(eventProcessors.get(0))));
     Assert.assertEquals(Arrays.asList(group1),
@@ -114,8 +114,8 @@ public final class GroupIsolatorTest {
 
     // Check
     final List<EventProcessor> eventProcessors = groupAllocationTable.getKeys();
-    Assert.assertEquals(true, eventProcessors.get(0).isIsolatedProcessor());
-    Assert.assertEquals(false, eventProcessors.get(1).isIsolatedProcessor());
+    Assert.assertEquals(true, eventProcessors.get(0).isRunningIsolatedGroup());
+    Assert.assertEquals(false, eventProcessors.get(1).isRunningIsolatedGroup());
     Assert.assertEquals(Arrays.asList(group1),
         collectionToList(groupAllocationTable.getValue(eventProcessors.get(0))));
     Assert.assertEquals(Arrays.asList(group2),
@@ -140,7 +140,7 @@ public final class GroupIsolatorTest {
     public EventProcessor newEventProcessor() {
       final AtomicBoolean isIsolatedProcess = new AtomicBoolean(false);
       final EventProcessor eventProcessor = mock(EventProcessor.class);
-      when(eventProcessor.isIsolatedProcessor()).thenAnswer((icm) -> {
+      when(eventProcessor.isRunningIsolatedGroup()).thenAnswer((icm) -> {
         return isIsolatedProcess.get();
       });
 
@@ -150,7 +150,7 @@ public final class GroupIsolatorTest {
           isIsolatedProcess.set(true);
           return null;
         }
-      }).when(eventProcessor).setToIsolatedProcessor();
+      }).when(eventProcessor).setRunningIsolatedGroup(true);
 
       doAnswer(new Answer<Void>() {
         @Override
@@ -158,7 +158,7 @@ public final class GroupIsolatorTest {
           isIsolatedProcess.set(false);
           return null;
         }
-      }).when(eventProcessor).setToNormalProcessor();
+      }).when(eventProcessor).setRunningIsolatedGroup(false);
 
       return eventProcessor;
     }

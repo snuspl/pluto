@@ -117,7 +117,7 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
 
     try {
       // Skip if it is an isolated processor that runs an isolated group
-      final List<EventProcessor> eventProcessors = groupAllocationTable.getNormalEventProcessors();
+      final List<EventProcessor> eventProcessors = groupAllocationTable.getEventProcessorsNotRunningIsolatedGroup();
       // Overloaded threads
       final List<EventProcessor> overloadedThreads = new LinkedList<>();
 

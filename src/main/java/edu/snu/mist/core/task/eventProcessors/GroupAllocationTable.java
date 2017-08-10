@@ -33,9 +33,9 @@ public interface GroupAllocationTable {
   List<EventProcessor> getKeys();
 
   /**
-   * Get the event processors except for isolated event processors.
+   * Get the event processors that do not run isolated group.
    */
-  List<EventProcessor> getNormalEventProcessors();
+  List<EventProcessor> getEventProcessorsNotRunningIsolatedGroup();
 
   /**
    * Get the allocated groups for the event processor.

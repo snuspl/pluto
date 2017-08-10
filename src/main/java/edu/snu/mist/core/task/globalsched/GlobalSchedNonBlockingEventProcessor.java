@@ -55,9 +55,9 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
   private volatile GlobalSchedGroupInfo currProcessedGroup;
 
   /**
-   * True if it is an isolated processor.
+   * True if it is running an isolated group.
    */
-  private boolean isolatedProcessor;
+  private boolean runningIsolatedGroup;
 
   /**
    * The start processing time of the current group.
@@ -76,7 +76,7 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
     this.currProcessedGroup = null;
     this.currProcessedGroupStartTime = System.currentTimeMillis();
     this.numProcessedEvents = 0;
-    this.isolatedProcessor = false;
+    this.runningIsolatedGroup = false;
   }
 
   /**
@@ -167,17 +167,12 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
   }
 
   @Override
-  public void setToIsolatedProcessor() {
-    isolatedProcessor = true;
+  public void setRunningIsolatedGroup(final boolean val) {
+    runningIsolatedGroup = val;
   }
 
   @Override
-  public void setToNormalProcessor() {
-    isolatedProcessor = false;
-  }
-
-  @Override
-  public boolean isIsolatedProcessor() {
-    return isolatedProcessor;
+  public boolean isRunningIsolatedGroup() {
+    return runningIsolatedGroup;
   }
 }

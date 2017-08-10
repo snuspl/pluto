@@ -65,7 +65,7 @@ public final class DefaultGroupIsolatorImpl implements GroupIsolator {
   public void triggerIsolation() {
     final List<EventProcessor> eventProcessors = groupAllocationTable.getKeys();
     for (final EventProcessor eventProcessor : eventProcessors) {
-      if (!eventProcessor.isIsolatedProcessor()) {
+      if (!eventProcessor.isRunningIsolatedGroup()) {
         final RuntimeProcessingInfo runtimeProcessingInfo = eventProcessor.getCurrentRuntimeInfo();
         final GlobalSchedGroupInfo groupInfo = runtimeProcessingInfo.getCurrGroup();
         final long startTime = runtimeProcessingInfo.getStartTime();
@@ -82,8 +82,8 @@ public final class DefaultGroupIsolatorImpl implements GroupIsolator {
           final Collection<GlobalSchedGroupInfo> srcGroups = groupAllocationTable.getValue(eventProcessor);
 
           if (isPreemptible(runtimeProcessingInfo)) {
-            // The new thread is an isolated thread
-            newEP.setToIsolatedProcessor();
+            // The new thread runs an isolated group
+            newEP.setRunningIsolatedGroup(true);
 
             // Move the preemptible group to the new thread
             // Add the group to the new thread
@@ -93,9 +93,9 @@ public final class DefaultGroupIsolatorImpl implements GroupIsolator {
             eventProcessor.removeActiveGroup(groupInfo);
 
           } else {
-            // The new thread is a normal, but the current thread should be an isolated thread
-            eventProcessor.setToIsolatedProcessor();
-            newEP.setToNormalProcessor();
+            // The new thread is a normal, but the current thread should be run an isolated group
+            eventProcessor.setRunningIsolatedGroup(true);
+            newEP.setRunningIsolatedGroup(false);
 
             // Move remaining groups to the new thread and isolate the current group in the current thread
             final Iterator<GlobalSchedGroupInfo> iterator = srcGroups.iterator();
