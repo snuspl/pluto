@@ -265,7 +265,7 @@ public final class CepTranslator {
             final List<CepStatefulRule> cepStatefulRules,
             final Map<String, CepAction> cepFinalState) {
 
-        final Set<String> nfaFinalState = cepFinalState.keySet();
+        final Set<String> finalState = cepFinalState.keySet();
         final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable = new HashMap<>();
 
         for (final CepStatefulRule iterRule : cepStatefulRules) {
@@ -283,7 +283,7 @@ public final class CepTranslator {
 
         ContinuousStream<Tuple2<Map<String, Object>, String>> stateTransStream = null;
         try {
-            stateTransStream = inputMapStream.stateTransition(initialState, nfaFinalState, stateTable);
+            stateTransStream = inputMapStream.stateTransition(initialState, finalState, stateTable);
         } catch (final IOException e) {
             e.printStackTrace();
         }
