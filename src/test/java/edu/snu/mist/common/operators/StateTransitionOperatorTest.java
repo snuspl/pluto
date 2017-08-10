@@ -27,9 +27,9 @@ import org.junit.Test;
 
 import java.util.*;
 
-public class NFAOperatorTest {
+public class StateTransitionOperatorTest {
     /**
-     * Test NFAOperator.
+     * Test StateTransitionOperator.
      * Final states are "1" and "4".
      */
     @Test
@@ -75,37 +75,37 @@ public class NFAOperatorTest {
         stateTable.put("1", list1);
         stateTable.put("3", list3);
 
-        // make a nfa operator
-        final NFAOperator nfaOperator = new NFAOperator("0", finalSet, stateTable);
+        // make a state transition operator
+        final StateTransitionOperator stateTransitionOperator = new StateTransitionOperator("0", finalSet, stateTable);
         final List<MistEvent> result = new LinkedList<>();
-        nfaOperator.setOutputEmitter(new OutputBufferEmitter(result));
+        stateTransitionOperator.setOutputEmitter(new OutputBufferEmitter(result));
 
-        nfaOperator.processLeftData(data1);
+        stateTransitionOperator.processLeftData(data1);
         Assert.assertEquals(1, result.size());
         Assert.assertEquals(data1, result.get(0));
-        Assert.assertEquals("1", nfaOperator.getOperatorState().get("nfaOperatorState"));
+        Assert.assertEquals("1", stateTransitionOperator.getOperatorState().get("nfaOperatorState"));
 
-        nfaOperator.processLeftData(data2);
+        stateTransitionOperator.processLeftData(data2);
         Assert.assertEquals(1, result.size());
-        Assert.assertEquals("0", nfaOperator.getOperatorState().get("nfaOperatorState"));
+        Assert.assertEquals("0", stateTransitionOperator.getOperatorState().get("nfaOperatorState"));
 
-        nfaOperator.processLeftWatermark(watermarkEvent);
+        stateTransitionOperator.processLeftWatermark(watermarkEvent);
         Assert.assertEquals(2, result.size());
         Assert.assertEquals(watermarkEvent, result.get(1));
-        Assert.assertEquals("0", nfaOperator.getOperatorState().get("nfaOperatorState"));
+        Assert.assertEquals("0", stateTransitionOperator.getOperatorState().get("nfaOperatorState"));
 
-        nfaOperator.processLeftData(data3);
+        stateTransitionOperator.processLeftData(data3);
         Assert.assertEquals(2, result.size());
-        Assert.assertEquals("3", nfaOperator.getOperatorState().get("nfaOperatorState"));
+        Assert.assertEquals("3", stateTransitionOperator.getOperatorState().get("nfaOperatorState"));
 
-        nfaOperator.processLeftData(data4);
+        stateTransitionOperator.processLeftData(data4);
         Assert.assertEquals(3, result.size());
         Assert.assertEquals(data4, result.get(2));
-        Assert.assertEquals("4", nfaOperator.getOperatorState().get("nfaOperatorState"));
+        Assert.assertEquals("4", stateTransitionOperator.getOperatorState().get("nfaOperatorState"));
     }
 
     /**
-     * Test getting state of NFAOperator.
+     * Test getting state of StateTransitionOperator.
      */
     @Test
     public void testNFAOperatorGetState() throws InterruptedException {
@@ -136,28 +136,28 @@ public class NFAOperatorTest {
         stateTable.put("0", list0);
         stateTable.put("1", list1);
 
-        final NFAOperator nfaOperator = new NFAOperator("0", finalSet, stateTable);
+        final StateTransitionOperator stateTransitionOperator = new StateTransitionOperator("0", finalSet, stateTable);
         final List<MistEvent> result = new ArrayList<>();
-        nfaOperator.setOutputEmitter(new OutputBufferEmitter(result));
-        nfaOperator.processLeftData(data1);
-        nfaOperator.processLeftData(data2);
+        stateTransitionOperator.setOutputEmitter(new OutputBufferEmitter(result));
+        stateTransitionOperator.processLeftData(data1);
+        stateTransitionOperator.processLeftData(data2);
 
         // Generate the expected state
         final String expectedNFAOperatorState = "2";
 
         //Get the
-        final Map<String, Object> operatorState = nfaOperator.getOperatorState();
+        final Map<String, Object> operatorState = stateTransitionOperator.getOperatorState();
         final String nfaOperatorState = (String)operatorState.get("nfaOperatorState");
 
         Assert.assertEquals(expectedNFAOperatorState, nfaOperatorState);
     }
 
     /**
-     * Test setting state of NFAOperator.
+     * Test setting state of StateTransitionOperator.
      */
     @Test
     public void testNFAOperatorSetState() throws InterruptedException {
-        //Generate a new state and set it to NFAOperator.
+        //Generate a new state and set it to StateTransitionOperator.
         final String newNFAFunctionState = "1";
         final Map<String, Object> loadStateMap = new HashMap<>();
         loadStateMap.put("nfaOperatorState", newNFAFunctionState);
@@ -179,11 +179,11 @@ public class NFAOperatorTest {
         stateTable.put("1", list1);
         stateTable.put("2", list2);
 
-        final NFAOperator nfaOperator = new NFAOperator("0", finalSet, stateTable);
-        nfaOperator.setState(loadStateMap);
+        final StateTransitionOperator stateTransitionOperator = new StateTransitionOperator("0", finalSet, stateTable);
+        stateTransitionOperator.setState(loadStateMap);
 
-        // Get the current NFAOperator's state.
-        final Map<String, Object> operatorState = nfaOperator.getOperatorState();
+        // Get the current StateTransitionOperator's state.
+        final Map<String, Object> operatorState = stateTransitionOperator.getOperatorState();
         final String nfaOperatorState = (String)operatorState.get("nfaOperatorState");
 
         // Compare the original and the set operator
@@ -191,7 +191,7 @@ public class NFAOperatorTest {
 
         // Test if the operator can properly process data.
         final List<MistEvent> result = new LinkedList<>();
-        nfaOperator.setOutputEmitter(new OutputBufferEmitter(result));
+        stateTransitionOperator.setOutputEmitter(new OutputBufferEmitter(result));
 
         // expected result: 2--3
         // generate input data event
@@ -203,15 +203,15 @@ public class NFAOperatorTest {
         value3.put("number", 3);
         final MistDataEvent data3 = new MistDataEvent(value3, 1L);
 
-        nfaOperator.processLeftData(data2);
+        stateTransitionOperator.processLeftData(data2);
         Assert.assertEquals(1, result.size());
         Assert.assertEquals(data2, result.get(0));
-        Assert.assertEquals("2", nfaOperator.getOperatorState().get("nfaOperatorState"));
+        Assert.assertEquals("2", stateTransitionOperator.getOperatorState().get("nfaOperatorState"));
 
-        nfaOperator.processLeftData(data3);
+        stateTransitionOperator.processLeftData(data3);
         Assert.assertEquals(2, result.size());
         Assert.assertEquals(data3, result.get(1));
-        Assert.assertEquals("3", nfaOperator.getOperatorState().get("nfaOperatorState"));
+        Assert.assertEquals("3", stateTransitionOperator.getOperatorState().get("nfaOperatorState"));
     }
 }
 

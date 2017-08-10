@@ -25,9 +25,9 @@ import org.apache.reef.tang.formats.RequiredImpl;
 import org.apache.reef.tang.formats.RequiredParameter;
 
 /**
- * A configuration for the operators that use NFAOperator.
+ * A configuration for the operators that use StateTransitionOperator.
  */
-public final class NFAOperatorConfiguration extends ConfigurationModuleBuilder {
+public final class StateTransitionOperatorConfiguration extends ConfigurationModuleBuilder {
 
     /**
      * Required initial state.
@@ -53,7 +53,7 @@ public final class NFAOperatorConfiguration extends ConfigurationModuleBuilder {
     /**
      * A configuration for binding the class of the user-defined function.
      */
-    public static final ConfigurationModule CONF = new NFAOperatorConfiguration()
+    public static final ConfigurationModule CONF = new StateTransitionOperatorConfiguration()
         .bindNamedParameter(InitialState.class, INITIAL_STATE)
         .bindSetEntry(FinalState.class, FINAL_STATE)
         .bindNamedParameter(StateTable.class, STATE_TABLE)

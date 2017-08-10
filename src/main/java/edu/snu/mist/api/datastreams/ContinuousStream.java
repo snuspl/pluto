@@ -141,13 +141,13 @@ public interface ContinuousStream<T> extends MISTStream<T> {
                                             Configuration funcConf);
 
   /**
-   * Applies nfa operator to the current stream.
+   * Applies state transition operator to the current stream.
    * @param initialState initial state in nfa
    * @param finalState set of final state in nfa
    * @param stateTable state table to transition state
-   * @return new transformed stream after applying nfa operation
+   * @return new transformed stream after applying state transition operation
    */
-  ContinuousStream<Tuple2<T, String>> nfa(
+  ContinuousStream<Tuple2<T, String>> stateTransition(
           final String initialState,
           final Set<String> finalState,
           final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable) throws IOException;
