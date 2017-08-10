@@ -77,7 +77,9 @@ public final class NFAOperator extends OneStreamOperator implements StateHandler
     private void stateTransition(final Map<String, Object> inputData) {
         // possible transition list in current state
         final Collection<Tuple2<MISTPredicate, String>> transitionList = stateTable.get(currState);
-
+        if (transitionList == null) {
+            return;
+        }
         for (final Tuple2<MISTPredicate, String> transition : transitionList) {
             final MISTPredicate<Map<String, Object>> predicate = (MISTPredicate<Map<String, Object>>) transition.get(0);
             if (predicate.test(inputData)) {
@@ -93,7 +95,7 @@ public final class NFAOperator extends OneStreamOperator implements StateHandler
 
         // emit when the state is final state
         if (finalState.contains(currState)) {
-            final Tuple2<Map<String, Object>, Object> output = new Tuple2(input.getValue(), currState);
+            final Tuple2<Map<String, Object>, String> output = new Tuple2(input.getValue(), currState);
             if (LOG.isLoggable(Level.FINE)) {
                 LOG.log(Level.FINE, "{0} updates the state to {1} with input {2}, and generates {3}",
                         new Object[]{this.getClass().getName(),

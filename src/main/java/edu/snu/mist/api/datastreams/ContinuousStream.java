@@ -147,7 +147,7 @@ public interface ContinuousStream<T> extends MISTStream<T> {
    * @param stateTable state table to transition state
    * @return new transformed stream after applying nfa operation
    */
-  ContinuousStream<T> nfa(
+  ContinuousStream<Tuple2<T, String>> nfa(
           final String initialState,
           final Set<String> finalState,
           final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable) throws IOException;
