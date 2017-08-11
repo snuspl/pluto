@@ -33,7 +33,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -72,7 +71,7 @@ public final class GroupRebalancerTest {
     final List<EventProcessor> eventProcessors = new LinkedList<>();
     for (int i = 0; i < 4; i++) {
       eventProcessors.add(epFactory.newEventProcessor());
-      groupAllocationTable.put(eventProcessors.get(i), new ConcurrentLinkedQueue<>());
+      groupAllocationTable.put(eventProcessors.get(i));
     }
 
     final List<Double> loadsForEp1 = Arrays.asList(1.0, 2.0, 3.0, 4.0, 0.5, 0.5, 1.0);
@@ -132,7 +131,7 @@ public final class GroupRebalancerTest {
     final List<EventProcessor> eventProcessors = new LinkedList<>();
     for (int i = 0; i < 5; i++) {
       eventProcessors.add(epFactory.newEventProcessor());
-      groupAllocationTable.put(eventProcessors.get(i), new ConcurrentLinkedQueue<>());
+      groupAllocationTable.put(eventProcessors.get(i));
     }
 
     final List<Double> loadsForEp1 = Arrays.asList(0.1, 0.05, 0.1, 0.2, 0.1, 0.05, 0.1, 0.2, 0.05);

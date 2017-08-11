@@ -31,9 +31,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.LinkedList;
-
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -56,8 +53,8 @@ public final class GroupAssignerTest {
     ep1 = epFactory.newEventProcessor();
     ep2 = epFactory.newEventProcessor();
 
-    groupAllocationTable.put(ep1, new LinkedList<>());
-    groupAllocationTable.put(ep2, new LinkedList<>());
+    groupAllocationTable.put(ep1);
+    groupAllocationTable.put(ep2);
   }
 
   @After
@@ -83,12 +80,11 @@ public final class GroupAssignerTest {
 
     groupAssigner.assignGroup(group1);
 
-    Assert.assertEquals(Arrays.asList(group1), groupAllocationTable.getValue(ep1));
-    Assert.assertEquals(Arrays.asList(), groupAllocationTable.getValue(ep2));
+    Assert.assertTrue(groupAllocationTable.getValue(ep1).contains(group1));
+    Assert.assertEquals(0, groupAllocationTable.getValue(ep2).size());
 
     groupAssigner.assignGroup(group2);
-    Assert.assertEquals(Arrays.asList(group2), groupAllocationTable.getValue(ep2));
-
+    Assert.assertTrue(groupAllocationTable.getValue(ep2).contains(group2));
   }
 
   /**
@@ -112,12 +108,12 @@ public final class GroupAssignerTest {
     // ep1: [group1]
     // ep2: []
     groupBalancer.assignGroup(group1);
-    Assert.assertEquals(Arrays.asList(group1), groupAllocationTable.getValue(ep1));
+    Assert.assertTrue(groupAllocationTable.getValue(ep1).contains(group1));
 
     // ep1: [group1] (load 10.0)
     // ep2: [group2] (load 20.0)
     groupBalancer.assignGroup(group2);
-    Assert.assertEquals(Arrays.asList(group2), groupAllocationTable.getValue(ep2));
+    Assert.assertTrue(groupAllocationTable.getValue(ep2).contains(group2));
 
     final GlobalSchedGroupInfo group3 = mock(GlobalSchedGroupInfo.class);
     when(group3.getLoad()).thenReturn(40.0);
@@ -125,7 +121,8 @@ public final class GroupAssignerTest {
     // ep1: [group1, group3] (load 50.0)
     // ep2: [group2] (load 20.0)
     groupBalancer.assignGroup(group3);
-    Assert.assertEquals(Arrays.asList(group1, group3), groupAllocationTable.getValue(ep1));
+    Assert.assertTrue(groupAllocationTable.getValue(ep1).contains(group1));
+    Assert.assertTrue(groupAllocationTable.getValue(ep1).contains(group3));
 
     final GlobalSchedGroupInfo group4 = mock(GlobalSchedGroupInfo.class);
     when(group4.getLoad()).thenReturn(20.0);
@@ -133,6 +130,7 @@ public final class GroupAssignerTest {
     // ep1: [group1, group3] (load 50.0)
     // ep2: [group2, group4] (load 40.0)
     groupBalancer.assignGroup(group4);
-    Assert.assertEquals(Arrays.asList(group2, group4), groupAllocationTable.getValue(ep2));
+    Assert.assertTrue(groupAllocationTable.getValue(ep2).contains(group2));
+    Assert.assertTrue(groupAllocationTable.getValue(ep2).contains(group4));
   }
 }

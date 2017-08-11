@@ -44,7 +44,7 @@ public final class DefaultGroupAllocationTable implements GroupAllocationTable {
     // Create event processors
     for (int i = 0; i < defaultNumEventProcessors; i++) {
       final EventProcessor eventProcessor = eventProcessorFactory.newEventProcessor();
-      put(eventProcessor, new ConcurrentLinkedQueue<>());
+      put(eventProcessor);
       eventProcessor.start();
     }
   }
@@ -60,26 +60,14 @@ public final class DefaultGroupAllocationTable implements GroupAllocationTable {
   }
 
   @Override
-  public void put(final EventProcessor key, final Collection<GlobalSchedGroupInfo> value) {
-    table.put(key, value);
+  public void put(final EventProcessor key) {
+    table.put(key, new ConcurrentLinkedQueue<>());
     eventProcessors.add(key);
   }
 
   @Override
   public int size() {
     return eventProcessors.size();
-  }
-
-  @Override
-  public void addEventProcessor(final EventProcessor eventProcessor) {
-    table.put(eventProcessor, new ConcurrentLinkedQueue<>());
-    eventProcessors.add(eventProcessor);
-  }
-
-  @Override
-  public void removeEventProcessor(final EventProcessor eventProcessor) {
-    eventProcessors.remove(eventProcessor);
-    table.remove(eventProcessor);
   }
 
   @Override
@@ -99,6 +87,7 @@ public final class DefaultGroupAllocationTable implements GroupAllocationTable {
 
   @Override
   public Collection<GlobalSchedGroupInfo> remove(final EventProcessor key) {
+    eventProcessors.remove(key);
     return table.remove(key);
   }
 

@@ -68,7 +68,7 @@ public final class GroupIsolatorTest {
   @Test
   public void largeNumberOfInputGroupIsolationTest() {
     final EventProcessor normalProcessor = eventProcessorFactory.newEventProcessor();
-    groupAllocationTable.addEventProcessor(normalProcessor);
+    groupAllocationTable.put(normalProcessor);
     final Collection<GlobalSchedGroupInfo> normalGroups = groupAllocationTable.getValue(normalProcessor);
 
     normalGroups.add(group1);
@@ -98,7 +98,7 @@ public final class GroupIsolatorTest {
   @Test
   public void adversarialOperationGroupTest() {
     final EventProcessor normalProcessor = eventProcessorFactory.newEventProcessor();
-    groupAllocationTable.addEventProcessor(normalProcessor);
+    groupAllocationTable.put(normalProcessor);
     final Collection<GlobalSchedGroupInfo> normalGroups = groupAllocationTable.getValue(normalProcessor);
 
     normalGroups.add(group1);

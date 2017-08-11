@@ -78,12 +78,18 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
    */
   private final GroupIsolator groupIsolator;
 
+  /**
+   * Group isolation remover that removes threads that run isolated groups.
+   */
+  private final IsolatedGroupReassigner isolatedGroupReassigner;
+
   @Inject
   private GroupAllocationTableModifier(final GroupAllocationTable groupAllocationTable,
                                        final GroupAssigner groupAssigner,
                                        final GroupRebalancer groupRebalancer,
                                        final LoadUpdater loadUpdater,
-                                       final GroupIsolator groupIsolator) {
+                                       final GroupIsolator groupIsolator,
+                                       final IsolatedGroupReassigner isolatedGroupReassigner) {
     this.groupAllocationTable = groupAllocationTable;
     this.groupAssigner = groupAssigner;
     this.groupRebalancer = groupRebalancer;
@@ -91,6 +97,7 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
     this.singleWriter = Executors.newSingleThreadExecutor();
     this.loadUpdater = loadUpdater;
     this.groupIsolator = groupIsolator;
+    this.isolatedGroupReassigner = isolatedGroupReassigner;
     // Create a writer thread
     singleWriter.submit(new SingleWriterThread());
   }
@@ -151,6 +158,7 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
               break;
             case REBALANCE:
               loadUpdater.update();
+              isolatedGroupReassigner.reassignIsolatedGroups();
               groupRebalancer.triggerRebalancing();
               break;
             case ISOLATION:

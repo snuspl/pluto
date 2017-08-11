@@ -75,7 +75,7 @@ public final class DefaultGroupIsolatorImpl implements GroupIsolator {
           // create a new thread
           final EventProcessor newEP = eventProcessorFactory.newEventProcessor();
           newEP.start();
-          groupAllocationTable.addEventProcessor(newEP);
+          groupAllocationTable.put(newEP);
           final Collection<GlobalSchedGroupInfo> destGroups = groupAllocationTable.getValue(newEP);
 
           // Groups of the current event processor

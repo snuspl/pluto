@@ -45,29 +45,16 @@ public interface GroupAllocationTable {
   Collection<GlobalSchedGroupInfo> getValue(EventProcessor eventProcessor);
 
   /**
-   * Put the event processor and the assigned groups.
+   * Put a new event processor.
    * @param key event processor
-   * @param value assigned gruops
    */
-  void put(EventProcessor key, Collection<GlobalSchedGroupInfo> value);
+  void put(EventProcessor key);
 
   /**
    * The size of the table.
    * @return size of the table.
    */
   int size();
-
-  /**
-   * Add a new event processor.
-   * @param eventProcessor a new event processor
-   */
-  void addEventProcessor(EventProcessor eventProcessor);
-
-  /**
-   * Remove an existing event processor.
-   * @param eventProcessor event processor to be removed
-   */
-  void removeEventProcessor(EventProcessor eventProcessor);
 
   /**
    * Remove the event processor from the allocation table.
