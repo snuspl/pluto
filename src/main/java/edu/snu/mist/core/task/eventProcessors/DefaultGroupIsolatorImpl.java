@@ -23,6 +23,8 @@ import javax.inject.Inject;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class isolates an overloaded group,
@@ -36,6 +38,7 @@ import java.util.List;
  * and moves all groups except for the isolated group to a new thread.
  */
 public final class DefaultGroupIsolatorImpl implements GroupIsolator {
+  private static final Logger LOG = Logger.getLogger(DefaultGroupIsolatorImpl.class.getName());
 
   private final GroupAllocationTable groupAllocationTable;
   private final EventProcessorFactory eventProcessorFactory;
@@ -72,6 +75,9 @@ public final class DefaultGroupIsolatorImpl implements GroupIsolator {
         final long elapsedTime = System.currentTimeMillis() - startTime;
 
         if (groupInfo != null && elapsedTime >= isolationTriggerPeriod && groupInfo.setIsolated()) {
+          LOG.log(Level.INFO, "Creating a new thread for isolation: {0}",
+              new Object[]{groupInfo});
+
           // create a new thread
           final EventProcessor newEP = eventProcessorFactory.newEventProcessor();
           newEP.start();
@@ -104,7 +110,7 @@ public final class DefaultGroupIsolatorImpl implements GroupIsolator {
               if (!groupToMove.equals(groupInfo)) {
                 destGroups.add(groupToMove);
                 iterator.remove();
-                eventProcessor.removeActiveGroup(groupInfo);
+                eventProcessor.removeActiveGroup(groupToMove);
               }
             }
           }
