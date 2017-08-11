@@ -70,6 +70,7 @@ public final class MistGroupSchedulingTaskConfigs {
   private final int dispatcherThreadNum;
   private final long rebalancingPeriod;
   private final long isolationTriggerPeriod;
+  private final double underloadedGroupThreshold;
 
   // TODO[REMOVE]
   private final boolean groupAware;
@@ -95,7 +96,8 @@ public final class MistGroupSchedulingTaskConfigs {
       @Parameter(Rebalancing.class) final boolean rebalancing,
       @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
       @Parameter(GroupIsolationEnabled.class) final boolean groupIsolation,
-      @Parameter(IsolationTriggerPeriod.class) final long isolationTriggerPeriod) {
+      @Parameter(IsolationTriggerPeriod.class) final long isolationTriggerPeriod,
+      @Parameter(UnderloadedGroupThreshold.class) final double underloadedGroupThreshold) {
     this.epaType = epaType;
     this.cpuUtilLowThreshold = cpuUtilLowThreshold;
     this.eventNumHighThreshold = eventNumHighThreshold;
@@ -113,6 +115,7 @@ public final class MistGroupSchedulingTaskConfigs {
     this.rebalancingPeriod = rebalancingPeriod;
     this.groupIsolation = groupIsolation;
     this.isolationTriggerPeriod = isolationTriggerPeriod;
+    this.underloadedGroupThreshold = underloadedGroupThreshold;
   }
 
   /**
@@ -200,6 +203,7 @@ public final class MistGroupSchedulingTaskConfigs {
     jcb.bindNamedParameter(DispatcherThreadNum.class, Integer.toString(dispatcherThreadNum));
     jcb.bindNamedParameter(GroupRebalancingPeriod.class, Long.toString(rebalancingPeriod));
     jcb.bindNamedParameter(IsolationTriggerPeriod.class, Long.toString(isolationTriggerPeriod));
+    jcb.bindNamedParameter(UnderloadedGroupThreshold.class, Double.toString(underloadedGroupThreshold));
 
     return Configurations.merge(getConfigurationForExecutionModel(), jcb.build());
   }
@@ -226,6 +230,7 @@ public final class MistGroupSchedulingTaskConfigs {
         .registerShortNameOfClass(GroupAssignerType.class)
         .registerShortNameOfClass(GroupRebalancingPeriod.class)
         .registerShortNameOfClass(GroupIsolationEnabled.class)
-        .registerShortNameOfClass(IsolationTriggerPeriod.class);
+        .registerShortNameOfClass(IsolationTriggerPeriod.class)
+        .registerShortNameOfClass(UnderloadedGroupThreshold.class);
   }
 }
