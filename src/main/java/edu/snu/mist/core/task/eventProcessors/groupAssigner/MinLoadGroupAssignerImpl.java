@@ -80,12 +80,6 @@ public final class MinLoadGroupAssignerImpl implements GroupAssigner {
     return minEventProcessor;
   }
 
-  private double getDefaultLoad(final EventProcessor eventProcessor) {
-    final double defaultLoad = eventProcessor.getLoad();
-    final int groupnum = Math.max(1, groupAllocationTable.getValue(eventProcessor).size());
-    return defaultLoad / groupnum;
-  }
-
   /**
    * Assign the new group to the event processor that has the latest minimum load.
    * @param groupInfo new group
@@ -97,8 +91,6 @@ public final class MinLoadGroupAssignerImpl implements GroupAssigner {
     //latestPickTime = System.currentTimeMillis();
     latestMinLoadEventProcessor = minLoadEventProcessor;
 
-    final double defaultLoad = getDefaultLoad(latestMinLoadEventProcessor);
-    groupInfo.setLoad(defaultLoad);
     groupAllocationTable.getValue(latestMinLoadEventProcessor).add(groupInfo);
     latestMinLoadEventProcessor.setLoad(latestMinLoadEventProcessor.getLoad() + groupInfo.getLoad());
   }

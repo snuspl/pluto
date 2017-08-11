@@ -19,6 +19,7 @@ import edu.snu.mist.core.task.eventProcessors.groupAssigner.GroupAssigner;
 import edu.snu.mist.core.task.eventProcessors.parameters.*;
 import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupRebalancer;
 import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.parameters.DefaultGroupLoad;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -103,12 +104,18 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
    */
   private final AtomicBoolean closed = new AtomicBoolean(false);
 
+  /**
+   * Default group load.
+   */
+  private final double defaultGroupLoad;
+
   @Inject
   private DefaultEventProcessorManager(@Parameter(EventProcessorLowerBound.class) final int eventProcessorLowerBound,
                                        @Parameter(EventProcessorUpperBound.class) final int eventProcessorUpperBound,
                                        @Parameter(GracePeriod.class) final int gracePeriod,
                                        @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
                                        @Parameter(IsolationTriggerPeriod.class) final long isolationTriggerPeriod,
+                                       @Parameter(DefaultGroupLoad.class) final double defaultGroupLoad,
                                        final GroupAllocationTable groupAllocationTable,
                                        final GroupAssigner groupAssigner,
                                        final GroupRebalancer groupRebalancer,
@@ -124,6 +131,7 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
     this.groupAllocationTableModifier = groupAllocationTableModifier;
     this.eventProcessorFactory = eventProcessorFactory;
     this.gracePeriod = gracePeriod;
+    this.defaultGroupLoad = defaultGroupLoad;
     this.groupRebalancerService = Executors.newSingleThreadScheduledExecutor();
     this.groupIsolationService = Executors.newSingleThreadScheduledExecutor();
     initialize(rebalancingPeriod, isolationTriggerPeriod);
@@ -173,7 +181,7 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
 
         for (int i = 0; i < increaseNum; i++) {
           final EventProcessor eventProcessor = eventProcessorFactory.newEventProcessor();
-          groupAllocationTable.put(eventProcessor, new ConcurrentLinkedQueue<>());
+          groupAllocationTable.put(eventProcessor);
           eventProcessor.start();
         }
 
@@ -238,6 +246,7 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
 
   @Override
   public void addGroup(final GlobalSchedGroupInfo newGroup) {
+    newGroup.setLoad(defaultGroupLoad);
     groupAllocationTableModifier.addEvent(new WritingEvent(WritingEvent.EventType.GROUP_ADD, newGroup));
   }
 
