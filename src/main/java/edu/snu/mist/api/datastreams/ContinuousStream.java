@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.api.datastreams;
 
+import edu.snu.mist.api.cep.CepEvent;
 import edu.snu.mist.common.functions.*;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.WindowInformation;
@@ -151,6 +152,16 @@ public interface ContinuousStream<T> extends MISTStream<T> {
           final String initialState,
           final Set<String> finalState,
           final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable) throws IOException;
+
+  /**
+   * Applies sequence scan operator to the current stream, used in cep query.
+   * @param eventSequence the list of cep event
+   * @param windowTime window time
+   * @return new map(event name, event) streams after applying sequence scan operation
+   */
+  ContinuousStream<Map<String, T>> sequenceScan(
+          final List<CepEvent<T>> eventSequence,
+          final long windowTime);
 
   /**
    * Applies union operation to the current stream and input continuous stream passed as a parameter.
