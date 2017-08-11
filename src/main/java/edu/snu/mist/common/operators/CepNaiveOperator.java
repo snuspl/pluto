@@ -145,7 +145,7 @@ public final class CepNaiveOperator<T> extends SequenceScanOperator<T> {
     }
 
     /**
-     * Check whether the state is final state
+     * Check whether the state is final state.
      * @param state state
      * @return boolean
      */
@@ -203,7 +203,7 @@ public final class CepNaiveOperator<T> extends SequenceScanOperator<T> {
     }
 
     /**
-     * Class for save the previous events
+     * Class for save the previous events.
      * @param <T> type of user defined class
      */
     private final class CepQueue<T> {
