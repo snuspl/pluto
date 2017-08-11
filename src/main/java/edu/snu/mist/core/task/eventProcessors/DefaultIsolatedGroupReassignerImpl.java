@@ -23,6 +23,7 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.util.Iterator;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Remove threads that run isolated groups if the load of isolated groups is small.  
@@ -53,6 +54,9 @@ public final class DefaultIsolatedGroupReassignerImpl implements IsolatedGroupRe
         final RuntimeProcessingInfo runtimeInfo = eventProcessor.getCurrentRuntimeInfo();
         final GlobalSchedGroupInfo group = runtimeInfo.getCurrGroup();
         if (group.getLoad() <= underloadedGroupThreshold) {
+          LOG.log(Level.INFO, "Removing a thread for isolation: {0}",
+              new Object[] {group});
+
           groupAllocationTable.remove(eventProcessor);
           try {
             eventProcessor.close();

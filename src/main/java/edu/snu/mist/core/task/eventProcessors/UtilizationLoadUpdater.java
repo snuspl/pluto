@@ -22,8 +22,10 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Logger;
 
 public final class UtilizationLoadUpdater implements LoadUpdater {
+  private static final Logger LOG = Logger.getLogger(UtilizationLoadUpdater.class.getName());
 
   /**
    * Default group load.
@@ -48,6 +50,7 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
     for (final EventProcessor eventProcessor : eventProcessors) {
       updateGroupAndThreadLoad(eventProcessor, groupAllocationTable.getValue(eventProcessor));
     }
+    LOG.info(groupAllocationTable.toString());
   }
 
 

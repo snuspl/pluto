@@ -94,13 +94,13 @@ public final class DefaultGroupAllocationTable implements GroupAllocationTable {
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder();
-    for (final EventProcessor eventProcessor : eventProcessors) {
-      final Collection<GlobalSchedGroupInfo> groups = table.get(eventProcessor);
-      sb.append(eventProcessor);
+    for (final EventProcessor ep : eventProcessors) {
+      final Collection<GlobalSchedGroupInfo> groups = getValue(ep);
+      sb.append(ep);
       sb.append(" -> [");
       sb.append(groups.size());
       sb.append("], ");
-      sb.append(table.get(eventProcessor));
+      sb.append(groups);
       sb.append("\n");
     }
     return sb.toString();

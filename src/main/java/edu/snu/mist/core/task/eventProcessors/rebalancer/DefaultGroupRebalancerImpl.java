@@ -146,7 +146,7 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
       }
 
       // LOGGING
-      logging(eventProcessors, loadTable);
+      //logging(eventProcessors, loadTable);
 
       double targetLoad = (alpha + beta) / 2;
 
