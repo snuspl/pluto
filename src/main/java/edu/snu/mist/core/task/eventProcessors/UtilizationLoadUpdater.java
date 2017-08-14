@@ -80,7 +80,7 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
 
       final long processingEventTime = group.getProcessingTime().get();
       group.getProcessingTime().getAndAdd(-processingEventTime);
-      
+
       // No processed. This thread is overloaded!
       if (processingEventTime == 0 && incomingEvent != 0) {
         isOverloaded = true;
