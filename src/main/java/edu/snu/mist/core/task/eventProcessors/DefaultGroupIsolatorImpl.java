@@ -114,9 +114,6 @@ public final class DefaultGroupIsolatorImpl implements GroupIsolator {
               }
             }
           }
-
-          // End of the isolation
-          groupInfo.setReadyFromIsolated();
         }
       }
     }

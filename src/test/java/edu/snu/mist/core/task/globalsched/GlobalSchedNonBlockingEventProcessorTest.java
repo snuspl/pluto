@@ -175,6 +175,7 @@ public final class GlobalSchedNonBlockingEventProcessorTest {
           final GlobalSchedGroupInfo group = mock(GlobalSchedGroupInfo.class);
           final OperatorChainManager ocm = mock(OperatorChainManager.class);
           when(group.getOperatorChainManager()).thenReturn(ocm);
+          when(group.isProcessing()).thenReturn(true);
           when(ocm.pickOperatorChain()).thenReturn(null);
           return group;
         } catch (final InterruptedException e) {

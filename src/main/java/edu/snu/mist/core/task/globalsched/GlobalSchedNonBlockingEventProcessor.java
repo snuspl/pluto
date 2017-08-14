@@ -108,24 +108,32 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
           }
         }
 
-        // End time
-        final long endProcessingTime = System.nanoTime();
+        // Update the group info if it is in Processing state
+        // If not, skip update because it is in Isolated state
+        if (groupInfo.isProcessing()) {
+          // End time
+          final long endProcessingTime = System.nanoTime();
 
-        // Update processing time and # of events
-        final long processingTime = endProcessingTime - startProcessingTime;
-        if (numProcessedEvents != 0) {
-          groupInfo.getProcessingTime().getAndAdd(endProcessingTime - startProcessingTime);
-          groupInfo.getProcessingEvent().getAndAdd(numProcessedEvents);
+          // Update processing time and # of events
+          final long processingTime = endProcessingTime - startProcessingTime;
+          if (numProcessedEvents != 0) {
+            groupInfo.getProcessingTime().getAndAdd(endProcessingTime - startProcessingTime);
+            groupInfo.getProcessingEvent().getAndAdd(numProcessedEvents);
+          }
+
+          if (LOG.isLoggable(Level.FINE)) {
+            LOG.log(Level.FINE, "{0} Process Group {1}, # Processed Events: {2}, ProcessingTime: {3}",
+                new Object[]{Thread.currentThread().getName(), groupInfo,  numProcessedEvents,
+                    processingTime});
+          }
+
+          // Change the group status
+          groupInfo.setReadyFromProcessing();
+        } else if (groupInfo.isIsolated()) {
+          groupInfo.setReadyFromIsolated();
+        } else {
+          throw new RuntimeException("Invalid group state: " + groupInfo);
         }
-
-        if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "{0} Process Group {1}, # Processed Events: {2}, ProcessingTime: {3}",
-              new Object[]{Thread.currentThread().getName(), groupInfo,  numProcessedEvents,
-                  processingTime});
-        }
-
-        // Change the group status
-        groupInfo.setReadyFromProcessing();
       }
     } catch (final InterruptedException e) {
       // Interrupt occurs while sleeping, so just finishes the process...
