@@ -292,6 +292,8 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
     sb.append(", ");
     sb.append(atomicStatus.get());
     sb.append(", ");
+    sb.append(groupLoad);
+    sb.append(", ");
     sb.append(numberOfRemainingEvents());
     sb.append("}");
     return sb.toString();
