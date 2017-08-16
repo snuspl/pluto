@@ -16,7 +16,9 @@
 package edu.snu.mist.api.cep;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Default Implementation for MISTCepQuery.
@@ -149,6 +151,13 @@ public final class MISTCepQuery<T> {
             return this;
         }
 
+        private boolean checkSequence() {
+            final Set<String> eventNameSet = new HashSet<>();
+            cepEventSequence.stream()
+                .forEach(e -> eventNameSet.add(e.getEventName()));
+            return cepEventSequence.size() == eventNameSet.size();
+        }
+
         public MISTCepQuery<T> build() {
             if (groupId == null
                     || cepInput == null
@@ -158,6 +167,9 @@ public final class MISTCepQuery<T> {
                     || cepAction == null) {
                 throw new IllegalStateException(
                         "One of group id, input, event sequence, qualifier, window, or action is not set!");
+            }
+            if (!checkSequence()) {
+                throw new IllegalStateException("Each event should have a different event name!");
             }
             return new MISTCepQuery(groupId, cepInput, cepEventSequence, cepQualifier, windowTime, cepAction);
         }
