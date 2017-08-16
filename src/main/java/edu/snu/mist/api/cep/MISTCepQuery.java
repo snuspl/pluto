@@ -153,14 +153,9 @@ public final class MISTCepQuery<T> {
 
         private boolean checkSequence() {
             final Set<String> eventNameSet = new HashSet<>();
-            for (final CepEvent<T> event : cepEventSequence) {
-                final String name = event.getEventName();
-                if (eventNameSet.contains(name)) {
-                    return false;
-                }
-                eventNameSet.add(name);
-            }
-            return true;
+            cepEventSequence.stream()
+                .forEach(e -> eventNameSet.add(e.getEventName()));
+            return cepEventSequence.size() == eventNameSet.size();
         }
 
         public MISTCepQuery<T> build() {
