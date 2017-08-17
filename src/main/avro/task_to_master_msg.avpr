@@ -13,14 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.rpc;
-
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
-
-/**
- * The port number of RPC server.
- */
-@NamedParameter(doc = "The port number of RPC Server")
-public class RPCServerPort implements Name<Integer> {
+ /**
+  * This protocol defines the master message to the mist task.
+  */
+{
+  "namespace": "edu.snu.mist.formats.avro",
+  "protocol": "TaskToMasterMessage",
+  /* TODO[IMPLEMENT] Implement master to task message */
+  "types":
+  [
+  ],
+  "messages":
+  {
+  }
 }

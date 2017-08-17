@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.common.rpc;
 
+import edu.snu.mist.core.task.QueryIdGenerator;
+import edu.snu.mist.core.task.QueryManager;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;

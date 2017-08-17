@@ -40,11 +40,11 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
   /**
    * A proxy that communicates with MIST Driver.
    */
-  private final MistTaskProvider proxyToDriver;
+  private final ClientToMasterMessage proxyToDriver;
   /**
    * A list of MIST Tasks.
    */
-  private final List<IPAddress> tasks;
+  private final IPAddress task;
   /**
    * A map of proxies that has an ip address of the MIST Task as a key,
    * and a proxy communicating with a MIST Task as a value.
@@ -62,9 +62,8 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
                                              final int serverPort) throws IOException {
     // Step 1: Get a task list from Driver
     final NettyTransceiver clientToDriver = new NettyTransceiver(new InetSocketAddress(serverAddr, serverPort));
-    this.proxyToDriver = SpecificRequestor.getClient(MistTaskProvider.class, clientToDriver);
-    final TaskList taskList = proxyToDriver.getTasks(new QueryInfo());
-    this.tasks = taskList.getTasks();
+    this.proxyToDriver = SpecificRequestor.getClient(ClientToMasterMessage.class, clientToDriver);
+    this.task = proxyToDriver.getTask(new QueryInfo());
     this.taskProxyMap = new ConcurrentHashMap<>();
   }
 
@@ -78,9 +77,6 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
   @Override
   public APIQueryControlResult submit(final MISTQuery queryToSubmit,
                                       final String[] jarFilePaths) throws IOException {
-    // Choose a task
-    final IPAddress task = tasks.get(0);
-
     ClientToTaskMessage proxyToTask = taskProxyMap.get(task);
     if (proxyToTask == null) {
       final NettyTransceiver clientToTask = new NettyTransceiver(

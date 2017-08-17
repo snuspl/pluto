@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.rpc;
+package edu.snu.mist.core.driver.parameters;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * The port number of RPC server.
+ * The port number used for Avro RPC of MistTask / MasterTask.
  */
-@NamedParameter(doc = "The port number of RPC Server")
-public class RPCServerPort implements Name<Integer> {
+@NamedParameter(doc = "The port number used for Avro RPC of MistTask / MasterTask",
+short_name = "avro_rpc_port", default_value = "20000")
+public class AvroRPCPortStart implements Name<Integer> {
 }

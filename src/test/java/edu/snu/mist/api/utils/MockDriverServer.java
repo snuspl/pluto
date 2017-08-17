@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.api.utils;
 
+import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import edu.snu.mist.formats.avro.IPAddress;
 import edu.snu.mist.formats.avro.MistTaskProvider;
 import edu.snu.mist.formats.avro.QueryInfo;
@@ -26,7 +27,7 @@ import java.util.Arrays;
 /**
  * A task provider for test.
  */
-public class MockDriverServer implements MistTaskProvider {
+public class MockDriverServer implements ClientToMasterMessage {
   private final String driverHost;
   private final int taskPortNum;
 
@@ -37,7 +38,7 @@ public class MockDriverServer implements MistTaskProvider {
   }
 
   @Override
-  public TaskList getTasks(final QueryInfo queryInfo) throws AvroRemoteException {
+  public ClientToMasterMessage getTask(final QueryInfo queryInfo) throws AvroRemoteException {
     return new TaskList(Arrays.asList(new IPAddress(driverHost, taskPortNum)));
   }
 }

@@ -25,7 +25,6 @@ import edu.snu.mist.common.operators.FilterOperator;
 import edu.snu.mist.common.operators.FlatMapOperator;
 import edu.snu.mist.common.operators.MapOperator;
 import edu.snu.mist.common.operators.ReduceByKeyOperator;
-import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.common.sources.EventGenerator;
 import edu.snu.mist.common.sources.PunctuatedEventGenerator;
 import edu.snu.mist.common.types.Tuple2;
@@ -92,7 +91,7 @@ public final class QueryManagerTest {
   @Test(timeout = 10000)
   public void testSubmitComplexQueryInOption2Dispatching() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(RPCServerPort.class, "20338");
+    jcb.bindNamedParameter(DriverRPCServerPort.class, "20338");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
     jcb.bindNamedParameter(ExecutionModelOption.class, "2");
     jcb.bindNamedParameter(GroupSchedModelType.class, "dispatching");
@@ -104,7 +103,7 @@ public final class QueryManagerTest {
   @Test(timeout = 10000)
   public void testSubmitComplexQueryInOption2GroupUnaware() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(RPCServerPort.class, "20339");
+    jcb.bindNamedParameter(DriverRPCServerPort.class, "20339");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
     jcb.bindNamedParameter(ExecutionModelOption.class, "2");
     jcb.bindNamedParameter(GroupSchedModelType.class, "dispatching");
@@ -117,7 +116,7 @@ public final class QueryManagerTest {
   @Test(timeout = 10000)
   public void testSubmitComplexQueryInOption3() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(RPCServerPort.class, "20334");
+    jcb.bindNamedParameter(DriverRPCServerPort.class, "20334");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
     jcb.bindNamedParameter(ExecutionModelOption.class, "3");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
