@@ -100,7 +100,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
         client = new MqttAsyncClient(brokerURI, clientId);
         final MqttConnectOptions mqttConnectOptions = new MqttConnectOptions();
         mqttConnectOptions.setKeepAliveInterval(mqttSourceKeepAliveSec);
-        client.connect().waitForCompletion();
+        client.connect(mqttConnectOptions).waitForCompletion();
         client.setCallback(this);
         started = true;
       }
