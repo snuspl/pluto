@@ -34,6 +34,8 @@ public final class CepEvent<T> {
     private int minTimes;
     private int maxTimes;
 
+    private MISTPredicate<T> stopCondition;
+
     public CepEvent(
             final String eventName,
             final MISTPredicate<T> condition,
@@ -45,6 +47,7 @@ public final class CepEvent<T> {
         this.continuity = null;
         this.minTimes = -1;
         this.maxTimes = -1;
+        stopCondition = null;
     }
 
     public String getEventName() {
@@ -75,7 +78,11 @@ public final class CepEvent<T> {
         return maxTimes;
     }
 
-    public void setOneOrMore() {
+    public MISTPredicate<T> getStopCondition() {
+        return stopCondition;
+    }
+
+    public void setOneOrMore(final MISTPredicate<T> stopConditionParam) {
         switch (quantifier) {
             case ONE:
                 quantifier = ONE_OR_MORE;
@@ -86,6 +93,7 @@ public final class CepEvent<T> {
             default:
                 throw new IllegalStateException("One or more is already set!");
         }
+        stopCondition = stopConditionParam;
     }
 
     public void setTimes(final int timesParam) {
