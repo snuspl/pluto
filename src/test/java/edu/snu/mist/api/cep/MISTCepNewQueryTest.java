@@ -28,8 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static edu.snu.mist.api.cep.CepEventContinuity.*;
-
 public final class MISTCepNewQueryTest {
     //Socket source information.
     private final String cepSocketInputAddress = "some.inputaddress.com";

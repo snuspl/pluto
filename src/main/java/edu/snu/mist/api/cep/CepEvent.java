@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.api.cep;
 
-import edu.snu.mist.api.cep.predicates.CepFalsePredicate;
 import edu.snu.mist.common.functions.MISTPredicate;
 
 /**
@@ -125,10 +124,14 @@ public final class CepEvent<T> {
         private MISTPredicate<T> condition;
         private Class<T> classType;
 
-        // continuity between previous event and current event.
+        /**
+         * Continuity between previous event and current event.
+         */
         private CepEventContinuity continuity;
 
-        // quantifier
+        /**
+         * Quantifier for cep event.
+         */
         private boolean optional;
         private boolean times;
         private int minTimes;
@@ -136,9 +139,15 @@ public final class CepEvent<T> {
         private CepEventContinuity innerContinuity;
         private static final CepEventContinuity DEFAULT_INNER_CONTINUITY = CepEventContinuity.RELAXED;
 
-        // only for one or more quantifier.
+        /**
+         * Only for one or more quantifier.
+         */
         private MISTPredicate<T> stopCondition;
-        private static final MISTPredicate DEFAULT_STOPCONDITION = new CepFalsePredicate();
+        /**
+         * If stop condition is not set, all the events should be saved.
+         * So, default stop condition is false condition.
+         */
+        private static final MISTPredicate DEFAULT_STOPCONDITION = s -> false;
 
         public Builder() {
             this.eventName = null;
@@ -149,7 +158,8 @@ public final class CepEvent<T> {
             this.times = false;
             this.minTimes = -1;
             this.maxTimes = -1;
-            this.stopCondition = null;
+            this.innerContinuity = DEFAULT_INNER_CONTINUITY;
+            this.stopCondition = DEFAULT_STOPCONDITION;
         }
 
         /**
@@ -201,7 +211,7 @@ public final class CepEvent<T> {
                 throw new IllegalStateException("Times quantifier is already set!");
             }
             if (n <= 0) {
-                throw new IllegalStateException("Number n should be positive!");
+                throw new IllegalArgumentException("Number n should be positive!");
             }
             times = true;
             minTimes = n;
@@ -222,23 +232,30 @@ public final class CepEvent<T> {
         }
 
         /**
-         * Set times quantifier.
-         * @param timesParam
+         * Set times quantifier. Exact times of events are matched.
+         * @param timesParam times
          * @return builder
          */
         public Builder setTimes(final int timesParam) {
             return setTimes(timesParam, timesParam);
         }
 
+        /**
+         * Set times quantifier.
+         * Specifies that the pattern can occur between minTimes and maxTimes.
+         * @param minTimeParam times
+         * @param maxTimeParam times
+         * @return builder
+         */
         public Builder setTimes(final int minTimeParam, final int maxTimeParam) {
             if (times) {
                 throw new IllegalStateException("Times quantifier is already set!");
             }
             if (minTimeParam > maxTimeParam) {
-                throw new IllegalStateException("min time should be less than or equal to max time!");
+                throw new IllegalArgumentException("min time should be less than or equal to max time!");
             }
             if (minTimeParam < 0 || maxTimeParam < 0) {
-                throw new IllegalStateException("Min time and Max time should be positive!");
+                throw new IllegalArgumentException("Min time and Max time should be positive!");
             }
             times = true;
             minTimes = minTimeParam;
@@ -278,14 +295,8 @@ public final class CepEvent<T> {
                     || classType == null) {
                 throw new IllegalStateException("One of event name, condition, class type is null!");
             }
-            if (stopCondition != null && maxTimes != -1) {
-                throw new IllegalStateException("N or more quantifier is not set!");
-            }
-            if (innerContinuity == null) {
-                innerContinuity = DEFAULT_INNER_CONTINUITY;
-            }
-            if (stopCondition == null) {
-                stopCondition = DEFAULT_STOPCONDITION;
+            if (!stopCondition.equals(DEFAULT_STOPCONDITION) && maxTimes != -1) {
+                throw new IllegalStateException("Stop condition is set, but maxTimes is not infinite");
             }
             return new CepEvent(eventName, condition, continuity, optional,
                     times, minTimes, maxTimes, innerContinuity, stopCondition, classType);
