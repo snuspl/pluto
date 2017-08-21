@@ -67,19 +67,12 @@ public final class CepEvent<T> {
         return continuity;
     }
 
-    public void setOptional() {
-        switch (quantifier) {
-            case ONE:
-                quantifier = OPTIONAL;
-                break;
-            case ONE_OR_MORE:
-                quantifier = ZERO_OR_MORE;
-                break;
-            case TIMES:
-                quantifier = ZERO_OR_TIMES;
-            default:
-                throw new IllegalStateException("Optional is already set!");
-        }
+    public int getMinTimes() {
+        return minTimes;
+    }
+
+    public int getMaxTimes() {
+        return maxTimes;
     }
 
     public void setOneOrMore() {
@@ -96,27 +89,41 @@ public final class CepEvent<T> {
     }
 
     public void setTimes(final int timesParam) {
-        if (quantifier == TIMES || quantifier == ZERO_OR_TIMES) {
-            throw new IllegalStateException("Times is already set!");
+        if (quantifier == ONE) {
+            quantifier = TIMES;
         } else if (quantifier == OPTIONAL) {
             quantifier = ZERO_OR_TIMES;
         } else {
-            quantifier = TIMES;
+            throw new IllegalStateException("Continuity is already set!");
         }
         minTimes = timesParam;
         maxTimes = timesParam;
     }
 
     public void setTimes(final int minTimesParam, final int maxTimesParam) {
-        if (quantifier == TIMES || quantifier == ZERO_OR_TIMES) {
-            throw new IllegalStateException("Times is already set!");
+        if (quantifier == ONE) {
+            quantifier = TIMES;
         } else if (quantifier == OPTIONAL) {
             quantifier = ZERO_OR_TIMES;
         } else {
-            quantifier = TIMES;
+            throw new IllegalStateException("Continuity is already set!");
         }
         minTimes = minTimesParam;
         maxTimes = maxTimesParam;
+    }
+    public void setOptional() {
+        switch (quantifier) {
+            case ONE:
+                quantifier = OPTIONAL;
+                break;
+            case ONE_OR_MORE:
+                quantifier = ZERO_OR_MORE;
+                break;
+            case TIMES:
+                quantifier = ZERO_OR_TIMES;
+            default:
+                throw new IllegalStateException("Optional is already set!");
+        }
     }
 
     public void setStrictContinuity() {
