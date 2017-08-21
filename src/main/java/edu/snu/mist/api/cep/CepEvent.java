@@ -28,22 +28,22 @@ public final class CepEvent<T> {
     // continuity between previous event and current event.
     private CepEventContinuity continuity;
 
-    // quantifier
-    private boolean oneOrMore;
+    /**
+     * Quantifier for cep event.
+     * Value -1 of maxTimes means infinite(supporting N or more).
+     */
     private boolean optional;
     private boolean times;
-
     private int minTimes;
     private int maxTimes;
 
-    // only for one or more quantification.
+    // only valid when maxTimes is infinite(N or more).
     private MISTPredicate<T> stopCondition;
 
     private CepEvent(
             final String eventName,
             final MISTPredicate<T> condition,
             final CepEventContinuity continuity,
-            final boolean oneOrMore,
             final boolean optional,
             final boolean times,
             final int minTimes,
@@ -53,7 +53,6 @@ public final class CepEvent<T> {
         this.eventName = eventName;
         this.condition = condition;
         this.continuity = continuity;
-        this.oneOrMore = oneOrMore;
         this.optional = optional;
         this.times = times;
         this.minTimes = minTimes;
@@ -76,10 +75,6 @@ public final class CepEvent<T> {
 
     public CepEventContinuity getContinuity() {
         return continuity;
-    }
-
-    public boolean isOneOrMore() {
-        return oneOrMore;
     }
 
     public boolean isOptional() {
@@ -114,7 +109,6 @@ public final class CepEvent<T> {
         private CepEventContinuity continuity;
 
         // quantifier
-        private boolean oneOrMore;
         private boolean optional;
         private boolean times;
 
@@ -134,23 +128,27 @@ public final class CepEvent<T> {
             this.continuity = continuity;
             this.classType = classType;
 
-            this.oneOrMore = false;
             this.optional = false;
             this.times = false;
-            this.minTimes = -1;
-            this.maxTimes = -1;
+            this.minTimes = -2;
+            this.maxTimes = -2;
             this.stopCondition = null;
         }
 
         /**
-         * Set one or more quantifier.
+         * Set N or more quantifier.
          * @return builder
          */
-        public Builder setOneOrMore() {
-            if (oneOrMore) {
-                throw new IllegalStateException("One or more quantifier is already set!");
+        public Builder setNOrMore(final int n) {
+            if (times) {
+                throw new IllegalStateException("Times quantifier is already set!");
             }
-            oneOrMore = true;
+            if (n <= 0) {
+                throw new IllegalStateException("Number n should be positive!");
+            }
+            times = true;
+            minTimes = n;
+            maxTimes = -1;
             return this;
         }
 
@@ -160,7 +158,7 @@ public final class CepEvent<T> {
          */
         public Builder setOptional() {
             if (optional) {
-                throw new IllegalStateException("One or more quantifier is already set!");
+                throw new IllegalStateException("Optional quantifier is already set!");
             }
             optional = true;
             return this;
@@ -185,6 +183,7 @@ public final class CepEvent<T> {
             if (minTimeParam <= 0 || maxTimeParam <= 0) {
                 throw new IllegalStateException("Min time and Max time should be positive!");
             }
+            times = true;
             minTimes = minTimeParam;
             maxTimes = maxTimeParam;
             return this;
@@ -195,7 +194,7 @@ public final class CepEvent<T> {
          * @return builder
          */
         public Builder setStopCondition(final MISTPredicate<T> stopConditionParam) {
-            if (!oneOrMore) {
+            if (maxTimes != -1) {
                 throw new IllegalStateException("One or more quantifier is not set!");
             }
             stopCondition = stopConditionParam;
@@ -209,14 +208,10 @@ public final class CepEvent<T> {
                     || classType == null) {
                 throw new IllegalStateException("One of event name, condition, class type is null!");
             }
-            if (!oneOrMore && stopCondition != null) {
-                throw new IllegalStateException("One or more quantifier is not set!");
+            if (stopCondition != null && maxTimes != -1) {
+                throw new IllegalStateException("N or more quantifier is not set!");
             }
-            // one or more and times cannot coexist.
-            if (oneOrMore && times) {
-                throw new IllegalStateException("Both one or more quantifier and times quantifier are set!");
-            }
-            return new CepEvent(eventName, condition, continuity, oneOrMore, optional,
+            return new CepEvent(eventName, condition, continuity, optional,
                     times, minTimes, maxTimes, stopCondition, classType);
         }
     }
