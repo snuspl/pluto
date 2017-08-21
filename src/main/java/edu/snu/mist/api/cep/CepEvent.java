@@ -31,7 +31,8 @@ public final class CepEvent<T> {
     // continuity between current event and next event.
     private CepEventContinuity continuity;
 
-    private int times;
+    private int minTimes;
+    private int maxTimes;
 
     public CepEvent(
             final String eventName,
@@ -42,7 +43,8 @@ public final class CepEvent<T> {
         this.classType = classType;
         this.quantifier = ONE;
         this.continuity = null;
-        this.times = -1;
+        this.minTimes = -1;
+        this.maxTimes = -1;
     }
 
     public String getEventName() {
@@ -73,6 +75,8 @@ public final class CepEvent<T> {
             case ONE_OR_MORE:
                 quantifier = ZERO_OR_MORE;
                 break;
+            case TIMES:
+                quantifier = ZERO_OR_TIMES;
             default:
                 throw new IllegalStateException("Optional is already set!");
         }
@@ -92,10 +96,27 @@ public final class CepEvent<T> {
     }
 
     public void setTimes(final int timesParam) {
-        if (quantifier == TIMES) {
+        if (quantifier == TIMES || quantifier == ZERO_OR_TIMES) {
             throw new IllegalStateException("Times is already set!");
+        } else if (quantifier == OPTIONAL) {
+            quantifier = ZERO_OR_TIMES;
+        } else {
+            quantifier = TIMES;
         }
-        times = timesParam;
+        minTimes = timesParam;
+        maxTimes = timesParam;
+    }
+
+    public void setTimes(final int minTimesParam, final int maxTimesParam) {
+        if (quantifier == TIMES || quantifier == ZERO_OR_TIMES) {
+            throw new IllegalStateException("Times is already set!");
+        } else if (quantifier == OPTIONAL) {
+            quantifier = ZERO_OR_TIMES;
+        } else {
+            quantifier = TIMES;
+        }
+        minTimes = minTimesParam;
+        maxTimes = maxTimesParam;
     }
 
     public void setStrictContinuity() {

@@ -23,5 +23,6 @@ public enum CepEventQuantifier {
     ONE_OR_MORE,
     OPTIONAL,
     ZERO_OR_MORE,
-    TIMES
+    TIMES,
+    ZERO_OR_TIMES
 }
