@@ -16,9 +16,9 @@
 package edu.snu.mist.api.cep;
 
 /**
- * Enum class for cep event continuity.
+ * Enum class for cep event contiguity.
  */
-public enum CepEventContinuity {
+public enum CepEventContiguity {
     STRICT,
     RELAXED,
     NON_DETERMINISTIC_RELAXED

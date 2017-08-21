@@ -25,8 +25,10 @@ public final class CepEvent<T> {
     private final MISTPredicate<T> condition;
     private final Class<T> classType;
 
-    // continuity between previous event and current event.
-    private final CepEventContinuity continuity;
+    /**
+     * Contiguity between previous event and current event.
+     */
+    private final CepEventContiguity contiguity;
 
     /**
      * Optional quantifier for cep event.
@@ -43,9 +45,9 @@ public final class CepEvent<T> {
     private final int maxTimes;
 
     /**
-     * In times quantifier, the events would be handled with inner continuity.
+     * In times quantifier, the events would be handled with inner contiguity.
      */
-    private final CepEventContinuity innerContinuity;
+    private final CepEventContiguity innerContiguity;
 
     /**
      * In times quantifier, the condition which stops the accumulation of events.
@@ -56,22 +58,22 @@ public final class CepEvent<T> {
     private CepEvent(
             final String eventName,
             final MISTPredicate<T> condition,
-            final CepEventContinuity continuity,
+            final CepEventContiguity contiguity,
             final boolean optional,
             final boolean times,
             final int minTimes,
             final int maxTimes,
-            final CepEventContinuity innerContinuity,
+            final CepEventContiguity innerContiguity,
             final MISTPredicate<T> stopCondition,
             final Class<T> classType) {
         this.eventName = eventName;
         this.condition = condition;
-        this.continuity = continuity;
+        this.contiguity = contiguity;
         this.optional = optional;
         this.times = times;
         this.minTimes = minTimes;
         this.maxTimes = maxTimes;
-        this.innerContinuity = innerContinuity;
+        this.innerContiguity = innerContiguity;
         this.stopCondition = stopCondition;
         this.classType = classType;
     }
@@ -88,8 +90,8 @@ public final class CepEvent<T> {
         return classType;
     }
 
-    public CepEventContinuity getContinuity() {
-        return continuity;
+    public CepEventContiguity getContiguity() {
+        return contiguity;
     }
 
     public boolean isOptional() {
@@ -108,8 +110,8 @@ public final class CepEvent<T> {
         return maxTimes;
     }
 
-    public CepEventContinuity getInnerContinuity() {
-        return innerContinuity;
+    public CepEventContiguity getInnerContiguity() {
+        return innerContiguity;
     }
 
     public MISTPredicate<T> getStopCondition() {
@@ -125,9 +127,9 @@ public final class CepEvent<T> {
         private Class<T> classType;
 
         /**
-         * Continuity between previous event and current event.
+         * Contiguity between previous event and current event.
          */
-        private CepEventContinuity continuity;
+        private CepEventContiguity contiguity;
 
         /**
          * Quantifier for cep event.
@@ -136,8 +138,8 @@ public final class CepEvent<T> {
         private boolean times;
         private int minTimes;
         private int maxTimes;
-        private CepEventContinuity innerContinuity;
-        private static final CepEventContinuity DEFAULT_INNER_CONTINUITY = CepEventContinuity.RELAXED;
+        private CepEventContiguity innerContiguity;
+        private static final CepEventContiguity DEFAULT_INNER_CONTIGUITY = CepEventContiguity.RELAXED;
 
         /**
          * Only for one or more quantifier.
@@ -152,13 +154,13 @@ public final class CepEvent<T> {
         public Builder() {
             this.eventName = null;
             this.condition = null;
-            this.continuity = null;
+            this.contiguity = null;
             this.classType = null;
             this.optional = false;
             this.times = false;
             this.minTimes = -1;
             this.maxTimes = -1;
-            this.innerContinuity = DEFAULT_INNER_CONTINUITY;
+            this.innerContiguity = DEFAULT_INNER_CONTIGUITY;
             this.stopCondition = DEFAULT_STOPCONDITION;
         }
 
@@ -183,12 +185,12 @@ public final class CepEvent<T> {
         }
 
         /**
-         * Set continuity.
-         * @param continuityParam continuity
+         * Set contiguity.
+         * @param contiguityParam contiguity
          * @return builder
          */
-        public Builder setContinuity(final CepEventContinuity continuityParam) {
-            continuity = continuityParam;
+        public Builder setContiguity(final CepEventContiguity contiguityParam) {
+            contiguity = contiguityParam;
             return this;
         }
 
@@ -264,15 +266,15 @@ public final class CepEvent<T> {
         }
 
         /**
-         * Set inner continuity of times quantifier.
-         * @param innerContinuityParam continuity
+         * Set inner contiguity of times quantifier.
+         * @param innerContiguityParam contiguity
          * @return builder
          */
-        public Builder setInnerContinuity(final CepEventContinuity innerContinuityParam) {
+        public Builder setInnerContiguity(final CepEventContiguity innerContiguityParam) {
             if (!times) {
                 throw new IllegalStateException("Times quantifier should be set!");
             }
-            innerContinuity = innerContinuityParam;
+            innerContiguity = innerContiguityParam;
             return this;
         }
 
@@ -290,7 +292,7 @@ public final class CepEvent<T> {
 
         public CepEvent<T> build() {
             if (eventName == null
-                    || continuity == null
+                    || contiguity == null
                     || condition == null
                     || classType == null) {
                 throw new IllegalStateException("One of event name, condition, class type is null!");
@@ -298,8 +300,8 @@ public final class CepEvent<T> {
             if (!stopCondition.equals(DEFAULT_STOPCONDITION) && maxTimes != -1) {
                 throw new IllegalStateException("Stop condition is set, but maxTimes is not infinite");
             }
-            return new CepEvent(eventName, condition, continuity, optional,
-                    times, minTimes, maxTimes, innerContinuity, stopCondition, classType);
+            return new CepEvent(eventName, condition, contiguity, optional,
+                    times, minTimes, maxTimes, innerContiguity, stopCondition, classType);
         }
     }
 }
