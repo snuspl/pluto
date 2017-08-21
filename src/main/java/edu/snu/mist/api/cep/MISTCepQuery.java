@@ -151,7 +151,18 @@ public final class MISTCepQuery<T> {
             return this;
         }
 
+        /**
+         * Check the continuity of event and the differences of events' name.
+         * @return boolean
+         */
         private boolean checkSequence() {
+            // continuity check
+            for (int i = 0; i < cepEventSequence.size() - 1; i++) {
+                if (cepEventSequence.get(i).getCondition() == null) {
+                    return false;
+                }
+            }
+            // name check
             final Set<String> eventNameSet = new HashSet<>();
             cepEventSequence.stream()
                 .forEach(e -> eventNameSet.add(e.getEventName()));

@@ -17,6 +17,9 @@ package edu.snu.mist.api.cep;
 
 import edu.snu.mist.common.functions.MISTPredicate;
 
+import static edu.snu.mist.api.cep.CepEventContinuity.*;
+import static edu.snu.mist.api.cep.CepEventQuantifier.*;
+
 /**
  * Event of cep query, consists of event name and condition.
  */
@@ -24,6 +27,11 @@ public final class CepEvent<T> {
     private final String eventName;
     private final MISTPredicate<T> condition;
     private final Class<T> classType;
+    private CepEventQuantifier quantifier;
+    // continuity between current event and next event.
+    private CepEventContinuity continuity;
+
+    private int times;
 
     public CepEvent(
             final String eventName,
@@ -32,6 +40,9 @@ public final class CepEvent<T> {
         this.eventName = eventName;
         this.condition = condition;
         this.classType = classType;
+        this.quantifier = ONE;
+        this.continuity = null;
+        this.times = -1;
     }
 
     public String getEventName() {
@@ -44,5 +55,67 @@ public final class CepEvent<T> {
 
     public Class<T> getClassType() {
         return classType;
+    }
+
+    public CepEventQuantifier getQuantifier() {
+        return quantifier;
+    }
+
+    public CepEventContinuity getContinuity() {
+        return continuity;
+    }
+
+    public void setOptional() {
+        switch (quantifier) {
+            case ONE:
+                quantifier = OPTIONAL;
+                break;
+            case ONE_OR_MORE:
+                quantifier = ZERO_OR_MORE;
+                break;
+            default:
+                throw new IllegalStateException("Optional is already set!");
+        }
+    }
+
+    public void setOneOrMore() {
+        switch (quantifier) {
+            case ONE:
+                quantifier = ONE_OR_MORE;
+                break;
+            case OPTIONAL:
+                quantifier = ZERO_OR_MORE;
+                break;
+            default:
+                throw new IllegalStateException("One or more is already set!");
+        }
+    }
+
+    public void setTimes(final int timesParam) {
+        if (quantifier == TIMES) {
+            throw new IllegalStateException("Times is already set!");
+        }
+        times = timesParam;
+    }
+
+    public void setStrictContinuity() {
+        if (continuity == STRICT) {
+            throw new IllegalStateException("Strict is already set!");
+        }
+        continuity = STRICT;
+    }
+
+    public void setRelaxedContinuity() {
+        if (continuity == RELAXED) {
+            throw new IllegalStateException("Relaxed continuity is already set!");
+        }
+        continuity = RELAXED;
+    }
+
+    public void setNonDeterministicContinuity() {
+        if (continuity == NON_DETERMINISTIC_RELAXED) {
+            throw new IllegalStateException("Non deterministic relaxed is already set!");
+        }
+        continuity = NON_DETERMINISTIC_RELAXED;
     }
 }
