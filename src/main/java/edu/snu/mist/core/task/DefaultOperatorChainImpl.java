@@ -134,6 +134,7 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
     }
     if (status.compareAndSet(Status.READY, Status.RUNNING)) {
       if (queue.isEmpty()) {
+        numEvents = 0;
         status.set(Status.READY);
         return false;
       }

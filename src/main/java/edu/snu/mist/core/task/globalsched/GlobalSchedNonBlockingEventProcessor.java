@@ -100,6 +100,10 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
         while (groupInfo.isActive() && groupInfo.isProcessing()) {
           //Pick an active operator event queue
           final OperatorChain operatorChain = operatorChainManager.pickOperatorChain();
+          // This can be null because we do not synchronize the counter
+          if (operatorChain == null) {
+            break;
+          }
           // Set the event processing start time
           // From this time, we can find the group is overloaded while processing an event
           while (operatorChain.processNextEvent() && groupInfo.isProcessing()) {

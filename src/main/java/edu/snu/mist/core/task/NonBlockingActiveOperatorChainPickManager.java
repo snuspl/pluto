@@ -75,6 +75,8 @@ public final class NonBlockingActiveOperatorChainPickManager implements Operator
     final OperatorChain operatorChain = activeQueryQueue.poll();
     if (operatorChain != null) {
       numAcitveOperators -= 1;
+    } else {
+      numAcitveOperators = 0;
     }
     return operatorChain;
   }
