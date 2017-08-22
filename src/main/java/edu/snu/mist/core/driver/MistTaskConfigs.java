@@ -19,6 +19,7 @@ import edu.snu.mist.common.rpc.AvroRPCNettyServerWrapper;
 import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.core.driver.parameters.DeactivationEnabled;
 import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
+import edu.snu.mist.core.driver.parameters.JarSharing;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.parameters.MqttSinkKeepAliveSec;
 import edu.snu.mist.core.parameters.MqttSourceKeepAliveSec;
@@ -115,6 +116,11 @@ public final class MistTaskConfigs {
    */
   private final int mqttSinkKeepAliveSec;
 
+  /**
+   * Decides whether the jar files within a same group to be shared or not inside a group when running Option 3.
+   */
+  private final boolean jarSharing;
+
   @Inject
   private MistTaskConfigs(@Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
                           @Parameter(RPCServerPort.class) final int rpcServerPort,
@@ -128,6 +134,7 @@ public final class MistTaskConfigs {
                           @Parameter(GracePeriod.class) final int gracePeriod,
                           @Parameter(MqttSourceKeepAliveSec.class) final int mqttSourceKeepAliveSec,
                           @Parameter(MqttSinkKeepAliveSec.class) final int mqttSinkKeepAliveSec,
+                          @Parameter(JarSharing.class) final boolean jarSharing,
                           final MistGroupSchedulingTaskConfigs option2TaskConfigs) {
     this.numEventProcessors = numEventProcessors;
     this.tempFolderPath = tempFolderPath;
@@ -141,6 +148,7 @@ public final class MistTaskConfigs {
     this.gracePeriod = gracePeriod;
     this.option2TaskConfigs = option2TaskConfigs;
     this.mqttSourceKeepAliveSec = mqttSourceKeepAliveSec;
+    this.jarSharing = jarSharing;
     this.mqttSinkKeepAliveSec = mqttSinkKeepAliveSec;
   }
 
@@ -166,7 +174,9 @@ public final class MistTaskConfigs {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindImplementation(QueryManager.class, ThreadBasedQueryManagerImpl.class);
     jcb.bindImplementation(OperatorChainFactory.class, ThreadBasedOperatorChainFactory.class);
-    jcb.bindImplementation(ClassLoaderProvider.class, NoSharingURLClassLoaderProvider.class);
+    if (!this.jarSharing) {
+      jcb.bindImplementation(ClassLoaderProvider.class, NoSharingURLClassLoaderProvider.class);
+    }
     return jcb.build();
   }
   /**
