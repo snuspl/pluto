@@ -23,5 +23,5 @@ import org.apache.reef.tang.annotations.NamedParameter;
  */
 @NamedParameter(doc = "Indicates whether MIST share the jar file or not",
 short_name = "jar_sharing", default_value = "false")
-public class JarSharing implements Name<Boolean> {
+public final class JarSharing implements Name<Boolean> {
 }
