@@ -74,7 +74,12 @@ public final class MISTCepNewQueryTest {
             .build();
 
     private final MISTPredicate examplePredicate = s -> true;
-    private final CepEvent exampleEvent = new CepEvent("test-event", examplePredicate, CepExampleClass.class);
+    private final CepEvent exampleEvent = new CepEvent.Builder()
+            .setName("test-event")
+            .setCondition(examplePredicate)
+            .setContiguity(CepEventContiguity.STRICT)
+            .setClass(CepExampleClass.class)
+            .build();
     private final CepQualifier exampleQualifier = new CepExampleQualifier();
 
     /**

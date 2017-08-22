@@ -151,7 +151,12 @@ public final class MISTCepQuery<T> {
             return this;
         }
 
+        /**
+         * Check the differences of events' name.
+         * @return boolean
+         */
         private boolean checkSequence() {
+            // name check
             final Set<String> eventNameSet = new HashSet<>();
             cepEventSequence.stream()
                 .forEach(e -> eventNameSet.add(e.getEventName()));
