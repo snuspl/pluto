@@ -223,7 +223,8 @@ public final class MistTaskConfigs {
         .registerShortNameOfClass(ExecutionModelOption.class)
         .registerShortNameOfClass(GracePeriod.class)
         .registerShortNameOfClass(MqttSourceKeepAliveSec.class)
-        .registerShortNameOfClass(MqttSinkKeepAliveSec.class);
+        .registerShortNameOfClass(MqttSinkKeepAliveSec.class)
+        .registerShortNameOfClass(JarSharing.class);
     return MistGroupSchedulingTaskConfigs.addCommandLineConf(cmd);
   }
 }
