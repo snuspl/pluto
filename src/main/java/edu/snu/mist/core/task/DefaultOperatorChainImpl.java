@@ -134,7 +134,6 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
     }
     if (status.compareAndSet(Status.READY, Status.RUNNING)) {
       if (queue.isEmpty()) {
-        numEvents = 0;
         status.set(Status.READY);
         return false;
       }
@@ -160,6 +159,7 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
     final boolean isAdded;
     // Insert this operator chain into the new operator chain manager when its queue becomes not empty.
     // This operation is not performed concurrently with queue polling to prevent event omitting.
+    numEvents += 1;
     synchronized (this) {
       if (operatorChainManager != null && queue.isEmpty()) {
         isAdded = queue.add(new Tuple<>(event, direction));
@@ -168,7 +168,6 @@ public final class DefaultOperatorChainImpl implements OperatorChain {
         isAdded = queue.add(new Tuple<>(event, direction));
       }
     }
-    numEvents += 1;
     return isAdded;
   }
 

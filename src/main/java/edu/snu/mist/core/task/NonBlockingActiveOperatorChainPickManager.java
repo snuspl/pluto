@@ -49,8 +49,8 @@ public final class NonBlockingActiveOperatorChainPickManager implements Operator
    */
   @Override
   public void insert(final OperatorChain operatorChain) {
-    activeQueryQueue.add(operatorChain);
     numAcitveOperators += 1;
+    activeQueryQueue.add(operatorChain);
   }
 
   /**
@@ -72,12 +72,8 @@ public final class NonBlockingActiveOperatorChainPickManager implements Operator
    */
   @Override
   public OperatorChain pickOperatorChain() {
+    numAcitveOperators -= 1;
     final OperatorChain operatorChain = activeQueryQueue.poll();
-    if (operatorChain != null) {
-      numAcitveOperators -= 1;
-    } else {
-      numAcitveOperators = 0;
-    }
     return operatorChain;
   }
 
