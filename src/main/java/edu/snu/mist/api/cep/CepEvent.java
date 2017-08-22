@@ -297,9 +297,6 @@ public final class CepEvent<T> {
                     || classType == null) {
                 throw new IllegalStateException("One of event name, condition, class type is null!");
             }
-            if (!stopCondition.equals(DEFAULT_STOPCONDITION) && maxTimes != -1) {
-                throw new IllegalStateException("Stop condition is set, but maxTimes is not infinite");
-            }
             return new CepEvent(eventName, condition, contiguity, optional,
                     times, minTimes, maxTimes, innerContiguity, stopCondition, classType);
         }

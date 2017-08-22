@@ -82,4 +82,113 @@ public class MISTCepEventTest {
         Assert.assertTrue(exampleEvent2.isOptional());
         Assert.assertEquals(exampleInnerContiguity, exampleEvent2.getInnerContiguity());
     }
+
+    /**
+     * Test whether exception for undefined parameter is handled.
+     * @throws Exception exception
+     */
+    @Test(expected = IllegalStateException.class)
+    public void testCepEventException() throws IllegalStateException {
+        final CepEvent<CepExampleClass> exampleEvent = new CepEvent.Builder<CepExampleClass>()
+                .build();
+    }
+
+    /**
+     * Test of exception which occurs in condition of negative argument in NOrMore quantifier.
+     * @throws IllegalArgumentException exception
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testCepEventNOrMoreArgException() throws IllegalArgumentException {
+        final CepEvent<CepExampleClass> exampleEvent = new CepEvent.Builder<CepExampleClass>()
+                .setName(exampleEventName)
+                .setCondition(exampleCondition)
+                .setClass(exampleClassType)
+                .setNOrMore(-10)
+                .build();
+    }
+
+    /**
+     * Test of exception which occurs when optional quantifier is set twice.
+     * @throws IllegalStateException excpetion
+     */
+    @Test(expected = IllegalStateException.class)
+    public void testCepEventDoubleOptionalException() throws IllegalArgumentException {
+        final CepEvent<CepExampleClass> exampleEvent = new CepEvent.Builder<CepExampleClass>()
+                .setName(exampleEventName)
+                .setCondition(exampleCondition)
+                .setClass(exampleClassType)
+                .setOptional()
+                .setOptional()
+                .build();
+    }
+
+    /**
+     * Test of exception which occurs when the minTime parameter and maxTime parameter is changed.
+     * @throws IllegalArgumentException
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testCepEventTimesChangedMinMaxArgException() throws IllegalArgumentException {
+        final CepEvent<CepExampleClass> exampleEvent = new CepEvent.Builder<CepExampleClass>()
+                .setName(exampleEventName)
+                .setCondition(exampleCondition)
+                .setClass(exampleClassType)
+                .setTimes(30, 10)
+                .build();
+    }
+
+    /**
+     * Test of exception which occurs when the minTime or maxTime parameter is negative.
+     * @throws IllegalStateException
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testCepEventTimesNegetiveArgException() throws IllegalArgumentException {
+        final CepEvent<CepExampleClass> exampleEvent = new CepEvent.Builder<CepExampleClass>()
+                .setName(exampleEventName)
+                .setCondition(exampleCondition)
+                .setClass(exampleClassType)
+                .setTimes(-3)
+                .build();
+    }
+
+    /**
+     * Test whether exception, for set of both NOrMore and Times quantifier, is handled.
+     */
+    @Test(expected = IllegalStateException.class)
+    public void testCepEventQuantifierSetException() throws IllegalStateException {
+        final CepEvent<CepExampleClass> exampleEvent = new CepEvent.Builder<CepExampleClass>()
+                .setName(exampleEventName)
+                .setCondition(exampleCondition)
+                .setClass(exampleClassType)
+                .setTimes(30)
+                .setNOrMore(20)
+                .build();
+    }
+
+    /**
+     * Test exception which occurs when the inner contiguity is set without times quantifier.
+     * @throws IllegalStateException
+     */
+    @Test(expected = IllegalStateException.class)
+    public void testCepEventInnerContiguityException() throws IllegalStateException {
+        final CepEvent<CepExampleClass> exampleEvent = new CepEvent.Builder<CepExampleClass>()
+                .setName(exampleEventName)
+                .setCondition(exampleCondition)
+                .setClass(exampleClassType)
+                .setInnerContiguity(exampleInnerContiguity)
+                .build();
+    }
+
+    /**
+     * Test exception which occurs when the stop condition is set without N or more quantifier.
+     * @throws IllegalStateException
+     */
+    @Test(expected = IllegalStateException.class)
+    public void testCepEventStopConditionException() throws IllegalStateException {
+        final CepEvent<CepExampleClass> exampleEvent = new CepEvent.Builder<CepExampleClass>()
+                .setName(exampleEventName)
+                .setCondition(exampleCondition)
+                .setClass(exampleClassType)
+                .setStopCondition(exampleStopCondition)
+                .build();
+    }
 }
