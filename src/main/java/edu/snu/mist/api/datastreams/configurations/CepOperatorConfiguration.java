@@ -25,7 +25,10 @@ import org.apache.reef.tang.formats.RequiredParameter;
 
 import java.util.List;
 
-public class NFAOperatorConfiguration extends ConfigurationModuleBuilder {
+/**
+ * A configuration for cep operator that binds a list of serialized cep events and window time.
+ */
+public final class CepOperatorConfiguration extends ConfigurationModuleBuilder {
 
     /**
      * Required event list.
@@ -45,7 +48,7 @@ public class NFAOperatorConfiguration extends ConfigurationModuleBuilder {
     /**
      * A configuration for binding the class of the user-defined function.
      */
-    public static final ConfigurationModule CONF = new NFAOperatorConfiguration()
+    public static final ConfigurationModule CONF = new CepOperatorConfiguration()
         .bindList(CepEvents.class, CEP_EVENTS)
         .bindNamedParameter(WindowTime.class, WINDOW_TIME)
         .bindImplementation(Operator.class, OPERATOR)

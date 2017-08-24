@@ -32,9 +32,9 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public final class NFAOperator<T> extends OneStreamOperator implements StateHandler {
+public final class CepOperator<T> extends OneStreamOperator implements StateHandler {
 
-    private static final Logger LOG = Logger.getLogger(NFAOperator.class.getName());
+    private static final Logger LOG = Logger.getLogger(CepOperator.class.getName());
 
     /**
      * Name of initial state is "$initial$".
@@ -57,7 +57,7 @@ public final class NFAOperator<T> extends OneStreamOperator implements StateHand
     private final long windowTime;
 
     @Inject
-    private NFAOperator(
+    private CepOperator(
         @Parameter(CepEvents.class) final List<String> serializedEvents,
         @Parameter(WindowTime.class) final long windowTime,
         final ClassLoader classLoader) throws IOException, ClassNotFoundException {
@@ -99,7 +99,7 @@ public final class NFAOperator<T> extends OneStreamOperator implements StateHand
      * Constructor of nfa operator.
      * @param cepEvents cep event list.
      */
-    public NFAOperator(
+    public CepOperator(
             final List<CepEvent<T>> cepEvents,
             final long windowTime) {
         this.initialState = new State(INITIAL_STATE);

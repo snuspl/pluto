@@ -156,10 +156,10 @@ public interface ContinuousStream<T> extends MISTStream<T> {
   /**
    * Applies nfa operator to the current stream.
    * @param cepEvents sequence of cep events
-   * @param windowTime
+   * @param windowTime window time
    * @return new transformed stream after applying nfa operation
    */
-  ContinuousStream<Map<String, List<T>>> nfaOperator(final List<CepEvent<T>> cepEvents,
+  ContinuousStream<Map<String, List<T>>> cepOperator(final List<CepEvent<T>> cepEvents,
                                                      final long windowTime) throws IOException;
 
   /**

@@ -233,17 +233,17 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
   }
 
   @Override
-  public ContinuousStream<Map<String, List<T>>> nfaOperator(final List<CepEvent<T>> cepEvents,
+  public ContinuousStream<Map<String, List<T>>> cepOperator(final List<CepEvent<T>> cepEvents,
                                                      final long windowTime) throws IOException {
     try {
       final List<String> tangList = new ArrayList<>();
       for (final CepEvent<T> event : cepEvents) {
         tangList.add(SerializeUtils.serializeToString(event));
       }
-      final Configuration opConf = NFAOperatorConfiguration.CONF
-              .set(NFAOperatorConfiguration.CEP_EVENTS, tangList)
-              .set(NFAOperatorConfiguration.WINDOW_TIME, windowTime)
-              .set(NFAOperatorConfiguration.OPERATOR, NFAOperator.class)
+      final Configuration opConf = CepOperatorConfiguration.CONF
+              .set(CepOperatorConfiguration.CEP_EVENTS, tangList)
+              .set(CepOperatorConfiguration.WINDOW_TIME, windowTime)
+              .set(CepOperatorConfiguration.OPERATOR, CepOperator.class)
               .build();
       return transformToSingleInputContinuousStream(opConf, this);
     } catch (final IOException e) {
