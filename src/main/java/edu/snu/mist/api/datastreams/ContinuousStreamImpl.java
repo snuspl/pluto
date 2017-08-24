@@ -17,6 +17,7 @@
 package edu.snu.mist.api.datastreams;
 
 
+import edu.snu.mist.api.cep.CepEvent;
 import edu.snu.mist.api.datastreams.configurations.*;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.SerializeUtils;
@@ -35,10 +36,7 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * This class implements ContinuousStream by configuring operations using Tang.
@@ -232,6 +230,26 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
     }
     final Configuration opConf = opConfModule.build();
     return transformToSingleInputContinuousStream(opConf, this);
+  }
+
+  @Override
+  public ContinuousStream<Map<String, List<T>>> nfaOperator(final List<CepEvent<T>> cepEvents,
+                                                     final long windowTime) throws IOException {
+    try {
+      final List<String> tangList = new ArrayList<>();
+      for (final CepEvent<T> event : cepEvents) {
+        tangList.add(SerializeUtils.serializeToString(event));
+      }
+      final Configuration opConf = NFAOperatorConfiguration.CONF
+              .set(NFAOperatorConfiguration.CEP_EVENTS, tangList)
+              .set(NFAOperatorConfiguration.WINDOW_TIME, windowTime)
+              .set(NFAOperatorConfiguration.OPERATOR, NFAOperator.class)
+              .build();
+      return transformToSingleInputContinuousStream(opConf, this);
+    } catch (final IOException e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
+    }
   }
 
   @Override

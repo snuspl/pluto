@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.api.datastreams;
 
+import edu.snu.mist.api.cep.CepEvent;
 import edu.snu.mist.common.functions.*;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.WindowInformation;
@@ -151,6 +152,15 @@ public interface ContinuousStream<T> extends MISTStream<T> {
           final String initialState,
           final Set<String> finalState,
           final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable) throws IOException;
+
+  /**
+   * Applies nfa operator to the current stream.
+   * @param cepEvents sequence of cep events
+   * @param windowTime
+   * @return new transformed stream after applying nfa operation
+   */
+  ContinuousStream<Map<String, List<T>>> nfaOperator(final List<CepEvent<T>> cepEvents,
+                                                     final long windowTime) throws IOException;
 
   /**
    * Applies union operation to the current stream and input continuous stream passed as a parameter.
