@@ -229,9 +229,8 @@ public final class CepOperator<T> extends OneStreamOperator {
                         if (currEvent.isTimes()
                                 && currEvent.getMaxTimes() != -1
                                 && (times < currEvent.getMinTimes() || times > currEvent.getMaxTimes())) {
-                            newMatchedEventStackList.add(stack.copyStack());
-                        }
-                        if (cepEvent.getCondition().test(input)) {
+                            deleteStackIndex.add(iterStackIndex);
+                        } else if (cepEvent.getCondition().test(input)) {
                             final EventStack<T> newStack = new EventStack<>(stack.getFirstEventTime());
                             newStack.setStack(stack.copyStack().getStack());
                             final EventStackEntry<T> newEntry = new EventStackEntry<>(proceedIndex);
