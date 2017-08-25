@@ -13,13 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.cep;
+package edu.snu.mist.api.rulebased.conditions;
 
 /**
- * Types of source defined for cep query processing.
+ * An immutable condition operator. Should be extended before being used.
  */
-public enum CepInputType {
-    KAFKA_SOURCE,
-    TEXT_SOCKET_SOURCE,
-    MQTT_SOURCE
+public abstract class AbstractCondition {
+
+  /**
+   * The type of this condition statement.
+   */
+  protected final ConditionType conditionType;
+
+  /**
+   * Makes an immutable operator which has its own type.
+   * @param conditionType the type of condition.
+   */
+  protected AbstractCondition(final ConditionType conditionType) {
+    this.conditionType = conditionType;
+  }
+
+  /**
+   * @return The type of this operator
+   */
+  public ConditionType getConditionType() {
+    return conditionType;
+  }
 }

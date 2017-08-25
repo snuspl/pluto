@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.common.operators;
 
-import edu.snu.mist.api.cep.predicates.CepEQPredicate;
+import edu.snu.mist.api.rulebased.predicates.RuleBasedEQPredicate;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
@@ -63,14 +63,14 @@ public class StateTransitionOperatorTest {
         final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable = new HashMap<>();
 
         final Collection<Tuple2<MISTPredicate, String>> list0 = new ArrayList<>();
-        list0.add(new Tuple2<>(new CepEQPredicate("number", 1), "1"));
-        list0.add(new Tuple2<>(new CepEQPredicate("number", 3), "3"));
+        list0.add(new Tuple2<>(new RuleBasedEQPredicate("number", 1), "1"));
+        list0.add(new Tuple2<>(new RuleBasedEQPredicate("number", 3), "3"));
 
         final Collection<Tuple2<MISTPredicate, String>> list1 = new ArrayList<>();
-        list1.add(new Tuple2<>(new CepEQPredicate("number", 2), "0"));
+        list1.add(new Tuple2<>(new RuleBasedEQPredicate("number", 2), "0"));
 
         final Collection<Tuple2<MISTPredicate, String>> list3 = new ArrayList<>();
-        list3.add(new Tuple2<>(new CepEQPredicate("number", 4), "4"));
+        list3.add(new Tuple2<>(new RuleBasedEQPredicate("number", 4), "4"));
         stateTable.put("0", list0);
         stateTable.put("1", list1);
         stateTable.put("3", list3);
@@ -134,10 +134,10 @@ public class StateTransitionOperatorTest {
         final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable = new HashMap<>();
 
         final Collection<Tuple2<MISTPredicate, String>> list0 = new ArrayList<>();
-        list0.add(new Tuple2<>(new CepEQPredicate("number", 1), "1"));
+        list0.add(new Tuple2<>(new RuleBasedEQPredicate("number", 1), "1"));
 
         final Collection<Tuple2<MISTPredicate, String>> list1 = new ArrayList<>();
-        list1.add(new Tuple2<>(new CepEQPredicate("number", 2), "2"));
+        list1.add(new Tuple2<>(new RuleBasedEQPredicate("number", 2), "2"));
 
         stateTable.put("0", list0);
         stateTable.put("1", list1);
@@ -178,10 +178,10 @@ public class StateTransitionOperatorTest {
         final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable = new HashMap<>();
 
         final Collection<Tuple2<MISTPredicate, String>> list1 = new ArrayList<>();
-        list1.add(new Tuple2<>(new CepEQPredicate("number", 2), "2"));
+        list1.add(new Tuple2<>(new RuleBasedEQPredicate("number", 2), "2"));
 
         final Collection<Tuple2<MISTPredicate, String>> list2 = new ArrayList<>();
-        list2.add(new Tuple2<>(new CepEQPredicate("number", 3), "3"));
+        list2.add(new Tuple2<>(new RuleBasedEQPredicate("number", 3), "3"));
 
         stateTable.put("1", list1);
         stateTable.put("2", list2);

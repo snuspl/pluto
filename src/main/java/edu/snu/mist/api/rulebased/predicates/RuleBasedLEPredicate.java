@@ -13,13 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.cep;
+
+package edu.snu.mist.api.rulebased.predicates;
+
+import edu.snu.mist.common.functions.MISTPredicate;
+
+import java.util.Map;
 
 /**
- * Types of source defined for cep query processing.
+ * MISTPredicate for filtering rule-based Comparison LE Condition.
  */
-public enum CepInputType {
-    KAFKA_SOURCE,
-    TEXT_SOCKET_SOURCE,
-    MQTT_SOURCE
+public final class RuleBasedLEPredicate extends RuleBasedCCPredicate implements MISTPredicate<Map<String, Object>> {
+
+    public RuleBasedLEPredicate(final String field, final Object value) {
+        super(field, value);
+    }
+
+    @Override
+    public boolean test(final Map<String, Object> stringObjectMap) {
+        return ruleBasedCompare(stringObjectMap.get(this.getField()), this.getValue()) <= 0;
+    }
 }
