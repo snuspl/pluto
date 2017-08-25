@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Seoul National University
+ * Copyright (C) 2016 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.cep;
-
 /**
- * Types of source defined for cep query processing.
+ * A package for defining stateless & stateful monitoring rule-based query.
  */
-public enum CepInputType {
-    KAFKA_SOURCE,
-    TEXT_SOCKET_SOURCE,
-    MQTT_SOURCE
-}
+package edu.snu.mist.api.rulebased;

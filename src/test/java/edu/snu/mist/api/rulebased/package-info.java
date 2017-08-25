@@ -13,13 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.cep;
-
 /**
- * Types of source defined for cep query processing.
+ * A package for CEP query testing.
  */
-public enum CepInputType {
-    KAFKA_SOURCE,
-    TEXT_SOCKET_SOURCE,
-    MQTT_SOURCE
-}
+/**
+ * A pakage for testing rule based query.
+ */
+package edu.snu.mist.api.rulebased;
