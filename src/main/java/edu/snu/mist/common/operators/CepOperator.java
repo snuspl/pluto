@@ -23,6 +23,7 @@ import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.parameters.CepEvents;
 import edu.snu.mist.common.parameters.WindowTime;
 import edu.snu.mist.common.types.Tuple2;
+import edu.snu.mist.core.task.eventProcessors.WritingEvent;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -150,6 +151,10 @@ public final class CepOperator<T> extends OneStreamOperator {
         for (int iterStackIndex = 0; iterStackIndex < matchedEventStackList.size(); iterStackIndex++) {
             final EventStack<T> stack = matchedEventStackList.get(iterStackIndex);
             /**
+             * Flag whether discard original event stack or not.
+             */
+            boolean isDiscard = true;
+            /**
              * Discard the event before limit time.
              */
             if (stack.getFirstEventTime() < limitTime) {
@@ -166,10 +171,6 @@ public final class CepOperator<T> extends OneStreamOperator {
                     deleteStackIndex.add(iterStackIndex);
                     continue;
                 }
-                /**
-                 * Flag whether discard original event stack or not.
-                 */
-                boolean isDiscard = true;
 
                 /**
                  * Current stack state.
@@ -204,8 +205,12 @@ public final class CepOperator<T> extends OneStreamOperator {
                                     /**
                                      * If final state, emit the stack.
                                      */
-                                    if (proceedIndex >= minFinalStateIndex) {
+                                    if (proceedIndex >= minFinalStateIndex && newStack.isEmitable()) {
                                         emit(data, newStack);
+                                    }
+                                    if (currEvent.getInnerContiguity()
+                                            == CepEventContiguity.NON_DETERMINISTIC_RELAXED) {
+                                        isDiscard = false;
                                     }
                                 }
                             } else {
@@ -244,6 +249,10 @@ public final class CepOperator<T> extends OneStreamOperator {
                             if (proceedIndex >= minFinalStateIndex) {
                                 emit(data, newStack);
                             }
+
+                            if (cepEvent.getContiguity() == CepEventContiguity.NON_DETERMINISTIC_RELAXED) {
+                                isDiscard = false;
+                            }
                         } else {
                             /**
                              * If transition condition of relaxed contiguity is not satisfied,
@@ -255,11 +264,15 @@ public final class CepOperator<T> extends OneStreamOperator {
                             }
                         }
                     }
-
-                    if (isDiscard) {
-                        deleteStackIndex.add(iterStackIndex);
-                    }
                 }
+            }
+            if (!isDiscard) {
+                final EventStack<T> newStack = stack.copyStack();
+                if (!stack.isEmitable()) {
+                    newStack.setAlreadyEmitted();
+                }
+                newMatchedEventStackList.add(newStack);
+                deleteStackIndex.add(iterStackIndex);
             }
         }
 
@@ -311,8 +324,7 @@ public final class CepOperator<T> extends OneStreamOperator {
         final CepEvent<T> finalState = eventList.get(finalStateIndex);
         if (!finalState.isTimes()
                 || (times >= finalState.getMinTimes()
-                    && (finalState.getMaxTimes() == -1 || times <= finalState.getMaxTimes()))) {
-
+                && (finalState.getMaxTimes() == -1 || times <= finalState.getMaxTimes()))) {
             for (final EventStackEntry<T> iterEntry : eventStack.getStack()) {
                 output.put(eventList.get(iterEntry.index).getEventName(), iterEntry.getlist());
             }
@@ -322,8 +334,8 @@ public final class CepOperator<T> extends OneStreamOperator {
                         new Object[]{this.getClass().getName(), input, output});
             }
             outputEmitter.emitData(new MistDataEvent(output, timeStamp));
+            eventStack.setAlreadyEmitted();
         }
-
     }
 
     /**
@@ -335,9 +347,12 @@ public final class CepOperator<T> extends OneStreamOperator {
 
         private long firstEventTime;
 
+        private boolean emitable;
+
         private EventStack(final long firstEventTime) {
             this.eventStack = new Stack<>();
             this.firstEventTime = firstEventTime;
+            emitable = true;
         }
 
         private Stack<EventStackEntry<T>> getStack() {
@@ -348,9 +363,17 @@ public final class CepOperator<T> extends OneStreamOperator {
             return firstEventTime;
         }
 
+        private boolean isEmitable() {
+            return emitable;
+        }
+
         private void setStack(final Stack<EventStackEntry<T>> newStack) {
             eventStack.clear();
             eventStack.addAll(newStack);
+        }
+
+        private void setAlreadyEmitted() {
+            emitable = false;
         }
 
         /**
