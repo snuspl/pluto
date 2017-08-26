@@ -193,6 +193,10 @@ public final class CepOperator<T> extends OneStreamOperator {
                                     continue;
                                 }
                             } else if (currEvent.getCondition().test(input)) {
+                                if (currEvent.getInnerContiguity() == CepEventContiguity.STRICT
+                                        && !stack.isIncludingLast()) {
+                                    continue;
+                                }
                                 /**
                                  * If current entry satisfies times condition.
                                  */
@@ -213,6 +217,9 @@ public final class CepOperator<T> extends OneStreamOperator {
                                     }
                                 }
                             } else {
+                                if (currEvent.getInnerContiguity() == CepEventContiguity.STRICT) {
+                                    stack.getStack().peek().setStoped();
+                                }
                                 /**
                                  * If transition condition of relaxed contiguity is not satisfied,
                                  * the current original stack should not be discarded.
@@ -235,6 +242,12 @@ public final class CepOperator<T> extends OneStreamOperator {
                                 && (times < currEvent.getMinTimes() || times > currEvent.getMaxTimes())) {
                             deleteStackIndex.add(iterStackIndex);
                         } else if (cepEvent.getCondition().test(input)) {
+
+                            if (cepEvent.getContiguity() == CepEventContiguity.STRICT
+                                    && !stack.isIncludingLast()) {
+                                continue;
+                            }
+
                             final EventStack<T> newStack = new EventStack<>(stack.getFirstEventTime());
                             newStack.setStack(stack.copyStack().getStack());
                             final EventStackEntry<T> newEntry = new EventStackEntry<>(proceedIndex);
@@ -267,6 +280,7 @@ public final class CepOperator<T> extends OneStreamOperator {
             }
             if (!isDiscard) {
                 final EventStack<T> newStack = stack.copyStack();
+                newStack.setIncludeLast(false);
                 if (!stack.isEmitable()) {
                     newStack.setAlreadyEmitted();
                 }
@@ -348,10 +362,13 @@ public final class CepOperator<T> extends OneStreamOperator {
 
         private boolean emitable;
 
+        private boolean includeLast;
+
         private EventStack(final long firstEventTime) {
             this.eventStack = new Stack<>();
             this.firstEventTime = firstEventTime;
-            emitable = true;
+            this.emitable = true;
+            this.includeLast = true;
         }
 
         private Stack<EventStackEntry<T>> getStack() {
@@ -366,6 +383,10 @@ public final class CepOperator<T> extends OneStreamOperator {
             return emitable;
         }
 
+        private boolean isIncludingLast() {
+            return includeLast;
+        }
+
         private void setStack(final Stack<EventStackEntry<T>> newStack) {
             eventStack.clear();
             eventStack.addAll(newStack);
@@ -373,6 +394,10 @@ public final class CepOperator<T> extends OneStreamOperator {
 
         private void setAlreadyEmitted() {
             emitable = false;
+        }
+
+        private void setIncludeLast(final boolean includeLastParam) {
+            includeLast = includeLastParam;
         }
 
         /**

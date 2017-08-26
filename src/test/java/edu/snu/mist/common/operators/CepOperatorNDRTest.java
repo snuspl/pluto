@@ -1056,4 +1056,100 @@ public class CepOperatorNDRTest {
         Assert.assertEquals(19, result.size());
         System.out.println(result);
     }
+
+    @Test
+    public void testInnerStrictAndNDRContiguity() {
+        final CepEvent<CepExampleClass> event1 = new CepEvent.Builder<CepExampleClass>()
+                .setName("first")
+                .setCondition(conditionA)
+                .setClass(exampleClassType)
+                .setContiguity(exampleContiguity)
+                .setNOrMore(1)
+                .setInnerContiguity(CepEventContiguity.STRICT)
+                .build();
+        final CepEvent<CepExampleClass> event2 = new CepEvent.Builder<CepExampleClass>()
+                .setName("second")
+                .setCondition(conditionB)
+                .setClass(exampleClassType)
+                .setContiguity(CepEventContiguity.NON_DETERMINISTIC_RELAXED)
+                .build();
+
+        final List<CepEvent<CepExampleClass>> exampleEventSequence = new ArrayList<>();
+        exampleEventSequence.add(event1);
+        exampleEventSequence.add(event2);
+
+        final CepExampleClass value1 = new CepExampleClass("A", 1);
+        final CepExampleClass value2 = new CepExampleClass("A", 2);
+        final CepExampleClass value3 = new CepExampleClass("A", 3);
+        final CepExampleClass value4 = new CepExampleClass("A", 4);
+        final CepExampleClass value5 = new CepExampleClass("B", 5);
+        final MistDataEvent data1 = new MistDataEvent(value1, 1L);
+        final MistDataEvent data2 = new MistDataEvent(value2, 2L);
+        final MistDataEvent data3 = new MistDataEvent(value3, 3L);
+        final MistDataEvent data4 = new MistDataEvent(value4, 4L);
+        final MistDataEvent data5 = new MistDataEvent(value5, 5L);
+
+        final CepOperator nfaOperator = new CepOperator(exampleEventSequence, 1000);
+        final List<MistEvent> result = new LinkedList<>();
+        nfaOperator.setOutputEmitter(new OutputBufferEmitter(result));
+
+        nfaOperator.processLeftData(data1);
+        nfaOperator.processLeftData(data2);
+        nfaOperator.processLeftData(data3);
+        nfaOperator.processLeftData(data4);
+        nfaOperator.processLeftData(data5);
+
+        // 10
+        System.out.println("result size = " + result.size());
+        Assert.assertEquals(10, result.size());
+        System.out.println(result);
+    }
+
+    @Test
+    public void testInnerNDRAndStrictContiguity() {
+        final CepEvent<CepExampleClass> event1 = new CepEvent.Builder<CepExampleClass>()
+                .setName("first")
+                .setCondition(conditionA)
+                .setClass(exampleClassType)
+                .setContiguity(exampleContiguity)
+                .setNOrMore(1)
+                .setInnerContiguity(CepEventContiguity.NON_DETERMINISTIC_RELAXED)
+                .build();
+        final CepEvent<CepExampleClass> event2 = new CepEvent.Builder<CepExampleClass>()
+                .setName("second")
+                .setCondition(conditionB)
+                .setClass(exampleClassType)
+                .setContiguity(CepEventContiguity.STRICT)
+                .build();
+
+        final List<CepEvent<CepExampleClass>> exampleEventSequence = new ArrayList<>();
+        exampleEventSequence.add(event1);
+        exampleEventSequence.add(event2);
+
+        final CepExampleClass value1 = new CepExampleClass("A", 1);
+        final CepExampleClass value2 = new CepExampleClass("A", 2);
+        final CepExampleClass value3 = new CepExampleClass("A", 3);
+        final CepExampleClass value4 = new CepExampleClass("A", 4);
+        final CepExampleClass value5 = new CepExampleClass("B", 5);
+        final MistDataEvent data1 = new MistDataEvent(value1, 1L);
+        final MistDataEvent data2 = new MistDataEvent(value2, 2L);
+        final MistDataEvent data3 = new MistDataEvent(value3, 3L);
+        final MistDataEvent data4 = new MistDataEvent(value4, 4L);
+        final MistDataEvent data5 = new MistDataEvent(value5, 5L);
+
+        final CepOperator nfaOperator = new CepOperator(exampleEventSequence, 1000);
+        final List<MistEvent> result = new LinkedList<>();
+        nfaOperator.setOutputEmitter(new OutputBufferEmitter(result));
+
+        nfaOperator.processLeftData(data1);
+        nfaOperator.processLeftData(data2);
+        nfaOperator.processLeftData(data3);
+        nfaOperator.processLeftData(data4);
+        nfaOperator.processLeftData(data5);
+
+        // 8
+        System.out.println("result size = " + result.size());
+        Assert.assertEquals(8, result.size());
+        System.out.println(result);
+    }
 }
