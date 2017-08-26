@@ -868,6 +868,7 @@ public class CepOperatorStrictTest {
                 .setClass(exampleClassType)
                 .setContiguity(exampleContiguity)
                 .setNOrMore(1)
+                .setInnerContiguity(exampleContiguity)
                 .build();
         final CepEvent<CepExampleClass> event2 = new CepEvent.Builder<CepExampleClass>()
                 .setName("second")
@@ -875,6 +876,7 @@ public class CepOperatorStrictTest {
                 .setClass(exampleClassType)
                 .setContiguity(exampleContiguity)
                 .setNOrMore(1)
+                .setInnerContiguity(exampleContiguity)
                 .build();
 
         final List<CepEvent<CepExampleClass>> exampleEventSequence = new ArrayList<>();
@@ -975,6 +977,7 @@ public class CepOperatorStrictTest {
                 .setContiguity(exampleContiguity)
                 .setOptional()
                 .setNOrMore(1)
+                .setInnerContiguity(exampleContiguity)
                 .setStopCondition(conditionB)
                 .build();
         final CepEvent<CepExampleClass> event2 = new CepEvent.Builder<CepExampleClass>()
@@ -984,6 +987,7 @@ public class CepOperatorStrictTest {
                 .setContiguity(exampleContiguity)
                 .setOptional()
                 .setNOrMore(1)
+                .setInnerContiguity(exampleContiguity)
                 .build();
 
         final List<CepEvent<CepExampleClass>> exampleEventSequence = new ArrayList<>();
@@ -1011,6 +1015,7 @@ public class CepOperatorStrictTest {
 //        nfaOperator.processLeftData(data4);
 //        nfaOperator.processLeftData(data5);
 
+        //16
         System.out.println("result size = " + result.size());
         System.out.println(result);
     }
