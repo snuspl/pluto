@@ -22,6 +22,7 @@ import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.utils.OutputBufferEmitter;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -116,42 +117,43 @@ public class CepOperatorNDRTest {
 
         // 4
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(4, result.size());
 
         System.out.println(result);
 
-        final CepExampleClass a00 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
-        System.out.print(a00.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a01 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(1);
-        System.out.print(a01.getAge());
-        System.out.println();
-        final CepExampleClass a10 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
-        System.out.print(a10.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a11 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(1);
-        System.out.print(a11.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a12 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(2);
-        System.out.print(a12.getAge());
-        System.out.print(" ");
-
-        final CepExampleClass a20 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
-        System.out.print(a20.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a21 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(1);
-        System.out.print(a21.getAge());
-        System.out.print(" ");
+//        final CepExampleClass a00 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
+//        System.out.print(a00.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a01 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(1);
+//        System.out.print(a01.getAge());
+//        System.out.println();
+//        final CepExampleClass a10 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
+//        System.out.print(a10.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a11 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(1);
+//        System.out.print(a11.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a12 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(2);
+//        System.out.print(a12.getAge());
+//        System.out.print(" ");
+//
+//        final CepExampleClass a20 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
+//        System.out.print(a20.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a21 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(1);
+//        System.out.print(a21.getAge());
+//        System.out.print(" ");
     }
 
     @Test
@@ -187,41 +189,43 @@ public class CepOperatorNDRTest {
         // 4
         System.out.println("result size = " + result.size());
 
+        Assert.assertEquals(4, result.size());
+
         System.out.println(result);
 
-        final CepExampleClass a00 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
-        System.out.print(a00.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a01 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(1);
-        System.out.print(a01.getAge());
-        System.out.println();
-        final CepExampleClass a10 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
-        System.out.print(a10.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a11 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(1);
-        System.out.print(a11.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a12 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(2);
-        System.out.print(a12.getAge());
-        System.out.print(" ");
-
-        final CepExampleClass a20 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
-        System.out.print(a20.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a21 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(1);
-        System.out.print(a21.getAge());
-        System.out.print(" ");
+//        final CepExampleClass a00 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
+//        System.out.print(a00.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a01 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(1);
+//        System.out.print(a01.getAge());
+//        System.out.println();
+//        final CepExampleClass a10 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
+//        System.out.print(a10.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a11 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(1);
+//        System.out.print(a11.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a12 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(2);
+//        System.out.print(a12.getAge());
+//        System.out.print(" ");
+//
+//        final CepExampleClass a20 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
+//        System.out.print(a20.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a21 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(1);
+//        System.out.print(a21.getAge());
+//        System.out.print(" ");
 
     }
 
@@ -260,37 +264,38 @@ public class CepOperatorNDRTest {
 
         // 6
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(6, result.size());
         System.out.println(result);
 
-        final CepExampleClass a00 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
-        System.out.print(a00.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a01 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(1);
-        System.out.print(a01.getAge());
-        System.out.println(" ");
-
-        final CepExampleClass a10 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
-        System.out.print(a10.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a11 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(1);
-        System.out.print(a11.getAge());
-        System.out.println();
-
-        final CepExampleClass a20 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
-        System.out.print(a20.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a21 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(1);
-        System.out.print(a21.getAge());
-        System.out.println();
+//        final CepExampleClass a00 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
+//        System.out.print(a00.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a01 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(1);
+//        System.out.print(a01.getAge());
+//        System.out.println(" ");
+//
+//        final CepExampleClass a10 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
+//        System.out.print(a10.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a11 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(1);
+//        System.out.print(a11.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a20 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
+//        System.out.print(a20.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a21 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(1);
+//        System.out.print(a21.getAge());
+//        System.out.println();
     }
 
     @Test
@@ -325,42 +330,44 @@ public class CepOperatorNDRTest {
 
         // 6
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(6, result.size());
         System.out.println(result);
 
-        final CepExampleClass a00 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
-        System.out.print(a00.getAge());
-        System.out.println();
 
-        final CepExampleClass a10 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
-        System.out.print(a10.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a11 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(1);
-        System.out.print(a11.getAge());
-        System.out.print(" ");
-
-        final CepExampleClass a20 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
-        System.out.print(a20.getAge());
-        System.out.println();
-
-        final CepExampleClass a30 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("first").get(0);
-        System.out.print(a30.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a31 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("first").get(1);
-        System.out.print(a31.getAge());
-        System.out.print(" ");
-
-        final CepExampleClass a40 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(4)).getValue()).get("first").get(0);
-        System.out.print(a40.getAge());
-        System.out.println();
+//        final CepExampleClass a00 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
+//        System.out.print(a00.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a10 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
+//        System.out.print(a10.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a11 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(1);
+//        System.out.print(a11.getAge());
+//        System.out.print(" ");
+//
+//        final CepExampleClass a20 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
+//        System.out.print(a20.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a30 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("first").get(0);
+//        System.out.print(a30.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a31 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("first").get(1);
+//        System.out.print(a31.getAge());
+//        System.out.print(" ");
+//
+//        final CepExampleClass a40 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(4)).getValue()).get("first").get(0);
+//        System.out.print(a40.getAge());
+//        System.out.println();
     }
 
     @Test
@@ -403,47 +410,48 @@ public class CepOperatorNDRTest {
 
         // 10
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(10, result.size());
         System.out.println(result);
 
-        final CepExampleClass a00 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
-        System.out.print(a00.getAge());
-        System.out.println();
-
-        final CepExampleClass a10 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
-        System.out.print(a10.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a11 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(1);
-        System.out.print(a11.getAge());
-        System.out.print(" ");
-
-        final CepExampleClass a20 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
-        System.out.print(a20.getAge());
-        System.out.println();
-
-        final CepExampleClass a30 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("first").get(0);
-        System.out.print(a30.getAge());
-        System.out.println();
-
-        final CepExampleClass a40 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(4)).getValue()).get("first").get(0);
-        System.out.print(a40.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a41 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(4)).getValue()).get("first").get(1);
-        System.out.print(a41.getAge());
-        System.out.print(" ");
-
-        final CepExampleClass a50 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(5)).getValue()).get("first").get(0);
-        System.out.print(a50.getAge());
-        System.out.println();
+//        final CepExampleClass a00 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
+//        System.out.print(a00.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a10 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
+//        System.out.print(a10.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a11 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(1);
+//        System.out.print(a11.getAge());
+//        System.out.print(" ");
+//
+//        final CepExampleClass a20 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
+//        System.out.print(a20.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a30 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("first").get(0);
+//        System.out.print(a30.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a40 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(4)).getValue()).get("first").get(0);
+//        System.out.print(a40.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a41 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(4)).getValue()).get("first").get(1);
+//        System.out.print(a41.getAge());
+//        System.out.print(" ");
+//
+//        final CepExampleClass a50 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(5)).getValue()).get("first").get(0);
+//        System.out.print(a50.getAge());
+//        System.out.println();
     }
 
     @Test
@@ -481,47 +489,48 @@ public class CepOperatorNDRTest {
 
         // 6
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(6, result.size());
         System.out.println(result);
 
-        final CepExampleClass a00 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
-        System.out.print(a00.getAge());
-        System.out.println();
-
-        final CepExampleClass a10 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
-        System.out.print(a10.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a11 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(1);
-        System.out.print(a11.getAge());
-        System.out.print(" ");
-
-        final CepExampleClass a20 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
-        System.out.print(a20.getAge());
-        System.out.println();
-
-        final CepExampleClass a30 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("first").get(0);
-        System.out.print(a30.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a31 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("first").get(1);
-        System.out.print(a31.getAge());
-        System.out.print(" ");
-
-        final CepExampleClass a40 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(4)).getValue()).get("first").get(0);
-        System.out.print(a40.getAge());
-        System.out.println();
-
-        final CepExampleClass a50 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(5)).getValue()).get("first").get(0);
-        System.out.print(a50.getAge());
-        System.out.println();
+//        final CepExampleClass a00 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
+//        System.out.print(a00.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a10 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
+//        System.out.print(a10.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a11 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(1);
+//        System.out.print(a11.getAge());
+//        System.out.print(" ");
+//
+//        final CepExampleClass a20 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
+//        System.out.print(a20.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a30 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("first").get(0);
+//        System.out.print(a30.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a31 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("first").get(1);
+//        System.out.print(a31.getAge());
+//        System.out.print(" ");
+//
+//        final CepExampleClass a40 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(4)).getValue()).get("first").get(0);
+//        System.out.print(a40.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a50 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(5)).getValue()).get("first").get(0);
+//        System.out.print(a50.getAge());
+//        System.out.println();
     }
 
     @Test
@@ -572,6 +581,7 @@ public class CepOperatorNDRTest {
 
         // 8
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(8, result.size());
         System.out.println(result);
 
         final CepExampleClass a00 =
@@ -644,42 +654,43 @@ public class CepOperatorNDRTest {
 
         // 11
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(11, result.size());
         System.out.println(result);
 
-        final CepExampleClass a00 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
-        System.out.print(a00.getAge());
-        System.out.print(",");
-
-        final CepExampleClass a01 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("second").get(0);
-        System.out.print(a01.getAge());
-        System.out.print(" ");
-
-        final CepExampleClass a10 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("second").get(0);
-        System.out.print(a10.getAge());
-        System.out.println();
-
-        final CepExampleClass a20 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
-        System.out.print(a20.getAge());
-        System.out.print(",");
-
-        final CepExampleClass a21 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(0);
-        System.out.print(a21.getAge());
-        System.out.print(" ");
-
-        final CepExampleClass a30 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("second").get(0);
-        System.out.print(a30.getAge());
-        System.out.println();
-
-        final CepExampleClass a40 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(4)).getValue()).get("second").get(0);
-        System.out.print(a40.getAge());
-        System.out.println();
+//        final CepExampleClass a00 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
+//        System.out.print(a00.getAge());
+//        System.out.print(",");
+//
+//        final CepExampleClass a01 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("second").get(0);
+//        System.out.print(a01.getAge());
+//        System.out.print(" ");
+//
+//        final CepExampleClass a10 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("second").get(0);
+//        System.out.print(a10.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a20 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
+//        System.out.print(a20.getAge());
+//        System.out.print(",");
+//
+//        final CepExampleClass a21 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(0);
+//        System.out.print(a21.getAge());
+//        System.out.print(" ");
+//
+//        final CepExampleClass a30 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("second").get(0);
+//        System.out.print(a30.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a40 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(4)).getValue()).get("second").get(0);
+//        System.out.print(a40.getAge());
+//        System.out.println();
     }
 
     @Test
@@ -732,42 +743,43 @@ public class CepOperatorNDRTest {
 
         // 17
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(17, result.size());
         System.out.println(result);
 
-        final CepExampleClass a00 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
-        System.out.print(a00.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a01 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(1);
-        System.out.print(a01.getAge());
-        System.out.print(",");
-
-        final CepExampleClass a02 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("second").get(0);
-        System.out.print(a02.getAge());
-        System.out.println();
-
-        final CepExampleClass a10 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
-        System.out.print(a10.getAge());
-        System.out.print(",");
-
-        final CepExampleClass a11 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("second").get(0);
-        System.out.print(a11.getAge());
-        System.out.println();
-
-        final CepExampleClass a20 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
-        System.out.print(a20.getAge());
-        System.out.print(",");
-
-        final CepExampleClass a21 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(0);
-        System.out.print(a21.getAge());
-        System.out.println();
+//        final CepExampleClass a00 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
+//        System.out.print(a00.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a01 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(1);
+//        System.out.print(a01.getAge());
+//        System.out.print(",");
+//
+//        final CepExampleClass a02 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("second").get(0);
+//        System.out.print(a02.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a10 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
+//        System.out.print(a10.getAge());
+//        System.out.print(",");
+//
+//        final CepExampleClass a11 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("second").get(0);
+//        System.out.print(a11.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a20 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
+//        System.out.print(a20.getAge());
+//        System.out.print(",");
+//
+//        final CepExampleClass a21 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(0);
+//        System.out.print(a21.getAge());
+//        System.out.println();
     }
 
     @Test
@@ -823,62 +835,63 @@ public class CepOperatorNDRTest {
 
         //14
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(14, result.size());
         System.out.println(result);
 
-        final CepExampleClass a00 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
-        System.out.print(a00.getAge());
-        System.out.print(",");
-
-        final CepExampleClass a01 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("second").get(0);
-        System.out.print(a01.getAge());
-        System.out.println();
-
-        final CepExampleClass a10 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
-        System.out.print(a10.getAge());
-        System.out.print(",");
-
-        final CepExampleClass a11 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("second").get(0);
-        System.out.print(a11.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a12 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("second").get(1);
-        System.out.print(a12.getAge());
-        System.out.println();
-
-        final CepExampleClass a20 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
-        System.out.print(a20.getAge());
-        System.out.print(",");
-
-        final CepExampleClass a21 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(0);
-        System.out.print(a21.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a22 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(1);
-        System.out.print(a22.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a23 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(2);
-        System.out.print(a23.getAge());
-        System.out.println();
-
-        final CepExampleClass a30 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("first").get(0);
-        System.out.print(a30.getAge());
-        System.out.print(",");
-
-        final CepExampleClass a31 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("second").get(0);
-        System.out.print(a31.getAge());
-        System.out.println();
+//        final CepExampleClass a00 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
+//        System.out.print(a00.getAge());
+//        System.out.print(",");
+//
+//        final CepExampleClass a01 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("second").get(0);
+//        System.out.print(a01.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a10 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
+//        System.out.print(a10.getAge());
+//        System.out.print(",");
+//
+//        final CepExampleClass a11 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("second").get(0);
+//        System.out.print(a11.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a12 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("second").get(1);
+//        System.out.print(a12.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a20 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
+//        System.out.print(a20.getAge());
+//        System.out.print(",");
+//
+//        final CepExampleClass a21 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(0);
+//        System.out.print(a21.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a22 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(1);
+//        System.out.print(a22.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a23 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(2);
+//        System.out.print(a23.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a30 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("first").get(0);
+//        System.out.print(a30.getAge());
+//        System.out.print(",");
+//
+//        final CepExampleClass a31 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("second").get(0);
+//        System.out.print(a31.getAge());
+//        System.out.println();
     }
 
     @Test
@@ -927,67 +940,68 @@ public class CepOperatorNDRTest {
 
         // 9
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(9, result.size());
         System.out.println(result);
 
-        final CepExampleClass a00 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
-        System.out.print(a00.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a01 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(1);
-        System.out.print(a01.getAge());
-        System.out.print(",");
-
-        final CepExampleClass a02 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("second").get(0);
-        System.out.print(a02.getAge());
-        System.out.print(" ");
-
-        final CepExampleClass a11 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
-        System.out.print(a11.getAge());
-        System.out.print(",");
-
-        final CepExampleClass a12 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("second").get(0);
-        System.out.print(a12.getAge());
-        System.out.println();
-
-        final CepExampleClass a20 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
-        System.out.print(a20.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a21 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(1);
-        System.out.print(a21.getAge());
-        System.out.print(",");
-
-        final CepExampleClass a22 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(0);
-        System.out.print(a22.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a23 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(1);
-        System.out.print(a23.getAge());
-        System.out.print(" ");
-
-        final CepExampleClass a30 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("first").get(0);
-        System.out.print(a30.getAge());
-        System.out.print(",");
-
-        final CepExampleClass a31 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("second").get(0);
-        System.out.print(a31.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a32 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("second").get(1);
-        System.out.print(a32.getAge());
-        System.out.println();
+//        final CepExampleClass a00 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
+//        System.out.print(a00.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a01 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(1);
+//        System.out.print(a01.getAge());
+//        System.out.print(",");
+//
+//        final CepExampleClass a02 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("second").get(0);
+//        System.out.print(a02.getAge());
+//        System.out.print(" ");
+//
+//        final CepExampleClass a11 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
+//        System.out.print(a11.getAge());
+//        System.out.print(",");
+//
+//        final CepExampleClass a12 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("second").get(0);
+//        System.out.print(a12.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a20 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
+//        System.out.print(a20.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a21 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(1);
+//        System.out.print(a21.getAge());
+//        System.out.print(",");
+//
+//        final CepExampleClass a22 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(0);
+//        System.out.print(a22.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a23 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(1);
+//        System.out.print(a23.getAge());
+//        System.out.print(" ");
+//
+//        final CepExampleClass a30 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("first").get(0);
+//        System.out.print(a30.getAge());
+//        System.out.print(",");
+//
+//        final CepExampleClass a31 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("second").get(0);
+//        System.out.print(a31.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a32 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("second").get(1);
+//        System.out.print(a32.getAge());
+//        System.out.println();
     }
 
     @Test
@@ -1039,6 +1053,7 @@ public class CepOperatorNDRTest {
 
         // 19
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(19, result.size());
         System.out.println(result);
     }
 }

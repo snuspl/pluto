@@ -23,7 +23,6 @@ import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.parameters.CepEvents;
 import edu.snu.mist.common.parameters.WindowTime;
 import edu.snu.mist.common.types.Tuple2;
-import edu.snu.mist.core.task.eventProcessors.WritingEvent;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
