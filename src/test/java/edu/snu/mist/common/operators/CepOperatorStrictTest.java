@@ -22,6 +22,7 @@ import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.utils.OutputBufferEmitter;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -91,6 +92,7 @@ public class CepOperatorStrictTest {
                 .setClass(exampleClassType)
                 .setContiguity(exampleContiguity)
                 .setNOrMore(2)
+                .setInnerContiguity(exampleContiguity)
                 .setOptional()
                 .build();
         final long exampleWindowTime = 1000L;
@@ -113,7 +115,9 @@ public class CepOperatorStrictTest {
         cepOperator.processLeftData(data2);
         cepOperator.processLeftData(data3);
 
+        // 3
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(3, result.size());
 
         System.out.println(result);
 
@@ -160,6 +164,7 @@ public class CepOperatorStrictTest {
                 .setClass(exampleClassType)
                 .setContiguity(exampleContiguity)
                 .setNOrMore(2)
+                .setInnerContiguity(exampleContiguity)
                 .build();
         final long exampleWindowTime = 1000L;
 
@@ -181,7 +186,9 @@ public class CepOperatorStrictTest {
         cepOperator.processLeftData(data2);
         cepOperator.processLeftData(data3);
 
+        // 3
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(3, result.size());
 
         System.out.println(result);
 
@@ -229,6 +236,7 @@ public class CepOperatorStrictTest {
                 .setClass(exampleClassType)
                 .setContiguity(exampleContiguity)
                 .setTimes(2)
+                .setInnerContiguity(exampleContiguity)
                 .build();
         final long exampleWindowTime = 1000L;
 
@@ -253,7 +261,9 @@ public class CepOperatorStrictTest {
         nfaOperator.processLeftData(data3);
         nfaOperator.processLeftData(data4);
 
+        // 3
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(3, result.size());
         System.out.println(result);
 
         final CepExampleClass a00 =
@@ -295,6 +305,7 @@ public class CepOperatorStrictTest {
                 .setClass(exampleClassType)
                 .setContiguity(exampleContiguity)
                 .setTimes(1, 2)
+                .setInnerContiguity(exampleContiguity)
                 .build();
         final long exampleWindowTime = 1000L;
 
@@ -316,7 +327,9 @@ public class CepOperatorStrictTest {
         nfaOperator.processLeftData(data2);
         nfaOperator.processLeftData(data3);
 
+        // 5
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(5, result.size());
         System.out.println(result);
 
         final CepExampleClass a00 =
@@ -364,6 +377,7 @@ public class CepOperatorStrictTest {
                 .setClass(exampleClassType)
                 .setContiguity(exampleContiguity)
                 .setNOrMore(1)
+                .setInnerContiguity(exampleContiguity)
                 .setStopCondition(stopCondition)
                 .build();
         final long exampleWindowTime = 1000L;
@@ -389,7 +403,9 @@ public class CepOperatorStrictTest {
         nfaOperator.processLeftData(data3);
         nfaOperator.processLeftData(data4);
 
+        // 6
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(6, result.size());
         System.out.println(result);
 
         final CepExampleClass a00 =
@@ -441,6 +457,7 @@ public class CepOperatorStrictTest {
                 .setClass(exampleClassType)
                 .setContiguity(exampleContiguity)
                 .setNOrMore(1)
+                .setInnerContiguity(exampleContiguity)
                 .build();
         final long exampleWindowTime = 1000L;
 
@@ -465,7 +482,9 @@ public class CepOperatorStrictTest {
         nfaOperator.processLeftData(data3);
         nfaOperator.processLeftData(data4);
 
+        // 6
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(6, result.size());
         System.out.println(result);
 
         final CepExampleClass a00 =
@@ -555,7 +574,9 @@ public class CepOperatorStrictTest {
         nfaOperator.processLeftData(data6);
         nfaOperator.processLeftData(data7);
 
+        // 2
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(2, result.size());
         System.out.println(result);
 
         final CepExampleClass a00 =
@@ -626,7 +647,9 @@ public class CepOperatorStrictTest {
         nfaOperator.processLeftData(data6);
         nfaOperator.processLeftData(data7);
 
+        // 5
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(5, result.size());
         System.out.println(result);
 
         final CepExampleClass a00 =
@@ -673,6 +696,7 @@ public class CepOperatorStrictTest {
                 .setClass(exampleClassType)
                 .setContiguity(exampleContiguity)
                 .setNOrMore(1)
+                .setInnerContiguity(exampleContiguity)
                 .build();
         final CepEvent<CepExampleClass> event2 = new CepEvent.Builder<CepExampleClass>()
                 .setName("second")
@@ -712,43 +736,45 @@ public class CepOperatorStrictTest {
         nfaOperator.processLeftData(data6);
         nfaOperator.processLeftData(data7);
 
+        // 8
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(3, result.size());
         System.out.println(result);
 
-        final CepExampleClass a00 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
-        System.out.print(a00.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a01 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(1);
-        System.out.print(a01.getAge());
-        System.out.print(",");
-
-        final CepExampleClass a02 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("second").get(0);
-        System.out.print(a02.getAge());
-        System.out.println();
-
-        final CepExampleClass a10 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
-        System.out.print(a10.getAge());
-        System.out.print(",");
-
-        final CepExampleClass a11 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("second").get(0);
-        System.out.print(a11.getAge());
-        System.out.println();
-
-        final CepExampleClass a20 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
-        System.out.print(a20.getAge());
-        System.out.print(",");
-
-        final CepExampleClass a21 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(0);
-        System.out.print(a21.getAge());
-        System.out.println();
+//        final CepExampleClass a00 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
+//        System.out.print(a00.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a01 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(1);
+//        System.out.print(a01.getAge());
+//        System.out.print(",");
+//
+//        final CepExampleClass a02 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("second").get(0);
+//        System.out.print(a02.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a10 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
+//        System.out.print(a10.getAge());
+//        System.out.print(",");
+//
+//        final CepExampleClass a11 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("second").get(0);
+//        System.out.print(a11.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a20 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
+//        System.out.print(a20.getAge());
+//        System.out.print(",");
+//
+//        final CepExampleClass a21 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(0);
+//        System.out.print(a21.getAge());
+//        System.out.println();
     }
 
     @Test
@@ -765,6 +791,7 @@ public class CepOperatorStrictTest {
                 .setClass(exampleClassType)
                 .setContiguity(exampleContiguity)
                 .setNOrMore(1)
+                .setInnerContiguity(exampleContiguity)
                 .build();
 
         final List<CepEvent<CepExampleClass>> exampleEventSequence = new ArrayList<>();
@@ -801,63 +828,65 @@ public class CepOperatorStrictTest {
         nfaOperator.processLeftData(data7);
         nfaOperator.processLeftData(data8);
 
+        // 4
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(4, result.size());
         System.out.println(result);
 
-        final CepExampleClass a00 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
-        System.out.print(a00.getAge());
-        System.out.print(",");
-
-        final CepExampleClass a01 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("second").get(0);
-        System.out.print(a01.getAge());
-        System.out.println();
-
-        final CepExampleClass a10 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
-        System.out.print(a10.getAge());
-        System.out.print(",");
-
-        final CepExampleClass a11 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("second").get(0);
-        System.out.print(a11.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a12 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("second").get(1);
-        System.out.print(a12.getAge());
-        System.out.println();
-
-        final CepExampleClass a20 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
-        System.out.print(a20.getAge());
-        System.out.print(",");
-
-        final CepExampleClass a21 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(0);
-        System.out.print(a21.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a22 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(1);
-        System.out.print(a22.getAge());
-        System.out.print("-");
-
-        final CepExampleClass a23 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(2);
-        System.out.print(a23.getAge());
-        System.out.println();
-
-        final CepExampleClass a30 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("first").get(0);
-        System.out.print(a30.getAge());
-        System.out.print(",");
-
-        final CepExampleClass a31 =
-                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("second").get(0);
-        System.out.print(a31.getAge());
-        System.out.println();
+//        final CepExampleClass a00 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("first").get(0);
+//        System.out.print(a00.getAge());
+//        System.out.print(",");
+//
+//        final CepExampleClass a01 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(0)).getValue()).get("second").get(0);
+//        System.out.print(a01.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a10 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("first").get(0);
+//        System.out.print(a10.getAge());
+//        System.out.print(",");
+//
+//        final CepExampleClass a11 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("second").get(0);
+//        System.out.print(a11.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a12 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(1)).getValue()).get("second").get(1);
+//        System.out.print(a12.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a20 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("first").get(0);
+//        System.out.print(a20.getAge());
+//        System.out.print(",");
+//
+//        final CepExampleClass a21 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(0);
+//        System.out.print(a21.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a22 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(1);
+//        System.out.print(a22.getAge());
+//        System.out.print("-");
+//
+//        final CepExampleClass a23 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(2)).getValue()).get("second").get(2);
+//        System.out.print(a23.getAge());
+//        System.out.println();
+//
+//        final CepExampleClass a30 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("first").get(0);
+//        System.out.print(a30.getAge());
+//        System.out.print(",");
+//
+//        final CepExampleClass a31 =
+//                ((Map<String, List<CepExampleClass>>)((MistDataEvent) result.get(3)).getValue()).get("second").get(0);
+//        System.out.print(a31.getAge());
+//        System.out.println();
     }
 
     @Test
@@ -868,6 +897,7 @@ public class CepOperatorStrictTest {
                 .setClass(exampleClassType)
                 .setContiguity(exampleContiguity)
                 .setNOrMore(1)
+                .setInnerContiguity(exampleContiguity)
                 .build();
         final CepEvent<CepExampleClass> event2 = new CepEvent.Builder<CepExampleClass>()
                 .setName("second")
@@ -875,6 +905,7 @@ public class CepOperatorStrictTest {
                 .setClass(exampleClassType)
                 .setContiguity(exampleContiguity)
                 .setNOrMore(1)
+                .setInnerContiguity(exampleContiguity)
                 .build();
 
         final List<CepEvent<CepExampleClass>> exampleEventSequence = new ArrayList<>();
@@ -902,7 +933,9 @@ public class CepOperatorStrictTest {
         nfaOperator.processLeftData(data4);
         nfaOperator.processLeftData(data5);
 
+        // 4
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(4, result.size());
         System.out.println(result);
 
         final CepExampleClass a00 =
@@ -975,6 +1008,7 @@ public class CepOperatorStrictTest {
                 .setContiguity(exampleContiguity)
                 .setOptional()
                 .setNOrMore(1)
+                .setInnerContiguity(exampleContiguity)
                 .setStopCondition(conditionB)
                 .build();
         final CepEvent<CepExampleClass> event2 = new CepEvent.Builder<CepExampleClass>()
@@ -984,6 +1018,7 @@ public class CepOperatorStrictTest {
                 .setContiguity(exampleContiguity)
                 .setOptional()
                 .setNOrMore(1)
+                .setInnerContiguity(exampleContiguity)
                 .build();
 
         final List<CepEvent<CepExampleClass>> exampleEventSequence = new ArrayList<>();
@@ -1011,7 +1046,9 @@ public class CepOperatorStrictTest {
 //        nfaOperator.processLeftData(data4);
 //        nfaOperator.processLeftData(data5);
 
+        // 16
         System.out.println("result size = " + result.size());
+        Assert.assertEquals(16, result.size());
         System.out.println(result);
     }
 }
