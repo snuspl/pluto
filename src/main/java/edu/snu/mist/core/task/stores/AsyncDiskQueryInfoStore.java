@@ -191,7 +191,7 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
       final Tuple<ByteBuffer, String> jarInfo = hashInfoMap.get(wrappedHash);
       if (jarInfo != null) {
         // If the hash exists, check if the actual ByteBuffer is also the same.
-        if (HashUtils.byteBufferEquals(jarFileBytes, jarInfo.getKey())) {
+        if (Arrays.equals(jarFileBytes.array(), jarInfo.getKey().array())) {
           LOG.log(Level.INFO, "The jar file submitted was already previously submitted.");
           final String path = jarInfo.getValue();
           paths.add(path);

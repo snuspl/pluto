@@ -18,32 +18,29 @@ package edu.snu.mist.core.task;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 
 /**
  * This class provides static methods concerning checks for jar duplication.
  * that converts a ByteBuffer to a SHA-256 hash, which is a byte array.
  * This class is stateless.
  */
-public class HashUtils {
+public final class HashUtils {
+
+  private HashUtils() {
+    // do nothing
+  }
 
   // Converts a ByteBuffer to a SHA-256 hash.
   public static byte[] getByteBufferHash(final ByteBuffer byteBuffer) {
     try {
       final MessageDigest md = MessageDigest.getInstance("SHA-256");
-      byte[] byteBufferArray = new byte[byteBuffer.slice().remaining()];
-      byteBuffer.get(byteBufferArray);
+      final ByteBuffer bufferCopy = byteBuffer.slice();
+      final byte[] byteBufferArray = new byte[bufferCopy.remaining()];
+      bufferCopy.get(byteBufferArray);
       return md.digest(byteBufferArray);
     } catch (final NoSuchAlgorithmException e) {
       e.printStackTrace();
       throw new RuntimeException("SHA-256 algorithm is not available in the current environment.");
     }
-  }
-
-  // Check if 2 ByteBuffers are the same.
-  public static boolean byteBufferEquals(final ByteBuffer buffer1, ByteBuffer buffer2) {
-    final byte[] f1 = getByteBufferHash(buffer1);
-    final byte[] f2 = getByteBufferHash(buffer1);
-    return Arrays.equals(f1, f2);
   }
 }

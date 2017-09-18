@@ -47,7 +47,7 @@ public class QueryInfoStoreTest {
    * @throws InjectionException
    * @throws IOException
    */
-  @Test(timeout = 1000)
+  @Test(timeout = 10000)
   public void diskStoreTest() throws InjectionException, IOException {
     // Generate a query
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(TestParameters.GROUP_ID);
@@ -133,7 +133,7 @@ public class QueryInfoStoreTest {
     folder.delete();
   }
 
-  @Test(timeout = 100000)
+  @Test(timeout = 10000)
   public void hashCollisionTest() throws InjectionException, IOException {
     // Jar files
     final List<ByteBuffer> jarFiles1 = new LinkedList<>();
