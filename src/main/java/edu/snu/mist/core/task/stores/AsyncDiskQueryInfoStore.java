@@ -16,6 +16,7 @@
 package edu.snu.mist.core.task.stores;
 
 import edu.snu.mist.core.parameters.TempFolderPath;
+import edu.snu.mist.core.task.HashUtils;
 import edu.snu.mist.formats.avro.AvroOperatorChainDag;
 import io.netty.util.internal.ConcurrentSet;
 import org.apache.avro.file.DataFileReader;
@@ -35,16 +36,21 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.*;
+import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * It saves the information of a query (operator chain dag, jar files) into the disk.
  * The store request is done by separated thread asynchronously.
  */
 final class AsyncDiskQueryInfoStore implements QueryInfoStore {
+
+  private static final Logger LOG = Logger.getLogger(QueryInfoStore.class.getName());
   /**
    * A path for the temporary folder that stores jar files and operator chain dags of queries.
    */
@@ -80,6 +86,13 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
    */
   private final Set<String> storedQuerySet;
 
+  /**
+   * A map that contains the SHA-256 hash value (which is a byte array) converted to a ByteBuffer as the key,
+   * and the tuple of the ByteBuffer and location(as a string) as a value for submitted jar files.
+   * The key is a ByteBuffer because a byte array cannot be used as a key without a separate wrapper.
+   */
+  private final Map<ByteBuffer, Tuple<ByteBuffer, String>> hashInfoMap;
+
   @Inject
   private AsyncDiskQueryInfoStore(@Parameter(TempFolderPath.class) final String tmpFolderPath,
                                   final FileNameGenerator fileNameGenerator) {
@@ -87,6 +100,7 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
     this.fileNameGenerator = fileNameGenerator;
     this.datumWriter = new SpecificDatumWriter<>(AvroOperatorChainDag.class);
     this.datumReader = new SpecificDatumReader<>(AvroOperatorChainDag.class);
+    this.hashInfoMap = new HashMap<>();
     // Create a folder that stores the dags and jar files
     final File folder = new File(tmpFolderPath);
     if (!folder.exists()) {
@@ -171,13 +185,31 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
   public List<String> saveJar(final List<ByteBuffer> jarFiles) throws IOException {
     final List<String> paths = new LinkedList<>();
     for (final ByteBuffer jarFileBytes : jarFiles) {
-      final String path = String.format("submitted-%s.jar", fileNameGenerator.generate());
-      final Path jarFilePath = Paths.get(tmpFolderPath, path);
-      final File jarFile = jarFilePath.toFile();
-      final FileChannel wChannel = new FileOutputStream(jarFile, false).getChannel();
-      wChannel.write(jarFileBytes);
-      wChannel.close();
-      paths.add(jarFile.getAbsolutePath());
+      final byte[] byteBufferHash = HashUtils.getByteBufferHash(jarFileBytes);
+      // Check if the jarFiles already exist.
+      final ByteBuffer wrappedHash = ByteBuffer.wrap(byteBufferHash);
+      final Tuple<ByteBuffer, String> jarInfo = hashInfoMap.get(wrappedHash);
+      if (jarInfo != null) {
+        // If the hash exists, check if the actual ByteBuffer is also the same.
+        if (HashUtils.byteBufferEquals(jarFileBytes, jarInfo.getKey())) {
+          LOG.log(Level.INFO, "The jar file submitted was already previously submitted.");
+          final String path = jarInfo.getValue();
+          paths.add(path);
+        } else {
+          throw new RuntimeException("SHA-256 hash collision between two different files.");
+        }
+      } else {
+        // If the jar is new to the MistTask, create the new jar.
+        final String path = String.format("submitted-%s.jar", fileNameGenerator.generate());
+        LOG.log(Level.INFO, "New jar " + path + " was submitted.");
+        final Path jarFilePath = Paths.get(tmpFolderPath, path);
+        hashInfoMap.put(wrappedHash, new Tuple<>(jarFileBytes, jarFilePath.toString()));
+        final File jarFile = jarFilePath.toFile();
+        final FileChannel wChannel = new FileOutputStream(jarFile, false).getChannel();
+        wChannel.write(jarFileBytes);
+        wChannel.close();
+        paths.add(jarFile.getAbsolutePath());
+      }
     }
     return paths;
   }
