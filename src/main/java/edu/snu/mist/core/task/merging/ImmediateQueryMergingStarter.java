@@ -119,7 +119,8 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
   @Override
   public synchronized void start(final String queryId,
                                  final DAG<ConfigVertex, MISTEdge> submittedDag,
-                                 final List<String> jarFilePaths)
+                                 final List<String> jarFilePaths,
+                                 final Boolean sameClassLoader)
       throws InjectionException, IOException, ClassNotFoundException {
 
     queryIdConfigDagMap.put(queryId, submittedDag);

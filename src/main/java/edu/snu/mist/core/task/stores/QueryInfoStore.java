@@ -49,7 +49,7 @@ public interface QueryInfoStore extends AutoCloseable {
    * @return paths of the jar files
    * @throws IOException throws an exception when the jar file is not able to be saved.
    */
-  List<String> saveJar(List<ByteBuffer> jarFiles) throws IOException;
+  Tuple<Boolean, List<String>> saveJar(List<ByteBuffer> jarFiles) throws IOException;
 
   /**
    * Loads the operator chain dag corresponding to the queryId.

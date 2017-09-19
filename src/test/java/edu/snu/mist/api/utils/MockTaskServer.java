@@ -35,7 +35,7 @@ public class MockTaskServer implements ClientToTaskMessage {
 
   @Override
   public JarUploadResult uploadJarFiles(final List<ByteBuffer> jarFiles) throws AvroRemoteException {
-    return new JarUploadResult(true, "success", new LinkedList<>());
+    return new JarUploadResult(true, "success", false, new LinkedList<>());
   }
 
   @Override

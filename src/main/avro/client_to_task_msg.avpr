@@ -54,6 +54,10 @@
           "type": "string"
         },
         {
+          "name": "HasSameClassLoader",
+          "type": "boolean"
+        },
+        {
           "name": "JarFilePaths",
           "type":
           {
@@ -153,6 +157,10 @@
         {
           "name": "Msg",
           "type": "string"
+        },
+        {
+          "name": "HasSameClassLoader",
+          "type": "boolean"
         },
         {
           "name": "Paths",

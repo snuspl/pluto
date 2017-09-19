@@ -182,8 +182,9 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
    * @throws IOException throws an exception when the jar file is not able to be saved.
    */
   @Override
-  public List<String> saveJar(final List<ByteBuffer> jarFiles) throws IOException {
+  public Tuple<Boolean, List<String>> saveJar(final List<ByteBuffer> jarFiles) throws IOException {
     final List<String> paths = new LinkedList<>();
+    Boolean sameClassLoader = true;
     for (final ByteBuffer jarFileBytes : jarFiles) {
       final byte[] byteBufferHash = HashUtils.getByteBufferHash(jarFileBytes);
       // Check if the jarFiles already exist.
@@ -209,9 +210,13 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
         wChannel.write(jarFileBytes);
         wChannel.close();
         paths.add(jarFile.getAbsolutePath());
+        // Indicate that the same ClassLoader cannot be used.
+        if (sameClassLoader) {
+          sameClassLoader = false;
+        }
       }
     }
-    return paths;
+    return new Tuple<>(sameClassLoader, paths);
   }
 
   /**

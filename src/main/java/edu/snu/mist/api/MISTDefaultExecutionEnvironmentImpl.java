@@ -109,6 +109,7 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
     final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = queryToSubmit.getAvroOperatorChainDag();
     final AvroOperatorChainDag.Builder operatorChainDagBuilder = AvroOperatorChainDag.newBuilder();
     final AvroOperatorChainDag operatorChainDag = operatorChainDagBuilder
+        .setHasSameClassLoader(jarUploadResult.getHasSameClassLoader())
         .setJarFilePaths(jarUploadResult.getPaths())
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())

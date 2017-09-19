@@ -19,35 +19,54 @@ import javax.inject.Inject;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * URL class loader provider that shares jar files when the urls are the same.
  */
 final class URLClassLoaderProvider implements ClassLoaderProvider {
 
-  private final ConcurrentMap<List<URL>, ClassLoader> classLoaderConcurrentMap;
+  private static final Logger LOG = Logger.getLogger(URLClassLoaderProvider.class.getName());
+
+  private final ConcurrentMap<Set<URL>, ClassLoader> classLoaderConcurrentMap;
 
   @Inject
   private URLClassLoaderProvider() {
     this.classLoaderConcurrentMap = new ConcurrentHashMap<>();
   }
 
+  private Set<URL> urlArrayToSet(final URL[] urls) {
+    final Set<URL> urlSet = new HashSet<>(urls.length);
+    for (int i = 0; i < urls.length; i++) {
+      urlSet.add(urls[i]);
+    }
+    return urlSet;
+  }
+
   @Override
   public ClassLoader newInstance(final URL[] urls) {
-    final List<URL> urlList = new ArrayList<>(urls.length);
-    for (int i = 0; i < urls.length; i++) {
-      urlList.add(urls[i]);
+    final Set<URL> urlSet = urlArrayToSet(urls);
+    if (classLoaderConcurrentMap.containsKey(urlSet)) {
+      LOG.log(Level.WARNING, "The ClassLoader was already submitted before, but it was not noticed.");
     }
+    classLoaderConcurrentMap.putIfAbsent(urlSet, new URLClassLoader(urls));
+    return classLoaderConcurrentMap.get(urlSet);
+  }
 
-    if (classLoaderConcurrentMap.get(urlList) == null) {
-      classLoaderConcurrentMap.putIfAbsent(urlList, new URLClassLoader(urls));
-      return classLoaderConcurrentMap.get(urlList);
+  @Override
+  public ClassLoader oldInstance(final URL[] urls) {
+    final Set<URL> urlSet = urlArrayToSet(urls);
+    if (classLoaderConcurrentMap.containsKey(urlSet)) {
+      return classLoaderConcurrentMap.get(urlSet);
     } else {
-      return classLoaderConcurrentMap.get(urlList);
+      LOG.log(Level.WARNING, "The ClassLoader was submitted before but was not saved in the ClassLoaderProvider.");
+      return newInstance(urls);
     }
   }
 
