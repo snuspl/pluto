@@ -26,21 +26,27 @@ import java.security.NoSuchAlgorithmException;
  */
 public final class HashUtils {
 
+  private static MessageDigest md;
+
   private HashUtils() {
     // do nothing
   }
 
-  // Converts a ByteBuffer to a SHA-256 hash.
-  public static byte[] getByteBufferHash(final ByteBuffer byteBuffer) {
+  static {
+    md = null;
     try {
-      final MessageDigest md = MessageDigest.getInstance("SHA-256");
-      final ByteBuffer bufferCopy = byteBuffer.slice();
-      final byte[] byteBufferArray = new byte[bufferCopy.remaining()];
-      bufferCopy.get(byteBufferArray);
-      return md.digest(byteBufferArray);
+      md = MessageDigest.getInstance("SHA-256");
     } catch (final NoSuchAlgorithmException e) {
       e.printStackTrace();
       throw new RuntimeException("SHA-256 algorithm is not available in the current environment.");
     }
+  }
+
+  // Converts a ByteBuffer to a SHA-256 hash.
+  public static byte[] getByteBufferHash(final ByteBuffer byteBuffer) {
+    final ByteBuffer bufferCopy = byteBuffer.slice();
+    final byte[] byteBufferArray = new byte[bufferCopy.remaining()];
+    bufferCopy.get(byteBufferArray);
+    return md.digest(byteBufferArray);
   }
 }
