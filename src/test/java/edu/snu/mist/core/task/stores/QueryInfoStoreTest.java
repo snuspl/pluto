@@ -74,7 +74,7 @@ public class QueryInfoStoreTest {
     final File folder = new File(tmpFolderPath);
 
     // Store jar files
-    final List<String> paths = store.saveJar(jarFiles).getValue();
+    final List<String> paths = store.saveJar(jarFiles);
     for (int i = 0; i < jarFiles.size(); i++) {
       final ByteBuffer buf = ByteBuffer.allocateDirect(jarFiles.get(i).capacity());
       final String path = paths.get(i);
@@ -89,14 +89,12 @@ public class QueryInfoStoreTest {
     final AvroOperatorChainDag.Builder avroOpChainDagBuilder = AvroOperatorChainDag.newBuilder();
     final AvroOperatorChainDag avroOpChainDag1 = avroOpChainDagBuilder
         .setGroupId(TestParameters.GROUP_ID)
-        .setHasSameClassLoader(false)
         .setJarFilePaths(paths)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .build();
     final AvroOperatorChainDag avroOpChainDag2 = avroOpChainDagBuilder
         .setGroupId(TestParameters.GROUP_ID)
-        .setHasSameClassLoader(false)
         .setJarFilePaths(paths)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
@@ -161,8 +159,8 @@ public class QueryInfoStoreTest {
     final File folder = new File(tmpFolderPath);
 
     // Store jar files
-    final List<String> paths1 = store.saveJar(jarFiles1).getValue();
-    final List<String> paths2 = store.saveJar(jarFiles2).getValue();
+    final List<String> paths1 = store.saveJar(jarFiles1);
+    final List<String> paths2 = store.saveJar(jarFiles2);
 
     // Test if paths were redirected to the right files.
     Assert.assertEquals(paths2.get(0), paths1.get(0));

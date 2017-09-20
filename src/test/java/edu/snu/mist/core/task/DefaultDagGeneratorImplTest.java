@@ -93,7 +93,6 @@ public final class DefaultDagGeneratorImplTest {
     final AvroOperatorChainDag.Builder avroOpChainDagBuilder = AvroOperatorChainDag.newBuilder();
     final AvroOperatorChainDag avroChainedDag = avroOpChainDagBuilder
         .setGroupId(TestParameters.GROUP_ID)
-        .setHasSameClassLoader(false)
         .setJarFilePaths(new LinkedList<>())
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())

@@ -41,12 +41,6 @@ public final class NoSharingURLClassLoaderProvider implements ClassLoaderProvide
   }
 
   @Override
-  public ClassLoader oldInstance(final URL[] urls) {
-    // This method is intended only for sharing ClassLoaders. It should not be used for this class.
-    return newInstance(urls);
-  }
-
-  @Override
   public ClassLoader newInstance(final List<String> paths) throws MalformedURLException {
     // Get jar files' urls
     final URL[] urls = new URL[paths.size()];

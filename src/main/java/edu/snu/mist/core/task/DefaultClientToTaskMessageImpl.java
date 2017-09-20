@@ -66,13 +66,10 @@ public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage
   @Override
   public JarUploadResult uploadJarFiles(final List<ByteBuffer> jarFiles) throws AvroRemoteException {
     try {
-      final Tuple<Boolean, List<String>> sameClassLoaderAndPaths = queryInfoStore.saveJar(jarFiles);
-      final Boolean sameClassLoader = sameClassLoaderAndPaths.getKey();
-      final List<String> paths = sameClassLoaderAndPaths.getValue();
+      final List<String> paths = queryInfoStore.saveJar(jarFiles);
       final JarUploadResult result = JarUploadResult.newBuilder()
           .setIsSuccess(true)
           .setMsg("Success")
-          .setHasSameClassLoader(sameClassLoader)
           .setPaths(paths)
           .build();
       return result;
@@ -81,7 +78,6 @@ public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage
       final JarUploadResult result = JarUploadResult.newBuilder()
           .setIsSuccess(false)
           .setMsg(e.getMessage())
-          .setHasSameClassLoader(false)
           .setPaths(null)
           .build();
       return result;

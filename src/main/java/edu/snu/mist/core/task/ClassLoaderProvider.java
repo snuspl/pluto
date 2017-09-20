@@ -35,13 +35,6 @@ public interface ClassLoaderProvider {
   ClassLoader newInstance(URL[] urls);
 
   /**
-   * Use a class loader that already exists.
-   * @param urls urls
-   * @return class loader
-   */
-  ClassLoader oldInstance(URL[] urls);
-
-  /**
    * Create a class loader with paths of the jar files.
    * @param paths paths of jar files
    * @return class loader

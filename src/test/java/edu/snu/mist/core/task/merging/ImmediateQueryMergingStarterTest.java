@@ -196,7 +196,7 @@ public final class ImmediateQueryMergingStarterTest {
 
     // Execute the query 1
     final List<String> paths = mock(List.class);
-    queryStarter.start("q1", dagTuple.getKey(), paths, false);
+    queryStarter.start("q1", dagTuple.getKey(), paths);
 
     // Generate events for the query and check if the dag is executed correctly
     final String data1 = "Hello";
@@ -293,8 +293,8 @@ public final class ImmediateQueryMergingStarterTest {
     // Execute two queries
     final String query1Id = "q1";
     final String query2Id = "q2";
-    queryStarter.start(query1Id, dagTuple1.getKey(), paths1, false);
-    queryStarter.start(query2Id, dagTuple2.getKey(), paths2, false);
+    queryStarter.start(query1Id, dagTuple1.getKey(), paths1);
+    queryStarter.start(query2Id, dagTuple2.getKey(), paths2);
 
     // The query 1 and 2 have different sources, so they should be executed separately
     final String data1 = "Hello";
@@ -412,8 +412,8 @@ public final class ImmediateQueryMergingStarterTest {
     // Execute two queries
     final String query1Id = "q1";
     final String query2Id = "q2";
-    queryStarter.start(query1Id, dagTuple1.getKey(), paths1, false);
-    queryStarter.start(query2Id, dagTuple2.getKey(), paths2, false);
+    queryStarter.start(query1Id, dagTuple1.getKey(), paths1);
+    queryStarter.start(query2Id, dagTuple2.getKey(), paths2);
 
     // Generate events for the merged query and check if the dag is executed correctly
     final String data = "Hello";
@@ -535,8 +535,8 @@ public final class ImmediateQueryMergingStarterTest {
 
     final String query1Id = "q1";
     final String query2Id = "q2";
-    queryStarter.start(query1Id, dagTuple1.getKey(), paths1, false);
-    queryStarter.start(query2Id, dagTuple2.getKey(), paths2, false);
+    queryStarter.start(query1Id, dagTuple1.getKey(), paths1);
+    queryStarter.start(query2Id, dagTuple2.getKey(), paths2);
 
     // Generate events for the merged query and check if the dag is executed correctly
     final String data1 = "Hello";

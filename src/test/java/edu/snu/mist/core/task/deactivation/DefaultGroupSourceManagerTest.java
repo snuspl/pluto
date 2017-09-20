@@ -190,7 +190,6 @@ public class DefaultGroupSourceManagerTest {
     final AvroOperatorChainDag.Builder chainedDagBuilder = AvroOperatorChainDag.newBuilder();
     final AvroOperatorChainDag avroChainedDag = chainedDagBuilder
         .setGroupId(groupId)
-        .setHasSameClassLoader(false)
         .setJarFilePaths(new LinkedList<>())
         .setAvroVertices(initialAvroOpChainDag.getKey())
         .setEdges(initialAvroOpChainDag.getValue())

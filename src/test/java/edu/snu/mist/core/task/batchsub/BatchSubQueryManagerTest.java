@@ -149,14 +149,12 @@ public final class BatchSubQueryManagerTest {
     final JarUploadResult jarUploadResult = JarUploadResult.newBuilder()
         .setIsSuccess(true)
         .setMsg("Success")
-        .setHasSameClassLoader(false)
         .setPaths(paths)
         .build();
 
     // Create AvroOperatorChainDag
     final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getAvroOperatorChainDag();
     final AvroOperatorChainDag operatorChainDag = AvroOperatorChainDag.newBuilder()
-        .setHasSameClassLoader(false)
         .setJarFilePaths(jarUploadResult.getPaths())
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())

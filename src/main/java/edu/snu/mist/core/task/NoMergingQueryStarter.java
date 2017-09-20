@@ -68,8 +68,7 @@ public final class NoMergingQueryStarter implements QueryStarter {
   @Override
   public void start(final String queryId,
                     final DAG<ConfigVertex, MISTEdge> configDag,
-                    final List<String> jarFilePaths,
-                    final Boolean sameClassLoader)
+                    final List<String> jarFilePaths)
       throws InjectionException, IOException, ClassNotFoundException {
     final ExecutionDag submittedExecutionDag = dagGenerator.generate(configDag, jarFilePaths);
     executionPlanDagMap.put(queryId, submittedExecutionDag);

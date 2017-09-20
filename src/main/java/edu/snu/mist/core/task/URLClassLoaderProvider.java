@@ -24,15 +24,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * URL class loader provider that shares jar files when the urls are the same.
  */
 final class URLClassLoaderProvider implements ClassLoaderProvider {
-
-  private static final Logger LOG = Logger.getLogger(URLClassLoaderProvider.class.getName());
 
   private final ConcurrentMap<Set<URL>, ClassLoader> classLoaderConcurrentMap;
 
@@ -41,32 +37,18 @@ final class URLClassLoaderProvider implements ClassLoaderProvider {
     this.classLoaderConcurrentMap = new ConcurrentHashMap<>();
   }
 
-  private Set<URL> urlArrayToSet(final URL[] urls) {
+  @Override
+  public ClassLoader newInstance(final URL[] urls) {
     final Set<URL> urlSet = new HashSet<>(urls.length);
     for (int i = 0; i < urls.length; i++) {
       urlSet.add(urls[i]);
     }
-    return urlSet;
-  }
 
-  @Override
-  public ClassLoader newInstance(final URL[] urls) {
-    final Set<URL> urlSet = urlArrayToSet(urls);
-    if (classLoaderConcurrentMap.containsKey(urlSet)) {
-      LOG.log(Level.WARNING, "The ClassLoader was already submitted before, but it was not noticed.");
-    }
-    classLoaderConcurrentMap.putIfAbsent(urlSet, new URLClassLoader(urls));
-    return classLoaderConcurrentMap.get(urlSet);
-  }
-
-  @Override
-  public ClassLoader oldInstance(final URL[] urls) {
-    final Set<URL> urlSet = urlArrayToSet(urls);
-    if (classLoaderConcurrentMap.containsKey(urlSet)) {
+    if (classLoaderConcurrentMap.get(urlSet) == null) {
+      classLoaderConcurrentMap.putIfAbsent(urlSet, new URLClassLoader(urls));
       return classLoaderConcurrentMap.get(urlSet);
     } else {
-      LOG.log(Level.WARNING, "The ClassLoader was submitted before but was not saved in the ClassLoaderProvider.");
-      return newInstance(urls);
+      return classLoaderConcurrentMap.get(urlSet);
     }
   }
 
