@@ -35,7 +35,7 @@ import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
 import edu.snu.mist.core.task.merging.MergeAwareQueryRemover;
 import edu.snu.mist.core.task.merging.MergingExecutionDags;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
-import edu.snu.mist.formats.avro.AvroOperatorChainDag;
+import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
@@ -96,7 +96,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   private final BatchQueryCreator batchQueryCreator;
 
   /**
-   * A dag generator that creates DAG<ConfigVertex, MISTEdge> from avro vertex chain dag.
+   * A dag generator that creates DAG<ConfigVertex, MISTEdge> from avro dag.
    */
   private final ConfigDagGenerator configDagGenerator;
 
@@ -167,20 +167,20 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
    * Start a submitted query.
    * It converts the avro operator chain dag (query) to the execution dag,
    * and executes the sources in order to receives data streams.
-   * Before the queries are executed, it stores the avro operator chain dag into disk.
-   * We can regenerate the queries from the stored avro operator chain dag.
-   * @param tuple a pair of the query id and the avro operator chain dag
+   * Before the queries are executed, it stores the avro  dag into disk.
+   * We can regenerate the queries from the stored avro dag.
+   * @param tuple a pair of the query id and the avro dag
    * @return submission result
    */
   @Override
-  public QueryControlResult create(final Tuple<String, AvroOperatorChainDag> tuple) {
+  public QueryControlResult create(final Tuple<String, AvroDag> tuple) {
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(tuple.getKey());
     try {
       // Create the submitted query
-      // 1) Saves the avro operator chain dag to the PlanStore and
-      // converts the avro operator chain dag to the logical and execution dag
-      planStore.saveAvroOpChainDag(tuple);
+      // 1) Saves the avr dag to the PlanStore and
+      // converts the avro dag to the logical and execution dag
+      planStore.saveAvroDag(tuple);
       final String queryId = tuple.getKey();
 
       // Update group information
@@ -221,7 +221,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
 
         switch (executionModel) {
           case "dispatching":
-            jcb.bindImplementation(OperatorChainManager.class, NonBlockingActiveOperatorChainPickManager.class);
+            jcb.bindImplementation(ActiveQueryManager.class, DefaultActiveQueryManagerImpl.class);
             break;
           default:
             throw new RuntimeException("Invalid execution model: " + executionModel);
@@ -253,8 +253,9 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
       groupInfo.addQueryIdToGroup(queryId);
 
       // Start the submitted dag
+      final Query query = new DefaultQueryImpl(groupInfo.getActiveQueryManager());
       final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
-      groupInfo.getQueryStarter().start(queryId, configDag, tuple.getValue().getJarFilePaths());
+      groupInfo.getQueryStarter().start(queryId, query, configDag, tuple.getValue().getJarFilePaths());
 
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
@@ -275,11 +276,11 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
    * TODO[DELETE] this code is for test.
    * Start submitted queries in batch manner.
    * The operator chain dag will be duplicated for test.
-   * @param tuple a pair of the query id and the avro operator chain dag
+   * @param tuple a pair of the query id and the avro dag
    * @return submission result
    */
   @Override
-  public QueryControlResult createBatch(final Tuple<List<String>, AvroOperatorChainDag> tuple) {
+  public QueryControlResult createBatch(final Tuple<List<String>, AvroDag> tuple) {
     final List<String> queryIdList = tuple.getKey();
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(queryIdList.get(0));

@@ -30,7 +30,6 @@ import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcesso
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorLowerBound;
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorUpperBound;
 import edu.snu.mist.core.task.eventProcessors.parameters.GracePeriod;
-import edu.snu.mist.core.task.threadbased.ThreadBasedOperatorChainFactory;
 import edu.snu.mist.core.task.threadbased.ThreadBasedQueryManagerImpl;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import org.apache.avro.ipc.Server;
@@ -168,12 +167,11 @@ public final class MistTaskConfigs {
 
   /**
    * Get the configuration for thread-based execution model
-   * that creates a new thread per operator chain.
+   * that creates a new thread per query.
    */
   private Configuration getOption3Configuration() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindImplementation(QueryManager.class, ThreadBasedQueryManagerImpl.class);
-    jcb.bindImplementation(OperatorChainFactory.class, ThreadBasedOperatorChainFactory.class);
     if (!this.jarSharing) {
       jcb.bindImplementation(ClassLoaderProvider.class, NoSharingURLClassLoaderProvider.class);
     }

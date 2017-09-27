@@ -28,11 +28,6 @@ public final class DefaultPhysicalOperatorImpl extends BasePhysicalVertex implem
   private final Operator operator;
 
   /**
-   * The operator chain that holds the operator.
-   */
-  private OperatorChain operatorChain;
-
-  /**
    * The timestamp of the data that is recently processed.
    */
   private long latestDataTimestamp;
@@ -44,26 +39,14 @@ public final class DefaultPhysicalOperatorImpl extends BasePhysicalVertex implem
 
   public DefaultPhysicalOperatorImpl(final String id,
                                      final String configuration,
-                                     final Operator operator,
-                                     final OperatorChain operatorChain) {
+                                     final Operator operator) {
     super(id, configuration);
     this.operator = operator;
-    this.operatorChain = operatorChain;
   }
 
   @Override
   public Operator getOperator() {
     return operator;
-  }
-
-  @Override
-  public OperatorChain getOperatorChain() {
-    return operatorChain;
-  }
-
-  @Override
-  public void setOperatorChain(final OperatorChain newOperatorChain) {
-    operatorChain = newOperatorChain;
   }
 
   @Override
@@ -107,5 +90,15 @@ public final class DefaultPhysicalOperatorImpl extends BasePhysicalVertex implem
   @Override
   public int hashCode() {
     return id.hashCode();
+  }
+
+  @Override
+  public Type getType() {
+    return Type.OPERATOR;
+  }
+
+  @Override
+  public String getIdentifier() {
+    return id;
   }
 }

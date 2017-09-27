@@ -21,25 +21,13 @@ import edu.snu.mist.common.operators.Operator;
  * This interface represents a physical operator that contains the actual object of the operator.
  * It also holds the meta data of the operator.
  */
-public interface PhysicalOperator extends PhysicalVertex {
+public interface PhysicalOperator extends PhysicalVertex, ExecutionVertex {
 
   /**
    * Get the actual operator object.
    * @return operator
    */
   Operator getOperator();
-
-  /**
-   * Gets the operator chain that contains the operator.
-   * @return operator chain that contains the operator.
-   */
-  OperatorChain getOperatorChain();
-
-  /**
-   * Updates the operator chain that contains the operator.
-   * @param operatorChain operator chain that contains the operator
-   */
-  void setOperatorChain(OperatorChain operatorChain);
 
   /**
    * Get the timestamp of the recently processed data.

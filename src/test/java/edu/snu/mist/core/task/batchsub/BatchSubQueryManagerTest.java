@@ -66,7 +66,7 @@ import static org.mockito.Mockito.when;
  */
 public final class BatchSubQueryManagerTest {
   private QueryManager manager;
-  private Tuple<List<String>, AvroOperatorChainDag> tuple;
+  private Tuple<List<String>, AvroDag> tuple;
   private List<String> groupIdList;
   private Injector injector;
   private AvroConfigurationSerializer avroConfigurationSerializer;
@@ -152,9 +152,9 @@ public final class BatchSubQueryManagerTest {
         .setPaths(paths)
         .build();
 
-    // Create AvroOperatorChainDag
-    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getAvroOperatorChainDag();
-    final AvroOperatorChainDag operatorChainDag = AvroOperatorChainDag.newBuilder()
+    // Create AvroDag
+    final Tuple<List<AvroVertex>, List<Edge>> serializedDag = query.getAvroOperatorDag();
+    final AvroDag avroDag = AvroDag.newBuilder()
         .setJarFilePaths(jarUploadResult.getPaths())
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
@@ -171,7 +171,7 @@ public final class BatchSubQueryManagerTest {
     for (int i = 0; i < NUM_QUERIES; i++) {
       queryIdList.add(QUERY_ID_PREFIX + i);
     }
-    tuple = new Tuple<>(queryIdList, operatorChainDag);
+    tuple = new Tuple<>(queryIdList, avroDag);
 
     duplicationSuccess = new AtomicBoolean(true);
   }
@@ -233,7 +233,7 @@ public final class BatchSubQueryManagerTest {
   /**
    * A builder for QueryManager.
    */
-  private QueryManager queryManagerBuild(final Tuple<List<String>, AvroOperatorChainDag> tp,
+  private QueryManager queryManagerBuild(final Tuple<List<String>, AvroDag> tp,
                                          final ConfigDagGenerator dagGenerator) throws Exception {
     // Create mock PlanStore. It returns true and the above logical plan
     final QueryInfoStore planStore = mock(QueryInfoStore.class);
@@ -291,20 +291,20 @@ public final class BatchSubQueryManagerTest {
     }
 
     @Override
-    public DAG<ConfigVertex, MISTEdge> generate(final AvroOperatorChainDag opChainDag) {
+    public DAG<ConfigVertex, MISTEdge> generate(final AvroDag avroDag) {
       try {
-        final String actualGroupId = opChainDag.getGroupId();
+        final String actualGroupId = avroDag.getGroupId();
         final Set<String> expectedSubTopicSet =
             SUB_TOPIC_FUNCTION.apply(actualGroupId, "arbitrary");
 
         // Test whether the group id is overwritten well
         Assert.assertFalse(ORIGINAL_GROUP_ID.equals(actualGroupId));
         // Test whether the MQTT configuration is overwritten well
-        for (final AvroVertexChain avroVertexChain : opChainDag.getAvroVertices()) {
-          switch (avroVertexChain.getAvroVertexChainType()) {
+        for (final AvroVertex avroVertex : avroDag.getAvroVertices()) {
+          switch (avroVertex.getAvroVertexType()) {
             case SOURCE: {
-              final Vertex vertex = avroVertexChain.getVertexChain().get(0);
-              final Configuration modifiedConf = avroConfigurationSerializer.fromString(vertex.getConfiguration());
+              final Configuration modifiedConf =
+                  avroConfigurationSerializer.fromString(avroVertex.getConfiguration());
 
               // Restore the configuration and see whether it is overwritten well
               final Injector newInjector = Tang.Factory.getTang().newInjector(modifiedConf);
@@ -338,13 +338,13 @@ public final class BatchSubQueryManagerTest {
               Assert.assertEquals(expectedTuple.getValue(), actualTuple.getValue());
               break;
             }
-            case OPERATOR_CHAIN: {
+            case OPERATOR: {
               // Do nothing
               break;
             }
             case SINK: {
-              final Vertex vertex = avroVertexChain.getVertexChain().get(0);
-              final Configuration modifiedConf = avroConfigurationSerializer.fromString(vertex.getConfiguration());
+              final Configuration modifiedConf =
+                  avroConfigurationSerializer.fromString(avroVertex.getConfiguration());
 
               // Restore the configuration and see whether it is overwritten well
               final Injector newInjector = Tang.Factory.getTang().newInjector(modifiedConf);

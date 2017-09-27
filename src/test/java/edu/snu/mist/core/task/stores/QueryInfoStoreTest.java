@@ -82,15 +82,15 @@ public class QueryInfoStoreTest {
     }
 
     // Generate logical plan
-    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getAvroOperatorChainDag();
-    final AvroOperatorChainDag.Builder avroOpChainDagBuilder = AvroOperatorChainDag.newBuilder();
-    final AvroOperatorChainDag avroOpChainDag1 = avroOpChainDagBuilder
+    final Tuple<List<AvroVertex>, List<Edge>> serializedDag = query.getAvroOperatorDag();
+    final AvroDag.Builder avroDagBuilder = AvroDag.newBuilder();
+    final AvroDag avroDag1 = avroDagBuilder
         .setGroupId(TestParameters.GROUP_ID)
         .setJarFilePaths(paths)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .build();
-    final AvroOperatorChainDag avroOpChainDag2 = avroOpChainDagBuilder
+    final AvroDag avroDag2 = avroDagBuilder
         .setGroupId(TestParameters.GROUP_ID)
         .setJarFilePaths(paths)
         .setAvroVertices(serializedDag.getKey())
@@ -98,8 +98,8 @@ public class QueryInfoStoreTest {
         .build();
 
     // Store the chained dag
-    store.saveAvroOpChainDag(new Tuple<>(queryId1, avroOpChainDag1));
-    store.saveAvroOpChainDag(new Tuple<>(queryId2, avroOpChainDag2));
+    store.saveAvroDag(new Tuple<>(queryId1, avroDag1));
+    store.saveAvroDag(new Tuple<>(queryId2, avroDag2));
     while (!(store.isStored(queryId1) && store.isStored(queryId2))) {
       // Wait until the plan is stored
     }
@@ -107,15 +107,15 @@ public class QueryInfoStoreTest {
     Assert.assertTrue(new File(tmpFolderPath, queryId2 + ".plan").exists());
 
     // Test stored file
-    final AvroOperatorChainDag loadedDag1 = store.load(queryId1);
-    Assert.assertEquals(avroOpChainDag1.getEdges(), loadedDag1.getEdges());
-    Assert.assertEquals(avroOpChainDag1.getSchema(), loadedDag1.getSchema());
-    testVerticesEqual(avroOpChainDag1.getAvroVertices(), loadedDag1.getAvroVertices());
+    final AvroDag loadedDag1 = store.load(queryId1);
+    Assert.assertEquals(avroDag1.getEdges(), loadedDag1.getEdges());
+    Assert.assertEquals(avroDag1.getSchema(), loadedDag1.getSchema());
+    testVerticesEqual(avroDag1.getAvroVertices(), loadedDag1.getAvroVertices());
 
-    final AvroOperatorChainDag loadedDag2 = store.load(queryId2);
-    Assert.assertEquals(avroOpChainDag2.getEdges(), loadedDag2.getEdges());
-    Assert.assertEquals(avroOpChainDag2.getSchema(), loadedDag2.getSchema());
-    testVerticesEqual(avroOpChainDag2.getAvroVertices(), loadedDag2.getAvroVertices());
+    final AvroDag loadedDag2 = store.load(queryId2);
+    Assert.assertEquals(avroDag2.getEdges(), loadedDag2.getEdges());
+    Assert.assertEquals(avroDag2.getSchema(), loadedDag2.getSchema());
+    testVerticesEqual(avroDag2.getAvroVertices(), loadedDag2.getAvroVertices());
 
     // Test deletion
     store.delete(queryId1);
@@ -135,16 +135,12 @@ public class QueryInfoStoreTest {
    * @param vertices the first list of vertices
    * @param loadedVertices the second list of vertices
    */
-  private void testVerticesEqual(final List<AvroVertexChain> vertices, final List<AvroVertexChain> loadedVertices) {
+  private void testVerticesEqual(final List<AvroVertex> vertices, final List<AvroVertex> loadedVertices) {
     for (int i = 0; i < vertices.size(); i++) {
-      final AvroVertexChain avroVertexChain = vertices.get(i);
-      final AvroVertexChain loadedVertexChain = loadedVertices.get(i);
-      for (int j = 0; j < avroVertexChain.getVertexChain().size(); j++) {
-        final Vertex vertex = avroVertexChain.getVertexChain().get(j);
-        final Vertex loadedVertex = loadedVertexChain.getVertexChain().get(j);
-        Assert.assertEquals(vertex.getConfiguration(), loadedVertex.getConfiguration());
-        Assert.assertEquals(vertex.getSchema(), loadedVertex.getSchema());
-      }
+      final AvroVertex avroVertex = vertices.get(i);
+      final AvroVertex loadedVertex = loadedVertices.get(i);
+      Assert.assertEquals(avroVertex.getConfiguration(), loadedVertex.getConfiguration());
+      Assert.assertEquals(avroVertex.getSchema(), loadedVertex.getSchema());
     }
   }
 }

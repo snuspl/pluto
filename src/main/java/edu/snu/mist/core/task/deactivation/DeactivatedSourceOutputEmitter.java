@@ -20,9 +20,7 @@ import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.OutputEmitter;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.ExecutionVertex;
-import edu.snu.mist.core.task.OperatorChain;
 import edu.snu.mist.core.task.PhysicalSource;
-import edu.snu.mist.formats.avro.Direction;
 
 import java.io.IOException;
 import java.util.Map;
@@ -122,6 +120,7 @@ final class DeactivatedSourceOutputEmitter implements OutputEmitter {
 
   @Override
   public void emitWatermark(final MistWatermarkEvent watermark) {
+    /* TODO: Remove
     if (!stoppedEmitWatermark) {
       for (final Map.Entry<ExecutionVertex, MISTEdge> nextQuery :
           needWatermarkVertices.entrySet()) {
@@ -131,5 +130,7 @@ final class DeactivatedSourceOutputEmitter implements OutputEmitter {
     } else {
       stoppedWatermarks.add(watermark);
     }
+
+    */
   }
 }

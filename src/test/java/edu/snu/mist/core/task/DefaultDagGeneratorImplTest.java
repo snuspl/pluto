@@ -26,8 +26,8 @@ import edu.snu.mist.common.operators.MapOperator;
 import edu.snu.mist.common.operators.ReduceByKeyOperator;
 import edu.snu.mist.common.sinks.NettyTextSink;
 import edu.snu.mist.common.types.Tuple2;
-import edu.snu.mist.formats.avro.AvroOperatorChainDag;
-import edu.snu.mist.formats.avro.AvroVertexChain;
+import edu.snu.mist.formats.avro.AvroDag;
+import edu.snu.mist.formats.avro.AvroVertex;
 import edu.snu.mist.formats.avro.Edge;
 import edu.snu.mist.utils.TestParameters;
 import org.apache.reef.io.Tuple;
@@ -89,9 +89,9 @@ public final class DefaultDagGeneratorImplTest {
         .textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
     final MISTQuery query = queryBuilder.build();
     // Generate avro operator chain dag
-    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getAvroOperatorChainDag();
-    final AvroOperatorChainDag.Builder avroOpChainDagBuilder = AvroOperatorChainDag.newBuilder();
-    final AvroOperatorChainDag avroChainedDag = avroOpChainDagBuilder
+    final Tuple<List<AvroVertex>, List<Edge>> serializedDag = query.getAvroOperatorDag();
+    final AvroDag.Builder avroDagBuilder = AvroDag.newBuilder();
+    final AvroDag avroChainedDag = avroDagBuilder
         .setGroupId(TestParameters.GROUP_ID)
         .setJarFilePaths(new LinkedList<>())
         .setAvroVertices(serializedDag.getKey())
@@ -101,7 +101,7 @@ public final class DefaultDagGeneratorImplTest {
     final Injector injector = Tang.Factory.getTang().newInjector();
     final ConfigDagGenerator configDagGenerator = injector.getInstance(ConfigDagGenerator.class);
     final DagGenerator dagGenerator = injector.getInstance(DagGenerator.class);
-    final Tuple<String, AvroOperatorChainDag> tuple = new Tuple<>("query-test", avroChainedDag);
+    final Tuple<String, AvroDag> tuple = new Tuple<>("query-test", avroChainedDag);
     final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
     final ExecutionDag executionDag =
         dagGenerator.generate(configDag, avroChainedDag.getJarFilePaths());
@@ -115,18 +115,18 @@ public final class DefaultDagGeneratorImplTest {
     final Map<ExecutionVertex, MISTEdge> nextOps = dag.getEdges(source);
     Assert.assertEquals(1, nextOps.size());
 
-    final OperatorChain pq1 = (OperatorChain)nextOps.entrySet().iterator().next().getKey();
-    final Map<ExecutionVertex, MISTEdge> sinks = dag.getEdges(pq1);
-    Assert.assertEquals(4, pq1.size());
-    final PhysicalOperator mapOperator = pq1.removeFromHead();
-    final PhysicalOperator filterOperator = pq1.removeFromHead();
-    final PhysicalOperator mapOperator2 = pq1.removeFromHead();
-    final PhysicalOperator reduceByKeyOperator = pq1.removeFromHead();
-    Assert.assertTrue(mapOperator.getOperator() instanceof FlatMapOperator);
-    Assert.assertTrue(filterOperator.getOperator() instanceof FilterOperator);
-    Assert.assertTrue(mapOperator2.getOperator() instanceof MapOperator);
-    Assert.assertTrue(reduceByKeyOperator.getOperator() instanceof ReduceByKeyOperator);
-    final PhysicalSink physicalSink = (PhysicalSink)sinks.entrySet().iterator().next().getKey();
-    Assert.assertTrue(physicalSink.getSink() instanceof NettyTextSink);
+    final PhysicalOperator flatMapOp = (PhysicalOperator)nextOps.entrySet().iterator().next().getKey();
+    final PhysicalOperator filterOp = (PhysicalOperator)dag.getEdges(flatMapOp).entrySet().iterator().next().getKey();
+    final PhysicalOperator mapOp = (PhysicalOperator)dag.getEdges(filterOp).entrySet().iterator().next().getKey();
+    final PhysicalOperator reduceByKeyOp = (PhysicalOperator)dag.getEdges(mapOp)
+        .entrySet().iterator().next().getKey();
+    final PhysicalSink sink = (PhysicalSink)dag.getEdges(reduceByKeyOp)
+        .entrySet().iterator().next().getKey();
+
+    Assert.assertTrue(flatMapOp.getOperator() instanceof FlatMapOperator);
+    Assert.assertTrue(filterOp.getOperator() instanceof FilterOperator);
+    Assert.assertTrue(mapOp.getOperator() instanceof MapOperator);
+    Assert.assertTrue(reduceByKeyOp.getOperator() instanceof ReduceByKeyOperator);
+    Assert.assertTrue(sink.getSink() instanceof NettyTextSink);
   }
 }

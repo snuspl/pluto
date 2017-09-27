@@ -16,7 +16,6 @@
 package edu.snu.mist.core.task.deactivation;
 
 import edu.snu.mist.common.SerializeUtils;
-import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.common.operators.StateHandler;
@@ -27,21 +26,14 @@ import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.*;
 import org.apache.avro.AvroRemoteException;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.tang.Configuration;
-import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
-import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
-import org.apache.reef.tang.implementation.java.ClassHierarchyImpl;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,11 +44,6 @@ import java.util.logging.Logger;
 public final class DeactivationGroupSourceManager implements GroupSourceManager {
 
   private static final Logger LOG = Logger.getLogger(DeactivationGroupSourceManager.class.getName());
-
-  /**
-   * Operator chain manager.
-   */
-  private final OperatorChainManager operatorChainManager;
 
   /**
    * A plan store.
@@ -103,7 +90,6 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
 
   @Inject
   private DeactivationGroupSourceManager(@Parameter(GroupId.class) final String groupId,
-                                         final OperatorChainManager operatorChainManager,
                                          final QueryInfoStore planStore,
                                          final AvroExecutionVertexStore avroExecutionVertexStore,
                                          final AvroConfigurationSerializer avroConfigurationSerializer,
@@ -111,7 +97,6 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
                                          final ExecutionDags executionDags,
                                          final ClassLoaderProvider classLoaderProvider) {
     this.groupId = groupId;
-    this.operatorChainManager = operatorChainManager;
     this.planStore = planStore;
     this.avroExecutionVertexStore = avroExecutionVertexStore;
     this.avroConfigurationSerializer = avroConfigurationSerializer;
@@ -133,7 +118,9 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
         synchronized (executionDag) {
           final Map<ExecutionVertex, MISTEdge> needWatermarkVertices = new HashMap<>();
           // Update physical plan and save the deactivated execution vertices.
-          dfsAndSaveExecutionVertices(executionDag, root, needWatermarkVertices);
+          /* Comment out
+             dfsAndSaveExecutionVertices(executionDag, root, needWatermarkVertices);
+           */
           // Set the source's output emitter to the active vertices that need watermarks to continue processing.
           ((PhysicalSource) root).setOutputEmitter(
               new DeactivatedSourceOutputEmitter(queryId, needWatermarkVertices, this, (PhysicalSource) root));
@@ -171,6 +158,7 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
    * Recursively conducts DFS throughout the executionDag.
    * It saves the ExecutionVertices which have inDegree of 0.
    */
+  /* Comment out
   private void dfsAndSaveExecutionVertices(final ExecutionDag executionDag,
                                            final ExecutionVertex currentVertex,
                                            final Map<ExecutionVertex, MISTEdge> needWatermarkVertices)
@@ -242,6 +230,7 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
       }
     }
   }
+  */
 
   /**
    * Converts a map of outgoing edges to a map of Avro OutgoingEdges.
@@ -268,6 +257,7 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
    * @param outgoingEdges
    * @return AvroPhysicalOperatorChain
    */
+  /* Comment out
   private AvroPhysicalOperatorChain getAvroPhysicalOperatorChain(final OperatorChain operatorChain,
                                                                  final Map<ExecutionVertex, MISTEdge> outgoingEdges)
       throws IOException {
@@ -289,6 +279,7 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
         .setOutgoingEdges(avroOutgoingEdges);
     return avroPhysicalOperatorChainBuilder.build();
   }
+  */
 
   /**
    * This is an auxiliary method for the getAvroPhysicalOperatorChain method.
@@ -317,9 +308,11 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
           LOG.log(Level.INFO, "Source is already activated");
         } else {
           // TODO: [MIST-771] Synchronization between source deactivation/activation and query merging
+          /* Comment out
           synchronized (executionDag) {
             dfsAndLoadExecutionVertices(urlsAndClassLoader, executionDag, sourceId);
           }
+          */
         }
       }
     } catch (final Exception e) {
@@ -349,6 +342,7 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
    * @param executionDag the dag for the source to be activated
    * @param currentVertexIdToActivate the id of the current executionVertex to be activated
    */
+  /* Comment out
   private void dfsAndLoadExecutionVertices(final Tuple<URL[], ClassLoader> urlsAndClassLoader,
                                            final ExecutionDag executionDag,
                                            final String currentVertexIdToActivate)
@@ -428,7 +422,7 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
       case SOURCE: {
         final PhysicalSource source = (PhysicalSource) revivedExecutionVertex;
         // Set output emitter
-        source.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
+        source.setOutputEmitter(new DefaultSourceOutputEmitterImpl<>(nextOps));
         // Add vertex and edges to executionDag
         dag.addVertex(revivedExecutionVertex);
         for (final ExecutionVertex adjacentVertex : nextOps.keySet()) {
@@ -463,6 +457,7 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
       }
     }
   }
+  */
 
   /**
    * Set the state of the PhysicalOperator.

@@ -53,7 +53,9 @@ import java.util.*;
  *   - ex) [... op1] -> [op3 ...]
  *         [... op2] ->
  *
+ * @deprecated we do not chain operators
  */
+@Deprecated
 public final class OperatorChainDagGenerator {
 
   /**

@@ -16,7 +16,7 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.core.parameters.QueryIdPrefix;
-import edu.snu.mist.formats.avro.AvroOperatorChainDag;
+import edu.snu.mist.formats.avro.AvroDag;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -35,10 +35,10 @@ public final class QueryIdGeneratorTest {
     final Injector injector = Tang.Factory.getTang().newInjector();
     final QueryIdGenerator queryIdGenerator = injector.getInstance(QueryIdGenerator.class);
     final String prefix = injector.getNamedInstance(QueryIdPrefix.class);
-    final AvroOperatorChainDag avroOpChainDag = new AvroOperatorChainDag();
+    final AvroDag avroDag = new AvroDag();
     long submittedQueryNum = 0;
     while (submittedQueryNum < 10000) {
-      final String queryId = queryIdGenerator.generate(avroOpChainDag);
+      final String queryId = queryIdGenerator.generate(avroDag);
       Assert.assertEquals(prefix + submittedQueryNum, queryId);
       submittedQueryNum++;
     }

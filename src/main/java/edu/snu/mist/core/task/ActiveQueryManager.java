@@ -18,14 +18,36 @@ package edu.snu.mist.core.task;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * This interface is for operator chain factory.
+ * This interface manages operator chains without blocking.
  */
-@DefaultImplementation(DefaultOperatorChainFactory.class)
-public interface OperatorChainFactory {
+@DefaultImplementation(DefaultActiveQueryManagerImpl.class)
+public interface ActiveQueryManager {
 
   /**
-   * Get the new operator chain.
-   * @return operator chain
+   * Insert an operator chain.
    */
-  OperatorChain newInstance(String id);
+  void insert(Query query);
+
+  /**
+   * Delete an operator chain.
+   */
+  void delete(Query query);
+
+  /**
+   * Pick an active query.
+   * @return an active query
+   */
+  Query pickActiveQuery() throws InterruptedException;
+
+  /**
+   * The number of active operator chains.
+   * @return active operator chain
+   */
+  int size();
+
+  /**
+   * The number of remaining events.
+   * @return remaining events
+   */
+  long numEvents();
 }

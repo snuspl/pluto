@@ -15,8 +15,9 @@
  */
 package edu.snu.mist.core.task.globalsched;
 
-import edu.snu.mist.core.task.OperatorChain;
-import edu.snu.mist.core.task.OperatorChainManager;
+import edu.snu.mist.core.task.ActiveQueryManager;
+import edu.snu.mist.core.task.Query;
+import edu.snu.mist.core.task.SourceOutputEmitter;
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.RuntimeProcessingInfo;
 
@@ -92,23 +93,28 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
         currProcessedGroup = groupInfo;
 
         // Active operator queue
-        final OperatorChainManager operatorChainManager = groupInfo.getOperatorChainManager();
+        final ActiveQueryManager activeQueryManager = groupInfo.getActiveQueryManager();
 
         // Start time
         final long startProcessingTime = System.nanoTime();
         numProcessedEvents = 0;
         while (groupInfo.isActive() && groupInfo.isProcessing()) {
           //Pick an active operator event queue
-          final OperatorChain operatorChain = operatorChainManager.pickOperatorChain();
+          final Query activeQuery = activeQueryManager.pickActiveQuery();
           // This can be null because we do not synchronize the counter
-          if (operatorChain == null) {
+          if (activeQuery == null) {
             break;
           }
-          // Set the event processing start time
-          // From this time, we can find the group is overloaded while processing an event
-          while (operatorChain.processNextEvent() && groupInfo.isProcessing()) {
-            // Process next event
-            numProcessedEvents += 1;
+
+          SourceOutputEmitter sourceOutputEmitter = activeQuery.pickNextEventQueue();
+          while (sourceOutputEmitter != null) {
+            // Set the event processing start time
+            // From this time, we can find the group is overloaded while processing an event
+            while (sourceOutputEmitter.processNextEvent() && groupInfo.isProcessing()) {
+              // Process next event
+              numProcessedEvents += 1;
+            }
+            sourceOutputEmitter = activeQuery.pickNextEventQueue();
           }
         }
 

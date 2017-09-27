@@ -16,10 +16,7 @@
 package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.common.parameters.GroupId;
-import edu.snu.mist.core.task.ExecutionDags;
-import edu.snu.mist.core.task.OperatorChainManager;
-import edu.snu.mist.core.task.QueryRemover;
-import edu.snu.mist.core.task.QueryStarter;
+import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.globalsched.parameters.DefaultGroupLoad;
 import org.apache.reef.tang.annotations.Parameter;
@@ -66,11 +63,6 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
   private final QueryStarter queryStarter;
 
   /**
-   * Operator chain manager.
-   */
-  private final OperatorChainManager operatorChainManager;
-
-  /**
    * Query remover that deletes queries.
    */
   private final QueryRemover queryRemover;
@@ -105,12 +97,14 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
    */
   private long latestRebalanceTime;
 
+  private final ActiveQueryManager activeQueryManager;
+
   @Inject
   private DefaultGlobalSchedGroupInfo(@Parameter(GroupId.class) final String groupId,
                                       @Parameter(DefaultGroupLoad.class) final double defaultLoad,
                                       final ExecutionDags executionDags,
                                       final QueryStarter queryStarter,
-                                      final OperatorChainManager operatorChainManager,
+                                      final ActiveQueryManager activeQueryManager,
                                       final QueryRemover queryRemover,
                                       final GroupSourceManager groupSourceManager) {
     this.groupId = groupId;
@@ -118,22 +112,18 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
     this.queryIdList = new ArrayList<>();
     this.executionDags = executionDags;
     this.queryStarter = queryStarter;
-    this.operatorChainManager = operatorChainManager;
     this.queryRemover = queryRemover;
     this.groupSourceManager = groupSourceManager;
+    this.activeQueryManager = activeQueryManager;
     this.totalProcessingTime = new AtomicLong(0);
     this.totalProcessingEvent = new AtomicLong(0);
     this.atomicStatus = new AtomicReference<>(GroupStatus.READY);
     this.latestRebalanceTime = System.nanoTime();
   }
 
-  /**
-   * Get the operator chain manager.
-   * @return operator chain manager
-   */
   @Override
-  public OperatorChainManager getOperatorChainManager() {
-    return operatorChainManager;
+  public ActiveQueryManager getActiveQueryManager() {
+    return activeQueryManager;
   }
 
   /**
@@ -182,7 +172,7 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
 
   @Override
   public long numberOfRemainingEvents() {
-    return operatorChainManager.numEvents();
+    return activeQueryManager.numEvents();
   }
 
   @Override
@@ -207,7 +197,7 @@ final class DefaultGlobalSchedGroupInfo implements GlobalSchedGroupInfo {
 
   @Override
   public boolean isActive() {
-   return operatorChainManager.size() != 0;
+   return activeQueryManager.size() != 0;
   }
 
   @Override
