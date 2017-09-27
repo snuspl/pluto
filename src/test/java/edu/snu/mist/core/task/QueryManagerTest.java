@@ -90,11 +90,11 @@ public final class QueryManagerTest {
       (input) -> input.values().stream().reduce(0, (x, y) -> x + y);
 
   @Test(timeout = 10000)
-  public void testSubmitComplexQueryInOption2Dispatching() throws Exception {
+  public void testSubmitComplextQueryInMIST() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(RPCServerPort.class, "20338");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
-    jcb.bindNamedParameter(ExecutionModelOption.class, "2");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "mist");
     jcb.bindNamedParameter(GroupSchedModelType.class, "dispatching");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final MistTaskConfigs taskConfigs = injector.getInstance(MistTaskConfigs.class);
@@ -102,11 +102,11 @@ public final class QueryManagerTest {
   }
 
   @Test(timeout = 10000)
-  public void testSubmitComplexQueryInOption2GroupUnaware() throws Exception {
+  public void testSubmitComplextQueryInMISTGroupUnaware() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(RPCServerPort.class, "20339");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
-    jcb.bindNamedParameter(ExecutionModelOption.class, "2");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "mist");
     jcb.bindNamedParameter(GroupSchedModelType.class, "dispatching");
     jcb.bindNamedParameter(GroupAware.class, "false");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
@@ -115,11 +115,22 @@ public final class QueryManagerTest {
   }
 
   @Test(timeout = 10000)
-  public void testSubmitComplexQueryInOption3() throws Exception {
+  public void testSubmitComplexQueryInThreadBased() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(RPCServerPort.class, "20334");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
-    jcb.bindNamedParameter(ExecutionModelOption.class, "3");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "tpq");
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final MistTaskConfigs taskConfigs = injector.getInstance(MistTaskConfigs.class);
+    testSubmitComplexQueryHelper(taskConfigs.getConfiguration());
+  }
+
+  @Test(timeout = 10000)
+  public void testSubmitComplexQueryInThreadPool() throws Exception {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(RPCServerPort.class, "20335");
+    jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "tp");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final MistTaskConfigs taskConfigs = injector.getInstance(MistTaskConfigs.class);
     testSubmitComplexQueryHelper(taskConfigs.getConfiguration());

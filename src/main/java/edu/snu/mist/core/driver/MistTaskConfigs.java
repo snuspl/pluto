@@ -31,6 +31,7 @@ import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorLowerBoun
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorUpperBound;
 import edu.snu.mist.core.task.eventProcessors.parameters.GracePeriod;
 import edu.snu.mist.core.task.threadbased.ThreadBasedQueryManagerImpl;
+import edu.snu.mist.core.task.threadpool.threadbased.ThreadPoolQueryManagerImpl;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
@@ -83,7 +84,7 @@ public final class MistTaskConfigs {
   /**
    * The execution model of Mist.
    */
-  private final int executionModelOption;
+  private final String executionModelOption;
 
   /**
    * Configuration for execution model 2 (global scheduling).
@@ -127,7 +128,7 @@ public final class MistTaskConfigs {
                           @Parameter(NumPeriodicSchedulerThreads.class) final int numSchedulerThreads,
                           @Parameter(MergingEnabled.class) final boolean mergingEnabled,
                           @Parameter(DeactivationEnabled.class) final boolean deactivationEnabled,
-                          @Parameter(ExecutionModelOption.class) final int executionModelOption,
+                          @Parameter(ExecutionModelOption.class) final String executionModelOption,
                           @Parameter(EventProcessorLowerBound.class) final int eventProcessorLowerBound,
                           @Parameter(EventProcessorUpperBound.class) final int eventProcessorUpperBound,
                           @Parameter(GracePeriod.class) final int gracePeriod,
@@ -156,10 +157,12 @@ public final class MistTaskConfigs {
    */
   private Configuration getConfigurationForExecutionModel() {
     switch (executionModelOption) {
-      case 2:
+      case "tpq":
+        return threadBasedOption();
+      case "tp":
+        return threadPoolOption();
+      case "mist":
         return option2TaskConfigs.getConfiguration();
-      case 3:
-        return getOption3Configuration();
       default:
         throw new RuntimeException("Undefined execution model: " + executionModelOption);
     }
@@ -169,7 +172,7 @@ public final class MistTaskConfigs {
    * Get the configuration for thread-based execution model
    * that creates a new thread per query.
    */
-  private Configuration getOption3Configuration() {
+  private Configuration threadBasedOption() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindImplementation(QueryManager.class, ThreadBasedQueryManagerImpl.class);
     if (!this.jarSharing) {
@@ -177,6 +180,19 @@ public final class MistTaskConfigs {
     }
     return jcb.build();
   }
+
+  /**
+   * Get the configuration for thread pool execution model.
+   */
+  private Configuration threadPoolOption() {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindImplementation(QueryManager.class, ThreadPoolQueryManagerImpl.class);
+    if (!this.jarSharing) {
+      jcb.bindImplementation(ClassLoaderProvider.class, NoSharingURLClassLoaderProvider.class);
+    }
+    return jcb.build();
+  }
+
   /**
    * Get the task configuration.
    * @return configuration

@@ -38,7 +38,11 @@ import edu.snu.mist.core.task.globalsched.GroupAwareGlobalSchedQueryManagerImpl;
 import edu.snu.mist.core.task.globalsched.GroupEvent;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.core.task.threadbased.ThreadBasedQueryManagerImpl;
-import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.core.task.threadpool.threadbased.ThreadPoolQueryManagerImpl;
+import edu.snu.mist.formats.avro.AvroDag;
+import edu.snu.mist.formats.avro.AvroVertex;
+import edu.snu.mist.formats.avro.Edge;
+import edu.snu.mist.formats.avro.JarUploadResult;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
@@ -188,11 +192,11 @@ public final class BatchSubQueryManagerTest {
    * Test option 2 query manager.
    */
   @Test(timeout = 10000)
-  public void testSubmitComplexQueryInOption2() throws Exception {
+  public void testSubmitComplexQueryInMIST() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(RPCServerPort.class, "20333");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
-    jcb.bindNamedParameter(ExecutionModelOption.class, "2");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "mist");
     jcb.bindImplementation(QueryManager.class, GroupAwareGlobalSchedQueryManagerImpl.class);
     injector = Tang.Factory.getTang().newInjector(jcb.build());
     final MistPubSubEventHandler pubSubEventHandler = injector.getInstance(MistPubSubEventHandler.class);
@@ -204,12 +208,26 @@ public final class BatchSubQueryManagerTest {
    * Test option 3 query manager.
    */
   @Test(timeout = 5000)
-  public void testSubmitComplexQueryInOption3() throws Exception {
+  public void testSubmitComplexQueryInThreadBased() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(RPCServerPort.class, "20334");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
-    jcb.bindNamedParameter(ExecutionModelOption.class, "3");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "tpq");
     jcb.bindImplementation(QueryManager.class, ThreadBasedQueryManagerImpl.class);
+    injector = Tang.Factory.getTang().newInjector(jcb.build());
+    testBatchSubmitQueryHelper();
+  }
+
+  /**
+   * Test thread pool.
+   */
+  @Test(timeout = 5000)
+  public void testSubmitComplexQueryInThreadPool() throws Exception {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(RPCServerPort.class, "20335");
+    jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "tp");
+    jcb.bindImplementation(QueryManager.class, ThreadPoolQueryManagerImpl.class);
     injector = Tang.Factory.getTang().newInjector(jcb.build());
     testBatchSubmitQueryHelper();
   }

@@ -13,12 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.driver.parameters;
-
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
-
-@NamedParameter(doc = "The execution model of Mist", short_name = "execution_model", default_value = "mist")
-public final class ExecutionModelOption implements Name<String> {
-  // empty
-}
+/**
+ * This package contains classes for the thread-based execution model.
+ */
+package edu.snu.mist.core.task.threadpool.threadbased;
