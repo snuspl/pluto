@@ -29,11 +29,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 final class RandomTaskSelectorImpl implements TaskSelector {
 
-  private List<IPAddress> taskIPAdressList;
+  private List<IPAddress> taskIPAddressList;
 
   @Inject
   private RandomTaskSelectorImpl() {
-    this.taskIPAdressList = new CopyOnWriteArrayList<>();
+    this.taskIPAddressList = new CopyOnWriteArrayList<>();
   }
 
   @Override
@@ -43,6 +43,7 @@ final class RandomTaskSelectorImpl implements TaskSelector {
     final IPAddress ipAddress = new IPAddress();
     ipAddress.setHostAddress(splitAddress[0]);
     ipAddress.setPort(Integer.valueOf(splitAddress[1]));
+    taskIPAddressList.add(ipAddress);
   }
 
   @Override
@@ -60,7 +61,7 @@ final class RandomTaskSelectorImpl implements TaskSelector {
    */
   @Override
   public IPAddress getTask(final QueryInfo message) throws AvroRemoteException {
-    final int randomIndex = (int)(Math.random() * taskIPAdressList.size());
-    return taskIPAdressList.get(randomIndex);
+    final int randomIndex = (int)(Math.random() * taskIPAddressList.size());
+    return taskIPAddressList.get(randomIndex);
   }
 }
