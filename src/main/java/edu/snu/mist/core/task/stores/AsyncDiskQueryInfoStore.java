@@ -181,7 +181,7 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
    * @throws IOException throws an exception when the jar file is not able to be saved.
    */
   @Override
-  public synchronized List<String> saveJar(final List<ByteBuffer> jarFiles) throws IOException {
+  public List<String> saveJar(final List<ByteBuffer> jarFiles) throws IOException {
     final List<String> paths = new LinkedList<>();
     for (final ByteBuffer jarFileBytes : jarFiles) {
       final byte[] byteBufferHash = HashUtils.getByteBufferHash(jarFileBytes);
@@ -216,7 +216,7 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
         final Path jarFilePath = Paths.get(tmpFolderPath, path);
         final Set<Tuple<ByteBuffer, String>> newPathsSet = new ConcurrentSet<>();
         newPathsSet.add(new Tuple<>(jarFileBytes, jarFilePath.toString()));
-        hashInfoMap.put(wrappedHash, newPathsSet);
+        hashInfoMap.putIfAbsent(wrappedHash, newPathsSet);
         final File jarFile = jarFilePath.toFile();
         final FileChannel wChannel = new FileOutputStream(jarFile, false).getChannel();
         wChannel.write(jarFileBytes);
