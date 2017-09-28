@@ -37,10 +37,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -88,10 +85,12 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
 
   /**
    * A map that contains the SHA-256 hash value (which is a byte array) converted to a ByteBuffer as the key,
-   * and the tuple of the ByteBuffer and location(as a string) as a value for submitted jar files.
+   * and a set of tuples that correspond to that SHA-256 hash value.
+   * A tuple is consisted of the ByteBuffer(of a jar file) and location(as a string) as a value for submitted jar files.
+   * Multiple tuples may correspond to a single SHA-256 hash value, in case of hash collisions.
    * The key is a ByteBuffer because a byte array cannot be used as a key without a separate wrapper.
    */
-  private final Map<ByteBuffer, Tuple<ByteBuffer, String>> hashInfoMap;
+  private final Map<ByteBuffer, Set<Tuple<ByteBuffer, String>>> hashInfoMap;
 
   @Inject
   private AsyncDiskQueryInfoStore(@Parameter(TempFolderPath.class) final String tmpFolderPath,
@@ -100,7 +99,7 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
     this.fileNameGenerator = fileNameGenerator;
     this.datumWriter = new SpecificDatumWriter<>(AvroOperatorChainDag.class);
     this.datumReader = new SpecificDatumReader<>(AvroOperatorChainDag.class);
-    this.hashInfoMap = new HashMap<>();
+    this.hashInfoMap = new ConcurrentHashMap<>();
     // Create a folder that stores the dags and jar files
     final File folder = new File(tmpFolderPath);
     if (!folder.exists()) {
@@ -182,28 +181,42 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
    * @throws IOException throws an exception when the jar file is not able to be saved.
    */
   @Override
-  public List<String> saveJar(final List<ByteBuffer> jarFiles) throws IOException {
+  public synchronized List<String> saveJar(final List<ByteBuffer> jarFiles) throws IOException {
     final List<String> paths = new LinkedList<>();
     for (final ByteBuffer jarFileBytes : jarFiles) {
       final byte[] byteBufferHash = HashUtils.getByteBufferHash(jarFileBytes);
       // Check if the jarFiles already exist.
       final ByteBuffer wrappedHash = ByteBuffer.wrap(byteBufferHash);
-      final Tuple<ByteBuffer, String> jarInfo = hashInfoMap.get(wrappedHash);
-      if (jarInfo != null) {
-        // If the hash exists, check if the actual ByteBuffer is also the same.
-        if (Arrays.equals(jarFileBytes.array(), jarInfo.getKey().array())) {
-          LOG.log(Level.INFO, "The jar file submitted was already previously submitted.");
-          final String path = jarInfo.getValue();
-          paths.add(path);
-        } else {
-          throw new RuntimeException("SHA-256 hash collision between two different files.");
+      final Set<Tuple<ByteBuffer, String>> jarInfoSet = hashInfoMap.get(wrappedHash);
+      if (jarInfoSet != null) {
+        // This is the case when a jar file with the same hash was submitted previously.
+        // The following boolean is used to see if a hash collision has occurred.
+        boolean hashCollisionOccurred = true;
+        // Check if any of the actual ByteBuffers are also the same.
+        for (final Tuple<ByteBuffer, String> jarInfo : jarInfoSet) {
+          if (Arrays.equals(jarFileBytes.array(), jarInfo.getKey().array())) {
+            LOG.log(Level.INFO, "The jar file submitted was already previously submitted.");
+            final String path = jarInfo.getValue();
+            paths.add(path);
+            hashCollisionOccurred = false;
+            break;
+          }
+        }
+        if (hashCollisionOccurred) {
+          // This is when there was a SHA-256 hash collision between two different files.
+          final String path = String.format("submitted-%s.jar", fileNameGenerator.generate());
+          LOG.log(Level.INFO, "New jar " + path + " was submitted with a SHA-256 hash collision.");
+          final Path jarFilePath = Paths.get(tmpFolderPath, path);
+          jarInfoSet.add(new Tuple<>(jarFileBytes, jarFilePath.toString()));
         }
       } else {
-        // If the jar is new to the MistTask, create the new jar.
+        // If the hash value is new to the MistTask, create the new jar.
         final String path = String.format("submitted-%s.jar", fileNameGenerator.generate());
         LOG.log(Level.INFO, "New jar " + path + " was submitted.");
         final Path jarFilePath = Paths.get(tmpFolderPath, path);
-        hashInfoMap.put(wrappedHash, new Tuple<>(jarFileBytes, jarFilePath.toString()));
+        final Set<Tuple<ByteBuffer, String>> newPathsSet = new ConcurrentSet<>();
+        newPathsSet.add(new Tuple<>(jarFileBytes, jarFilePath.toString()));
+        hashInfoMap.put(wrappedHash, newPathsSet);
         final File jarFile = jarFilePath.toFile();
         final FileChannel wChannel = new FileOutputStream(jarFile, false).getChannel();
         wChannel.write(jarFileBytes);
