@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.driver;
 
-import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.core.MistLauncher;
 import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
 import edu.snu.mist.core.parameters.DriverRuntimeType;
@@ -56,7 +55,7 @@ public final class MistDriverTest {
     jcb.bindNamedParameter(NumTaskCores.class, "1");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "1");
     jcb.bindNamedParameter(TaskMemorySize.class, "256");
-    jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
+    jcb.bindNamedParameter(DriverRPCServerPort.class, Integer.toString(rpcServerPort));
     jcb.bindNamedParameter(ExecutionModelOption.class, Integer.toString(executionModelOption));
     jcb.bindNamedParameter(GroupSchedModelType.class, groupSchedModel);
 

@@ -16,9 +16,8 @@
 package edu.snu.mist.core;
 
 import edu.snu.mist.common.rpc.AvroRPCNettyServerWrapper;
-import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.core.driver.MistDriver;
-import edu.snu.mist.core.driver.SpecificResponderWrapper;
+import edu.snu.mist.common.rpc.MasterSpecificResponderWrapper;
 import edu.snu.mist.core.parameters.DriverRuntimeType;
 import edu.snu.mist.core.parameters.NumTaskCores;
 import edu.snu.mist.core.parameters.NumTasks;
@@ -98,7 +97,7 @@ public final class MistLauncher {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder(conf);
     jcb.bindImplementation(NameResolver.class, LocalNameResolverImpl.class);
     jcb.bindImplementation(IdentifierFactory.class, StringIdentifierFactory.class);
-    jcb.bindConstructor(SpecificResponder.class, SpecificResponderWrapper.class);
+    jcb.bindConstructor(SpecificResponder.class, MasterSpecificResponderWrapper.class);
     jcb.bindConstructor(Server.class, AvroRPCNettyServerWrapper.class);
 
     final Configuration driverConf = DriverConfiguration.CONF
@@ -154,18 +153,16 @@ public final class MistLauncher {
    * @param numTaskCores the number of cores for tasks
    * @param numEventProcessors the number of event processors
    * @param numTasks the number of tasks
-   * @param rpcServerPort the RPC Server Port
    * @param taskMemorySize the Memory size of the task
    * @return a status of the driver
    * @throws InjectionException on configuration errors
    */
   public LauncherStatus run(final int numTaskCores, final int numEventProcessors, final int numTasks,
-                            final int rpcServerPort, final int taskMemorySize) throws InjectionException {
+                            final int taskMemorySize) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(NumTaskCores.class, Integer.toString(numTaskCores));
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, Integer.toString(numEventProcessors));
     jcb.bindNamedParameter(NumTasks.class, Integer.toString(numTasks));
-    jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
     jcb.bindNamedParameter(TaskMemorySize.class, Integer.toString(taskMemorySize));
 
     return runFromConf(jcb.build());

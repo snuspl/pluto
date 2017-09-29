@@ -15,12 +15,10 @@
  */
 package edu.snu.mist.core.driver;
 
-import edu.snu.mist.common.rpc.RPCServerPort;
+import edu.snu.mist.core.driver.parameters.AvroRPCPortStart;
 import edu.snu.mist.core.driver.parameters.NewRatio;
 import edu.snu.mist.core.driver.parameters.ReservedCodeCacheSize;
-import edu.snu.mist.core.parameters.NumTaskCores;
-import edu.snu.mist.core.parameters.NumTasks;
-import edu.snu.mist.core.parameters.TaskMemorySize;
+import edu.snu.mist.core.parameters.*;
 import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.formats.CommandLine;
 
@@ -34,9 +32,19 @@ public final class MistDriverConfigs {
   private static final int MAX_PORT_NUM = 65535;
 
   /**
+   * The number of Mist Masters.
+   */
+  private final int numMasters;
+
+  /**
    * The number of MistTasks.
    */
   private final int numTasks;
+
+  /**
+   * The memory size of a Mist master.
+   */
+  private final int masterMemSize;
 
   /**
    * The memory size of a MistTask.
@@ -44,14 +52,19 @@ public final class MistDriverConfigs {
   private final int taskMemSize;
 
   /**
+   * The number of cores of a Mist master.
+   */
+  private final int numMasterCores;
+
+  /**
    * The number of cores of a MistTask.
    */
   private final int numTaskCores;
 
   /**
-   * The port number of rpc server of a MistTask.
+   * The start port number of rpc servers.
    */
-  private final int rpcServerPort;
+  private final int avroRpcServerPortStart;
 
   /**
    * The new ratio of the JVM process.
@@ -64,34 +77,52 @@ public final class MistDriverConfigs {
   private final int reservedCodeCacheSize;
 
   @Inject
-  private MistDriverConfigs(@Parameter(NumTasks.class) final int numTasks,
+  private MistDriverConfigs(@Parameter(NumMasters.class) final int numMasters,
+                            @Parameter(NumTasks.class) final int numTasks,
+                            @Parameter(MasterMemorySize.class) final int masterMemSize,
                             @Parameter(TaskMemorySize.class) final int taskMemSize,
+                            @Parameter(NumMasterCores.class) final int numMasterCores,
                             @Parameter(NumTaskCores.class) final int numTaskCores,
-                            @Parameter(RPCServerPort.class) final int rpcServerPort,
+                            @Parameter(AvroRPCPortStart.class) final int avroRpcServerPortStart,
                             @Parameter(NewRatio.class) final int newRatio,
                             @Parameter(ReservedCodeCacheSize.class) final int reservedCodeCacheSize) {
+    this.numMasters = numMasters;
     this.numTasks = numTasks;
+    this.masterMemSize = masterMemSize;
     this.taskMemSize = taskMemSize;
+    this.numMasterCores = numMasterCores;
     this.numTaskCores = numTaskCores;
-    this.rpcServerPort = rpcServerPort + 10 > MAX_PORT_NUM ? rpcServerPort - 10 : rpcServerPort + 10;
+    this.avroRpcServerPortStart = avroRpcServerPortStart;
     this.newRatio = newRatio;
     this.reservedCodeCacheSize = reservedCodeCacheSize;
+  }
+
+  public int getNumMasters() {
+    return numMasters;
   }
 
   public int getNumTasks() {
    return numTasks;
   }
 
+  public int getMasterMemSize() {
+    return masterMemSize;
+  }
+
   public int getTaskMemSize() {
     return taskMemSize;
+  }
+
+  public int getNumMasterCores() {
+    return numMasterCores;
   }
 
   public int getNumTaskCores() {
     return numTaskCores;
   }
 
-  public int getRpcServerPort() {
-    return rpcServerPort;
+  public int getAvroRpcServerPortStart() {
+    return avroRpcServerPortStart;
   }
 
   public int getNewRatio() {
@@ -108,9 +139,12 @@ public final class MistDriverConfigs {
    * @return command line where parameters are added
    */
   public static CommandLine addCommandLineConf(final CommandLine commandLine) {
-    return commandLine.registerShortNameOfClass(NumTaskCores.class)
+    return commandLine
+        .registerShortNameOfClass(NumMasterCores.class)
+        .registerShortNameOfClass(NumTaskCores.class)
+        .registerShortNameOfClass(NumMasters.class)
         .registerShortNameOfClass(NumTasks.class)
-        .registerShortNameOfClass(RPCServerPort.class)
+        .registerShortNameOfClass(MasterMemorySize.class)
         .registerShortNameOfClass(TaskMemorySize.class)
         .registerShortNameOfClass(NewRatio.class)
         .registerShortNameOfClass(ReservedCodeCacheSize.class);

@@ -13,31 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.driver;
+package edu.snu.mist.master;
 
-import edu.snu.mist.formats.avro.MistTaskProvider;
-import org.apache.avro.ipc.specific.SpecificResponder;
-import org.apache.reef.tang.ExternalConstructor;
+import org.apache.avro.ipc.Server;
 
 import javax.inject.Inject;
 
 /**
- * A wrapper class for Avro SpecificResponder.
+ * The default implementation for EvaluatorManager.
  */
-public final class SpecificResponderWrapper implements ExternalConstructor<SpecificResponder> {
+public final class DefaultTaskManagerImpl implements TaskManager {
 
-  /**
-   * A Specific responder.
-   */
-  private final SpecificResponder responder;
+  // TODO[MIST-423]: Implement tracking evaluator stats in mist master
 
   @Inject
-  private SpecificResponderWrapper(final TaskSelector taskSelector) {
-    this.responder = new SpecificResponder(MistTaskProvider.class, taskSelector);
+  private DefaultTaskManagerImpl(final Server server) {
+
   }
 
   @Override
-  public SpecificResponder newInstance() {
-    return responder;
+  public void close() {
+
   }
 }

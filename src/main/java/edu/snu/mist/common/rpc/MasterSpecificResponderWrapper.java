@@ -13,27 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.driver;
+package edu.snu.mist.common.rpc;
 
+import edu.snu.mist.core.driver.TaskSelector;
 import edu.snu.mist.formats.avro.ClientToMasterMessage;
-import org.apache.reef.tang.annotations.DefaultImplementation;
+import org.apache.avro.ipc.specific.SpecificResponder;
+import org.apache.reef.tang.ExternalConstructor;
+
+import javax.inject.Inject;
 
 /**
- * TaskSelector returns a list of tasks for executing client queries
- * by collecting information about MistTasks.
- * It extends MistTaskProvider which is a generated avro RPC protocol.
+ * A wrapper class for Avro SpecificResponder.
  */
-@DefaultImplementation(RandomTaskSelectorImpl.class)
-public interface TaskSelector extends ClientToMasterMessage {
-  /**
-   * Registers a running task to task selector.
-   * @param runningTask running task
-   */
-  void registerRunningTask(final String runningTask);
+public final class MasterSpecificResponderWrapper implements ExternalConstructor<SpecificResponder> {
 
   /**
-   * Unregisters the task.
-   * @param taskId task id
+   * A Specific responder.
    */
-  void unregisterTask(final String taskId);
+  private final SpecificResponder responder;
+
+  @Inject
+  private MasterSpecificResponderWrapper(final TaskSelector taskSelector) {
+    this.responder = new SpecificResponder(ClientToMasterMessage.class, taskSelector);
+  }
+
+  @Override
+  public SpecificResponder newInstance() {
+    return responder;
+  }
 }

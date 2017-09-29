@@ -15,12 +15,16 @@
  */
 package edu.snu.mist.common.rpc;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import edu.snu.mist.formats.avro.TaskToMasterMessage;
+
+import javax.inject.Inject;
 
 /**
- * The port number of RPC server.
+ * Default implementation of task to master message.
  */
-@NamedParameter(doc = "The port number of RPC Server")
-public class RPCServerPort implements Name<Integer> {
+public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage {
+  @Inject
+  private DefaultTaskToMasterMessageImpl() {
+    //Do nothing
+  }
 }
