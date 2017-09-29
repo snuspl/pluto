@@ -34,7 +34,7 @@ public class MistLauncherTest {
     final LauncherStatus status = MistLauncher
         .getLauncher(MistLauncher.RuntimeType.LOCAL)
         .setTimeout(4000)
-        .run(1, 1, 1, 7777, 2048);
+        .run(1, 1, 1, 2048);
     Assert.assertEquals(LauncherStatus.FORCE_CLOSED, status);
   }
 }

@@ -29,6 +29,7 @@ import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.MQTTBrokerURI;
 import edu.snu.mist.common.parameters.MQTTTopic;
 import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
+import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
 import edu.snu.mist.core.parameters.PlanStorePath;
 import edu.snu.mist.core.task.*;
@@ -189,7 +190,7 @@ public final class BatchSubQueryManagerTest {
   @Test(timeout = 10000)
   public void testSubmitComplexQueryInOption2() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(DriverRPCServerPort.class, "20333");
+    jcb.bindNamedParameter(RPCServerPort.class, "20333");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
     jcb.bindNamedParameter(ExecutionModelOption.class, "2");
     jcb.bindImplementation(QueryManager.class, GroupAwareGlobalSchedQueryManagerImpl.class);
@@ -205,7 +206,7 @@ public final class BatchSubQueryManagerTest {
   @Test(timeout = 5000)
   public void testSubmitComplexQueryInOption3() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(DriverRPCServerPort.class, "20334");
+    jcb.bindNamedParameter(RPCServerPort.class, "20334");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
     jcb.bindNamedParameter(ExecutionModelOption.class, "3");
     jcb.bindImplementation(QueryManager.class, ThreadBasedQueryManagerImpl.class);

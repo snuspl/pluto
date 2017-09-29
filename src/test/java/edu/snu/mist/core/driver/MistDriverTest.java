@@ -18,6 +18,7 @@ package edu.snu.mist.core.driver;
 import edu.snu.mist.core.MistLauncher;
 import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
 import edu.snu.mist.core.parameters.DriverRuntimeType;
+import edu.snu.mist.core.parameters.MasterMemorySize;
 import edu.snu.mist.core.parameters.NumTaskCores;
 import edu.snu.mist.core.parameters.TaskMemorySize;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
@@ -52,10 +53,11 @@ public final class MistDriverTest {
                                      final String groupSchedModel) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(DriverRuntimeType.class, "LOCAL");
+    jcb.bindNamedParameter(MasterMemorySize.class, "1024");
     jcb.bindNamedParameter(NumTaskCores.class, "1");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "1");
     jcb.bindNamedParameter(TaskMemorySize.class, "256");
-    jcb.bindNamedParameter(DriverRPCServerPort.class, Integer.toString(rpcServerPort));
+    //jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
     jcb.bindNamedParameter(ExecutionModelOption.class, Integer.toString(executionModelOption));
     jcb.bindNamedParameter(GroupSchedModelType.class, groupSchedModel);
 
