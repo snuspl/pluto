@@ -20,8 +20,8 @@ import edu.snu.mist.core.task.eventProcessors.groupAssigner.MinLoadGroupAssigner
 import edu.snu.mist.core.task.eventProcessors.groupAssigner.RoundRobinGroupAssignerImpl;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.eventProcessors.parameters.GroupBalancerGracePeriod;
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.GlobalSchedNonBlockingEventProcessorFactory;
+import edu.snu.mist.core.task.globalsched.Group;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -73,8 +73,8 @@ public final class GroupAssignerTest {
     injector.bindVolatileInstance(GroupAllocationTable.class, groupAllocationTable);
     final GroupAssigner groupAssigner = injector.getInstance(RoundRobinGroupAssignerImpl.class);
 
-    final GlobalSchedGroupInfo group1 = mock(GlobalSchedGroupInfo.class);
-    final GlobalSchedGroupInfo group2 = mock(GlobalSchedGroupInfo.class);
+    final Group group1 = mock(Group.class);
+    final Group group2 = mock(Group.class);
 
     groupAssigner.initialize();
 
@@ -97,10 +97,10 @@ public final class GroupAssignerTest {
     injector.bindVolatileInstance(GroupAllocationTable.class, groupAllocationTable);
     final MinLoadGroupAssignerImpl groupBalancer = injector.getInstance(MinLoadGroupAssignerImpl.class);
 
-    final GlobalSchedGroupInfo group1 = mock(GlobalSchedGroupInfo.class);
+    final Group group1 = mock(Group.class);
     when(group1.getLoad()).thenReturn(10.0);
 
-    final GlobalSchedGroupInfo group2 = mock(GlobalSchedGroupInfo.class);
+    final Group group2 = mock(Group.class);
     when(group2.getLoad()).thenReturn(20.0);
 
     groupBalancer.initialize();
@@ -115,7 +115,7 @@ public final class GroupAssignerTest {
     groupBalancer.assignGroup(group2);
     Assert.assertTrue(groupAllocationTable.getValue(ep2).contains(group2));
 
-    final GlobalSchedGroupInfo group3 = mock(GlobalSchedGroupInfo.class);
+    final Group group3 = mock(Group.class);
     when(group3.getLoad()).thenReturn(40.0);
 
     // ep1: [group1, group3] (load 50.0)
@@ -124,7 +124,7 @@ public final class GroupAssignerTest {
     Assert.assertTrue(groupAllocationTable.getValue(ep1).contains(group1));
     Assert.assertTrue(groupAllocationTable.getValue(ep1).contains(group3));
 
-    final GlobalSchedGroupInfo group4 = mock(GlobalSchedGroupInfo.class);
+    final Group group4 = mock(Group.class);
     when(group4.getLoad()).thenReturn(20.0);
 
     // ep1: [group1, group3] (load 50.0)

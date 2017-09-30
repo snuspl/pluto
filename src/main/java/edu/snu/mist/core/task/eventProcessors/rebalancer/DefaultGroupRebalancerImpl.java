@@ -17,8 +17,10 @@ package edu.snu.mist.core.task.eventProcessors.rebalancer;
 
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.GroupAllocationTable;
-import edu.snu.mist.core.task.eventProcessors.parameters.*;
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.eventProcessors.parameters.GroupRebalancingPeriod;
+import edu.snu.mist.core.task.eventProcessors.parameters.OverloadedThreshold;
+import edu.snu.mist.core.task.eventProcessors.parameters.UnderloadedThreshold;
+import edu.snu.mist.core.task.globalsched.Group;
 import edu.snu.mist.core.task.globalsched.parameters.DefaultGroupLoad;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.Parameter;
@@ -97,7 +99,7 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
     final StringBuilder sb = new StringBuilder();
     sb.append("-------------- TABLE ----------------\n");
     for (final EventProcessor ep : eventProcessors) {
-      final Collection<GlobalSchedGroupInfo> groups = groupAllocationTable.getValue(ep);
+      final Collection<Group> groups = groupAllocationTable.getValue(ep);
       sb.append(ep);
       sb.append(" -> [");
       sb.append(loadTable.get(ep));
@@ -154,34 +156,34 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
 
       if (!overloadedThreads.isEmpty() && !underloadedThreads.isEmpty()) {
         for (final EventProcessor highLoadThread : overloadedThreads) {
-          final Collection<GlobalSchedGroupInfo> highLoadGroups = groupAllocationTable.getValue(highLoadThread);
-          final Iterator<GlobalSchedGroupInfo> iterator = highLoadGroups.iterator();
+          final Collection<Group> highLoadGroups = groupAllocationTable.getValue(highLoadThread);
+          final Iterator<Group> iterator = highLoadGroups.iterator();
           double highLoad = loadTable.get(highLoadThread);
 
           while (iterator.hasNext()) {
-            final GlobalSchedGroupInfo selectedGroup = iterator.next();
+            final Group selectedGroup = iterator.next();
             final double groupLoad = selectedGroup.getLoad();
 
             if (highLoad - groupLoad >= targetLoad) {
               final Tuple<EventProcessor, Double> peek = underloadedThreads.peek();
               if (peek.getValue() + groupLoad <= targetLoad) {
-                if (selectedGroup.isReady() || highLoadThread.removeActiveGroup(selectedGroup)) {
-                  final Tuple<EventProcessor, Double> lowLoadThread = underloadedThreads.poll();
-                  final Collection<GlobalSchedGroupInfo> lowLoadGroups =
-                      groupAllocationTable.getValue(lowLoadThread.getKey());
+                highLoadThread.removeActiveGroup(selectedGroup);
+                final Tuple<EventProcessor, Double> lowLoadThread = underloadedThreads.poll();
+                final Collection<Group> lowLoadGroups =
+                    groupAllocationTable.getValue(lowLoadThread.getKey());
 
-                  lowLoadGroups.add(selectedGroup);
-                  iterator.remove();
+                lowLoadGroups.add(selectedGroup);
+                selectedGroup.setEventProcessor(lowLoadThread.getKey());
+                iterator.remove();
 
-                  // Update overloaded thread load
-                  highLoad -= groupLoad;
-                  highLoadThread.setLoad(highLoad - groupLoad);
-                  rebNum += 1;
+                // Update overloaded thread load
+                highLoad -= groupLoad;
+                highLoadThread.setLoad(highLoad - groupLoad);
+                rebNum += 1;
 
-                  // Update underloaded thread load
-                  lowLoadThread.getKey().setLoad(lowLoadThread.getValue() + groupLoad);
-                  underloadedThreads.add(new Tuple<>(lowLoadThread.getKey(), lowLoadThread.getValue() + groupLoad));
-                }
+                // Update underloaded thread load
+                lowLoadThread.getKey().setLoad(lowLoadThread.getValue() + groupLoad);
+                underloadedThreads.add(new Tuple<>(lowLoadThread.getKey(), lowLoadThread.getValue() + groupLoad));
               }
             }
           }

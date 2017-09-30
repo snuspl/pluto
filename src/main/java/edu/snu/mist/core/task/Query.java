@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
+import edu.snu.mist.core.task.globalsched.SubGroup;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 @DefaultImplementation(DefaultQueryImpl.class)
@@ -24,9 +25,13 @@ public interface Query {
 
   void delete(SourceOutputEmitter sourceOutputEmitter);
 
-  SourceOutputEmitter pickNextEventQueue();
+  int processAllEvent();
 
   int size();
 
   int numEvents();
+
+  String getId();
+
+  SubGroup getSubGroup();
 }

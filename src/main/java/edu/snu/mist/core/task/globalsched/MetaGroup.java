@@ -13,18 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched.roundrobin.polling;
+package edu.snu.mist.core.task.globalsched;
 
+import edu.snu.mist.core.task.ExecutionDags;
+import edu.snu.mist.core.task.QueryRemover;
+import edu.snu.mist.core.task.QueryStarter;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
-/**
- * Inactive group checker factory interface.
- */
-@DefaultImplementation(NaiveInactiveGroupCheckerFactory.class)
-public interface InactiveGroupCheckerFactory {
+import java.util.List;
 
-  /**
-   * Get a new instance of inactive group checker.
-   */
-  InactiveGroupChecker newInstance();
+/**
+ * A class which contains query and metric information about query group.
+ * It is different from GroupInfo in that it does not have ThreadManager.
+ * As we consider global scheduling, we do not have to have ThreadManger per group.
+ */
+@DefaultImplementation(DefaultMetaGroupImpl.class)
+public interface MetaGroup {
+
+  QueryStarter getQueryStarter();
+
+  QueryRemover getQueryRemover();
+
+  ExecutionDags getExecutionDags();
+
+  List<Group> getGroups();
 }

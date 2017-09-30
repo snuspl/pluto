@@ -13,22 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched.roundrobin.polling;
+package edu.snu.mist.core.task.globalsched;
 
-import javax.inject.Inject;
+public interface ExecutionGroupSplitter {
 
-/**
- * NaiveInactiveChecker factory.
- */
-public final class NaiveInactiveGroupCheckerFactory implements InactiveGroupCheckerFactory {
-
-  @Inject
-  private NaiveInactiveGroupCheckerFactory() {
-    // do nothing
-  }
-
-  @Override
-  public InactiveGroupChecker newInstance() {
-    return new NaiveInactiveGroupChecker();
-  }
+  void splitGroup(SubGroup group);
 }

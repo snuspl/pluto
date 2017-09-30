@@ -13,20 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched.roundrobin.polling;
+package edu.snu.mist.core.parameters;
 
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-/**
- * This interface checks whether the group becomes inactive or not.
- */
-public interface InactiveGroupChecker {
-
-  /**
-   * Checks whether the group becomes inactive.
-   * @param groupInfo group info
-   * @param miss true if the event processor cannot find an active operator chain in the group
-   * @return true if it determines the group becomes inactive
-   */
-  boolean check(GlobalSchedGroupInfo groupInfo, boolean miss);
+@NamedParameter(doc = "Sub-group id")
+public final class SubGroupId implements Name<String> {
+  // empty
 }

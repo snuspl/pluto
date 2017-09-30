@@ -18,7 +18,7 @@ package edu.snu.mist.core.task.eventProcessors.groupAssigner;
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.GroupAllocationTable;
 import edu.snu.mist.core.task.eventProcessors.parameters.GroupBalancerGracePeriod;
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.Group;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -85,13 +85,14 @@ public final class MinLoadGroupAssignerImpl implements GroupAssigner {
    * @param groupInfo new group
    */
   @Override
-  public void assignGroup(final GlobalSchedGroupInfo groupInfo) {
+  public void assignGroup(final Group groupInfo) {
     // Reselect the event processor that has the minimum
     final EventProcessor minLoadEventProcessor = findMinLoadEventProcessor();
     //latestPickTime = System.currentTimeMillis();
     latestMinLoadEventProcessor = minLoadEventProcessor;
 
     groupAllocationTable.getValue(latestMinLoadEventProcessor).add(groupInfo);
+    groupInfo.setEventProcessor(latestMinLoadEventProcessor);
     latestMinLoadEventProcessor.setLoad(latestMinLoadEventProcessor.getLoad() + groupInfo.getLoad());
   }
 

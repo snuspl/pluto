@@ -17,7 +17,10 @@ package edu.snu.mist.core.task.eventProcessors;
 
 import edu.snu.mist.core.task.eventProcessors.groupAssigner.GroupAssigner;
 import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupRebalancer;
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.Group;
+import edu.snu.mist.core.task.globalsched.MetaGroup;
+import edu.snu.mist.core.task.globalsched.SubGroup;
+import org.apache.reef.io.Tuple;
 
 import javax.inject.Inject;
 import java.util.Collection;
@@ -26,8 +29,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A single writer thread that modifies the group allocation table.
@@ -102,9 +105,9 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
     singleWriter.submit(new SingleWriterThread());
   }
 
-  private void removeGroupInWriterThread(final GlobalSchedGroupInfo removedGroup) {
+  private void removeGroupInWriterThread(final Group removedGroup) {
     for (final EventProcessor eventProcessor : groupAllocationTable.getKeys()) {
-      final Collection<GlobalSchedGroupInfo> groups = groupAllocationTable.getValue(eventProcessor);
+      final Collection<Group> groups = groupAllocationTable.getValue(eventProcessor);
       if (groups.remove(removedGroup)) {
         // deleted
         if (LOG.isLoggable(Level.FINE)) {
@@ -141,12 +144,39 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
           final WritingEvent event = writingEventQueue.take();
           switch (event.getEventType()) {
             case GROUP_ADD: {
-              final GlobalSchedGroupInfo group = (GlobalSchedGroupInfo) event.getValue();
+              final Tuple<MetaGroup, Group> tuple = (Tuple<MetaGroup, Group>) event.getValue();
+              final MetaGroup metaGroup = tuple.getKey();
+              final Group group = tuple.getValue();
+              metaGroup.getGroups().add(group);
               groupAssigner.assignGroup(group);
               break;
             }
+            case SUBGROUP_ADD: {
+              final Tuple<MetaGroup, SubGroup> tuple = (Tuple<MetaGroup, SubGroup>) event.getValue();
+              final MetaGroup metaGroup = tuple.getKey();
+              final SubGroup subGroup = tuple.getValue();
+              // TODO: pluggable
+              // Find minimum load group
+              Group minGroup = null;
+              double minLoad = Double.MAX_VALUE;
+              for (final Group group : metaGroup.getGroups()) {
+                final double load = group.getLoad();
+                if (load < minLoad) {
+                  minGroup = group;
+                  minLoad = load;
+                } else if (load == minLoad) {
+                  if (group.getSubGroups().size() < minGroup.getSubGroups().size()) {
+                    minGroup = group;
+                    minLoad = load;
+                  }
+                }
+              }
+              subGroup.setGroup(minGroup);
+              minGroup.addSubGroup(subGroup);
+              break;
+            }
             case GROUP_REMOVE: {
-              final GlobalSchedGroupInfo group = (GlobalSchedGroupInfo) event.getValue();
+              final Group group = (Group) event.getValue();
               removeGroupInWriterThread(group);
               break;
             }

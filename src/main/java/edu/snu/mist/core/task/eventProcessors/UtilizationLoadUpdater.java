@@ -15,7 +15,8 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.Group;
+import edu.snu.mist.core.task.globalsched.SubGroup;
 import edu.snu.mist.core.task.globalsched.parameters.DefaultGroupLoad;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -60,57 +61,71 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
    * @param groups assigned groups
    */
   private void updateGroupAndThreadLoad(final EventProcessor eventProcessor,
-                                        final Collection<GlobalSchedGroupInfo> groups) {
-    double load = 0.0;
-    boolean isOverloaded = false;
+                                        final Collection<Group> groups) {
+    //boolean isOverloaded = false;
 
-    for (final GlobalSchedGroupInfo group : groups) {
-      final long startTime = System.nanoTime();
+    double eventProcessorLoad = 0.0;
 
-      // Number of processed events
-      final long processingEvent = group.getProcessingEvent().get();
-      group.getProcessingEvent().getAndAdd(-processingEvent);
+    for (final Group group : groups) {
+      double load = 0.0;
 
-      // Number of incoming events
-      final long incomingEventTime = startTime - group.getLatestRebalanceTime();
-      group.setLatestRebalanceTime(startTime);
+      final List<SubGroup> subGroupList = group.getSubGroups();
+      synchronized (subGroupList) {
+        for (final SubGroup subGroup : subGroupList) {
+          final long startTime = System.nanoTime();
 
-      final long incomingE = group.numberOfRemainingEvents();
-      final long incomingEvent = incomingE + processingEvent;
+          // Number of processed events
+          final long processingEvent = subGroup.getProcessingEvent().get();
+          subGroup.getProcessingEvent().getAndAdd(-processingEvent);
 
-      final long processingEventTime = group.getProcessingTime().get();
-      group.getProcessingTime().getAndAdd(-processingEventTime);
+          // Number of incoming events
+          final long incomingEventTime = startTime - subGroup.getLatestRebalanceTime();
+          subGroup.setLatestRebalanceTime(startTime);
 
-      // No processed. This thread is overloaded!
-      if (processingEventTime == 0 && incomingEvent != 0) {
-        isOverloaded = true;
-        break;
-      } else if (incomingEvent == 0) {
-        // No incoming event
-        group.setLoad(defaultGroupLoad);
-        load += defaultGroupLoad;
-      } else {
-        // processed event, incoming event
-        final double inputRate = (incomingEvent * 1000000000) / (double) incomingEventTime;
-        final double processingRate = (processingEvent * 1000000000) / (double) processingEventTime;
-        final double groupLoad = inputRate / processingRate;
-        load += groupLoad;
+          final long incomingE = subGroup.numberOfRemainingEvents();
+          final long incomingEvent = incomingE + processingEvent;
 
-        group.setLoad(groupLoad);
+          final long processingEventTime = subGroup.getProcessingTime().get();
+          subGroup.getProcessingTime().getAndAdd(-processingEventTime);
+
+          // No processed. This thread is overloaded!
+          if (processingEventTime == 0 && incomingEvent != 0) {
+            //isOverloaded = true;
+          } else if (incomingEvent == 0) {
+            // No incoming event
+            subGroup.setLoad(defaultGroupLoad);
+            load += defaultGroupLoad;
+          } else {
+            // processed event, incoming event
+            final double inputRate = (incomingEvent * 1000000000) / (double) incomingEventTime;
+            final double processingRate = (processingEvent * 1000000000) / (double) processingEventTime;
+            final double groupLoad = inputRate / processingRate;
+            load += groupLoad;
+
+            subGroup.setLoad(groupLoad);
+          }
+        }
       }
+      group.setLoad(load);
+      eventProcessorLoad += load;
     }
 
+
     // Overloaded!
+    /*
     if (isOverloaded) {
       eventProcessor.setLoad(1.0);
       // distribute the load
       final int size = groups.size();
       final double balancedLoad = 1.0 / size;
-      for (final GlobalSchedGroupInfo group : groups) {
+      for (final SubGroup group : groups) {
         group.setLoad(balancedLoad);
       }
     } else {
       eventProcessor.setLoad(load);
     }
+    */
+
+    eventProcessor.setLoad(eventProcessorLoad);
   }
 }

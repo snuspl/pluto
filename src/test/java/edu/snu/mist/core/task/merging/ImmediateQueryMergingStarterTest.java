@@ -202,7 +202,7 @@ public final class ImmediateQueryMergingStarterTest {
     source.send(data1);
     Assert.assertEquals(Arrays.asList(), result);
     Assert.assertEquals(1, source.getSourceOutputEmitter().numberOfEvents());
-    Assert.assertEquals(true, source.getSourceOutputEmitter().processNextEvent());
+    Assert.assertEquals(1, source.getSourceOutputEmitter().processAllEvent());
     Assert.assertEquals(Arrays.asList(data1), result);
 
     // Check queryIdConfigDagMap
@@ -301,16 +301,16 @@ public final class ImmediateQueryMergingStarterTest {
     // The query 1 and 2 have different sources, so they should be executed separately
     final String data1 = "Hello";
     src1.send(data1);
-    Assert.assertEquals(true, src1.getSourceOutputEmitter().processNextEvent());
+    Assert.assertEquals(1, src1.getSourceOutputEmitter().processAllEvent());
     Assert.assertEquals(Arrays.asList(data1), result1);
-    Assert.assertEquals(false, src2.getSourceOutputEmitter().processNextEvent());
+    Assert.assertEquals(0, src2.getSourceOutputEmitter().processAllEvent());
     Assert.assertEquals(Arrays.asList(), result2);
 
     final String data2 = "World";
     src2.send(data2);
-    Assert.assertEquals(true, src2.getSourceOutputEmitter().processNextEvent());
+    Assert.assertEquals(1, src2.getSourceOutputEmitter().processAllEvent());
     Assert.assertEquals(Arrays.asList(data2), result2);
-    Assert.assertEquals(false, src1.getSourceOutputEmitter().processNextEvent());
+    Assert.assertEquals(0, src1.getSourceOutputEmitter().processAllEvent());
     Assert.assertEquals(Arrays.asList(data1), result1);
 
     // Check queryIdConfigDagMap
@@ -425,7 +425,7 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertEquals(1, src1.getSourceOutputEmitter().numberOfEvents());
     // This is not created because the source is the same!
     Assert.assertEquals(null, src2.getSourceOutputEmitter());
-    Assert.assertEquals(true, src1.getSourceOutputEmitter().processNextEvent());
+    Assert.assertEquals(1, src1.getSourceOutputEmitter().processAllEvent());
     Assert.assertEquals(Arrays.asList(data), result1);
     Assert.assertEquals(Arrays.asList(data), result2);
 
@@ -549,14 +549,14 @@ public final class ImmediateQueryMergingStarterTest {
     src1.send(data1);
     Assert.assertEquals(1, src1.getSourceOutputEmitter().numberOfEvents());
     Assert.assertEquals(null, src2.getSourceOutputEmitter());
-    Assert.assertEquals(true, src1.getSourceOutputEmitter().processNextEvent());
+    Assert.assertEquals(1, src1.getSourceOutputEmitter().processAllEvent());
     Assert.assertEquals(Arrays.asList(data1), result1);
     Assert.assertEquals(Arrays.asList(data1), result2);
 
     final String data2 = "World";
     src1.send(data2);
     Assert.assertEquals(1, src1.getSourceOutputEmitter().numberOfEvents());
-    Assert.assertEquals(true, src1.getSourceOutputEmitter().processNextEvent());
+    Assert.assertEquals(1, src1.getSourceOutputEmitter().processAllEvent());
     Assert.assertEquals(Arrays.asList(data1, data2), result1);
     Assert.assertEquals(Arrays.asList(data1, data2), result2);
 

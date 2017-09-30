@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.Group;
 
 /**
  * This is an interface of EventProcessor that processes events of queries.
@@ -43,14 +43,14 @@ public interface EventProcessor extends AutoCloseable {
    * Add the active groups to the active queue of the event processor.
    * @param group active group
    */
-  void addActiveGroup(GlobalSchedGroupInfo group);
+  void addActiveGroup(Group group);
 
   /**
    * Remove the active group from the active group queue.
    * @param group active group
    * @return true if there exists the active group in the queue
    */
-  boolean removeActiveGroup(GlobalSchedGroupInfo group);
+  boolean removeActiveGroup(Group group);
 
   /**
    * Get the information of current runtime.

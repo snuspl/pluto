@@ -24,6 +24,7 @@ import edu.snu.mist.formats.avro.Direction;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This emitter emits the outputs to the next OperatorChains that get inputs from the sources.
@@ -42,36 +43,35 @@ public final class NonBlockingQueueSourceOutputEmitter<I> implements SourceOutpu
    */
   private final Map<ExecutionVertex, MISTEdge> nextOperators;
 
-  private int numEvents;
+  private final AtomicInteger numEvents;
 
   private final Query query;
+
 
   public NonBlockingQueueSourceOutputEmitter(final Map<ExecutionVertex, MISTEdge> nextOperators,
                                              final Query query) {
     this.queue = new ConcurrentLinkedQueue<>();
     this.nextOperators = nextOperators;
     this.query = query;
-    this.numEvents = 0;
+    this.numEvents = new AtomicInteger();
   }
 
   // Return false if the queue is empty or the previously event processing is not finished.
   @Override
-  public boolean processNextEvent() {
-    if (queue.isEmpty()) {
-      return false;
+  public int processAllEvent() {
+    int numProcessedEvent = 0;
+    if (numEvents.get() > 0) {
+      MistEvent event = queue.poll();
+      while (event != null) {
+        for (final Map.Entry<ExecutionVertex, MISTEdge> entry : nextOperators.entrySet()) {
+          process(event, entry.getValue().getDirection(), (PhysicalOperator)entry.getKey());
+        }
+        numProcessedEvent += 1;
+        event = queue.poll();
+        numEvents.decrementAndGet();
+      }
     }
-
-    final MistEvent event = queue.poll();
-    for (final Map.Entry<ExecutionVertex, MISTEdge> entry : nextOperators.entrySet()) {
-      process(event, entry.getValue().getDirection(), (PhysicalOperator)entry.getKey());
-    }
-
-    if (!queue.isEmpty()) {
-      query.insert(this);
-    }
-
-    numEvents -= 1;
-    return true;
+    return numProcessedEvent;
   }
 
   private void process(final MistEvent event,
@@ -100,7 +100,7 @@ public final class NonBlockingQueueSourceOutputEmitter<I> implements SourceOutpu
 
   @Override
   public int numberOfEvents() {
-    return numEvents;
+    return numEvents.get();
   }
 
   @Override
@@ -111,25 +111,43 @@ public final class NonBlockingQueueSourceOutputEmitter<I> implements SourceOutpu
 
   @Override
   public void emitData(final MistDataEvent data) {
-    numEvents += 1;
-    queue.add(data);
-    if (numEvents <= 1) {
-      query.insert(this);
+    try {
+      final int n = numEvents.getAndIncrement();
+      //System.out.println("Event is added at sourceOutputEmitter: " + data.getValue() + ", # events: " + n);
+      queue.add(data);
+      if (n == 0) {
+        query.insert(this);
+      }
+    } catch (final Exception e) {
+      throw new RuntimeException(e);
     }
   }
 
   @Override
   public void emitData(final MistDataEvent data, final int index) {
-    // source output emitter does not emit data according to the index
-    numEvents += 1;
-    if (queue.isEmpty()) {
-      query.insert(this);
+    try {
+      // source output emitter does not emit data according to the index
+      final int n = numEvents.getAndIncrement();
+      //System.out.println("Event is added at sourceOutputEmitter: " + data.getValue() + ", # events: " + n);
+      queue.add(data);
+      if (n == 0) {
+        query.insert(this);
+      }
+    } catch (final Exception e) {
+      throw new RuntimeException(e);
     }
-    queue.add(data);
   }
 
   @Override
   public void emitWatermark(final MistWatermarkEvent watermark) {
-    queue.add(watermark);
+    try {
+      final int n = numEvents.getAndIncrement();
+      queue.add(watermark);
+      if (n == 0) {
+        query.insert(this);
+      }
+    } catch (final Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 }

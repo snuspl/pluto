@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.globalsched.cfs;
 
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.SubGroup;
 import edu.snu.mist.core.task.globalsched.SchedulingPeriodCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsSchedulingPeriod;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.MinSchedulingPeriod;
@@ -55,7 +55,7 @@ public final class CfsSchedulingPeriodCalculatorTest {
         Tang.Factory.getTang().newInjector().getInstance(GroupMetrics.class);
     metricHolder.getWeightMetric().setValue(10.0);
 
-    final GlobalSchedGroupInfo groupInfo = mock(GlobalSchedGroupInfo.class);
+    final SubGroup groupInfo = mock(SubGroup.class);
     //when(groupInfo.getMetricHolder()).thenReturn(metricHolder);
     globalMetricHolder.getNumGroupsMetric().setValue(5);
     globalMetricHolder.getWeightMetric().setValue(20.0);
@@ -76,14 +76,14 @@ public final class CfsSchedulingPeriodCalculatorTest {
     metricHolder1.getWeightMetric().setValue(10.0);
     metricHolder2.getWeightMetric().setValue(1.0);
 
-    final GlobalSchedGroupInfo groupInfo = mock(GlobalSchedGroupInfo.class);
+    final SubGroup groupInfo = mock(SubGroup.class);
     //when(groupInfo.getMetricHolder()).thenReturn(metricHolder1);
     globalMetricHolder.getNumGroupsMetric().setValue(20);
     globalMetricHolder.getWeightMetric().setValue(40.0);
     final long period1 = schedPeriodCalculator.calculateSchedulingPeriod(groupInfo);
     Assert.assertEquals(500, period1);
 
-    final GlobalSchedGroupInfo groupInfo2 = mock(GlobalSchedGroupInfo.class);
+    final SubGroup groupInfo2 = mock(SubGroup.class);
     //when(groupInfo2.getMetricHolder()).thenReturn(metricHolder2);
     final long period2 = schedPeriodCalculator.calculateSchedulingPeriod(groupInfo2);
     Assert.assertEquals(100, period2); // min slice

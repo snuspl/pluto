@@ -15,9 +15,6 @@
  */
 package edu.snu.mist.core.task.globalsched;
 
-import edu.snu.mist.core.task.ActiveQueryManager;
-import edu.snu.mist.core.task.Query;
-import edu.snu.mist.core.task.SourceOutputEmitter;
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.RuntimeProcessingInfo;
 
@@ -53,7 +50,7 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
   /**
    * The currently processed group.
    */
-  private volatile GlobalSchedGroupInfo currProcessedGroup;
+  private volatile SubGroup currProcessedGroup;
 
   /**
    * True if it is running an isolated group.
@@ -88,66 +85,14 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
     try {
       while (!Thread.currentThread().isInterrupted() && !closed) {
         // Pick an active group
-        final GlobalSchedGroupInfo groupInfo = nextGroupSelector.getNextExecutableGroup();
-        currProcessedGroupStartTime = System.currentTimeMillis();
-        currProcessedGroup = groupInfo;
+        final Group groupInfo = nextGroupSelector.getNextExecutableGroup();
+        numProcessedEvents = groupInfo.processAllEvent();
 
-        // Active operator queue
-        final ActiveQueryManager activeQueryManager = groupInfo.getActiveQueryManager();
-
-        // Start time
-        final long startProcessingTime = System.nanoTime();
-        numProcessedEvents = 0;
-        while (groupInfo.isActive() && groupInfo.isProcessing()) {
-          //Pick an active operator event queue
-          final Query activeQuery = activeQueryManager.pickActiveQuery();
-          // This can be null because we do not synchronize the counter
-          if (activeQuery == null) {
-            break;
+          if (LOG.isLoggable(Level.INFO)) {
+            LOG.log(Level.INFO, "{0} Process Group {1}, # Processed Events: {2}",
+                new Object[]{Thread.currentThread().getName(), groupInfo,  numProcessedEvents});
           }
-
-          SourceOutputEmitter sourceOutputEmitter = activeQuery.pickNextEventQueue();
-          while (sourceOutputEmitter != null) {
-            // Set the event processing start time
-            // From this time, we can find the group is overloaded while processing an event
-            while (sourceOutputEmitter.processNextEvent() && groupInfo.isProcessing()) {
-              // Process next event
-              numProcessedEvents += 1;
-            }
-            sourceOutputEmitter = activeQuery.pickNextEventQueue();
-          }
-        }
-
-        // Update the group info if it is in Processing state
-        // If not, skip update because it is in Isolated state
-        if (groupInfo.isProcessing()) {
-          // End time
-          final long endProcessingTime = System.nanoTime();
-
-          // Update processing time and # of events
-          final long processingTime = endProcessingTime - startProcessingTime;
-          if (numProcessedEvents != 0) {
-            groupInfo.getProcessingTime().getAndAdd(endProcessingTime - startProcessingTime);
-            groupInfo.getProcessingEvent().getAndAdd(numProcessedEvents);
-          }
-
-          if (LOG.isLoggable(Level.FINE)) {
-            LOG.log(Level.FINE, "{0} Process Group {1}, # Processed Events: {2}, ProcessingTime: {3}",
-                new Object[]{Thread.currentThread().getName(), groupInfo,  numProcessedEvents,
-                    processingTime});
-          }
-
-          // Change the group status
-          groupInfo.setReadyFromProcessing();
-        } else if (groupInfo.isIsolated()) {
-          groupInfo.setReadyFromIsolated();
-        } else {
-          throw new RuntimeException("Invalid group state: " + groupInfo);
-        }
       }
-    } catch (final InterruptedException e) {
-      // Interrupt occurs while sleeping, so just finishes the process...
-      e.printStackTrace();
     } catch (final Exception e) {
       e.printStackTrace();
       throw new RuntimeException(e + ", OperatorChainManager should not return null");
@@ -170,12 +115,12 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
   }
 
   @Override
-  public void addActiveGroup(final GlobalSchedGroupInfo group) {
+  public void addActiveGroup(final Group group) {
     nextGroupSelector.reschedule(group, false);
   }
 
   @Override
-  public boolean removeActiveGroup(final GlobalSchedGroupInfo group) {
+  public boolean removeActiveGroup(final Group group) {
     return nextGroupSelector.removeDispatchedGroup(group);
   }
 

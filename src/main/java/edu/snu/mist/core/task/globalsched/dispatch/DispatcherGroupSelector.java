@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.globalsched.dispatch;
 
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.Group;
 import edu.snu.mist.core.task.globalsched.GroupEvent;
 import edu.snu.mist.core.task.globalsched.NextGroupSelector;
 
@@ -31,20 +31,18 @@ public final class DispatcherGroupSelector implements NextGroupSelector {
 
   private static final Logger LOG = Logger.getLogger(DispatcherGroupSelector.class.getName());
 
-  private final BlockingQueue<GlobalSchedGroupInfo> queue;
+  private final BlockingQueue<Group> queue;
 
   DispatcherGroupSelector() {
     this.queue = new LinkedBlockingQueue<>();
   }
 
   @Override
-  public GlobalSchedGroupInfo getNextExecutableGroup() {
+  public Group getNextExecutableGroup() {
     try {
       while (true) {
-        final GlobalSchedGroupInfo groupInfo = queue.take();
-        if (groupInfo.setProcessing()) {
-          return groupInfo;
-        }
+        final Group groupInfo = queue.take();
+        return groupInfo;
       }
     } catch (InterruptedException e) {
       e.printStackTrace();
@@ -57,22 +55,22 @@ public final class DispatcherGroupSelector implements NextGroupSelector {
    * If it is miss, set assigned false and do not add it to the queue.
    */
   @Override
-  public void reschedule(final GlobalSchedGroupInfo groupInfo, final boolean miss) {
+  public void reschedule(final Group groupInfo, final boolean miss) {
     if (miss) {
       //groupInfo.compareAndSetAssigned(true, false);
     } else {
+      //System.out.println("Event is added at NExtGroupSEelctor");
       queue.add(groupInfo);
     }
   }
 
   @Override
-  public boolean removeDispatchedGroup(final GlobalSchedGroupInfo group) {
-    queue.remove(group);
-    return group.setReadyFromDispatched();
+  public boolean removeDispatchedGroup(final Group group) {
+    return queue.remove(group);
   }
 
   @Override
-  public void reschedule(final Collection<GlobalSchedGroupInfo> groupInfos) {
+  public void reschedule(final Collection<Group> groupInfos) {
     throw new RuntimeException("not supported");
   }
 

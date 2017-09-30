@@ -15,10 +15,13 @@
  */
 package edu.snu.mist.core.task;
 
+import edu.snu.mist.core.task.globalsched.SubGroup;
+
 import javax.inject.Inject;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This class picks a query, which has more than one events to be processed, from the active query set randomly.
@@ -32,32 +35,34 @@ public final class DefaultQueryImpl implements Query {
    */
   private final Queue<SourceOutputEmitter> activeOperatorQueue;
 
-  private int numActiveOperators;
-  private final ActiveQueryManager activeQueryManager;
+  private final AtomicInteger numActiveOperators;
 
-  private boolean isActive = false;
+  private final String id;
+
+  private final SubGroup subGroup;
 
   @Inject
-  public DefaultQueryImpl(final ActiveQueryManager activeQueryManager) {
+  public DefaultQueryImpl(final String identifier,
+                          final SubGroup subGroup) {
     // ConcurrentLinkedQueue is used to assure concurrency as well as maintain exactly-once query picking.
+    this.id = identifier;
     this.activeOperatorQueue = new ConcurrentLinkedQueue<>();
-    this.activeQueryManager = activeQueryManager;
-    this.numActiveOperators = 0;
+    this.subGroup = subGroup;
+    this.numActiveOperators = new AtomicInteger();
   }
 
   /**
    * Insert a new operator chain into the manager. This method is called when the
    * queue of a operatorChain just becomes not empty by getting an event, or the queue is still not empty
    * after thread's processing an event.
-   * @param headOperator a operatorChain to be inserted
    */
   @Override
   public void insert(final SourceOutputEmitter sourceOutputEmitter) {
-    numActiveOperators += 1;
+    final int n = numActiveOperators.getAndIncrement();
     activeOperatorQueue.add(sourceOutputEmitter);
-    if (!isActive) {
-      isActive = true;
-      activeQueryManager.insert(this);
+    //System.out.println("Event is added at Query, # ev ents: " + n);
+    if (n == 0) {
+      subGroup.insert(this);
     }
   }
 
@@ -65,34 +70,32 @@ public final class DefaultQueryImpl implements Query {
    * Delete an operator from the manager.
    * This method should be only called when the queue is permanently removed from the system,
    * because this method traverses along the whole queue, thus takes O(n) time to complete.
-   * @param operatorChain a operatorChain to be deleted.
    */
   @Override
   public void delete(final SourceOutputEmitter sourceOutputEmitter) {
     if (activeOperatorQueue.remove(sourceOutputEmitter)) {
-      numActiveOperators -= 1;
-      activeQueryManager.delete(this);
+      numActiveOperators.decrementAndGet();
+      subGroup.delete(this);
     }
-  }
-
-  /**
-   * Pick an operator chain from the manager and removes it from the working queue.
-   * @return picked operator chain if there is. null when there is no active queries to be processed.
-   */
-  @Override
-  public SourceOutputEmitter pickNextEventQueue() {
-    numActiveOperators -= 1;
-    final SourceOutputEmitter sourceOutputEmitter = activeOperatorQueue.poll();
-
-    if (sourceOutputEmitter == null) {
-      isActive = false;
-    }
-    return sourceOutputEmitter;
   }
 
   @Override
   public int size() {
-    return numActiveOperators;
+    return numActiveOperators.get();
+  }
+
+  @Override
+  public int processAllEvent() {
+    int numProcessedEvent = 0;
+    if (numActiveOperators.get() > 0) {
+      SourceOutputEmitter sourceOutputEmitter = activeOperatorQueue.poll();
+      while (sourceOutputEmitter != null) {
+        numProcessedEvent += sourceOutputEmitter.processAllEvent();
+        numActiveOperators.decrementAndGet();
+        sourceOutputEmitter = activeOperatorQueue.poll();
+      }
+    }
+    return numProcessedEvent;
   }
 
   @Override
@@ -104,5 +107,15 @@ public final class DefaultQueryImpl implements Query {
       sum += sourceOutputEmitter.numberOfEvents();
     }
     return sum;
+  }
+
+  @Override
+  public String getId() {
+    return id;
+  }
+
+  @Override
+  public SubGroup getSubGroup() {
+    return subGroup;
   }
 }

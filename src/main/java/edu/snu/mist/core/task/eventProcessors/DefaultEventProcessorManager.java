@@ -18,7 +18,7 @@ package edu.snu.mist.core.task.eventProcessors;
 import edu.snu.mist.core.task.eventProcessors.groupAssigner.GroupAssigner;
 import edu.snu.mist.core.task.eventProcessors.parameters.*;
 import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupRebalancer;
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.Group;
 import edu.snu.mist.core.task.globalsched.parameters.DefaultGroupLoad;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -26,7 +26,9 @@ import javax.inject.Inject;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,7 +74,7 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
   /**
    * Dispatcher threads.
    */
-  private final GroupDispatcher groupDispatcher;
+  //private final GroupDispatcher groupDispatcher;
 
   /**
    * Group rebalancer thread.
@@ -120,11 +122,11 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
                                        final GroupAssigner groupAssigner,
                                        final GroupRebalancer groupRebalancer,
                                        final GroupAllocationTableModifier groupAllocationTableModifier,
-                                       final GroupDispatcher groupDispatcher,
+                                       //final GroupDispatcher groupDispatcher,
                                        final EventProcessorFactory eventProcessorFactory) {
     this.eventProcessorLowerBound = eventProcessorLowerBound;
     this.eventProcessorUpperBound = eventProcessorUpperBound;
-    this.groupDispatcher = groupDispatcher;
+    //this.groupDispatcher = groupDispatcher;
     this.groupAssigner = groupAssigner;
     this.groupRebalancer = groupRebalancer;
     this.groupAllocationTable = groupAllocationTable;
@@ -209,14 +211,13 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
               new Object[]{currNum, currNum - decreaseNum});
         }
 
-
         final List<EventProcessor> eventProcessors = groupAllocationTable.getKeys();
         final List<EventProcessor> removedEventProcessors = new LinkedList<>();
         final EventProcessor lastEventProcessor = eventProcessors.get(eventProcessors.size() - 1);
         for (int i = 0; i < decreaseNum; i++) {
           final EventProcessor ep = eventProcessors.get(i);
-          final Collection<GlobalSchedGroupInfo> srcGroups = groupAllocationTable.getValue(ep);
-          final Collection<GlobalSchedGroupInfo> dstGroups = groupAllocationTable.getValue(lastEventProcessor);
+          final Collection<Group> srcGroups = groupAllocationTable.getValue(ep);
+          final Collection<Group> dstGroups = groupAllocationTable.getValue(lastEventProcessor);
           dstGroups.addAll(srcGroups);
           srcGroups.clear();
           removedEventProcessors.add(eventProcessors.get(i));
@@ -245,17 +246,6 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
   }
 
   @Override
-  public void addGroup(final GlobalSchedGroupInfo newGroup) {
-    newGroup.setLoad(defaultGroupLoad);
-    groupAllocationTableModifier.addEvent(new WritingEvent(WritingEvent.EventType.GROUP_ADD, newGroup));
-  }
-
-  @Override
-  public void removeGroup(final GlobalSchedGroupInfo removedGroup) {
-    groupAllocationTableModifier.addEvent(new WritingEvent<>(WritingEvent.EventType.GROUP_REMOVE, removedGroup));
-  }
-
-  @Override
   public int size() {
     final int size = groupAllocationTable.size();
     return size;
@@ -273,7 +263,7 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
       eventProcessor.close();
     }
 
-    groupDispatcher.close();
+    //groupDispatcher.close();
     groupAllocationTableModifier.close();
     groupRebalancerService.shutdown();
     groupRebalancerService.awaitTermination(5L, TimeUnit.SECONDS);

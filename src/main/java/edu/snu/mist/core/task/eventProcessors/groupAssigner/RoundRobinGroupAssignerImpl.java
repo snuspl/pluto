@@ -17,7 +17,7 @@ package edu.snu.mist.core.task.eventProcessors.groupAssigner;
 
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.GroupAllocationTable;
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.Group;
 
 import javax.inject.Inject;
 import java.util.Collection;
@@ -58,7 +58,7 @@ public final class RoundRobinGroupAssignerImpl implements GroupAssigner {
     final StringBuilder sb = new StringBuilder();
     sb.append("-------------- TABLE ----------------\n");
     for (final EventProcessor ep : eventProcessors) {
-      final Collection<GlobalSchedGroupInfo> groups = groupAllocationTable.getValue(ep);
+      final Collection<Group> groups = groupAllocationTable.getValue(ep);
       sb.append(ep);
       sb.append(" -> [");
       sb.append(groups.size());
@@ -71,7 +71,7 @@ public final class RoundRobinGroupAssignerImpl implements GroupAssigner {
 
 
   @Override
-  public void assignGroup(final GlobalSchedGroupInfo newGroup) {
+  public void assignGroup(final Group newGroup) {
     try {
       final String groupId = newGroup.getGroupId();
       int index = Integer.valueOf(groupId.substring(3));
@@ -84,6 +84,7 @@ public final class RoundRobinGroupAssignerImpl implements GroupAssigner {
       final double defaultLoad = getDefaultLoad(eventProcessor);
       newGroup.setLoad(defaultLoad);
       groupAllocationTable.getValue(eventProcessor).add(newGroup);
+      newGroup.setEventProcessor(eventProcessor);
       eventProcessor.setLoad(eventProcessor.getLoad() + defaultLoad);
     } catch (final Exception e) {
       e.printStackTrace();

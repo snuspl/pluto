@@ -27,7 +27,7 @@ public interface SourceOutputEmitter extends OutputEmitter {
    * @return true if there exists an event.
    * If the queue is empty or running an event, it returns false.
    */
-  boolean processNextEvent();
+  int processAllEvent();
 
   /**
    * Get the number of events that are in the queue.

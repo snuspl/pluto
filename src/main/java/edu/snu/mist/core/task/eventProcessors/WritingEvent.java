@@ -24,6 +24,7 @@ public final class WritingEvent<V> {
    */
   public enum EventType {
     GROUP_ADD,
+    SUBGROUP_ADD,
     GROUP_REMOVE,
     EP_ADD,
     EP_REMOVE,

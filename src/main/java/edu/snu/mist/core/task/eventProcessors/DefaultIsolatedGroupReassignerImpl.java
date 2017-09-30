@@ -17,13 +17,10 @@ package edu.snu.mist.core.task.eventProcessors;
 
 import edu.snu.mist.core.task.eventProcessors.groupAssigner.GroupAssigner;
 import edu.snu.mist.core.task.eventProcessors.parameters.UnderloadedGroupThreshold;
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.Iterator;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 
 /**
  * Remove threads that run isolated groups if the load of isolated groups is small.  
@@ -47,12 +44,13 @@ public final class DefaultIsolatedGroupReassignerImpl implements IsolatedGroupRe
 
   @Override
   public void reassignIsolatedGroups() {
+    /* Re-implement this method
     final Iterator<EventProcessor> iterator = groupAllocationTable.getKeys().iterator();
     while (iterator.hasNext()) {
       final EventProcessor eventProcessor = iterator.next();
       if (eventProcessor.isRunningIsolatedGroup()) {
         final RuntimeProcessingInfo runtimeInfo = eventProcessor.getCurrentRuntimeInfo();
-        final GlobalSchedGroupInfo group = runtimeInfo.getCurrGroup();
+        final SubGroup group = runtimeInfo.getCurrGroup();
         if (group.getLoad() <= underloadedGroupThreshold) {
           LOG.log(Level.INFO, "Removing a thread for isolation: {0}",
               new Object[] {group});
@@ -68,5 +66,6 @@ public final class DefaultIsolatedGroupReassignerImpl implements IsolatedGroupRe
         }
       }
     }
+    */
   }
 }

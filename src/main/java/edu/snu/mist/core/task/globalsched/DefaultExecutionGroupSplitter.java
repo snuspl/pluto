@@ -13,24 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched.roundrobin.polling;
+package edu.snu.mist.core.task.globalsched;
 
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
 
-/**
- * This class checks whether the group is inactive or not based on the miss.
- */
-public final class NaiveInactiveGroupChecker implements InactiveGroupChecker {
+import javax.inject.Inject;
 
-  NaiveInactiveGroupChecker() {
-    // do nothing
+public final class DefaultExecutionGroupSplitter implements ExecutionGroupSplitter {
+
+  private final EventProcessorManager eventProcessorManager;
+
+  @Inject
+  private DefaultExecutionGroupSplitter(final EventProcessorManager eventProcessorManager) {
+    this.eventProcessorManager = eventProcessorManager;
   }
 
-  /**
-   * Just returns the miss value (it means it determines the group becomes inactive when a single miss occur).
-   */
   @Override
-  public boolean check(final GlobalSchedGroupInfo groupInfo, final boolean miss) {
-    return miss;
+  public void splitGroup(final SubGroup group) {
+    final Group superGroup = group.getGroup();
+    // TODO
   }
 }

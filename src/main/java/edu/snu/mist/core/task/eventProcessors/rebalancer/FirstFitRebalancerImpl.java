@@ -17,7 +17,7 @@ package edu.snu.mist.core.task.eventProcessors.rebalancer;
 
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.GroupAllocationTable;
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.Group;
 import org.apache.reef.io.Tuple;
 
 import javax.inject.Inject;
@@ -58,9 +58,9 @@ public final class FirstFitRebalancerImpl implements GroupRebalancer {
    * @param groups groups
    * @return total load
    */
-  private double calculateLoadOfGroupsForLogging(final Collection<GlobalSchedGroupInfo> groups) {
+  private double calculateLoadOfGroupsForLogging(final Collection<Group> groups) {
     double sum = 0;
-    for (final GlobalSchedGroupInfo group : groups) {
+    for (final Group group : groups) {
       final double fixedLoad = group.getLoad();
       sum += fixedLoad;
     }
@@ -85,22 +85,22 @@ public final class FirstFitRebalancerImpl implements GroupRebalancer {
     final double desirableLoad = totalLoad * (1.0 / eventProcessors.size());
 
     // Make bins and items.
-    final Tuple<Map<EventProcessor, Double>, List<GlobalSchedGroupInfo>> binsAndItems =
+    final Tuple<Map<EventProcessor, Double>, List<Group>> binsAndItems =
         makeBinsAndItems(desirableLoad, loadTable, eventProcessors);
 
     // First-fit heuristic algorithm
-    final Map<GlobalSchedGroupInfo, EventProcessor> mapping = firstFitHeuristic(
+    final Map<Group, EventProcessor> mapping = firstFitHeuristic(
         eventProcessors, binsAndItems.getKey(), binsAndItems.getValue());
 
     // Reassign the groups to the event processor
     for (final EventProcessor eventProcessor : eventProcessors) {
-      final Iterator<GlobalSchedGroupInfo> iterator = groupAllocationTable.getValue(eventProcessor).iterator();
+      final Iterator<Group> iterator = groupAllocationTable.getValue(eventProcessor).iterator();
       while (iterator.hasNext()) {
-        final GlobalSchedGroupInfo group = iterator.next();
+        final Group group = iterator.next();
         final EventProcessor destEP = mapping.remove(group);
         if (destEP != null) {
           iterator.remove();
-          final Collection<GlobalSchedGroupInfo> dest = groupAllocationTable.getValue(destEP);
+          final Collection<Group> dest = groupAllocationTable.getValue(destEP);
           dest.add(group);
         }
       }
@@ -119,15 +119,15 @@ public final class FirstFitRebalancerImpl implements GroupRebalancer {
     }
   }
 
-  private Map<GlobalSchedGroupInfo, EventProcessor> firstFitHeuristic(
+  private Map<Group, EventProcessor> firstFitHeuristic(
       final List<EventProcessor> eventProcessors,
       final Map<EventProcessor, Double> bins,
-      final List<GlobalSchedGroupInfo> items) {
-    final Map<GlobalSchedGroupInfo, EventProcessor> mapping = new HashMap<>(items.size());
+      final List<Group> items) {
+    final Map<Group, EventProcessor> mapping = new HashMap<>(items.size());
 
-    final Iterator<GlobalSchedGroupInfo> iterator = items.iterator();
+    final Iterator<Group> iterator = items.iterator();
     while (iterator.hasNext()) {
-      final GlobalSchedGroupInfo item = iterator.next();
+      final Group item = iterator.next();
       // find the first bin that can hold the item
       for (final EventProcessor eventProcessor : eventProcessors) {
         final double size = bins.get(eventProcessor);
@@ -144,9 +144,9 @@ public final class FirstFitRebalancerImpl implements GroupRebalancer {
 
     if (!items.isEmpty()) {
       // Second
-      final Iterator<GlobalSchedGroupInfo> secondIter = items.iterator();
+      final Iterator<Group> secondIter = items.iterator();
       while (secondIter.hasNext()) {
-        final GlobalSchedGroupInfo item = secondIter.next();
+        final Group item = secondIter.next();
         // find the first bin that can hold the item
         for (final EventProcessor eventProcessor : eventProcessors) {
           final double size = bins.get(eventProcessor);
@@ -176,7 +176,7 @@ public final class FirstFitRebalancerImpl implements GroupRebalancer {
    * @param eventProcessors event processors
    * @return bins and items
    */
-  private Tuple<Map<EventProcessor, Double>, List<GlobalSchedGroupInfo>> makeBinsAndItems(
+  private Tuple<Map<EventProcessor, Double>, List<Group>> makeBinsAndItems(
       final double desirableLoad,
       final Map<EventProcessor, Double> loadTable,
       final List<EventProcessor> eventProcessors) {
@@ -184,14 +184,14 @@ public final class FirstFitRebalancerImpl implements GroupRebalancer {
     final Map<EventProcessor, Double> bins = new HashMap<>(groupAllocationTable.size());
 
     // Make items
-    final List<GlobalSchedGroupInfo> items = new LinkedList<>();
+    final List<Group> items = new LinkedList<>();
     for (final EventProcessor eventProcessor : eventProcessors) {
       double load = loadTable.get(eventProcessor);
       if (load > desirableLoad) {
         // Add groups until the load is less than the desirable load
-        final Iterator<GlobalSchedGroupInfo> iterator = groupAllocationTable.getValue(eventProcessor).iterator();
+        final Iterator<Group> iterator = groupAllocationTable.getValue(eventProcessor).iterator();
         while (load > desirableLoad && iterator.hasNext()) {
-          final GlobalSchedGroupInfo group = iterator.next();
+          final Group group = iterator.next();
           items.add(group);
           load -= group.getLoad();
         }
