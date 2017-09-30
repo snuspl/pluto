@@ -34,7 +34,6 @@ public interface ClassLoaderProvider {
    */
   ClassLoader newInstance(URL[] urls);
 
-
   /**
    * Create a class loader with paths of the jar files.
    * @param paths paths of jar files
