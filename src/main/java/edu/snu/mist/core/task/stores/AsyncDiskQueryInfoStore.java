@@ -180,22 +180,22 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
    * @param paths
    * @return true if there was a hash collision.
    */
-  private boolean checkForHashCollision(final ByteBuffer jarFileBytes,
-                                        final List<Tuple<ByteBuffer, String>> jarInfoList,
-                                        final List<String> paths) {
+  private boolean checkSameJar(final ByteBuffer jarFileBytes,
+                               final List<Tuple<ByteBuffer, String>> jarInfoList,
+                               final List<String> paths) {
     // The following boolean is used to see if a hash collision has occurred.
-    boolean hashCollisionOccurred = true;
+    boolean sameJarExists = false;
     // Check if any of the actual ByteBuffers are also the same.
     for (final Tuple<ByteBuffer, String> jarInfo : jarInfoList) {
       if (Arrays.equals(jarFileBytes.array(), jarInfo.getKey().array())) {
         LOG.log(Level.INFO, "The jar file submitted was already previously submitted.");
         final String path = jarInfo.getValue();
         paths.add(path);
-        hashCollisionOccurred = false;
+        sameJarExists = true;
         break;
       }
     }
-    return hashCollisionOccurred;
+    return sameJarExists;
   }
 
   /**
@@ -233,7 +233,7 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
       if (jarInfoList != null) {
         synchronized (jarInfoList) {
           // This is the case when a jar file with the same hash was submitted previously.
-          if (checkForHashCollision(jarFileBytes, jarInfoList, paths)) {
+          if (!checkSameJar(jarFileBytes, jarInfoList, paths)) {
             // This is when there was a SHA-256 hash collision between two different files, so a new jar is created.
             final String path = String.format("submitted-%s.jar", fileNameGenerator.generate());
             LOG.log(Level.INFO, "New jar " + path + " was submitted with a SHA-256 hash collision.");
@@ -256,7 +256,7 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
           // Two jar files with the same hash were submitted concurrently.
           jarInfoList = hashInfoMap.get(wrappedHash);
           synchronized (jarInfoList) {
-            if (checkForHashCollision(jarFileBytes, jarInfoList, paths)) {
+            if (!checkSameJar(jarFileBytes, jarInfoList, paths)) {
               LOG.log(Level.INFO, "New jar " + path + " was submitted with a SHA-256 hash collision.");
               jarInfoList.add(newJarTuple);
               createJarFile(jarFileBytes, jarFilePath, paths);
