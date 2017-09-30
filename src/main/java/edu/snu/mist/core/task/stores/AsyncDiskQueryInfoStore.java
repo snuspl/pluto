@@ -85,12 +85,12 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
 
   /**
    * A map that contains the SHA-256 hash value (which is a byte array) converted to a ByteBuffer as the key,
-   * and a set of tuples that correspond to that SHA-256 hash value.
+   * and a list of tuples that correspond to that SHA-256 hash value.
    * A tuple is consisted of the ByteBuffer(of a jar file) and location(as a string) as a value for submitted jar files.
    * Multiple tuples may correspond to a single SHA-256 hash value, in case of hash collisions.
    * The key is a ByteBuffer because a byte array cannot be used as a key without a separate wrapper.
    */
-  private final Map<ByteBuffer, Set<Tuple<ByteBuffer, String>>> hashInfoMap;
+  private final Map<ByteBuffer, List<Tuple<ByteBuffer, String>>> hashInfoMap;
 
   @Inject
   private AsyncDiskQueryInfoStore(@Parameter(TempFolderPath.class) final String tmpFolderPath,
@@ -174,19 +174,19 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
   }
 
   /**
-   * Check for hash collisions within the jarInfoSet and add the path(s) if collisions exist.
+   * Check for hash collisions within the jarInfoList and add the path(s) if collisions exist.
    * @param jarFileBytes
-   * @param jarInfoSet
+   * @param jarInfoList
    * @param paths
    * @return true if there was a hash collision.
    */
   private boolean checkForHashCollision(final ByteBuffer jarFileBytes,
-                                        final Set<Tuple<ByteBuffer, String>> jarInfoSet,
+                                        final List<Tuple<ByteBuffer, String>> jarInfoList,
                                         final List<String> paths) {
     // The following boolean is used to see if a hash collision has occurred.
     boolean hashCollisionOccurred = true;
     // Check if any of the actual ByteBuffers are also the same.
-    for (final Tuple<ByteBuffer, String> jarInfo : jarInfoSet) {
+    for (final Tuple<ByteBuffer, String> jarInfo : jarInfoList) {
       if (Arrays.equals(jarFileBytes.array(), jarInfo.getKey().array())) {
         LOG.log(Level.INFO, "The jar file submitted was already previously submitted.");
         final String path = jarInfo.getValue();
@@ -229,16 +229,16 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
       final byte[] byteBufferHash = HashUtils.getByteBufferHash(jarFileBytes);
       // Check if the jarFiles already exist.
       final ByteBuffer wrappedHash = ByteBuffer.wrap(byteBufferHash);
-      Set<Tuple<ByteBuffer, String>> jarInfoSet = hashInfoMap.get(wrappedHash);
-      if (jarInfoSet != null) {
-        synchronized (jarInfoSet) {
+      List<Tuple<ByteBuffer, String>> jarInfoList = hashInfoMap.get(wrappedHash);
+      if (jarInfoList != null) {
+        synchronized (jarInfoList) {
           // This is the case when a jar file with the same hash was submitted previously.
-          if (checkForHashCollision(jarFileBytes, jarInfoSet, paths)) {
+          if (checkForHashCollision(jarFileBytes, jarInfoList, paths)) {
             // This is when there was a SHA-256 hash collision between two different files, so a new jar is created.
             final String path = String.format("submitted-%s.jar", fileNameGenerator.generate());
             LOG.log(Level.INFO, "New jar " + path + " was submitted with a SHA-256 hash collision.");
             final Path jarFilePath = Paths.get(tmpFolderPath, path);
-            jarInfoSet.add(new Tuple<>(jarFileBytes, jarFilePath.toString()));
+            jarInfoList.add(new Tuple<>(jarFileBytes, jarFilePath.toString()));
             createJarFile(jarFileBytes, jarFilePath, paths);
           }
         }
@@ -246,19 +246,19 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
         // If the hash value is new to the MistTask, create the new jar.
         final String path = String.format("submitted-%s.jar", fileNameGenerator.generate());
         final Path jarFilePath = Paths.get(tmpFolderPath, path);
-        final Set<Tuple<ByteBuffer, String>> newPathsSet = new HashSet<>();
+        final List<Tuple<ByteBuffer, String>> newPathsList = new ArrayList<>();
         final Tuple<ByteBuffer, String> newJarTuple = new Tuple<>(jarFileBytes, jarFilePath.toString());
-        newPathsSet.add(newJarTuple);
-        if (hashInfoMap.putIfAbsent(wrappedHash, newPathsSet) == null) {
+        newPathsList.add(newJarTuple);
+        if (hashInfoMap.putIfAbsent(wrappedHash, newPathsList) == null) {
           LOG.log(Level.INFO, "New jar " + path + " was submitted.");
           createJarFile(jarFileBytes, jarFilePath, paths);
         } else {
           // Two jar files with the same hash were submitted concurrently.
-          jarInfoSet = hashInfoMap.get(wrappedHash);
-          synchronized (jarInfoSet) {
-            if (checkForHashCollision(jarFileBytes, jarInfoSet, paths)) {
+          jarInfoList = hashInfoMap.get(wrappedHash);
+          synchronized (jarInfoList) {
+            if (checkForHashCollision(jarFileBytes, jarInfoList, paths)) {
               LOG.log(Level.INFO, "New jar " + path + " was submitted with a SHA-256 hash collision.");
-              jarInfoSet.add(newJarTuple);
+              jarInfoList.add(newJarTuple);
               createJarFile(jarFileBytes, jarFilePath, paths);
             }
           }
