@@ -20,7 +20,9 @@ import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.core.parameters.TempFolderPath;
-import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.formats.avro.AvroDag;
+import edu.snu.mist.formats.avro.AvroVertex;
+import edu.snu.mist.formats.avro.Edge;
 import edu.snu.mist.utils.TestParameters;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
@@ -127,6 +129,43 @@ public class QueryInfoStoreTest {
     for (final String path : paths) {
       Assert.assertFalse(new File(path).exists());
     }
+    folder.delete();
+  }
+
+  @Test(timeout = 1000)
+  public void hashCollisionTest() throws InjectionException, IOException {
+    // Jar files
+    final List<ByteBuffer> jarFiles1 = new LinkedList<>();
+    final ByteBuffer byteBuffer1 = ByteBuffer.wrap(new byte[]{0, 1, 0, 1, 1, 1});
+    final ByteBuffer byteBuffer2 = ByteBuffer.wrap(new byte[]{1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0});
+    final ByteBuffer byteBuffer3 = ByteBuffer.wrap(new byte[]{0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1});
+    jarFiles1.add(byteBuffer1);
+    jarFiles1.add(byteBuffer2);
+    jarFiles1.add(byteBuffer3);
+
+    final List<ByteBuffer> jarFiles2 = new LinkedList<>();
+    // byteBuffer 4 and 5 are the same as 1 and 2.
+    final ByteBuffer byteBuffer4 = ByteBuffer.wrap(new byte[]{0, 1, 0, 1, 1, 1});
+    final ByteBuffer byteBuffer5 = ByteBuffer.wrap(new byte[]{1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0});
+    final ByteBuffer byteBuffer6 = ByteBuffer.wrap(new byte[]{1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0});
+    jarFiles2.add(byteBuffer4);
+    jarFiles2.add(byteBuffer5);
+    jarFiles2.add(byteBuffer6);
+
+    final Injector injector = Tang.Factory.getTang().newInjector();
+    final QueryInfoStore store = injector.getInstance(QueryInfoStore.class);
+    final String tmpFolderPath = injector.getNamedInstance(TempFolderPath.class);
+    final File folder = new File(tmpFolderPath);
+
+    // Store jar files
+    final List<String> paths1 = store.saveJar(jarFiles1);
+    final List<String> paths2 = store.saveJar(jarFiles2);
+
+    // Test if paths were redirected to the right files.
+    Assert.assertEquals(paths2.get(0), paths1.get(0));
+    Assert.assertEquals(paths2.get(1), paths1.get(1));
+    Assert.assertNotEquals(paths2.get(2), paths1.get(2));
+
     folder.delete();
   }
 

@@ -17,6 +17,7 @@ package edu.snu.mist.core.task.stores;
 
 import edu.snu.mist.core.parameters.TempFolderPath;
 import edu.snu.mist.formats.avro.AvroDag;
+import edu.snu.mist.core.task.HashUtils;
 import io.netty.util.internal.ConcurrentSet;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.DataFileWriter;
@@ -42,12 +43,18 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * It saves the information of a query (operator chain dag, jar files) into the disk.
  * The store request is done by separated thread asynchronously.
  */
 final class AsyncDiskQueryInfoStore implements QueryInfoStore {
+
+  private static final Logger LOG = Logger.getLogger(QueryInfoStore.class.getName());
   /**
    * A path for the temporary folder that stores jar files and operator chain dags of queries.
    */
@@ -83,6 +90,15 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
    */
   private final Set<String> storedQuerySet;
 
+  /**
+   * A map that contains the SHA-256 hash value (which is a byte array) converted to a ByteBuffer as the key,
+   * and a list of tuples that correspond to that SHA-256 hash value.
+   * A tuple is consisted of the ByteBuffer(of a jar file) and location(as a string) as a value for submitted jar files.
+   * Multiple tuples may correspond to a single SHA-256 hash value, in case of hash collisions.
+   * The key is a ByteBuffer because a byte array cannot be used as a key without a separate wrapper.
+   */
+  private final Map<ByteBuffer, List<Tuple<ByteBuffer, String>>> hashInfoMap;
+
   @Inject
   private AsyncDiskQueryInfoStore(@Parameter(TempFolderPath.class) final String tmpFolderPath,
                                   final FileNameGenerator fileNameGenerator) {
@@ -90,6 +106,7 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
     this.fileNameGenerator = fileNameGenerator;
     this.datumWriter = new SpecificDatumWriter<>(AvroDag.class);
     this.datumReader = new SpecificDatumReader<>(AvroDag.class);
+    this.hashInfoMap = new ConcurrentHashMap<>();
     // Create a folder that stores the dags and jar files
     final File folder = new File(tmpFolderPath);
     if (!folder.exists()) {
@@ -164,6 +181,48 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
   }
 
   /**
+   * Check for hash collisions within the jarInfoList and add the path(s) if the same jar was previously submitted.
+   * @param jarFileBytes
+   * @param jarInfoList
+   * @param paths
+   * @return true if the same jar was previously submitted.
+   */
+  private boolean checkSameJar(final ByteBuffer jarFileBytes,
+                               final List<Tuple<ByteBuffer, String>> jarInfoList,
+                               final List<String> paths) {
+    // The following boolean is used to see if a hash collision has occurred.
+    boolean sameJarExists = false;
+    // Check if any of the actual ByteBuffers are also the same.
+    for (final Tuple<ByteBuffer, String> jarInfo : jarInfoList) {
+      if (Arrays.equals(jarFileBytes.array(), jarInfo.getKey().array())) {
+        LOG.log(Level.INFO, "The jar file submitted was already previously submitted.");
+        final String path = jarInfo.getValue();
+        paths.add(path);
+        sameJarExists = true;
+        break;
+      }
+    }
+    return sameJarExists;
+  }
+
+  /**
+   * Create a JarFile with the given bytes and path, and also add it to the paths.
+   * @param jarFileBytes
+   * @param jarFilePath
+   * @param paths
+   * @throws IOException
+   */
+  private void createJarFile(final ByteBuffer jarFileBytes,
+                             final Path jarFilePath,
+                             final List<String> paths) throws IOException {
+    final File jarFile = jarFilePath.toFile();
+    final FileChannel wChannel = new FileOutputStream(jarFile, false).getChannel();
+    wChannel.write(jarFileBytes);
+    wChannel.close();
+    paths.add(jarFile.getAbsolutePath());
+  }
+
+  /**
    * Saves the serialized jar files into the disk.
    * This generates file names for the jar files from fileNameGenerator.
    * @param jarFiles jar files
@@ -174,13 +233,44 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
   public List<String> saveJar(final List<ByteBuffer> jarFiles) throws IOException {
     final List<String> paths = new LinkedList<>();
     for (final ByteBuffer jarFileBytes : jarFiles) {
-      final String path = String.format("submitted-%s.jar", fileNameGenerator.generate());
-      final Path jarFilePath = Paths.get(tmpFolderPath, path);
-      final File jarFile = jarFilePath.toFile();
-      final FileChannel wChannel = new FileOutputStream(jarFile, false).getChannel();
-      wChannel.write(jarFileBytes);
-      wChannel.close();
-      paths.add(jarFile.getAbsolutePath());
+      final byte[] byteBufferHash = HashUtils.getByteBufferHash(jarFileBytes);
+      // Check if the jarFiles already exist.
+      final ByteBuffer wrappedHash = ByteBuffer.wrap(byteBufferHash);
+      List<Tuple<ByteBuffer, String>> jarInfoList = hashInfoMap.get(wrappedHash);
+      if (jarInfoList != null) {
+        synchronized (jarInfoList) {
+          // This is the case when a jar file with the same hash was submitted previously.
+          if (!checkSameJar(jarFileBytes, jarInfoList, paths)) {
+            // This is when there was a SHA-256 hash collision between two different files, so a new jar is created.
+            final String path = String.format("submitted-%s.jar", fileNameGenerator.generate());
+            LOG.log(Level.INFO, "New jar " + path + " was submitted with a SHA-256 hash collision.");
+            final Path jarFilePath = Paths.get(tmpFolderPath, path);
+            jarInfoList.add(new Tuple<>(jarFileBytes, jarFilePath.toString()));
+            createJarFile(jarFileBytes, jarFilePath, paths);
+          }
+        }
+      } else {
+        // If the hash value is new to the MistTask, create the new jar.
+        final String path = String.format("submitted-%s.jar", fileNameGenerator.generate());
+        final Path jarFilePath = Paths.get(tmpFolderPath, path);
+        final List<Tuple<ByteBuffer, String>> newPathsList = new ArrayList<>();
+        final Tuple<ByteBuffer, String> newJarTuple = new Tuple<>(jarFileBytes, jarFilePath.toString());
+        newPathsList.add(newJarTuple);
+        if (hashInfoMap.putIfAbsent(wrappedHash, newPathsList) == null) {
+          LOG.log(Level.INFO, "New jar " + path + " was submitted.");
+          createJarFile(jarFileBytes, jarFilePath, paths);
+        } else {
+          // Two jar files with the same hash were submitted concurrently.
+          jarInfoList = hashInfoMap.get(wrappedHash);
+          synchronized (jarInfoList) {
+            if (!checkSameJar(jarFileBytes, jarInfoList, paths)) {
+              LOG.log(Level.INFO, "New jar " + path + " was submitted with a SHA-256 hash collision.");
+              jarInfoList.add(newJarTuple);
+              createJarFile(jarFileBytes, jarFilePath, paths);
+            }
+          }
+        }
+      }
     }
     return paths;
   }
