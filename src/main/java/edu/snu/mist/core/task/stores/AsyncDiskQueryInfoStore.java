@@ -174,11 +174,11 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
   }
 
   /**
-   * Check for hash collisions within the jarInfoList and add the path(s) if collisions exist.
+   * Check for hash collisions within the jarInfoList and add the path(s) if the same jar was previously submitted.
    * @param jarFileBytes
    * @param jarInfoList
    * @param paths
-   * @return true if there was a hash collision.
+   * @return true if the same jar was previously submitted.
    */
   private boolean checkSameJar(final ByteBuffer jarFileBytes,
                                final List<Tuple<ByteBuffer, String>> jarInfoList,
