@@ -186,7 +186,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
       // Update group information
       final String groupId;
       if (groupAware) {
-        groupId = tuple.getValue().getGroupId();
+        groupId = tuple.getValue().getSuperGroupId();
       } else {
         // TODO[REMOVE]: If it is groupUnaware, just assign unique group Id per query
         groupId = Long.toString(groupIdCounter.getAndIncrement());

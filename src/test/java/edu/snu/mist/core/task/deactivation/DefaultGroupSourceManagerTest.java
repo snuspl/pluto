@@ -105,7 +105,7 @@ public class DefaultGroupSourceManagerTest {
     final SourceConfiguration localTextSocketSource3Conf =
         MISTExampleUtils.getLocalTextSocketSourceConf(source3Socket);
 
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("testGroup");
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("testGroup", "user1");
 
     final int defaultWatermarkPeriod = 100;
     final WatermarkConfiguration testConf = PeriodicWatermarkConfiguration.newBuilder()

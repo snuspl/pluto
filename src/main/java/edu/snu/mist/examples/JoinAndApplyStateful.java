@@ -65,7 +65,7 @@ public final class JoinAndApplyStateful {
 
     final MISTBiPredicate<String, String> joinPred = (s1, s2) -> s1.equals(s2);
     final ApplyStatefulFunction<Tuple2<String, String>, String> applyStatefulFunction = new FoldStringTupleFunction();
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group");
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group", "user1");
     final ContinuousStream sourceStream1 = queryBuilder.socketTextStream(localTextSocketSource1Conf);
     final ContinuousStream sourceStream2 = queryBuilder.socketTextStream(localTextSocketSource2Conf);
 

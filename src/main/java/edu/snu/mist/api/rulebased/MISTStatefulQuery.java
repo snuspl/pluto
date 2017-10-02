@@ -25,7 +25,8 @@ import java.util.Map;
  */
 public final class MISTStatefulQuery {
 
-    private final String groupId;
+    private final String superGroupId;
+    private final String subGroupId;
     private final RuleBasedInput input;
     private final String initialState;
     private final List<StatefulRule> statefulRules;
@@ -34,19 +35,22 @@ public final class MISTStatefulQuery {
     /**
      * Creates an immutable MISTStatefulQuery using given parameters.
      *
-     * @param groupId          group id
+     * @param superGroupId          super group id
+     * @param subGroupId       sub group id
      * @param input            input
      * @param initialState     initial state
      * @param statefulRules a list of stateful rules
      * @param finalState    a map of final states and its action
      */
     private MISTStatefulQuery(
-            final String groupId,
+            final String superGroupId,
+            final String subGroupId,
             final RuleBasedInput input,
             final String initialState,
             final List<StatefulRule> statefulRules,
             final Map<String, RuleBasedAction> finalState) {
-        this.groupId = groupId;
+        this.superGroupId = superGroupId;
+        this.subGroupId = subGroupId;
         this.input = input;
         this.initialState = initialState;
         this.statefulRules = statefulRules;
@@ -56,8 +60,16 @@ public final class MISTStatefulQuery {
     /**
      * @return group Id of this query
      */
-    public String getGroupId() {
-        return this.groupId;
+    public String getSuperGroupId() {
+        return superGroupId;
+    }
+
+
+    /**
+     * @return group Id of this query
+     */
+    public String getSubGroupId() {
+        return subGroupId;
     }
 
     /**
@@ -93,7 +105,8 @@ public final class MISTStatefulQuery {
      */
     public static class Builder {
 
-        private final String groupId;
+        private final String superGroupId;
+        private final String subGroupId;
         private RuleBasedInput input;
         private String initialState;
         private final List<StatefulRule> statefulRules;
@@ -102,8 +115,10 @@ public final class MISTStatefulQuery {
         /**
          * Creates a new builder.
          */
-        public Builder(final String groupId) {
-            this.groupId = groupId;
+        public Builder(final String superGroupId,
+                       final String subGroupId) {
+            this.superGroupId = superGroupId;
+            this.subGroupId = subGroupId;
             this.input = null;
             this.initialState = null;
             this.statefulRules = new ArrayList<>();
@@ -168,7 +183,8 @@ public final class MISTStatefulQuery {
          */
         public MISTStatefulQuery build() {
             //TODO[MIST-864]: Check validation of state transition diagram.
-            if (groupId == null
+            if (superGroupId == null
+                    || subGroupId == null
                     || input == null
                     || initialState == null
                     || statefulRules.size() == 0
@@ -176,7 +192,7 @@ public final class MISTStatefulQuery {
                 throw new IllegalStateException(
                         "One of group id, input, initial state, rules, or final states are not set!");
             }
-            return new MISTStatefulQuery(groupId, input, initialState, statefulRules, finalState);
+            return new MISTStatefulQuery(superGroupId, subGroupId, input, initialState, statefulRules, finalState);
         }
     }
 }

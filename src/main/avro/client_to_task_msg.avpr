@@ -50,7 +50,11 @@
           "default": 1
         },
         {
-          "name": "GroupId",
+          "name": "SuperGroupId",
+          "type": "string"
+        },
+        {
+          "name": "SubGroupId",
           "type": "string"
         },
         {

@@ -53,7 +53,7 @@ public final class RuleBasedTranslator {
         final RuleBasedInput input = query.getInput();
         final List<StatelessRule> statelessRules = query.getStatelessRules();
 
-        final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(query.getGroupId());
+        final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(query.getSuperGroupId(), query.getSubGroupId());
         final ContinuousStream<Map<String, Object>> inputMapStream =
                 inputTranslator(queryBuilder, input);
         statelessRulesTranslator(inputMapStream, statelessRules);
@@ -71,7 +71,8 @@ public final class RuleBasedTranslator {
         final List<StatefulRule> statefulRules = query.getStatefulRules();
         final Map<String, RuleBasedAction> finalStates = query.getFinalState();
 
-        final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(query.getGroupId());
+        final MISTQueryBuilder queryBuilder =
+            new MISTQueryBuilder(query.getSuperGroupId(), query.getSubGroupId());
         final ContinuousStream<Map<String, Object>> inputMapStream =
                 inputTranslator(queryBuilder, input);
         statefulRulesTranslator(inputMapStream, initialState, statefulRules, finalStates);

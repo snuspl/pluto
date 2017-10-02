@@ -16,37 +16,17 @@
 
 package edu.snu.mist.core.task.batchsub;
 
-import com.rits.cloning.Cloner;
-import edu.snu.mist.api.datastreams.configurations.MQTTSourceConfiguration;
-import edu.snu.mist.api.datastreams.configurations.MqttSinkConfiguration;
-import edu.snu.mist.api.datastreams.configurations.PunctuatedWatermarkConfiguration;
-import edu.snu.mist.api.datastreams.configurations.WatermarkConfiguration;
-import edu.snu.mist.common.SerializeUtils;
-import edu.snu.mist.common.functions.MISTBiFunction;
-import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.common.functions.WatermarkTimestampFunction;
-import edu.snu.mist.common.parameters.MQTTBrokerURI;
-import edu.snu.mist.common.parameters.MergeFakeParameter;
-import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
 import edu.snu.mist.core.task.ClassLoaderProvider;
 import edu.snu.mist.core.task.QueryManager;
-import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.formats.avro.AvroDag;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.tang.*;
-import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
-import org.apache.reef.tang.implementation.java.ClassHierarchyImpl;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import javax.inject.Inject;
-import java.net.URL;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
-import static java.lang.Thread.sleep;
+import java.util.List;
 
 /**
  * TODO[DELETE] this code is for test.
@@ -79,6 +59,8 @@ public final class BatchQueryCreator {
    */
   public void duplicate(final Tuple<List<String>, AvroDag> tuple,
                         final QueryManager manager) throws Exception {
+    /* TODO: Re-implement this method with app id (super-group id), and user id (sub-group id)
+    
     final List<String> queryIdList = tuple.getKey();
     final AvroDag avroDag = tuple.getValue();
 
@@ -243,6 +225,7 @@ public final class BatchQueryCreator {
     if (!allSuccess) {
       throw new RuntimeException("Submission failed");
     }
+    */
   }
 
   /**

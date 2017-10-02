@@ -49,7 +49,8 @@ public class QueryInfoStoreTest {
   @Test(timeout = 1000)
   public void diskStoreTest() throws InjectionException, IOException {
     // Generate a query
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(TestParameters.GROUP_ID);
+    final MISTQueryBuilder queryBuilder =
+        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID, TestParameters.SUB_GROUP_ID);
     queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
         .flatMap(s -> Arrays.asList(s.split(" ")))
         .filter(s -> s.startsWith("A"))
@@ -87,13 +88,15 @@ public class QueryInfoStoreTest {
     final Tuple<List<AvroVertex>, List<Edge>> serializedDag = query.getAvroOperatorDag();
     final AvroDag.Builder avroDagBuilder = AvroDag.newBuilder();
     final AvroDag avroDag1 = avroDagBuilder
-        .setGroupId(TestParameters.GROUP_ID)
+        .setSuperGroupId(TestParameters.SUPER_GROUP_ID)
+        .setSubGroupId(TestParameters.SUB_GROUP_ID)
         .setJarFilePaths(paths)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .build();
     final AvroDag avroDag2 = avroDagBuilder
-        .setGroupId(TestParameters.GROUP_ID)
+        .setSuperGroupId(TestParameters.SUPER_GROUP_ID)
+        .setSubGroupId(TestParameters.SUB_GROUP_ID)
         .setJarFilePaths(paths)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())

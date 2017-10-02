@@ -15,17 +15,14 @@
  */
 package edu.snu.mist.api.batchsub;
 
-import edu.snu.mist.api.*;
-import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.api.APIQueryControlResult;
+import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.formats.avro.*;
 import org.apache.avro.ipc.NettyTransceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
-import org.apache.reef.io.Tuple;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -84,6 +81,7 @@ public final class BatchSubExecutionEnvironment {
   public APIQueryControlResult batchSubmit(final MISTQuery queryToSubmit,
                                            final BatchSubmissionConfiguration batchSubConfig,
                                            final String... jarFilePaths) throws IOException {
+    /* TODO: Re-implement this method with app id (super-group id), and user id (sub-group id)
     // Choose a task
     final IPAddress task = tasks.get(0);
     ClientToTaskMessage proxyToTask = taskProxyMap.get(task);
@@ -117,7 +115,7 @@ public final class BatchSubExecutionEnvironment {
         .setJarFilePaths(jarUploadResult.getPaths())
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
-        .setGroupId(queryToSubmit.getGroupId())
+        .setGroupId(queryToSubmit.getSuperGroupId())
         .setPubTopicGenerateFunc(
             SerializeUtils.serializeToString(batchSubConfig.getPubTopicGenerateFunc()))
         .setSubTopicGenerateFunc(
@@ -133,5 +131,7 @@ public final class BatchSubExecutionEnvironment {
         new APIQueryControlResultImpl(queryControlResult.getQueryId(), task,
             queryControlResult.getMsg(), queryControlResult.getIsSuccess());
     return apiQueryControlResult;
+    */
+    return null;
   }
 }

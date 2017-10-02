@@ -144,7 +144,7 @@ public class MISTRuleBasedQuerySubmissionTest {
    */
   @Test
   public void testSocketStatelessQuery() {
-    final MISTStatelessQuery exampleQuery = new MISTStatelessQuery.Builder("test-group")
+    final MISTStatelessQuery exampleQuery = new MISTStatelessQuery.Builder("test-group", "user1")
         .input(exampleSocketInput)
         .addStatelessRule(new StatelessRule.Builder()
             .setCondition(ComparisonCondition.gt("Temperature", 25))
@@ -189,7 +189,7 @@ public class MISTRuleBasedQuerySubmissionTest {
    */
   @Test
   public void testMqttStatelessQuery() {
-    final MISTStatelessQuery exampleQuery = new MISTStatelessQuery.Builder("test-group")
+    final MISTStatelessQuery exampleQuery = new MISTStatelessQuery.Builder("test-group", "user1")
             .input(exampleMqttInput)
             .addStatelessRule(new StatelessRule.Builder()
                     .setCondition(ComparisonCondition.gt("Temperature", 25))
@@ -234,7 +234,7 @@ public class MISTRuleBasedQuerySubmissionTest {
    */
   @Test
   public void testStatefulQuery() {
-    final MISTStatefulQuery exampleQuery = new MISTStatefulQuery.Builder("test-group")
+    final MISTStatefulQuery exampleQuery = new MISTStatefulQuery.Builder("test-group", "user1")
         .input(exampleSocketInput)
         .initialState("OUTSIDE")
         .addStatefulRule(new StatefulRule.Builder()

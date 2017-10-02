@@ -112,7 +112,8 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
         .setJarFilePaths(jarUploadResult.getPaths())
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
-        .setGroupId(queryToSubmit.getGroupId())
+        .setSuperGroupId(queryToSubmit.getSuperGroupId())
+        .setSubGroupId(queryToSubmit.getSubGroupId())
         .build();
     final QueryControlResult queryControlResult = proxyToTask.sendQueries(avroDag);
 
