@@ -37,12 +37,20 @@
           "default": "null"
         },
         {
-          "name": "GroupIdList", /* TODO[DELETE] this code is for test */
+          "name": "SuperGroupIdList", /* TODO[DELETE] this code is for test */
           "type": {
             "type": "array",
             "items": "string"
           },
           "default": []
+        },
+        {
+          "name": "SubGroupIdList", /* TODO[DELETE] this code is for test */
+          "type": {
+            "type": "array",
+            "items": "string"
+           },
+           "default": []
         },
         {
           "name": "MergeFactor", /* TODO[DELETE] this code is for test */
