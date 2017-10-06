@@ -29,6 +29,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 final class RandomTaskSelectorImpl implements TaskSelector {
 
+  // IP address for client to task server
   private List<IPAddress> taskIPAddressList;
 
   @Inject
@@ -52,7 +53,7 @@ final class RandomTaskSelectorImpl implements TaskSelector {
   }
 
   /**
-   * Returns the list of ip addresses of the MistTasks.
+   * Returns the random IP address of the master's tasks.
    * This method is called by avro RPC when client calls .getTasks(msg);
    * Current implementation simply returns the list of tasks.
    * @param message a message containing query information from clients
