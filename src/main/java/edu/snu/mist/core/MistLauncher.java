@@ -15,15 +15,10 @@
  */
 package edu.snu.mist.core;
 
-import edu.snu.mist.common.rpc.AvroRPCNettyServerWrapper;
 import edu.snu.mist.core.driver.MistDriver;
 import edu.snu.mist.common.rpc.MasterSpecificResponderWrapper;
-import edu.snu.mist.core.parameters.DriverRuntimeType;
-import edu.snu.mist.core.parameters.NumTaskCores;
-import edu.snu.mist.core.parameters.NumTasks;
-import edu.snu.mist.core.parameters.TaskMemorySize;
+import edu.snu.mist.core.parameters.*;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
-import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.reef.client.DriverConfiguration;
 import org.apache.reef.client.DriverLauncher;
@@ -98,7 +93,6 @@ public final class MistLauncher {
     jcb.bindImplementation(NameResolver.class, LocalNameResolverImpl.class);
     jcb.bindImplementation(IdentifierFactory.class, StringIdentifierFactory.class);
     jcb.bindConstructor(SpecificResponder.class, MasterSpecificResponderWrapper.class);
-    jcb.bindConstructor(Server.class, AvroRPCNettyServerWrapper.class);
 
     final Configuration driverConf = DriverConfiguration.CONF
         .set(DriverConfiguration.GLOBAL_LIBRARIES, EnvironmentUtils.getClassLocation(MistDriver.class))
@@ -157,13 +151,22 @@ public final class MistLauncher {
    * @return a status of the driver
    * @throws InjectionException on configuration errors
    */
-  public LauncherStatus run(final int numTaskCores, final int numEventProcessors, final int numTasks,
-                            final int taskMemorySize) throws InjectionException {
+  public LauncherStatus run(final int numTaskCores,
+                            final int numEventProcessors,
+                            final int numTasks,
+                            final int taskMemorySize,
+                            final int numMasterCores,
+                            final int numMasters,
+                            final int masterMemorySize
+                            ) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(NumTaskCores.class, Integer.toString(numTaskCores));
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, Integer.toString(numEventProcessors));
     jcb.bindNamedParameter(NumTasks.class, Integer.toString(numTasks));
     jcb.bindNamedParameter(TaskMemorySize.class, Integer.toString(taskMemorySize));
+    jcb.bindNamedParameter(NumMasterCores.class, Integer.toString(numMasterCores));
+    jcb.bindNamedParameter(NumMasters.class, Integer.toString(numMasters));
+    jcb.bindNamedParameter(MasterMemorySize.class, Integer.toString(masterMemorySize));
 
     return runFromConf(jcb.build());
   }

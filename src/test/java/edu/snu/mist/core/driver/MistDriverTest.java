@@ -41,7 +41,7 @@ public final class MistDriverTest {
    */
   @Test
   public void testLaunchDriverOption3() throws InjectionException {
-    launchDriverTestHelper(3, 20334, "none");
+    launchDriverTestHelper(3, "none");
   }
 
   /**
@@ -49,7 +49,7 @@ public final class MistDriverTest {
    * @throws InjectionException
    */
   public void launchDriverTestHelper(final int executionModelOption,
-                                     final int rpcServerPort,
+                                     //final int rpcServerPort,
                                      final String groupSchedModel) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(DriverRuntimeType.class, "LOCAL");
@@ -57,7 +57,6 @@ public final class MistDriverTest {
     jcb.bindNamedParameter(NumTaskCores.class, "1");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "1");
     jcb.bindNamedParameter(TaskMemorySize.class, "256");
-    //jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
     jcb.bindNamedParameter(ExecutionModelOption.class, Integer.toString(executionModelOption));
     jcb.bindNamedParameter(GroupSchedModelType.class, groupSchedModel);
 

@@ -22,7 +22,6 @@ import edu.snu.mist.master.MistMaster;
 import edu.snu.mist.master.parameters.ClientToMasterServerPortNum;
 import edu.snu.mist.master.parameters.ClientToTaskServerAddressSet;
 import edu.snu.mist.master.parameters.TaskToMasterServerPortNum;
-import org.apache.avro.ipc.Server;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.driver.context.ContextConfiguration;
 import org.apache.reef.driver.evaluator.*;
@@ -157,7 +156,6 @@ public final class MistDriver {
                      final NameServer nameServer,
                      final LocalAddressProvider localAddressProvider,
                      final TaskSelector taskSelector,
-                     final Server server,
                      final MistDriverConfigs mistDriverConfigs,
                      final MistTaskConfigs mistTaskConfigs) {
     this.nameServer = nameServer;
