@@ -15,7 +15,10 @@
  */
 package edu.snu.mist.common.rpc;
 
+import edu.snu.mist.formats.avro.SendTaskLoadInfoResult;
+import edu.snu.mist.formats.avro.TaskLoadInfo;
 import edu.snu.mist.formats.avro.TaskToMasterMessage;
+import org.apache.avro.AvroRemoteException;
 
 import javax.inject.Inject;
 
@@ -26,5 +29,14 @@ public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage
   @Inject
   private DefaultTaskToMasterMessageImpl() {
     //Do nothing
+  }
+
+  @Override
+  public SendTaskLoadInfoResult sendTaskLoadInfo(final TaskLoadInfo taskLoadInfo) throws AvroRemoteException {
+    final SendTaskLoadInfoResult result = SendTaskLoadInfoResult.newBuilder()
+            .setIsSuccess(true)
+            .setMsg("Success")
+            .build();
+    return result;
   }
 }
