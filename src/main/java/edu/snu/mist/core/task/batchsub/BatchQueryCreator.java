@@ -16,17 +16,37 @@
 
 package edu.snu.mist.core.task.batchsub;
 
+import com.rits.cloning.Cloner;
+import edu.snu.mist.api.datastreams.configurations.MQTTSourceConfiguration;
+import edu.snu.mist.api.datastreams.configurations.MqttSinkConfiguration;
+import edu.snu.mist.api.datastreams.configurations.PunctuatedWatermarkConfiguration;
+import edu.snu.mist.api.datastreams.configurations.WatermarkConfiguration;
+import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.functions.MISTBiFunction;
+import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.common.functions.WatermarkTimestampFunction;
+import edu.snu.mist.common.parameters.MQTTBrokerURI;
+import edu.snu.mist.common.parameters.MergeFakeParameter;
+import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
 import edu.snu.mist.core.task.ClassLoaderProvider;
 import edu.snu.mist.core.task.QueryManager;
 import edu.snu.mist.formats.avro.AvroDag;
+import edu.snu.mist.formats.avro.AvroVertex;
+import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
+import org.apache.reef.tang.*;
+import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
+import org.apache.reef.tang.implementation.java.ClassHierarchyImpl;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import javax.inject.Inject;
-import java.util.List;
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * TODO[DELETE] this code is for test.
@@ -59,7 +79,6 @@ public final class BatchQueryCreator {
    */
   public void duplicate(final Tuple<List<String>, AvroDag> tuple,
                         final QueryManager manager) throws Exception {
-    /* TODO: Re-implement this method with app id (super-group id), and user id (sub-group id)
     
     final List<String> queryIdList = tuple.getKey();
     final AvroDag avroDag = tuple.getValue();
@@ -73,17 +92,19 @@ public final class BatchQueryCreator {
         avroDag.getPubTopicGenerateFunc(), classLoader);
     final MISTBiFunction<String, String, Set<String>> subTopicFunc = SerializeUtils.deserializeFromString(
         avroDag.getSubTopicGenerateFunc(), classLoader);
-    final List<String> groupIdList = avroDag.getGroupIdList();
+    final List<String> superGroupIdList = avroDag.getSuperGroupIdList();
+    final List<String> subGroupIdList = avroDag.getSubGroupIdList();
+
 
     // Parallelize the submission process
-    final int batchThreads = groupIdList.size() / 100 + ((groupIdList.size() % 100 == 0) ? 0 : 1);
+    final int batchThreads = superGroupIdList.size() / 100 + ((superGroupIdList.size() % 100 == 0) ? 0 : 1);
     final ExecutorService executorService = Executors.newFixedThreadPool(batchThreads);
     final List<Future> futures = new LinkedList<>();
     final boolean[] success = new boolean[batchThreads];
 
     final int mergeFactor = tuple.getValue().getMergeFactor();
-    final List<String> fakeMergeIdList = new ArrayList<>(groupIdList.size());
-    for (int i = 0; i < groupIdList.size(); i++) {
+    final List<String> fakeMergeIdList = new ArrayList<>(superGroupIdList.size());
+    for (int i = 0; i < superGroupIdList.size(); i++) {
       fakeMergeIdList.add(String.valueOf(i % mergeFactor));
     }
 
@@ -102,14 +123,16 @@ public final class BatchQueryCreator {
           try {
             for (int j = threadNum * 100; j < (threadNum + 1) * 100 && j < queryIdList.size(); j++) {
               // Set the topic according to the query number
-              final String groupId = groupIdList.get(j);
+              final String superGroupId = superGroupIdList.get(j);
+              final String subGroupId = subGroupIdList.get(j);
               final String queryId = queryIdList.get(j);
-              final String pubTopic = pubTopicFunc.apply(groupId, queryId);
-              final Iterator<String> subTopicItr = subTopicFunc.apply(groupId, queryId).iterator();
+              final String pubTopic = pubTopicFunc.apply(superGroupId, queryId);
+              final Iterator<String> subTopicItr = subTopicFunc.apply(superGroupId, queryId).iterator();
               final String fakeMergeId = fakeMergeIdList.get(j);
 
               // Overwrite the group id
-              avroDagClone.setGroupId(groupId);
+              avroDagClone.setSuperGroupId(superGroupId);
+              avroDagClone.setSubGroupId(subGroupId);
               // Insert the topic information to a copied AvroOperatorChainDag
               int vertexIndex = 0;
               for (final AvroVertex avroVertex : avroDagClone.getAvroVertices()) {
@@ -215,7 +238,7 @@ public final class BatchQueryCreator {
     for (int i = 0; i < batchThreads; i++) {
       for (final Future future : futures) {
         while (!future.isDone()) {
-          sleep(1000);
+          Thread.sleep(1000);
         }
         allSuccess = allSuccess && success[i];
       }
@@ -225,7 +248,6 @@ public final class BatchQueryCreator {
     if (!allSuccess) {
       throw new RuntimeException("Submission failed");
     }
-    */
   }
 
   /**

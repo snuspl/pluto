@@ -107,12 +107,12 @@ public class BatchSubExecutionEnvironmentTest {
               .toString());
       return topicList;
     };
-    final List<String> queryGroupList = new LinkedList<>();
-    queryGroupList.add("1");
-    queryGroupList.add("2");
+    final List<String> superGroupList = Arrays.asList("1", "2");
+    final List<String> subGroupList = Arrays.asList("1", "2");
+
 
     final BatchSubmissionConfiguration batchConf = new BatchSubmissionConfiguration(
-        subTopicGenerateFunc, pubTopicGenerateFunc, queryGroupList);
+        subTopicGenerateFunc, pubTopicGenerateFunc, superGroupList, subGroupList);
     final APIQueryControlResult batchResult =
         executionEnvironment.batchSubmit(query, batchConf, tempJarFile.toString());
     Assert.assertEquals(batchResult.getQueryId(), testQueryResult);
