@@ -15,9 +15,6 @@
  */
 package edu.snu.mist.core.task.threadpool.threadbased;
 
-import edu.snu.mist.common.MistDataEvent;
-import edu.snu.mist.common.MistEvent;
-import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
@@ -26,19 +23,17 @@ import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
 import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
-import edu.snu.mist.core.task.threadbased.ThreadBasedSourceOutputEmitter;
 import edu.snu.mist.formats.avro.AvroDag;
-import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.QueryControlResult;
-import io.netty.util.internal.ConcurrentSet;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,11 +62,6 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
   private final DagGenerator dagGenerator;
 
   /**
-   * Map that has the Operator chain as a key and the thread as a value.
-   */
-  private final Set<Thread> threads;
-
-  /**
    * A batch query submission helper.
    */
   private final BatchQueryCreator batchQueryCreator;
@@ -81,11 +71,18 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
    */
   private final ConfigDagGenerator configDagGenerator;
 
-  private final List<BlockingQueue<Tuple<MistEvent, Map<ExecutionVertex, MISTEdge>>>> threadsQueue;
+  //private final List<BlockingQueue<Tuple<MistEvent, Map<ExecutionVertex, MISTEdge>>>> threadsQueue;
 
   private final AtomicLong numQueries = new AtomicLong(0);
 
   private final int numThreads;
+
+  private final ConcurrentMap<String, Object> queryStatus = new ConcurrentHashMap<>();
+
+  private final AtomicLong queryIdCounter = new AtomicLong();
+
+  private final ExecutorService executorService;
+
   /**
    * Default query manager in MistTask.
    */
@@ -96,34 +93,14 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
                                      @Parameter(DefaultNumEventProcessors.class) final int defaultNumEventProcessors,
                                      final ConfigDagGenerator configDagGenerator,
                                      final BatchQueryCreator batchQueryCreator) {
+    this.executorService = Executors.newFixedThreadPool(defaultNumEventProcessors);
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
-    this.threads = new ConcurrentSet<>();
     this.batchQueryCreator = batchQueryCreator;
     this.configDagGenerator = configDagGenerator;
     this.numThreads = defaultNumEventProcessors;
-    this.threadsQueue = new ArrayList<>(defaultNumEventProcessors);
-
-    for (int i = 0; i < defaultNumEventProcessors; i++) {
-      final BlockingQueue<Tuple<MistEvent, Map<ExecutionVertex, MISTEdge>>> queue = new LinkedBlockingQueue<>();
-      threadsQueue.add(queue);
-      final Thread t = new Thread(new Runnable() {
-        @Override
-        public void run() {
-          while (!Thread.currentThread().isInterrupted()) {
-            try {
-              processNextEvent(queue);
-            } catch (InterruptedException e) {
-              // try again
-            }
-          }
-        }
-      });
-
-      t.start();
-      threads.add(t);
-    }
+    //this.threadsQueue = new ArrayList<>(defaultNumEventProcessors);
   }
 
   /**
@@ -139,6 +116,10 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
   public QueryControlResult create(final Tuple<String, AvroDag> tuple) {
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(tuple.getKey());
+    final String queryId = Long.toString(queryIdCounter.getAndIncrement());
+
+    queryStatus.put(queryId, new Object());
+
     try {
       // Create the submitted query
       // 1) Saves the avro dag to the PlanStore and
@@ -150,7 +131,7 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
           dagGenerator.generate(configDag, tuple.getValue().getJarFilePaths());
 
       // Execute the execution dag
-      start(executionDag);
+      start(executionDag, queryStatus.get(queryId));
 
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
@@ -193,52 +174,21 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
       return queryControlResult;
     }
   }
-  // Return false if the queue is empty or the previously event processing is not finished.
-  private boolean processNextEvent(
-      final BlockingQueue<Tuple<MistEvent, Map<ExecutionVertex, MISTEdge>>> queue) throws InterruptedException {
-    final Tuple<MistEvent, Map<ExecutionVertex, MISTEdge>> event = queue.take();
-      for (final Map.Entry<ExecutionVertex, MISTEdge> entry : event.getValue().entrySet()) {
-        process(event.getKey(), entry.getValue().getDirection(), (PhysicalOperator)entry.getKey());
-      }
-    return true;
-  }
 
-  private void process(final MistEvent event,
-                       final Direction direction,
-                       final PhysicalOperator operator) {
-    try {
-      if (event.isData()) {
-        if (direction == Direction.LEFT) {
-          operator.getOperator().processLeftData((MistDataEvent) event);
-        } else {
-          operator.getOperator().processRightData((MistDataEvent) event);
-        }
-        operator.setLatestDataTimestamp(event.getTimestamp());
-      } else {
-        if (direction == Direction.LEFT) {
-          operator.getOperator().processLeftWatermark((MistWatermarkEvent) event);
-        } else {
-          operator.getOperator().processRightWatermark((MistWatermarkEvent) event);
-        }
-        operator.setLatestWatermarkTimestamp(event.getTimestamp());
-      }
-    } catch (final NullPointerException e) {
-      throw new RuntimeException(e);
-    }
-  }
 
   /**
    * Sets the OutputEmitters of the sources, operators and sinks
    * and starts to receive input data stream from the sources.
    * @param physicalPlan physical plan of the query
    */
-  private void start(final ExecutionDag physicalPlan) {
+  private void start(final ExecutionDag physicalPlan,
+                     final Object lockObject) {
     final List<PhysicalSource> sources = new LinkedList<>();
     final DAG<ExecutionVertex, MISTEdge> dag = physicalPlan.getDag();
     final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(dag);
 
     final int index = (int)numQueries.getAndIncrement() % numThreads;
-    final BlockingQueue<Tuple<MistEvent, Map<ExecutionVertex, MISTEdge>>> queue = threadsQueue.get(index);
+    //final BlockingQueue<Tuple<MistEvent, Map<ExecutionVertex, MISTEdge>>> queue = threadsQueue.get(index);
     while (iterator.hasNext()) {
       final ExecutionVertex executionVertex = iterator.next();
       switch (executionVertex.getType()) {
@@ -246,7 +196,7 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
           final PhysicalSource source = (PhysicalSource)executionVertex;
           final Map<ExecutionVertex, MISTEdge> nextOps = dag.getEdges(source);
           // 3) Sets output emitters
-          source.setOutputEmitter(new ThreadBasedSourceOutputEmitter<>(nextOps, queue));
+          source.setOutputEmitter(new ThreadPoolOutputEmitter<>(nextOps, executorService, lockObject));
           sources.add(source);
           break;
         }
@@ -276,9 +226,7 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
   public void close() throws Exception {
     scheduler.shutdown();
     planStore.close();
-    for (final Thread thread : threads) {
-      thread.interrupt();
-    }
+    executorService.shutdown();
   }
 
   /**
@@ -298,4 +246,5 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
     // This method should not be used in option 3.
     throw new RuntimeException("getGroupSourceManager should not be used in option 3.");
   }
+
 }
