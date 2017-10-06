@@ -22,8 +22,72 @@
   /* TODO[IMPLEMENT] Implement master to task message */
   "types":
   [
+    {
+      "type": "record",
+      "name": "IPAddress",
+      "fields": [
+        {
+          "name": "hostAddress",
+          "type": "string"
+        },
+        {
+          "name": "port",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "TaskLoadInfo",
+      "type": "record",
+      "fields":
+      [
+        {
+          "name": "TaskIPAddress",
+          "type": "IPAddress"
+        },
+        {
+          "name": "TotalLoad",
+          "type": "double"
+        },
+        {
+          "name": "GroupLoadMap",
+          "type":
+          {
+            "type": "map",
+            "values": "double"
+          }
+        }
+      ]
+    },
+    {
+      "name": "SendTaskLoadInfoResult",
+      "type": "record",
+      "fields":
+      [
+        {
+          "name": "IsSuccess",
+          "type": "boolean"
+        },
+        {
+          "name": "Msg",
+          "type": "string"
+        }
+
+      ]
+    }
   ],
   "messages":
   {
+    "sendTaskLoadInfo":
+    {
+      "request":
+      [
+        {
+          "name": "taskLoadInfo",
+          "type": "TaskLoadInfo"
+        }
+      ],
+      "response": "SendTaskLoadInfoResult"
+    }
   }
 }
