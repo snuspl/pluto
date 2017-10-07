@@ -173,6 +173,13 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
 
       int rebNum = 0;
 
+      Collections.sort(overloadedThreads, new Comparator<EventProcessor>() {
+        @Override
+        public int compare(final EventProcessor o1, final EventProcessor o2) {
+          return o1.getLoad() < o2.getLoad() ? 1 : -1;
+        }
+      });
+
       if (!overloadedThreads.isEmpty() && !underloadedThreads.isEmpty()) {
         for (final EventProcessor highLoadThread : overloadedThreads) {
           final Collection<Group> highLoadGroups = groupAllocationTable.getValue(highLoadThread);

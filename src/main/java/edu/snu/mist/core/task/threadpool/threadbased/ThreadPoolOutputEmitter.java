@@ -54,12 +54,12 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
 
   @Override
   public void emitData(final MistDataEvent data) {
-    final long eventNum = queryProgress.eventNum.getAndIncrement();
+    final long eventNum = queryProgress.getEventNum().getAndIncrement();
     executorService.submit(new Runnable() {
       @Override
       public void run() {
         synchronized (queryProgress) {
-          while (eventNum > queryProgress.nextEventNum.get()) {
+          while (eventNum > queryProgress.getNextEventNum().get()) {
             try {
               queryProgress.wait();
             } catch (InterruptedException e) {
@@ -67,10 +67,10 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
             }
           }
 
-          if (eventNum == queryProgress.nextEventNum.get()) {
+          if (eventNum == queryProgress.getNextEventNum().get()) {
             try {
               processNextEvent(data);
-              queryProgress.nextEventNum.getAndIncrement();
+              queryProgress.getNextEventNum().getAndIncrement();
               queryProgress.notifyAll();
             } catch (InterruptedException e) {
               e.printStackTrace();
@@ -84,12 +84,12 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
   @Override
   public void emitData(final MistDataEvent data, final int index) {
     // source output emitter does not emit data according to the index
-    final long eventNum = queryProgress.eventNum.getAndIncrement();
+    final long eventNum = queryProgress.getEventNum().getAndIncrement();
     executorService.submit(new Runnable() {
       @Override
       public void run() {
         synchronized (queryProgress) {
-          while (eventNum > queryProgress.nextEventNum.get()) {
+          while (eventNum > queryProgress.getNextEventNum().get()) {
             try {
               queryProgress.wait();
             } catch (InterruptedException e) {
@@ -97,10 +97,10 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
             }
           }
 
-          if (eventNum == queryProgress.nextEventNum.get()) {
+          if (eventNum == queryProgress.getNextEventNum().get()) {
             try {
               processNextEvent(data);
-              queryProgress.nextEventNum.getAndIncrement();
+              queryProgress.getNextEventNum().getAndIncrement();
               queryProgress.notifyAll();
             } catch (InterruptedException e) {
               e.printStackTrace();
@@ -113,12 +113,12 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
 
   @Override
   public void emitWatermark(final MistWatermarkEvent watermark) {
-    final long eventNum = queryProgress.eventNum.getAndIncrement();
+    final long eventNum = queryProgress.getEventNum().getAndIncrement();
     executorService.submit(new Runnable() {
       @Override
       public void run() {
         synchronized (queryProgress) {
-          while (eventNum > queryProgress.nextEventNum.get()) {
+          while (eventNum > queryProgress.getNextEventNum().get()) {
             try {
               queryProgress.wait();
             } catch (InterruptedException e) {
@@ -126,10 +126,10 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
             }
           }
 
-          if (eventNum == queryProgress.nextEventNum.get()) {
+          if (eventNum == queryProgress.getNextEventNum().get()) {
             try {
               processNextEvent(watermark);
-              queryProgress.nextEventNum.getAndIncrement();
+              queryProgress.getNextEventNum().getAndIncrement();
               queryProgress.notifyAll();
             } catch (InterruptedException e) {
               e.printStackTrace();

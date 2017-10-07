@@ -21,7 +21,9 @@ import edu.snu.mist.core.task.ExecutionDags;
 import edu.snu.mist.core.task.QueryRemover;
 import edu.snu.mist.core.task.QueryStarter;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
-import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupMerger;
+import edu.snu.mist.core.task.eventProcessors.parameters.OverloadedThreshold;
+import edu.snu.mist.core.task.eventProcessors.parameters.UnderloadedThreshold;
+import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupSplitter;
 import edu.snu.mist.core.task.globalsched.GlobalSchedNonBlockingEventProcessorFactory;
 import edu.snu.mist.core.task.globalsched.Group;
 import edu.snu.mist.core.task.globalsched.MetaGroup;
@@ -40,7 +42,7 @@ import java.util.List;
 
 import static org.mockito.Mockito.mock;
 
-public final class GroupMergerTest {
+public final class GroupSplitterTest {
 
   private MetaGroup createMetaGroup() throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
@@ -55,6 +57,7 @@ public final class GroupMergerTest {
 
     return injector.getInstance(MetaGroup.class);
   }
+
   private Group createGroup(final String id) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(GroupId.class, id);
@@ -70,37 +73,54 @@ public final class GroupMergerTest {
   }
 
   /**
-   * t1: [0.4, 0.2, 0.3, 0.1, 0.05] (1.05) overloaded.
-   * t2: [0.1, 0.1, 0.05, 0.05] (0.3) underloaded.
+   * alpha: 0.6
+   * beta: 0.8
+   * target: 0.7.
    *
-   * After merging.
-   * t1: [0.4, 0.2, 0.3] (0.9)
-   * t2: [0.1, 0.1, 0.15, 0.1] (0.45)
+   * [0.3 group]: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+   * [0.5 group]: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+   *
+   *                     **
+   * t1: [0.35, 0.2, 0.2, 0.3] (1.05) overloaded
+   *            **
+   * t2: [0.2, 0.5, 0.2] (0.9) overloaded
+   * t3: [0.58] (0.58) underloaded
+   * t4: [0.5, 0.05] (0.55) underloaded
+   *
+   * After splitting
+   * t1: [0.3, 0.2, 0.2, 0.15] (0.85)
+   * t2: [0.25, 0.4, 0.2] (0.8)
+   * t3: [0.6, 0.1] (0.7)
+   * t4: [0.5, 0.2] (0.7)
    */
   @Test
-  public void defaultGroupMergerTest1() throws InjectionException {
+  public void defaultGroupSplitterTest1() throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "0");
     jcb.bindImplementation(LoadUpdater.class, TestLoadUpdater.class);
+    jcb.bindNamedParameter(OverloadedThreshold.class, "0.8");
+    jcb.bindNamedParameter(UnderloadedThreshold.class, "0.6");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final GroupAllocationTable groupAllocationTable = injector.getInstance(GroupAllocationTable.class);
-    final GroupMerger groupMerger = injector.getInstance(GroupMerger.class);
+    final GroupSplitter groupSplitter = injector.getInstance(GroupSplitter.class);
     final LoadUpdater loadUpdater = injector.getInstance(LoadUpdater.class);
 
     final EventProcessorFactory epFactory = injector.getInstance(GlobalSchedNonBlockingEventProcessorFactory.class);
     final List<EventProcessor> eventProcessors = new LinkedList<>();
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 4; i++) {
       eventProcessors.add(epFactory.newEventProcessor());
       groupAllocationTable.put(eventProcessors.get(i));
     }
 
     final EventProcessor ep1 = eventProcessors.get(0);
     final EventProcessor ep2 = eventProcessors.get(1);
+    final EventProcessor ep3 = eventProcessors.get(2);
+    final EventProcessor ep4 = eventProcessors.get(3);
 
     final MetaGroup mg1 = createMetaGroup();
     final Group g1 = createGroup("g1");
     mg1.addGroup(g1);
-    g1.setLoad(0.4);
+    g1.setLoad(0.3);
     g1.setEventProcessor(ep1);
 
     final MetaGroup mg2 = createMetaGroup();
@@ -112,97 +132,105 @@ public final class GroupMergerTest {
     final MetaGroup mg3 = createMetaGroup();
     final Group g3 = createGroup("g3");
     mg3.addGroup(g3);
-    g3.setLoad(0.3);
+    g3.setLoad(0.2);
     g3.setEventProcessor(ep1);
 
     final MetaGroup mg4 = createMetaGroup();
     final Group g4 = createGroup("g4");
     mg4.addGroup(g4);
-    g4.setLoad(0.1);
+    g4.setLoad(0.3);
     g4.setEventProcessor(ep1);
 
-    final SubGroup sg1 = createSubGroup("sg1");
-    sg1.setLoad(0.02);
-    g4.addSubGroup(sg1);
-    final SubGroup sg2 = createSubGroup("sg2");
-    sg2.setLoad(0.04);
-    g4.addSubGroup(sg2);
-    final SubGroup sg3 = createSubGroup("sg3");
-    sg3.setLoad(0.04);
-    g4.addSubGroup(sg3);
+    final List<SubGroup> g4SubGroups = new LinkedList<>();
+    for (int i = 0; i < 6; i++) {
+      final SubGroup sg1 = createSubGroup("sg" + i + "_of_g4");
+      sg1.setLoad(0.05);
+      g4.addSubGroup(sg1);
+    }
 
     final MetaGroup mg5 = createMetaGroup();
     final Group g5 = createGroup("g5");
     mg5.addGroup(g5);
-    g5.setLoad(0.05);
-    g5.setEventProcessor(ep1);
-
-    final SubGroup sg4 = createSubGroup("sg4");
-    sg4.setLoad(0.02);
-    g5.addSubGroup(sg4);
-    final SubGroup sg5 = createSubGroup("sg5");
-    sg5.setLoad(0.03);
-    g5.addSubGroup(sg5);
+    g5.setLoad(0.2);
+    g5.setEventProcessor(ep2);
 
     final MetaGroup mg6 = createMetaGroup();
     final Group g6 = createGroup("g6");
     mg6.addGroup(g6);
-    g6.setLoad(0.1);
+    g6.setLoad(0.5);
     g6.setEventProcessor(ep2);
+
+    final List<SubGroup> g6SubGroups = new LinkedList<>();
+    for (int i = 0; i < 10; i++) {
+      final SubGroup sg1 = createSubGroup("sg" + i + "_of_g6");
+      sg1.setLoad(0.05);
+      g6.addSubGroup(sg1);
+    }
 
     final MetaGroup mg7 = createMetaGroup();
     final Group g7 = createGroup("g7");
-    mg7.addGroup(g7);
-    g7.setLoad(0.1);
+    g7.setLoad(0.2);
     g7.setEventProcessor(ep2);
+    mg7.addGroup(g7);
 
-    final Group g44 = createGroup("g4");
-    g44.setLoad(0.05);
-    mg4.addGroup(g44);
-    g44.setEventProcessor(ep2);
+    final MetaGroup mg8 = createMetaGroup();
+    final Group g8 = createGroup("g8");
+    g8.setLoad(0.58);
+    g8.setEventProcessor(ep3);
+    mg8.addGroup(g8);
 
-    final SubGroup sg6 = createSubGroup("sg6");
-    sg6.setLoad(0.05);
-    g44.addSubGroup(sg6);
+    final MetaGroup mg9 = createMetaGroup();
+    final Group g9 = createGroup("g9");
+    g9.setLoad(0.5);
+    g9.setEventProcessor(ep4);
+    mg9.addGroup(g9);
 
-    final Group g55 = createGroup("g5");
-    mg5.addGroup(g55);
-    g55.setLoad(0.05);
-    g55.setEventProcessor(ep2);
-
-    final SubGroup sg7 = createSubGroup("sg7");
-    sg7.setLoad(0.05);
-    g55.addSubGroup(sg7);
+    final Group g10 = createGroup("g4");
+    g10.setLoad(0.05);
+    g10.setEventProcessor(ep4);
+    mg4.addGroup(g10);
 
     groupAllocationTable.getValue(ep1).add(g1);
     groupAllocationTable.getValue(ep1).add(g2);
     groupAllocationTable.getValue(ep1).add(g3);
     groupAllocationTable.getValue(ep1).add(g4);
-    groupAllocationTable.getValue(ep1).add(g5);
 
+    groupAllocationTable.getValue(ep2).add(g5);
     groupAllocationTable.getValue(ep2).add(g6);
     groupAllocationTable.getValue(ep2).add(g7);
-    groupAllocationTable.getValue(ep2).add(g44);
-    groupAllocationTable.getValue(ep2).add(g55);
 
+    groupAllocationTable.getValue(ep3).add(g8);
+
+    groupAllocationTable.getValue(ep4).add(g9);
+    groupAllocationTable.getValue(ep4).add(g10);
 
     loadUpdater.update();
-    groupMerger.groupMerging();
+    groupSplitter.splitGroup();
 
-    Assert.assertEquals(1, mg4.getGroups().size());
-    Assert.assertEquals(1, mg5.getGroups().size());
+    // Result
+    // After splitting
+    // t1: [0.3, 0.2, 0.2, 0.15] (0.85)
+    // t2: [0.25, 0.4, 0.2] (0.9)
+    // t3: [0.58, 0.1] (0.68)
+    // t4: [0.5, 0.2] (0.7)
 
-    Assert.assertEquals(4, g44.getSubGroups().size());
-    Assert.assertEquals(3, g55.getSubGroups().size());
+    Assert.assertEquals(2, mg4.getGroups().size());
+    Assert.assertEquals(2, mg6.getGroups().size());
 
-    Assert.assertEquals(g44, sg1.getGroup());
-    Assert.assertEquals(g44, sg2.getGroup());
-    Assert.assertEquals(g44, sg3.getGroup());
-    Assert.assertEquals(g55, sg4.getGroup());
-    Assert.assertEquals(g55, sg5.getGroup());
+    Assert.assertEquals(3, g4.getSubGroups().size());
+    Assert.assertEquals(8, g6.getSubGroups().size());
 
-    Assert.assertEquals(0.9, calculateLoadOfGroups(groupAllocationTable.getValue(eventProcessors.get(0))), 0.0001);
-    Assert.assertEquals(0.45, calculateLoadOfGroups(groupAllocationTable.getValue(eventProcessors.get(1))), 0.0001);
+    Assert.assertEquals(3, g10.getSubGroups().size());
+    Assert.assertEquals(0.2, g10.getLoad(), 0.0000001);
+    Assert.assertEquals(0.15, g4.getLoad(), 0.000001);
+    Assert.assertEquals(0.4, g6.getLoad(), 0.0000001);
+
+    Assert.assertEquals(2, groupAllocationTable.getValue(ep3).size());
+
+    Assert.assertEquals(0.85, calculateLoadOfGroups(groupAllocationTable.getValue(eventProcessors.get(0))), 0.0001);
+    Assert.assertEquals(0.8, calculateLoadOfGroups(groupAllocationTable.getValue(eventProcessors.get(1))), 0.0001);
+    Assert.assertEquals(0.68, calculateLoadOfGroups(groupAllocationTable.getValue(eventProcessors.get(2))), 0.0001);
+    Assert.assertEquals(0.7, calculateLoadOfGroups(groupAllocationTable.getValue(eventProcessors.get(3))), 0.0001);
 
   }
 

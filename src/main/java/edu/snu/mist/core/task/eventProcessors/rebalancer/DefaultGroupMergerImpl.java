@@ -131,10 +131,15 @@ public final class DefaultGroupMergerImpl implements GroupMerger {
       highLoadGroups.remove(highLoadGroup);
     }
 
+    synchronized (highLoadGroup.getMetaGroup().getGroups()) {
+      highLoadGroup.getMetaGroup().getGroups().remove(highLoadGroup);
+    }
+
     // Update overloaded thread load
     highLoadThread.setLoad(highLoadThread.getLoad() - incLoad);
 
     // Update underloaded thread load
+    lowLoadGroup.setLoad(lowLoadGroup.getLoad() + incLoad);
     lowLoadGroup.getEventProcessor().setLoad(lowLoadGroup.getEventProcessor().getLoad() + incLoad);
 
     LOG.log(Level.INFO, "Merge {0} from {1} to {2}",
@@ -182,6 +187,13 @@ public final class DefaultGroupMergerImpl implements GroupMerger {
       double targetLoad = (alpha + beta) / 2;
 
       int rebNum = 0;
+
+      Collections.sort(overloadedThreads, new Comparator<EventProcessor>() {
+        @Override
+        public int compare(final EventProcessor o1, final EventProcessor o2) {
+          return o1.getLoad() < o2.getLoad() ? 1 : -1;
+        }
+      });
 
       if (!overloadedThreads.isEmpty() && !underloadedThreads.isEmpty()) {
         for (final EventProcessor highLoadThread : overloadedThreads) {

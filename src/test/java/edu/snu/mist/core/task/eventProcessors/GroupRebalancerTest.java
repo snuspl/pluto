@@ -87,6 +87,7 @@ public final class GroupRebalancerTest {
       for (final Double load : loadList) {
         final Group group = mock(Group.class);
         when(group.getLoad()).thenReturn(load);
+        when(group.isSplited()).thenReturn(false);
         when(group.toString()).thenReturn(Double.toString(load));
         groupAllocationTable.getValue(eventProcessor).add(group);
       }
@@ -149,6 +150,7 @@ public final class GroupRebalancerTest {
         final Group group = mock(Group.class);
         when(group.getLoad()).thenReturn(load);
         when(group.toString()).thenReturn(Double.toString(load));
+        when(group.isSplited()).thenReturn(false);
         //when(group.isReady()).thenReturn(true);
         groupAllocationTable.getValue(eventProcessor).add(group);
       }

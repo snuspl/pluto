@@ -70,6 +70,8 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
    */
   private final double alpha;
 
+  private final double epsilon = 0.00000001;
+
   @Inject
   private DefaultGroupSplitterImpl(final GroupAllocationTable groupAllocationTable,
                                    @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
@@ -127,7 +129,7 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
 
   @Override
   public void splitGroup() {
-    LOG.info("REBALANCING START");
+    LOG.info("GROUP SPLIT START");
     long rebalanceStart = System.currentTimeMillis();
 
     try {
@@ -164,6 +166,13 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
 
       int rebNum = 0;
 
+      Collections.sort(overloadedThreads, new Comparator<EventProcessor>() {
+        @Override
+        public int compare(final EventProcessor o1, final EventProcessor o2) {
+          return o1.getLoad() < o2.getLoad() ? 1 : -1;
+        }
+      });
+
       if (!overloadedThreads.isEmpty() && !underloadedThreads.isEmpty()) {
         for (final EventProcessor highLoadThread : overloadedThreads) {
           final Collection<Group> highLoadGroups = groupAllocationTable.getValue(highLoadThread);
@@ -187,42 +196,48 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
           });
 
           for (final Group highLoadGroup : sortedHighLoadGroups) {
-            final Iterator<SubGroup> subGroupIterator = highLoadGroup.getSubGroups().iterator();
-            final EventProcessor peek = underloadedThreads.peek();
-            Group sameGroup = hasSameGroup(highLoadGroup, peek);
-            EventProcessor lowLoadThread = underloadedThreads.poll();
+            // Split if the load of the high load thread could be less than targetLoad
+            // when we split the high load group
+            if (highLoadThread.getLoad() - highLoadGroup.getLoad() < targetLoad + epsilon
+                && highLoadGroup.getSubGroups().size() > 1) {
 
-            while (subGroupIterator.hasNext()) {
-              final SubGroup subGroup = subGroupIterator.next();
-              if (highLoadThread.getLoad() - subGroup.getLoad() >= targetLoad &&
-                  peek.getLoad() + subGroup.getLoad() <= targetLoad) {
+              final Iterator<SubGroup> subGroupIterator = highLoadGroup.getSubGroups().iterator();
+              final EventProcessor peek = underloadedThreads.peek();
+              Group sameGroup = hasSameGroup(highLoadGroup, peek);
+              EventProcessor lowLoadThread = underloadedThreads.poll();
 
-                if (sameGroup == null) {
-                  // Split! Create a new group!
-                  final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-                  jcb.bindNamedParameter(GroupId.class, highLoadGroup.getGroupId());
-                  final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-                  sameGroup = injector.getInstance(Group.class);
-                  sameGroup.setEventProcessor(lowLoadThread);
-                  highLoadGroup.getMetaGroup().addGroup(sameGroup);
-                  groupAllocationTable.getValue(lowLoadThread).add(sameGroup);
+              while (subGroupIterator.hasNext()) {
+                final SubGroup subGroup = subGroupIterator.next();
+                if (highLoadThread.getLoad() - subGroup.getLoad() >= targetLoad - epsilon &&
+                    peek.getLoad() + subGroup.getLoad() <= targetLoad + epsilon) {
+
+                  if (sameGroup == null) {
+                    // Split! Create a new group!
+                    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+                    jcb.bindNamedParameter(GroupId.class, highLoadGroup.getGroupId());
+                    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+                    sameGroup = injector.getInstance(Group.class);
+                    sameGroup.setEventProcessor(lowLoadThread);
+                    highLoadGroup.getMetaGroup().addGroup(sameGroup);
+                    groupAllocationTable.getValue(lowLoadThread).add(sameGroup);
+                  }
+
+                  // Move to the existing group!
+                  sameGroup.addSubGroup(subGroup);
+                  sameGroup.setLoad(sameGroup.getLoad() + subGroup.getLoad());
+
+                  subGroupIterator.remove();
+                  highLoadGroup.setLoad(highLoadGroup.getLoad() - subGroup.getLoad());
+
+                  lowLoadThread.setLoad(lowLoadThread.getLoad() + subGroup.getLoad());
+                  highLoadThread.setLoad(highLoadThread.getLoad() - subGroup.getLoad());
+
+                  rebNum += 1;
                 }
-
-                // Move to the existing group!
-                sameGroup.addSubGroup(subGroup);
-                sameGroup.setLoad(sameGroup.getLoad() + subGroup.getLoad());
-
-                subGroupIterator.remove();
-                highLoadGroup.setLoad(highLoadGroup.getLoad() - subGroup.getLoad());
-
-                lowLoadThread.setLoad(lowLoadThread.getLoad() + subGroup.getLoad());
-                highLoadThread.setLoad(highLoadThread.getLoad() - subGroup.getLoad());
-
-                rebNum += 1;
               }
-            }
 
-            underloadedThreads.add(lowLoadThread);
+              underloadedThreads.add(lowLoadThread);
+            }
           }
         }
       }
