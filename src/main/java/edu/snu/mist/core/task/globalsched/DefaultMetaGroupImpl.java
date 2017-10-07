@@ -59,4 +59,10 @@ public final class DefaultMetaGroupImpl implements MetaGroup {
   public List<Group> getGroups() {
     return groups;
   }
+
+  @Override
+  public boolean addGroup(final Group group) {
+    group.setMetaGroup(this);
+    return groups.add(group);
+  }
 }

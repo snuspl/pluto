@@ -50,24 +50,17 @@ final class DefaultGroupImpl implements Group {
 
   private final AtomicReference<EventProcessor> eventProcessor;
 
-  private double load;
+  private double load = 0;
 
   private final List<SubGroup> subGroupList = new LinkedList<>();
+
+  private MetaGroup metaGroup;
 
   @Inject
   private DefaultGroupImpl(@Parameter(GroupId.class) final String groupId) {
     this.groupId = groupId;
     this.activeSubGroupQueue = new ConcurrentLinkedQueue<>();
     this.eventProcessor = new AtomicReference<>(null);
-  }
-
-  @Override
-  public String toString() {
-    final StringBuilder sb = new StringBuilder();
-    sb.append("{");
-    sb.append(groupId);
-    sb.append("}");
-    return sb.toString();
   }
 
   @Override
@@ -78,6 +71,7 @@ final class DefaultGroupImpl implements Group {
   @Override
   public void addSubGroup(final SubGroup subGroup) {
     synchronized (subGroupList) {
+      subGroup.setGroup(this);
       subGroupList.add(subGroup);
     }
   }
@@ -117,6 +111,16 @@ final class DefaultGroupImpl implements Group {
   @Override
   public EventProcessor getEventProcessor() {
     return eventProcessor.get();
+  }
+
+  @Override
+  public MetaGroup getMetaGroup() {
+    return metaGroup;
+  }
+
+  @Override
+  public void setMetaGroup(final MetaGroup mGroup) {
+    metaGroup = mGroup;
   }
 
 
@@ -169,5 +173,22 @@ final class DefaultGroupImpl implements Group {
       }
     }
     return numProcessedEvent;
+  }
+
+  @Override
+  public boolean isSplited() {
+    return metaGroup.getGroups().size() > 1;
+  }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("{gid: ");
+    sb.append(groupId);
+    sb.append(", load: ");
+    sb.append(load);
+    sb.append("# subGroups: ");
+    sb.append(subGroupList.size());
+    sb.append("}");
+    return sb.toString();
   }
 }

@@ -43,6 +43,10 @@ public interface Group extends AutoCloseable {
 
   EventProcessor getEventProcessor();
 
+  MetaGroup getMetaGroup();
+
+  void setMetaGroup(MetaGroup metaGroup);
+
   /**
    * Get the load of the group.
    */
@@ -64,4 +68,6 @@ public interface Group extends AutoCloseable {
   double calculateLoad();
 
   int processAllEvent();
+
+  boolean isSplited();
 }

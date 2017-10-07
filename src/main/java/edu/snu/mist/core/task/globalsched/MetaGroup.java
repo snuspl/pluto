@@ -37,4 +37,6 @@ public interface MetaGroup {
   ExecutionDags getExecutionDags();
 
   List<Group> getGroups();
+
+  boolean addGroup(Group group);
 }

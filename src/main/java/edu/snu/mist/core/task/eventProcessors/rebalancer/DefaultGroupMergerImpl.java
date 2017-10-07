@@ -21,6 +21,7 @@ import edu.snu.mist.core.task.eventProcessors.parameters.GroupRebalancingPeriod;
 import edu.snu.mist.core.task.eventProcessors.parameters.OverloadedThreshold;
 import edu.snu.mist.core.task.eventProcessors.parameters.UnderloadedThreshold;
 import edu.snu.mist.core.task.globalsched.Group;
+import edu.snu.mist.core.task.globalsched.SubGroup;
 import edu.snu.mist.core.task.globalsched.parameters.DefaultGroupLoad;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -37,8 +38,8 @@ import java.util.logging.Logger;
  * After finding the overloaded and underloaded threads, it moves the groups
  * assiged to the overloaded threads to the underloaded threads.
  */
-public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
-  private static final Logger LOG = Logger.getLogger(DefaultGroupRebalancerImpl.class.getName());
+public final class DefaultGroupMergerImpl implements GroupMerger {
+  private static final Logger LOG = Logger.getLogger(DefaultGroupMergerImpl.class.getName());
 
   /**
    * Group allocation table.
@@ -66,11 +67,11 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
   private final double alpha;
 
   @Inject
-  private DefaultGroupRebalancerImpl(final GroupAllocationTable groupAllocationTable,
-                                     @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
-                                     @Parameter(DefaultGroupLoad.class) final double defaultGroupLoad,
-                                     @Parameter(OverloadedThreshold.class) final double beta,
-                                     @Parameter(UnderloadedThreshold.class) final double alpha) {
+  private DefaultGroupMergerImpl(final GroupAllocationTable groupAllocationTable,
+                                 @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
+                                 @Parameter(DefaultGroupLoad.class) final double defaultGroupLoad,
+                                 @Parameter(OverloadedThreshold.class) final double beta,
+                                 @Parameter(UnderloadedThreshold.class) final double alpha) {
     this.groupAllocationTable = groupAllocationTable;
     this.rebalancingPeriod = rebalancingPeriod;
     this.defaultGroupLoad = defaultGroupLoad;
@@ -111,32 +112,52 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
     LOG.info(sb.toString());
   }
 
-  private void moveGroup(final Group highLoadGroup,
-                         final Collection<Group> highLoadGroups,
-                         final EventProcessor highLoadThread,
-                         final EventProcessor lowLoadThread,
-                         final PriorityQueue<EventProcessor> underloadedThreads) {
-    final double groupLoad = highLoadGroup.getLoad();
+  private void merge(final Group highLoadGroup,
+                     final Collection<Group> highLoadGroups,
+                     final EventProcessor highLoadThread,
+                     final Group lowLoadGroup) {
+    double incLoad = 0.0;
 
-    highLoadThread.removeActiveGroup(highLoadGroup);
-    final Collection<Group> lowLoadGroups =
-        groupAllocationTable.getValue(lowLoadThread);
+    synchronized (highLoadGroup.getSubGroups()) {
+      for (final SubGroup subGroup : highLoadGroup.getSubGroups()) {
+        lowLoadGroup.addSubGroup(subGroup);
+        incLoad += subGroup.getLoad();
+      }
+    }
 
-    lowLoadGroups.add(highLoadGroup);
-    highLoadGroup.setEventProcessor(lowLoadThread);
-    highLoadGroups.remove(highLoadGroup);
+    // memory barrier
+    synchronized (lowLoadGroup.getSubGroups()) {
+      highLoadGroup.setEventProcessor(null);
+      highLoadGroups.remove(highLoadGroup);
+    }
 
     // Update overloaded thread load
-    highLoadThread.setLoad(highLoadThread.getLoad() - groupLoad);
+    highLoadThread.setLoad(highLoadThread.getLoad() - incLoad);
 
     // Update underloaded thread load
-    lowLoadThread.setLoad(lowLoadThread.getLoad() + groupLoad);
-    underloadedThreads.add(lowLoadThread);
+    lowLoadGroup.getEventProcessor().setLoad(lowLoadGroup.getEventProcessor().getLoad() + incLoad);
+
+    LOG.log(Level.INFO, "Merge {0} from {1} to {2}",
+        new Object[]{highLoadGroup, highLoadThread, lowLoadGroup.getEventProcessor()});
+  }
+
+  private Group findLowestLoadThreadSplittedGroup(final Group highLoadGroup) {
+    Group g = null;
+    double threadLoad = Double.MAX_VALUE;
+
+    for (final Group hg : highLoadGroup.getMetaGroup().getGroups()) {
+      if (hg.getEventProcessor().getLoad() < threadLoad) {
+        g = hg;
+        threadLoad = hg.getEventProcessor().getLoad();
+      }
+    }
+
+    return g;
   }
 
   @Override
-  public void triggerRebalancing() {
-    LOG.info("REBALANCING START");
+  public void groupMerging() {
+    LOG.info("MERGING START");
     long rebalanceStart = System.currentTimeMillis();
 
     try {
@@ -146,15 +167,7 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
       final List<EventProcessor> overloadedThreads = new LinkedList<>();
 
       // Underloaded threads
-      final PriorityQueue<EventProcessor> underloadedThreads =
-          new PriorityQueue<>(new Comparator<EventProcessor>() {
-            @Override
-            public int compare(final EventProcessor o1, final EventProcessor o2) {
-              final Double load1 = o1.getLoad();
-              final Double load2 = o2.getLoad();
-              return load1.compareTo(load2);
-            }
-          });
+      final List<EventProcessor> underloadedThreads = new LinkedList<>();
 
       // Calculate each load and total load
       for (final EventProcessor eventProcessor : eventProcessors) {
@@ -165,9 +178,6 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
           underloadedThreads.add(eventProcessor);
         }
       }
-
-      // LOGGING
-      //logging(eventProcessors, loadTable);
 
       double targetLoad = (alpha + beta) / 2;
 
@@ -197,24 +207,27 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
 
           for (final Group highLoadGroup : sortedHighLoadGroups) {
             final double groupLoad = highLoadGroup.getLoad();
-
-            if (!highLoadGroup.isSplited()) {
-              // Rebalance!!!
-              if (highLoadThread.getLoad() - groupLoad >= targetLoad) {
-                final EventProcessor peek = underloadedThreads.peek();
-                if (peek.getLoad() + groupLoad <= targetLoad) {
-                  final EventProcessor lowLoadThread = underloadedThreads.poll();
-                  moveGroup(highLoadGroup, highLoadGroups, highLoadThread, lowLoadThread, underloadedThreads);
-                  rebNum += 1;
-                }
+            if (highLoadGroup.isSplited()) {
+              // Merge splitted group!
+              // 1. find the thread that has the lowest load among threads that hold the splitted groups
+              final Group lowLoadGroup = findLowestLoadThreadSplittedGroup(highLoadGroup);
+              // 2. Check we can move the high load group to the low load thread group
+              if (lowLoadGroup != highLoadGroup &&
+                  highLoadGroup.getEventProcessor().getLoad() - groupLoad >= targetLoad &&
+                  lowLoadGroup.getEventProcessor().getLoad() + groupLoad <= targetLoad) {
+                // 3. merge!
+                merge(highLoadGroup, highLoadGroups, highLoadThread, lowLoadGroup);
+                rebNum += 1;
               }
+            } else {
+              break;
             }
           }
         }
       }
 
       long rebalanceEnd = System.currentTimeMillis();
-      LOG.log(Level.INFO, "Rebalancing number: {0}, elapsed time: {1}",
+      LOG.log(Level.INFO, "Merging number: {0}, elapsed time: {1}",
           new Object[]{rebNum, rebalanceEnd - rebalanceStart});
 
       //LOG.log(Level.INFO, "-------------TABLE-------------\n{0}",

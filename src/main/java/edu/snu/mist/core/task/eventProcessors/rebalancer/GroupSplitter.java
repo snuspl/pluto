@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched;
+package edu.snu.mist.core.task.eventProcessors.rebalancer;
 
-public interface ExecutionGroupSplitter {
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
-  void splitGroup(SubGroup group);
+@DefaultImplementation(DefaultGroupSplitterImpl.class)
+public interface GroupSplitter {
+
+  void splitGroup();
 }

@@ -13,24 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched;
+package edu.snu.mist.core.task.eventProcessors.rebalancer;
 
-import edu.snu.mist.core.task.eventProcessors.EventProcessorManager;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
-import javax.inject.Inject;
 
-public final class DefaultExecutionGroupSplitter implements ExecutionGroupSplitter {
+/**
+ * GroupRebalancer modifies the group allocation table.
+ */
+@DefaultImplementation(DefaultGroupMergerImpl.class)
+public interface GroupMerger {
 
-  private final EventProcessorManager eventProcessorManager;
-
-  @Inject
-  private DefaultExecutionGroupSplitter(final EventProcessorManager eventProcessorManager) {
-    this.eventProcessorManager = eventProcessorManager;
-  }
-
-  @Override
-  public void splitGroup(final SubGroup group) {
-    final Group superGroup = group.getGroup();
-    // TODO
-  }
+  /**
+   * Trigger the rebalancing of groups.
+   */
+  void groupMerging();
 }

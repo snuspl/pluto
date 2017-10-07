@@ -16,7 +16,9 @@
 package edu.snu.mist.core.task.eventProcessors;
 
 import edu.snu.mist.core.task.eventProcessors.groupAssigner.GroupAssigner;
+import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupMerger;
 import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupRebalancer;
+import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupSplitter;
 import edu.snu.mist.core.task.globalsched.Group;
 import edu.snu.mist.core.task.globalsched.MetaGroup;
 import edu.snu.mist.core.task.globalsched.SubGroup;
@@ -86,12 +88,18 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
    */
   private final IsolatedGroupReassigner isolatedGroupReassigner;
 
+  private final GroupMerger groupMerger;
+
+  private final GroupSplitter groupSplitter;
+
   @Inject
   private GroupAllocationTableModifier(final GroupAllocationTable groupAllocationTable,
                                        final GroupAssigner groupAssigner,
                                        final GroupRebalancer groupRebalancer,
                                        final LoadUpdater loadUpdater,
                                        final GroupIsolator groupIsolator,
+                                       final GroupMerger groupMerger,
+                                       final GroupSplitter groupSplitter,
                                        final IsolatedGroupReassigner isolatedGroupReassigner) {
     this.groupAllocationTable = groupAllocationTable;
     this.groupAssigner = groupAssigner;
@@ -100,6 +108,8 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
     this.singleWriter = Executors.newSingleThreadExecutor();
     this.loadUpdater = loadUpdater;
     this.groupIsolator = groupIsolator;
+    this.groupMerger = groupMerger;
+    this.groupSplitter = groupSplitter;
     this.isolatedGroupReassigner = isolatedGroupReassigner;
     // Create a writer thread
     singleWriter.submit(new SingleWriterThread());
@@ -147,7 +157,7 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
               final Tuple<MetaGroup, Group> tuple = (Tuple<MetaGroup, Group>) event.getValue();
               final MetaGroup metaGroup = tuple.getKey();
               final Group group = tuple.getValue();
-              metaGroup.getGroups().add(group);
+              metaGroup.addGroup(group);
               groupAssigner.assignGroup(group);
               break;
             }
@@ -188,8 +198,17 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
               break;
             case REBALANCE:
               loadUpdater.update();
-              isolatedGroupReassigner.reassignIsolatedGroups();
+              //isolatedGroupReassigner.reassignIsolatedGroups();
+
+              // 1. merging first
+              groupMerger.groupMerging();
+
+              // 2. reassignment
               groupRebalancer.triggerRebalancing();
+
+              // 3. split groups
+              groupSplitter.splitGroup();
+
               break;
             case ISOLATION:
               groupIsolator.triggerIsolation();
