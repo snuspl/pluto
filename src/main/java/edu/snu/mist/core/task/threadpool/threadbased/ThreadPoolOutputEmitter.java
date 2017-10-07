@@ -42,25 +42,40 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
 
   private final ExecutorService executorService;
 
-  private final Object lockObject;
+  private final QueryProgress queryProgress;
 
   public ThreadPoolOutputEmitter(final Map<ExecutionVertex, MISTEdge> nextOperators,
                                  final ExecutorService executorService,
-                                 final Object lockObject) {
+                                 final QueryProgress queryProgress) {
     this.nextOperators = nextOperators;
     this.executorService = executorService;
-    this.lockObject = lockObject;
+    this.queryProgress = queryProgress;
   }
 
   @Override
   public void emitData(final MistDataEvent data) {
+    final long eventNum = queryProgress.eventNum.getAndIncrement();
     executorService.submit(new Runnable() {
       @Override
       public void run() {
-        try {
-          processNextEvent(data);
-        } catch (InterruptedException e) {
-          e.printStackTrace();
+        synchronized (queryProgress) {
+          while (eventNum > queryProgress.nextEventNum.get()) {
+            try {
+              queryProgress.wait();
+            } catch (InterruptedException e) {
+              e.printStackTrace();
+            }
+          }
+
+          if (eventNum == queryProgress.nextEventNum.get()) {
+            try {
+              processNextEvent(data);
+              queryProgress.nextEventNum.getAndIncrement();
+              queryProgress.notifyAll();
+            } catch (InterruptedException e) {
+              e.printStackTrace();
+            }
+          }
         }
       }
     });
@@ -69,13 +84,28 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
   @Override
   public void emitData(final MistDataEvent data, final int index) {
     // source output emitter does not emit data according to the index
+    final long eventNum = queryProgress.eventNum.getAndIncrement();
     executorService.submit(new Runnable() {
       @Override
       public void run() {
-        try {
-          processNextEvent(data);
-        } catch (InterruptedException e) {
-          e.printStackTrace();
+        synchronized (queryProgress) {
+          while (eventNum > queryProgress.nextEventNum.get()) {
+            try {
+              queryProgress.wait();
+            } catch (InterruptedException e) {
+              e.printStackTrace();
+            }
+          }
+
+          if (eventNum == queryProgress.nextEventNum.get()) {
+            try {
+              processNextEvent(data);
+              queryProgress.nextEventNum.getAndIncrement();
+              queryProgress.notifyAll();
+            } catch (InterruptedException e) {
+              e.printStackTrace();
+            }
+          }
         }
       }
     });
@@ -83,13 +113,28 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
 
   @Override
   public void emitWatermark(final MistWatermarkEvent watermark) {
+    final long eventNum = queryProgress.eventNum.getAndIncrement();
     executorService.submit(new Runnable() {
       @Override
       public void run() {
-        try {
-          processNextEvent(watermark);
-        } catch (InterruptedException e) {
-          e.printStackTrace();
+        synchronized (queryProgress) {
+          while (eventNum > queryProgress.nextEventNum.get()) {
+            try {
+              queryProgress.wait();
+            } catch (InterruptedException e) {
+              e.printStackTrace();
+            }
+          }
+
+          if (eventNum == queryProgress.nextEventNum.get()) {
+            try {
+              processNextEvent(watermark);
+              queryProgress.nextEventNum.getAndIncrement();
+              queryProgress.notifyAll();
+            } catch (InterruptedException e) {
+              e.printStackTrace();
+            }
+          }
         }
       }
     });
@@ -107,22 +152,20 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
                        final Direction direction,
                        final PhysicalOperator operator) {
     try {
-      synchronized (lockObject) {
-        if (event.isData()) {
-          if (direction == Direction.LEFT) {
-            operator.getOperator().processLeftData((MistDataEvent) event);
-          } else {
-            operator.getOperator().processRightData((MistDataEvent) event);
-          }
-          operator.setLatestDataTimestamp(event.getTimestamp());
+      if (event.isData()) {
+        if (direction == Direction.LEFT) {
+          operator.getOperator().processLeftData((MistDataEvent) event);
         } else {
-          if (direction == Direction.LEFT) {
-            operator.getOperator().processLeftWatermark((MistWatermarkEvent) event);
-          } else {
-            operator.getOperator().processRightWatermark((MistWatermarkEvent) event);
-          }
-          operator.setLatestWatermarkTimestamp(event.getTimestamp());
+          operator.getOperator().processRightData((MistDataEvent) event);
         }
+        operator.setLatestDataTimestamp(event.getTimestamp());
+      } else {
+        if (direction == Direction.LEFT) {
+          operator.getOperator().processLeftWatermark((MistWatermarkEvent) event);
+        } else {
+          operator.getOperator().processRightWatermark((MistWatermarkEvent) event);
+        }
+        operator.setLatestWatermarkTimestamp(event.getTimestamp());
       }
     } catch (final NullPointerException e) {
       throw new RuntimeException(e);

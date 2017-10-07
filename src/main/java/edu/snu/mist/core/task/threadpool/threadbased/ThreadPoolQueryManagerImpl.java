@@ -77,7 +77,7 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
 
   private final int numThreads;
 
-  private final ConcurrentMap<String, Object> queryStatus = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, QueryProgress> queryStatus = new ConcurrentHashMap<>();
 
   private final AtomicLong queryIdCounter = new AtomicLong();
 
@@ -118,7 +118,7 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
     queryControlResult.setQueryId(tuple.getKey());
     final String queryId = Long.toString(queryIdCounter.getAndIncrement());
 
-    queryStatus.put(queryId, new Object());
+    queryStatus.put(queryId, new QueryProgress());
 
     try {
       // Create the submitted query
@@ -182,7 +182,7 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
    * @param physicalPlan physical plan of the query
    */
   private void start(final ExecutionDag physicalPlan,
-                     final Object lockObject) {
+                     final QueryProgress queryProgress) {
     final List<PhysicalSource> sources = new LinkedList<>();
     final DAG<ExecutionVertex, MISTEdge> dag = physicalPlan.getDag();
     final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(dag);
@@ -196,7 +196,7 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
           final PhysicalSource source = (PhysicalSource)executionVertex;
           final Map<ExecutionVertex, MISTEdge> nextOps = dag.getEdges(source);
           // 3) Sets output emitters
-          source.setOutputEmitter(new ThreadPoolOutputEmitter<>(nextOps, executorService, lockObject));
+          source.setOutputEmitter(new ThreadPoolOutputEmitter<>(nextOps, executorService, queryProgress));
           sources.add(source);
           break;
         }
