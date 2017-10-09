@@ -31,9 +31,11 @@ import edu.snu.mist.common.parameters.MergeFakeParameter;
 import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
 import edu.snu.mist.core.task.ClassLoaderProvider;
 import edu.snu.mist.core.task.QueryManager;
+import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.AvroVertex;
 import edu.snu.mist.formats.avro.QueryControlResult;
+import org.apache.commons.io.IOUtils;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.*;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -43,10 +45,9 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import javax.inject.Inject;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 /**
  * TODO[DELETE] this code is for test.
@@ -64,11 +65,21 @@ public final class BatchQueryCreator {
    */
   private final ClassLoaderProvider classLoaderProvider;
 
+  /**
+   * A map which contains the class loaders for each super group.
+   */
+  private final ConcurrentMap<String, List<String>> superGroupJarPathMap;
+
+  private final QueryInfoStore planStore;
+
   @Inject
   private BatchQueryCreator(final AvroConfigurationSerializer avroConfigurationSerializer,
-                            final ClassLoaderProvider classLoaderProvider) {
+                            final ClassLoaderProvider classLoaderProvider,
+                            final QueryInfoStore planStore) {
     this.avroConfigurationSerializer = avroConfigurationSerializer;
     this.classLoaderProvider = classLoaderProvider;
+    this.superGroupJarPathMap = new ConcurrentHashMap<>();
+    this.planStore = planStore;
   }
 
   /**
@@ -82,18 +93,34 @@ public final class BatchQueryCreator {
     
     final List<String> queryIdList = tuple.getKey();
     final AvroDag avroDag = tuple.getValue();
+    final List<String> superGroupIdList = avroDag.getSuperGroupIdList();
+    final List<String> subGroupIdList = avroDag.getSubGroupIdList();
 
     // Get classloader
-    final URL[] urls = SerializeUtils.getJarFileURLs(avroDag.getJarFilePaths());
-    final ClassLoader classLoader = classLoaderProvider.newInstance(urls);
+    final URL[] jarUrls = SerializeUtils.getJarFileURLs(avroDag.getJarFilePaths());
+
+    // Read byte buffer
+    final List<ByteBuffer> jarByteBuffers = new ArrayList<>();
+    for (final URL jarUrl: jarUrls) {
+      final byte[] jarByteArray = IOUtils.toByteArray(jarUrl);
+      jarByteBuffers.add(ByteBuffer.wrap(jarByteArray));
+    }
+
+    // Make new jars for new super groups
+    for (final String superGroupId: superGroupIdList) {
+      if (!superGroupJarPathMap.containsKey(superGroupId)) {
+        final List<String> paths = planStore.saveJar(jarByteBuffers);
+        superGroupJarPathMap.putIfAbsent(superGroupId, paths);
+      }
+    }
+
+    final ClassLoader tempClassLoader = classLoaderProvider.newInstance(jarUrls);
 
     // Load the batch submission configuration
     final MISTBiFunction<String, String, String> pubTopicFunc = SerializeUtils.deserializeFromString(
-        avroDag.getPubTopicGenerateFunc(), classLoader);
+        avroDag.getPubTopicGenerateFunc(), tempClassLoader);
     final MISTBiFunction<String, String, Set<String>> subTopicFunc = SerializeUtils.deserializeFromString(
-        avroDag.getSubTopicGenerateFunc(), classLoader);
-    final List<String> superGroupIdList = avroDag.getSuperGroupIdList();
-    final List<String> subGroupIdList = avroDag.getSubGroupIdList();
+        avroDag.getSubTopicGenerateFunc(), tempClassLoader);
 
 
     // Parallelize the submission process
@@ -113,7 +140,7 @@ public final class BatchQueryCreator {
       final List<Configuration> originConfs = new ArrayList<>(avroDag.getAvroVertices().size());
       for (final AvroVertex avroVertex : avroDag.getAvroVertices()) {
         originConfs.add(avroConfigurationSerializer.fromString(
-            avroVertex.getConfiguration(), new ClassHierarchyImpl(urls)));
+            avroVertex.getConfiguration(), new ClassHierarchyImpl(jarUrls)));
       }
       // Do a deep copy for avroDag
       final AvroDag avroDagClone = new Cloner().deepClone(avroDag);
@@ -133,6 +160,8 @@ public final class BatchQueryCreator {
               // Overwrite the group id
               avroDagClone.setSuperGroupId(superGroupId);
               avroDagClone.setSubGroupId(subGroupId);
+              // Overwrite the jar path
+              avroDagClone.setJarFilePaths(superGroupJarPathMap.get(superGroupId));
               // Insert the topic information to a copied AvroOperatorChainDag
               int vertexIndex = 0;
               for (final AvroVertex avroVertex : avroDagClone.getAvroVertices()) {
@@ -140,7 +169,7 @@ public final class BatchQueryCreator {
                   case SOURCE: {
                     // It have to be MQTT source at now
                     final Configuration originConf = avroConfigurationSerializer.fromString(
-                        avroVertex.getConfiguration(), new ClassHierarchyImpl(urls));
+                        avroVertex.getConfiguration(), new ClassHierarchyImpl(jarUrls));
 
                     // Restore the original configuration and inject the overriding topic
                     final Injector injector = Tang.Factory.getTang().newInjector(originConf);
@@ -169,7 +198,7 @@ public final class BatchQueryCreator {
                       // Timestamp function was set
                       final MISTFunction<MqttMessage, Tuple<MqttMessage, Long>> extractFunc =
                           SerializeUtils.deserializeFromString(
-                              injector.getNamedInstance(SerializedTimestampExtractUdf.class), classLoader);
+                              injector.getNamedInstance(SerializedTimestampExtractUdf.class), tempClassLoader);
                       builder
                           .setTimestampExtractionFunction(extractFunc);
                     } catch (final InjectionException e) {
@@ -197,7 +226,7 @@ public final class BatchQueryCreator {
                   }
                   case SINK: {
                     final Configuration originConf = avroConfigurationSerializer.fromString(
-                        avroVertex.getConfiguration(), new ClassHierarchyImpl(urls));
+                        avroVertex.getConfiguration(), new ClassHierarchyImpl(jarUrls));
 
                     // Restore the original configuration and inject the overriding topic
                     final Injector injector = Tang.Factory.getTang().newInjector(originConf);
