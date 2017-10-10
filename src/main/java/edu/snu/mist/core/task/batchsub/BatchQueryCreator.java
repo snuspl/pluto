@@ -153,8 +153,8 @@ public final class BatchQueryCreator {
               final String superGroupId = superGroupIdList.get(j);
               final String subGroupId = subGroupIdList.get(j);
               final String queryId = queryIdList.get(j);
-              final String pubTopic = pubTopicFunc.apply(superGroupId, queryId);
-              final Iterator<String> subTopicItr = subTopicFunc.apply(superGroupId, queryId).iterator();
+              final String pubTopic = pubTopicFunc.apply(superGroupId + "," + subGroupId, queryId);
+              final Iterator<String> subTopicItr = subTopicFunc.apply(subGroupId, queryId).iterator();
               final String fakeMergeId = fakeMergeIdList.get(j);
 
               // Overwrite the group id
