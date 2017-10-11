@@ -238,6 +238,7 @@ public final class MQTTSharedResource implements AutoCloseable {
       brokerSubscriberMap.put(brokerURI, newSubscribeClientList);
       // Initialize the topic-sub map
       final Map<String, MQTTSubscribeClient> myTopicSubscriberMap = new HashMap<>();
+      topicSubscriberMap.put(brokerURI, myTopicSubscriberMap);
       final MQTTSubscribeClient client = newSubscribeClientList.get(0);
       myTopicSubscriberMap.put(topic, client);
       subscriberSourceNumMap.replace(client, subscriberSourceNumMap.get(client) + 1);
