@@ -84,8 +84,8 @@ final class DefaultGroupImpl implements Group {
 
   @Override
   public void insert(final Query query) {
-    final int n = numActiveSubGroup.getAndIncrement();
     activeQueryQueue.add(query);
+    final int n = numActiveSubGroup.getAndIncrement();
     //System.out.println("Event is added at Group, # group: " + n);
 
     if (n == 0) {
@@ -153,25 +153,23 @@ final class DefaultGroupImpl implements Group {
   @Override
   public int processAllEvent() {
     int numProcessedEvent = 0;
-    if (numActiveSubGroup.get() > 0) {
-      Query query = activeQueryQueue.poll();
-      long startProcessingTime = System.nanoTime();
-      while (query != null) {
-        final int processedEvent = query.processAllEvent();
+    Query query = activeQueryQueue.poll();
+    long startProcessingTime = System.nanoTime();
+    while (query != null) {
+      final int processedEvent = query.processAllEvent();
 
-        // Calculate load
-        long endProcessingTime = System.nanoTime();
-        final long processingTime = endProcessingTime - startProcessingTime;
+      // Calculate load
+      long endProcessingTime = System.nanoTime();
+      final long processingTime = endProcessingTime - startProcessingTime;
 
-        if (processedEvent != 0) {
-          query.getProcessingTime().getAndAdd(processingTime);
-          query.getProcessingEvent().getAndAdd(processedEvent);
-        }
-
-        numActiveSubGroup.decrementAndGet();
-        query = activeQueryQueue.poll();
-        numProcessedEvent += processedEvent;
+      if (processedEvent != 0) {
+        query.getProcessingTime().getAndAdd(processingTime);
+        query.getProcessingEvent().getAndAdd(processedEvent);
       }
+
+      numActiveSubGroup.decrementAndGet();
+      query = activeQueryQueue.poll();
+      numProcessedEvent += processedEvent;
     }
     return numProcessedEvent;
   }

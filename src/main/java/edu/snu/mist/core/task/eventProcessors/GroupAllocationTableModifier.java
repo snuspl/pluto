@@ -218,6 +218,9 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
           }
         } catch (final InterruptedException e) {
           e.printStackTrace();
+        } catch (final Exception e) {
+          e.printStackTrace();
+          throw new RuntimeException(e);
         }
       }
     }

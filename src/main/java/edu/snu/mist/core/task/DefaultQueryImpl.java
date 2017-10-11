@@ -87,8 +87,8 @@ public final class DefaultQueryImpl implements Query {
    */
   @Override
   public void insert(final SourceOutputEmitter sourceOutputEmitter) {
-    final int n = numActiveOperators.getAndIncrement();
     activeOperatorQueue.add(sourceOutputEmitter);
+    final int n = numActiveOperators.getAndIncrement();
     //System.out.println("Event is added at Query, # ev ents: " + n);
     if (n == 0) {
       group.insert(this);
@@ -116,13 +116,11 @@ public final class DefaultQueryImpl implements Query {
   @Override
   public int processAllEvent() {
     int numProcessedEvent = 0;
-    if (numActiveOperators.get() > 0) {
-      SourceOutputEmitter sourceOutputEmitter = activeOperatorQueue.poll();
-      while (sourceOutputEmitter != null) {
-        numProcessedEvent += sourceOutputEmitter.processAllEvent();
-        numActiveOperators.decrementAndGet();
-        sourceOutputEmitter = activeOperatorQueue.poll();
-      }
+    SourceOutputEmitter sourceOutputEmitter = activeOperatorQueue.poll();
+    while (sourceOutputEmitter != null) {
+      numProcessedEvent += sourceOutputEmitter.processAllEvent();
+      numActiveOperators.decrementAndGet();
+      sourceOutputEmitter = activeOperatorQueue.poll();
     }
     return numProcessedEvent;
   }
