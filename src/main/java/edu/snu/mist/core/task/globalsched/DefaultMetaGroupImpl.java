@@ -22,6 +22,7 @@ import edu.snu.mist.core.task.QueryStarter;
 import javax.inject.Inject;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class DefaultMetaGroupImpl implements MetaGroup {
 
@@ -29,6 +30,8 @@ public final class DefaultMetaGroupImpl implements MetaGroup {
   private final QueryRemover queryRemover;
   private final ExecutionDags executionDags;
   private final List<Group> groups;
+
+  private final AtomicInteger numGroups = new AtomicInteger(0);
 
   @Inject
   private DefaultMetaGroupImpl(final QueryStarter queryStarter,
@@ -63,6 +66,12 @@ public final class DefaultMetaGroupImpl implements MetaGroup {
   @Override
   public boolean addGroup(final Group group) {
     group.setMetaGroup(this);
+    numGroups.incrementAndGet();
     return groups.add(group);
+  }
+
+  @Override
+  public AtomicInteger numGroups() {
+    return numGroups;
   }
 }

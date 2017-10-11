@@ -133,6 +133,7 @@ public final class DefaultGroupMergerImpl implements GroupMerger {
 
     synchronized (highLoadGroup.getMetaGroup().getGroups()) {
       highLoadGroup.getMetaGroup().getGroups().remove(highLoadGroup);
+      highLoadGroup.getMetaGroup().numGroups().decrementAndGet();
     }
 
     // Update overloaded thread load

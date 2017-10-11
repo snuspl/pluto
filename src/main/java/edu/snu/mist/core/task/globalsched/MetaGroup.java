@@ -21,6 +21,7 @@ import edu.snu.mist.core.task.QueryStarter;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A class which contains query and metric information about query group.
@@ -39,4 +40,6 @@ public interface MetaGroup {
   List<Group> getGroups();
 
   boolean addGroup(Group group);
+
+  AtomicInteger numGroups();
 }
