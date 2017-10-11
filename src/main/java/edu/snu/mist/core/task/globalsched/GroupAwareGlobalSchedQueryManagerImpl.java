@@ -250,10 +250,8 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
       }
 
       final Query query = new DefaultQueryImpl(queryId);
-      while (mGroup.getKey().numGroups().get() > 0) {
-        groupAllocationTableModifier.addEvent(new WritingEvent(WritingEvent.EventType.QUERY_ADD,
-            new Tuple<>(mGroup.getKey(), query)));
-      }
+      groupAllocationTableModifier.addEvent(new WritingEvent(WritingEvent.EventType.QUERY_ADD,
+          new Tuple<>(mGroup.getKey(), query)));
 
       // Start the submitted dag
       final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
