@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task.globalsched;
 
+import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
@@ -28,16 +29,16 @@ import java.util.List;
 @DefaultImplementation(DefaultGroupImpl.class)
 public interface Group extends AutoCloseable {
 
-  void addSubGroup(SubGroup subGroup);
+  void addQuery(Query subGroup);
 
-  List<SubGroup> getSubGroups();
+  List<Query> getQueries();
 
   /**
    * Add query to the group.
    */
-  void insert(SubGroup subGroup);
+  void insert(Query query);
 
-  void delete(SubGroup subGroup);
+  void delete(Query query);
 
   void setEventProcessor(EventProcessor eventProcessor);
 
@@ -70,4 +71,6 @@ public interface Group extends AutoCloseable {
   int processAllEvent();
 
   boolean isSplited();
+
+  int size();
 }

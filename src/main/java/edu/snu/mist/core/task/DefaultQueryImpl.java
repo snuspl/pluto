@@ -15,13 +15,14 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.core.task.globalsched.SubGroup;
+import edu.snu.mist.core.task.globalsched.Group;
 
 import javax.inject.Inject;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This class picks a query, which has more than one events to be processed, from the active query set randomly.
@@ -39,16 +40,44 @@ public final class DefaultQueryImpl implements Query {
 
   private final String id;
 
-  private final SubGroup subGroup;
+  private Group group;
+
+  /**
+   * The load of the group.
+   */
+  private double groupLoad;
+
+  /**
+   * The event processing time of the group.
+   */
+  private final AtomicLong totalProcessingTime;
+
+  /**
+   * The number of processed events in the group.
+   */
+  private final AtomicLong totalProcessingEvent;
+
+  /**
+   * The latest rebalance time.
+   */
+  private long latestRebalanceTime;
 
   @Inject
-  public DefaultQueryImpl(final String identifier,
-                          final SubGroup subGroup) {
+  public DefaultQueryImpl(final String identifier) {
     // ConcurrentLinkedQueue is used to assure concurrency as well as maintain exactly-once query picking.
     this.id = identifier;
     this.activeOperatorQueue = new ConcurrentLinkedQueue<>();
-    this.subGroup = subGroup;
+    this.group = group;
+    this.groupLoad = 0;
+    this.totalProcessingTime = new AtomicLong(0);
+    this.totalProcessingEvent = new AtomicLong(0);
+    this.latestRebalanceTime = System.nanoTime();
     this.numActiveOperators = new AtomicInteger();
+  }
+
+  @Override
+  public void setGroup(final Group g) {
+    group = g;
   }
 
   /**
@@ -62,7 +91,7 @@ public final class DefaultQueryImpl implements Query {
     activeOperatorQueue.add(sourceOutputEmitter);
     //System.out.println("Event is added at Query, # ev ents: " + n);
     if (n == 0) {
-      subGroup.insert(this);
+      group.insert(this);
     }
   }
 
@@ -75,7 +104,7 @@ public final class DefaultQueryImpl implements Query {
   public void delete(final SourceOutputEmitter sourceOutputEmitter) {
     if (activeOperatorQueue.remove(sourceOutputEmitter)) {
       numActiveOperators.decrementAndGet();
-      subGroup.delete(this);
+      group.delete(this);
     }
   }
 
@@ -99,7 +128,7 @@ public final class DefaultQueryImpl implements Query {
   }
 
   @Override
-  public int numEvents() {
+  public long numberOfRemainingEvents() {
     int sum = 0;
     final Iterator<SourceOutputEmitter> iterator = activeOperatorQueue.iterator();
     while (iterator.hasNext()) {
@@ -110,12 +139,43 @@ public final class DefaultQueryImpl implements Query {
   }
 
   @Override
+  public void setLoad(final double load) {
+    groupLoad = load;
+  }
+
+  @Override
+  public double getLoad() {
+    return groupLoad;
+  }
+
+  @Override
+  public void setLatestRebalanceTime(final long rebalanceTime) {
+    latestRebalanceTime = rebalanceTime;
+  }
+
+  @Override
+  public long getLatestRebalanceTime() {
+    return latestRebalanceTime;
+  }
+
+
+  @Override
+  public AtomicLong getProcessingTime() {
+    return totalProcessingTime;
+  }
+
+  @Override
+  public AtomicLong getProcessingEvent() {
+    return totalProcessingEvent;
+  }
+
+  @Override
   public String getId() {
     return id;
   }
 
   @Override
-  public SubGroup getSubGroup() {
-    return subGroup;
+  public Group getGroup() {
+    return group;
   }
 }

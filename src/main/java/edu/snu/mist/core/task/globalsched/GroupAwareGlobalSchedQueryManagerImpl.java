@@ -23,7 +23,6 @@ import edu.snu.mist.common.shared.MQTTSharedResource;
 import edu.snu.mist.common.shared.NettySharedResource;
 import edu.snu.mist.core.driver.parameters.DeactivationEnabled;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
-import edu.snu.mist.core.parameters.SubGroupId;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
 import edu.snu.mist.core.task.deactivation.GroupSourceManager;
@@ -76,7 +75,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
    */
   private final GlobalSchedGroupInfoMap groupInfoMap;
 
-  private final ConcurrentMap<String, Tuple<MetaGroup, ConcurrentMap<String, SubGroup>>> groupMap;
+  private final ConcurrentMap<String, MetaGroup> groupMap;
 
   /**
    * Merging enabled or not.
@@ -221,7 +220,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
 
         final MetaGroup metaGroup = injector.getInstance(MetaGroup.class);
 
-        if (groupMap.putIfAbsent(groupId, new Tuple<>(metaGroup, new ConcurrentHashMap<>())) == null) {
+        if (groupMap.putIfAbsent(groupId, metaGroup) == null) {
           LOG.log(Level.FINE, "Create Group: {0}", new Object[]{groupId});
           final Group group = injector.getInstance(Group.class);
           groupAllocationTableModifier.addEvent(
@@ -235,25 +234,10 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
         }
       }
 
-      // Get sub-group
-      final Tuple<MetaGroup, ConcurrentMap<String, SubGroup>> t = groupMap.get(groupId);
-      final MetaGroup metaGroup = t.getKey();
-      final ConcurrentMap<String, SubGroup> subGroupMap = t.getValue();
-
-      if (subGroupMap.get(subGroupId) == null) {
-        final JavaConfigurationBuilder jcb2 = Tang.Factory.getTang().newConfigurationBuilder();
-        jcb2.bindNamedParameter(SubGroupId.class, subGroupId);
-        final Injector injector2 = Tang.Factory.getTang().newInjector(jcb2.build());
-        final SubGroup subGroup = injector2.getInstance(SubGroup.class);
-        if (subGroupMap.putIfAbsent(subGroupId, subGroup) == null) {
-          LOG.log(Level.FINE, "Create SubGroup: {0}", new Object[]{subGroupId});
-          groupAllocationTableModifier.addEvent(
-              new WritingEvent(WritingEvent.EventType.SUBGROUP_ADD, new Tuple<>(metaGroup, subGroup)));
-        }
-      }
-
-      final SubGroup subGroup = subGroupMap.get(subGroupId);
-      final Query query = new DefaultQueryImpl(queryId, subGroup);
+      final MetaGroup metaGroup = groupMap.get(groupId);
+      final Query query = new DefaultQueryImpl(queryId);
+      groupAllocationTableModifier.addEvent(new WritingEvent(WritingEvent.EventType.QUERY_ADD,
+          new Tuple<>(metaGroup, query)));
 
       // Start the submitted dag
       final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
@@ -307,9 +291,6 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   public void close() throws Exception {
     scheduler.shutdown();
     planStore.close();
-    for (final SubGroup groupInfo : groupInfoMap.values()) {
-      groupInfo.close();
-    }
     eventProcessorManager.close();
   }
 
@@ -318,7 +299,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
    */
   @Override
   public QueryControlResult delete(final String groupId, final String queryId) {
-    groupMap.get(groupId).getKey().getQueryRemover().deleteQuery(queryId);
+    groupMap.get(groupId).getQueryRemover().deleteQuery(queryId);
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(queryId);
     queryControlResult.setIsSuccess(true);

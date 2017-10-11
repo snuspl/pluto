@@ -15,8 +15,8 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
+import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.globalsched.Group;
-import edu.snu.mist.core.task.globalsched.SubGroup;
 import edu.snu.mist.core.task.globalsched.parameters.DefaultGroupLoad;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -69,31 +69,31 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
     for (final Group group : groups) {
       double load = 0.0;
 
-      final List<SubGroup> subGroupList = group.getSubGroups();
-      synchronized (subGroupList) {
-        for (final SubGroup subGroup : subGroupList) {
+      final List<Query> queries = group.getQueries();
+      synchronized (queries) {
+        for (final Query query : queries) {
           final long startTime = System.nanoTime();
 
           // Number of processed events
-          final long processingEvent = subGroup.getProcessingEvent().get();
-          subGroup.getProcessingEvent().getAndAdd(-processingEvent);
+          final long processingEvent = query.getProcessingEvent().get();
+          query.getProcessingEvent().getAndAdd(-processingEvent);
 
           // Number of incoming events
-          final long incomingEventTime = startTime - subGroup.getLatestRebalanceTime();
-          subGroup.setLatestRebalanceTime(startTime);
+          final long incomingEventTime = startTime - query.getLatestRebalanceTime();
+          query.setLatestRebalanceTime(startTime);
 
-          final long incomingE = subGroup.numberOfRemainingEvents();
+          final long incomingE = query.numberOfRemainingEvents();
           final long incomingEvent = incomingE + processingEvent;
 
-          final long processingEventTime = subGroup.getProcessingTime().get();
-          subGroup.getProcessingTime().getAndAdd(-processingEventTime);
+          final long processingEventTime = query.getProcessingTime().get();
+          query.getProcessingTime().getAndAdd(-processingEventTime);
 
           // No processed. This thread is overloaded!
           if (processingEventTime == 0 && incomingEvent != 0) {
             //isOverloaded = true;
           } else if (incomingEvent == 0) {
             // No incoming event
-            subGroup.setLoad(defaultGroupLoad);
+            query.setLoad(defaultGroupLoad);
             load += defaultGroupLoad;
           } else {
             // processed event, incoming event
@@ -102,7 +102,7 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
             final double groupLoad = inputRate / processingRate;
             load += groupLoad;
 
-            subGroup.setLoad(groupLoad);
+            query.setLoad(groupLoad);
           }
         }
       }

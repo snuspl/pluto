@@ -15,84 +15,11 @@
  */
 package edu.snu.mist.core.task.globalsched;
 
-import edu.snu.mist.core.task.Query;
-import org.apache.reef.tang.annotations.DefaultImplementation;
-
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
-
 /**
  * A class which contains query and metric information about query group.
  * It is different from GroupInfo in that it does not have ThreadManager.
  * As we consider global scheduling, we do not have to have ThreadManger per group.
  */
-@DefaultImplementation(DefaultSubGroupImpl.class)
-public interface SubGroup extends AutoCloseable {
+public interface SubGroup {
 
-  void insert(Query query);
-
-  boolean delete(Query query);
-
-  /**
-   * @return the list of query id in this group
-   */
-  List<Query> getQueryList();
-
-  /**
-   * Get the number of remaining events.
-   * @return the number of remaining events.
-   */
-  long numberOfRemainingEvents();
-
-  /**
-   * Get the load of the group.
-   */
-  double getLoad();
-
-  int processAllEvent();
-
-  /**
-   *  Set the load of the group.
-   */
-  void setLoad(double load);
-
-  /**
-   * Set the rebalance time.
-   */
-  void setLatestRebalanceTime(long rebalanceTime);
-
-  /**
-   * Get the latest rebalance time.
-   * @return rebalance time
-   */
-  long getLatestRebalanceTime();
-
-  /**
-   * Check whether the group has events to be processed.
-   * @return true if it has events to be processed.
-   */
-  boolean isActive();
-
-  /**
-   * Get sub-group id.
-   * @return group id
-   */
-  String getSubGroupId();
-
-  /**
-   * Get the event processing time in the group.
-   * @return event processing time
-   */
-  AtomicLong getProcessingTime();
-
-  /**
-   * Get the number of processed events in the group.
-   * @return numb er of processed events
-   * @return number of processed events
-   */
-  AtomicLong getProcessingEvent();
-
-  Group getGroup();
-
-  void setGroup(Group group);
 }

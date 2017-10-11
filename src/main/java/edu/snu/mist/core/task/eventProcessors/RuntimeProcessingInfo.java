@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
-import edu.snu.mist.core.task.globalsched.SubGroup;
 
 /**
  * This class is for the group isolator.
@@ -25,7 +24,7 @@ public final class RuntimeProcessingInfo {
   /**
    * The currently processed group.
    */
-  private final SubGroup currGroup;
+  //private final SubGroup currGroup;
 
   /**
    * The start time of the group.
@@ -37,17 +36,19 @@ public final class RuntimeProcessingInfo {
    */
   private final long numProcessedEvents;
 
-  public RuntimeProcessingInfo(final SubGroup currGroup,
+  public RuntimeProcessingInfo(//final SubGroup currGroup,
                                final long startTime,
                                final long numProcessedEvents) {
-    this.currGroup = currGroup;
+    //this.currGroup = currGroup;
     this.startTime = startTime;
     this.numProcessedEvents = numProcessedEvents;
   }
 
+  /*
   public SubGroup getCurrGroup() {
     return currGroup;
   }
+  */
 
   public long getStartTime() {
     return startTime;

@@ -15,11 +15,15 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.core.task.globalsched.SubGroup;
+import edu.snu.mist.core.task.globalsched.Group;
 import org.apache.reef.tang.annotations.DefaultImplementation;
+
+import java.util.concurrent.atomic.AtomicLong;
 
 @DefaultImplementation(DefaultQueryImpl.class)
 public interface Query {
+
+  void setGroup(Group group);
 
   void insert(SourceOutputEmitter sourceOutputEmitter);
 
@@ -29,9 +33,23 @@ public interface Query {
 
   int size();
 
-  int numEvents();
+  //int numEvents();
 
   String getId();
 
-  SubGroup getSubGroup();
+  Group getGroup();
+
+  AtomicLong getProcessingTime();
+
+  AtomicLong getProcessingEvent();
+
+  void setLoad(double load);
+
+  double getLoad();
+
+  long getLatestRebalanceTime();
+
+  void setLatestRebalanceTime(long t);
+
+  long numberOfRemainingEvents();
 }

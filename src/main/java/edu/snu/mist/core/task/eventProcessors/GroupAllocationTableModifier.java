@@ -15,13 +15,13 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
+import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.eventProcessors.groupAssigner.GroupAssigner;
 import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupMerger;
 import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupRebalancer;
 import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupSplitter;
 import edu.snu.mist.core.task.globalsched.Group;
 import edu.snu.mist.core.task.globalsched.MetaGroup;
-import edu.snu.mist.core.task.globalsched.SubGroup;
 import org.apache.reef.io.Tuple;
 
 import javax.inject.Inject;
@@ -161,10 +161,10 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
               groupAssigner.assignGroup(group);
               break;
             }
-            case SUBGROUP_ADD: {
-              final Tuple<MetaGroup, SubGroup> tuple = (Tuple<MetaGroup, SubGroup>) event.getValue();
+            case QUERY_ADD: {
+              final Tuple<MetaGroup, Query> tuple = (Tuple<MetaGroup, Query>) event.getValue();
               final MetaGroup metaGroup = tuple.getKey();
-              final SubGroup subGroup = tuple.getValue();
+              final Query query = tuple.getValue();
               // TODO: pluggable
               // Find minimum load group
               Group minGroup = null;
@@ -175,14 +175,14 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
                   minGroup = group;
                   minLoad = load;
                 } else if (load == minLoad) {
-                  if (group.getSubGroups().size() < minGroup.getSubGroups().size()) {
+                  if (group.size() < minGroup.size()) {
                     minGroup = group;
                     minLoad = load;
                   }
                 }
               }
-              subGroup.setGroup(minGroup);
-              minGroup.addSubGroup(subGroup);
+              query.setGroup(minGroup);
+              minGroup.addQuery(query);
               break;
             }
             case GROUP_REMOVE: {

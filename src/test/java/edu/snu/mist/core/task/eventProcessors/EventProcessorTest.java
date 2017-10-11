@@ -64,16 +64,10 @@ public final class EventProcessorTest {
     final BlockingQueue<Group> queue = new LinkedBlockingQueue<>();
 
     final Group group1 = createGroup("group1");
-    final SubGroup subGroup1 = createSubGroup("subGroup1");
-    subGroup1.setGroup(group1);
 
     final Group group2 = createGroup("group2");
-    final SubGroup subGroup2 = createSubGroup("subGroup2");
-    subGroup2.setGroup(group2);
 
     final Group group3 = createGroup("group3");
-    final SubGroup subGroup3 = createSubGroup("subGroup3");
-    subGroup3.setGroup(group3);
 
     final CountDownLatch countDownLatch = new CountDownLatch(31);
     final AtomicInteger numEvent1 = new AtomicInteger(10);
@@ -116,9 +110,12 @@ public final class EventProcessorTest {
       return cnt;
     });
 
-    final Query query1 = new DefaultQueryImpl("q1", subGroup1);
-    final Query query2 = new DefaultQueryImpl("q2", subGroup2);
-    final Query query3 = new DefaultQueryImpl("q3", subGroup3);
+    final Query query1 = new DefaultQueryImpl("q1");
+    group1.addQuery(query1);
+    final Query query2 = new DefaultQueryImpl("q2");
+    group2.addQuery(query2);
+    final Query query3 = new DefaultQueryImpl("q3");
+    group3.addQuery(query3);
 
     final NextGroupSelector nextGroupSelector = new TestNextGroupSelector(queue);
 

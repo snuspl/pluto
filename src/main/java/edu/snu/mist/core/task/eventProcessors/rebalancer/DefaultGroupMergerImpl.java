@@ -15,13 +15,13 @@
  */
 package edu.snu.mist.core.task.eventProcessors.rebalancer;
 
+import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.GroupAllocationTable;
 import edu.snu.mist.core.task.eventProcessors.parameters.GroupRebalancingPeriod;
 import edu.snu.mist.core.task.eventProcessors.parameters.OverloadedThreshold;
 import edu.snu.mist.core.task.eventProcessors.parameters.UnderloadedThreshold;
 import edu.snu.mist.core.task.globalsched.Group;
-import edu.snu.mist.core.task.globalsched.SubGroup;
 import edu.snu.mist.core.task.globalsched.parameters.DefaultGroupLoad;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -118,15 +118,15 @@ public final class DefaultGroupMergerImpl implements GroupMerger {
                      final Group lowLoadGroup) {
     double incLoad = 0.0;
 
-    synchronized (highLoadGroup.getSubGroups()) {
-      for (final SubGroup subGroup : highLoadGroup.getSubGroups()) {
-        lowLoadGroup.addSubGroup(subGroup);
-        incLoad += subGroup.getLoad();
+    synchronized (highLoadGroup.getQueries()) {
+      for (final Query query : highLoadGroup.getQueries()) {
+        lowLoadGroup.addQuery(query);
+        incLoad += query.getLoad();
       }
     }
 
     // memory barrier
-    synchronized (lowLoadGroup.getSubGroups()) {
+    synchronized (lowLoadGroup.getQueries()) {
       highLoadGroup.setEventProcessor(null);
       highLoadGroups.remove(highLoadGroup);
     }
