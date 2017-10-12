@@ -43,12 +43,12 @@ import org.apache.reef.tang.implementation.java.ClassHierarchyImpl;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import javax.inject.Inject;
-import java.io.RandomAccessFile;
+import java.io.File;
 import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * TODO[DELETE] this code is for test.
@@ -73,6 +73,8 @@ public final class BatchQueryCreator {
 
   private final QueryInfoStore planStore;
 
+  private final AtomicInteger duplicateNum;
+
   @Inject
   private BatchQueryCreator(final AvroConfigurationSerializer avroConfigurationSerializer,
                             final ClassLoaderProvider classLoaderProvider,
@@ -81,6 +83,7 @@ public final class BatchQueryCreator {
     this.classLoaderProvider = classLoaderProvider;
     this.superGroupJarPathMap = new ConcurrentHashMap<>();
     this.planStore = planStore;
+    this.duplicateNum = new AtomicInteger(0);
   }
 
   /**
@@ -100,20 +103,15 @@ public final class BatchQueryCreator {
     // Get classloader
     final URL[] jarUrls = SerializeUtils.getJarFileURLs(avroDag.getJarFilePaths());
 
-    // Read byte buffer
-    final List<ByteBuffer> jarByteBuffers = new ArrayList<>();
-    for (final String jarPath: avroDag.getJarFilePaths()) {
-      final RandomAccessFile aFile = new RandomAccessFile(jarPath, "r");
-      final FileChannel inChannel = aFile.getChannel();
-      final ByteBuffer jarByteBuffer = ByteBuffer.allocate((int) inChannel.size());
-      inChannel.read(jarByteBuffer);
-      jarByteBuffers.add(jarByteBuffer);
-    }
-
     // Make new jars for new super groups
     for (final String superGroupId: superGroupIdList) {
       if (!superGroupJarPathMap.containsKey(superGroupId)) {
-        final List<String> paths = planStore.saveJar(jarByteBuffers);
+        final List<String> paths = new ArrayList<>();
+        for (final String jarPath: avroDag.getJarFilePaths()) {
+          final String newPath = String.format("/tmp/%d-duplicate.jar", duplicateNum.getAndIncrement());
+          Files.copy(new File(jarPath).toPath(), new File(newPath).toPath());
+          paths.add(newPath);
+        }
         superGroupJarPathMap.putIfAbsent(superGroupId, paths);
         //System.err.println(String.format("Super Group Id = %s, Jar path: %s", superGroupId, paths));
       }
