@@ -110,12 +110,6 @@ public final class EventProcessorTest {
       return cnt;
     });
 
-    final Query query1 = new DefaultQueryImpl("q1");
-    group1.addQuery(query1);
-    final Query query2 = new DefaultQueryImpl("q2");
-    group2.addQuery(query2);
-    final Query query3 = new DefaultQueryImpl("q3");
-    group3.addQuery(query3);
 
     final NextGroupSelector nextGroupSelector = new TestNextGroupSelector(queue);
 
@@ -124,6 +118,14 @@ public final class EventProcessorTest {
     group1.setEventProcessor(eventProcessor);
     group2.setEventProcessor(eventProcessor);
     group3.setEventProcessor(eventProcessor);
+
+    final Query query1 = new DefaultQueryImpl("q1");
+    group1.addQuery(query1);
+    final Query query2 = new DefaultQueryImpl("q2");
+    group2.addQuery(query2);
+    final Query query3 = new DefaultQueryImpl("q3");
+    group3.addQuery(query3);
+
 
     query1.insert(oc1);
     query2.insert(oc2);

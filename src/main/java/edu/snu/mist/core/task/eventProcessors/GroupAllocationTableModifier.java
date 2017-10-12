@@ -207,7 +207,7 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
               groupRebalancer.triggerRebalancing();
 
               // 3. split groups
-              groupSplitter.splitGroup();
+              //groupSplitter.splitGroup();
 
               break;
             case ISOLATION:

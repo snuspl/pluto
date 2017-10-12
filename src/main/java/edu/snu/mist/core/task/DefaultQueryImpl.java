@@ -118,8 +118,9 @@ public final class DefaultQueryImpl implements Query {
     int numProcessedEvent = 0;
     SourceOutputEmitter sourceOutputEmitter = activeOperatorQueue.poll();
     while (sourceOutputEmitter != null) {
-      numProcessedEvent += sourceOutputEmitter.processAllEvent();
       numActiveOperators.decrementAndGet();
+
+      numProcessedEvent += sourceOutputEmitter.processAllEvent();
       sourceOutputEmitter = activeOperatorQueue.poll();
     }
     return numProcessedEvent;

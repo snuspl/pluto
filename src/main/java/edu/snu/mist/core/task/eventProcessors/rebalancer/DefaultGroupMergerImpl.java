@@ -112,11 +112,17 @@ public final class DefaultGroupMergerImpl implements GroupMerger {
     LOG.info(sb.toString());
   }
 
-  private void merge(final Group highLoadGroup,
+  private boolean merge(final Group highLoadGroup,
                      final Collection<Group> highLoadGroups,
                      final EventProcessor highLoadThread,
                      final Group lowLoadGroup) {
     double incLoad = 0.0;
+
+    // If the group is processing, do not merge
+    if (!highLoadGroup.setMovingFromReady()) {
+      return false;
+    }
+
 
     synchronized (highLoadGroup.getQueries()) {
       for (final Query query : highLoadGroup.getQueries()) {
@@ -128,6 +134,11 @@ public final class DefaultGroupMergerImpl implements GroupMerger {
     // memory barrier
     synchronized (lowLoadGroup.getQueries()) {
       highLoadGroup.setEventProcessor(null);
+
+      while (highLoadThread.removeActiveGroup(highLoadGroup)) {
+        // remove all elements
+      }
+
       highLoadGroups.remove(highLoadGroup);
     }
 
@@ -143,8 +154,13 @@ public final class DefaultGroupMergerImpl implements GroupMerger {
     lowLoadGroup.setLoad(lowLoadGroup.getLoad() + incLoad);
     lowLoadGroup.getEventProcessor().setLoad(lowLoadGroup.getEventProcessor().getLoad() + incLoad);
 
+
+    // Add one more
+    lowLoadGroup.getEventProcessor().addActiveGroup(lowLoadGroup);
+
     LOG.log(Level.INFO, "Merge {0} from {1} to {2}",
         new Object[]{highLoadGroup, highLoadThread, lowLoadGroup.getEventProcessor()});
+    return true;
   }
 
   private Group findLowestLoadThreadSplittedGroup(final Group highLoadGroup) {
@@ -229,8 +245,9 @@ public final class DefaultGroupMergerImpl implements GroupMerger {
                   highLoadGroup.getEventProcessor().getLoad() - groupLoad >= targetLoad &&
                   lowLoadGroup.getEventProcessor().getLoad() + groupLoad <= targetLoad) {
                 // 3. merge!
-                merge(highLoadGroup, highLoadGroups, highLoadThread, lowLoadGroup);
-                rebNum += 1;
+                if (merge(highLoadGroup, highLoadGroups, highLoadThread, lowLoadGroup)) {
+                  rebNum += 1;
+                }
               }
             } else {
               break;

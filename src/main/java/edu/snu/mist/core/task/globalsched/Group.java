@@ -48,6 +48,12 @@ public interface Group extends AutoCloseable {
 
   void setMetaGroup(MetaGroup metaGroup);
 
+  boolean setProcessingFromReady();
+
+  boolean setMovingFromReady();
+
+  void setReady();
+
   /**
    * Get the load of the group.
    */

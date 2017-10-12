@@ -38,6 +38,7 @@ final class DefaultGroupImpl implements Group {
    */
   private enum GroupStatus {
     READY,
+    MOVING,
     DISPATCHED,
     PROCESSING,
     ISOLATED,
@@ -57,6 +58,8 @@ final class DefaultGroupImpl implements Group {
 
   private MetaGroup metaGroup;
 
+  private final AtomicReference<GroupStatus> groupStatus = new AtomicReference<>(GroupStatus.READY);
+
   @Inject
   private DefaultGroupImpl(@Parameter(GroupId.class) final String groupId) {
     this.groupId = groupId;
@@ -74,6 +77,13 @@ final class DefaultGroupImpl implements Group {
     synchronized (queryList) {
       query.setGroup(this);
       queryList.add(query);
+      activeQueryQueue.add(query);
+
+      final int n = numActiveSubGroup.getAndIncrement();
+
+      if (n == 0) {
+        eventProcessor.get().addActiveGroup(this);
+      }
     }
   }
 
@@ -95,7 +105,7 @@ final class DefaultGroupImpl implements Group {
 
   @Override
   public void delete(final Query query) {
-    eventProcessor.get().removeActiveGroup(this);
+    //eventProcessor.get().removeActiveGroup(this);
     synchronized (queryList) {
       queryList.remove(query);
     }
@@ -124,6 +134,20 @@ final class DefaultGroupImpl implements Group {
     metaGroup = mGroup;
   }
 
+  @Override
+  public boolean setProcessingFromReady() {
+    return groupStatus.compareAndSet(GroupStatus.READY, GroupStatus.PROCESSING);
+  }
+
+  @Override
+  public boolean setMovingFromReady() {
+    return groupStatus.compareAndSet(GroupStatus.READY, GroupStatus.MOVING);
+  }
+
+  @Override
+  public void setReady() {
+    groupStatus.set(GroupStatus.READY);
+  }
 
   @Override
   public double getLoad() {
@@ -156,6 +180,8 @@ final class DefaultGroupImpl implements Group {
     Query query = activeQueryQueue.poll();
     long startProcessingTime = System.nanoTime();
     while (query != null) {
+      numActiveSubGroup.decrementAndGet();
+
       final int processedEvent = query.processAllEvent();
 
       // Calculate load
@@ -167,10 +193,10 @@ final class DefaultGroupImpl implements Group {
         query.getProcessingEvent().getAndAdd(processedEvent);
       }
 
-      numActiveSubGroup.decrementAndGet();
       query = activeQueryQueue.poll();
       numProcessedEvent += processedEvent;
     }
+    groupStatus.set(GroupStatus.READY);
     return numProcessedEvent;
   }
 

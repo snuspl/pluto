@@ -148,6 +148,7 @@ public final class GroupRebalancerTest {
       final List<Double> loadList = loads.get(i);
       for (final Double load : loadList) {
         final Group group = mock(Group.class);
+        when(group.setMovingFromReady()).thenReturn(true);
         when(group.getLoad()).thenReturn(load);
         when(group.toString()).thenReturn(Double.toString(load));
         when(group.isSplited()).thenReturn(false);
