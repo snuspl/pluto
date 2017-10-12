@@ -18,7 +18,6 @@ package edu.snu.mist.core.task.globalsched;
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.RuntimeProcessingInfo;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -87,10 +86,12 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
         final Group groupInfo = nextGroupSelector.getNextExecutableGroup();
         numProcessedEvents = groupInfo.processAllEvent();
 
-          if (LOG.isLoggable(Level.INFO)) {
-            LOG.log(Level.INFO, "{0} Process Group {1}, # Processed Events: {2}",
-                new Object[]{Thread.currentThread().getName(), groupInfo,  numProcessedEvents});
-          }
+        /*
+        if (LOG.isLoggable(Level.INFO)) {
+          LOG.log(Level.INFO, "{0} Process Group {1}, # Processed Events: {2}",
+              new Object[]{Thread.currentThread().getName(), groupInfo,  numProcessedEvents});
+        }
+        */
       }
     } catch (final Exception e) {
       e.printStackTrace();
