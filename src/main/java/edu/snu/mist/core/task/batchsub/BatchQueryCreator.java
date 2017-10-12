@@ -103,6 +103,7 @@ public final class BatchQueryCreator {
     final List<ByteBuffer> jarByteBuffers = new ArrayList<>();
     for (final URL jarUrl: jarUrls) {
       final byte[] jarByteArray = IOUtils.toByteArray(jarUrl);
+      System.err.println(jarByteArray);
       jarByteBuffers.add(ByteBuffer.wrap(jarByteArray));
     }
 
