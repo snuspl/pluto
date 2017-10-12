@@ -17,7 +17,6 @@ package edu.snu.mist.core.task.stores;
 
 import edu.snu.mist.core.parameters.TempFolderPath;
 import edu.snu.mist.formats.avro.AvroDag;
-import edu.snu.mist.core.task.HashUtils;
 import io.netty.util.internal.ConcurrentSet;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.DataFileWriter;
@@ -36,13 +35,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
@@ -233,6 +225,10 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
   public List<String> saveJar(final List<ByteBuffer> jarFiles) throws IOException {
     final List<String> paths = new LinkedList<>();
     for (final ByteBuffer jarFileBytes : jarFiles) {
+      final String path = String.format("submitted-%s.jar", fileNameGenerator.generate());
+      final Path jarFilePath = Paths.get(tmpFolderPath, path);
+      createJarFile(jarFileBytes, jarFilePath, paths);
+      /**
       final byte[] byteBufferHash = HashUtils.getByteBufferHash(jarFileBytes);
       // Check if the jarFiles already exist.
       final ByteBuffer wrappedHash = ByteBuffer.wrap(byteBufferHash);
@@ -270,7 +266,7 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
             }
           }
         }
-      }
+      }**/
     }
     return paths;
   }
