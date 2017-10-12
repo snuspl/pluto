@@ -111,6 +111,7 @@ public final class BatchQueryCreator {
       if (!superGroupJarPathMap.containsKey(superGroupId)) {
         final List<String> paths = planStore.saveJar(jarByteBuffers);
         superGroupJarPathMap.putIfAbsent(superGroupId, paths);
+        System.err.println(String.format("Super Group Id = %s, Jar path: %s", paths));
       }
     }
 
