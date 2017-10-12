@@ -60,16 +60,15 @@ public final class NonBlockingQueueSourceOutputEmitter<I> implements SourceOutpu
   @Override
   public int processAllEvent() {
     int numProcessedEvent = 0;
-    if (numEvents.get() > 0) {
-      MistEvent event = queue.poll();
-      while (event != null) {
-        for (final Map.Entry<ExecutionVertex, MISTEdge> entry : nextOperators.entrySet()) {
-          process(event, entry.getValue().getDirection(), (PhysicalOperator)entry.getKey());
-        }
-        numProcessedEvent += 1;
-        event = queue.poll();
-        numEvents.decrementAndGet();
+    MistEvent event = queue.poll();
+    while (event != null) {
+      numEvents.decrementAndGet();
+
+      for (final Map.Entry<ExecutionVertex, MISTEdge> entry : nextOperators.entrySet()) {
+        process(event, entry.getValue().getDirection(), (PhysicalOperator)entry.getKey());
       }
+      numProcessedEvent += 1;
+      event = queue.poll();
     }
     return numProcessedEvent;
   }
@@ -112,9 +111,9 @@ public final class NonBlockingQueueSourceOutputEmitter<I> implements SourceOutpu
   @Override
   public void emitData(final MistDataEvent data) {
     try {
-      final int n = numEvents.getAndIncrement();
       //System.out.println("Event is added at sourceOutputEmitter: " + data.getValue() + ", # events: " + n);
       queue.add(data);
+      final int n = numEvents.getAndIncrement();
       if (n == 0) {
         query.insert(this);
       }
@@ -127,9 +126,10 @@ public final class NonBlockingQueueSourceOutputEmitter<I> implements SourceOutpu
   public void emitData(final MistDataEvent data, final int index) {
     try {
       // source output emitter does not emit data according to the index
-      final int n = numEvents.getAndIncrement();
       //System.out.println("Event is added at sourceOutputEmitter: " + data.getValue() + ", # events: " + n);
       queue.add(data);
+      final int n = numEvents.getAndIncrement();
+
       if (n == 0) {
         query.insert(this);
       }
@@ -141,8 +141,9 @@ public final class NonBlockingQueueSourceOutputEmitter<I> implements SourceOutpu
   @Override
   public void emitWatermark(final MistWatermarkEvent watermark) {
     try {
-      final int n = numEvents.getAndIncrement();
       queue.add(watermark);
+      final int n = numEvents.getAndIncrement();
+
       if (n == 0) {
         query.insert(this);
       }

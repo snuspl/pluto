@@ -16,16 +16,12 @@
 package edu.snu.mist.core.task.eventProcessors;
 
 import edu.snu.mist.common.parameters.GroupId;
-import edu.snu.mist.core.parameters.SubGroupId;
-import edu.snu.mist.core.task.ExecutionDags;
-import edu.snu.mist.core.task.QueryRemover;
-import edu.snu.mist.core.task.QueryStarter;
+import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupMerger;
 import edu.snu.mist.core.task.globalsched.GlobalSchedNonBlockingEventProcessorFactory;
 import edu.snu.mist.core.task.globalsched.Group;
 import edu.snu.mist.core.task.globalsched.MetaGroup;
-import edu.snu.mist.core.task.globalsched.SubGroup;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -62,11 +58,8 @@ public final class GroupMergerTest {
     return injector.getInstance(Group.class);
   }
 
-  private SubGroup createSubGroup(final String id) throws InjectionException {
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(SubGroupId.class, id);
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    return injector.getInstance(SubGroup.class);
+  private Query createQuery(final String id) throws InjectionException {
+    return new DefaultQueryImpl(id);
   }
 
   /**
@@ -121,15 +114,15 @@ public final class GroupMergerTest {
     g4.setLoad(0.1);
     g4.setEventProcessor(ep1);
 
-    final SubGroup sg1 = createSubGroup("sg1");
+    final Query sg1 = createQuery("sg1");
     sg1.setLoad(0.02);
-    g4.addSubGroup(sg1);
-    final SubGroup sg2 = createSubGroup("sg2");
+    g4.addQuery(sg1);
+    final Query sg2 = createQuery("sg2");
     sg2.setLoad(0.04);
-    g4.addSubGroup(sg2);
-    final SubGroup sg3 = createSubGroup("sg3");
+    g4.addQuery(sg2);
+    final Query sg3 = createQuery("sg3");
     sg3.setLoad(0.04);
-    g4.addSubGroup(sg3);
+    g4.addQuery(sg3);
 
     final MetaGroup mg5 = createMetaGroup();
     final Group g5 = createGroup("g5");
@@ -137,12 +130,12 @@ public final class GroupMergerTest {
     g5.setLoad(0.05);
     g5.setEventProcessor(ep1);
 
-    final SubGroup sg4 = createSubGroup("sg4");
+    final Query sg4 = createQuery("sg4");
     sg4.setLoad(0.02);
-    g5.addSubGroup(sg4);
-    final SubGroup sg5 = createSubGroup("sg5");
+    g5.addQuery(sg4);
+    final Query sg5 = createQuery("sg5");
     sg5.setLoad(0.03);
-    g5.addSubGroup(sg5);
+    g5.addQuery(sg5);
 
     final MetaGroup mg6 = createMetaGroup();
     final Group g6 = createGroup("g6");
@@ -161,18 +154,18 @@ public final class GroupMergerTest {
     mg4.addGroup(g44);
     g44.setEventProcessor(ep2);
 
-    final SubGroup sg6 = createSubGroup("sg6");
+    final Query sg6 = createQuery("sg6");
     sg6.setLoad(0.05);
-    g44.addSubGroup(sg6);
+    g44.addQuery(sg6);
 
     final Group g55 = createGroup("g5");
     mg5.addGroup(g55);
     g55.setLoad(0.05);
     g55.setEventProcessor(ep2);
 
-    final SubGroup sg7 = createSubGroup("sg7");
+    final Query sg7 = createQuery("sg7");
     sg7.setLoad(0.05);
-    g55.addSubGroup(sg7);
+    g55.addQuery(sg7);
 
     groupAllocationTable.getValue(ep1).add(g1);
     groupAllocationTable.getValue(ep1).add(g2);
@@ -192,8 +185,8 @@ public final class GroupMergerTest {
     Assert.assertEquals(1, mg4.getGroups().size());
     Assert.assertEquals(1, mg5.getGroups().size());
 
-    Assert.assertEquals(4, g44.getSubGroups().size());
-    Assert.assertEquals(3, g55.getSubGroups().size());
+    Assert.assertEquals(4, g44.size());
+    Assert.assertEquals(3, g55.size());
 
     Assert.assertEquals(g44, sg1.getGroup());
     Assert.assertEquals(g44, sg2.getGroup());

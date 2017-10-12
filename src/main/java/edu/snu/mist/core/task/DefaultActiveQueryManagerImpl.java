@@ -86,7 +86,7 @@ public final class DefaultActiveQueryManagerImpl implements ActiveQueryManager {
     final Iterator<Query> iterator = activeQueryQueue.iterator();
     while (iterator.hasNext()) {
       final Query query = iterator.next();
-      sum += query.numEvents();
+      sum += query.numberOfRemainingEvents();
     }
     return sum;
   }

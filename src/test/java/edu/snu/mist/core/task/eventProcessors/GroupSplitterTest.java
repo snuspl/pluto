@@ -16,10 +16,7 @@
 package edu.snu.mist.core.task.eventProcessors;
 
 import edu.snu.mist.common.parameters.GroupId;
-import edu.snu.mist.core.parameters.SubGroupId;
-import edu.snu.mist.core.task.ExecutionDags;
-import edu.snu.mist.core.task.QueryRemover;
-import edu.snu.mist.core.task.QueryStarter;
+import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.eventProcessors.parameters.OverloadedThreshold;
 import edu.snu.mist.core.task.eventProcessors.parameters.UnderloadedThreshold;
@@ -27,7 +24,6 @@ import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupSplitter;
 import edu.snu.mist.core.task.globalsched.GlobalSchedNonBlockingEventProcessorFactory;
 import edu.snu.mist.core.task.globalsched.Group;
 import edu.snu.mist.core.task.globalsched.MetaGroup;
-import edu.snu.mist.core.task.globalsched.SubGroup;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -65,11 +61,8 @@ public final class GroupSplitterTest {
     return injector.getInstance(Group.class);
   }
 
-  private SubGroup createSubGroup(final String id) throws InjectionException {
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(SubGroupId.class, id);
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    return injector.getInstance(SubGroup.class);
+  private Query createQuery(final String id) throws InjectionException {
+    return new DefaultQueryImpl(id);
   }
 
   /**
@@ -141,11 +134,11 @@ public final class GroupSplitterTest {
     g4.setLoad(0.3);
     g4.setEventProcessor(ep1);
 
-    final List<SubGroup> g4SubGroups = new LinkedList<>();
+    final List<Query> g4Query = new LinkedList<>();
     for (int i = 0; i < 6; i++) {
-      final SubGroup sg1 = createSubGroup("sg" + i + "_of_g4");
+      final Query sg1 = createQuery("sg" + i + "_of_g4");
       sg1.setLoad(0.05);
-      g4.addSubGroup(sg1);
+      g4.addQuery(sg1);
     }
 
     final MetaGroup mg5 = createMetaGroup();
@@ -160,11 +153,11 @@ public final class GroupSplitterTest {
     g6.setLoad(0.5);
     g6.setEventProcessor(ep2);
 
-    final List<SubGroup> g6SubGroups = new LinkedList<>();
+    final List<Query> g6SubGroups = new LinkedList<>();
     for (int i = 0; i < 10; i++) {
-      final SubGroup sg1 = createSubGroup("sg" + i + "_of_g6");
+      final Query sg1 = createQuery("sg" + i + "_of_g6");
       sg1.setLoad(0.05);
-      g6.addSubGroup(sg1);
+      g6.addQuery(sg1);
     }
 
     final MetaGroup mg7 = createMetaGroup();
@@ -217,10 +210,10 @@ public final class GroupSplitterTest {
     Assert.assertEquals(2, mg4.getGroups().size());
     Assert.assertEquals(2, mg6.getGroups().size());
 
-    Assert.assertEquals(3, g4.getSubGroups().size());
-    Assert.assertEquals(8, g6.getSubGroups().size());
+    Assert.assertEquals(3, g4.getQueries().size());
+    Assert.assertEquals(8, g6.getQueries().size());
 
-    Assert.assertEquals(3, g10.getSubGroups().size());
+    Assert.assertEquals(3, g10.getQueries().size());
     Assert.assertEquals(0.2, g10.getLoad(), 0.0000001);
     Assert.assertEquals(0.15, g4.getLoad(), 0.000001);
     Assert.assertEquals(0.4, g6.getLoad(), 0.0000001);

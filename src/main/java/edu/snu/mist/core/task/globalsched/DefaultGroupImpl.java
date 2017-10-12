@@ -16,6 +16,7 @@
 package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -37,6 +38,7 @@ final class DefaultGroupImpl implements Group {
    */
   private enum GroupStatus {
     READY,
+    MOVING,
     DISPATCHED,
     PROCESSING,
     ISOLATED,
@@ -44,7 +46,7 @@ final class DefaultGroupImpl implements Group {
 
   private final String groupId;
 
-  private final Queue<SubGroup> activeSubGroupQueue;
+  private final Queue<Query> activeQueryQueue;
 
   private final AtomicInteger numActiveSubGroup = new AtomicInteger(0);
 
@@ -52,14 +54,16 @@ final class DefaultGroupImpl implements Group {
 
   private double load = 0;
 
-  private final List<SubGroup> subGroupList = new LinkedList<>();
+  private final List<Query> queryList = new LinkedList<>();
 
   private MetaGroup metaGroup;
+
+  private final AtomicReference<GroupStatus> groupStatus = new AtomicReference<>(GroupStatus.READY);
 
   @Inject
   private DefaultGroupImpl(@Parameter(GroupId.class) final String groupId) {
     this.groupId = groupId;
-    this.activeSubGroupQueue = new ConcurrentLinkedQueue<>();
+    this.activeQueryQueue = new ConcurrentLinkedQueue<>();
     this.eventProcessor = new AtomicReference<>(null);
   }
 
@@ -69,22 +73,29 @@ final class DefaultGroupImpl implements Group {
   }
 
   @Override
-  public void addSubGroup(final SubGroup subGroup) {
-    synchronized (subGroupList) {
-      subGroup.setGroup(this);
-      subGroupList.add(subGroup);
+  public void addQuery(final Query query) {
+    synchronized (queryList) {
+      query.setGroup(this);
+      queryList.add(query);
+      activeQueryQueue.add(query);
+
+      final int n = numActiveSubGroup.getAndIncrement();
+
+      if (n == 0) {
+        eventProcessor.get().addActiveGroup(this);
+      }
     }
   }
 
   @Override
-  public List<SubGroup> getSubGroups() {
-    return subGroupList;
+  public List<Query> getQueries() {
+    return queryList;
   }
 
   @Override
-  public void insert(final SubGroup subGroup) {
+  public void insert(final Query query) {
+    activeQueryQueue.add(query);
     final int n = numActiveSubGroup.getAndIncrement();
-    activeSubGroupQueue.add(subGroup);
     //System.out.println("Event is added at Group, # group: " + n);
 
     if (n == 0) {
@@ -93,12 +104,12 @@ final class DefaultGroupImpl implements Group {
   }
 
   @Override
-  public void delete(final SubGroup subGroup) {
-    eventProcessor.get().removeActiveGroup(this);
-    synchronized (subGroupList) {
-      subGroupList.remove(subGroup);
+  public void delete(final Query query) {
+    //eventProcessor.get().removeActiveGroup(this);
+    synchronized (queryList) {
+      queryList.remove(query);
     }
-    if (activeSubGroupQueue.remove(subGroup)) {
+    if (activeQueryQueue.remove(query)) {
       numActiveSubGroup.decrementAndGet();
     }
   }
@@ -123,6 +134,20 @@ final class DefaultGroupImpl implements Group {
     metaGroup = mGroup;
   }
 
+  @Override
+  public boolean setProcessingFromReady() {
+    return groupStatus.compareAndSet(GroupStatus.READY, GroupStatus.PROCESSING);
+  }
+
+  @Override
+  public boolean setMovingFromReady() {
+    return groupStatus.compareAndSet(GroupStatus.READY, GroupStatus.MOVING);
+  }
+
+  @Override
+  public void setReady() {
+    groupStatus.set(GroupStatus.READY);
+  }
 
   @Override
   public double getLoad() {
@@ -152,26 +177,26 @@ final class DefaultGroupImpl implements Group {
   @Override
   public int processAllEvent() {
     int numProcessedEvent = 0;
-    if (numActiveSubGroup.get() > 0) {
-      SubGroup subGroup = activeSubGroupQueue.poll();
-      long startProcessingTime = System.nanoTime();
-      while (subGroup != null) {
-        final int processedEvent = subGroup.processAllEvent();
+    Query query = activeQueryQueue.poll();
+    long startProcessingTime = System.nanoTime();
+    while (query != null) {
+      numActiveSubGroup.decrementAndGet();
 
-        // Calculate load
-        long endProcessingTime = System.nanoTime();
-        final long processingTime = endProcessingTime - startProcessingTime;
+      final int processedEvent = query.processAllEvent();
 
-        if (processedEvent != 0) {
-          subGroup.getProcessingTime().getAndAdd(processingTime);
-          subGroup.getProcessingEvent().getAndAdd(processedEvent);
-        }
+      // Calculate load
+      long endProcessingTime = System.nanoTime();
+      final long processingTime = endProcessingTime - startProcessingTime;
 
-        numActiveSubGroup.decrementAndGet();
-        subGroup = activeSubGroupQueue.poll();
-        numProcessedEvent += processedEvent;
+      if (processedEvent != 0) {
+        query.getProcessingTime().getAndAdd(processingTime);
+        query.getProcessingEvent().getAndAdd(processedEvent);
       }
+
+      query = activeQueryQueue.poll();
+      numProcessedEvent += processedEvent;
     }
+    groupStatus.set(GroupStatus.READY);
     return numProcessedEvent;
   }
 
@@ -181,13 +206,18 @@ final class DefaultGroupImpl implements Group {
   }
 
   @Override
+  public int size() {
+    return queryList.size();
+  }
+
+  @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder("{gid: ");
     sb.append(groupId);
     sb.append(", load: ");
     sb.append(load);
     sb.append("# subGroups: ");
-    sb.append(subGroupList.size());
+    sb.append(queryList.size());
     sb.append("}");
     return sb.toString();
   }

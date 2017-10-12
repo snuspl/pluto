@@ -42,7 +42,9 @@ public final class DispatcherGroupSelector implements NextGroupSelector {
     try {
       while (true) {
         final Group groupInfo = queue.take();
-        return groupInfo;
+        if (groupInfo.setProcessingFromReady()) {
+          return groupInfo;
+        }
       }
     } catch (InterruptedException e) {
       e.printStackTrace();

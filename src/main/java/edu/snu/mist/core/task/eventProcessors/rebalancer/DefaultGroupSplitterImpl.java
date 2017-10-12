@@ -16,13 +16,13 @@
 package edu.snu.mist.core.task.eventProcessors.rebalancer;
 
 import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.GroupAllocationTable;
 import edu.snu.mist.core.task.eventProcessors.parameters.GroupRebalancingPeriod;
 import edu.snu.mist.core.task.eventProcessors.parameters.OverloadedThreshold;
 import edu.snu.mist.core.task.eventProcessors.parameters.UnderloadedThreshold;
 import edu.snu.mist.core.task.globalsched.Group;
-import edu.snu.mist.core.task.globalsched.SubGroup;
 import edu.snu.mist.core.task.globalsched.parameters.DefaultGroupLoad;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -199,17 +199,25 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
             // Split if the load of the high load thread could be less than targetLoad
             // when we split the high load group
             if (highLoadThread.getLoad() - highLoadGroup.getLoad() < targetLoad + epsilon
-                && highLoadGroup.getSubGroups().size() > 1) {
+                && highLoadGroup.size() > 1) {
 
-              final Iterator<SubGroup> subGroupIterator = highLoadGroup.getSubGroups().iterator();
+              // Sorting queries
+              final List<Query> queries = highLoadGroup.getQueries();
+              final List<Query> sortedQueries = new ArrayList<>(queries);
+              sortedQueries.sort(new Comparator<Query>() {
+                @Override
+                public int compare(final Query o1, final Query o2) {
+                  return o1.getLoad() < o2.getLoad() ? 1 : -1;
+                }
+              });
+
               final EventProcessor peek = underloadedThreads.peek();
               Group sameGroup = hasSameGroup(highLoadGroup, peek);
               EventProcessor lowLoadThread = underloadedThreads.poll();
 
-              while (subGroupIterator.hasNext()) {
-                final SubGroup subGroup = subGroupIterator.next();
-                if (highLoadThread.getLoad() - subGroup.getLoad() >= targetLoad - epsilon &&
-                    peek.getLoad() + subGroup.getLoad() <= targetLoad + epsilon) {
+              for (final Query movingQuery : sortedQueries) {
+                if (highLoadThread.getLoad() - movingQuery.getLoad() >= targetLoad - epsilon &&
+                    peek.getLoad() + movingQuery.getLoad() <= targetLoad + epsilon) {
 
                   if (sameGroup == null) {
                     // Split! Create a new group!
@@ -223,14 +231,14 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
                   }
 
                   // Move to the existing group!
-                  sameGroup.addSubGroup(subGroup);
-                  sameGroup.setLoad(sameGroup.getLoad() + subGroup.getLoad());
+                  sameGroup.addQuery(movingQuery);
+                  sameGroup.setLoad(sameGroup.getLoad() + movingQuery.getLoad());
 
-                  subGroupIterator.remove();
-                  highLoadGroup.setLoad(highLoadGroup.getLoad() - subGroup.getLoad());
+                  queries.remove(movingQuery);
+                  highLoadGroup.setLoad(highLoadGroup.getLoad() - movingQuery.getLoad());
 
-                  lowLoadThread.setLoad(lowLoadThread.getLoad() + subGroup.getLoad());
-                  highLoadThread.setLoad(highLoadThread.getLoad() - subGroup.getLoad());
+                  lowLoadThread.setLoad(lowLoadThread.getLoad() + movingQuery.getLoad());
+                  highLoadThread.setLoad(highLoadThread.getLoad() - movingQuery.getLoad());
 
                   rebNum += 1;
                 }

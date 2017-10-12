@@ -122,6 +122,11 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
     final Collection<Group> lowLoadGroups =
         groupAllocationTable.getValue(lowLoadThread);
 
+
+    while (highLoadThread.removeActiveGroup(highLoadGroup)) {
+      // remove all elements
+    }
+
     lowLoadGroups.add(highLoadGroup);
     highLoadGroup.setEventProcessor(lowLoadThread);
     highLoadGroups.remove(highLoadGroup);
@@ -132,6 +137,9 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
     // Update underloaded thread load
     lowLoadThread.setLoad(lowLoadThread.getLoad() + groupLoad);
     underloadedThreads.add(lowLoadThread);
+
+    highLoadGroup.setReady();
+    lowLoadThread.addActiveGroup(highLoadGroup);
   }
 
   @Override
@@ -209,7 +217,7 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
               // Rebalance!!!
               if (highLoadThread.getLoad() - groupLoad >= targetLoad) {
                 final EventProcessor peek = underloadedThreads.peek();
-                if (peek.getLoad() + groupLoad <= targetLoad) {
+                if (peek.getLoad() + groupLoad <= targetLoad && highLoadGroup.setMovingFromReady()) {
                   final EventProcessor lowLoadThread = underloadedThreads.poll();
                   moveGroup(highLoadGroup, highLoadGroups, highLoadThread, lowLoadThread, underloadedThreads);
                   rebNum += 1;

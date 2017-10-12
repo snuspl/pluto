@@ -18,7 +18,6 @@ package edu.snu.mist.core.task.globalsched;
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.RuntimeProcessingInfo;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -50,7 +49,7 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
   /**
    * The currently processed group.
    */
-  private volatile SubGroup currProcessedGroup;
+  //private volatile SubGroup currProcessedGroup;
 
   /**
    * True if it is running an isolated group.
@@ -71,7 +70,6 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
     super();
     this.nextGroupSelector = nextGroupSelector;
     this.load = 0.0;
-    this.currProcessedGroup = null;
     this.currProcessedGroupStartTime = System.currentTimeMillis();
     this.numProcessedEvents = 0;
     this.runningIsolatedGroup = false;
@@ -88,10 +86,12 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
         final Group groupInfo = nextGroupSelector.getNextExecutableGroup();
         numProcessedEvents = groupInfo.processAllEvent();
 
-          if (LOG.isLoggable(Level.INFO)) {
-            LOG.log(Level.INFO, "{0} Process Group {1}, # Processed Events: {2}",
-                new Object[]{Thread.currentThread().getName(), groupInfo,  numProcessedEvents});
-          }
+        /*
+        if (LOG.isLoggable(Level.INFO)) {
+          LOG.log(Level.INFO, "{0} Process Group {1}, # Processed Events: {2}",
+              new Object[]{Thread.currentThread().getName(), groupInfo,  numProcessedEvents});
+        }
+        */
       }
     } catch (final Exception e) {
       e.printStackTrace();
@@ -126,7 +126,7 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
 
   @Override
   public RuntimeProcessingInfo getCurrentRuntimeInfo() {
-    return new RuntimeProcessingInfo(currProcessedGroup, currProcessedGroupStartTime, numProcessedEvents);
+    return new RuntimeProcessingInfo(currProcessedGroupStartTime, numProcessedEvents);
   }
 
   @Override
