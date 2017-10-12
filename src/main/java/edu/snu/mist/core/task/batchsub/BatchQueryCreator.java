@@ -35,7 +35,6 @@ import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.AvroVertex;
 import edu.snu.mist.formats.avro.QueryControlResult;
-import org.apache.commons.io.IOUtils;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.*;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -44,8 +43,10 @@ import org.apache.reef.tang.implementation.java.ClassHierarchyImpl;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import javax.inject.Inject;
+import java.io.RandomAccessFile;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -101,10 +102,12 @@ public final class BatchQueryCreator {
 
     // Read byte buffer
     final List<ByteBuffer> jarByteBuffers = new ArrayList<>();
-    for (final URL jarUrl: jarUrls) {
-      final byte[] jarByteArray = IOUtils.toByteArray(jarUrl);
-      System.err.println(jarByteArray);
-      jarByteBuffers.add(ByteBuffer.wrap(jarByteArray));
+    for (final String jarPath: avroDag.getJarFilePaths()) {
+      final RandomAccessFile aFile = new RandomAccessFile(jarPath, "r");
+      final FileChannel inChannel = aFile.getChannel();
+      final ByteBuffer jarByteBuffer = ByteBuffer.allocate((int) inChannel.size());
+      inChannel.read(jarByteBuffer);
+      jarByteBuffers.add(jarByteBuffer);
     }
 
     // Make new jars for new super groups
@@ -112,7 +115,7 @@ public final class BatchQueryCreator {
       if (!superGroupJarPathMap.containsKey(superGroupId)) {
         final List<String> paths = planStore.saveJar(jarByteBuffers);
         superGroupJarPathMap.putIfAbsent(superGroupId, paths);
-        System.err.println(String.format("Super Group Id = %s, Jar path: %s", superGroupId, paths));
+        //System.err.println(String.format("Super Group Id = %s, Jar path: %s", superGroupId, paths));
       }
     }
 
