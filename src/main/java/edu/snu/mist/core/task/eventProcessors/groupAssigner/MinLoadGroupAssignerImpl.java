@@ -107,15 +107,17 @@ public final class MinLoadGroupAssignerImpl implements GroupAssigner {
   @Override
   public void assignGroup(final Group groupInfo) {
     final List<EventProcessor> uThreads = underloadedThreads();
-    final int index = random.nextInt(uThreads.size());
 
-    final EventProcessor eventProcessor = uThreads.get(index);
+    if (uThreads.size() > 0) {
+      final int index = random.nextInt(uThreads.size());
 
-    groupAllocationTable.getValue(eventProcessor).add(groupInfo);
-    groupInfo.setEventProcessor(eventProcessor);
-    eventProcessor.setLoad(eventProcessor.getLoad() + groupInfo.getLoad());
+      final EventProcessor eventProcessor = uThreads.get(index);
 
-    /*
+      groupAllocationTable.getValue(eventProcessor).add(groupInfo);
+      groupInfo.setEventProcessor(eventProcessor);
+      eventProcessor.setLoad(eventProcessor.getLoad() + groupInfo.getLoad());
+
+    } else {
     // Reselect the event processor that has the minimum
     final EventProcessor minLoadEventProcessor = findMinLoadEventProcessor();
     //latestPickTime = System.currentTimeMillis();
@@ -124,7 +126,7 @@ public final class MinLoadGroupAssignerImpl implements GroupAssigner {
     groupAllocationTable.getValue(latestMinLoadEventProcessor).add(groupInfo);
     groupInfo.setEventProcessor(latestMinLoadEventProcessor);
     latestMinLoadEventProcessor.setLoad(latestMinLoadEventProcessor.getLoad() + groupInfo.getLoad());
-    */
+    }
   }
 
   @Override
