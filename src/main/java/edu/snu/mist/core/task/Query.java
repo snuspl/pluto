@@ -52,4 +52,8 @@ public interface Query {
   void setLatestRebalanceTime(long t);
 
   long numberOfRemainingEvents();
+
+  void setReady();
+
+  boolean setProcessingFromReady();
 }

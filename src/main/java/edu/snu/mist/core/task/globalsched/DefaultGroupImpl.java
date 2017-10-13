@@ -180,23 +180,26 @@ final class DefaultGroupImpl implements Group {
     Query query = activeQueryQueue.poll();
     long startProcessingTime = System.nanoTime();
     while (query != null) {
-      numActiveSubGroup.decrementAndGet();
 
-      final int processedEvent = query.processAllEvent();
+      if (query.setProcessingFromReady()) {
+        numActiveSubGroup.decrementAndGet();
 
-      // Calculate load
-      long endProcessingTime = System.nanoTime();
-      final long processingTime = endProcessingTime - startProcessingTime;
+        final int processedEvent = query.processAllEvent();
 
-      if (processedEvent != 0) {
-        query.getProcessingTime().getAndAdd(processingTime);
-        query.getProcessingEvent().getAndAdd(processedEvent);
+        // Calculate load
+        long endProcessingTime = System.nanoTime();
+        final long processingTime = endProcessingTime - startProcessingTime;
+
+        if (processedEvent != 0) {
+          query.getProcessingTime().getAndAdd(processingTime);
+          query.getProcessingEvent().getAndAdd(processedEvent);
+        }
+        numProcessedEvent += processedEvent;
+
+        query.setReady();
       }
-
       query = activeQueryQueue.poll();
-      numProcessedEvent += processedEvent;
     }
-    groupStatus.set(GroupStatus.READY);
     return numProcessedEvent;
   }
 

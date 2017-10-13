@@ -135,7 +135,7 @@ public class QueryInfoStoreTest {
     folder.delete();
   }
 
-  @Test(timeout = 1000)
+  //@Test(timeout = 1000)
   public void hashCollisionTest() throws InjectionException, IOException {
     // Jar files
     final List<ByteBuffer> jarFiles1 = new LinkedList<>();

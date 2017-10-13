@@ -118,12 +118,6 @@ public final class DefaultGroupMergerImpl implements GroupMerger {
                      final Group lowLoadGroup) {
     double incLoad = 0.0;
 
-    // If the group is processing, do not merge
-    if (!highLoadGroup.setMovingFromReady()) {
-      return false;
-    }
-
-
     synchronized (highLoadGroup.getQueries()) {
       for (final Query query : highLoadGroup.getQueries()) {
         lowLoadGroup.addQuery(query);

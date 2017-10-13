@@ -85,7 +85,7 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
         // Pick an active group
         final Group groupInfo = nextGroupSelector.getNextExecutableGroup();
         numProcessedEvents = groupInfo.processAllEvent();
-
+        groupInfo.setReady();
         /*
         if (LOG.isLoggable(Level.INFO)) {
           LOG.log(Level.INFO, "{0} Process Group {1}, # Processed Events: {2}",
