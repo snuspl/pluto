@@ -118,14 +118,14 @@ public final class MinLoadGroupAssignerImpl implements GroupAssigner {
       eventProcessor.setLoad(eventProcessor.getLoad() + groupInfo.getLoad());
 
     } else {
-    // Reselect the event processor that has the minimum
-    final EventProcessor minLoadEventProcessor = findMinLoadEventProcessor();
-    //latestPickTime = System.currentTimeMillis();
-    latestMinLoadEventProcessor = minLoadEventProcessor;
-
-    groupAllocationTable.getValue(latestMinLoadEventProcessor).add(groupInfo);
-    groupInfo.setEventProcessor(latestMinLoadEventProcessor);
-    latestMinLoadEventProcessor.setLoad(latestMinLoadEventProcessor.getLoad() + groupInfo.getLoad());
+      // Reselect the event processor that has the minimum
+      final EventProcessor minLoadEventProcessor = findMinLoadEventProcessor();
+      //latestPickTime = System.currentTimeMillis();
+      latestMinLoadEventProcessor = minLoadEventProcessor;
+  
+      groupAllocationTable.getValue(latestMinLoadEventProcessor).add(groupInfo);
+      groupInfo.setEventProcessor(latestMinLoadEventProcessor);
+      latestMinLoadEventProcessor.setLoad(latestMinLoadEventProcessor.getLoad() + groupInfo.getLoad());
     }
   }
 
