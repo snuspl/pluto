@@ -58,24 +58,29 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
     executorService.submit(new Runnable() {
       @Override
       public void run() {
-        synchronized (queryProgress) {
-          while (eventNum > queryProgress.getNextEventNum().get()) {
-            try {
-              queryProgress.wait();
-            } catch (InterruptedException e) {
-              e.printStackTrace();
+        try {
+          synchronized (queryProgress) {
+            while (eventNum > queryProgress.getNextEventNum().get()) {
+              try {
+                queryProgress.wait();
+              } catch (InterruptedException e) {
+                e.printStackTrace();
+              }
             }
-          }
 
-          if (eventNum == queryProgress.getNextEventNum().get()) {
-            try {
-              processNextEvent(data);
-              queryProgress.getNextEventNum().getAndIncrement();
-              queryProgress.notifyAll();
-            } catch (InterruptedException e) {
-              e.printStackTrace();
+            if (eventNum == queryProgress.getNextEventNum().get()) {
+              try {
+                processNextEvent(data);
+                queryProgress.getNextEventNum().getAndIncrement();
+                queryProgress.notifyAll();
+              } catch (InterruptedException e) {
+                e.printStackTrace();
+              }
             }
           }
+        } catch (final Exception e) {
+          e.printStackTrace();
+          throw new RuntimeException(e);
         }
       }
     });
@@ -88,24 +93,29 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
     executorService.submit(new Runnable() {
       @Override
       public void run() {
-        synchronized (queryProgress) {
-          while (eventNum > queryProgress.getNextEventNum().get()) {
-            try {
-              queryProgress.wait();
-            } catch (InterruptedException e) {
-              e.printStackTrace();
+        try {
+          synchronized (queryProgress) {
+            while (eventNum > queryProgress.getNextEventNum().get()) {
+              try {
+                queryProgress.wait();
+              } catch (InterruptedException e) {
+                e.printStackTrace();
+              }
             }
-          }
 
-          if (eventNum == queryProgress.getNextEventNum().get()) {
-            try {
-              processNextEvent(data);
-              queryProgress.getNextEventNum().getAndIncrement();
-              queryProgress.notifyAll();
-            } catch (InterruptedException e) {
-              e.printStackTrace();
+            if (eventNum == queryProgress.getNextEventNum().get()) {
+              try {
+                processNextEvent(data);
+                queryProgress.getNextEventNum().getAndIncrement();
+                queryProgress.notifyAll();
+              } catch (InterruptedException e) {
+                e.printStackTrace();
+              }
             }
           }
+        } catch (final Exception e) {
+          e.printStackTrace();
+          throw new RuntimeException(e);
         }
       }
     });
@@ -117,24 +127,29 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
     executorService.submit(new Runnable() {
       @Override
       public void run() {
-        synchronized (queryProgress) {
-          while (eventNum > queryProgress.getNextEventNum().get()) {
-            try {
-              queryProgress.wait();
-            } catch (InterruptedException e) {
-              e.printStackTrace();
+        try {
+          synchronized (queryProgress) {
+            while (eventNum > queryProgress.getNextEventNum().get()) {
+              try {
+                queryProgress.wait();
+              } catch (InterruptedException e) {
+                e.printStackTrace();
+              }
             }
-          }
 
-          if (eventNum == queryProgress.getNextEventNum().get()) {
-            try {
-              processNextEvent(watermark);
-              queryProgress.getNextEventNum().getAndIncrement();
-              queryProgress.notifyAll();
-            } catch (InterruptedException e) {
-              e.printStackTrace();
+            if (eventNum == queryProgress.getNextEventNum().get()) {
+              try {
+                processNextEvent(watermark);
+                queryProgress.getNextEventNum().getAndIncrement();
+                queryProgress.notifyAll();
+              } catch (InterruptedException e) {
+                e.printStackTrace();
+              }
             }
           }
+        } catch (final Exception e) {
+          e.printStackTrace();
+          throw new RuntimeException(e);
         }
       }
     });

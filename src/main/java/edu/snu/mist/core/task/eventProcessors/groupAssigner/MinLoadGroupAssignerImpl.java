@@ -122,7 +122,7 @@ public final class MinLoadGroupAssignerImpl implements GroupAssigner {
       final EventProcessor minLoadEventProcessor = findMinLoadEventProcessor();
       //latestPickTime = System.currentTimeMillis();
       latestMinLoadEventProcessor = minLoadEventProcessor;
-  
+
       groupAllocationTable.getValue(latestMinLoadEventProcessor).add(groupInfo);
       groupInfo.setEventProcessor(latestMinLoadEventProcessor);
       latestMinLoadEventProcessor.setLoad(latestMinLoadEventProcessor.getLoad() + groupInfo.getLoad());
