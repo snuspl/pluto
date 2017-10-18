@@ -19,11 +19,11 @@ import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.common.parameters.MQTTBrokerURI;
 import edu.snu.mist.common.parameters.MQTTTopic;
 import edu.snu.mist.common.shared.KafkaSharedResource;
+import edu.snu.mist.common.shared.MQTTResource;
 import edu.snu.mist.common.shared.NettySharedResource;
 import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;
-import edu.snu.mist.common.shared.MQTTSharedResource;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -62,13 +62,13 @@ public final class PhysicalObjectGenerator implements AutoCloseable {
   /**
    * MQTT shared resources.
    */
-  private final MQTTSharedResource mqttSharedResource;
+  private final MQTTResource mqttSharedResource;
 
   @Inject
   private PhysicalObjectGenerator(final ScheduledExecutorServiceWrapper schedulerWrapper,
                                   final KafkaSharedResource kafkaSharedResource,
                                   final NettySharedResource nettySharedResource,
-                                  final MQTTSharedResource mqttSharedResource) {
+                                  final MQTTResource mqttSharedResource) {
     this.scheduler = schedulerWrapper.getScheduler();
     this.kafkaSharedResource = kafkaSharedResource;
     this.nettySharedResource = nettySharedResource;
@@ -157,7 +157,7 @@ public final class PhysicalObjectGenerator implements AutoCloseable {
     final Injector injector = newDefaultInjector(conf, classLoader);
     if (injector.isParameterSet(MQTTBrokerURI.class)) {
       // for MQTT
-      injector.bindVolatileInstance(MQTTSharedResource.class, mqttSharedResource);
+      injector.bindVolatileInstance(MQTTResource.class, mqttSharedResource);
     } else {
       // for netty
       injector.bindVolatileInstance(NettySharedResource.class, nettySharedResource);

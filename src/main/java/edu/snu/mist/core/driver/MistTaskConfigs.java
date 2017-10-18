@@ -22,6 +22,13 @@ import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
 import edu.snu.mist.core.driver.parameters.JarSharing;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.parameters.*;
+import edu.snu.mist.common.shared.MQTTNoSharedResource;
+import edu.snu.mist.common.shared.MQTTResource;
+import edu.snu.mist.core.driver.parameters.*;
+import edu.snu.mist.core.parameters.MqttSinkKeepAliveSec;
+import edu.snu.mist.core.parameters.MqttSourceKeepAliveSec;
+import edu.snu.mist.core.parameters.NumPeriodicSchedulerThreads;
+import edu.snu.mist.core.parameters.TempFolderPath;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorLowerBound;
@@ -119,6 +126,8 @@ public final class MistTaskConfigs {
   private final boolean jarSharing;
 
   private final boolean isSplit;
+  private final boolean networkSharing;
+
   @Inject
   private MistTaskConfigs(@Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
                           @Parameter(RPCServerPort.class) final int rpcServerPort,
@@ -134,6 +143,7 @@ public final class MistTaskConfigs {
                           @Parameter(MqttSinkKeepAliveSec.class) final int mqttSinkKeepAliveSec,
                           @Parameter(JarSharing.class) final boolean jarSharing,
                           @Parameter(IsSplit.class) final boolean isSplit,
+                          @Parameter(NetworkSharing.class) final boolean networkSharing,
                           final MistGroupSchedulingTaskConfigs option2TaskConfigs) {
     this.numEventProcessors = numEventProcessors;
     this.tempFolderPath = tempFolderPath;
@@ -148,6 +158,7 @@ public final class MistTaskConfigs {
     this.option2TaskConfigs = option2TaskConfigs;
     this.mqttSourceKeepAliveSec = mqttSourceKeepAliveSec;
     this.jarSharing = jarSharing;
+    this.networkSharing = networkSharing;
     this.mqttSinkKeepAliveSec = mqttSinkKeepAliveSec;
     this.isSplit = isSplit;
   }
@@ -189,6 +200,9 @@ public final class MistTaskConfigs {
     jcb.bindImplementation(QueryManager.class, ThreadPoolQueryManagerImpl.class);
     if (!this.jarSharing) {
       jcb.bindImplementation(ClassLoaderProvider.class, NoSharingURLClassLoaderProvider.class);
+    }
+    if (!this.networkSharing) {
+      jcb.bindImplementation(MQTTResource.class, MQTTNoSharedResource.class);
     }
     return jcb.build();
   }
@@ -240,7 +254,8 @@ public final class MistTaskConfigs {
         .registerShortNameOfClass(MqttSourceKeepAliveSec.class)
         .registerShortNameOfClass(MqttSinkKeepAliveSec.class)
         .registerShortNameOfClass(IsSplit.class)
-        .registerShortNameOfClass(JarSharing.class);
+        .registerShortNameOfClass(JarSharing.class)
+        .registerShortNameOfClass(NetworkSharing.class);
     return MistGroupSchedulingTaskConfigs.addCommandLineConf(cmd);
   }
 }

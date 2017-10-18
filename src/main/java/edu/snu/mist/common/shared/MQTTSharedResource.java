@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 /**
  * This class manages MQTT clients.
  */
-public final class MQTTSharedResource implements AutoCloseable {
+public final class MQTTSharedResource implements MQTTResource {
   private static final Logger LOG = Logger.getLogger(MQTTSharedResource.class.getName());
 
   /**
