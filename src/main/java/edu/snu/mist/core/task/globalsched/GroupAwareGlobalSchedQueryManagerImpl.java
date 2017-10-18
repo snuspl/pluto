@@ -19,7 +19,7 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.common.shared.KafkaSharedResource;
-import edu.snu.mist.common.shared.MQTTSharedResource;
+import edu.snu.mist.common.shared.MQTTResource;
 import edu.snu.mist.common.shared.NettySharedResource;
 import edu.snu.mist.core.driver.parameters.DeactivationEnabled;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
@@ -111,7 +111,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   /**
    * A globally shared MQTTSharedResource.
    */
-  private final MQTTSharedResource mqttSharedResource;
+  private final MQTTResource mqttSharedResource;
 
   /**
    * A globally shared KafkaSharedResource.
@@ -139,7 +139,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 @Parameter(DeactivationEnabled.class) final boolean deactivateEnabled,
                                                 final ConfigDagGenerator configDagGenerator,
                                                 final BatchQueryCreator batchQueryCreator,
-                                                final MQTTSharedResource mqttSharedResource,
+                                                final MQTTResource mqttSharedResource,
                                                 final KafkaSharedResource kafkaSharedResource,
                                                 final NettySharedResource nettySharedResource,
                                                 final DagGenerator dagGenerator,
@@ -210,7 +210,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
         // TODO[DELETE] end: for test
 
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-        injector.bindVolatileInstance(MQTTSharedResource.class, mqttSharedResource);
+        injector.bindVolatileInstance(MQTTResource.class, mqttSharedResource);
         injector.bindVolatileInstance(KafkaSharedResource.class, kafkaSharedResource);
         injector.bindVolatileInstance(NettySharedResource.class, nettySharedResource);
         injector.bindVolatileInstance(QueryInfoStore.class, planStore);
