@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
+import edu.snu.mist.core.parameters.IsSplit;
 import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.eventProcessors.groupAssigner.GroupAssigner;
 import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupMerger;
@@ -23,6 +24,7 @@ import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupSplitter;
 import edu.snu.mist.core.task.globalsched.Group;
 import edu.snu.mist.core.task.globalsched.MetaGroup;
 import org.apache.reef.io.Tuple;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.Collection;
@@ -92,6 +94,8 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
 
   private final GroupSplitter groupSplitter;
 
+  private final boolean isSplit;
+
   @Inject
   private GroupAllocationTableModifier(final GroupAllocationTable groupAllocationTable,
                                        final GroupAssigner groupAssigner,
@@ -100,6 +104,7 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
                                        final GroupIsolator groupIsolator,
                                        final GroupMerger groupMerger,
                                        final GroupSplitter groupSplitter,
+                                       @Parameter(IsSplit.class) final boolean isSplit,
                                        final IsolatedGroupReassigner isolatedGroupReassigner) {
     this.groupAllocationTable = groupAllocationTable;
     this.groupAssigner = groupAssigner;
@@ -110,6 +115,7 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
     this.groupIsolator = groupIsolator;
     this.groupMerger = groupMerger;
     this.groupSplitter = groupSplitter;
+    this.isSplit = isSplit;
     this.isolatedGroupReassigner = isolatedGroupReassigner;
     // Create a writer thread
     singleWriter.submit(new SingleWriterThread());
@@ -201,13 +207,17 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
               //isolatedGroupReassigner.reassignIsolatedGroups();
 
               // 1. merging first
-              groupMerger.groupMerging();
+              if (isSplit) {
+                groupMerger.groupMerging();
+              }
 
               // 2. reassignment
               groupRebalancer.triggerRebalancing();
 
               // 3. split groups
-              //groupSplitter.splitGroup();
+              if (isSplit) {
+                groupSplitter.splitGroup();
+              }
 
               break;
             case ISOLATION:

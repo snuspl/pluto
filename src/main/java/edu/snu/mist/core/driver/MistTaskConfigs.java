@@ -17,6 +17,11 @@ package edu.snu.mist.core.driver;
 
 import edu.snu.mist.common.rpc.AvroRPCNettyServerWrapper;
 import edu.snu.mist.common.rpc.RPCServerPort;
+import edu.snu.mist.core.driver.parameters.DeactivationEnabled;
+import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
+import edu.snu.mist.core.driver.parameters.JarSharing;
+import edu.snu.mist.core.driver.parameters.MergingEnabled;
+import edu.snu.mist.core.parameters.*;
 import edu.snu.mist.common.shared.MQTTNoSharedResource;
 import edu.snu.mist.common.shared.MQTTResource;
 import edu.snu.mist.core.driver.parameters.*;
@@ -120,6 +125,7 @@ public final class MistTaskConfigs {
    */
   private final boolean jarSharing;
 
+  private final boolean isSplit;
   private final boolean networkSharing;
 
   @Inject
@@ -136,6 +142,7 @@ public final class MistTaskConfigs {
                           @Parameter(MqttSourceKeepAliveSec.class) final int mqttSourceKeepAliveSec,
                           @Parameter(MqttSinkKeepAliveSec.class) final int mqttSinkKeepAliveSec,
                           @Parameter(JarSharing.class) final boolean jarSharing,
+                          @Parameter(IsSplit.class) final boolean isSplit,
                           @Parameter(NetworkSharing.class) final boolean networkSharing,
                           final MistGroupSchedulingTaskConfigs option2TaskConfigs) {
     this.numEventProcessors = numEventProcessors;
@@ -153,6 +160,7 @@ public final class MistTaskConfigs {
     this.jarSharing = jarSharing;
     this.networkSharing = networkSharing;
     this.mqttSinkKeepAliveSec = mqttSinkKeepAliveSec;
+    this.isSplit = isSplit;
   }
 
   /**
@@ -218,6 +226,7 @@ public final class MistTaskConfigs {
     jcb.bindNamedParameter(GracePeriod.class, Integer.toString(gracePeriod));
     jcb.bindNamedParameter(MqttSourceKeepAliveSec.class, Integer.toString(mqttSourceKeepAliveSec));
     jcb.bindNamedParameter(MqttSinkKeepAliveSec.class, Integer.toString(mqttSinkKeepAliveSec));
+    jcb.bindNamedParameter(IsSplit.class, Boolean.toString(isSplit));
 
     // Implementation
     jcb.bindImplementation(ClientToTaskMessage.class, DefaultClientToTaskMessageImpl.class);
@@ -244,6 +253,7 @@ public final class MistTaskConfigs {
         .registerShortNameOfClass(GracePeriod.class)
         .registerShortNameOfClass(MqttSourceKeepAliveSec.class)
         .registerShortNameOfClass(MqttSinkKeepAliveSec.class)
+        .registerShortNameOfClass(IsSplit.class)
         .registerShortNameOfClass(JarSharing.class)
         .registerShortNameOfClass(NetworkSharing.class);
     return MistGroupSchedulingTaskConfigs.addCommandLineConf(cmd);
