@@ -214,16 +214,10 @@ public final class DefaultGroupMergerImpl implements GroupMerger {
           Collections.sort(sortedHighLoadGroups, new Comparator<Group>() {
             @Override
             public int compare(final Group o1, final Group o2) {
-              if (o1.isSplited() && !o2.isSplited()) {
+              if (o1.getLoad() < o2.getLoad()) {
                 return -1;
-              } else if (!o1.isSplited() && o2.isSplited()) {
-                return 1;
               } else {
-                if (o1.getLoad() < o2.getLoad()) {
-                  return -1;
-                } else {
-                  return 1;
-                }
+                return 1;
               }
             }
           });
@@ -243,8 +237,6 @@ public final class DefaultGroupMergerImpl implements GroupMerger {
                   rebNum += 1;
                 }
               }
-            } else {
-              break;
             }
           }
         }
