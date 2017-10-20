@@ -189,6 +189,9 @@ public final class MistTaskConfigs {
     if (!this.jarSharing) {
       jcb.bindImplementation(ClassLoaderProvider.class, NoSharingURLClassLoaderProvider.class);
     }
+    if (!this.networkSharing) {
+      jcb.bindImplementation(MQTTResource.class, MQTTNoSharedResource.class);
+    }
     return jcb.build();
   }
 
@@ -200,9 +203,6 @@ public final class MistTaskConfigs {
     jcb.bindImplementation(QueryManager.class, ThreadPoolQueryManagerImpl.class);
     if (!this.jarSharing) {
       jcb.bindImplementation(ClassLoaderProvider.class, NoSharingURLClassLoaderProvider.class);
-    }
-    if (!this.networkSharing) {
-      jcb.bindImplementation(MQTTResource.class, MQTTNoSharedResource.class);
     }
     return jcb.build();
   }
