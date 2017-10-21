@@ -113,7 +113,7 @@ public final class EventProcessorTest {
 
     final NextGroupSelector nextGroupSelector = new TestNextGroupSelector(queue);
 
-    final EventProcessor eventProcessor = new GlobalSchedNonBlockingEventProcessor(nextGroupSelector);
+    final EventProcessor eventProcessor = new GlobalSchedNonBlockingEventProcessor(nextGroupSelector, 1);
 
     group1.setEventProcessor(eventProcessor);
     group2.setEventProcessor(eventProcessor);

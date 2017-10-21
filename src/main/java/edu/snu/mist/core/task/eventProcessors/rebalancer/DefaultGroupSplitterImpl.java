@@ -211,13 +211,12 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
                 }
               });
 
-              final EventProcessor peek = underloadedThreads.peek();
-              Group sameGroup = hasSameGroup(highLoadGroup, peek);
-              EventProcessor lowLoadThread = underloadedThreads.poll();
+              final EventProcessor lowLoadThread = underloadedThreads.poll();
+              Group sameGroup = hasSameGroup(highLoadGroup, lowLoadThread);
 
               for (final Query movingQuery : sortedQueries) {
                 if (highLoadThread.getLoad() - movingQuery.getLoad() >= targetLoad - epsilon &&
-                    peek.getLoad() + movingQuery.getLoad() <= targetLoad + epsilon) {
+                    lowLoadThread.getLoad() + movingQuery.getLoad() <= targetLoad + epsilon) {
 
                   if (sameGroup == null) {
                     // Split! Create a new group!

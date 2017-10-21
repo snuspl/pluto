@@ -89,12 +89,14 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
           query.getProcessingTime().getAndAdd(-processingEventTime);
 
           // No processed. This thread is overloaded!
+          // Just use the previous load
           if (processingEventTime == 0 && incomingEvent != 0) {
             //isOverloaded = true;
+            load += query.getLoad();
           } else if (incomingEvent == 0) {
             // No incoming event
-            query.setLoad(defaultGroupLoad);
-            load += defaultGroupLoad;
+            query.setLoad(0.00001);
+            load += 0.00001;
           } else {
             // processed event, incoming event
             final double inputRate = (incomingEvent * 1000000000) / (double) incomingEventTime;

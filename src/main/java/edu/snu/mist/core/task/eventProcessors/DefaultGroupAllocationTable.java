@@ -100,7 +100,7 @@ public final class DefaultGroupAllocationTable implements GroupAllocationTable {
       sb.append(" -> [");
       sb.append(groups.size());
       sb.append("], ");
-      sb.append(groups);
+      sb.append(String.format("%.4f", ep.getLoad()));
       sb.append("\n");
     }
     return sb.toString();

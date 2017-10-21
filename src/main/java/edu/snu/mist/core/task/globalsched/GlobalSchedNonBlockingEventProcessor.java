@@ -66,10 +66,14 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
    */
   private long numProcessedEvents;
 
-  public GlobalSchedNonBlockingEventProcessor(final NextGroupSelector nextGroupSelector) {
+  private final int id;
+
+  public GlobalSchedNonBlockingEventProcessor(final NextGroupSelector nextGroupSelector,
+                                              final int id) {
     super();
     this.nextGroupSelector = nextGroupSelector;
     this.load = 0.0;
+    this.id = id;
     this.currProcessedGroupStartTime = System.currentTimeMillis();
     this.numProcessedEvents = 0;
     this.runningIsolatedGroup = false;
@@ -137,5 +141,12 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
   @Override
   public boolean isRunningIsolatedGroup() {
     return runningIsolatedGroup;
+  }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("T");
+    sb.append(id);
+    return sb.toString();
   }
 }
