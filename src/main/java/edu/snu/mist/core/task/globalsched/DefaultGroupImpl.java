@@ -127,6 +127,7 @@ final class DefaultGroupImpl implements Group {
     if (activeQueryQueue.remove(query)) {
       numActiveSubGroup.decrementAndGet();
     }
+
   }
 
   @Override

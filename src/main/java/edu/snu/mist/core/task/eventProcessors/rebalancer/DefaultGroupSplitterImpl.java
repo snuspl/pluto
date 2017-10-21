@@ -200,6 +200,7 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
           for (final Group highLoadGroup : sortedHighLoadGroups) {
             // Split if the load of the high load thread could be less than targetLoad
             // when we split the high load group
+            int n = 0;
             if (highLoadThread.getLoad() - highLoadGroup.getLoad() < targetLoad + epsilon
                 && highLoadGroup.size() > 1) {
 
@@ -222,37 +223,42 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
               final EventProcessor lowLoadThread = underloadedThreads.poll();
               Group sameGroup = hasSameGroup(highLoadGroup, lowLoadThread);
 
+              if (sameGroup == null) {
+                // Split! Create a new group!
+                final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+                jcb.bindNamedParameter(GroupId.class, highLoadGroup.getGroupId());
+                final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+                sameGroup = injector.getInstance(Group.class);
+                sameGroup.setEventProcessor(lowLoadThread);
+                highLoadGroup.getMetaGroup().addGroup(sameGroup);
+                groupAllocationTable.getValue(lowLoadThread).add(sameGroup);
+              }
+
               for (final Query movingQuery : sortedQueries) {
                 if (highLoadThread.getLoad() - movingQuery.getLoad() >= targetLoad - epsilon &&
                     lowLoadThread.getLoad() + movingQuery.getLoad() <= targetLoad + epsilon) {
-
-                  if (sameGroup == null) {
-                    // Split! Create a new group!
-                    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-                    jcb.bindNamedParameter(GroupId.class, highLoadGroup.getGroupId());
-                    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-                    sameGroup = injector.getInstance(Group.class);
-                    sameGroup.setEventProcessor(lowLoadThread);
-                    highLoadGroup.getMetaGroup().addGroup(sameGroup);
-                    groupAllocationTable.getValue(lowLoadThread).add(sameGroup);
-                  }
 
                   // Move to the existing group!
                   sameGroup.addQuery(movingQuery);
                   sameGroup.setLoad(sameGroup.getLoad() + movingQuery.getLoad());
 
-                  queries.remove(movingQuery);
+                  highLoadGroup.delete(movingQuery);
                   highLoadGroup.setLoad(highLoadGroup.getLoad() - movingQuery.getLoad());
 
                   lowLoadThread.setLoad(lowLoadThread.getLoad() + movingQuery.getLoad());
                   highLoadThread.setLoad(highLoadThread.getLoad() - movingQuery.getLoad());
 
                   rebNum += 1;
+                  n += 1;
                 }
               }
 
               underloadedThreads.add(lowLoadThread);
+
+              LOG.log(Level.INFO, "GroupSplit from: {0} to {1}, number: {2}",
+                  new Object[]{highLoadThread, lowLoadThread, n});
             }
+
           }
         }
       }
