@@ -64,6 +64,8 @@ public interface Group extends AutoCloseable {
 
   AtomicLong getProcessingTime();
 
+  AtomicLong getProcessingEvent();
+
   /**
    *  Set the load of the group.
    */
@@ -84,6 +86,8 @@ public interface Group extends AutoCloseable {
   long getLatestRebalanceTime();
 
   void setLatestRebalanceTime(long t);
+
+  long numberOfRemainingEvents();
 
   int size();
 }

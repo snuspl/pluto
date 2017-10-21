@@ -71,22 +71,14 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
       double load = 0.0;
 
       final List<Query> queries = group.getQueries();
-      long processingEvent = 0;
-      long incomingEvent = 0;
+      final long processingEvent = group.getProcessingEvent().get();
+      group.getProcessingEvent().addAndGet(-processingEvent);
+      final long incomingEvent = processingEvent + group.numberOfRemainingEvents();
       final long processingEventTime = group.getProcessingTime().get();
       group.getProcessingTime().addAndGet(-processingEventTime);
 
       final long incomingEventTime = startTime - group.getLatestRebalanceTime();
-
-      synchronized (queries) {
-        for (final Query query : queries) {
-          // Number of processed events
-          processingEvent += query.getProcessingEvent().get();
-
-          final long incomingE = query.numberOfRemainingEvents();
-          incomingEvent += incomingE + processingEvent;
-        }
-      }
+      group.setLatestRebalanceTime(startTime);
 
       // Calculate group load
       // No processed. This thread is overloaded!
@@ -125,6 +117,7 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
       }
     }
 
+    eventProcessor.setLoad(eventProcessorLoad);
 
     // Overloaded!
     /*
@@ -133,14 +126,18 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
       // distribute the load
       final int size = groups.size();
       final double balancedLoad = 1.0 / size;
-      for (final SubGroup group : groups) {
+
+      for (final Group group : groups) {
         group.setLoad(balancedLoad);
+        final int querySize = group.getQueries().size();
+        final double queryLoad = balancedLoad / querySize;
+        for (final Query query : group.getQueries()) {
+          query.setLoad(queryLoad);
+        }
       }
     } else {
-      eventProcessor.setLoad(load);
+      eventProcessor.setLoad(eventProcessorLoad);
     }
     */
-
-    eventProcessor.setLoad(eventProcessorLoad);
   }
 }

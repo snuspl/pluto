@@ -21,6 +21,7 @@ import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -64,6 +65,10 @@ final class DefaultGroupImpl implements Group {
   private final AtomicLong processingTime = new AtomicLong(0);
 
   /**
+   * The number of processed events in the group.
+   */
+  private final AtomicLong totalProcessingEvent;
+  /**
    * The latest rebalance time.
    */
   private long latestRebalanceTime;
@@ -74,6 +79,7 @@ final class DefaultGroupImpl implements Group {
     this.activeQueryQueue = new ConcurrentLinkedQueue<>();
     this.eventProcessor = new AtomicReference<>(null);
     this.latestRebalanceTime = System.nanoTime();
+    this.totalProcessingEvent = new AtomicLong(0);
   }
 
   @Override
@@ -219,6 +225,17 @@ final class DefaultGroupImpl implements Group {
   }
 
   @Override
+  public long numberOfRemainingEvents() {
+    int sum = 0;
+    final Iterator<Query> iterator = activeQueryQueue.iterator();
+    while (iterator.hasNext()) {
+      final Query query = iterator.next();
+      sum += query.numberOfRemainingEvents();
+    }
+    return sum;
+  }
+
+  @Override
   public long getLatestRebalanceTime() {
     return latestRebalanceTime;
   }
@@ -231,6 +248,11 @@ final class DefaultGroupImpl implements Group {
   @Override
   public int size() {
     return queryList.size();
+  }
+
+  @Override
+  public AtomicLong getProcessingEvent() {
+    return totalProcessingEvent;
   }
 
   @Override

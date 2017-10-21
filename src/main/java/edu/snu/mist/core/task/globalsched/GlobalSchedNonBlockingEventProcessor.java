@@ -91,6 +91,7 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
         final long startTime = System.nanoTime();
         numProcessedEvents = groupInfo.processAllEvent();
         final long endTime = System.nanoTime();
+        groupInfo.getProcessingEvent().addAndGet(numProcessedEvents);
         groupInfo.getProcessingTime().getAndAdd(endTime - startTime);
 
         groupInfo.setReady();
