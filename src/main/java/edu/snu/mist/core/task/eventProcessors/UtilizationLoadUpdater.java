@@ -65,51 +65,64 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
     //boolean isOverloaded = false;
 
     double eventProcessorLoad = 0.0;
+    final long startTime = System.nanoTime();
 
     for (final Group group : groups) {
       double load = 0.0;
 
       final List<Query> queries = group.getQueries();
+      long processingEvent = 0;
+      long incomingEvent = 0;
+      final long processingEventTime = group.getProcessingTime().get();
+      group.getProcessingTime().addAndGet(-processingEventTime);
+
+      final long incomingEventTime = startTime - group.getLatestRebalanceTime();
+
       synchronized (queries) {
         for (final Query query : queries) {
-          final long startTime = System.nanoTime();
-
           // Number of processed events
-          final long processingEvent = query.getProcessingEvent().get();
-          query.getProcessingEvent().getAndAdd(-processingEvent);
-
-          // Number of incoming events
-          final long incomingEventTime = startTime - query.getLatestRebalanceTime();
-          query.setLatestRebalanceTime(startTime);
+          processingEvent += query.getProcessingEvent().get();
 
           final long incomingE = query.numberOfRemainingEvents();
-          final long incomingEvent = incomingE + processingEvent;
-
-          final long processingEventTime = query.getProcessingTime().get();
-          query.getProcessingTime().getAndAdd(-processingEventTime);
-
-          // No processed. This thread is overloaded!
-          // Just use the previous load
-          if (processingEventTime == 0 && incomingEvent != 0) {
-            //isOverloaded = true;
-            load += query.getLoad();
-          } else if (incomingEvent == 0) {
-            // No incoming event
-            query.setLoad(0.00001);
-            load += 0.00001;
-          } else {
-            // processed event, incoming event
-            final double inputRate = (incomingEvent * 1000000000) / (double) incomingEventTime;
-            final double processingRate = (processingEvent * 1000000000) / (double) processingEventTime;
-            final double groupLoad = inputRate / processingRate;
-            load += groupLoad;
-
-            query.setLoad(groupLoad);
-          }
+          incomingEvent += incomingE + processingEvent;
         }
       }
-      group.setLoad(load);
+
+      // Calculate group load
+      // No processed. This thread is overloaded!
+      // Just use the previous load
+      if (processingEventTime == 0 && incomingEvent != 0) {
+        //isOverloaded = true;
+        load = group.getLoad();
+      } else if (incomingEvent == 0) {
+        // No incoming event
+        load = defaultGroupLoad;
+      } else {
+        // processed event, incoming event
+        final double inputRate = (incomingEvent * 1000000000) / (double) incomingEventTime;
+        final double processingRate = (processingEvent * 1000000000) / (double) processingEventTime;
+        final double groupLoad = inputRate / processingRate;
+        load = groupLoad;
+      }
+
       eventProcessorLoad += load;
+      group.setLoad(load);
+
+      // Calculate query load based on the group load!
+      for (final Query query : queries) {
+        // Number of processed events
+        final long queryProcessingEvent = query.getProcessingEvent().get();
+        query.getProcessingEvent().getAndAdd(-queryProcessingEvent);
+
+        final long incomingE = query.numberOfRemainingEvents();
+
+        final long queryIncomingEvent = incomingE + queryProcessingEvent;
+        if (incomingEvent == 0) {
+          query.setLoad(0);
+        } else {
+          query.setLoad(load * (queryIncomingEvent / (double) incomingEvent));
+        }
+      }
     }
 
 

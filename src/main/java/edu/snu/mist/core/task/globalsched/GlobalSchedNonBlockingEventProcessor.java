@@ -88,7 +88,11 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
       while (!Thread.currentThread().isInterrupted() && !closed) {
         // Pick an active group
         final Group groupInfo = nextGroupSelector.getNextExecutableGroup();
+        final long startTime = System.nanoTime();
         numProcessedEvents = groupInfo.processAllEvent();
+        final long endTime = System.nanoTime();
+        groupInfo.getProcessingTime().getAndAdd(endTime - startTime);
+
         groupInfo.setReady();
         /*
         if (LOG.isLoggable(Level.INFO)) {

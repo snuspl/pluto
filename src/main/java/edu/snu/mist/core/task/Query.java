@@ -39,17 +39,11 @@ public interface Query {
 
   Group getGroup();
 
-  AtomicLong getProcessingTime();
-
   AtomicLong getProcessingEvent();
 
   void setLoad(double load);
 
   double getLoad();
-
-  long getLatestRebalanceTime();
-
-  void setLatestRebalanceTime(long t);
 
   long numberOfRemainingEvents();
 

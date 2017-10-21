@@ -20,6 +20,7 @@ import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A class which contains query and metric information about query group.
@@ -61,6 +62,8 @@ public interface Group extends AutoCloseable {
 
   String getGroupId();
 
+  AtomicLong getProcessingTime();
+
   /**
    *  Set the load of the group.
    */
@@ -77,6 +80,10 @@ public interface Group extends AutoCloseable {
   int processAllEvent();
 
   boolean isSplited();
+
+  long getLatestRebalanceTime();
+
+  void setLatestRebalanceTime(long t);
 
   int size();
 }

@@ -63,11 +63,6 @@ public final class DefaultQueryImpl implements Query {
    */
   private final AtomicLong totalProcessingEvent;
 
-  /**
-   * The latest rebalance time.
-   */
-  private long latestRebalanceTime;
-
   private final AtomicReference<QueryStatus> queryStatus = new AtomicReference<>(QueryStatus.READY);
 
   @Inject
@@ -78,7 +73,6 @@ public final class DefaultQueryImpl implements Query {
     this.groupLoad = 0;
     this.totalProcessingTime = new AtomicLong(0);
     this.totalProcessingEvent = new AtomicLong(0);
-    this.latestRebalanceTime = System.nanoTime();
     this.numActiveOperators = new AtomicInteger();
   }
 
@@ -163,22 +157,6 @@ public final class DefaultQueryImpl implements Query {
   @Override
   public double getLoad() {
     return groupLoad;
-  }
-
-  @Override
-  public void setLatestRebalanceTime(final long rebalanceTime) {
-    latestRebalanceTime = rebalanceTime;
-  }
-
-  @Override
-  public long getLatestRebalanceTime() {
-    return latestRebalanceTime;
-  }
-
-
-  @Override
-  public AtomicLong getProcessingTime() {
-    return totalProcessingTime;
   }
 
   @Override

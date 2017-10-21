@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -60,11 +61,19 @@ final class DefaultGroupImpl implements Group {
 
   private final AtomicReference<GroupStatus> groupStatus = new AtomicReference<>(GroupStatus.READY);
 
+  private final AtomicLong processingTime = new AtomicLong(0);
+
+  /**
+   * The latest rebalance time.
+   */
+  private long latestRebalanceTime;
+
   @Inject
   private DefaultGroupImpl(@Parameter(GroupId.class) final String groupId) {
     this.groupId = groupId;
     this.activeQueryQueue = new ConcurrentLinkedQueue<>();
     this.eventProcessor = new AtomicReference<>(null);
+    this.latestRebalanceTime = System.nanoTime();
   }
 
   @Override
@@ -160,6 +169,11 @@ final class DefaultGroupImpl implements Group {
   }
 
   @Override
+  public AtomicLong getProcessingTime() {
+    return processingTime;
+  }
+
+  @Override
   public void setLoad(final double l) {
     load = l;
   }
@@ -178,7 +192,7 @@ final class DefaultGroupImpl implements Group {
   public int processAllEvent() {
     int numProcessedEvent = 0;
     Query query = activeQueryQueue.poll();
-    long startProcessingTime = System.nanoTime();
+
     while (query != null) {
 
       if (query.setProcessingFromReady()) {
@@ -186,12 +200,7 @@ final class DefaultGroupImpl implements Group {
 
         final int processedEvent = query.processAllEvent();
 
-        // Calculate load
-        long endProcessingTime = System.nanoTime();
-        final long processingTime = endProcessingTime - startProcessingTime;
-
         if (processedEvent != 0) {
-          query.getProcessingTime().getAndAdd(processingTime);
           query.getProcessingEvent().getAndAdd(processedEvent);
         }
         numProcessedEvent += processedEvent;
@@ -200,7 +209,18 @@ final class DefaultGroupImpl implements Group {
       }
       query = activeQueryQueue.poll();
     }
+
     return numProcessedEvent;
+  }
+
+  @Override
+  public void setLatestRebalanceTime(final long rebalanceTime) {
+    latestRebalanceTime = rebalanceTime;
+  }
+
+  @Override
+  public long getLatestRebalanceTime() {
+    return latestRebalanceTime;
   }
 
   @Override
