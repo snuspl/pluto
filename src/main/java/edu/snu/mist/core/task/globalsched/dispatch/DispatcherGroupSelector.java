@@ -44,6 +44,8 @@ public final class DispatcherGroupSelector implements NextGroupSelector {
         final Group groupInfo = queue.take();
         if (groupInfo.setProcessingFromReady()) {
           return groupInfo;
+        } else {
+          queue.add(groupInfo);
         }
       }
     } catch (InterruptedException e) {

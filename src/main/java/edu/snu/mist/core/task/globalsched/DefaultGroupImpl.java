@@ -213,6 +213,8 @@ final class DefaultGroupImpl implements Group {
         numProcessedEvent += processedEvent;
 
         query.setReady();
+      } else {
+        activeQueryQueue.add(query);
       }
       query = activeQueryQueue.poll();
     }

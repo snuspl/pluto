@@ -255,8 +255,8 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
 
               underloadedThreads.add(lowLoadThread);
 
-              LOG.log(Level.INFO, "GroupSplit from: {0} to {1}, number: {2}",
-                  new Object[]{highLoadThread, lowLoadThread, n});
+              LOG.log(Level.INFO, "GroupSplit from: {0} to {1}, Splitted Group: {3}, number: {2}",
+                  new Object[]{highLoadThread, lowLoadThread, n, highLoadGroup.toString()});
             }
 
           }
