@@ -28,6 +28,8 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.Collection;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -96,6 +98,7 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
 
   private final boolean isSplit;
 
+  private final Random random = new Random();
   @Inject
   private GroupAllocationTableModifier(final GroupAllocationTable groupAllocationTable,
                                        final GroupAssigner groupAssigner,
@@ -173,20 +176,10 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
               final Query query = tuple.getValue();
               // TODO: pluggable
               // Find minimum load group
-              Group minGroup = null;
-              double minLoad = Double.MAX_VALUE;
-              for (final Group group : metaGroup.getGroups()) {
-                final double load = group.getLoad();
-                if (load < minLoad) {
-                  minGroup = group;
-                  minLoad = load;
-                } else if (load == minLoad) {
-                  if (group.size() < minGroup.size()) {
-                    minGroup = group;
-                    minLoad = load;
-                  }
-                }
-              }
+              final List<Group> groups = metaGroup.getGroups();
+              final int index = random.nextInt(groups.size());
+              final Group minGroup = groups.get(index);
+
               query.setGroup(minGroup);
               minGroup.addQuery(query);
               break;
