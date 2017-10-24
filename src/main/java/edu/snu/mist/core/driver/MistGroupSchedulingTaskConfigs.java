@@ -18,6 +18,7 @@ package edu.snu.mist.core.driver;
 import edu.snu.mist.core.driver.parameters.EventProcessorNumAssignerType;
 import edu.snu.mist.core.driver.parameters.GroupAware;
 import edu.snu.mist.core.driver.parameters.GroupIsolationEnabled;
+import edu.snu.mist.core.parameters.Pinning;
 import edu.snu.mist.core.task.QueryManager;
 import edu.snu.mist.core.task.eventProcessors.*;
 import edu.snu.mist.core.task.eventProcessors.groupAssigner.GroupAssigner;
@@ -64,7 +65,6 @@ public final class MistGroupSchedulingTaskConfigs {
   private final long cfsSchedulingPeriod;
   private final long minSchedulingPeriod;
   private final int eventProcessorIncreaseNum;
-  private final String groupSchedModelType;
   private final int dispatcherThreadNum;
   private final long rebalancingPeriod;
   private final long isolationTriggerPeriod;
@@ -75,6 +75,8 @@ public final class MistGroupSchedulingTaskConfigs {
   private final String groupAssignerType;
   private final boolean rebalancing;
   private final boolean groupIsolation;
+
+  private final boolean pinning;
 
   @Inject
   private MistGroupSchedulingTaskConfigs(
@@ -87,7 +89,7 @@ public final class MistGroupSchedulingTaskConfigs {
       @Parameter(CfsSchedulingPeriod.class) final long cfsSchedulingPeriod,
       @Parameter(MinSchedulingPeriod.class) final long minSchedulingPeriod,
       @Parameter(EventProcessorIncreaseNum.class) final int eventProcessorIncreaseNum,
-      @Parameter(GroupSchedModelType.class) final String groupSchedModelType,
+      @Parameter(Pinning.class) final boolean pinning,
       @Parameter(DispatcherThreadNum.class) final int dispatcherThreadNum,
       @Parameter(GroupAware.class) final boolean groupAware,
       @Parameter(GroupAssignerType.class) final String groupAssignerType,
@@ -105,7 +107,7 @@ public final class MistGroupSchedulingTaskConfigs {
     this.cfsSchedulingPeriod = cfsSchedulingPeriod;
     this.minSchedulingPeriod = minSchedulingPeriod;
     this.eventProcessorIncreaseNum = eventProcessorIncreaseNum;
-    this.groupSchedModelType = groupSchedModelType;
+    this.pinning = pinning;
     this.groupAware = groupAware;
     this.dispatcherThreadNum = dispatcherThreadNum;
     this.groupAssignerType = groupAssignerType;
@@ -139,14 +141,13 @@ public final class MistGroupSchedulingTaskConfigs {
    */
   private Configuration getConfigurationForExecutionModel() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    switch (groupSchedModelType) {
-      case "dispatching":
-        jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedNonBlockingEventProcessorFactory.class);
-        jcb.bindImplementation(NextGroupSelectorFactory.class, DispatcherGroupSelectorFactory.class);
-        break;
-      default:
-        throw new RuntimeException("Invalid group scheduling model: " + groupSchedModelType);
+    if (pinning) {
+      jcb.bindImplementation(EventProcessorFactory.class, AffinityEventProcessorFactory.class);
+    } else {
+      jcb.bindImplementation(EventProcessorFactory.class, GlobalSchedNonBlockingEventProcessorFactory.class);
     }
+
+    jcb.bindImplementation(NextGroupSelectorFactory.class, DispatcherGroupSelectorFactory.class);
     return jcb.build();
   }
 
@@ -195,7 +196,6 @@ public final class MistGroupSchedulingTaskConfigs {
     jcb.bindNamedParameter(CfsSchedulingPeriod.class, Long.toString(cfsSchedulingPeriod));
     jcb.bindNamedParameter(MinSchedulingPeriod.class, Long.toString(minSchedulingPeriod));
     jcb.bindNamedParameter(EventProcessorIncreaseNum.class, Integer.toString(eventProcessorIncreaseNum));
-    jcb.bindNamedParameter(GroupSchedModelType.class, groupSchedModelType);
     jcb.bindNamedParameter(GroupAware.class, Boolean.toString(groupAware));
     jcb.bindNamedParameter(DispatcherThreadNum.class, Integer.toString(dispatcherThreadNum));
     jcb.bindNamedParameter(GroupRebalancingPeriod.class, Long.toString(rebalancingPeriod));

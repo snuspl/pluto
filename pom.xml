@@ -54,6 +54,13 @@ limitations under the License.
     </repositories>
 
     <dependencies>
+      <!-- https://mvnrepository.com/artifact/net.openhft/affinity -->
+      <!-- thread affinityy -->
+      <dependency>
+        <groupId>net.openhft</groupId>
+        <artifactId>affinity</artifactId>
+        <version>3.0.6</version>
+      </dependency>
         <dependency>
             <groupId>org.apache.reef</groupId>
             <artifactId>reef-common</artifactId>
