@@ -59,7 +59,6 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
       @Override
       public void run() {
         try {
-          /*
           synchronized (queryProgress) {
             while (eventNum > queryProgress.getNextEventNum().get()) {
               try {
@@ -79,8 +78,7 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
               }
             }
           }
-          */
-          processNextEvent(data);
+          //processNextEvent(data);
         } catch (final Exception e) {
           e.printStackTrace();
           throw new RuntimeException(e);
@@ -97,7 +95,6 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
       @Override
       public void run() {
         try {
-          /*
           synchronized (queryProgress) {
             while (eventNum > queryProgress.getNextEventNum().get()) {
               try {
@@ -117,8 +114,8 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
               }
             }
           }
-          */
-          processNextEvent(data);
+
+          //processNextEvent(data);
         } catch (final Exception e) {
           e.printStackTrace();
           throw new RuntimeException(e);
@@ -134,7 +131,6 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
       @Override
       public void run() {
         try {
-          /*
           synchronized (queryProgress) {
             while (eventNum > queryProgress.getNextEventNum().get()) {
               try {
@@ -154,8 +150,8 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
               }
             }
           }
-          */
-          processNextEvent(watermark);
+
+          //processNextEvent(watermark);
         } catch (final Exception e) {
           e.printStackTrace();
           throw new RuntimeException(e);

@@ -137,6 +137,7 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
       return queryControlResult;
     } catch (final Exception e) {
+      e.printStackTrace();
       // [MIST-345] We need to release all of the information that is required for the query when it fails.
       LOG.log(Level.SEVERE, "An exception occurred while starting {0} query: {1}",
           new Object[] {tuple.getKey(), e.getMessage()});
