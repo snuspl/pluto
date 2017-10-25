@@ -204,6 +204,9 @@ public final class MistTaskConfigs {
     if (!this.jarSharing) {
       jcb.bindImplementation(ClassLoaderProvider.class, NoSharingURLClassLoaderProvider.class);
     }
+    if (!this.networkSharing) {
+      jcb.bindImplementation(MQTTResource.class, MQTTNoSharedResource.class);
+    }
     return jcb.build();
   }
 
