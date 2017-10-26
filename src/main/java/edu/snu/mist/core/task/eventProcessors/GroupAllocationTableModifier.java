@@ -202,16 +202,13 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
               // 1. merging first
               if (isSplit) {
                 groupMerger.groupMerging();
-              }
 
-              // 2. reassignment
-              groupRebalancer.triggerRebalancing();
+                // 2. reassignment
+                groupRebalancer.triggerRebalancing();
 
-              // 3. split groups
-              if (isSplit) {
+                // 3. split groups
                 groupSplitter.splitGroup();
               }
-
               break;
             case ISOLATION:
               groupIsolator.triggerIsolation();
