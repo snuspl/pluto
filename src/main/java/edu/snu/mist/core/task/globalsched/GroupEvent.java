@@ -32,14 +32,14 @@ public final class GroupEvent {
   /**
    * Group info.
    */
-  private final SubGroup groupInfo;
+  private final Group groupInfo;
 
   /**
    * Group event type.
    */
   private final GroupEventType type;
 
-  public GroupEvent(final SubGroup groupInfo,
+  public GroupEvent(final Group groupInfo,
                     final GroupEventType type) {
     this.groupInfo = groupInfo;
     this.type = type;
@@ -57,7 +57,7 @@ public final class GroupEvent {
    * Get the group info.
    * @return group info
    */
-  public SubGroup getGroupInfo() {
+  public Group getGroupInfo() {
     return groupInfo;
   }
 }

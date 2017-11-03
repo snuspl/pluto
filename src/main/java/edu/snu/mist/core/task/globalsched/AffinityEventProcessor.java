@@ -21,11 +21,7 @@ import edu.snu.mist.core.task.eventProcessors.RuntimeProcessingInfo;
 import java.util.logging.Logger;
 
 /**
- * This is an event processor that can change the operator chain manager.
- * Every time slice of the group, it selects another operator chain manager
- * to execute the events of queries within the group.
- * It also selects another operator chain manager when there are no active operator chain,
- * which means it does not block when the group has no active operator chain.
+ * This event processor is pinned to a certain core.
  */
 public final class AffinityEventProcessor implements EventProcessor {
 
@@ -36,8 +32,14 @@ public final class AffinityEventProcessor implements EventProcessor {
    */
   private final int id;
 
+  /**
+   * Thread.
+   */
   private final Thread thread;
 
+  /**
+   * Runnable.
+   */
   private final AffinityRunnable runnable;
 
   public AffinityEventProcessor(final int id,

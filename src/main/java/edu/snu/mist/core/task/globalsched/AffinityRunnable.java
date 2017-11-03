@@ -20,11 +20,7 @@ import edu.snu.mist.core.task.eventProcessors.RuntimeProcessingInfo;
 import java.util.logging.Logger;
 
 /**
- * This is an event processor that can change the operator chain manager.
- * Every time slice of the group, it selects another operator chain manager
- * to execute the events of queries within the group.
- * It also selects another operator chain manager when there are no active operator chain,
- * which means it does not block when the group has no active operator chain.
+ * This is a runnable that runs on an affinity event processor.
  */
 public final class AffinityRunnable implements Runnable {
 
@@ -44,11 +40,6 @@ public final class AffinityRunnable implements Runnable {
    * The load of the event processor.
    */
   private double load;
-
-  /**
-   * The currently processed group.
-   */
-  //private volatile SubGroup currProcessedGroup;
 
   /**
    * True if it is running an isolated group.
@@ -94,12 +85,6 @@ public final class AffinityRunnable implements Runnable {
         groupInfo.getProcessingTime().getAndAdd(endTime - startTime);
 
         groupInfo.setReady();
-        /*
-        if (LOG.isLoggable(Level.INFO)) {
-          LOG.log(Level.INFO, "{0} Process Group {1}, # Processed Events: {2}",
-              new Object[]{Thread.currentThread().getName(), groupInfo,  numProcessedEvents});
-        }
-        */
       }
     } catch (final Exception e) {
       e.printStackTrace();

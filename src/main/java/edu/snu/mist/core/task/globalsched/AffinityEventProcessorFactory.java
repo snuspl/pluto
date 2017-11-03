@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
- * The factory class of GlobalSchedNonBlockingEventPrcoessor.
+ * The factory class of AffinityEventProcessor.
  */
 public final class AffinityEventProcessorFactory implements EventProcessorFactory {
   private static final Logger LOG = Logger.getLogger(AffinityEventProcessorFactory.class.getName());
@@ -34,8 +34,14 @@ public final class AffinityEventProcessorFactory implements EventProcessorFactor
    */
   private final NextGroupSelectorFactory nextGroupSelectorFactory;
 
+  /**
+   * Thread id.
+   */
   private final AtomicInteger id = new AtomicInteger(0);
 
+  /**
+   * Affinity thread factory.
+   */
   private final AffinityThreadFactory affinityThreadFactory;
 
   @Inject

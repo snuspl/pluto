@@ -16,9 +16,7 @@
 package edu.snu.mist.core.task.globalsched;
 
 /**
- * A class which contains query and metric information about query group.
- * It is different from GroupInfo in that it does not have ThreadManager.
- * As we consider global scheduling, we do not have to have ThreadManger per group.
+ * TODO: delete.
  */
 public interface SubGroup {
 

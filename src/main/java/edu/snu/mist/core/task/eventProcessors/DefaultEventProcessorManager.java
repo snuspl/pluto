@@ -122,11 +122,9 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
                                        final GroupAssigner groupAssigner,
                                        final GroupRebalancer groupRebalancer,
                                        final GroupAllocationTableModifier groupAllocationTableModifier,
-                                       //final GroupDispatcher groupDispatcher,
                                        final EventProcessorFactory eventProcessorFactory) {
     this.eventProcessorLowerBound = eventProcessorLowerBound;
     this.eventProcessorUpperBound = eventProcessorUpperBound;
-    //this.groupDispatcher = groupDispatcher;
     this.groupAssigner = groupAssigner;
     this.groupRebalancer = groupRebalancer;
     this.groupAllocationTable = groupAllocationTable;
@@ -263,7 +261,6 @@ public final class DefaultEventProcessorManager implements EventProcessorManager
       eventProcessor.close();
     }
 
-    //groupDispatcher.close();
     groupAllocationTableModifier.close();
     groupRebalancerService.shutdown();
     groupRebalancerService.awaitTermination(5L, TimeUnit.SECONDS);

@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * This is the default implementation of the GlobalSchedGroupInfo.
+ * This is the default implementation of Group.
  */
 final class DefaultGroupImpl implements Group {
 
@@ -40,8 +40,6 @@ final class DefaultGroupImpl implements Group {
    */
   private enum GroupStatus {
     READY,
-    MOVING,
-    DISPATCHED,
     PROCESSING,
     ISOLATED,
   }
@@ -156,11 +154,6 @@ final class DefaultGroupImpl implements Group {
   }
 
   @Override
-  public boolean setMovingFromReady() {
-    return groupStatus.compareAndSet(GroupStatus.READY, GroupStatus.MOVING);
-  }
-
-  @Override
   public void setReady() {
     groupStatus.set(GroupStatus.READY);
   }
@@ -188,11 +181,6 @@ final class DefaultGroupImpl implements Group {
   @Override
   public boolean isActive() {
     return numActiveSubGroup.get() > 0;
-  }
-
-  @Override
-  public double calculateLoad() {
-    return 0;
   }
 
   @Override

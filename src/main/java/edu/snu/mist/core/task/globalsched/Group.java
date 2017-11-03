@@ -30,29 +30,55 @@ import java.util.concurrent.atomic.AtomicLong;
 @DefaultImplementation(DefaultGroupImpl.class)
 public interface Group extends AutoCloseable {
 
-  void addQuery(Query subGroup);
+  /**
+   * Add a query assigned to the group.
+   */
+  void addQuery(Query query);
 
+  /**
+   * Get the list of queries assigned to the group.
+   */
   List<Query> getQueries();
 
   /**
-   * Add query to the group.
+   * Add an active query to the group.
    */
   void insert(Query query);
 
+  /**
+   * Delete an active query from the group.
+   */
   void delete(Query query);
 
+  /**
+   * Set an event processor. This can be changed when group is reassigned.
+   */
   void setEventProcessor(EventProcessor eventProcessor);
 
+  /**
+   * Get an event processor that processes the events of the group.
+   */
   EventProcessor getEventProcessor();
 
+  /**
+   * Get a meta group.
+   */
   MetaGroup getMetaGroup();
 
+  /**
+   * Set a meta group.
+   */
   void setMetaGroup(MetaGroup metaGroup);
 
+  /**
+   * Change the group status from ready to processing.
+   * @return true if it is changed from ready to processing.
+   */
   boolean setProcessingFromReady();
 
-  boolean setMovingFromReady();
-
+  /**
+   * Set the group status to ready.
+   */
   void setReady();
 
   /**
@@ -60,10 +86,19 @@ public interface Group extends AutoCloseable {
    */
   double getLoad();
 
+  /**
+   * Get the group id.
+   */
   String getGroupId();
 
+  /**
+   * Get processing time.
+   */
   AtomicLong getProcessingTime();
 
+  /**
+   * Get the number of processed events.
+   */
   AtomicLong getProcessingEvent();
 
   /**
@@ -77,17 +112,35 @@ public interface Group extends AutoCloseable {
    */
   boolean isActive();
 
-  double calculateLoad();
-
+  /**
+   * Process all events in the group.
+   * @return the number of processed events
+   */
   int processAllEvent();
 
+  /**
+   * Is this group split?
+   */
   boolean isSplited();
 
+  /**
+   * Get latest rebalance time.
+   */
   long getLatestRebalanceTime();
 
+  /**
+   * Set latest rebalance time.
+   */
   void setLatestRebalanceTime(long t);
 
+  /**
+   * The number of remaining events.
+   * @return
+   */
   long numberOfRemainingEvents();
 
+  /**
+   * The number of active queries.
+   */
   int size();
 }

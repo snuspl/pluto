@@ -24,22 +24,42 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * A class which contains query and metric information about query group.
- * It is different from GroupInfo in that it does not have ThreadManager.
- * As we consider global scheduling, we do not have to have ThreadManger per group.
+ * This interface represents a meta group that manages the split groups.
+ * Network connections, codes are shared within this meta group.
+ * Query merging is also being performed in this meta group.
  */
 @DefaultImplementation(DefaultMetaGroupImpl.class)
 public interface MetaGroup {
 
+  /**
+   * Get query starter.
+   */
   QueryStarter getQueryStarter();
 
+  /**
+   * Get query remover.
+   */
   QueryRemover getQueryRemover();
 
+  /**
+   * Get execution dags.
+   * @return
+   */
   ExecutionDags getExecutionDags();
 
+  /**
+   * Get split groups.
+   */
   List<Group> getGroups();
 
+  /**
+   * Add a split group.
+   * @param group split group
+   */
   boolean addGroup(Group group);
 
+  /**
+   * The number of split groups.
+   */
   AtomicInteger numGroups();
 }

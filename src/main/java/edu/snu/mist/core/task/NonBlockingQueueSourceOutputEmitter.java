@@ -27,24 +27,29 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * This emitter emits the outputs to the next OperatorChains that get inputs from the sources.
- * It always submits jobs to MistExecutors.
+ * This emitter enqueues events to the source event queue.
  *  @param <I>
  */
 public final class NonBlockingQueueSourceOutputEmitter<I> implements SourceOutputEmitter {
 
   /**
-   * A queue for the first operator's events.
+   * A queue for events.
    */
   private final Queue<MistEvent> queue;
 
   /**
-   * Next OperatorChains.
+   * Next operators.
    */
   private final Map<ExecutionVertex, MISTEdge> nextOperators;
 
+  /**
+   * Number of events.
+   */
   private final AtomicInteger numEvents;
 
+  /**
+   * Query that contains this source.
+   */
   private final Query query;
 
 
@@ -56,7 +61,6 @@ public final class NonBlockingQueueSourceOutputEmitter<I> implements SourceOutpu
     this.numEvents = new AtomicInteger();
   }
 
-  // Return false if the queue is empty or the previously event processing is not finished.
   @Override
   public int processAllEvent() {
     int numProcessedEvent = 0;

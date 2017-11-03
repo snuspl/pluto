@@ -26,54 +26,59 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * This class picks a query, which has more than one events to be processed, from the active query set randomly.
- * This prevents picking queries which have no events, thus saving CPU cycles compared to RandomlyPickManager.
- * This class uses queues to provide maximum concurrency and efficiency.
+ * This class represents a query in MistTask.
+ * It has an active source queue that contains active sources (sources that have at least one event to process).
+ * The active source is for data locality.
  */
 public final class DefaultQueryImpl implements Query {
 
   enum QueryStatus {
-    READY,
-    PROCESSING
+    READY, // Ready when it is not processed by an event processor
+    PROCESSING // Processing when it is being processed by an event processor
   }
 
   /**
-   * A working queue which contains operators that have events.
+   * A working queue which contains sources that have events.
    */
-  private final Queue<SourceOutputEmitter> activeOperatorQueue;
+  private final Queue<SourceOutputEmitter> activeSourceQueue;
 
-  private final AtomicInteger numActiveOperators;
+  /**
+   * The number of active sources.
+   * We do not use activeSourceQueue.size() because it is O(n) operation.
+   */
+  private final AtomicInteger numActiveSources;
 
+  /**
+   * Query id.
+   */
   private final String id;
 
+  /**
+   * Group where the query is included.
+   */
   private Group group;
 
   /**
-   * The load of the group.
+   * The load of the query. This is used for group split.
    */
-  private double groupLoad;
+  private double queryLoad;
 
   /**
-   * The event processing time of the group.
+   * The number of processed event. This is used for calculating query load.
    */
-  private final AtomicLong totalProcessingTime;
+  private final AtomicLong totalProcessingEvent = new AtomicLong(0);
 
   /**
-   * The number of processed events in the group.
+   * Query status.
    */
-  private final AtomicLong totalProcessingEvent;
-
   private final AtomicReference<QueryStatus> queryStatus = new AtomicReference<>(QueryStatus.READY);
 
   @Inject
   public DefaultQueryImpl(final String identifier) {
-    // ConcurrentLinkedQueue is used to assure concurrency as well as maintain exactly-once query picking.
     this.id = identifier;
-    this.activeOperatorQueue = new ConcurrentLinkedQueue<>();
-    this.groupLoad = 0;
-    this.totalProcessingTime = new AtomicLong(0);
-    this.totalProcessingEvent = new AtomicLong(0);
-    this.numActiveOperators = new AtomicInteger();
+    this.activeSourceQueue = new ConcurrentLinkedQueue<>();
+    this.queryLoad = 0;
+    this.numActiveSources = new AtomicInteger();
   }
 
   @Override
@@ -82,56 +87,48 @@ public final class DefaultQueryImpl implements Query {
   }
 
   /**
-   * Insert a new operator chain into the manager. This method is called when the
-   * queue of a operatorChain just becomes not empty by getting an event, or the queue is still not empty
-   * after thread's processing an event.
+   * Insert a new active source.
    */
   @Override
   public void insert(final SourceOutputEmitter sourceOutputEmitter) {
-    activeOperatorQueue.add(sourceOutputEmitter);
-    final int n = numActiveOperators.getAndIncrement();
-    //System.out.println("Event is added at Query, # ev ents: " + n);
+    activeSourceQueue.add(sourceOutputEmitter);
+    final int n = numActiveSources.getAndIncrement();
     if (n == 0) {
       group.insert(this);
     }
   }
 
   /**
-   * Delete an operator from the manager.
-   * This method should be only called when the queue is permanently removed from the system,
-   * because this method traverses along the whole queue, thus takes O(n) time to complete.
+   * Delete an active source.
    */
   @Override
   public void delete(final SourceOutputEmitter sourceOutputEmitter) {
-    if (activeOperatorQueue.remove(sourceOutputEmitter)) {
-      numActiveOperators.decrementAndGet();
+    if (activeSourceQueue.remove(sourceOutputEmitter)) {
+      numActiveSources.decrementAndGet();
       group.delete(this);
     }
   }
 
-  @Override
-  public int size() {
-    return numActiveOperators.get();
-  }
-
+  /**
+   * Process all events in the active sources.
+   * @return the number of events to be processed
+   */
   @Override
   public int processAllEvent() {
     int numProcessedEvent = 0;
-    SourceOutputEmitter sourceOutputEmitter = activeOperatorQueue.poll();
+    SourceOutputEmitter sourceOutputEmitter = activeSourceQueue.poll();
     while (sourceOutputEmitter != null) {
-      numActiveOperators.decrementAndGet();
-
+      numActiveSources.decrementAndGet();
       numProcessedEvent += sourceOutputEmitter.processAllEvent();
-      sourceOutputEmitter = activeOperatorQueue.poll();
+      sourceOutputEmitter = activeSourceQueue.poll();
     }
-
     return numProcessedEvent;
   }
 
   @Override
   public long numberOfRemainingEvents() {
     int sum = 0;
-    final Iterator<SourceOutputEmitter> iterator = activeOperatorQueue.iterator();
+    final Iterator<SourceOutputEmitter> iterator = activeSourceQueue.iterator();
     while (iterator.hasNext()) {
       final SourceOutputEmitter sourceOutputEmitter = iterator.next();
       sum += sourceOutputEmitter.numberOfEvents();
@@ -151,12 +148,12 @@ public final class DefaultQueryImpl implements Query {
 
   @Override
   public void setLoad(final double load) {
-    groupLoad = load;
+    queryLoad = load;
   }
 
   @Override
   public double getLoad() {
-    return groupLoad;
+    return queryLoad;
   }
 
   @Override

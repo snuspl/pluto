@@ -228,7 +228,7 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
       final String path = String.format("submitted-%s.jar", fileNameGenerator.generate());
       final Path jarFilePath = Paths.get(tmpFolderPath, path);
       createJarFile(jarFileBytes, jarFilePath, paths);
-      /**
+      /** TODO: re-implement this codes
       final byte[] byteBufferHash = HashUtils.getByteBufferHash(jarFileBytes);
       // Check if the jarFiles already exist.
       final ByteBuffer wrappedHash = ByteBuffer.wrap(byteBufferHash);

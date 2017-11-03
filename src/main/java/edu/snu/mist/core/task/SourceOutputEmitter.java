@@ -23,9 +23,8 @@ import edu.snu.mist.common.OutputEmitter;
 public interface SourceOutputEmitter extends OutputEmitter {
 
   /**
-   * Process the next event from the queue.
-   * @return true if there exists an event.
-   * If the queue is empty or running an event, it returns false.
+   * Process all the events in the event queue.
+   * @return number of processed events
    */
   int processAllEvent();
 
@@ -35,5 +34,8 @@ public interface SourceOutputEmitter extends OutputEmitter {
    */
   int numberOfEvents();
 
+  /**
+   * Get the query that holds this source.
+   */
   Query getQuery();
 }

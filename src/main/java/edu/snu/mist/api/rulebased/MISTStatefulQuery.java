@@ -35,10 +35,10 @@ public final class MISTStatefulQuery {
     /**
      * Creates an immutable MISTStatefulQuery using given parameters.
      *
-     * @param superGroupId          super group id
-     * @param subGroupId       sub group id
-     * @param input            input
-     * @param initialState     initial state
+     * @param superGroupId  super group id
+     * @param subGroupId    sub group id
+     * @param input         input
+     * @param initialState  initial state
      * @param statefulRules a list of stateful rules
      * @param finalState    a map of final states and its action
      */
@@ -66,7 +66,7 @@ public final class MISTStatefulQuery {
 
 
     /**
-     * @return group Id of this query
+     * @return sub-group Id of this query
      */
     public String getSubGroupId() {
         return subGroupId;

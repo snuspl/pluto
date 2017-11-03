@@ -38,5 +38,9 @@ public interface PhysicalSource extends AutoCloseable, OutputEmittable, Physical
    */
   EventGenerator getEventGenerator();
 
+  /**
+   * Get source output emitter.
+   * @return source output emitter
+   */
   SourceOutputEmitter getSourceOutputEmitter();
 }
