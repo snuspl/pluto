@@ -18,10 +18,9 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.graph.AdjacentListDAG;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.formats.avro.AvroOperatorChainDag;
-import edu.snu.mist.formats.avro.AvroVertexChain;
+import edu.snu.mist.formats.avro.AvroDag;
+import edu.snu.mist.formats.avro.AvroVertex;
 import edu.snu.mist.formats.avro.Edge;
-import edu.snu.mist.formats.avro.Vertex;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -37,52 +36,45 @@ public final class DefaultConfigDagGeneratorImpl implements ConfigDagGenerator {
   }
 
   /**
-   * Get the vertex type from the avro vertex chain.
-   * @param avroVertexChain avro vertex chain
+   * Get the vertex type from the avro vertex.
+   * @param avroVertex avro vertex
    * @return vertex type
    */
-  private ExecutionVertex.Type getVertexType(final AvroVertexChain avroVertexChain) {
-    switch (avroVertexChain.getAvroVertexChainType()) {
+  private ExecutionVertex.Type getVertexType(final AvroVertex avroVertex) {
+    switch (avroVertex.getAvroVertexType()) {
       case SOURCE:
         return ExecutionVertex.Type.SOURCE;
-      case OPERATOR_CHAIN:
-        return ExecutionVertex.Type.OPERATOR_CHAIN;
+      case OPERATOR:
+        return ExecutionVertex.Type.OPERATOR;
       case SINK:
         return ExecutionVertex.Type.SINK;
       default:
-        throw new RuntimeException("Unknown type of execution vertex: " + avroVertexChain.getAvroVertexChainType());
+        throw new RuntimeException("Unknown type of execution vertex: " + avroVertex.getAvroVertexType());
     }
   }
 
   /**
-   * Generate a dag that holds the configuration of vertices from avro vertex chain dag.
-   * @param avroOpChainDag avro vertex chain dag
+   * Generate a dag that holds the configuration of vertices from avro vertex dag.
+   * @param avroDag avro vertex dag
    * @return configuration vertex dag
    */
   @Override
-  public DAG<ConfigVertex, MISTEdge> generate(final AvroOperatorChainDag avroOpChainDag) {
-    final List<ConfigVertex> deserializedVertices = new ArrayList<>(avroOpChainDag.getAvroVertices().size());
+  public DAG<ConfigVertex, MISTEdge> generate(final AvroDag avroDag) {
+    final List<ConfigVertex> deserializedVertices = new ArrayList<>(avroDag.getAvroVertices().size());
     final DAG<ConfigVertex, MISTEdge> configDag = new AdjacentListDAG<>();
 
     // Fetch configurations from avro vertex dag
-    for (final AvroVertexChain avroVertexChain : avroOpChainDag.getAvroVertices()) {
-      final ExecutionVertex.Type type = getVertexType(avroVertexChain);
-      final List<Vertex> vertexChain = avroVertexChain.getVertexChain();
-
-      // Set configurations
-      final List<String> config = new ArrayList<>(vertexChain.size());
-      for (final Vertex vertex : vertexChain) {
-        config.add(vertex.getConfiguration());
-      }
+    for (final AvroVertex avroVertex : avroDag.getAvroVertices()) {
+      final ExecutionVertex.Type type = getVertexType(avroVertex);
 
       // Create a config vertex
-      final ConfigVertex configVertex = new ConfigVertex(type, config);
+      final ConfigVertex configVertex = new ConfigVertex(type, avroVertex.getConfiguration());
       deserializedVertices.add(configVertex);
       configDag.addVertex(configVertex);
     }
 
     // Add edge info to the config dag
-    for (final Edge edge : avroOpChainDag.getEdges()) {
+    for (final Edge edge : avroDag.getEdges()) {
       final int srcIndex = edge.getFrom();
       final int dstIndex = edge.getTo();
 

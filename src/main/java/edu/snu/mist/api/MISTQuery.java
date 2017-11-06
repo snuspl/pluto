@@ -18,7 +18,7 @@ package edu.snu.mist.api;
 import edu.snu.mist.api.datastreams.MISTStream;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.formats.avro.AvroVertexChain;
+import edu.snu.mist.formats.avro.AvroVertex;
 import edu.snu.mist.formats.avro.Edge;
 import org.apache.reef.io.Tuple;
 
@@ -30,9 +30,9 @@ import java.util.List;
 public interface MISTQuery {
 
   /**
-   * Get the serialized vertices and edges of the DAG with operator chains.
+   * Get the serialized vertices and edges of the DAG with operators.
    */
-  Tuple<List<AvroVertexChain>, List<Edge>> getAvroOperatorChainDag();
+  Tuple<List<AvroVertex>, List<Edge>> getAvroOperatorDag();
 
   /**
    * Get the DAG of the query.
@@ -40,7 +40,12 @@ public interface MISTQuery {
   DAG<MISTStream, MISTEdge> getDAG();
 
   /**
-   * Get the group id.
+   * Get the super-group id.
    */
-  String getGroupId();
+  String getSuperGroupId();
+
+  /**
+   * Get the sub-group id.
+   */
+  String getSubGroupId();
 }

@@ -59,7 +59,7 @@ public final class NumGroupsMetricEventHandlerTest {
 
     // Update the value
     for (int i = 0; i < UPDATE_GROUP_SIZE; i++) {
-      final GlobalSchedGroupInfo groupInfo = mock(GlobalSchedGroupInfo.class);
+      final SubGroup groupInfo = mock(SubGroup.class);
       groupInfoMap.put(String.valueOf(i), groupInfo);
     }
 

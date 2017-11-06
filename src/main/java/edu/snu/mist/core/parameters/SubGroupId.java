@@ -13,18 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched.roundrobin.polling;
+package edu.snu.mist.core.parameters;
 
-import org.apache.reef.tang.annotations.DefaultImplementation;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-/**
- * Inactive group checker factory interface.
- */
-@DefaultImplementation(NaiveInactiveGroupCheckerFactory.class)
-public interface InactiveGroupCheckerFactory {
-
-  /**
-   * Get a new instance of inactive group checker.
-   */
-  InactiveGroupChecker newInstance();
+@NamedParameter(doc = "Sub-group id")
+public final class SubGroupId implements Name<String> {
+  // empty
 }

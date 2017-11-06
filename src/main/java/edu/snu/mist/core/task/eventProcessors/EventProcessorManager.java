@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
@@ -30,16 +29,6 @@ public interface EventProcessorManager extends AutoCloseable {
    * @deprecated this should be removed
    */
   void increaseEventProcessors(int delta);
-
-  /**
-   * Add and assign the group to an event processor.
-   */
-  void addGroup(GlobalSchedGroupInfo groupInfo);
-
-  /**
-   * Remove the group from the assigned event processor.
-   */
-  void removeGroup(GlobalSchedGroupInfo groupInfo);
 
   /**
    * Decrease the number of event processors.

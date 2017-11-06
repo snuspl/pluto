@@ -26,5 +26,5 @@ public interface SchedulingPeriodCalculator {
   /**
    * Calculate the scheduling period of the group.
    */
-  long calculateSchedulingPeriod(GlobalSchedGroupInfo groupInfo);
+  long calculateSchedulingPeriod(SubGroup groupInfo);
 }

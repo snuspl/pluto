@@ -15,14 +15,9 @@
  */
 package edu.snu.mist.core.task;
 
-import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.Tang;
-import org.apache.reef.tang.exceptions.InjectionException;
-import org.junit.Assert;
-import org.junit.Test;
-
 public class OperatorChainManagerTest {
 
+  /*Comment out
   @Test
   public void nonBlockingActiveQueryPickManagerTest() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
@@ -40,4 +35,5 @@ public class OperatorChainManagerTest {
     final OperatorChain c = operatorChainManager.pickOperatorChain();
     Assert.assertEquals(null, c);
   }
+  */
 }

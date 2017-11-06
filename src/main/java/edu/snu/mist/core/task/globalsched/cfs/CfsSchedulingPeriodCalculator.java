@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.globalsched.cfs;
 
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.SubGroup;
 import edu.snu.mist.core.task.globalsched.SchedulingPeriodCalculator;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsSchedulingPeriod;
 import edu.snu.mist.core.task.globalsched.cfs.parameters.MinSchedulingPeriod;
@@ -64,7 +64,7 @@ public final class CfsSchedulingPeriodCalculator implements SchedulingPeriodCalc
   }
 
   @Override
-  public long calculateSchedulingPeriod(final GlobalSchedGroupInfo groupInfo) {
+  public long calculateSchedulingPeriod(final SubGroup groupInfo) {
     //groupInfo.getMetricHolder().getWeightMetric().getValue();
     final double groupWeight = 1;
     final double totalWeight = Math.max(groupWeight, globalMetricHolder.getWeightMetric().getValue());

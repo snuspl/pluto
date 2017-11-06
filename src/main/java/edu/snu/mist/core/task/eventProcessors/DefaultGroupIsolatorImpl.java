@@ -16,14 +16,9 @@
 package edu.snu.mist.core.task.eventProcessors;
 
 import edu.snu.mist.core.task.eventProcessors.parameters.IsolationTriggerPeriod;
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -66,11 +61,12 @@ public final class DefaultGroupIsolatorImpl implements GroupIsolator {
 
   @Override
   public void triggerIsolation() {
+    /* TODO: re-implement this method
     final List<EventProcessor> eventProcessors = groupAllocationTable.getKeys();
     for (final EventProcessor eventProcessor : eventProcessors) {
       if (!eventProcessor.isRunningIsolatedGroup()) {
         final RuntimeProcessingInfo runtimeProcessingInfo = eventProcessor.getCurrentRuntimeInfo();
-        final GlobalSchedGroupInfo groupInfo = runtimeProcessingInfo.getCurrGroup();
+        final SubGroup groupInfo = runtimeProcessingInfo.getCurrGroup();
         final long startTime = runtimeProcessingInfo.getStartTime();
         final long elapsedTime = System.currentTimeMillis() - startTime;
 
@@ -82,10 +78,10 @@ public final class DefaultGroupIsolatorImpl implements GroupIsolator {
           final EventProcessor newEP = eventProcessorFactory.newEventProcessor();
           newEP.start();
           groupAllocationTable.put(newEP);
-          final Collection<GlobalSchedGroupInfo> destGroups = groupAllocationTable.getValue(newEP);
+          final Collection<SubGroup> destGroups = groupAllocationTable.getValue(newEP);
 
           // Groups of the current event processor
-          final Collection<GlobalSchedGroupInfo> srcGroups = groupAllocationTable.getValue(eventProcessor);
+          final Collection<SubGroup> srcGroups = groupAllocationTable.getValue(eventProcessor);
 
           if (isPreemptible(runtimeProcessingInfo)) {
             // The new thread runs an isolated group
@@ -104,9 +100,9 @@ public final class DefaultGroupIsolatorImpl implements GroupIsolator {
             newEP.setRunningIsolatedGroup(false);
 
             // Move remaining groups to the new thread and isolate the current group in the current thread
-            final Iterator<GlobalSchedGroupInfo> iterator = srcGroups.iterator();
+            final Iterator<SubGroup> iterator = srcGroups.iterator();
             while (iterator.hasNext()) {
-              final GlobalSchedGroupInfo groupToMove = iterator.next();
+              final SubGroup groupToMove = iterator.next();
               if (!groupToMove.equals(groupInfo)) {
                 destGroups.add(groupToMove);
                 iterator.remove();
@@ -117,5 +113,6 @@ public final class DefaultGroupIsolatorImpl implements GroupIsolator {
         }
       }
     }
+    */
   }
 }

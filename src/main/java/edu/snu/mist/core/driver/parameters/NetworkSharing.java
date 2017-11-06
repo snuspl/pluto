@@ -13,25 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.threadbased;
+package edu.snu.mist.core.driver.parameters;
 
-import edu.snu.mist.core.task.OperatorChain;
-import edu.snu.mist.core.task.OperatorChainFactory;
-
-import javax.inject.Inject;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * This is an implementation of operator chain factory for thread-based model.
+ * Sharing network or not.
  */
-public final class ThreadBasedOperatorChainFactory implements OperatorChainFactory {
-
-  @Inject
-  private ThreadBasedOperatorChainFactory() {
-    // empty
-  }
-
-  @Override
-  public OperatorChain newInstance(final String id) {
-    return new ThreadBasedOperatorChainImpl(id);
-  }
+@NamedParameter(doc = "Sharing network or not", short_name = "network_sharing", default_value = "true")
+public class NetworkSharing implements Name<Boolean> {
 }

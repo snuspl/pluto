@@ -15,7 +15,8 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.Query;
+import edu.snu.mist.core.task.globalsched.Group;
 import edu.snu.mist.core.task.globalsched.parameters.DefaultGroupLoad;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -60,57 +61,83 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
    * @param groups assigned groups
    */
   private void updateGroupAndThreadLoad(final EventProcessor eventProcessor,
-                                        final Collection<GlobalSchedGroupInfo> groups) {
-    double load = 0.0;
-    boolean isOverloaded = false;
+                                        final Collection<Group> groups) {
+    //boolean isOverloaded = false;
 
-    for (final GlobalSchedGroupInfo group : groups) {
-      final long startTime = System.nanoTime();
+    double eventProcessorLoad = 0.0;
+    final long startTime = System.nanoTime();
 
-      // Number of processed events
+    for (final Group group : groups) {
+      double load = 0.0;
+
+      final List<Query> queries = group.getQueries();
       final long processingEvent = group.getProcessingEvent().get();
-      group.getProcessingEvent().getAndAdd(-processingEvent);
+      group.getProcessingEvent().addAndGet(-processingEvent);
+      final long incomingEvent = processingEvent + group.numberOfRemainingEvents();
+      final long processingEventTime = group.getProcessingTime().get();
+      group.getProcessingTime().addAndGet(-processingEventTime);
 
-      // Number of incoming events
       final long incomingEventTime = startTime - group.getLatestRebalanceTime();
       group.setLatestRebalanceTime(startTime);
 
-      final long incomingE = group.numberOfRemainingEvents();
-      final long incomingEvent = incomingE + processingEvent;
-
-      final long processingEventTime = group.getProcessingTime().get();
-      group.getProcessingTime().getAndAdd(-processingEventTime);
-
+      // Calculate group load
       // No processed. This thread is overloaded!
+      // Just use the previous load
       if (processingEventTime == 0 && incomingEvent != 0) {
-        isOverloaded = true;
-        break;
+        //isOverloaded = true;
+        load = group.getLoad();
       } else if (incomingEvent == 0) {
         // No incoming event
-        group.setLoad(defaultGroupLoad);
-        load += defaultGroupLoad;
+        load = defaultGroupLoad;
       } else {
         // processed event, incoming event
         final double inputRate = (incomingEvent * 1000000000) / (double) incomingEventTime;
         final double processingRate = (processingEvent * 1000000000) / (double) processingEventTime;
         final double groupLoad = inputRate / processingRate;
-        load += groupLoad;
+        load = groupLoad;
+      }
 
-        group.setLoad(groupLoad);
+      eventProcessorLoad += load;
+      group.setLoad(load);
+
+      // Calculate query load based on the group load!
+      for (final Query query : queries) {
+        // Number of processed events
+        final long queryProcessingEvent = query.getProcessingEvent().get();
+        query.getProcessingEvent().getAndAdd(-queryProcessingEvent);
+
+        final long incomingE = query.numberOfRemainingEvents();
+
+        final long queryIncomingEvent = incomingE + queryProcessingEvent;
+        if (incomingEvent == 0) {
+          query.setLoad(0);
+        } else {
+          query.setLoad(load * (queryIncomingEvent / (double) incomingEvent));
+        }
       }
     }
 
+    eventProcessor.setLoad(eventProcessorLoad);
+
     // Overloaded!
+    /*
     if (isOverloaded) {
       eventProcessor.setLoad(1.0);
       // distribute the load
       final int size = groups.size();
       final double balancedLoad = 1.0 / size;
-      for (final GlobalSchedGroupInfo group : groups) {
+
+      for (final Group group : groups) {
         group.setLoad(balancedLoad);
+        final int querySize = group.getQueries().size();
+        final double queryLoad = balancedLoad / querySize;
+        for (final Query query : group.getQueries()) {
+          query.setLoad(queryLoad);
+        }
       }
     } else {
-      eventProcessor.setLoad(load);
+      eventProcessor.setLoad(eventProcessorLoad);
     }
+    */
   }
 }

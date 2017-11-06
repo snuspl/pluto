@@ -13,24 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched.roundrobin.polling;
-
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+package edu.snu.mist.core.task.globalsched;
 
 /**
- * This class checks whether the group is inactive or not based on the miss.
+ * TODO: delete.
  */
-public final class NaiveInactiveGroupChecker implements InactiveGroupChecker {
+public interface SubGroup {
 
-  NaiveInactiveGroupChecker() {
-    // do nothing
-  }
-
-  /**
-   * Just returns the miss value (it means it determines the group becomes inactive when a single miss occur).
-   */
-  @Override
-  public boolean check(final GlobalSchedGroupInfo groupInfo, final boolean miss) {
-    return miss;
-  }
 }

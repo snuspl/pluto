@@ -82,7 +82,7 @@ public final class RuleBasedWeatherInfo {
         /**
          * Make a RuleBasedQuery.
          */
-        final MISTStatelessQuery ruleBasedQuery = new MISTStatelessQuery.Builder("example-group")
+        final MISTStatelessQuery ruleBasedQuery = new MISTStatelessQuery.Builder("example-group", "user1")
                 .input(input)
                 .addStatelessRule(new StatelessRule.Builder()
                         .setCondition(

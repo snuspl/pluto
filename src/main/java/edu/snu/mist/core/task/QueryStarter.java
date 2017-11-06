@@ -35,6 +35,7 @@ public interface QueryStarter {
    * @param queryId query id
    * @param configDag dag that has configuration of vertices
    */
-  void start(String queryId, DAG<ConfigVertex, MISTEdge> configDag, List<String> jarFilePaths)
+  void start(String queryId,
+             Query query, DAG<ConfigVertex, MISTEdge> configDag, List<String> jarFilePaths)
       throws InjectionException, IOException, ClassNotFoundException;
 }

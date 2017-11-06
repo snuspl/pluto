@@ -38,7 +38,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -121,13 +120,11 @@ public final class MergeAwareQueryRemoverTest {
    * @param conf configuration of the operator
    * @return operator chain
    */
-  private OperatorChain generateFilterOperatorChain(final String conf,
-                                                    final MISTPredicate<String> predicate) {
-    final OperatorChain operatorChain = new DefaultOperatorChainImpl("testOpChain");
+  private PhysicalOperator generateFilterOperator(final String conf,
+                                               final MISTPredicate<String> predicate) {
     final PhysicalOperator filterOp = new DefaultPhysicalOperatorImpl(idAndConfGenerator.generateId(),
-        conf, new FilterOperator<>(predicate), operatorChain);
-    operatorChain.insertToHead(filterOp);
-    return operatorChain;
+        conf, new FilterOperator<>(predicate));
+    return filterOp;
   }
 
   /**
@@ -144,13 +141,13 @@ public final class MergeAwareQueryRemoverTest {
   /**
    * Generate a simple query that has the following structure: src -> operator chain -> sink.
    * @param source source
-   * @param operatorChain operator chain
+   * @param physicalOperator operator chain
    * @param sink sink
    * @return dag
    */
   private Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag> generateSimpleDag(
       final TestSource source,
-      final OperatorChain operatorChain,
+      final PhysicalOperator physicalOperator,
       final PhysicalSink<String> sink,
       final ConfigVertex srcVertex,
       final ConfigVertex ocVertex,
@@ -166,11 +163,11 @@ public final class MergeAwareQueryRemoverTest {
 
     final DAG<ExecutionVertex, MISTEdge> newDag = new AdjacentListDAG<>();
     newDag.addVertex(source);
-    newDag.addVertex(operatorChain);
+    newDag.addVertex(physicalOperator);
     newDag.addVertex(sink);
 
-    newDag.addEdge(source, operatorChain, new MISTEdge(Direction.LEFT));
-    newDag.addEdge(operatorChain, sink, new MISTEdge(Direction.LEFT));
+    newDag.addEdge(source, physicalOperator, new MISTEdge(Direction.LEFT));
+    newDag.addEdge(physicalOperator, sink, new MISTEdge(Direction.LEFT));
 
     final ExecutionDag executionDag = new ExecutionDag(newDag);
     return new Tuple<>(dag, executionDag);
@@ -187,17 +184,17 @@ public final class MergeAwareQueryRemoverTest {
     final String ocConf = idAndConfGenerator.generateConf();
     final String sinkConf = idAndConfGenerator.generateConf();
     final TestSource source = generateSource(sourceConf);
-    final OperatorChain operatorChain = generateFilterOperatorChain(ocConf, (s) -> true);
+    final PhysicalOperator physicalOp = generateFilterOperator(ocConf, (s) -> true);
     final PhysicalSink<String> sink = generateSink(sinkConf, result);
 
     // Config vertices
-    final ConfigVertex srcVertex = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(sourceConf));
-    final ConfigVertex ocVertex = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(ocConf));
-    final ConfigVertex sinkVertex = new ConfigVertex(ExecutionVertex.Type.SINK, Arrays.asList(sinkConf));
+    final ConfigVertex srcVertex = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf);
+    final ConfigVertex ocVertex = new ConfigVertex(ExecutionVertex.Type.OPERATOR, ocConf);
+    final ConfigVertex sinkVertex = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>
-        dagTuple = generateSimpleDag(source, operatorChain, sink,
+        dagTuple = generateSimpleDag(source, physicalOp, sink,
         srcVertex, ocVertex, sinkVertex);
 
     final String queryId = "test-query";
@@ -208,17 +205,17 @@ public final class MergeAwareQueryRemoverTest {
     queryIdConfigDagMap.put(queryId, dagTuple.getKey());
     // ConfigExecutionVertexMap
     configExecutionVertexMap.put(srcVertex, source);
-    configExecutionVertexMap.put(ocVertex, operatorChain);
+    configExecutionVertexMap.put(ocVertex, physicalOp);
     configExecutionVertexMap.put(sinkVertex, sink);
     // ExecutionDags
     executionDags.add(dagTuple.getValue());
     // ExecutionVertexCountMap
     executionVertexCountMap.put(source, 1);
-    executionVertexCountMap.put(operatorChain, 1);
+    executionVertexCountMap.put(physicalOp, 1);
     executionVertexCountMap.put(sink, 1);
     // ExecutionVertexDagMap
     executionVertexDagMap.put(source, dagTuple.getValue());
-    executionVertexDagMap.put(operatorChain, dagTuple.getValue());
+    executionVertexDagMap.put(physicalOp, dagTuple.getValue());
     executionVertexDagMap.put(sink, dagTuple.getValue());
 
 
@@ -237,11 +234,11 @@ public final class MergeAwareQueryRemoverTest {
     Assert.assertEquals(0, executionDags.values().size());
     // Check ExecutionVertexCountMap
     Assert.assertNull(executionVertexCountMap.get(source));
-    Assert.assertNull(executionVertexCountMap.get(operatorChain));
+    Assert.assertNull(executionVertexCountMap.get(physicalOp));
     Assert.assertNull(executionVertexCountMap.get(sink));
     // Check ExecutionVertexDagMap
     Assert.assertNull(executionVertexDagMap.get(source));
-    Assert.assertNull(executionVertexDagMap.get(operatorChain));
+    Assert.assertNull(executionVertexDagMap.get(physicalOp));
     Assert.assertNull(executionVertexDagMap.get(sink));
 
     // Check if the source is closed
@@ -267,17 +264,17 @@ public final class MergeAwareQueryRemoverTest {
     final String ocConf1 = idAndConfGenerator.generateConf();
     final String sinkConf1 = idAndConfGenerator.generateConf();
     final TestSource src1 = generateSource(sourceConf1);
-    final OperatorChain operatorChain1 = generateFilterOperatorChain(ocConf1, (s) -> true);
+    final PhysicalOperator physicalOp1 = generateFilterOperator(ocConf1, (s) -> true);
     final PhysicalSink<String> sink1 = generateSink(sinkConf1, result1);
 
     // Config vertices
-    final ConfigVertex srcVertex1 = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(sourceConf1));
-    final ConfigVertex ocVertex1 = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(ocConf1));
-    final ConfigVertex sinkVertex1 = new ConfigVertex(ExecutionVertex.Type.SINK, Arrays.asList(sinkConf1));
+    final ConfigVertex srcVertex1 = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf1);
+    final ConfigVertex ocVertex1 = new ConfigVertex(ExecutionVertex.Type.OPERATOR, ocConf1);
+    final ConfigVertex sinkVertex1 = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf1);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>
-        dagTuple1 = generateSimpleDag(src1, operatorChain1, sink1,
+        dagTuple1 = generateSimpleDag(src1, physicalOp1, sink1,
         srcVertex1, ocVertex1, sinkVertex1);
 
     // Create a query 2:
@@ -291,17 +288,17 @@ public final class MergeAwareQueryRemoverTest {
     final String ocConf2 = idAndConfGenerator.generateConf();
     final String sinkConf2 = idAndConfGenerator.generateConf();
     final TestSource src2 = generateSource(sourceConf2);
-    final OperatorChain operatorChain2 = generateFilterOperatorChain(ocConf2, (s) -> true);
+    final PhysicalOperator physicalOp2 = generateFilterOperator(ocConf2, (s) -> true);
     final PhysicalSink<String> sink2 = generateSink(sinkConf2, result1);
 
     // Config vertices
-    final ConfigVertex srcVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(sourceConf2));
-    final ConfigVertex ocVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(ocConf2));
-    final ConfigVertex sinkVertex2 = new ConfigVertex(ExecutionVertex.Type.SINK, Arrays.asList(sinkConf2));
+    final ConfigVertex srcVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf2);
+    final ConfigVertex ocVertex2 = new ConfigVertex(ExecutionVertex.Type.OPERATOR, ocConf2);
+    final ConfigVertex sinkVertex2 = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf2);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>
-        dagTuple2 = generateSimpleDag(src2, operatorChain2, sink2,
+        dagTuple2 = generateSimpleDag(src2, physicalOp2, sink2,
         srcVertex2, ocVertex2, sinkVertex2);
 
     // Execute two queries
@@ -318,27 +315,27 @@ public final class MergeAwareQueryRemoverTest {
 
     // ConfigExecutionVertexMap
     configExecutionVertexMap.put(srcVertex1, src1);
-    configExecutionVertexMap.put(ocVertex1, operatorChain1);
+    configExecutionVertexMap.put(ocVertex1, physicalOp1);
     configExecutionVertexMap.put(sinkVertex1, sink1);
     configExecutionVertexMap.put(srcVertex2, src2);
-    configExecutionVertexMap.put(ocVertex2, operatorChain2);
+    configExecutionVertexMap.put(ocVertex2, physicalOp2);
     configExecutionVertexMap.put(sinkVertex2, sink2);
     // ExecutionDags
     executionDags.add(dagTuple1.getValue());
     executionDags.add(dagTuple2.getValue());
     // ExecutionVertexCountMap
     executionVertexCountMap.put(src1, 1);
-    executionVertexCountMap.put(operatorChain1, 1);
+    executionVertexCountMap.put(physicalOp1, 1);
     executionVertexCountMap.put(sink1, 1);
     executionVertexCountMap.put(src2, 1);
-    executionVertexCountMap.put(operatorChain2, 1);
+    executionVertexCountMap.put(physicalOp2, 1);
     executionVertexCountMap.put(sink2, 1);
     // ExecutionVertexDagMap
     executionVertexDagMap.put(src1, dagTuple1.getValue());
-    executionVertexDagMap.put(operatorChain1, dagTuple1.getValue());
+    executionVertexDagMap.put(physicalOp1, dagTuple1.getValue());
     executionVertexDagMap.put(sink1, dagTuple1.getValue());
     executionVertexDagMap.put(src2, dagTuple2.getValue());
-    executionVertexDagMap.put(operatorChain2, dagTuple2.getValue());
+    executionVertexDagMap.put(physicalOp2, dagTuple2.getValue());
     executionVertexDagMap.put(sink2, dagTuple2.getValue());
 
     // Remove query2
@@ -354,7 +351,7 @@ public final class MergeAwareQueryRemoverTest {
     Assert.assertEquals(dagTuple1.getKey(), queryIdConfigDagMap.get(query1Id));
     // Check configExecutionVertexMap
     Assert.assertEquals(src1, configExecutionVertexMap.get(srcVertex1));
-    Assert.assertEquals(operatorChain1, configExecutionVertexMap.get(ocVertex1));
+    Assert.assertEquals(physicalOp1, configExecutionVertexMap.get(ocVertex1));
     Assert.assertEquals(sink1, configExecutionVertexMap.get(sinkVertex1));
     Assert.assertNull(configExecutionVertexMap.get(srcVertex2));
     Assert.assertNull(configExecutionVertexMap.get(ocVertex2));
@@ -363,20 +360,20 @@ public final class MergeAwareQueryRemoverTest {
     Assert.assertEquals(1, executionDags.values().size());
     // Check ExecutionVertexCountMap
     Assert.assertEquals(1, (int)executionVertexCountMap.get(src1));
-    Assert.assertEquals(1, (int)executionVertexCountMap.get(operatorChain1));
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(physicalOp1));
     Assert.assertEquals(1, (int)executionVertexCountMap.get(sink1));
     Assert.assertNull(executionVertexCountMap.get(src2));
-    Assert.assertNull(executionVertexCountMap.get(operatorChain2));
+    Assert.assertNull(executionVertexCountMap.get(physicalOp2));
     Assert.assertNull(executionVertexCountMap.get(sink2));
     // Check ExecutionVertexDagMap
     Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple1.getValue().getDag(),
         executionVertexDagMap.get(src1).getDag()));
     Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple1.getValue().getDag(),
-        executionVertexDagMap.get(operatorChain1).getDag()));
+        executionVertexDagMap.get(physicalOp1).getDag()));
     Assert.assertTrue(GraphUtils.compareTwoDag(dagTuple1.getValue().getDag(),
         executionVertexDagMap.get(sink1).getDag()));
     Assert.assertNull(executionVertexDagMap.get(src2));
-    Assert.assertNull(executionVertexDagMap.get(operatorChain2));
+    Assert.assertNull(executionVertexDagMap.get(physicalOp2));
     Assert.assertNull(executionVertexDagMap.get(sink2));
 
     // Check if the source is closed
@@ -408,18 +405,18 @@ public final class MergeAwareQueryRemoverTest {
     final String operatorConf = idAndConfGenerator.generateConf();
     final TestSource src1 = generateSource(sourceConf);
     final String sinkConf1 = idAndConfGenerator.generateConf();
-    final OperatorChain operatorChain1 = generateFilterOperatorChain(operatorConf, (s) -> true);
+    final PhysicalOperator physicalOp1 = generateFilterOperator(operatorConf, (s) -> true);
     final PhysicalSink<String> sink1 = generateSink(sinkConf1, result1);
 
     // Config vertices
-    final ConfigVertex srcVertex1 = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(sourceConf));
-    final ConfigVertex ocVertex1 = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(operatorConf));
-    final ConfigVertex sinkVertex1 = new ConfigVertex(ExecutionVertex.Type.SINK, Arrays.asList(sinkConf1));
+    final ConfigVertex srcVertex1 = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf);
+    final ConfigVertex ocVertex1 = new ConfigVertex(ExecutionVertex.Type.OPERATOR, operatorConf);
+    final ConfigVertex sinkVertex1 = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf1);
     final List<String> paths1 = mock(List.class);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>
-        dagTuple1 = generateSimpleDag(src1, operatorChain1, sink1,
+        dagTuple1 = generateSimpleDag(src1, physicalOp1, sink1,
         srcVertex1, ocVertex1, sinkVertex1);
 
     // Create a query 2:
@@ -428,18 +425,18 @@ public final class MergeAwareQueryRemoverTest {
     final List<String> result2 = new LinkedList<>();
     final String sinkConf2 = idAndConfGenerator.generateConf();
     final TestSource src2 = generateSource(sourceConf);
-    final OperatorChain operatorChain2 = generateFilterOperatorChain(operatorConf, (s) -> true);
+    final PhysicalOperator physicalOp2 = generateFilterOperator(operatorConf, (s) -> true);
     final PhysicalSink<String> sink2 = generateSink(sinkConf2, result2);
     final List<String> paths2 = mock(List.class);
 
     // Config vertices
-    final ConfigVertex srcVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(sourceConf));
-    final ConfigVertex ocVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(operatorConf));
-    final ConfigVertex sinkVertex2 = new ConfigVertex(ExecutionVertex.Type.SINK, Arrays.asList(sinkConf2));
+    final ConfigVertex srcVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf);
+    final ConfigVertex ocVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, operatorConf);
+    final ConfigVertex sinkVertex2 = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf2);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>
-        dagTuple2 = generateSimpleDag(src2, operatorChain2, sink2,
+        dagTuple2 = generateSimpleDag(src2, physicalOp2, sink2,
         srcVertex2, ocVertex2, sinkVertex2);
 
     final String query1Id = "q1";
@@ -449,7 +446,7 @@ public final class MergeAwareQueryRemoverTest {
     final ExecutionDag mergedExecutionDag = dagTuple1.getValue();
     final DAG<ExecutionVertex, MISTEdge> dag = mergedExecutionDag.getDag();
     dag.addVertex(sink2);
-    dag.addEdge(operatorChain1, sink2, new MISTEdge(Direction.LEFT));
+    dag.addEdge(physicalOp1, sink2, new MISTEdge(Direction.LEFT));
 
     // Add execution dag to srcAndDagMap
     srcAndDagMap.put(sourceConf, mergedExecutionDag);
@@ -460,21 +457,21 @@ public final class MergeAwareQueryRemoverTest {
 
     // ConfigExecutionVertexMap
     configExecutionVertexMap.put(srcVertex1, src1);
-    configExecutionVertexMap.put(ocVertex1, operatorChain1);
+    configExecutionVertexMap.put(ocVertex1, physicalOp1);
     configExecutionVertexMap.put(sinkVertex1, sink1);
     configExecutionVertexMap.put(srcVertex2, src1);
-    configExecutionVertexMap.put(ocVertex2, operatorChain1);
+    configExecutionVertexMap.put(ocVertex2, physicalOp1);
     configExecutionVertexMap.put(sinkVertex2, sink2);
     // ExecutionDags
     executionDags.add(mergedExecutionDag);
     // ExecutionVertexCountMap
     executionVertexCountMap.put(src1, 2);
-    executionVertexCountMap.put(operatorChain1, 2);
+    executionVertexCountMap.put(physicalOp1, 2);
     executionVertexCountMap.put(sink1, 1);
     executionVertexCountMap.put(sink2, 1);
     // ExecutionVertexDagMap
     executionVertexDagMap.put(src1, mergedExecutionDag);
-    executionVertexDagMap.put(operatorChain1, mergedExecutionDag);
+    executionVertexDagMap.put(physicalOp1, mergedExecutionDag);
     executionVertexDagMap.put(sink1, mergedExecutionDag);
     executionVertexDagMap.put(sink2, mergedExecutionDag);
 
@@ -489,7 +486,7 @@ public final class MergeAwareQueryRemoverTest {
     Assert.assertEquals(dagTuple1.getKey(), queryIdConfigDagMap.get(query1Id));
     // Check configExecutionVertexMap
     Assert.assertEquals(src1, configExecutionVertexMap.get(srcVertex1));
-    Assert.assertEquals(operatorChain1, configExecutionVertexMap.get(ocVertex1));
+    Assert.assertEquals(physicalOp1, configExecutionVertexMap.get(ocVertex1));
     Assert.assertEquals(sink1, configExecutionVertexMap.get(sinkVertex1));
     Assert.assertNull(configExecutionVertexMap.get(srcVertex2));
     Assert.assertNull(configExecutionVertexMap.get(ocVertex2));
@@ -498,25 +495,25 @@ public final class MergeAwareQueryRemoverTest {
     Assert.assertEquals(1, executionDags.values().size());
     // Check ExecutionVertexCountMap
     Assert.assertEquals(1, (int)executionVertexCountMap.get(src1));
-    Assert.assertEquals(1, (int)executionVertexCountMap.get(operatorChain1));
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(physicalOp1));
     Assert.assertEquals(1, (int)executionVertexCountMap.get(sink1));
     Assert.assertNull(executionVertexCountMap.get(src2));
-    Assert.assertNull(executionVertexCountMap.get(operatorChain2));
+    Assert.assertNull(executionVertexCountMap.get(physicalOp2));
     Assert.assertNull(executionVertexCountMap.get(sink2));
     // Check ExecutionVertexDagMap
     final DAG<ExecutionVertex, MISTEdge> dag1 = dagTuple1.getValue().getDag();
     Assert.assertTrue(GraphUtils.compareTwoDag(dag1,
         executionVertexDagMap.get(src1).getDag()));
     Assert.assertTrue(GraphUtils.compareTwoDag(dag1,
-        executionVertexDagMap.get(operatorChain1).getDag()));
+        executionVertexDagMap.get(physicalOp1).getDag()));
     Assert.assertTrue(GraphUtils.compareTwoDag(dag1,
         executionVertexDagMap.get(sink1).getDag()));
     Assert.assertNull(executionVertexDagMap.get(src2));
-    Assert.assertNull(executionVertexDagMap.get(operatorChain2));
+    Assert.assertNull(executionVertexDagMap.get(physicalOp2));
     Assert.assertNull(executionVertexDagMap.get(sink2));
 
     // Check if the execution dag is changed correctly
-    final Map<ExecutionVertex, MISTEdge> oc1Edges = mergedExecutionDag.getDag().getEdges(operatorChain1);
+    final Map<ExecutionVertex, MISTEdge> oc1Edges = mergedExecutionDag.getDag().getEdges(physicalOp1);
     Assert.assertEquals(1, oc1Edges.size());
     Assert.assertEquals(sink1, oc1Edges.keySet().iterator().next());
   }
@@ -534,7 +531,7 @@ public final class MergeAwareQueryRemoverTest {
    * Test source that sends data to next operator chains.
    */
   final class TestSource implements PhysicalSource {
-    private OutputEmitter outputEmitter;
+    private SourceOutputEmitter outputEmitter;
     private final String id;
     private final String conf;
     private boolean closed = false;
@@ -553,6 +550,11 @@ public final class MergeAwareQueryRemoverTest {
     @Override
     public EventGenerator getEventGenerator() {
       return null;
+    }
+
+    @Override
+    public SourceOutputEmitter getSourceOutputEmitter() {
+      return outputEmitter;
     }
 
     /**
@@ -585,7 +587,7 @@ public final class MergeAwareQueryRemoverTest {
 
     @Override
     public void setOutputEmitter(final OutputEmitter emitter) {
-      outputEmitter = emitter;
+      outputEmitter = (SourceOutputEmitter)emitter;
     }
 
     @Override

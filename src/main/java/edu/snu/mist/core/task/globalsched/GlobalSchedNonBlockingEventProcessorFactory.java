@@ -19,6 +19,7 @@ import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorFactory;
 
 import javax.inject.Inject;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * The factory class of GlobalSchedNonBlockingEventPrcoessor.
@@ -30,6 +31,8 @@ public final class GlobalSchedNonBlockingEventProcessorFactory implements EventP
    */
   private final NextGroupSelectorFactory nextGroupSelectorFactory;
 
+  private final AtomicInteger id = new AtomicInteger(0);
+
   @Inject
   private GlobalSchedNonBlockingEventProcessorFactory(final NextGroupSelectorFactory nextGroupSelectorFactory) {
     this.nextGroupSelectorFactory = nextGroupSelectorFactory;
@@ -38,6 +41,6 @@ public final class GlobalSchedNonBlockingEventProcessorFactory implements EventP
   @Override
   public EventProcessor newEventProcessor() {
     final NextGroupSelector nextGroupSelector = nextGroupSelectorFactory.newInstance();
-    return new GlobalSchedNonBlockingEventProcessor(nextGroupSelector);
+    return new GlobalSchedNonBlockingEventProcessor(nextGroupSelector, id.getAndIncrement());
   }
 }

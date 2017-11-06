@@ -18,7 +18,7 @@ package edu.snu.mist.core.driver.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The execution model of Mist", short_name = "execution_model", default_value = "2")
-public final class ExecutionModelOption implements Name<Integer> {
+@NamedParameter(doc = "The execution model of Mist", short_name = "execution_model", default_value = "mist")
+public final class ExecutionModelOption implements Name<String> {
   // empty
 }

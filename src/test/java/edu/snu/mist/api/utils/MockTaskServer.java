@@ -39,12 +39,12 @@ public class MockTaskServer implements ClientToTaskMessage {
   }
 
   @Override
-  public QueryControlResult sendQueries(final AvroOperatorChainDag operatorChainDag) throws AvroRemoteException {
+  public QueryControlResult sendQueries(final AvroDag avroDag) throws AvroRemoteException {
     return new QueryControlResult(testQueryResult, true, testQueryResult);
   }
 
   @Override
-  public QueryControlResult sendBatchQueries(final AvroOperatorChainDag chainDag,
+  public QueryControlResult sendBatchQueries(final AvroDag avroDag,
                                              final int batchSize) throws AvroRemoteException {
     return new QueryControlResult(testQueryResult, true, testQueryResult);
   }

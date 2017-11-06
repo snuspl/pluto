@@ -15,19 +15,28 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
+import edu.snu.mist.core.parameters.IsSplit;
+import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.eventProcessors.groupAssigner.GroupAssigner;
+import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupMerger;
 import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupRebalancer;
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupSplitter;
+import edu.snu.mist.core.task.globalsched.Group;
+import edu.snu.mist.core.task.globalsched.MetaGroup;
+import org.apache.reef.io.Tuple;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.Collection;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A single writer thread that modifies the group allocation table.
@@ -83,12 +92,22 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
    */
   private final IsolatedGroupReassigner isolatedGroupReassigner;
 
+  private final GroupMerger groupMerger;
+
+  private final GroupSplitter groupSplitter;
+
+  private final boolean isSplit;
+
+  private final Random random = new Random();
   @Inject
   private GroupAllocationTableModifier(final GroupAllocationTable groupAllocationTable,
                                        final GroupAssigner groupAssigner,
                                        final GroupRebalancer groupRebalancer,
                                        final LoadUpdater loadUpdater,
                                        final GroupIsolator groupIsolator,
+                                       final GroupMerger groupMerger,
+                                       final GroupSplitter groupSplitter,
+                                       @Parameter(IsSplit.class) final boolean isSplit,
                                        final IsolatedGroupReassigner isolatedGroupReassigner) {
     this.groupAllocationTable = groupAllocationTable;
     this.groupAssigner = groupAssigner;
@@ -97,14 +116,17 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
     this.singleWriter = Executors.newSingleThreadExecutor();
     this.loadUpdater = loadUpdater;
     this.groupIsolator = groupIsolator;
+    this.groupMerger = groupMerger;
+    this.groupSplitter = groupSplitter;
+    this.isSplit = isSplit;
     this.isolatedGroupReassigner = isolatedGroupReassigner;
     // Create a writer thread
     singleWriter.submit(new SingleWriterThread());
   }
 
-  private void removeGroupInWriterThread(final GlobalSchedGroupInfo removedGroup) {
+  private void removeGroupInWriterThread(final Group removedGroup) {
     for (final EventProcessor eventProcessor : groupAllocationTable.getKeys()) {
-      final Collection<GlobalSchedGroupInfo> groups = groupAllocationTable.getValue(eventProcessor);
+      final Collection<Group> groups = groupAllocationTable.getValue(eventProcessor);
       if (groups.remove(removedGroup)) {
         // deleted
         if (LOG.isLoggable(Level.FINE)) {
@@ -141,12 +163,29 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
           final WritingEvent event = writingEventQueue.take();
           switch (event.getEventType()) {
             case GROUP_ADD: {
-              final GlobalSchedGroupInfo group = (GlobalSchedGroupInfo) event.getValue();
+              final Tuple<MetaGroup, Group> tuple = (Tuple<MetaGroup, Group>) event.getValue();
+              final MetaGroup metaGroup = tuple.getKey();
+              final Group group = tuple.getValue();
+              metaGroup.addGroup(group);
               groupAssigner.assignGroup(group);
               break;
             }
+            case QUERY_ADD: {
+              final Tuple<MetaGroup, Query> tuple = (Tuple<MetaGroup, Query>) event.getValue();
+              final MetaGroup metaGroup = tuple.getKey();
+              final Query query = tuple.getValue();
+              // TODO: pluggable
+              // Find minimum load group
+              final List<Group> groups = metaGroup.getGroups();
+              final int index = random.nextInt(groups.size());
+              final Group minGroup = groups.get(index);
+
+              query.setGroup(minGroup);
+              minGroup.addQuery(query);
+              break;
+            }
             case GROUP_REMOVE: {
-              final GlobalSchedGroupInfo group = (GlobalSchedGroupInfo) event.getValue();
+              final Group group = (Group) event.getValue();
               removeGroupInWriterThread(group);
               break;
             }
@@ -158,8 +197,18 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
               break;
             case REBALANCE:
               loadUpdater.update();
-              isolatedGroupReassigner.reassignIsolatedGroups();
-              groupRebalancer.triggerRebalancing();
+              //isolatedGroupReassigner.reassignIsolatedGroups();
+
+              // 1. merging first
+              if (isSplit) {
+                groupMerger.groupMerging();
+
+                // 2. reassignment
+                groupRebalancer.triggerRebalancing();
+
+                // 3. split groups
+                groupSplitter.splitGroup();
+              }
               break;
             case ISOLATION:
               groupIsolator.triggerIsolation();
@@ -169,6 +218,9 @@ public final class GroupAllocationTableModifier implements AutoCloseable {
           }
         } catch (final InterruptedException e) {
           e.printStackTrace();
+        } catch (final Exception e) {
+          e.printStackTrace();
+          throw new RuntimeException(e);
         }
       }
     }

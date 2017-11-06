@@ -84,7 +84,7 @@ public final class RuleBasedStatefulExample {
         /**
          * Make a StatefulQuery.
          */
-        final MISTStatefulQuery ruleBasedQuery = new MISTStatefulQuery.Builder("example-group")
+        final MISTStatefulQuery ruleBasedQuery = new MISTStatefulQuery.Builder("example-group", "user1")
                 .input(input)
                 .initialState("OUTSIDE")
                 .addStatefulRule(new StatefulRule.Builder()

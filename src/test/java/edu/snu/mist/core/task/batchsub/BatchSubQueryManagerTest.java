@@ -15,20 +15,10 @@
  */
 package edu.snu.mist.core.task.batchsub;
 
-import edu.snu.mist.api.MISTQuery;
-import edu.snu.mist.api.MISTQueryBuilder;
-import edu.snu.mist.api.batchsub.BatchSubmissionConfiguration;
-import edu.snu.mist.api.datastreams.ContinuousStream;
-import edu.snu.mist.api.datastreams.configurations.MQTTSourceConfiguration;
-import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
-import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.common.parameters.MQTTBrokerURI;
-import edu.snu.mist.common.parameters.MQTTTopic;
-import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
 import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
 import edu.snu.mist.core.parameters.PlanStorePath;
@@ -38,9 +28,9 @@ import edu.snu.mist.core.task.globalsched.GroupAwareGlobalSchedQueryManagerImpl;
 import edu.snu.mist.core.task.globalsched.GroupEvent;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.core.task.threadbased.ThreadBasedQueryManagerImpl;
-import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.core.task.threadpool.threadbased.ThreadPoolQueryManagerImpl;
+import edu.snu.mist.formats.avro.AvroDag;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -50,11 +40,12 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Test;
 import org.mockito.Matchers;
 
 import java.io.File;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.mockito.Mockito.mock;
@@ -66,7 +57,7 @@ import static org.mockito.Mockito.when;
  */
 public final class BatchSubQueryManagerTest {
   private QueryManager manager;
-  private Tuple<List<String>, AvroOperatorChainDag> tuple;
+  private Tuple<List<String>, AvroDag> tuple;
   private List<String> groupIdList;
   private Injector injector;
   private AvroConfigurationSerializer avroConfigurationSerializer;
@@ -116,6 +107,7 @@ public final class BatchSubQueryManagerTest {
    */
   @Before
   public void setUp() throws Exception {
+    /* TODO: Re-implement this method with app id (super-group id), and user id (sub-group id)
     // Make batch submission configuration
     // Because the size is 101, two threads will deal with this submission
     groupIdList = new LinkedList<>();
@@ -152,13 +144,13 @@ public final class BatchSubQueryManagerTest {
         .setPaths(paths)
         .build();
 
-    // Create AvroOperatorChainDag
-    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getAvroOperatorChainDag();
-    final AvroOperatorChainDag operatorChainDag = AvroOperatorChainDag.newBuilder()
+    // Create AvroDag
+    final Tuple<List<AvroVertex>, List<Edge>> serializedDag = query.getAvroOperatorDag();
+    final AvroDag avroDag = AvroDag.newBuilder()
         .setJarFilePaths(jarUploadResult.getPaths())
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
-        .setGroupId(query.getGroupId())
+        .setGroupId(query.getSuperGroupId())
         .setPubTopicGenerateFunc(
             SerializeUtils.serializeToString(batchSubConfig.getPubTopicGenerateFunc()))
         .setSubTopicGenerateFunc(
@@ -171,9 +163,10 @@ public final class BatchSubQueryManagerTest {
     for (int i = 0; i < NUM_QUERIES; i++) {
       queryIdList.add(QUERY_ID_PREFIX + i);
     }
-    tuple = new Tuple<>(queryIdList, operatorChainDag);
+    tuple = new Tuple<>(queryIdList, avroDag);
 
     duplicationSuccess = new AtomicBoolean(true);
+    */
   }
 
   @After
@@ -187,12 +180,14 @@ public final class BatchSubQueryManagerTest {
   /**
    * Test option 2 query manager.
    */
-  @Test(timeout = 10000)
-  public void testSubmitComplexQueryInOption2() throws Exception {
+
+  // TODO: Enable this test with app id (super-group id), and user id (sub-group id)
+  //@Test(timeout = 10000)
+  public void testSubmitComplexQueryInMIST() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(RPCServerPort.class, "20333");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
-    jcb.bindNamedParameter(ExecutionModelOption.class, "2");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "mist");
     jcb.bindImplementation(QueryManager.class, GroupAwareGlobalSchedQueryManagerImpl.class);
     injector = Tang.Factory.getTang().newInjector(jcb.build());
     final MistPubSubEventHandler pubSubEventHandler = injector.getInstance(MistPubSubEventHandler.class);
@@ -203,13 +198,29 @@ public final class BatchSubQueryManagerTest {
   /**
    * Test option 3 query manager.
    */
-  @Test(timeout = 5000)
-  public void testSubmitComplexQueryInOption3() throws Exception {
+  // TODO: Enable this test with app id (super-group id), and user id (sub-group id)
+  //@Test(timeout = 5000)
+  public void testSubmitComplexQueryInThreadBased() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(RPCServerPort.class, "20334");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
-    jcb.bindNamedParameter(ExecutionModelOption.class, "3");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "tpq");
     jcb.bindImplementation(QueryManager.class, ThreadBasedQueryManagerImpl.class);
+    injector = Tang.Factory.getTang().newInjector(jcb.build());
+    testBatchSubmitQueryHelper();
+  }
+
+  /**
+   * Test thread pool.
+   */
+  // TODO: Enable this test with app id (super-group id), and user id (sub-group id)
+  //@Test(timeout = 5000)
+  public void testSubmitComplexQueryInThreadPool() throws Exception {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(RPCServerPort.class, "20335");
+    jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "tp");
+    jcb.bindImplementation(QueryManager.class, ThreadPoolQueryManagerImpl.class);
     injector = Tang.Factory.getTang().newInjector(jcb.build());
     testBatchSubmitQueryHelper();
   }
@@ -233,7 +244,7 @@ public final class BatchSubQueryManagerTest {
   /**
    * A builder for QueryManager.
    */
-  private QueryManager queryManagerBuild(final Tuple<List<String>, AvroOperatorChainDag> tp,
+  private QueryManager queryManagerBuild(final Tuple<List<String>, AvroDag> tp,
                                          final ConfigDagGenerator dagGenerator) throws Exception {
     // Create mock PlanStore. It returns true and the above logical plan
     final QueryInfoStore planStore = mock(QueryInfoStore.class);
@@ -291,20 +302,21 @@ public final class BatchSubQueryManagerTest {
     }
 
     @Override
-    public DAG<ConfigVertex, MISTEdge> generate(final AvroOperatorChainDag opChainDag) {
+    public DAG<ConfigVertex, MISTEdge> generate(final AvroDag avroDag) {
+      /* TODO: Re-implement this method with app id and user id
       try {
-        final String actualGroupId = opChainDag.getGroupId();
+        final String actualGroupId = avroDag.getSuperGroupId();
         final Set<String> expectedSubTopicSet =
             SUB_TOPIC_FUNCTION.apply(actualGroupId, "arbitrary");
 
         // Test whether the group id is overwritten well
         Assert.assertFalse(ORIGINAL_GROUP_ID.equals(actualGroupId));
         // Test whether the MQTT configuration is overwritten well
-        for (final AvroVertexChain avroVertexChain : opChainDag.getAvroVertices()) {
-          switch (avroVertexChain.getAvroVertexChainType()) {
+        for (final AvroVertex avroVertex : avroDag.getAvroVertices()) {
+          switch (avroVertex.getAvroVertexType()) {
             case SOURCE: {
-              final Vertex vertex = avroVertexChain.getVertexChain().get(0);
-              final Configuration modifiedConf = avroConfigurationSerializer.fromString(vertex.getConfiguration());
+              final Configuration modifiedConf =
+                  avroConfigurationSerializer.fromString(avroVertex.getConfiguration());
 
               // Restore the configuration and see whether it is overwritten well
               final Injector newInjector = Tang.Factory.getTang().newInjector(modifiedConf);
@@ -338,13 +350,13 @@ public final class BatchSubQueryManagerTest {
               Assert.assertEquals(expectedTuple.getValue(), actualTuple.getValue());
               break;
             }
-            case OPERATOR_CHAIN: {
+            case OPERATOR: {
               // Do nothing
               break;
             }
             case SINK: {
-              final Vertex vertex = avroVertexChain.getVertexChain().get(0);
-              final Configuration modifiedConf = avroConfigurationSerializer.fromString(vertex.getConfiguration());
+              final Configuration modifiedConf =
+                  avroConfigurationSerializer.fromString(avroVertex.getConfiguration());
 
               // Restore the configuration and see whether it is overwritten well
               final Injector newInjector = Tang.Factory.getTang().newInjector(modifiedConf);
@@ -367,6 +379,7 @@ public final class BatchSubQueryManagerTest {
         e.printStackTrace();
         duplicationSuccess.compareAndSet(true, false);
       }
+      */
 
       return new AdjacentListConcurrentMapDAG<>();
     }

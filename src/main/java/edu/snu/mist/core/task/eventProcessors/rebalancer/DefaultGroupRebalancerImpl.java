@@ -17,10 +17,11 @@ package edu.snu.mist.core.task.eventProcessors.rebalancer;
 
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.GroupAllocationTable;
-import edu.snu.mist.core.task.eventProcessors.parameters.*;
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.eventProcessors.parameters.GroupRebalancingPeriod;
+import edu.snu.mist.core.task.eventProcessors.parameters.OverloadedThreshold;
+import edu.snu.mist.core.task.eventProcessors.parameters.UnderloadedThreshold;
+import edu.snu.mist.core.task.globalsched.Group;
 import edu.snu.mist.core.task.globalsched.parameters.DefaultGroupLoad;
-import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -97,7 +98,7 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
     final StringBuilder sb = new StringBuilder();
     sb.append("-------------- TABLE ----------------\n");
     for (final EventProcessor ep : eventProcessors) {
-      final Collection<GlobalSchedGroupInfo> groups = groupAllocationTable.getValue(ep);
+      final Collection<Group> groups = groupAllocationTable.getValue(ep);
       sb.append(ep);
       sb.append(" -> [");
       sb.append(loadTable.get(ep));
@@ -108,6 +109,36 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
       sb.append("\n");
     }
     LOG.info(sb.toString());
+  }
+
+  private void moveGroup(final Group highLoadGroup,
+                         final Collection<Group> highLoadGroups,
+                         final EventProcessor highLoadThread,
+                         final EventProcessor lowLoadThread,
+                         final PriorityQueue<EventProcessor> underloadedThreads) {
+    final double groupLoad = highLoadGroup.getLoad();
+
+    highLoadThread.removeActiveGroup(highLoadGroup);
+    final Collection<Group> lowLoadGroups =
+        groupAllocationTable.getValue(lowLoadThread);
+
+    while (highLoadThread.removeActiveGroup(highLoadGroup)) {
+      // remove all elements
+    }
+
+    lowLoadGroups.add(highLoadGroup);
+    highLoadGroup.setEventProcessor(lowLoadThread);
+    highLoadGroups.remove(highLoadGroup);
+
+    // Update overloaded thread load
+    highLoadThread.setLoad(highLoadThread.getLoad() - groupLoad);
+
+    // Update underloaded thread load
+    lowLoadThread.setLoad(lowLoadThread.getLoad() + groupLoad);
+    underloadedThreads.add(lowLoadThread);
+
+    highLoadGroup.setReady();
+    lowLoadThread.addActiveGroup(highLoadGroup);
   }
 
   @Override
@@ -122,26 +153,23 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
       final List<EventProcessor> overloadedThreads = new LinkedList<>();
 
       // Underloaded threads
-      final PriorityQueue<Tuple<EventProcessor, Double>> underloadedThreads =
-          new PriorityQueue<>(new Comparator<Tuple<EventProcessor, Double>>() {
+      final PriorityQueue<EventProcessor> underloadedThreads =
+          new PriorityQueue<>(new Comparator<EventProcessor>() {
             @Override
-            public int compare(final Tuple<EventProcessor, Double> o1, final Tuple<EventProcessor, Double> o2) {
-              final Double load1 = o1.getValue();
-              final Double load2 = o2.getValue();
+            public int compare(final EventProcessor o1, final EventProcessor o2) {
+              final Double load1 = o1.getLoad();
+              final Double load2 = o2.getLoad();
               return load1.compareTo(load2);
             }
           });
 
       // Calculate each load and total load
-      final Map<EventProcessor, Double> loadTable = new HashMap<>();
-
       for (final EventProcessor eventProcessor : eventProcessors) {
         final double load = eventProcessor.getLoad();
-        loadTable.put(eventProcessor, load);
         if (load > beta) {
           overloadedThreads.add(eventProcessor);
         } else if (load < alpha) {
-          underloadedThreads.add(new Tuple<>(eventProcessor, load));
+          underloadedThreads.add(eventProcessor);
         }
       }
 
@@ -152,35 +180,46 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
 
       int rebNum = 0;
 
+      Collections.sort(overloadedThreads, new Comparator<EventProcessor>() {
+        @Override
+        public int compare(final EventProcessor o1, final EventProcessor o2) {
+          return o1.getLoad() < o2.getLoad() ? 1 : -1;
+        }
+      });
+
       if (!overloadedThreads.isEmpty() && !underloadedThreads.isEmpty()) {
         for (final EventProcessor highLoadThread : overloadedThreads) {
-          final Collection<GlobalSchedGroupInfo> highLoadGroups = groupAllocationTable.getValue(highLoadThread);
-          final Iterator<GlobalSchedGroupInfo> iterator = highLoadGroups.iterator();
-          double highLoad = loadTable.get(highLoadThread);
+          final Collection<Group> highLoadGroups = groupAllocationTable.getValue(highLoadThread);
+          final List<Group> sortedHighLoadGroups = new LinkedList<>(highLoadGroups);
 
-          while (iterator.hasNext()) {
-            final GlobalSchedGroupInfo selectedGroup = iterator.next();
-            final double groupLoad = selectedGroup.getLoad();
+          Collections.sort(sortedHighLoadGroups, new Comparator<Group>() {
+            @Override
+            public int compare(final Group o1, final Group o2) {
+              if (o1.isSplited() && !o2.isSplited()) {
+                return -1;
+              } else if (!o1.isSplited() && o2.isSplited()) {
+                return 1;
+              } else {
+                if (o1.getLoad() < o2.getLoad()) {
+                  return -1;
+                } else {
+                  return 1;
+                }
+              }
+            }
+          });
 
-            if (highLoad - groupLoad >= targetLoad) {
-              final Tuple<EventProcessor, Double> peek = underloadedThreads.peek();
-              if (peek.getValue() + groupLoad <= targetLoad) {
-                if (selectedGroup.isReady() || highLoadThread.removeActiveGroup(selectedGroup)) {
-                  final Tuple<EventProcessor, Double> lowLoadThread = underloadedThreads.poll();
-                  final Collection<GlobalSchedGroupInfo> lowLoadGroups =
-                      groupAllocationTable.getValue(lowLoadThread.getKey());
+          for (final Group highLoadGroup : sortedHighLoadGroups) {
+            final double groupLoad = highLoadGroup.getLoad();
 
-                  lowLoadGroups.add(selectedGroup);
-                  iterator.remove();
-
-                  // Update overloaded thread load
-                  highLoad -= groupLoad;
-                  highLoadThread.setLoad(highLoad - groupLoad);
+            if (!highLoadGroup.isSplited()) {
+              // Rebalance!!!
+              if (highLoadThread.getLoad() - groupLoad >= targetLoad) {
+                final EventProcessor peek = underloadedThreads.peek();
+                if (peek.getLoad() + groupLoad <= targetLoad) {
+                  final EventProcessor lowLoadThread = underloadedThreads.poll();
+                  moveGroup(highLoadGroup, highLoadGroups, highLoadThread, lowLoadThread, underloadedThreads);
                   rebNum += 1;
-
-                  // Update underloaded thread load
-                  lowLoadThread.getKey().setLoad(lowLoadThread.getValue() + groupLoad);
-                  underloadedThreads.add(new Tuple<>(lowLoadThread.getKey(), lowLoadThread.getValue() + groupLoad));
                 }
               }
             }

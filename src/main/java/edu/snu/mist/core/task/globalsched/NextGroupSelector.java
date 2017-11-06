@@ -34,25 +34,25 @@ public interface NextGroupSelector extends EventHandler<GroupEvent>, AutoCloseab
    * in order to reselect another operator chain manager when there are no active operator chain managers.
    * @return group info that will be executed next
    */
-  GlobalSchedGroupInfo getNextExecutableGroup();
+  Group  getNextExecutableGroup();
 
   /**
    * Re-schedule the group to the selector.
    * @param groupInfo group info
    * @param miss true if the group has no active chain
    */
-  void reschedule(GlobalSchedGroupInfo groupInfo, boolean miss);
+  void reschedule(Group groupInfo, boolean miss);
 
   /**
    * Re-schedule the groups to the selector.
    * @param groupInfos group infos
    */
-  void reschedule(Collection<GlobalSchedGroupInfo> groupInfos);
+  void reschedule(Collection<Group> groupInfos);
 
   /**
    * Remove the dispatched group.
    * @param group dispatched group
    * @return true if the dispatched group is removed
    */
-  boolean removeDispatchedGroup(GlobalSchedGroupInfo group);
+  boolean removeDispatchedGroup(Group group);
 }

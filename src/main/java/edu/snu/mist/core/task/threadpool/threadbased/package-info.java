@@ -13,22 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
-
-import javax.inject.Inject;
-
 /**
- * This is a default implementation of operator chain factory.
+ * This package contains classes for the thread-based execution model.
  */
-public final class DefaultOperatorChainFactory implements OperatorChainFactory {
-
-  @Inject
-  private DefaultOperatorChainFactory() {
-    // empty
-  }
-
-  @Override
-  public OperatorChain newInstance(final String id) {
-    return new DefaultOperatorChainImpl(id);
-  }
-}
+package edu.snu.mist.core.task.threadpool.threadbased;

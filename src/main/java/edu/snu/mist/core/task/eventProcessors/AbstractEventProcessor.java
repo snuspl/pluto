@@ -15,17 +15,11 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
-import edu.snu.mist.core.task.OperatorChainManager;
-
 /**
  * This abstract class represents the event processor which processes events of queries.
  */
 abstract class AbstractEventProcessor extends Thread implements EventProcessor {
 
-  /**
-   * The operator chain manager for picking up a chain for event processing.
-   */
-  protected final OperatorChainManager operatorChainManager;
 
   /**
    * The boolean represents whether this processor should be reaped or not.
@@ -33,9 +27,8 @@ abstract class AbstractEventProcessor extends Thread implements EventProcessor {
    */
   protected volatile boolean closed;
 
-  AbstractEventProcessor(final OperatorChainManager operatorChainManagerParam) {
+  AbstractEventProcessor() {
     // Assume that operator chain manager is blocking
-    this.operatorChainManager = operatorChainManagerParam;
     this.closed = false;
   }
 

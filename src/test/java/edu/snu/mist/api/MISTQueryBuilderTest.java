@@ -48,7 +48,8 @@ public class MISTQueryBuilderTest {
    */
   @Test
   public void testNettyTextSourceSerializationWithoutUdf() throws InjectionException {
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(TestParameters.GROUP_ID);
+    final MISTQueryBuilder queryBuilder =
+        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID, TestParameters.SUB_GROUP_ID);
     final ContinuousStream<String> stream =
         queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
     // check
@@ -66,7 +67,8 @@ public class MISTQueryBuilderTest {
   public void testNettyTextSourceSerializationWithUdf()
       throws InjectionException, IOException, ClassNotFoundException {
     final MISTFunction<String, Tuple<String, Long>> timestampExtFunc = s -> new Tuple<>(s, 1L);
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(TestParameters.GROUP_ID);
+    final MISTQueryBuilder queryBuilder =
+        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID, TestParameters.SUB_GROUP_ID);
     final ContinuousStream<String> stream =
         queryBuilder.socketTextStream(TextSocketSourceConfiguration.newBuilder()
             .setHostAddress(TestParameters.HOST)
@@ -91,7 +93,8 @@ public class MISTQueryBuilderTest {
       throws InjectionException, IOException, ClassNotFoundException {
     final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
     final MISTFunction<String, Tuple<String, Long>> timestampExtFunc = s -> new Tuple<>(s, 1L);
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(TestParameters.GROUP_ID);
+    final MISTQueryBuilder queryBuilder =
+        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID, TestParameters.SUB_GROUP_ID);
     final ContinuousStream<String> stream =
         queryBuilder.socketTextStream(TextSocketSourceConfiguration.newBuilder()
             .setHostAddress(TestParameters.HOST)
@@ -126,7 +129,8 @@ public class MISTQueryBuilderTest {
     consumerConfig.put(groupKey, groupValue);
     consumerConfig.put(valueDeserializerKey, valueDeserializer);
 
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(TestParameters.GROUP_ID);
+    final MISTQueryBuilder queryBuilder =
+        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID, TestParameters.SUB_GROUP_ID);
     final ContinuousStream<ConsumerRecord<Integer, String>> kafkaSourceStream =
         queryBuilder.kafkaStream(KafkaSourceConfiguration.newBuilder()
             .setTopic(topic)
@@ -154,7 +158,8 @@ public class MISTQueryBuilderTest {
     final String expectedBrokerURI = "tcp://192.168.0.1:3386";
     final String expectedTopic = "region/system/subsystem/device/sensor";
 
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(TestParameters.GROUP_ID);
+    final MISTQueryBuilder queryBuilder =
+        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID, TestParameters.SUB_GROUP_ID);
     final ContinuousStream<MqttMessage> mqttSourceStream =
         queryBuilder.mqttStream(MQTTSourceConfiguration.newBuilder()
             .setBrokerURI(expectedBrokerURI)

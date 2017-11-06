@@ -13,15 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.parameters;
+package edu.snu.mist.core.task.threadpool.threadbased;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Prefix used for making operatorChain IDs.
+ * Created by taegeonum on 10/7/17.
  */
-@NamedParameter(doc = "A prefix used for making operatorChain ID", default_value = "opChain-")
-public final class OperatorChainIdPrefix implements Name<String> {
-  // empty
+public final class QueryProgress {
+
+  public AtomicLong getNextEventNum() {
+    return nextEventNum;
+  }
+
+  private final AtomicLong nextEventNum;
+
+  public AtomicLong getEventNum() {
+    return eventNum;
+  }
+
+  private final AtomicLong eventNum;
+
+  public QueryProgress() {
+    this.nextEventNum = new AtomicLong(0);
+    this.eventNum = new AtomicLong(0);
+  }
 }

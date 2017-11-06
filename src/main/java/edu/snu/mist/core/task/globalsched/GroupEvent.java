@@ -32,14 +32,14 @@ public final class GroupEvent {
   /**
    * Group info.
    */
-  private final GlobalSchedGroupInfo groupInfo;
+  private final Group groupInfo;
 
   /**
    * Group event type.
    */
   private final GroupEventType type;
 
-  public GroupEvent(final GlobalSchedGroupInfo groupInfo,
+  public GroupEvent(final Group groupInfo,
                     final GroupEventType type) {
     this.groupInfo = groupInfo;
     this.type = type;
@@ -57,7 +57,7 @@ public final class GroupEvent {
    * Get the group info.
    * @return group info
    */
-  public GlobalSchedGroupInfo getGroupInfo() {
+  public Group getGroupInfo() {
     return groupInfo;
   }
 }

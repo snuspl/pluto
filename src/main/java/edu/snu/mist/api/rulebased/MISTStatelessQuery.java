@@ -25,16 +25,20 @@ public final class MISTStatelessQuery {
 
   private final RuleBasedInput input;
   private final List<StatelessRule> statelessRules;
-  private final String groupId;
+  private final String superGroupId;
+  private final String subGroupId;
 
   /**
    * Creates an immutable stateless query.
    */
   public MISTStatelessQuery(final RuleBasedInput input,
-                               final List<StatelessRule> statelessRules, final String groupId) {
+                            final List<StatelessRule> statelessRules,
+                            final String superGroupId,
+                            final String subGroupId) {
     this.input = input;
     this.statelessRules = statelessRules;
-    this.groupId = groupId;
+    this.superGroupId = superGroupId;
+    this.subGroupId = subGroupId;
   }
 
   /**
@@ -54,8 +58,15 @@ public final class MISTStatelessQuery {
   /**
    *@return groupId for this query.
    */
-  public String getGroupId() {
-      return this.groupId;
+  public String getSuperGroupId() {
+      return this.superGroupId;
+  }
+
+  /**
+   *@return groupId for this query.
+   */
+  public String getSubGroupId() {
+    return this.subGroupId;
   }
 
     @Override
@@ -76,14 +87,14 @@ public final class MISTStatelessQuery {
                 that.statelessRules != null) {
             return false;
         }
-        return groupId != null ? groupId.equals(that.groupId) : that.groupId == null;
+        return superGroupId != null ? superGroupId.equals(that.superGroupId) : that.superGroupId == null;
     }
 
     @Override
     public int hashCode() {
         int result = input != null ? input.hashCode() : 0;
         result = 31 * result + (statelessRules != null ? statelessRules.hashCode() : 0);
-        result = 31 * result + (groupId != null ? groupId.hashCode() : 0);
+        result = 31 * result + (superGroupId != null ? superGroupId.hashCode() : 0);
         return result;
     }
 
@@ -93,15 +104,18 @@ public final class MISTStatelessQuery {
   public static class Builder {
     private RuleBasedInput input;
     private final List<StatelessRule> statelessRules;
-    private final String groupId;
+    private final String superGroupId;
+    private final String subGroupId;
 
     /**
      * Creates a new builder.
      */
-    public Builder(final String groupId) {
+    public Builder(final String superGroupId,
+                   final String subGroupId) {
       this.input = null;
       this.statelessRules = new ArrayList<>();
-      this.groupId = groupId;
+      this.superGroupId = superGroupId;
+      this.subGroupId = subGroupId;
     }
 
     /**
@@ -132,7 +146,7 @@ public final class MISTStatelessQuery {
       if (input == null || statelessRules.size() == 0) {
         throw new IllegalStateException("Input or stateless rules are not defined!");
       }
-      return new MISTStatelessQuery(input, statelessRules, this.groupId);
+      return new MISTStatelessQuery(input, statelessRules, superGroupId, subGroupId);
     }
   }
 }

@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task.merging;
 
-import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;
 import edu.snu.mist.core.task.*;
@@ -39,17 +38,14 @@ final class DefaultExecutionVertexGeneratorImpl implements ExecutionVertexGenera
   private final IdGenerator idGenerator;
   private final PhysicalObjectGenerator physicalObjectGenerator;
   private final AvroConfigurationSerializer avroConfigurationSerializer;
-  private final OperatorChainFactory operatorChainFactory;
 
   @Inject
   private DefaultExecutionVertexGeneratorImpl(final IdGenerator idGenerator,
                                               final AvroConfigurationSerializer avroConfigurationSerializer,
-                                              final PhysicalObjectGenerator physicalObjectGenerator,
-                                              final OperatorChainFactory operatorChainFactory) {
+                                              final PhysicalObjectGenerator physicalObjectGenerator) {
     this.idGenerator = idGenerator;
     this.avroConfigurationSerializer = avroConfigurationSerializer;
     this.physicalObjectGenerator = physicalObjectGenerator;
-    this.operatorChainFactory = operatorChainFactory;
   }
 
   @Override
@@ -58,7 +54,7 @@ final class DefaultExecutionVertexGeneratorImpl implements ExecutionVertexGenera
                                   final ClassLoader classLoader) throws IOException, InjectionException {
     switch (configVertex.getType()) {
       case SOURCE: {
-        final String strConf = configVertex.getConfiguration().get(0);
+        final String strConf = configVertex.getConfiguration();
         final Configuration conf = avroConfigurationSerializer.fromString(strConf, new ClassHierarchyImpl(urls));
         // Create an event generator
         final EventGenerator eventGenerator = physicalObjectGenerator.newEventGenerator(conf, classLoader);
@@ -68,22 +64,16 @@ final class DefaultExecutionVertexGeneratorImpl implements ExecutionVertexGenera
         final String id = idGenerator.generateSourceId();
         return new PhysicalSourceImpl<>(id, strConf, dataGenerator, eventGenerator);
       }
-      case OPERATOR_CHAIN: {
-        final String opChainId = idGenerator.generateOperatorChainId();
-        final OperatorChain operatorChain = operatorChainFactory.newInstance(opChainId);
-        for (final String strConf : configVertex.getConfiguration()) {
-          final Configuration conf = avroConfigurationSerializer.fromString(strConf,
-              new ClassHierarchyImpl(urls));
-          final String id = idGenerator.generateOperatorId();
-          final Operator operator = physicalObjectGenerator.newOperator(conf, classLoader);
-          final PhysicalOperator physicalOperator = new DefaultPhysicalOperatorImpl(id, strConf,
-              operator, operatorChain);
-          operatorChain.insertToTail(physicalOperator);
-        }
-        return operatorChain;
+      case OPERATOR: {
+        final String operatorId = idGenerator.generateOperatorId();
+        final Configuration conf = avroConfigurationSerializer.fromString(
+            configVertex.getConfiguration(), new ClassHierarchyImpl(urls));
+        final PhysicalOperator operator = new DefaultPhysicalOperatorImpl(operatorId, configVertex.getConfiguration(),
+            physicalObjectGenerator.newOperator(conf, classLoader));
+        return operator;
       }
       case SINK:
-        final String strConf = configVertex.getConfiguration().get(0);
+        final String strConf = configVertex.getConfiguration();
         final Configuration conf = avroConfigurationSerializer.fromString(strConf,
             new ClassHierarchyImpl(urls));
         final String id = idGenerator.generateSinkId();
