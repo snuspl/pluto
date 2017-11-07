@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.stores;
 
-import edu.snu.mist.formats.avro.AvroOperatorChainDag;
+import edu.snu.mist.formats.avro.AvroDag;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
@@ -30,11 +30,11 @@ import java.util.List;
 @DefaultImplementation(AsyncDiskQueryInfoStore.class)
 public interface QueryInfoStore extends AutoCloseable {
   /**
-   * Saves the operator chain dag.
+   * Saves the avro dag.
    * @param tuple
    * @throws IOException
    */
-  void saveAvroOpChainDag(Tuple<String, AvroOperatorChainDag> tuple);
+  void saveAvroDag(Tuple<String, AvroDag> tuple);
 
   /**
    * Check whether the query is stored properly or not.
@@ -54,10 +54,10 @@ public interface QueryInfoStore extends AutoCloseable {
   /**
    * Loads the operator chain dag corresponding to the queryId.
    * @param queryId
-   * @return operator chain dag
+   * @return avro dag
    * @throws IOException
    */
-  AvroOperatorChainDag load(String queryId) throws IOException;
+  AvroDag load(String queryId) throws IOException;
 
   /**
    * Deletes the operator chain dag and its corresponding jar files.

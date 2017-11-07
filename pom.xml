@@ -54,6 +54,13 @@ limitations under the License.
     </repositories>
 
     <dependencies>
+      <!-- https://mvnrepository.com/artifact/net.openhft/affinity -->
+      <!-- thread affinityy -->
+      <dependency>
+        <groupId>net.openhft</groupId>
+        <artifactId>affinity</artifactId>
+        <version>3.0.6</version>
+      </dependency>
         <dependency>
             <groupId>org.apache.reef</groupId>
             <artifactId>reef-common</artifactId>
@@ -156,16 +163,6 @@ limitations under the License.
             <groupId>io.moquette</groupId>
             <artifactId>moquette-broker</artifactId>
             <version>${moquette.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.googlecode.json-simple</groupId>
-            <artifactId>json-simple</artifactId>
-            <version>1.1.1</version>
-        </dependency>
-        <dependency>
-            <groupId>commons-cli</groupId>
-            <artifactId>commons-cli</artifactId>
-            <version>1.3.1</version>
         </dependency>
     </dependencies>
 

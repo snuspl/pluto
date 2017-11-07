@@ -15,18 +15,20 @@
  */
 package edu.snu.mist.api.batchsub;
 
-import edu.snu.mist.api.*;
+import edu.snu.mist.api.APIQueryControlResult;
+import edu.snu.mist.api.MISTQuery;
+import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.api.utils.MockDriverServer;
 import edu.snu.mist.api.utils.MockTaskServer;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.types.Tuple2;
-import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.formats.avro.ClientToMasterMessage;
+import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import edu.snu.mist.utils.TestParameters;
 import org.apache.avro.ipc.NettyServer;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
 import org.junit.Assert;
-import org.junit.Test;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -49,7 +51,8 @@ public class BatchSubExecutionEnvironmentTest {
    * This unit test creates mock jar file, mocking driver, and mocking task and tests
    * whether a test query can be serialized and sent via MISTDefaultExecutionEnvironmentImpl.
    */
-  @Test
+  //@Test
+  // TODO: Enable this test with app id and user id
   public void testMISTDefaultExecutionEnvironment() throws IOException {
     // Step 1: Launch mock RPC Server
     final Server driverServer = new NettyServer(
@@ -60,7 +63,8 @@ public class BatchSubExecutionEnvironmentTest {
         new InetSocketAddress(taskPortNum));
 
     // Step 2: Generate a new query
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(TestParameters.GROUP_ID);
+    final MISTQueryBuilder queryBuilder =
+        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID, TestParameters.SUB_GROUP_ID);
     queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
         .flatMap(s -> Arrays.asList(s.split(" ")))
         .map(s -> new Tuple2<>(s, 1))
@@ -103,12 +107,12 @@ public class BatchSubExecutionEnvironmentTest {
               .toString());
       return topicList;
     };
-    final List<String> queryGroupList = new LinkedList<>();
-    queryGroupList.add("1");
-    queryGroupList.add("2");
+    final List<String> superGroupList = Arrays.asList("1", "2");
+    final List<String> subGroupList = Arrays.asList("1", "2");
+
 
     final BatchSubmissionConfiguration batchConf = new BatchSubmissionConfiguration(
-        subTopicGenerateFunc, pubTopicGenerateFunc, queryGroupList);
+        subTopicGenerateFunc, pubTopicGenerateFunc, superGroupList, subGroupList);
     final APIQueryControlResult batchResult =
         executionEnvironment.batchSubmit(query, batchConf, tempJarFile.toString());
     Assert.assertEquals(batchResult.getQueryId(), testQueryResult);

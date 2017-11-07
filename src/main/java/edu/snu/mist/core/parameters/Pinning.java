@@ -13,19 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.parameters;
 
-import org.apache.reef.tang.annotations.DefaultImplementation;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-/**
- * This interface is for operator chain factory.
- */
-@DefaultImplementation(DefaultOperatorChainFactory.class)
-public interface OperatorChainFactory {
-
-  /**
-   * Get the new operator chain.
-   * @return operator chain
-   */
-  OperatorChain newInstance(String id);
+@NamedParameter(doc = "The number of cores of mist task", short_name = "pinning", default_value = "true")
+public final class Pinning implements Name<Boolean> {
+  // empty
 }

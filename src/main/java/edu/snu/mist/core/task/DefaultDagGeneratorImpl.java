@@ -81,7 +81,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
    */
   @Override
   public ExecutionDag generate(final DAG<ConfigVertex, MISTEdge> configDag,
-                                                 final List<String> jarFilePaths)
+                               final List<String> jarFilePaths)
       throws IOException, ClassNotFoundException, InjectionException {
     // For execution dag
     final ExecutionDag executionDag = new ExecutionDag(new AdjacentListConcurrentMapDAG<>());

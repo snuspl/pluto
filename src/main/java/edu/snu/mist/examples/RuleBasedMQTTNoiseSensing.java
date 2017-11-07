@@ -81,7 +81,7 @@ public final class RuleBasedMQTTNoiseSensing {
         /**
          * Make a stateless rule Query.
          */
-        final MISTStatelessQuery ruleBasedQuery = new MISTStatelessQuery.Builder("example-group")
+        final MISTStatelessQuery ruleBasedQuery = new MISTStatelessQuery.Builder("example-group", "user1")
                 .input(input)
                 .addStatelessRule(new StatelessRule.Builder()
                         .setCondition(ComparisonCondition.lt(firstField, noiseLimit))

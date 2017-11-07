@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 /**
  * This class manages MQTT clients.
  */
-public final class MQTTSharedResource implements AutoCloseable {
+public final class MQTTSharedResource implements MQTTResource {
   private static final Logger LOG = Logger.getLogger(MQTTSharedResource.class.getName());
 
   /**
@@ -48,14 +48,14 @@ public final class MQTTSharedResource implements AutoCloseable {
   public static final String MQTT_SUBSCRIBER_ID_PREFIX = "MIST_MQTT_SUBSCRIBER_";
 
   /**
-   * The map containing group-subscriber information.
+   * The map containing topic-subscriber information.
    */
-  private final Map<String, Map<String, MQTTSubscribeClient>> groupSubscriberMap;
+  private final Map<String, Map<String, MQTTSubscribeClient>> topicSubscriberMap;
 
   /**
-   * The map containing group-publisher information.
+   * The map containing topic-publisher information.
    */
-  private final Map<String, Map<String, IMqttAsyncClient>> groupPublisherMap;
+  private final Map<String, Map<String, IMqttAsyncClient>> topicPublisherMap;
 
   /**
    * The map coupling MQTT broker URI and MQTTSubscribeClient.
@@ -123,8 +123,8 @@ public final class MQTTSharedResource implements AutoCloseable {
     this.subscriberSourceNumMap = new HashMap<>();
     this.brokerPublisherMap = new HashMap<>();
     this.publisherSinkNumMap = new HashMap<>();
-    this.groupPublisherMap = new HashMap<>();
-    this.groupSubscriberMap = new HashMap<>();
+    this.topicPublisherMap = new HashMap<>();
+    this.topicSubscriberMap = new HashMap<>();
     this.subscriberLock = new ReentrantLock();
     this.publisherLock = new ReentrantLock();
     this.mqttSourceClientNumPerBroker = mqttSourceClientNumPerBrokerParam;
@@ -145,8 +145,6 @@ public final class MQTTSharedResource implements AutoCloseable {
       final String brokerURI,
       final String topic) throws MqttException, IOException {
     this.publisherLock.lock();
-    // TODO: Provide group information from QueryManager
-    final String group = getGroupName(topic);
     final List<IMqttAsyncClient> mqttAsyncClientList = brokerPublisherMap.get(brokerURI);
     if (mqttAsyncClientList == null) {
       // Initialize the broker list
@@ -154,20 +152,20 @@ public final class MQTTSharedResource implements AutoCloseable {
       for (int i = 0; i < mqttSinkClientNumPerBroker; i++) {
         createSinkClient(brokerURI, brokerPublisherMap.get(brokerURI));
       }
-      // Initialize the group-client list
-      final HashMap<String, IMqttAsyncClient> myGroupPublisherMap = new HashMap<>();
-      groupPublisherMap.put(brokerURI, myGroupPublisherMap);
+      // Initialize the topic-client list
+      final HashMap<String, IMqttAsyncClient> myTopicPublisherMap = new HashMap<>();
+      topicPublisherMap.put(brokerURI, myTopicPublisherMap);
       // Get the first client...
       final IMqttAsyncClient client = brokerPublisherMap.get(brokerURI).get(0);
       publisherSinkNumMap.replace(client, publisherSinkNumMap.get(client) + 1);
-      myGroupPublisherMap.put(group, client);
+      myTopicPublisherMap.put(topic, client);
       this.publisherLock.unlock();
       return client;
     } else {
-      final Map<String, IMqttAsyncClient> myGroupPublisherMap = groupPublisherMap.get(brokerURI);
-      if (myGroupPublisherMap.containsKey(group)) {
-        final IMqttAsyncClient client = myGroupPublisherMap.get(group);
-        //publisherSinkNumMap.replace(client, publisherSinkNumMap.get(client) + 1);
+      final Map<String, IMqttAsyncClient> myTopicPublisherMap = topicPublisherMap.get(brokerURI);
+      if (myTopicPublisherMap.containsKey(topic)) {
+        final IMqttAsyncClient client = myTopicPublisherMap.get(topic);
+        publisherSinkNumMap.replace(client, publisherSinkNumMap.get(client) + 1);
         this.publisherLock.unlock();
         return client;
       } else {
@@ -180,7 +178,7 @@ public final class MQTTSharedResource implements AutoCloseable {
           }
         }
         publisherSinkNumMap.replace(client, publisherSinkNumMap.get(client) + 1);
-        myGroupPublisherMap.put(group, client);
+        myTopicPublisherMap.put(topic, client);
         this.publisherLock.unlock();
         return client;
       }
@@ -227,7 +225,6 @@ public final class MQTTSharedResource implements AutoCloseable {
       final String topic) {
     this.subscriberLock.lock();
     // TODO: Provide group information from QueryManager
-    final String group = getGroupName(topic);
     final List<MQTTSubscribeClient> subscribeClientList = brokerSubscriberMap.get(brokerURI);
     if (subscribeClientList == null) {
       // Initialize the client list...
@@ -239,22 +236,19 @@ public final class MQTTSharedResource implements AutoCloseable {
         newSubscribeClientList.add(subscribeClient);
       }
       brokerSubscriberMap.put(brokerURI, newSubscribeClientList);
-      // Initialize the group-sub map
-      final Map<String, MQTTSubscribeClient> myGroupSubscriberMap = new HashMap<>();
-      groupSubscriberMap.put(brokerURI, myGroupSubscriberMap);
       // Initialize the topic-sub map
       final Map<String, MQTTSubscribeClient> myTopicSubscriberMap = new HashMap<>();
+      topicSubscriberMap.put(brokerURI, myTopicSubscriberMap);
       final MQTTSubscribeClient client = newSubscribeClientList.get(0);
-      myGroupSubscriberMap.put(group, client);
       myTopicSubscriberMap.put(topic, client);
       subscriberSourceNumMap.replace(client, subscriberSourceNumMap.get(client) + 1);
       this.subscriberLock.unlock();
       return client.connectToTopic(topic);
     } else {
-      final Map<String, MQTTSubscribeClient> myGroupSubscriberMap = groupSubscriberMap.get(brokerURI);
-      if (myGroupSubscriberMap.containsKey(group)) {
+      final Map<String, MQTTSubscribeClient> myTopicSubscriberMap = topicSubscriberMap.get(brokerURI);
+      if (myTopicSubscriberMap.containsKey(topic)) {
         // This is for group-sharing.
-        final MQTTSubscribeClient client = myGroupSubscriberMap.get(group);
+        final MQTTSubscribeClient client = myTopicSubscriberMap.get(topic);
         this.subscriberLock.unlock();
         return client.connectToTopic(topic);
       } else {
@@ -268,7 +262,7 @@ public final class MQTTSharedResource implements AutoCloseable {
           }
         }
         subscriberSourceNumMap.replace(client, subscriberSourceNumMap.get(client) + 1);
-        myGroupSubscriberMap.put(group, client);
+        myTopicSubscriberMap.put(topic, client);
         this.subscriberLock.unlock();
         return client.connectToTopic(topic);
       }

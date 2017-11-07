@@ -36,7 +36,7 @@ final class FixedSchedulingPeriodCalculator implements SchedulingPeriodCalculato
   }
 
   @Override
-  public long calculateSchedulingPeriod(final GlobalSchedGroupInfo groupInfo) {
+  public long calculateSchedulingPeriod(final SubGroup groupInfo) {
     return period;
   }
 }

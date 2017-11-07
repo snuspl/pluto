@@ -105,19 +105,6 @@ final class DfsCommonSubDagFinder implements CommonSubDagFinder {
   }
 
   /**
-   * Get the configuration of the operator chain.
-   * @param operatorChain operator chain
-   * @return configuration of the operator chain
-   */
-  private List<String> getOperatorChainConfig(final OperatorChain operatorChain) {
-    final List<String> conf = new ArrayList<>(operatorChain.size());
-    for (int i = 0; i < operatorChain.size(); i++) {
-      conf.add(operatorChain.get(i).getConfiguration());
-    }
-    return conf;
-  }
-
-  /**
    * Find a same execution vertex from the set of vertices.
    * @param vertices a set of vertices
    * @param v vertex to be found in the set of vertices
@@ -125,12 +112,10 @@ final class DfsCommonSubDagFinder implements CommonSubDagFinder {
    */
   private ExecutionVertex findSameVertex(final Collection<ExecutionVertex> vertices, final ConfigVertex v) {
     switch (v.getType()) {
-      case OPERATOR_CHAIN:
-        // We need to consider OperatorChain
+      case OPERATOR:
         for (final ExecutionVertex vertex : vertices) {
-          if (vertex.getType() == ExecutionVertex.Type.OPERATOR_CHAIN) {
-            final List<String> vertexConf = getOperatorChainConfig((OperatorChain)vertex);
-            if (v.getConfiguration().equals(vertexConf)) {
+          if (vertex.getType() == ExecutionVertex.Type.OPERATOR) {
+            if (v.getConfiguration().equals(((PhysicalOperator)vertex).getConfiguration())) {
               return vertex;
             }
           }
@@ -140,7 +125,7 @@ final class DfsCommonSubDagFinder implements CommonSubDagFinder {
         for (final ExecutionVertex vertex : vertices) {
           if (vertex.getType() == ExecutionVertex.Type.SOURCE) {
             final PhysicalSource vertexSource = (PhysicalSource)vertex;
-            if (vertexSource.getConfiguration().equals(v.getConfiguration().get(0))) {
+            if (vertexSource.getConfiguration().equals(v.getConfiguration())) {
               return vertex;
             }
           }

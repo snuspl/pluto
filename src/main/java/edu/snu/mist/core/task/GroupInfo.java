@@ -56,11 +56,6 @@ public final class GroupInfo implements AutoCloseable {
   private final QueryStarter queryStarter;
 
   /**
-   * Operator chain manager.
-   */
-  private final OperatorChainManager operatorChainManager;
-
-  /**
    * Query remover that deletes queries.
    */
   private final QueryRemover queryRemover;
@@ -80,7 +75,6 @@ public final class GroupInfo implements AutoCloseable {
                     final ExecutionDags executionDags,
                     final EventProcessorManager eventProcessorManager,
                     final QueryStarter queryStarter,
-                    final OperatorChainManager operatorChainManager,
                     final QueryRemover queryRemover,
                     final GroupMetrics metricHolder,
                     final GroupSourceManager groupSourceManager) {
@@ -89,7 +83,6 @@ public final class GroupInfo implements AutoCloseable {
     this.executionDags = executionDags;
     this.eventProcessorManager = eventProcessorManager;
     this.queryStarter = queryStarter;
-    this.operatorChainManager = operatorChainManager;
     this.queryRemover = queryRemover;
     this.metricHolder = metricHolder;
     this.groupSourceManager = groupSourceManager;

@@ -34,7 +34,7 @@ public final class LogicalDagOptimizerTest {
   private static final Logger LOG = Logger.getLogger(LogicalDagOptimizerTest.class.getName());
 
   /**
-   * Test conditional branch chaining.
+   * Test conditional branch.
    * logical dag:
    *                            -> op2 -> sink1
    *             -> cbr1 (idx 0)-> op3 -> sink2
@@ -49,7 +49,8 @@ public final class LogicalDagOptimizerTest {
    */
   @Test
   public void testConditionalBranch() throws InjectionException {
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(TestParameters.GROUP_ID);
+    final MISTQueryBuilder queryBuilder =
+        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID, TestParameters.SUB_GROUP_ID);
     final ContinuousStream<String> src1 =
         queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
     final ContinuousStream<String> op1 = src1.filter((x) -> true);

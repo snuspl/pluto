@@ -20,7 +20,9 @@ import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.core.parameters.TempFolderPath;
-import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.formats.avro.AvroDag;
+import edu.snu.mist.formats.avro.AvroVertex;
+import edu.snu.mist.formats.avro.Edge;
 import edu.snu.mist.utils.TestParameters;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
@@ -47,7 +49,8 @@ public class QueryInfoStoreTest {
   @Test(timeout = 1000)
   public void diskStoreTest() throws InjectionException, IOException {
     // Generate a query
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(TestParameters.GROUP_ID);
+    final MISTQueryBuilder queryBuilder =
+        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID, TestParameters.SUB_GROUP_ID);
     queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
         .flatMap(s -> Arrays.asList(s.split(" ")))
         .filter(s -> s.startsWith("A"))
@@ -82,24 +85,26 @@ public class QueryInfoStoreTest {
     }
 
     // Generate logical plan
-    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = query.getAvroOperatorChainDag();
-    final AvroOperatorChainDag.Builder avroOpChainDagBuilder = AvroOperatorChainDag.newBuilder();
-    final AvroOperatorChainDag avroOpChainDag1 = avroOpChainDagBuilder
-        .setGroupId(TestParameters.GROUP_ID)
+    final Tuple<List<AvroVertex>, List<Edge>> serializedDag = query.getAvroOperatorDag();
+    final AvroDag.Builder avroDagBuilder = AvroDag.newBuilder();
+    final AvroDag avroDag1 = avroDagBuilder
+        .setSuperGroupId(TestParameters.SUPER_GROUP_ID)
+        .setSubGroupId(TestParameters.SUB_GROUP_ID)
         .setJarFilePaths(paths)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .build();
-    final AvroOperatorChainDag avroOpChainDag2 = avroOpChainDagBuilder
-        .setGroupId(TestParameters.GROUP_ID)
+    final AvroDag avroDag2 = avroDagBuilder
+        .setSuperGroupId(TestParameters.SUPER_GROUP_ID)
+        .setSubGroupId(TestParameters.SUB_GROUP_ID)
         .setJarFilePaths(paths)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .build();
 
     // Store the chained dag
-    store.saveAvroOpChainDag(new Tuple<>(queryId1, avroOpChainDag1));
-    store.saveAvroOpChainDag(new Tuple<>(queryId2, avroOpChainDag2));
+    store.saveAvroDag(new Tuple<>(queryId1, avroDag1));
+    store.saveAvroDag(new Tuple<>(queryId2, avroDag2));
     while (!(store.isStored(queryId1) && store.isStored(queryId2))) {
       // Wait until the plan is stored
     }
@@ -107,15 +112,15 @@ public class QueryInfoStoreTest {
     Assert.assertTrue(new File(tmpFolderPath, queryId2 + ".plan").exists());
 
     // Test stored file
-    final AvroOperatorChainDag loadedDag1 = store.load(queryId1);
-    Assert.assertEquals(avroOpChainDag1.getEdges(), loadedDag1.getEdges());
-    Assert.assertEquals(avroOpChainDag1.getSchema(), loadedDag1.getSchema());
-    testVerticesEqual(avroOpChainDag1.getAvroVertices(), loadedDag1.getAvroVertices());
+    final AvroDag loadedDag1 = store.load(queryId1);
+    Assert.assertEquals(avroDag1.getEdges(), loadedDag1.getEdges());
+    Assert.assertEquals(avroDag1.getSchema(), loadedDag1.getSchema());
+    testVerticesEqual(avroDag1.getAvroVertices(), loadedDag1.getAvroVertices());
 
-    final AvroOperatorChainDag loadedDag2 = store.load(queryId2);
-    Assert.assertEquals(avroOpChainDag2.getEdges(), loadedDag2.getEdges());
-    Assert.assertEquals(avroOpChainDag2.getSchema(), loadedDag2.getSchema());
-    testVerticesEqual(avroOpChainDag2.getAvroVertices(), loadedDag2.getAvroVertices());
+    final AvroDag loadedDag2 = store.load(queryId2);
+    Assert.assertEquals(avroDag2.getEdges(), loadedDag2.getEdges());
+    Assert.assertEquals(avroDag2.getSchema(), loadedDag2.getSchema());
+    testVerticesEqual(avroDag2.getAvroVertices(), loadedDag2.getAvroVertices());
 
     // Test deletion
     store.delete(queryId1);
@@ -130,21 +135,54 @@ public class QueryInfoStoreTest {
     folder.delete();
   }
 
+  //@Test(timeout = 1000)
+  public void hashCollisionTest() throws InjectionException, IOException {
+    // Jar files
+    final List<ByteBuffer> jarFiles1 = new LinkedList<>();
+    final ByteBuffer byteBuffer1 = ByteBuffer.wrap(new byte[]{0, 1, 0, 1, 1, 1});
+    final ByteBuffer byteBuffer2 = ByteBuffer.wrap(new byte[]{1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0});
+    final ByteBuffer byteBuffer3 = ByteBuffer.wrap(new byte[]{0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1});
+    jarFiles1.add(byteBuffer1);
+    jarFiles1.add(byteBuffer2);
+    jarFiles1.add(byteBuffer3);
+
+    final List<ByteBuffer> jarFiles2 = new LinkedList<>();
+    // byteBuffer 4 and 5 are the same as 1 and 2.
+    final ByteBuffer byteBuffer4 = ByteBuffer.wrap(new byte[]{0, 1, 0, 1, 1, 1});
+    final ByteBuffer byteBuffer5 = ByteBuffer.wrap(new byte[]{1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0});
+    final ByteBuffer byteBuffer6 = ByteBuffer.wrap(new byte[]{1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0});
+    jarFiles2.add(byteBuffer4);
+    jarFiles2.add(byteBuffer5);
+    jarFiles2.add(byteBuffer6);
+
+    final Injector injector = Tang.Factory.getTang().newInjector();
+    final QueryInfoStore store = injector.getInstance(QueryInfoStore.class);
+    final String tmpFolderPath = injector.getNamedInstance(TempFolderPath.class);
+    final File folder = new File(tmpFolderPath);
+
+    // Store jar files
+    final List<String> paths1 = store.saveJar(jarFiles1);
+    final List<String> paths2 = store.saveJar(jarFiles2);
+
+    // Test if paths were redirected to the right files.
+    Assert.assertEquals(paths2.get(0), paths1.get(0));
+    Assert.assertEquals(paths2.get(1), paths1.get(1));
+    Assert.assertNotEquals(paths2.get(2), paths1.get(2));
+
+    folder.delete();
+  }
+
   /**
    * Tests that two lists of vertices are equal.
    * @param vertices the first list of vertices
    * @param loadedVertices the second list of vertices
    */
-  private void testVerticesEqual(final List<AvroVertexChain> vertices, final List<AvroVertexChain> loadedVertices) {
+  private void testVerticesEqual(final List<AvroVertex> vertices, final List<AvroVertex> loadedVertices) {
     for (int i = 0; i < vertices.size(); i++) {
-      final AvroVertexChain avroVertexChain = vertices.get(i);
-      final AvroVertexChain loadedVertexChain = loadedVertices.get(i);
-      for (int j = 0; j < avroVertexChain.getVertexChain().size(); j++) {
-        final Vertex vertex = avroVertexChain.getVertexChain().get(j);
-        final Vertex loadedVertex = loadedVertexChain.getVertexChain().get(j);
-        Assert.assertEquals(vertex.getConfiguration(), loadedVertex.getConfiguration());
-        Assert.assertEquals(vertex.getSchema(), loadedVertex.getSchema());
-      }
+      final AvroVertex avroVertex = vertices.get(i);
+      final AvroVertex loadedVertex = loadedVertices.get(i);
+      Assert.assertEquals(avroVertex.getConfiguration(), loadedVertex.getConfiguration());
+      Assert.assertEquals(avroVertex.getSchema(), loadedVertex.getSchema());
     }
   }
 }

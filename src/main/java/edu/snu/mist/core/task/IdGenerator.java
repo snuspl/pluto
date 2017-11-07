@@ -30,12 +30,6 @@ public interface IdGenerator {
   String generateOperatorId();
 
   /**
-   * Generates operatorChain Id.
-   * @return generated operatorChain Id
-   */
-  String generateOperatorChainId();
-
-  /**
    * Generates source Id.
    * @return generated source Id
    */

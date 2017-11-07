@@ -17,7 +17,7 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.globalsched.GroupAwareGlobalSchedQueryManagerImpl;
-import edu.snu.mist.formats.avro.AvroOperatorChainDag;
+import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
@@ -32,17 +32,17 @@ import java.util.List;
 public interface QueryManager extends AutoCloseable {
   /**
    * Start to the query.
-   * @param tuple the query id and the operator chain dag
+   * @param tuple the query id and the avro dag
    */
-  QueryControlResult create(Tuple<String, AvroOperatorChainDag> tuple);
+  QueryControlResult create(Tuple<String, AvroDag> tuple);
 
   /**
    * TODO[DELETE] this code is for test.
    * Start submitted queries in batch manner.
    * The operator chain dag will be duplicated for test.
-   * @param tuple the query id list and the operator chain dag
+   * @param tuple the query id list and the avro dag
    */
-  QueryControlResult createBatch(Tuple<List<String>, AvroOperatorChainDag> tuple);
+  QueryControlResult createBatch(Tuple<List<String>, AvroDag> tuple);
 
   /**
    * Deletes the query corresponding to the queryId submitted by client.

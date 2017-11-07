@@ -17,7 +17,7 @@ package edu.snu.mist.common.sinks;
 
 import edu.snu.mist.common.parameters.MQTTBrokerURI;
 import edu.snu.mist.common.parameters.MQTTTopic;
-import edu.snu.mist.common.shared.MQTTSharedResource;
+import edu.snu.mist.common.shared.MQTTResource;
 import org.apache.reef.tang.annotations.Parameter;
 import org.eclipse.paho.client.mqttv3.IMqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -45,7 +45,7 @@ public final class MqttSink implements Sink<MqttMessage> {
   public MqttSink(
       @Parameter(MQTTBrokerURI.class) final String brokerURI,
       @Parameter(MQTTTopic.class) final String topic,
-      final MQTTSharedResource sharedResource) throws IOException, MqttException {
+      final MQTTResource sharedResource) throws IOException, MqttException {
     this.topic = topic;
     this.mqttClient = sharedResource.getMqttSinkClient(brokerURI, topic);
   }

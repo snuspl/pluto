@@ -80,7 +80,7 @@ public final class RuleBasedHelloMist {
         /**
          * Make a stateless query.
          */
-        final MISTStatelessQuery ruleBasedQuery = new MISTStatelessQuery.Builder("example-group")
+        final MISTStatelessQuery ruleBasedQuery = new MISTStatelessQuery.Builder("example-group", "user1")
             .input(input)
             .addStatelessRule(new StatelessRule.Builder()
                 .setCondition(ComparisonCondition.eq("ID", "HelloMIST"))

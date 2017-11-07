@@ -31,11 +31,6 @@ import java.util.List;
 public final class NoMergingQueryStarter implements QueryStarter {
 
   /**
-   * Operator chain manager that manages the operator chains.
-   */
-  private final OperatorChainManager operatorChainManager;
-
-  /**
    * The map that has a query id as a key and an execution dag as a value.
    */
   private final ExecutionPlanDagMap executionPlanDagMap;
@@ -51,11 +46,9 @@ public final class NoMergingQueryStarter implements QueryStarter {
   private final ActiveExecutionVertexIdMap activeExecutionVertexIdMap;
 
   @Inject
-  private NoMergingQueryStarter(final OperatorChainManager operatorChainManager,
-                                final ExecutionPlanDagMap executionPlanDagMap,
+  private NoMergingQueryStarter(final ExecutionPlanDagMap executionPlanDagMap,
                                 final DagGenerator dagGenerator,
                                 final ActiveExecutionVertexIdMap activeExecutionVertexIdMap) {
-    this.operatorChainManager = operatorChainManager;
     this.executionPlanDagMap = executionPlanDagMap;
     this.dagGenerator = dagGenerator;
     this.activeExecutionVertexIdMap = activeExecutionVertexIdMap;
@@ -67,12 +60,13 @@ public final class NoMergingQueryStarter implements QueryStarter {
    */
   @Override
   public void start(final String queryId,
+                    final Query query,
                     final DAG<ConfigVertex, MISTEdge> configDag,
                     final List<String> jarFilePaths)
       throws InjectionException, IOException, ClassNotFoundException {
     final ExecutionDag submittedExecutionDag = dagGenerator.generate(configDag, jarFilePaths);
     executionPlanDagMap.put(queryId, submittedExecutionDag);
-    QueryStarterUtils.setUpOutputEmitters(operatorChainManager, submittedExecutionDag);
+    QueryStarterUtils.setUpOutputEmitters(submittedExecutionDag, query);
     // starts to receive input data stream from the sources
     final DAG<ExecutionVertex, MISTEdge> dag = submittedExecutionDag.getDag();
     for (final ExecutionVertex source : dag.getRootVertices()) {

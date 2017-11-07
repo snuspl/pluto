@@ -40,9 +40,14 @@ public final class BatchSubmissionConfiguration {
   private final MISTBiFunction<String, String, Set<String>> subTopicGenerateFunc;
 
   /**
-   * A list of group id.
+   * A list of super group id.
    */
-  private final List<String> groupIdList;
+  private final List<String> superGroupIdList;
+
+  /**
+   * A list of sub group id.
+   */
+  private final List<String> subGroupIdList;
 
   /**
    * The factor value which indicates how many queries can be merged into one.
@@ -51,20 +56,24 @@ public final class BatchSubmissionConfiguration {
 
   public BatchSubmissionConfiguration(final MISTBiFunction<String, String, Set<String>> subTopicGenerateFunc,
                                       final MISTBiFunction<String, String, String> pubTopicGenerateFunc,
-                                      final List<String> groupIdList,
+                                      final List<String> superGroupIdList,
+                                      final List<String> subGroupIdList,
                                       final int mergeFactor) {
     this.subTopicGenerateFunc = subTopicGenerateFunc;
     this.pubTopicGenerateFunc = pubTopicGenerateFunc;
-    this.groupIdList = groupIdList;
+    this.superGroupIdList = superGroupIdList;
+    this.subGroupIdList = subGroupIdList;
     this.mergeFactor = mergeFactor;
   }
 
   public BatchSubmissionConfiguration(final MISTBiFunction<String, String, Set<String>> subTopicGenerateFunc,
                                       final MISTBiFunction<String, String, String> pubTopicGenerateFunc,
-                                      final List<String> groupIdList) {
+                                      final List<String> superGroupIdList,
+                                      final List<String> subGroupIdList) {
     this.subTopicGenerateFunc = subTopicGenerateFunc;
     this.pubTopicGenerateFunc = pubTopicGenerateFunc;
-    this.groupIdList = groupIdList;
+    this.superGroupIdList = superGroupIdList;
+    this.subGroupIdList = subGroupIdList;
   }
 
   public MISTBiFunction<String, String, String> getPubTopicGenerateFunc() {
@@ -75,8 +84,12 @@ public final class BatchSubmissionConfiguration {
     return subTopicGenerateFunc;
   }
 
-  public List<String> getGroupIdList() {
-    return groupIdList;
+  public List<String> getSuperGroupIdList() {
+    return superGroupIdList;
+  }
+
+  public List<String> getSubGroupIdList() {
+    return subGroupIdList;
   }
 
   // TODO:

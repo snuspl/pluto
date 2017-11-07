@@ -15,23 +15,26 @@
  */
 package edu.snu.mist.core.task.threadbased;
 
+import edu.snu.mist.common.MistDataEvent;
+import edu.snu.mist.common.MistEvent;
+import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.*;
-import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
+import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
-import edu.snu.mist.formats.avro.AvroOperatorChainDag;
+import edu.snu.mist.formats.avro.AvroDag;
+import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.QueryControlResult;
+import io.netty.util.internal.ConcurrentSet;
 import org.apache.reef.io.Tuple;
 
 import javax.inject.Inject;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -62,7 +65,7 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
   /**
    * Map that has the Operator chain as a key and the thread as a value.
    */
-  private final Map<OperatorChain, Thread> threads;
+  private final Set<Thread> threads;
 
   /**
    * A batch query submission helper.
@@ -70,7 +73,7 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
   private final BatchQueryCreator batchQueryCreator;
 
   /**
-   * A dag generator that creates DAG<ConfigVertex, MISTEdge> from avro vertex chain dag.
+   * A dag generator that creates DAG<ConfigVertex, MISTEdge> from avro dag.
    */
   private final ConfigDagGenerator configDagGenerator;
 
@@ -86,7 +89,7 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
-    this.threads = new ConcurrentHashMap<>();
+    this.threads = new ConcurrentSet<>();
     this.batchQueryCreator = batchQueryCreator;
     this.configDagGenerator = configDagGenerator;
   }
@@ -95,20 +98,20 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
    * Create a submitted query.
    * It converts the avro operator chain dag (query) to the execution dag,
    * and executes the sources in order to receives data streams.
-   * Before the queries are executed, it stores the avro operator chain dag into disk.
-   * We can regenerate the queries from the stored avro operator chain dag.
-   * @param tuple a pair of the query id and the avro operator chain dag
+   * Before the queries are executed, it stores the avro dag into disk.
+   * We can regenerate the queries from the stored avro dag.
+   * @param tuple a pair of the query id and the avro dag
    * @return submission result
    */
   @Override
-  public QueryControlResult create(final Tuple<String, AvroOperatorChainDag> tuple) {
+  public QueryControlResult create(final Tuple<String, AvroDag> tuple) {
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(tuple.getKey());
     try {
       // Create the submitted query
-      // 1) Saves the avro operator chain dag to the PlanStore and
-      // converts the avro operator chain dag to the logical and execution dag
-      planStore.saveAvroOpChainDag(tuple);
+      // 1) Saves the avro dag to the PlanStore and
+      // converts the avro dag to the logical and execution dag
+      planStore.saveAvroDag(tuple);
 
       final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
       final ExecutionDag executionDag =
@@ -134,11 +137,11 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
    * TODO[DELETE] this code is for test.
    * Start submitted queries in batch manner.
    * The operator chain dag will be duplicated for test.
-   * @param tuple a pair of the query id and the avro operator chain dag
+   * @param tuple a pair of the query id and the avro dag
    * @return submission result
    */
   @Override
-  public QueryControlResult createBatch(final Tuple<List<String>, AvroOperatorChainDag> tuple) {
+  public QueryControlResult createBatch(final Tuple<List<String>, AvroDag> tuple) {
     final List<String> queryIdList = tuple.getKey();
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(queryIdList.get(0));
@@ -158,6 +161,39 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
       return queryControlResult;
     }
   }
+  // Return false if the queue is empty or the previously event processing is not finished.
+  private boolean processNextEvent(
+      final BlockingQueue<Tuple<MistEvent, Map<ExecutionVertex, MISTEdge>>> queue) throws InterruptedException {
+    final Tuple<MistEvent, Map<ExecutionVertex, MISTEdge>> event = queue.take();
+      for (final Map.Entry<ExecutionVertex, MISTEdge> entry : event.getValue().entrySet()) {
+        process(event.getKey(), entry.getValue().getDirection(), (PhysicalOperator)entry.getKey());
+      }
+    return true;
+  }
+
+  private void process(final MistEvent event,
+                       final Direction direction,
+                       final PhysicalOperator operator) {
+    try {
+      if (event.isData()) {
+        if (direction == Direction.LEFT) {
+          operator.getOperator().processLeftData((MistDataEvent) event);
+        } else {
+          operator.getOperator().processRightData((MistDataEvent) event);
+        }
+        operator.setLatestDataTimestamp(event.getTimestamp());
+      } else {
+        if (direction == Direction.LEFT) {
+          operator.getOperator().processLeftWatermark((MistWatermarkEvent) event);
+        } else {
+          operator.getOperator().processRightWatermark((MistWatermarkEvent) event);
+        }
+        operator.setLatestWatermarkTimestamp(event.getTimestamp());
+      }
+    } catch (final NullPointerException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   /**
    * Sets the OutputEmitters of the sources, operators and sinks
@@ -168,6 +204,8 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
     final List<PhysicalSource> sources = new LinkedList<>();
     final DAG<ExecutionVertex, MISTEdge> dag = physicalPlan.getDag();
     final Iterator<ExecutionVertex> iterator = GraphUtils.topologicalSort(dag);
+    final BlockingQueue<Tuple<MistEvent, Map<ExecutionVertex, MISTEdge>>> eventQueue = new LinkedBlockingQueue<>();
+
     while (iterator.hasNext()) {
       final ExecutionVertex executionVertex = iterator.next();
       switch (executionVertex.getType()) {
@@ -175,29 +213,16 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
           final PhysicalSource source = (PhysicalSource)executionVertex;
           final Map<ExecutionVertex, MISTEdge> nextOps = dag.getEdges(source);
           // 3) Sets output emitters
-          source.setOutputEmitter(new SourceOutputEmitter<>(nextOps));
+          source.setOutputEmitter(new ThreadBasedSourceOutputEmitter<>(nextOps, eventQueue));
           sources.add(source);
           break;
         }
-        case OPERATOR_CHAIN: {
+        case OPERATOR: {
           // 2) Inserts the OperatorChain to OperatorChainManager.
-          final OperatorChain operatorChain = (OperatorChain)executionVertex;
+          final PhysicalOperator physicalOp = (PhysicalOperator)executionVertex;
           final Map<ExecutionVertex, MISTEdge> edges =
-              dag.getEdges(operatorChain);
-
-          // Create a thread per operator chain
-          final Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-              while (!Thread.currentThread().isInterrupted()) {
-                operatorChain.processNextEvent();
-              }
-            }
-          });
-          thread.start();
-          threads.put(operatorChain, thread);
-          // 3) Sets output emitters
-          operatorChain.setOutputEmitter(new OperatorOutputEmitter(edges));
+              dag.getEdges(physicalOp);
+          physicalOp.getOperator().setOutputEmitter(new OperatorOutputEmitter(edges));
           break;
         }
         case SINK: {
@@ -207,6 +232,23 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
           throw new RuntimeException("Invalid vertex type: " + executionVertex.getType());
       }
     }
+
+    // Create a thread
+    final Thread t = new Thread(new Runnable() {
+      @Override
+      public void run() {
+        while (!Thread.currentThread().isInterrupted()) {
+          try {
+            processNextEvent(eventQueue);
+          } catch (InterruptedException e) {
+            // try again
+          }
+        }
+      }
+    });
+
+    threads.add(t);
+    t.start();
 
     // 4) starts to receive input data stream from the sources
     for (final PhysicalSource source : sources) {
@@ -218,7 +260,7 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
   public void close() throws Exception {
     scheduler.shutdown();
     planStore.close();
-    for (final Thread thread : threads.values()) {
+    for (final Thread thread : threads) {
       thread.interrupt();
     }
   }

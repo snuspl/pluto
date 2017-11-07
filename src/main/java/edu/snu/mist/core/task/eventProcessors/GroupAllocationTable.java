@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.eventProcessors;
 
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.Group;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.Collection;
@@ -42,7 +42,7 @@ public interface GroupAllocationTable {
    * @param eventProcessor event processor
    * @return allocated groups.
    */
-  Collection<GlobalSchedGroupInfo> getValue(EventProcessor eventProcessor);
+  Collection<Group> getValue(EventProcessor eventProcessor);
 
   /**
    * Put a new event processor.
@@ -59,5 +59,5 @@ public interface GroupAllocationTable {
   /**
    * Remove the event processor from the allocation table.
    */
-  Collection<GlobalSchedGroupInfo> remove(EventProcessor key);
+  Collection<Group> remove(EventProcessor key);
 }

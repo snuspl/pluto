@@ -19,8 +19,8 @@ import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcesso
 import edu.snu.mist.core.task.eventProcessors.rebalancer.DefaultGroupRebalancerImpl;
 import edu.snu.mist.core.task.eventProcessors.rebalancer.FirstFitRebalancerImpl;
 import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupRebalancer;
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
 import edu.snu.mist.core.task.globalsched.GlobalSchedNonBlockingEventProcessorFactory;
+import edu.snu.mist.core.task.globalsched.Group;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -85,8 +85,9 @@ public final class GroupRebalancerTest {
       final EventProcessor eventProcessor = eventProcessors.get(i);
       final List<Double> loadList = loads.get(i);
       for (final Double load : loadList) {
-        final GlobalSchedGroupInfo group = mock(GlobalSchedGroupInfo.class);
+        final Group group = mock(Group.class);
         when(group.getLoad()).thenReturn(load);
+        when(group.isSplited()).thenReturn(false);
         when(group.toString()).thenReturn(Double.toString(load));
         groupAllocationTable.getValue(eventProcessor).add(group);
       }
@@ -146,10 +147,10 @@ public final class GroupRebalancerTest {
       final EventProcessor eventProcessor = eventProcessors.get(i);
       final List<Double> loadList = loads.get(i);
       for (final Double load : loadList) {
-        final GlobalSchedGroupInfo group = mock(GlobalSchedGroupInfo.class);
+        final Group group = mock(Group.class);
         when(group.getLoad()).thenReturn(load);
         when(group.toString()).thenReturn(Double.toString(load));
-        when(group.isReady()).thenReturn(true);
+        when(group.isSplited()).thenReturn(false);
         groupAllocationTable.getValue(eventProcessor).add(group);
       }
     }
@@ -170,9 +171,9 @@ public final class GroupRebalancerTest {
    * @param groups groups
    * @return total load
    */
-  private double calculateLoadOfGroups(final Collection<GlobalSchedGroupInfo> groups) {
+  private double calculateLoadOfGroups(final Collection<Group> groups) {
     double sum = 0;
-    for (final GlobalSchedGroupInfo group : groups) {
+    for (final Group group : groups) {
       final double fixedLoad = group.getLoad();
       sum += fixedLoad;
     }
@@ -195,8 +196,8 @@ public final class GroupRebalancerTest {
     public void update() {
       for (final EventProcessor eventProcessor : groupAllocationTable.getKeys()) {
         double load = 0.0;
-        final Collection<GlobalSchedGroupInfo> groups = groupAllocationTable.getValue(eventProcessor);
-        for (final GlobalSchedGroupInfo group : groups) {
+        final Collection<Group> groups = groupAllocationTable.getValue(eventProcessor);
+        for (final Group group : groups) {
           load += group.getLoad();
         }
         eventProcessor.setLoad(load);

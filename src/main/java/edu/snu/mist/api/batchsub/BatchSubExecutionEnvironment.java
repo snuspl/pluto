@@ -15,7 +15,10 @@
  */
 package edu.snu.mist.api.batchsub;
 
-import edu.snu.mist.api.*;
+import edu.snu.mist.api.APIQueryControlResult;
+import edu.snu.mist.api.APIQueryControlResultImpl;
+import edu.snu.mist.api.JarFileUtils;
+import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.formats.avro.*;
 import org.apache.avro.ipc.NettyTransceiver;
@@ -108,22 +111,24 @@ public final class BatchSubExecutionEnvironment {
     }
 
     // Build logical plan using serialized vertices and edges.
-    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = queryToSubmit.getAvroOperatorChainDag();
-    final AvroOperatorChainDag.Builder operatorChainDagBuilder = AvroOperatorChainDag.newBuilder();
-    final AvroOperatorChainDag operatorChainDag = operatorChainDagBuilder
+    final Tuple<List<AvroVertex>, List<Edge>> serializedDag = queryToSubmit.getAvroOperatorDag();
+    final AvroDag.Builder avroDagBuilder = AvroDag.newBuilder();
+    final AvroDag avroDag = avroDagBuilder
         .setJarFilePaths(jarUploadResult.getPaths())
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
-        .setGroupId(queryToSubmit.getGroupId())
+        .setSuperGroupId(queryToSubmit.getSuperGroupId())
+        .setSubGroupId(queryToSubmit.getSubGroupId())
         .setPubTopicGenerateFunc(
             SerializeUtils.serializeToString(batchSubConfig.getPubTopicGenerateFunc()))
         .setSubTopicGenerateFunc(
             SerializeUtils.serializeToString(batchSubConfig.getSubTopicGenerateFunc()))
-        .setGroupIdList(batchSubConfig.getGroupIdList())
+        .setSuperGroupIdList(batchSubConfig.getSuperGroupIdList())
+        .setSubGroupIdList(batchSubConfig.getSubGroupIdList())
         .setMergeFactor(batchSubConfig.getMergeFactor())
         .build();
     final QueryControlResult queryControlResult =
-        proxyToTask.sendBatchQueries(operatorChainDag, batchSubConfig.getGroupIdList().size());
+        proxyToTask.sendBatchQueries(avroDag, batchSubConfig.getSuperGroupIdList().size());
 
     // Transform QueryControlResult to APIQueryControlResult
     final APIQueryControlResult apiQueryControlResult =

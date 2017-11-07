@@ -18,10 +18,14 @@ package edu.snu.mist.core.task.eventProcessors.groupAssigner;
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.GroupAllocationTable;
 import edu.snu.mist.core.task.eventProcessors.parameters.GroupBalancerGracePeriod;
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.eventProcessors.parameters.UnderloadedThreshold;
+import edu.snu.mist.core.task.globalsched.Group;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 /**
  * A group assigner that assigns a new group to the event processor that has the minimum load.
@@ -45,16 +49,21 @@ public final class MinLoadGroupAssignerImpl implements GroupAssigner {
    */
   private final long gracePeriod;
 
+  private final Random random = new Random();
   /**
    * Group allocation table.
    */
   private final GroupAllocationTable groupAllocationTable;
 
+  private final double underloadedThreshold;
+
   @Inject
   private MinLoadGroupAssignerImpl(@Parameter(GroupBalancerGracePeriod.class) final long gracePeriod,
-                                   final GroupAllocationTable groupAllocationTable) {
+                                   final GroupAllocationTable groupAllocationTable,
+                                   @Parameter(UnderloadedThreshold.class) final double underloadedThreshold) {
     this.gracePeriod = gracePeriod;
     this.groupAllocationTable = groupAllocationTable;
+    this.underloadedThreshold = underloadedThreshold;
   }
 
   /**
@@ -80,19 +89,44 @@ public final class MinLoadGroupAssignerImpl implements GroupAssigner {
     return minEventProcessor;
   }
 
+  private List<EventProcessor> underloadedThreads() {
+    final List<EventProcessor> under = new ArrayList<>(groupAllocationTable.getKeys().size());
+    for (final EventProcessor eventProcessor : groupAllocationTable.getEventProcessorsNotRunningIsolatedGroup()) {
+      final double load = eventProcessor.getLoad();
+      if (load < underloadedThreshold) {
+        under.add(eventProcessor);
+      }
+    }
+    return under;
+  }
+
   /**
    * Assign the new group to the event processor that has the latest minimum load.
    * @param groupInfo new group
    */
   @Override
-  public void assignGroup(final GlobalSchedGroupInfo groupInfo) {
-    // Reselect the event processor that has the minimum
-    final EventProcessor minLoadEventProcessor = findMinLoadEventProcessor();
-    //latestPickTime = System.currentTimeMillis();
-    latestMinLoadEventProcessor = minLoadEventProcessor;
+  public void assignGroup(final Group groupInfo) {
+    final List<EventProcessor> uThreads = underloadedThreads();
 
-    groupAllocationTable.getValue(latestMinLoadEventProcessor).add(groupInfo);
-    latestMinLoadEventProcessor.setLoad(latestMinLoadEventProcessor.getLoad() + groupInfo.getLoad());
+    if (uThreads.size() > 0) {
+      final int index = random.nextInt(uThreads.size());
+
+      final EventProcessor eventProcessor = uThreads.get(index);
+
+      groupAllocationTable.getValue(eventProcessor).add(groupInfo);
+      groupInfo.setEventProcessor(eventProcessor);
+      eventProcessor.setLoad(eventProcessor.getLoad() + groupInfo.getLoad());
+
+    } else {
+      // Reselect the event processor that has the minimum
+      final EventProcessor minLoadEventProcessor = findMinLoadEventProcessor();
+      //latestPickTime = System.currentTimeMillis();
+      latestMinLoadEventProcessor = minLoadEventProcessor;
+
+      groupAllocationTable.getValue(latestMinLoadEventProcessor).add(groupInfo);
+      groupInfo.setEventProcessor(latestMinLoadEventProcessor);
+      latestMinLoadEventProcessor.setLoad(latestMinLoadEventProcessor.getLoad() + groupInfo.getLoad());
+    }
   }
 
   @Override

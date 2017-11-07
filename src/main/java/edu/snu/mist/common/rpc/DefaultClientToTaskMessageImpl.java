@@ -18,10 +18,7 @@ package edu.snu.mist.common.rpc;
 import edu.snu.mist.core.task.QueryIdGenerator;
 import edu.snu.mist.core.task.QueryManager;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
-import edu.snu.mist.formats.avro.AvroOperatorChainDag;
-import edu.snu.mist.formats.avro.ClientToTaskMessage;
-import edu.snu.mist.formats.avro.JarUploadResult;
-import edu.snu.mist.formats.avro.QueryControlResult;
+import edu.snu.mist.formats.avro.*;
 import org.apache.avro.AvroRemoteException;
 import org.apache.reef.io.Tuple;
 
@@ -87,22 +84,22 @@ public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage
   }
 
   @Override
-  public QueryControlResult sendQueries(final AvroOperatorChainDag chainDag) throws AvroRemoteException {
-    final String queryId = queryIdGenerator.generate(chainDag);
-    return queryManager.create(new Tuple<>(queryId, chainDag));
+  public QueryControlResult sendQueries(final AvroDag avroDag) throws AvroRemoteException {
+    final String queryId = queryIdGenerator.generate(avroDag);
+    return queryManager.create(new Tuple<>(queryId, avroDag));
   }
 
   /**
    *  TODO[DELETE] this code is for test.
    */
   @Override
-  public QueryControlResult sendBatchQueries(final AvroOperatorChainDag chainDag,
+  public QueryControlResult sendBatchQueries(final AvroDag avroDag,
                                              final int batchSize) throws AvroRemoteException {
     final List<String> queryIdList = new ArrayList<>();
     for (int i = 0; i < batchSize; i++) {
-      queryIdList.add(queryIdGenerator.generate(chainDag));
+      queryIdList.add(queryIdGenerator.generate(avroDag));
     }
-    return queryManager.createBatch(new Tuple<>(queryIdList, chainDag));
+    return queryManager.createBatch(new Tuple<>(queryIdList, avroDag));
   }
 
   @Override

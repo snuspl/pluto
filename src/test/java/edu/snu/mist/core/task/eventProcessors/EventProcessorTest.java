@@ -16,12 +16,11 @@
 package edu.snu.mist.core.task.eventProcessors;
 
 import edu.snu.mist.common.parameters.GroupId;
-import edu.snu.mist.core.task.OperatorChain;
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
-import edu.snu.mist.core.task.globalsched.GlobalSchedNonBlockingEventProcessor;
-import edu.snu.mist.core.task.globalsched.GroupEvent;
-import edu.snu.mist.core.task.globalsched.NextGroupSelector;
-import junit.framework.Assert;
+import edu.snu.mist.core.parameters.SubGroupId;
+import edu.snu.mist.core.task.DefaultQueryImpl;
+import edu.snu.mist.core.task.Query;
+import edu.snu.mist.core.task.SourceOutputEmitter;
+import edu.snu.mist.core.task.globalsched.*;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -30,6 +29,7 @@ import org.junit.Test;
 
 import java.util.Collection;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -45,57 +45,98 @@ public final class EventProcessorTest {
    * Create a new group.
    * @throws InjectionException
    */
-  private GlobalSchedGroupInfo createGroup(final String groupId) throws InjectionException {
+  private Group createGroup(final String groupId) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(GroupId.class, groupId);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    return injector.getInstance(GlobalSchedGroupInfo.class);
+    return injector.getInstance(Group.class);
+  }
+
+  private SubGroup createSubGroup(final String subGroupId) throws InjectionException {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(SubGroupId.class, subGroupId);
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    return injector.getInstance(SubGroup.class);
   }
 
   @Test
-  public void eventProcessorProcessingTest() throws InjectionException {
-    final BlockingQueue<GlobalSchedGroupInfo> queue = new LinkedBlockingQueue<>();
+  public void eventProcessorProcessingTest() throws InjectionException, InterruptedException {
+    final BlockingQueue<Group> queue = new LinkedBlockingQueue<>();
 
-    final GlobalSchedGroupInfo group1 = createGroup("group1");
-    final GlobalSchedGroupInfo group2 = createGroup("group2");
+    final Group group1 = createGroup("group1");
 
-    group1.setDispatched();
-    group2.setDispatched();
+    final Group group2 = createGroup("group2");
 
+    final Group group3 = createGroup("group3");
+
+    final CountDownLatch countDownLatch = new CountDownLatch(31);
     final AtomicInteger numEvent1 = new AtomicInteger(10);
-    final OperatorChain oc1 = mock(OperatorChain.class);
+    final SourceOutputEmitter oc1 = mock(SourceOutputEmitter.class);
     final AtomicInteger numEvent2 = new AtomicInteger(20);
-    final OperatorChain oc2 = mock(OperatorChain.class);
+    final SourceOutputEmitter oc2 = mock(SourceOutputEmitter.class);
+    final AtomicInteger numEvent3 = new AtomicInteger(1);
+    final SourceOutputEmitter oc3 = mock(SourceOutputEmitter.class);
 
     when(oc1.numberOfEvents()).thenReturn(numEvent1.get());
-    when(oc1.processNextEvent()).thenAnswer((icm) -> {
-      Thread.sleep(10);
-      return numEvent1.getAndDecrement() != 0;
-    });
-    when(oc2.numberOfEvents()).thenReturn(numEvent2.get());
-    when(oc2.processNextEvent()).thenAnswer((icm) -> {
-      Thread.sleep(10);
-      return numEvent2.getAndDecrement() != 0;
+    when(oc1.processAllEvent()).thenAnswer((icm) -> {
+      int cnt = 0;
+      while (numEvent1.getAndDecrement() != 0) {
+        Thread.sleep(10);
+        countDownLatch.countDown();
+        cnt += 1;
+      }
+      return cnt;
     });
 
-    group1.getOperatorChainManager().insert(oc1);
-    group1.getOperatorChainManager().insert(oc2);
+    when(oc2.numberOfEvents()).thenReturn(numEvent2.get());
+    when(oc2.processAllEvent()).thenAnswer((icm) -> {
+      int cnt = 0;
+      while (numEvent2.getAndDecrement() != 0) {
+        Thread.sleep(10);
+        countDownLatch.countDown();
+        cnt += 1;
+      }
+      return cnt;
+    });
+
+    when(oc3.numberOfEvents()).thenReturn(numEvent3.get());
+    when(oc3.processAllEvent()).thenAnswer((icm) -> {
+      int cnt = 0;
+      while (numEvent3.getAndDecrement() != 0) {
+        Thread.sleep(10);
+        countDownLatch.countDown();
+        cnt += 1;
+      }
+      return cnt;
+    });
+
 
     final NextGroupSelector nextGroupSelector = new TestNextGroupSelector(queue);
 
-    final EventProcessor eventProcessor = new GlobalSchedNonBlockingEventProcessor(nextGroupSelector);
+    final EventProcessor eventProcessor = new GlobalSchedNonBlockingEventProcessor(nextGroupSelector, 1);
+
+    group1.setEventProcessor(eventProcessor);
+    group2.setEventProcessor(eventProcessor);
+    group3.setEventProcessor(eventProcessor);
+
+    final Query query1 = new DefaultQueryImpl("q1");
+    group1.addQuery(query1);
+    final Query query2 = new DefaultQueryImpl("q2");
+    group2.addQuery(query2);
+    final Query query3 = new DefaultQueryImpl("q3");
+    group3.addQuery(query3);
+
+
+    query1.insert(oc1);
+    query2.insert(oc2);
+    query3.insert(oc3);
+
     eventProcessor.start();
     queue.add(group1);
     queue.add(group2);
+    queue.add(group3);
 
-    while (!queue.isEmpty()) {
-      // wait
-    }
-
-    LOG.info("Group1 processing time: " + group1.getProcessingTime()
-        + ", processed events: " + group1.getProcessingEvent());
-    Assert.assertTrue(group1.getProcessingTime().get() > 0);
-    Assert.assertEquals(30, group1.getProcessingEvent().get());
+    countDownLatch.await();
   }
 
   /**
@@ -103,17 +144,16 @@ public final class EventProcessorTest {
    */
   final class TestNextGroupSelector implements NextGroupSelector {
 
-    private final BlockingQueue<GlobalSchedGroupInfo> groups;
+    private final BlockingQueue<Group> groups;
 
-    public TestNextGroupSelector(final BlockingQueue<GlobalSchedGroupInfo> groups) {
+    public TestNextGroupSelector(final BlockingQueue<Group> groups) {
       this.groups = groups;
     }
 
     @Override
-    public GlobalSchedGroupInfo getNextExecutableGroup() {
+    public Group getNextExecutableGroup() {
       try {
-        final GlobalSchedGroupInfo group =  groups.take();
-        group.setProcessing();
+        final Group group =  groups.take();
         return group;
       } catch (InterruptedException e) {
         e.printStackTrace();
@@ -122,19 +162,19 @@ public final class EventProcessorTest {
     }
 
     @Override
-    public void reschedule(final GlobalSchedGroupInfo groupInfo, final boolean miss) {
+    public void reschedule(final Group groupInfo, final boolean miss) {
       if (!miss) {
         groups.add(groupInfo);
       }
     }
 
     @Override
-    public void reschedule(final Collection<GlobalSchedGroupInfo> groupInfos) {
+    public void reschedule(final Collection<Group> groupInfos) {
 
     }
 
     @Override
-    public boolean removeDispatchedGroup(final GlobalSchedGroupInfo group) {
+    public boolean removeDispatchedGroup(final Group group) {
       return false;
     }
 

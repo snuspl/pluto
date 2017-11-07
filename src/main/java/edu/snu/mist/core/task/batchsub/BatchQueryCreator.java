@@ -31,10 +31,10 @@ import edu.snu.mist.common.parameters.MergeFakeParameter;
 import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
 import edu.snu.mist.core.task.ClassLoaderProvider;
 import edu.snu.mist.core.task.QueryManager;
-import edu.snu.mist.formats.avro.AvroOperatorChainDag;
-import edu.snu.mist.formats.avro.AvroVertexChain;
+import edu.snu.mist.core.task.stores.QueryInfoStore;
+import edu.snu.mist.formats.avro.AvroDag;
+import edu.snu.mist.formats.avro.AvroVertex;
 import edu.snu.mist.formats.avro.QueryControlResult;
-import edu.snu.mist.formats.avro.Vertex;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.*;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -43,13 +43,12 @@ import org.apache.reef.tang.implementation.java.ClassHierarchyImpl;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import javax.inject.Inject;
+import java.io.File;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
-import static java.lang.Thread.sleep;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * TODO[DELETE] this code is for test.
@@ -67,11 +66,24 @@ public final class BatchQueryCreator {
    */
   private final ClassLoaderProvider classLoaderProvider;
 
+  /**
+   * A map which contains the class loaders for each super group.
+   */
+  private final ConcurrentMap<String, List<String>> superGroupJarPathMap;
+
+  private final QueryInfoStore planStore;
+
+  private final AtomicInteger duplicateNum;
+
   @Inject
   private BatchQueryCreator(final AvroConfigurationSerializer avroConfigurationSerializer,
-                            final ClassLoaderProvider classLoaderProvider) {
+                            final ClassLoaderProvider classLoaderProvider,
+                            final QueryInfoStore planStore) {
     this.avroConfigurationSerializer = avroConfigurationSerializer;
     this.classLoaderProvider = classLoaderProvider;
+    this.superGroupJarPathMap = new ConcurrentHashMap<>();
+    this.planStore = planStore;
+    this.duplicateNum = new AtomicInteger(0);
   }
 
   /**
@@ -80,66 +92,87 @@ public final class BatchQueryCreator {
    * @param tuple a pair of query id list and the operator chain dag
    * @param manager a query manager
    */
-  public void duplicate(final Tuple<List<String>, AvroOperatorChainDag> tuple,
+  public void duplicate(final Tuple<List<String>, AvroDag> tuple,
                         final QueryManager manager) throws Exception {
+    
     final List<String> queryIdList = tuple.getKey();
-    final AvroOperatorChainDag operatorChainDag = tuple.getValue();
+    final AvroDag avroDag = tuple.getValue();
+    final List<String> superGroupIdList = avroDag.getSuperGroupIdList();
+    final List<String> subGroupIdList = avroDag.getSubGroupIdList();
 
     // Get classloader
-    final URL[] urls = SerializeUtils.getJarFileURLs(operatorChainDag.getJarFilePaths());
-    final ClassLoader classLoader = classLoaderProvider.newInstance(urls);
+    final URL[] jarUrls = SerializeUtils.getJarFileURLs(avroDag.getJarFilePaths());
+
+    // Make new jars for new super groups
+    for (final String superGroupId: superGroupIdList) {
+      if (!superGroupJarPathMap.containsKey(superGroupId)) {
+        final List<String> paths = new ArrayList<>();
+        for (final String jarPath: avroDag.getJarFilePaths()) {
+          final String newPath = String.format("/tmp/%d-duplicate.jar", duplicateNum.getAndIncrement());
+          Files.copy(new File(jarPath).toPath(), new File(newPath).toPath());
+          paths.add(newPath);
+        }
+        superGroupJarPathMap.putIfAbsent(superGroupId, paths);
+        //System.err.println(String.format("Super Group Id = %s, Jar path: %s", superGroupId, paths));
+      }
+    }
+
+    final ClassLoader tempClassLoader = classLoaderProvider.newInstance(jarUrls);
 
     // Load the batch submission configuration
     final MISTBiFunction<String, String, String> pubTopicFunc = SerializeUtils.deserializeFromString(
-        operatorChainDag.getPubTopicGenerateFunc(), classLoader);
+        avroDag.getPubTopicGenerateFunc(), tempClassLoader);
     final MISTBiFunction<String, String, Set<String>> subTopicFunc = SerializeUtils.deserializeFromString(
-        operatorChainDag.getSubTopicGenerateFunc(), classLoader);
-    final List<String> groupIdList = operatorChainDag.getGroupIdList();
+        avroDag.getSubTopicGenerateFunc(), tempClassLoader);
+
 
     // Parallelize the submission process
-    final int batchThreads = groupIdList.size() / 100 + ((groupIdList.size() % 100 == 0) ? 0 : 1);
+    final int batchThreads = superGroupIdList.size() / 100 + ((superGroupIdList.size() % 100 == 0) ? 0 : 1);
     final ExecutorService executorService = Executors.newFixedThreadPool(batchThreads);
     final List<Future> futures = new LinkedList<>();
     final boolean[] success = new boolean[batchThreads];
 
     final int mergeFactor = tuple.getValue().getMergeFactor();
-    final List<String> fakeMergeIdList = new ArrayList<>(groupIdList.size());
-    for (int i = 0; i < groupIdList.size(); i++) {
+    final List<String> fakeMergeIdList = new ArrayList<>(superGroupIdList.size());
+    for (int i = 0; i < superGroupIdList.size(); i++) {
       fakeMergeIdList.add(String.valueOf(i % mergeFactor));
     }
 
     for (int i = 0; i < batchThreads; i++) {
       final int threadNum = i;
-      final List<Configuration> originConfs = new ArrayList<>(operatorChainDag.getAvroVertices().size());
-      for (final AvroVertexChain avroVertexChain: operatorChainDag.getAvroVertices()) {
-        originConfs.add(avroConfigurationSerializer.fromString(avroVertexChain.getVertexChain()
-            .get(0).getConfiguration(), new ClassHierarchyImpl(urls)));
+      final List<Configuration> originConfs = new ArrayList<>(avroDag.getAvroVertices().size());
+      for (final AvroVertex avroVertex : avroDag.getAvroVertices()) {
+        originConfs.add(avroConfigurationSerializer.fromString(
+            avroVertex.getConfiguration(), new ClassHierarchyImpl(jarUrls)));
       }
-      // Do a deep copy for operatorChainDag
-      final AvroOperatorChainDag opChainDagClone = new Cloner().deepClone(operatorChainDag);
+      // Do a deep copy for avroDag
+      final AvroDag avroDagClone = new Cloner().deepClone(avroDag);
       futures.add(executorService.submit(new Runnable() {
         @Override
         public void run() {
           try {
             for (int j = threadNum * 100; j < (threadNum + 1) * 100 && j < queryIdList.size(); j++) {
               // Set the topic according to the query number
-              final String groupId = groupIdList.get(j);
+              final String superGroupId = superGroupIdList.get(j);
+              final String subGroupId = subGroupIdList.get(j);
               final String queryId = queryIdList.get(j);
-              final String pubTopic = pubTopicFunc.apply(groupId, queryId);
-              final Iterator<String> subTopicItr = subTopicFunc.apply(groupId, queryId).iterator();
+              final String pubTopic = pubTopicFunc.apply(superGroupId + "," + subGroupId, queryId);
+              final Iterator<String> subTopicItr = subTopicFunc.apply(subGroupId, queryId).iterator();
               final String fakeMergeId = fakeMergeIdList.get(j);
 
               // Overwrite the group id
-              opChainDagClone.setGroupId(groupId);
+              avroDagClone.setSuperGroupId(superGroupId);
+              avroDagClone.setSubGroupId(subGroupId);
+              // Overwrite the jar path
+              avroDagClone.setJarFilePaths(superGroupJarPathMap.get(superGroupId));
               // Insert the topic information to a copied AvroOperatorChainDag
               int vertexIndex = 0;
-              for (final AvroVertexChain avroVertexChain : opChainDagClone.getAvroVertices()) {
-                switch (avroVertexChain.getAvroVertexChainType()) {
+              for (final AvroVertex avroVertex : avroDagClone.getAvroVertices()) {
+                switch (avroVertex.getAvroVertexType()) {
                   case SOURCE: {
                     // It have to be MQTT source at now
-                    final Vertex vertex = avroVertexChain.getVertexChain().get(0);
-                    final Configuration originConf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
-                        new ClassHierarchyImpl(urls));
+                    final Configuration originConf = avroConfigurationSerializer.fromString(
+                        avroVertex.getConfiguration(), new ClassHierarchyImpl(jarUrls));
 
                     // Restore the original configuration and inject the overriding topic
                     final Injector injector = Tang.Factory.getTang().newInjector(originConf);
@@ -168,7 +201,7 @@ public final class BatchQueryCreator {
                       // Timestamp function was set
                       final MISTFunction<MqttMessage, Tuple<MqttMessage, Long>> extractFunc =
                           SerializeUtils.deserializeFromString(
-                              injector.getNamedInstance(SerializedTimestampExtractUdf.class), classLoader);
+                              injector.getNamedInstance(SerializedTimestampExtractUdf.class), tempClassLoader);
                       builder
                           .setTimestampExtractionFunction(extractFunc);
                     } catch (final InjectionException e) {
@@ -182,23 +215,21 @@ public final class BatchQueryCreator {
                     final Configuration modifiedConf =
                         Configurations.merge(modifiedDataGeneratorConf, defaultWatermarkConfig.getConfiguration());
 
-                    vertex.setConfiguration(avroConfigurationSerializer.toString(modifiedConf));
+                    avroVertex.setConfiguration(avroConfigurationSerializer.toString(modifiedConf));
                     break;
                   }
-                  case OPERATOR_CHAIN: {
+                  case OPERATOR: {
                     // Configure fake parameter to
-                    final Vertex vertex = avroVertexChain.getVertexChain().get(0);
                     final Configuration originConf = originConfs.get(vertexIndex);
                     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
                     jcb.bindNamedParameter(MergeFakeParameter.class, fakeMergeId);
                     final Configuration mergedConf = Configurations.merge(originConf, jcb.build());
-                    vertex.setConfiguration(avroConfigurationSerializer.toString(mergedConf));
+                    avroVertex.setConfiguration(avroConfigurationSerializer.toString(mergedConf));
                     break;
                   }
                   case SINK: {
-                    final Vertex vertex = avroVertexChain.getVertexChain().get(0);
-                    final Configuration originConf = avroConfigurationSerializer.fromString(vertex.getConfiguration(),
-                        new ClassHierarchyImpl(urls));
+                    final Configuration originConf = avroConfigurationSerializer.fromString(
+                        avroVertex.getConfiguration(), new ClassHierarchyImpl(jarUrls));
 
                     // Restore the original configuration and inject the overriding topic
                     final Injector injector = Tang.Factory.getTang().newInjector(originConf);
@@ -207,7 +238,7 @@ public final class BatchQueryCreator {
                         .set(MqttSinkConfiguration.MQTT_BROKER_URI, mqttBrokerURI)
                         .set(MqttSinkConfiguration.MQTT_TOPIC, pubTopic)
                         .build();
-                    vertex.setConfiguration(avroConfigurationSerializer.toString(modifiedConf));
+                    avroVertex.setConfiguration(avroConfigurationSerializer.toString(modifiedConf));
                     break;
                   }
                   default: {
@@ -217,7 +248,7 @@ public final class BatchQueryCreator {
                 vertexIndex += 1;
               }
 
-              final Tuple<String, AvroOperatorChainDag> newTuple = new Tuple<>(queryIdList.get(j), opChainDagClone);
+              final Tuple<String, AvroDag> newTuple = new Tuple<>(queryIdList.get(j), avroDagClone);
               final QueryControlResult result = manager.create(newTuple);
               if (!result.getIsSuccess()) {
                 throw new RuntimeException(j + "'th duplicated query creation failed: " + result.getMsg());
@@ -239,7 +270,7 @@ public final class BatchQueryCreator {
     for (int i = 0; i < batchThreads; i++) {
       for (final Future future : futures) {
         while (!future.isDone()) {
-          sleep(1000);
+          Thread.sleep(1000);
         }
         allSuccess = allSuccess && success[i];
       }

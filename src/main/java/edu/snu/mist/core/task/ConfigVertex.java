@@ -15,26 +15,23 @@
  */
 package edu.snu.mist.core.task;
 
-import java.util.List;
-
 /**
  * This class holds the configuration of the execution vertex.
  */
 public final class ConfigVertex {
 
   /**
-   * The type of this vertex (src, operator chain, sink).
+   * The type of this vertex (src, operator, sink).
    */
   private final ExecutionVertex.Type type;
 
   /**
    * The configuration of the vertex.
-   * This is a list of String because it could be a configuration of operator chain.
    */
-  private final List<String> configuration;
+  private final String configuration;
 
   public ConfigVertex(final ExecutionVertex.Type type,
-                      final List<String> configuration) {
+                      final String configuration) {
     this.type = type;
     this.configuration = configuration;
   }
@@ -43,7 +40,7 @@ public final class ConfigVertex {
     return type;
   }
 
-  public List<String> getConfiguration() {
+  public String getConfiguration() {
     return configuration;
   }
 }

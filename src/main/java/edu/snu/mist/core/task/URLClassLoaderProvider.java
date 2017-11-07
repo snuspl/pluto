@@ -19,8 +19,9 @@ import javax.inject.Inject;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -29,7 +30,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 final class URLClassLoaderProvider implements ClassLoaderProvider {
 
-  private final ConcurrentMap<List<URL>, ClassLoader> classLoaderConcurrentMap;
+  private final ConcurrentMap<Set<URL>, ClassLoader> classLoaderConcurrentMap;
 
   @Inject
   private URLClassLoaderProvider() {
@@ -38,16 +39,16 @@ final class URLClassLoaderProvider implements ClassLoaderProvider {
 
   @Override
   public ClassLoader newInstance(final URL[] urls) {
-    final List<URL> urlList = new ArrayList<>(urls.length);
+    final Set<URL> urlSet = new HashSet<>(urls.length);
     for (int i = 0; i < urls.length; i++) {
-      urlList.add(urls[i]);
+      urlSet.add(urls[i]);
     }
 
-    if (classLoaderConcurrentMap.get(urlList) == null) {
-      classLoaderConcurrentMap.putIfAbsent(urlList, new URLClassLoader(urls));
-      return classLoaderConcurrentMap.get(urlList);
+    if (classLoaderConcurrentMap.get(urlSet) == null) {
+      classLoaderConcurrentMap.putIfAbsent(urlSet, new URLClassLoader(urls));
+      return classLoaderConcurrentMap.get(urlSet);
     } else {
-      return classLoaderConcurrentMap.get(urlList);
+      return classLoaderConcurrentMap.get(urlSet);
     }
   }
 

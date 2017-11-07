@@ -13,22 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.globalsched.roundrobin.polling;
+package edu.snu.mist.core.task.eventProcessors.rebalancer;
 
-import javax.inject.Inject;
+import org.apache.reef.tang.annotations.DefaultImplementation;
+
 
 /**
- * NaiveInactiveChecker factory.
+ * GroupRebalancer modifies the group allocation table.
  */
-public final class NaiveInactiveGroupCheckerFactory implements InactiveGroupCheckerFactory {
+@DefaultImplementation(DefaultGroupMergerImpl.class)
+public interface GroupMerger {
 
-  @Inject
-  private NaiveInactiveGroupCheckerFactory() {
-    // do nothing
-  }
-
-  @Override
-  public InactiveGroupChecker newInstance() {
-    return new NaiveInactiveGroupChecker();
-  }
+  /**
+   * Trigger the rebalancing of groups.
+   */
+  void groupMerging();
 }

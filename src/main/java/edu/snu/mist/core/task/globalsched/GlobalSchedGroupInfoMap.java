@@ -24,26 +24,26 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class GlobalSchedGroupInfoMap {
 
-  private final ConcurrentHashMap<String, GlobalSchedGroupInfo> map;
+  private final ConcurrentHashMap<String, SubGroup> map;
 
   @Inject
   private GlobalSchedGroupInfoMap() {
     this.map = new ConcurrentHashMap<>();
   }
 
-  public GlobalSchedGroupInfo get(final String conf) {
+  public SubGroup get(final String conf) {
     return map.get(conf);
   }
 
-  public GlobalSchedGroupInfo putIfAbsent(final String groupId, final GlobalSchedGroupInfo groupInfo) {
+  public SubGroup putIfAbsent(final String groupId, final SubGroup groupInfo) {
     return map.putIfAbsent(groupId, groupInfo);
   }
 
-  public GlobalSchedGroupInfo put(final String groupId, final GlobalSchedGroupInfo groupInfo) {
+  public SubGroup put(final String groupId, final SubGroup groupInfo) {
     return map.put(groupId, groupInfo);
   }
 
-  public GlobalSchedGroupInfo remove(final String groupId) {
+  public SubGroup remove(final String groupId) {
     return map.remove(groupId);
   }
 
@@ -51,7 +51,7 @@ public final class GlobalSchedGroupInfoMap {
     return map.size();
   }
 
-  public Collection<GlobalSchedGroupInfo> values() {
+  public Collection<SubGroup> values() {
     return map.values();
   }
 }

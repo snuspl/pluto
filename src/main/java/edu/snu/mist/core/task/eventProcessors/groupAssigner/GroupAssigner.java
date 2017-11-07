@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.eventProcessors.groupAssigner;
 
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.Group;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
@@ -28,7 +28,7 @@ public interface GroupAssigner {
    * Assign a group to an event processor.
    * @param newGroup new group
    */
-  void assignGroup(GlobalSchedGroupInfo newGroup);
+  void assignGroup(Group newGroup);
 
   /**
    * This should be called once when the groupAllocationTable is initialized.

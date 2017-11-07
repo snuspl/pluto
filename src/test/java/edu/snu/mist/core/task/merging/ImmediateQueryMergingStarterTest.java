@@ -94,13 +94,11 @@ public final class ImmediateQueryMergingStarterTest {
    * @param conf configuration of the operator
    * @return operator chain
    */
-  private OperatorChain generateFilterOperatorChain(final String conf,
-                                                    final MISTPredicate<String> predicate) {
-    final OperatorChain operatorChain = new DefaultOperatorChainImpl("testOpChain");
+  private PhysicalOperator generateFilterOperator(final String conf,
+                                               final MISTPredicate<String> predicate) {
     final PhysicalOperator filterOp = new DefaultPhysicalOperatorImpl(idAndConfGenerator.generateId(),
-        conf, new FilterOperator<>(predicate), operatorChain);
-    operatorChain.insertToHead(filterOp);
-    return operatorChain;
+        conf, new FilterOperator<>(predicate));
+    return filterOp;
   }
 
   /**
@@ -115,15 +113,15 @@ public final class ImmediateQueryMergingStarterTest {
   }
 
   /**
-   * Generate a simple query that has the following structure: src -> operator chain -> sink.
+   * Generate a simple query that has the following structure: src -> operator -> sink.
    * @param source source
-   * @param operatorChain operator chain
+   * @param physicalOperator operator
    * @param sink sink
    * @return dag
    */
   private Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag> generateSimpleDag(
       final TestSource source,
-      final OperatorChain operatorChain,
+      final PhysicalOperator physicalOperator,
       final PhysicalSink<String> sink,
       final ConfigVertex srcVertex,
       final ConfigVertex ocVertex,
@@ -139,16 +137,16 @@ public final class ImmediateQueryMergingStarterTest {
 
     final DAG<ExecutionVertex, MISTEdge> exDag = new AdjacentListConcurrentMapDAG<>();
     exDag.addVertex(source);
-    exDag.addVertex(operatorChain);
+    exDag.addVertex(physicalOperator);
     exDag.addVertex(sink);
 
-    exDag.addEdge(source, operatorChain, new MISTEdge(Direction.LEFT));
-    exDag.addEdge(operatorChain, sink, new MISTEdge(Direction.LEFT));
+    exDag.addEdge(source, physicalOperator, new MISTEdge(Direction.LEFT));
+    exDag.addEdge(physicalOperator, sink, new MISTEdge(Direction.LEFT));
 
     when(executionVertexGenerator.generate(eq(srcVertex), any(URL[].class), any(ClassLoader.class)))
         .thenReturn(source);
     when(executionVertexGenerator.generate(eq(ocVertex), any(URL[].class), any(ClassLoader.class)))
-        .thenReturn(operatorChain);
+        .thenReturn(physicalOperator);
     when(executionVertexGenerator.generate(eq(sinkVertex), any(URL[].class), any(ClassLoader.class)))
         .thenReturn(sink);
 
@@ -181,29 +179,30 @@ public final class ImmediateQueryMergingStarterTest {
     final String ocConf = idAndConfGenerator.generateConf();
     final String sinkConf = idAndConfGenerator.generateConf();
     final TestSource source = generateSource(sourceConf);
-    final OperatorChain operatorChain = generateFilterOperatorChain(ocConf, (s) -> true);
+    final PhysicalOperator physicalOperator = generateFilterOperator(ocConf, (s) -> true);
     final PhysicalSink<String> sink = generateSink(sinkConf, result);
 
     // Config vertices
-    final ConfigVertex srcVertex = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(sourceConf));
-    final ConfigVertex ocVertex = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(ocConf));
-    final ConfigVertex sinkVertex = new ConfigVertex(ExecutionVertex.Type.SINK, Arrays.asList(sinkConf));
+    final ConfigVertex srcVertex = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf);
+    final ConfigVertex ocVertex = new ConfigVertex(ExecutionVertex.Type.OPERATOR, ocConf);
+    final ConfigVertex sinkVertex = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>
-        dagTuple = generateSimpleDag(source, operatorChain, sink,
+        dagTuple = generateSimpleDag(source, physicalOperator, sink,
         srcVertex, ocVertex, sinkVertex);
 
     // Execute the query 1
+    final Query query1 = mock(Query.class);
     final List<String> paths = mock(List.class);
-    queryStarter.start("q1", dagTuple.getKey(), paths);
+    queryStarter.start("q1", query1, dagTuple.getKey(), paths);
 
     // Generate events for the query and check if the dag is executed correctly
     final String data1 = "Hello";
     source.send(data1);
     Assert.assertEquals(Arrays.asList(), result);
-    Assert.assertEquals(1, operatorChain.numberOfEvents());
-    Assert.assertEquals(true, operatorChain.processNextEvent());
+    Assert.assertEquals(1, source.getSourceOutputEmitter().numberOfEvents());
+    Assert.assertEquals(1, source.getSourceOutputEmitter().processAllEvent());
     Assert.assertEquals(Arrays.asList(data1), result);
 
     // Check queryIdConfigDagMap
@@ -217,18 +216,18 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertTrue(GraphUtils.compareTwoDag(executionDag,
         executionVertexDagMap.get(source).getDag()));
     Assert.assertTrue(GraphUtils.compareTwoDag(executionDag,
-        executionVertexDagMap.get(operatorChain).getDag()));
+        executionVertexDagMap.get(physicalOperator).getDag()));
     Assert.assertTrue(GraphUtils.compareTwoDag(executionDag,
         executionVertexDagMap.get(sink).getDag()));
 
     // Check configExecutionVertexMap
     Assert.assertEquals(source, configExecutionVertexMap.get(srcVertex));
-    Assert.assertEquals(operatorChain, configExecutionVertexMap.get(ocVertex));
+    Assert.assertEquals(physicalOperator, configExecutionVertexMap.get(ocVertex));
     Assert.assertEquals(sink, configExecutionVertexMap.get(sinkVertex));
 
     // Check reference count
     Assert.assertEquals(1, (int)executionVertexCountMap.get(source));
-    Assert.assertEquals(1, (int)executionVertexCountMap.get(operatorChain));
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(physicalOperator));
     Assert.assertEquals(1, (int)executionVertexCountMap.get(sink));
 
     // Check execution dags
@@ -253,17 +252,17 @@ public final class ImmediateQueryMergingStarterTest {
     final String ocConf1 = idAndConfGenerator.generateConf();
     final String sinkConf1 = idAndConfGenerator.generateConf();
     final TestSource src1 = generateSource(sourceConf1);
-    final OperatorChain operatorChain1 = generateFilterOperatorChain(ocConf1, (s) -> true);
+    final PhysicalOperator physicalOp1 = generateFilterOperator(ocConf1, (s) -> true);
     final PhysicalSink<String> sink1 = generateSink(sinkConf1, result1);
 
     // Config vertices
-    final ConfigVertex srcVertex1 = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(sourceConf1));
-    final ConfigVertex ocVertex1 = new ConfigVertex(ExecutionVertex.Type.OPERATOR_CHAIN, Arrays.asList(ocConf1));
-    final ConfigVertex sinkVertex1 = new ConfigVertex(ExecutionVertex.Type.SINK, Arrays.asList(sinkConf1));
+    final ConfigVertex srcVertex1 = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf1);
+    final ConfigVertex ocVertex1 = new ConfigVertex(ExecutionVertex.Type.OPERATOR, ocConf1);
+    final ConfigVertex sinkVertex1 = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf1);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>
-        dagTuple1 = generateSimpleDag(src1, operatorChain1, sink1,
+        dagTuple1 = generateSimpleDag(src1, physicalOp1, sink1,
         srcVertex1, ocVertex1, sinkVertex1);
 
     // Create a query 2:
@@ -277,38 +276,41 @@ public final class ImmediateQueryMergingStarterTest {
     final String ocConf2 = idAndConfGenerator.generateConf();
     final String sinkConf2 = idAndConfGenerator.generateConf();
     final TestSource src2 = generateSource(sourceConf2);
-    final OperatorChain operatorChain2 = generateFilterOperatorChain(ocConf2, (s) -> true);
+    final PhysicalOperator physicalOp2 = generateFilterOperator(ocConf2, (s) -> true);
     final PhysicalSink<String> sink2 = generateSink(sinkConf2, result2);
 
     // Config vertices
-    final ConfigVertex srcVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(sourceConf2));
-    final ConfigVertex ocVertex2 = new ConfigVertex(ExecutionVertex.Type.OPERATOR_CHAIN, Arrays.asList(ocConf2));
-    final ConfigVertex sinkVertex2 = new ConfigVertex(ExecutionVertex.Type.SINK, Arrays.asList(sinkConf2));
+    final ConfigVertex srcVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf2);
+    final ConfigVertex ocVertex2 = new ConfigVertex(ExecutionVertex.Type.OPERATOR, ocConf2);
+    final ConfigVertex sinkVertex2 = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf2);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>
-        dagTuple2 = generateSimpleDag(src2, operatorChain2, sink2,
+        dagTuple2 = generateSimpleDag(src2, physicalOp2, sink2,
         srcVertex2, ocVertex2, sinkVertex2);
 
     // Execute two queries
+    final Query query1 = mock(Query.class);
+    final Query query2 = mock(Query.class);
+
     final String query1Id = "q1";
     final String query2Id = "q2";
-    queryStarter.start(query1Id, dagTuple1.getKey(), paths1);
-    queryStarter.start(query2Id, dagTuple2.getKey(), paths2);
+    queryStarter.start(query1Id, query1, dagTuple1.getKey(), paths1);
+    queryStarter.start(query2Id, query2, dagTuple2.getKey(), paths2);
 
     // The query 1 and 2 have different sources, so they should be executed separately
     final String data1 = "Hello";
     src1.send(data1);
-    Assert.assertEquals(true, operatorChain1.processNextEvent());
+    Assert.assertEquals(1, src1.getSourceOutputEmitter().processAllEvent());
     Assert.assertEquals(Arrays.asList(data1), result1);
-    Assert.assertEquals(false, operatorChain2.processNextEvent());
+    Assert.assertEquals(0, src2.getSourceOutputEmitter().processAllEvent());
     Assert.assertEquals(Arrays.asList(), result2);
 
     final String data2 = "World";
     src2.send(data2);
-    Assert.assertEquals(true, operatorChain2.processNextEvent());
+    Assert.assertEquals(1, src2.getSourceOutputEmitter().processAllEvent());
     Assert.assertEquals(Arrays.asList(data2), result2);
-    Assert.assertEquals(false, operatorChain1.processNextEvent());
+    Assert.assertEquals(0, src1.getSourceOutputEmitter().processAllEvent());
     Assert.assertEquals(Arrays.asList(data1), result1);
 
     // Check queryIdConfigDagMap
@@ -325,32 +327,32 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertTrue(GraphUtils.compareTwoDag(dag1,
         executionVertexDagMap.get(src1).getDag()));
     Assert.assertTrue(GraphUtils.compareTwoDag(dag1,
-        executionVertexDagMap.get(operatorChain1).getDag()));
+        executionVertexDagMap.get(physicalOp1).getDag()));
     Assert.assertTrue(GraphUtils.compareTwoDag(dag1,
         executionVertexDagMap.get(sink1).getDag()));
 
     Assert.assertTrue(GraphUtils.compareTwoDag(dag2,
         executionVertexDagMap.get(src2).getDag()));
     Assert.assertTrue(GraphUtils.compareTwoDag(dag2,
-        executionVertexDagMap.get(operatorChain2).getDag()));
+        executionVertexDagMap.get(physicalOp2).getDag()));
     Assert.assertTrue(GraphUtils.compareTwoDag(dag2,
         executionVertexDagMap.get(sink2).getDag()));
 
     // Check configExecutionVertexMap
     Assert.assertEquals(src1, configExecutionVertexMap.get(srcVertex1));
-    Assert.assertEquals(operatorChain1, configExecutionVertexMap.get(ocVertex1));
+    Assert.assertEquals(physicalOp1, configExecutionVertexMap.get(ocVertex1));
     Assert.assertEquals(sink1, configExecutionVertexMap.get(sinkVertex1));
 
     Assert.assertEquals(src2, configExecutionVertexMap.get(srcVertex2));
-    Assert.assertEquals(operatorChain2, configExecutionVertexMap.get(ocVertex2));
+    Assert.assertEquals(physicalOp2, configExecutionVertexMap.get(ocVertex2));
     Assert.assertEquals(sink2, configExecutionVertexMap.get(sinkVertex2));
 
     // Check reference count
     Assert.assertEquals(1, (int)executionVertexCountMap.get(src1));
-    Assert.assertEquals(1, (int)executionVertexCountMap.get(operatorChain1));
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(physicalOp1));
     Assert.assertEquals(1, (int)executionVertexCountMap.get(sink1));
     Assert.assertEquals(1, (int)executionVertexCountMap.get(src2));
-    Assert.assertEquals(1, (int)executionVertexCountMap.get(operatorChain2));
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(physicalOp2));
     Assert.assertEquals(1, (int)executionVertexCountMap.get(sink2));
 
     // Check execution dags
@@ -375,18 +377,18 @@ public final class ImmediateQueryMergingStarterTest {
     final String operatorConf = idAndConfGenerator.generateConf();
     final TestSource src1 = generateSource(sourceConf);
     final String sinkConf1 = idAndConfGenerator.generateConf();
-    final OperatorChain operatorChain1 = generateFilterOperatorChain(operatorConf, (s) -> true);
+    final PhysicalOperator physicalOp1 = generateFilterOperator(operatorConf, (s) -> true);
     final PhysicalSink<String> sink1 = generateSink(sinkConf1, result1);
 
     // Config vertices
-    final ConfigVertex srcVertex1 = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(sourceConf));
-    final ConfigVertex ocVertex1 = new ConfigVertex(ExecutionVertex.Type.OPERATOR_CHAIN, Arrays.asList(operatorConf));
-    final ConfigVertex sinkVertex1 = new ConfigVertex(ExecutionVertex.Type.SINK, Arrays.asList(sinkConf1));
+    final ConfigVertex srcVertex1 = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf);
+    final ConfigVertex ocVertex1 = new ConfigVertex(ExecutionVertex.Type.OPERATOR, operatorConf);
+    final ConfigVertex sinkVertex1 = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf1);
     final List<String> paths1 = mock(List.class);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>
-        dagTuple1 = generateSimpleDag(src1, operatorChain1, sink1,
+        dagTuple1 = generateSimpleDag(src1, physicalOp1, sink1,
         srcVertex1, ocVertex1, sinkVertex1);
 
     // Create a query 2:
@@ -395,33 +397,35 @@ public final class ImmediateQueryMergingStarterTest {
     final List<String> result2 = new LinkedList<>();
     final String sinkConf2 = idAndConfGenerator.generateConf();
     final TestSource src2 = generateSource(sourceConf);
-    final OperatorChain operatorChain2 = generateFilterOperatorChain(operatorConf, (s) -> true);
+    final PhysicalOperator physicalOp2 = generateFilterOperator(operatorConf, (s) -> true);
     final PhysicalSink<String> sink2 = generateSink(sinkConf2, result2);
     final List<String> paths2 = mock(List.class);
 
     // Config vertices
-    final ConfigVertex srcVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(sourceConf));
-    final ConfigVertex ocVertex2 = new ConfigVertex(ExecutionVertex.Type.OPERATOR_CHAIN, Arrays.asList(operatorConf));
-    final ConfigVertex sinkVertex2 = new ConfigVertex(ExecutionVertex.Type.SINK, Arrays.asList(sinkConf2));
+    final ConfigVertex srcVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf);
+    final ConfigVertex ocVertex2 = new ConfigVertex(ExecutionVertex.Type.OPERATOR, operatorConf);
+    final ConfigVertex sinkVertex2 = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf2);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>
-        dagTuple2 = generateSimpleDag(src2, operatorChain2, sink2,
+        dagTuple2 = generateSimpleDag(src2, physicalOp2, sink2,
         srcVertex2, ocVertex2, sinkVertex2);
 
     // Execute two queries
+    final Query query1 = mock(Query.class);
+    final Query query2 = mock(Query.class);
     final String query1Id = "q1";
     final String query2Id = "q2";
-    queryStarter.start(query1Id, dagTuple1.getKey(), paths1);
-    queryStarter.start(query2Id, dagTuple2.getKey(), paths2);
+    queryStarter.start(query1Id, query1, dagTuple1.getKey(), paths1);
+    queryStarter.start(query2Id, query2, dagTuple2.getKey(), paths2);
 
     // Generate events for the merged query and check if the dag is executed correctly
     final String data = "Hello";
     src1.send(data);
-    Assert.assertEquals(1, operatorChain1.numberOfEvents());
-    Assert.assertEquals(0, operatorChain2.numberOfEvents());
-    Assert.assertEquals(true, operatorChain1.processNextEvent());
-    Assert.assertEquals(false, operatorChain2.processNextEvent());
+    Assert.assertEquals(1, src1.getSourceOutputEmitter().numberOfEvents());
+    // This is not created because the source is the same!
+    Assert.assertEquals(null, src2.getSourceOutputEmitter());
+    Assert.assertEquals(1, src1.getSourceOutputEmitter().processAllEvent());
     Assert.assertEquals(Arrays.asList(data), result1);
     Assert.assertEquals(Arrays.asList(data), result2);
 
@@ -441,7 +445,7 @@ public final class ImmediateQueryMergingStarterTest {
     final Collection<ExecutionDag> expectedDags = new HashSet<>();
     final DAG<ExecutionVertex, MISTEdge> mergedDag = dagTuple1.getValue().getDag();
     mergedDag.addVertex(sink2);
-    mergedDag.addEdge(operatorChain1, sink2, new MISTEdge(Direction.LEFT));
+    mergedDag.addEdge(physicalOp1, sink2, new MISTEdge(Direction.LEFT));
     expectedDags.add(srcAndDagMap.get(sourceConf));
     Assert.assertEquals(expectedDags, executionDags.values());
 
@@ -450,29 +454,29 @@ public final class ImmediateQueryMergingStarterTest {
 
     // Check executionVertexDagMap
     Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, executionVertexDagMap.get(src1).getDag()));
-    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, executionVertexDagMap.get(operatorChain1).getDag()));
+    Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, executionVertexDagMap.get(physicalOp1).getDag()));
     Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, executionVertexDagMap.get(sink1).getDag()));
 
     // They are merged, so src2, oc2 and sink2 should be included in dag1
     Assert.assertNull(executionVertexDagMap.get(src2));
-    Assert.assertNull(executionVertexDagMap.get(operatorChain2));
+    Assert.assertNull(executionVertexDagMap.get(physicalOp2));
     Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag, executionVertexDagMap.get(sink2).getDag()));
 
     // Check configExecutionVertexMap
     Assert.assertEquals(src1, configExecutionVertexMap.get(srcVertex1));
-    Assert.assertEquals(operatorChain1, configExecutionVertexMap.get(ocVertex1));
+    Assert.assertEquals(physicalOp1, configExecutionVertexMap.get(ocVertex1));
     Assert.assertEquals(sink1, configExecutionVertexMap.get(sinkVertex1));
 
     Assert.assertEquals(src1, configExecutionVertexMap.get(srcVertex2));
-    Assert.assertEquals(operatorChain1, configExecutionVertexMap.get(ocVertex2));
+    Assert.assertEquals(physicalOp1, configExecutionVertexMap.get(ocVertex2));
     Assert.assertEquals(sink2, configExecutionVertexMap.get(sinkVertex2));
 
     // Check reference count
     Assert.assertEquals(2, (int)executionVertexCountMap.get(src1));
-    Assert.assertEquals(2, (int)executionVertexCountMap.get(operatorChain1));
+    Assert.assertEquals(2, (int)executionVertexCountMap.get(physicalOp1));
     Assert.assertEquals(1, (int)executionVertexCountMap.get(sink1));
     Assert.assertNull(executionVertexCountMap.get(src2));
-    Assert.assertNull(executionVertexCountMap.get(operatorChain2));
+    Assert.assertNull(executionVertexCountMap.get(physicalOp2));
     Assert.assertEquals(1, (int)executionVertexCountMap.get(sink2));
 
   }
@@ -493,17 +497,17 @@ public final class ImmediateQueryMergingStarterTest {
     final List<String> paths1 = mock(List.class);
 
     final TestSource src1 = generateSource(sourceConf);
-    final OperatorChain operatorChain1 = generateFilterOperatorChain(ocConf1, (s) -> true);
+    final PhysicalOperator physicalOp1 = generateFilterOperator(ocConf1, (s) -> true);
     final PhysicalSink<String> sink1 = generateSink(sinkConf1, result1);
 
     // Config vertices
-    final ConfigVertex srcVertex1 = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(sourceConf));
-    final ConfigVertex ocVertex1 = new ConfigVertex(ExecutionVertex.Type.OPERATOR_CHAIN, Arrays.asList(ocConf1));
-    final ConfigVertex sinkVertex1 = new ConfigVertex(ExecutionVertex.Type.SINK, Arrays.asList(sinkConf1));
+    final ConfigVertex srcVertex1 = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf);
+    final ConfigVertex ocVertex1 = new ConfigVertex(ExecutionVertex.Type.OPERATOR, ocConf1);
+    final ConfigVertex sinkVertex1 = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf1);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>
-        dagTuple1 = generateSimpleDag(src1, operatorChain1, sink1,
+        dagTuple1 = generateSimpleDag(src1, physicalOp1, sink1,
         srcVertex1, ocVertex1, sinkVertex1);
 
     // Create a query 2:
@@ -514,18 +518,18 @@ public final class ImmediateQueryMergingStarterTest {
     final String sinkConf2 = idAndConfGenerator.generateConf();
 
     final TestSource src2 = generateSource(sourceConf);
-    final OperatorChain operatorChain2 = generateFilterOperatorChain(ocConf2, (s) -> true);
+    final PhysicalOperator physicalOp2 = generateFilterOperator(ocConf2, (s) -> true);
     final PhysicalSink<String> sink2 = generateSink(sinkConf2, result2);
     final List<String> paths2 = mock(List.class);
 
     // Config vertices
-    final ConfigVertex srcVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, Arrays.asList(sourceConf));
-    final ConfigVertex ocVertex2 = new ConfigVertex(ExecutionVertex.Type.OPERATOR_CHAIN, Arrays.asList(ocConf2));
-    final ConfigVertex sinkVertex2 = new ConfigVertex(ExecutionVertex.Type.SINK, Arrays.asList(sinkConf2));
+    final ConfigVertex srcVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf);
+    final ConfigVertex ocVertex2 = new ConfigVertex(ExecutionVertex.Type.OPERATOR, ocConf2);
+    final ConfigVertex sinkVertex2 = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf2);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>
-        dagTuple2 = generateSimpleDag(src2, operatorChain2, sink2,
+        dagTuple2 = generateSimpleDag(src2, physicalOp2, sink2,
         srcVertex2, ocVertex2, sinkVertex2);
 
     // Execute two queries
@@ -535,25 +539,24 @@ public final class ImmediateQueryMergingStarterTest {
 
     final String query1Id = "q1";
     final String query2Id = "q2";
-    queryStarter.start(query1Id, dagTuple1.getKey(), paths1);
-    queryStarter.start(query2Id, dagTuple2.getKey(), paths2);
+    final Query query1 = mock(Query.class);
+    final Query query2 = mock(Query.class);
+    queryStarter.start(query1Id, query1, dagTuple1.getKey(), paths1);
+    queryStarter.start(query2Id, query2, dagTuple2.getKey(), paths2);
 
     // Generate events for the merged query and check if the dag is executed correctly
     final String data1 = "Hello";
     src1.send(data1);
-    Assert.assertEquals(1, operatorChain1.numberOfEvents());
-    Assert.assertEquals(1, operatorChain2.numberOfEvents());
-    Assert.assertEquals(true, operatorChain1.processNextEvent());
-    Assert.assertEquals(true, operatorChain2.processNextEvent());
+    Assert.assertEquals(1, src1.getSourceOutputEmitter().numberOfEvents());
+    Assert.assertEquals(null, src2.getSourceOutputEmitter());
+    Assert.assertEquals(1, src1.getSourceOutputEmitter().processAllEvent());
     Assert.assertEquals(Arrays.asList(data1), result1);
     Assert.assertEquals(Arrays.asList(data1), result2);
 
     final String data2 = "World";
     src1.send(data2);
-    Assert.assertEquals(1, operatorChain1.numberOfEvents());
-    Assert.assertEquals(1, operatorChain2.numberOfEvents());
-    Assert.assertEquals(true, operatorChain1.processNextEvent());
-    Assert.assertEquals(true, operatorChain2.processNextEvent());
+    Assert.assertEquals(1, src1.getSourceOutputEmitter().numberOfEvents());
+    Assert.assertEquals(1, src1.getSourceOutputEmitter().processAllEvent());
     Assert.assertEquals(Arrays.asList(data1, data2), result1);
     Assert.assertEquals(Arrays.asList(data1, data2), result2);
 
@@ -568,10 +571,10 @@ public final class ImmediateQueryMergingStarterTest {
     // Check execution dags
     final Collection<ExecutionDag> expectedDags = new HashSet<>();
     final DAG<ExecutionVertex, MISTEdge> mergedDag = dagTuple1.getValue().getDag();
-    mergedDag.addVertex(operatorChain2);
+    mergedDag.addVertex(physicalOp2);
     mergedDag.addVertex(sink2);
-    mergedDag.addEdge(src1, operatorChain2, new MISTEdge(Direction.LEFT));
-    mergedDag.addEdge(operatorChain2, sink2, new MISTEdge(Direction.LEFT));
+    mergedDag.addEdge(src1, physicalOp2, new MISTEdge(Direction.LEFT));
+    mergedDag.addEdge(physicalOp2, sink2, new MISTEdge(Direction.LEFT));
     expectedDags.add(srcAndDagMap.get(sourceConf));
     Assert.assertEquals(expectedDags, executionDags.values());
 
@@ -586,32 +589,32 @@ public final class ImmediateQueryMergingStarterTest {
     Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag,
         executionVertexDagMap.get(src1).getDag()));
     Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag,
-        executionVertexDagMap.get(operatorChain1).getDag()));
+        executionVertexDagMap.get(physicalOp1).getDag()));
     Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag,
         executionVertexDagMap.get(sink1).getDag()));
 
     // They are merged, so src2, oc2 and sink2 should be included in dag1
     Assert.assertEquals(null, executionVertexDagMap.get(src2));
     Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag,
-        executionVertexDagMap.get(operatorChain2).getDag()));
+        executionVertexDagMap.get(physicalOp2).getDag()));
     Assert.assertTrue(GraphUtils.compareTwoDag(mergedDag,
         executionVertexDagMap.get(sink2).getDag()));
 
     // Check configExecutionVertexMap
     Assert.assertEquals(src1, configExecutionVertexMap.get(srcVertex1));
-    Assert.assertEquals(operatorChain1, configExecutionVertexMap.get(ocVertex1));
+    Assert.assertEquals(physicalOp1, configExecutionVertexMap.get(ocVertex1));
     Assert.assertEquals(sink1, configExecutionVertexMap.get(sinkVertex1));
 
     Assert.assertEquals(src1, configExecutionVertexMap.get(srcVertex2));
-    Assert.assertEquals(operatorChain2, configExecutionVertexMap.get(ocVertex2));
+    Assert.assertEquals(physicalOp2, configExecutionVertexMap.get(ocVertex2));
     Assert.assertEquals(sink2, configExecutionVertexMap.get(sinkVertex2));
 
     // Check reference count
     Assert.assertEquals(2, (int)executionVertexCountMap.get(src1));
-    Assert.assertEquals(1, (int)executionVertexCountMap.get(operatorChain1));
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(physicalOp1));
     Assert.assertEquals(1, (int)executionVertexCountMap.get(sink1));
     Assert.assertEquals(null, executionVertexCountMap.get(src2));
-    Assert.assertEquals(1, (int)executionVertexCountMap.get(operatorChain2));
+    Assert.assertEquals(1, (int)executionVertexCountMap.get(physicalOp2));
     Assert.assertEquals(1, (int)executionVertexCountMap.get(sink2));
   }
 
@@ -619,7 +622,7 @@ public final class ImmediateQueryMergingStarterTest {
    * Test source that sends data to next operator chains.
    */
   final class TestSource implements PhysicalSource {
-    private OutputEmitter outputEmitter;
+    private SourceOutputEmitter outputEmitter;
     private final String id;
     private final String conf;
 
@@ -637,6 +640,11 @@ public final class ImmediateQueryMergingStarterTest {
     @Override
     public EventGenerator getEventGenerator() {
       return null;
+    }
+
+    @Override
+    public SourceOutputEmitter getSourceOutputEmitter() {
+      return outputEmitter;
     }
 
     /**
@@ -668,7 +676,7 @@ public final class ImmediateQueryMergingStarterTest {
 
     @Override
     public void setOutputEmitter(final OutputEmitter emitter) {
-      outputEmitter = emitter;
+      outputEmitter = (SourceOutputEmitter)emitter;
     }
 
     @Override

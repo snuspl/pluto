@@ -16,7 +16,7 @@
 package edu.snu.mist.core.task.eventProcessors;
 
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
-import edu.snu.mist.core.task.globalsched.GlobalSchedGroupInfo;
+import edu.snu.mist.core.task.globalsched.Group;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -31,7 +31,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public final class DefaultGroupAllocationTable implements GroupAllocationTable {
 
   private final List<EventProcessor> eventProcessors;
-  private final ConcurrentMap<EventProcessor, Collection<GlobalSchedGroupInfo>> table;
+  private final ConcurrentMap<EventProcessor, Collection<Group>> table;
   private final int defaultNumEventProcessors;
 
   @Inject
@@ -55,7 +55,7 @@ public final class DefaultGroupAllocationTable implements GroupAllocationTable {
   }
 
   @Override
-  public Collection<GlobalSchedGroupInfo> getValue(final EventProcessor eventProcessor) {
+  public Collection<Group> getValue(final EventProcessor eventProcessor) {
     return table.get(eventProcessor);
   }
 
@@ -86,7 +86,7 @@ public final class DefaultGroupAllocationTable implements GroupAllocationTable {
   }
 
   @Override
-  public Collection<GlobalSchedGroupInfo> remove(final EventProcessor key) {
+  public Collection<Group> remove(final EventProcessor key) {
     eventProcessors.remove(key);
     return table.remove(key);
   }
@@ -95,12 +95,12 @@ public final class DefaultGroupAllocationTable implements GroupAllocationTable {
   public String toString() {
     final StringBuilder sb = new StringBuilder();
     for (final EventProcessor ep : eventProcessors) {
-      final Collection<GlobalSchedGroupInfo> groups = getValue(ep);
+      final Collection<Group> groups = getValue(ep);
       sb.append(ep);
       sb.append(" -> [");
       sb.append(groups.size());
       sb.append("], ");
-      sb.append(groups);
+      sb.append(String.format("%.4f", ep.getLoad()));
       sb.append("\n");
     }
     return sb.toString();

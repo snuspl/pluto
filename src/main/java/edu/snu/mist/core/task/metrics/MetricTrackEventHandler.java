@@ -15,12 +15,10 @@
  */
 package edu.snu.mist.core.task.metrics;
 
-import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.wake.EventHandler;
 
 /**
  * This interface wrap a Wake EventHandler handling MetricTrackEvent.
  */
-@DefaultImplementation(EventNumMetricEventHandler.class)
 public interface MetricTrackEventHandler extends EventHandler<MetricTrackEvent> {
 }

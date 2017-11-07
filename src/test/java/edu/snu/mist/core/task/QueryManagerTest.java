@@ -38,7 +38,7 @@ import edu.snu.mist.core.task.globalsched.parameters.GroupSchedModelType;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.core.task.utils.TestDataGenerator;
 import edu.snu.mist.core.task.utils.TestWithCountDownSink;
-import edu.snu.mist.formats.avro.AvroOperatorChainDag;
+import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.Direction;
 import junit.framework.Assert;
 import org.apache.reef.io.Tuple;
@@ -90,11 +90,11 @@ public final class QueryManagerTest {
       (input) -> input.values().stream().reduce(0, (x, y) -> x + y);
 
   @Test(timeout = 10000)
-  public void testSubmitComplexQueryInOption2Dispatching() throws Exception {
+  public void testSubmitComplextQueryInMIST() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(RPCServerPort.class, "20338");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
-    jcb.bindNamedParameter(ExecutionModelOption.class, "2");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "mist");
     jcb.bindNamedParameter(GroupSchedModelType.class, "dispatching");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final MistTaskConfigs taskConfigs = injector.getInstance(MistTaskConfigs.class);
@@ -102,11 +102,11 @@ public final class QueryManagerTest {
   }
 
   @Test(timeout = 10000)
-  public void testSubmitComplexQueryInOption2GroupUnaware() throws Exception {
+  public void testSubmitComplextQueryInMISTGroupUnaware() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(RPCServerPort.class, "20339");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
-    jcb.bindNamedParameter(ExecutionModelOption.class, "2");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "mist");
     jcb.bindNamedParameter(GroupSchedModelType.class, "dispatching");
     jcb.bindNamedParameter(GroupAware.class, "false");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
@@ -115,11 +115,22 @@ public final class QueryManagerTest {
   }
 
   @Test(timeout = 10000)
-  public void testSubmitComplexQueryInOption3() throws Exception {
+  public void testSubmitComplexQueryInThreadBased() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(RPCServerPort.class, "20334");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
-    jcb.bindNamedParameter(ExecutionModelOption.class, "3");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "tpq");
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final MistTaskConfigs taskConfigs = injector.getInstance(MistTaskConfigs.class);
+    testSubmitComplexQueryHelper(taskConfigs.getConfiguration());
+  }
+
+  @Test(timeout = 10000)
+  public void testSubmitComplexQueryInThreadPool() throws Exception {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(RPCServerPort.class, "20335");
+    jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "tp");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final MistTaskConfigs taskConfigs = injector.getInstance(MistTaskConfigs.class);
     testSubmitComplexQueryHelper(taskConfigs.getConfiguration());
@@ -167,9 +178,10 @@ public final class QueryManagerTest {
         null, new TestWithCountDownSink<Integer>(sink2Result, countDownAllOutputs));
 
     // Fake operator chain dag of QueryManager
-    final AvroOperatorChainDag fakeOperatorChainDag = new AvroOperatorChainDag();
-    fakeOperatorChainDag.setGroupId("testGroup");
-    final Tuple<String, AvroOperatorChainDag> tuple = new Tuple<>(queryId, fakeOperatorChainDag);
+    final AvroDag fakeAvroDag = new AvroDag();
+    fakeAvroDag.setSuperGroupId("testGroup");
+    fakeAvroDag.setSubGroupId("user1");
+    final Tuple<String, AvroDag> tuple = new Tuple<>(queryId, fakeAvroDag);
 
     // Construct execution dag
     constructExecutionDag(tuple, executionDag, src, sink1, sink2);
@@ -221,68 +233,61 @@ public final class QueryManagerTest {
    * Construct execution dag.
    * Creates operators and adds source, dag vertices, edges and sinks to dag.
    */
-  private void constructExecutionDag(final Tuple<String, AvroOperatorChainDag> tuple,
+  private void constructExecutionDag(final Tuple<String, AvroDag> tuple,
                                      final ExecutionDag executionDag,
                                      final PhysicalSource src,
                                      final PhysicalSink sink1,
                                      final PhysicalSink sink2) {
 
-    // Create operators and operator chains
-    //                     (chain1)                                  (chain2)
+    // Create operators
     // src -> [flatMap -> filter -> toTupleMap -> reduceByKey] -> [toStringMap]   -> sink1
     //                                                         -> [totalCountMap] -> sink2
-    //                                                               (chain3)
-    final OperatorChain chain1 = new DefaultOperatorChainImpl("testOpChain-1");
-    final OperatorChain chain2 = new DefaultOperatorChainImpl("testOpChain-2");
-    final OperatorChain chain3 = new DefaultOperatorChainImpl("testOpChain-3");
-
     final PhysicalOperator flatMap = new DefaultPhysicalOperatorImpl("flatMap",
-        null, new FlatMapOperator<>(flatMapFunc), chain1);
+        null, new FlatMapOperator<>(flatMapFunc));
     final PhysicalOperator filter = new DefaultPhysicalOperatorImpl("filter",
-        null, new FilterOperator<>(filterFunc), chain1);
+        null, new FilterOperator<>(filterFunc));
     final PhysicalOperator toTupleMap = new DefaultPhysicalOperatorImpl("toTupleMap",
-        null, new MapOperator<>(toTupleMapFunc), chain1);
+        null, new MapOperator<>(toTupleMapFunc));
     final PhysicalOperator reduceByKey = new DefaultPhysicalOperatorImpl("reduceByKey",
-        null, new ReduceByKeyOperator<>(0, reduceByKeyFunc), chain1);
+        null, new ReduceByKeyOperator<>(0, reduceByKeyFunc));
     final PhysicalOperator toStringMap = new DefaultPhysicalOperatorImpl("toStringMap",
-        null, new MapOperator<>(toStringMapFunc), chain2);
+        null, new MapOperator<>(toStringMapFunc));
     final PhysicalOperator totalCountMap = new DefaultPhysicalOperatorImpl("totalCountMap",
-        null, new MapOperator<>(totalCountMapFunc), chain3);
+        null, new MapOperator<>(totalCountMapFunc));
 
     // Build the execution dag
-    chain1.insertToTail(flatMap);
-    chain1.insertToTail(filter);
-    chain1.insertToTail(toTupleMap);
-    chain1.insertToTail(reduceByKey);
-    chain2.insertToTail(toStringMap);
-    chain3.insertToTail(totalCountMap);
-
     final DAG<ExecutionVertex, MISTEdge> dag = executionDag.getDag();
 
     // Add Source
     dag.addVertex(src);
 
     // Add dag vertices and edges
-    dag.addVertex(chain1);
-    dag.addEdge(src, chain1, new MISTEdge(Direction.LEFT));
-    dag.addVertex(chain2);
-    dag.addEdge(chain1, chain2, new MISTEdge(Direction.LEFT));
-    dag.addVertex(chain3);
-    dag.addEdge(chain1, chain3, new MISTEdge(Direction.LEFT));
+    dag.addVertex(flatMap);
+    dag.addVertex(filter);
+    dag.addVertex(toTupleMap);
+    dag.addVertex(reduceByKey);
+    dag.addVertex(toStringMap);
+    dag.addVertex(totalCountMap);
 
+    dag.addEdge(src, flatMap, new MISTEdge(Direction.LEFT));
+    dag.addEdge(flatMap, filter, new MISTEdge(Direction.LEFT));
+    dag.addEdge(filter, toTupleMap, new MISTEdge(Direction.LEFT));
+    dag.addEdge(toTupleMap, reduceByKey, new MISTEdge(Direction.LEFT));
+    dag.addEdge(reduceByKey, toStringMap, new MISTEdge(Direction.LEFT));
+    dag.addEdge(reduceByKey, totalCountMap, new MISTEdge(Direction.LEFT));
 
     // Add Sink
     dag.addVertex(sink1);
-    dag.addEdge(chain2, sink1, new MISTEdge(Direction.LEFT));
+    dag.addEdge(toStringMap, sink1, new MISTEdge(Direction.LEFT));
     dag.addVertex(sink2);
-    dag.addEdge(chain3, sink2, new MISTEdge(Direction.LEFT));
+    dag.addEdge(totalCountMap, sink2, new MISTEdge(Direction.LEFT));
   }
 
   /**
    * QueryManager Builder.
    * It receives inputs tuple, physicalPlanGenerator, injector then makes query manager.
    */
-  private QueryManager queryManagerBuild(final Tuple<String, AvroOperatorChainDag> tuple,
+  private QueryManager queryManagerBuild(final Tuple<String, AvroDag> tuple,
                                          final ConfigDagGenerator configDagGenerator,
                                          final DagGenerator dagGenerator,
                                          final Injector injector) throws Exception {
