@@ -17,6 +17,8 @@ package edu.snu.mist.core.task.globalsched;
 
 import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.EventProcessorFactory;
+import edu.snu.mist.core.task.globalsched.parameters.ProcessingTimeout;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,14 +35,22 @@ public final class GlobalSchedNonBlockingEventProcessorFactory implements EventP
 
   private final AtomicInteger id = new AtomicInteger(0);
 
+  /**
+   * Processing timeout.
+   */
+  private final long timeout;
+
   @Inject
-  private GlobalSchedNonBlockingEventProcessorFactory(final NextGroupSelectorFactory nextGroupSelectorFactory) {
+  private GlobalSchedNonBlockingEventProcessorFactory(
+      final NextGroupSelectorFactory nextGroupSelectorFactory,
+      @Parameter(ProcessingTimeout.class) final long timeout) {
     this.nextGroupSelectorFactory = nextGroupSelectorFactory;
+    this.timeout = timeout;
   }
 
   @Override
   public EventProcessor newEventProcessor() {
     final NextGroupSelector nextGroupSelector = nextGroupSelectorFactory.newInstance();
-    return new GlobalSchedNonBlockingEventProcessor(nextGroupSelector, id.getAndIncrement());
+    return new GlobalSchedNonBlockingEventProcessor(nextGroupSelector, id.getAndIncrement(), timeout);
   }
 }

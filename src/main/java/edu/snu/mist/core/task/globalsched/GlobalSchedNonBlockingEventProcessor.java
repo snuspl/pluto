@@ -68,8 +68,11 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
 
   private final int id;
 
+  private final long timeout;
+
   public GlobalSchedNonBlockingEventProcessor(final NextGroupSelector nextGroupSelector,
-                                              final int id) {
+                                              final int id,
+                                              final long timeout) {
     super();
     this.nextGroupSelector = nextGroupSelector;
     this.load = 0.0;
@@ -77,6 +80,7 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
     this.currProcessedGroupStartTime = System.currentTimeMillis();
     this.numProcessedEvents = 0;
     this.runningIsolatedGroup = false;
+    this.timeout = timeout;
   }
 
   /**
@@ -89,7 +93,7 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
         // Pick an active group
         final Group groupInfo = nextGroupSelector.getNextExecutableGroup();
         final long startTime = System.nanoTime();
-        numProcessedEvents = groupInfo.processAllEvent();
+        numProcessedEvents = groupInfo.processAllEvent(timeout);
         final long endTime = System.nanoTime();
         groupInfo.getProcessingEvent().addAndGet(numProcessedEvents);
         groupInfo.getProcessingTime().getAndAdd(endTime - startTime);
