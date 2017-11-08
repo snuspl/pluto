@@ -38,16 +38,6 @@ public final class MQTTSharedResource implements MQTTResource {
   private static final Logger LOG = Logger.getLogger(MQTTSharedResource.class.getName());
 
   /**
-   * MQTT publisher id.
-   */
-  public static final String MQTT_PUBLISHER_ID_PREFIX = "MIST_MQTT_PUBLISHER_";
-
-  /**
-   * MQTT subscriber id.
-   */
-  public static final String MQTT_SUBSCRIBER_ID_PREFIX = "MIST_MQTT_SUBSCRIBER_";
-
-  /**
    * The map containing topic-subscriber information.
    */
   private final Map<String, Map<String, MQTTSubscribeClient>> topicSubscriberMap;

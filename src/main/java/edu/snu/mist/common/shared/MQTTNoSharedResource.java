@@ -35,16 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class MQTTNoSharedResource implements MQTTResource {
 
-  /**
-   * MQTT publisher id.
-   */
-  private static final String MQTT_PUBLISHER_ID_PREFIX = "MIST_MQTT_PUBLISHER_";
-
-  /**
-   * MQTT subscriber id.
-   */
-  private static final String MQTT_SUBSCRIBER_ID_PREFIX = "MIST_MQTT_SUBSCRIBER_";
-
   private final AtomicInteger sourceClientCounter;
 
   private final AtomicInteger sinkClientCounter;
