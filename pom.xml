@@ -258,6 +258,8 @@ limitations under the License.
                         <exclude>REEF_MESOS_RUNTIME/**</exclude>
                         <!-- JVM error logs, especially troublesome on CI servers -->
                         <exclude>**/hs_err_*.log</exclude>
+                        <!-- AWS IoT certificates -->
+                        <exclude>src/main/resources/cert/*</exclude>
                     </excludes>
                 </configuration>
                 <executions>
