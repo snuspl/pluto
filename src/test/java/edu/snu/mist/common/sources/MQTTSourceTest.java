@@ -16,6 +16,7 @@
 package edu.snu.mist.common.sources;
 
 import edu.snu.mist.common.OutputEmitter;
+import edu.snu.mist.common.shared.MQTTAWSIoTAuth;
 import edu.snu.mist.common.shared.MQTTSharedResource;
 import edu.snu.mist.common.utils.MqttUtils;
 import io.moquette.server.Server;
@@ -61,7 +62,22 @@ public final class MQTTSourceTest {
    * @throws Exception
    */
   @Test(timeout = 4000L)
-  public void testMQTTDataGenerator() throws Exception {
+  public void testLocalMQTTDataGenerator() throws Exception {
+    runMQTTTestCase(MqttUtils.BROKER_URI);
+  }
+
+  /**
+   * Test whether the MQTTDataGenerator fetches input stream from a MQTT AWS IoT broker
+   * Two DataGenerators subscribing different topic from identical broker will be tested.
+   * @throws Exception
+   */
+  @Test(timeout = 4000L)
+  public void testAWSIoTMQTTDataGenerator() throws Exception {
+    runMQTTTestCase("ssl://a20tt2fjk7i3az.iot.ap-northeast-2.amazonaws.com:8883");
+  }
+
+
+  private void runMQTTTestCase(final String brokerURI) throws Exception {
     final List<String> inputStream1 = new ArrayList<>();
     final List<String> inputStream2 = new ArrayList<>();
     inputStream1.add("Lorem ipsum dolor sit amet, consectetur adipiscing elit.");
@@ -74,8 +90,8 @@ public final class MQTTSourceTest {
     final List<String> result2 = new ArrayList<>();
 
     // create data generators
-    final MQTTDataGenerator dataGenerator1 = mqttSharedResource.getDataGenerator(MqttUtils.BROKER_URI, FIRST_TOPIC);
-    final MQTTDataGenerator dataGenerator2 = mqttSharedResource.getDataGenerator(MqttUtils.BROKER_URI, SECOND_TOPIC);
+    final MQTTDataGenerator dataGenerator1 = mqttSharedResource.getDataGenerator(brokerURI, FIRST_TOPIC);
+    final MQTTDataGenerator dataGenerator2 = mqttSharedResource.getDataGenerator(brokerURI, SECOND_TOPIC);
     final SourceTestEventGenerator eventGenerator1 = new SourceTestEventGenerator(result1, dataCountDownLatch1);
     final SourceTestEventGenerator eventGenerator2 = new SourceTestEventGenerator(result2, dataCountDownLatch2);
     dataGenerator1.setEventGenerator(eventGenerator1);
@@ -85,7 +101,7 @@ public final class MQTTSourceTest {
     dataGenerator2.start();
 
     // create test client and publish data
-    final PublishTestClient publishClient = new PublishTestClient(MqttUtils.BROKER_URI);
+    final PublishTestClient publishClient = new PublishTestClient(brokerURI);
     publishClient.publish(inputStream1, FIRST_TOPIC);
     publishClient.publish(inputStream2, SECOND_TOPIC);
 
@@ -116,7 +132,13 @@ public final class MQTTSourceTest {
     PublishTestClient(final String brokerURI) {
       try {
         this.client = new MqttClient(brokerURI, "MistTestClient");
-        client.connect();
+        if (MQTTAWSIoTAuth.needAuth(brokerURI)) {
+          final MqttConnectOptions connectOptions = new MqttConnectOptions();
+          MQTTAWSIoTAuth.applyAuth(connectOptions, brokerURI);
+          client.connect(connectOptions);
+        } else {
+          client.connect();
+        }
         client.setCallback(this);
       } catch (final MqttException e) {
         e.printStackTrace();
