@@ -164,6 +164,12 @@ limitations under the License.
             <artifactId>moquette-broker</artifactId>
             <version>${moquette.version}</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.bouncycastle/bcpkix-jdk15on -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+            <version>1.58</version>
+        </dependency>
     </dependencies>
 
     <build>
