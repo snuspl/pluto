@@ -50,7 +50,12 @@ public final class MQTTAWSIoTAuth {
   /**
    * AWS IoT ROOT CA Certificate.
    */
-  private static final String AWS_IOT_ROOT_CA = "cert/rootCA.pem";
+  private static final String AWS_IOT_ROOT_CA = "rootCA.pem";
+
+  /**
+   * Basepath of certificate files.
+   */
+  private static final String CERT_FILE_BASE_PATH = "src/main/resources/cert/";
 
 
   private MQTTAWSIoTAuth() { }
@@ -63,22 +68,18 @@ public final class MQTTAWSIoTAuth {
   static {
     REGION_CERTIFICATES_MAP = new HashMap<>();
     REGION_CERTIFICATES_MAP.put("ap-northeast-2",
-        new SimpleEntry<>("cert/b0e945ee3a-certificate.pem.crt", "cert/b0e945ee3a-private.pem.key"));
+        new SimpleEntry<>("b0e945ee3a-certificate.pem.crt", "b0e945ee3a-private.pem.key"));
   }
 
   private static String getRegion(final String brokerURI) {
     Pattern pattern = Pattern.compile("iot.(.*).amazonaws.com");
     Matcher matcher = pattern.matcher(brokerURI);
 
-    if (matcher.find()) {
-      return matcher.group(1);
-    } else {
-      throw new RuntimeException("Illegal BrokerURI address.");
-    }
+    return matcher.find() ? matcher.group(1) : "";
   }
 
   public static boolean needAuth(final String brokerURI) {
-    return brokerURI.matches("iot.*amazonaws.com");
+    return !getRegion(brokerURI).equals("");
   }
 
   public static void applyAuth(final MqttConnectOptions options, final String brokerURI) {
@@ -94,6 +95,10 @@ public final class MQTTAWSIoTAuth {
     }
   }
 
+  private static String getFilePath(final String file) {
+    return CERT_FILE_BASE_PATH + file;
+  }
+
   private static SSLSocketFactory getSocketFactory(final String caCrtFile,
                                                    final String crtFile, final String keyFile, final String password)
       throws Exception {
@@ -102,7 +107,7 @@ public final class MQTTAWSIoTAuth {
     // load CA certificate
     X509Certificate caCert = null;
 
-    FileInputStream fis = new FileInputStream(caCrtFile);
+    FileInputStream fis = new FileInputStream(getFilePath(caCrtFile));
     BufferedInputStream bis = new BufferedInputStream(fis);
     CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
@@ -111,14 +116,14 @@ public final class MQTTAWSIoTAuth {
     }
 
     // load client certificate
-    bis = new BufferedInputStream(new FileInputStream(crtFile));
+    bis = new BufferedInputStream(new FileInputStream(getFilePath(crtFile)));
     X509Certificate cert = null;
     while (bis.available() > 0) {
       cert = (X509Certificate) cf.generateCertificate(bis);
     }
 
     // load client private key
-    PEMParser pemParser = new PEMParser(new FileReader(keyFile));
+    PEMParser pemParser = new PEMParser(new FileReader(getFilePath(keyFile)));
     Object object = pemParser.readObject();
     PEMDecryptorProvider decProv = new JcePEMDecryptorProviderBuilder()
         .build(password.toCharArray());
