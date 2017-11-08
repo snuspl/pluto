@@ -17,6 +17,7 @@ package edu.snu.mist.common.sources;
 
 import edu.snu.mist.common.shared.MQTTAWSIoTAuth;
 import org.eclipse.paho.client.mqttv3.*;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -98,7 +99,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
   void subscribe(final String topic) throws MqttException {
     synchronized (subscribeLock) {
       if (!started) {
-        client = new MqttAsyncClient(brokerURI, clientId);
+        client = new MqttAsyncClient(brokerURI, clientId, new MemoryPersistence());
         final MqttConnectOptions mqttConnectOptions = new MqttConnectOptions();
         mqttConnectOptions.setKeepAliveInterval(mqttSourceKeepAliveSec);
         if (MQTTAWSIoTAuth.needAuth(brokerURI)) {

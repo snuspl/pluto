@@ -23,6 +23,7 @@ import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.eclipse.paho.client.mqttv3.*;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,7 +58,7 @@ public final class MqttSinkTest {
     final Injector injector = Tang.Factory.getTang().newInjector();
     mqttSharedResource = injector.getInstance(MQTTSharedResource.class);
     broker = MqttUtils.createMqttBroker();
-    subscriber = new MqttClient(MqttUtils.BROKER_URI, "mqttClient");
+    subscriber = new MqttClient(MqttUtils.BROKER_URI, "mqttClient", new MemoryPersistence());
   }
 
   @After

@@ -25,6 +25,7 @@ import org.eclipse.paho.client.mqttv3.IMqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -61,7 +62,7 @@ public final class MQTTNoSharedResource implements MQTTResource {
   public IMqttAsyncClient getMqttSinkClient(final String brokerURI, final String topic)
       throws MqttException, IOException {
     final IMqttAsyncClient client = new MqttAsyncClient(brokerURI, MQTT_PUBLISHER_ID_PREFIX + sinkClientCounter
-        .getAndIncrement());
+        .getAndIncrement(), new MemoryPersistence());
     final MqttConnectOptions connectOptions = new MqttConnectOptions();
     connectOptions.setMaxInflight(maxInflightMqttEventNum);
     connectOptions.setKeepAliveInterval(mqttSinkKeepAliveSec);
