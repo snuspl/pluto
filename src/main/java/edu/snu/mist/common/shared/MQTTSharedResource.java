@@ -190,6 +190,9 @@ public final class MQTTSharedResource implements MQTTResource {
     final MqttConnectOptions connectOptions = new MqttConnectOptions();
     connectOptions.setMaxInflight(maxInflightMqttEventNum);
     connectOptions.setKeepAliveInterval(mqttSinkKeepAliveSec);
+    if (MQTTAWSIoTAuth.needAuth(brokerURI)) {
+      MQTTAWSIoTAuth.applyAuth(connectOptions, brokerURI);
+    }
     client.connect(connectOptions).waitForCompletion();
     mqttAsyncClientList.add(client);
     publisherSinkNumMap.put(client, 0);

@@ -30,12 +30,12 @@ public interface MQTTResource extends AutoCloseable {
   /**
    * MQTT publisher id.
    */
-  static final String MQTT_PUBLISHER_ID_PREFIX = "MIST_MQTT_PUBLISHER_";
+  String MQTT_PUBLISHER_ID_PREFIX = "MIST_MQTT_PUBLISHER_";
 
   /**
    * MQTT subscriber id.
    */
-  static final String MQTT_SUBSCRIBER_ID_PREFIX = "MIST_MQTT_SUBSCRIBER_";
+  String MQTT_SUBSCRIBER_ID_PREFIX = "MIST_MQTT_SUBSCRIBER_";
 
   IMqttAsyncClient getMqttSinkClient(String brokerURI, String topic)
       throws MqttException, IOException;

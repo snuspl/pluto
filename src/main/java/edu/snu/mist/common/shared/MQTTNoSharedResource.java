@@ -65,6 +65,9 @@ public final class MQTTNoSharedResource implements MQTTResource {
     final MqttConnectOptions connectOptions = new MqttConnectOptions();
     connectOptions.setMaxInflight(maxInflightMqttEventNum);
     connectOptions.setKeepAliveInterval(mqttSinkKeepAliveSec);
+    if (MQTTAWSIoTAuth.needAuth(brokerURI)) {
+      MQTTAWSIoTAuth.applyAuth(connectOptions, brokerURI);
+    }
     client.connect(connectOptions).waitForCompletion();
     return client;
   }
