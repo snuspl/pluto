@@ -72,8 +72,8 @@ public final class MQTTAWSIoTAuth {
   }
 
   private static String getRegion(final String brokerURI) {
-    Pattern pattern = Pattern.compile("iot.(.*).amazonaws.com");
-    Matcher matcher = pattern.matcher(brokerURI);
+    final Pattern pattern = Pattern.compile("iot.(.*).amazonaws.com");
+    final Matcher matcher = pattern.matcher(brokerURI);
 
     return matcher.find() ? matcher.group(1) : "";
   }
@@ -84,10 +84,10 @@ public final class MQTTAWSIoTAuth {
 
   public static void applyAuth(final MqttConnectOptions options, final String brokerURI) {
     final String region = getRegion(brokerURI);
-    SimpleEntry<String, String> certificates = REGION_CERTIFICATES_MAP.get(region);
+    final SimpleEntry<String, String> certificates = REGION_CERTIFICATES_MAP.get(region);
 
     try {
-      SSLSocketFactory socketFactory = getSocketFactory(AWS_IOT_ROOT_CA,
+      final SSLSocketFactory socketFactory = getSocketFactory(AWS_IOT_ROOT_CA,
           certificates.getKey(), certificates.getValue(), "");
       options.setSocketFactory(socketFactory);
     } catch (Exception e) {
@@ -107,9 +107,9 @@ public final class MQTTAWSIoTAuth {
     // load CA certificate
     X509Certificate caCert = null;
 
-    FileInputStream fis = new FileInputStream(getFilePath(caCrtFile));
+    final FileInputStream fis = new FileInputStream(getFilePath(caCrtFile));
+    final CertificateFactory cf = CertificateFactory.getInstance("X.509");
     BufferedInputStream bis = new BufferedInputStream(fis);
-    CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
     while (bis.available() > 0) {
       caCert = (X509Certificate) cf.generateCertificate(bis);
@@ -123,11 +123,11 @@ public final class MQTTAWSIoTAuth {
     }
 
     // load client private key
-    PEMParser pemParser = new PEMParser(new FileReader(getFilePath(keyFile)));
-    Object object = pemParser.readObject();
-    PEMDecryptorProvider decProv = new JcePEMDecryptorProviderBuilder()
+    final PEMParser pemParser = new PEMParser(new FileReader(getFilePath(keyFile)));
+    final Object object = pemParser.readObject();
+    final PEMDecryptorProvider decProv = new JcePEMDecryptorProviderBuilder()
         .build(password.toCharArray());
-    JcaPEMKeyConverter converter = new JcaPEMKeyConverter()
+    final JcaPEMKeyConverter converter = new JcaPEMKeyConverter()
         .setProvider("BC");
     KeyPair key;
     if (object instanceof PEMEncryptedKeyPair) {
@@ -139,19 +139,19 @@ public final class MQTTAWSIoTAuth {
     pemParser.close();
 
     // CA certificate is used to authenticate server
-    KeyStore caKs = KeyStore.getInstance(KeyStore.getDefaultType());
+    final KeyStore caKs = KeyStore.getInstance(KeyStore.getDefaultType());
     caKs.load(null, null);
     caKs.setCertificateEntry("ca-certificate", caCert);
-    TrustManagerFactory tmf = TrustManagerFactory.getInstance("X509");
+    final TrustManagerFactory tmf = TrustManagerFactory.getInstance("X509");
     tmf.init(caKs);
 
     // client key and certificates are sent to server
-    KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+    final KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
     ks.load(null, null);
     ks.setCertificateEntry("certificate", cert);
     ks.setKeyEntry("private-key", key.getPrivate(), password.toCharArray(),
         new java.security.cert.Certificate[]{cert});
-    KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory
+    final KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory
         .getDefaultAlgorithm());
     kmf.init(ks, password.toCharArray());
 
