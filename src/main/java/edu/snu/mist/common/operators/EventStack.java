@@ -30,7 +30,7 @@ public final class EventStack<T> {
     private final Stack<EventStackEntry<T>> eventStack;
 
     /**
-     * Save the first event time to support discarding timeout
+     * Save the first event time to support discarding timeout.
      */
     private long firstEventTime;
 

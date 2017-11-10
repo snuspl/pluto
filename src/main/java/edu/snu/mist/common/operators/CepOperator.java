@@ -227,7 +227,7 @@ public final class CepOperator<T> extends OneStreamOperator {
                                  * the current original stack should not be discarded.
                                  */
                                 if (currEvent.getInnerContiguity() == CepEventContiguity.RELAXED
-                                        || currEvent.getInnerContiguity() == CepEventContiguity.NON_DETERMINISTIC_RELAXED) {
+                                    || currEvent.getInnerContiguity() == CepEventContiguity.NON_DETERMINISTIC_RELAXED) {
                                     isDiscard = false;
                                 }
                             }
