@@ -228,6 +228,7 @@ public final class MistGroupSchedulingTaskConfigs {
         .registerShortNameOfClass(GroupRebalancingPeriod.class)
         .registerShortNameOfClass(GroupIsolationEnabled.class)
         .registerShortNameOfClass(IsolationTriggerPeriod.class)
-        .registerShortNameOfClass(UnderloadedGroupThreshold.class);
+        .registerShortNameOfClass(UnderloadedGroupThreshold.class)
+        .registerShortNameOfClass(Pinning.class);
   }
 }
