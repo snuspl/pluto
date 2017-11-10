@@ -17,6 +17,7 @@
 package edu.snu.mist.api.datastreams;
 
 
+import edu.snu.mist.api.cep.CepEvent;
 import edu.snu.mist.api.datastreams.configurations.*;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.SerializeUtils;
@@ -232,6 +233,22 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
     }
     final Configuration opConf = opConfModule.build();
     return transformToSingleInputContinuousStream(opConf, this);
+  }
+
+  @Override
+  public ContinuousStream<Map<String, List<T>>> cepOperator(final List<CepEvent<T>> cepEvents,
+                                                            final long windowTime) throws IOException {
+    try {
+      final Configuration opConf = CepOperatorConfiguration.CONF
+              .set(CepOperatorConfiguration.CEP_EVENTS, SerializeUtils.serializeToString((Serializable) cepEvents))
+              .set(CepOperatorConfiguration.WINDOW_TIME, windowTime)
+              .set(CepOperatorConfiguration.OPERATOR, CepOperator.class)
+              .build();
+      return transformToSingleInputContinuousStream(opConf, this);
+    } catch (final IOException e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
+    }
   }
 
   @Override

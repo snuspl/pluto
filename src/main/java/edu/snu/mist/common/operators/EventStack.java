@@ -35,12 +35,13 @@ public final class EventStack<T> {
     private long firstEventTime;
 
     /**
-     * After emit this stack, 
+     * Checks whether this stack already emitted or not.
+     * If it was emitted, then this indicate should be false.
      */
     private boolean emitable;
 
     /**
-     *
+     * Checks whether this stack include last event or not.
      */
     private boolean includeLast;
 
