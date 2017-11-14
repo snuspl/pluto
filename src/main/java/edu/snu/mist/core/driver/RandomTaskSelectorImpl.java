@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * A default task selector which returns a list of task ip addresses for client queries.
+ * A default task selector which returns a task ip address for client queries.
  * This simply returns the list of tasks without load information about tasks.
  */
 final class RandomTaskSelectorImpl implements TaskSelector {

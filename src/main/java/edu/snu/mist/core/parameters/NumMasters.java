@@ -22,5 +22,5 @@ import org.apache.reef.tang.annotations.NamedParameter;
  * The number of MIST masters.
  */
 @NamedParameter(doc = "The number of MIST masters.", short_name = "num_masters", default_value = "1")
-public class NumMasters implements Name<Integer> {
+public final class NumMasters implements Name<Integer> {
 }

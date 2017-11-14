@@ -19,7 +19,7 @@ import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * TaskSelector returns a list of tasks for executing client queries
+ * TaskSelector returns a task for executing client queries
  * by collecting information about MistTasks.
  * It extends MistTaskProvider which is a generated avro RPC protocol.
  */

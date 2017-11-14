@@ -22,5 +22,5 @@ import org.apache.reef.tang.annotations.NamedParameter;
  * The memory size of master master.
  */
 @NamedParameter(doc = "The memory size of MIST master", short_name = "master_mem_size")
-public class MasterMemorySize implements Name<Integer> {
+public final class MasterMemorySize implements Name<Integer> {
 }

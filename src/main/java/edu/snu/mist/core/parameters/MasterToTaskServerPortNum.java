@@ -22,5 +22,5 @@ import org.apache.reef.tang.annotations.NamedParameter;
  * Master to task port number used for Avro RPC.
  */
 @NamedParameter(doc = "Master to task port number used for Avro RPC")
-public class MasterToTaskServerPortNum implements Name<Integer> {
+public final class MasterToTaskServerPortNum implements Name<Integer> {
 }

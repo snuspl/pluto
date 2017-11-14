@@ -22,5 +22,5 @@ import org.apache.reef.tang.annotations.NamedParameter;
  * The number of master cores.
  */
 @NamedParameter(doc = "The number of master cores", short_name = "num_master_cores", default_value = "1")
-public class NumMasterCores implements Name<Integer> {
+public final class NumMasterCores implements Name<Integer> {
 }

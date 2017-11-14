@@ -23,5 +23,5 @@ import org.apache.reef.tang.annotations.NamedParameter;
  */
 @NamedParameter(doc = "The port number used for Avro RPC of MistTask / MasterTask",
 short_name = "avro_rpc_port", default_value = "20000")
-public class AvroRPCPortStart implements Name<Integer> {
+public final class AvroRPCPortStart implements Name<Integer> {
 }
