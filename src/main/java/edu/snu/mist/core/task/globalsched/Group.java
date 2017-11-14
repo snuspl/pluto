@@ -119,6 +119,12 @@ public interface Group extends AutoCloseable {
   int processAllEvent();
 
   /**
+   * Process all events in the group within the timeout.
+   * @return the number of processed events
+   */
+  int processAllEvent(long timeout);
+
+  /**
    * Is this group split?
    */
   boolean isSplited();

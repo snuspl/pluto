@@ -185,8 +185,18 @@ final class DefaultGroupImpl implements Group {
 
   @Override
   public int processAllEvent() {
+    return processAllEvent(Long.MAX_VALUE);
+  }
+
+  private long elapsedTime(final long startTime) {
+    return System.nanoTime() - startTime;
+  }
+
+  @Override
+  public int processAllEvent(final long timeout) {
     int numProcessedEvent = 0;
     Query query = activeQueryQueue.poll();
+    final long startTime = System.nanoTime();
 
     while (query != null) {
 
@@ -204,6 +214,13 @@ final class DefaultGroupImpl implements Group {
       } else {
         activeQueryQueue.add(query);
       }
+
+      // Reschedule this group if it still has events to process
+      if (elapsedTime(startTime) > timeout) {
+        eventProcessor.get().addActiveGroup(this);
+        break;
+      }
+
       query = activeQueryQueue.poll();
     }
 
