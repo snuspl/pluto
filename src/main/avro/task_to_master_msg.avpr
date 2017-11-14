@@ -19,7 +19,6 @@
 {
   "namespace": "edu.snu.mist.formats.avro",
   "protocol": "TaskToMasterMessage",
-  /* TODO[IMPLEMENT] Implement master to task message */
   "types":
   [
     {

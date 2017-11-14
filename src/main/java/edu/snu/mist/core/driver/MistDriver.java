@@ -142,10 +142,19 @@ public final class MistDriver {
    * The submitter submits evaluators for Mist tasks after all of the Mist masters launched.
    */
 
+  /**
+   * This is a queue that holds the tasks that were submitted as contexts.
+   */
   private final Queue<ActiveContext> mistTaskQueue;
 
+  /**
+   * This is a queue that holds the masters that were submitted as contexts.
+   */
   private final Queue<ActiveContext> mistMasterQueue;
 
+  /**
+   * This counts the number of contexts submitted.
+   */
   private final AtomicInteger activeContextCounter;
 
   private final Tang tang = Tang.Factory.getTang();
@@ -246,7 +255,6 @@ public final class MistDriver {
       } else {
         LOG.log(Level.SEVERE, "Invalid contextId: {0}", taskId);
       }
-
       // All the active contexts are now submitted
       if (activeContextCounter.incrementAndGet()
           == mistDriverConfigs.getNumMasters() + mistDriverConfigs.getNumTasks()) {
