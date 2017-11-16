@@ -154,10 +154,12 @@ public interface ContinuousStream<T> extends MISTStream<T> {
           final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable) throws IOException;
 
   /**
-   * Applies nfa operator to the current stream.
+   * Applies cep operator to the current stream.
    * @param cepEvents sequence of cep events
    * @param windowTime window time
-   * @return new transformed stream after applying nfa operation
+   * @return new transformed stream after applying cep operation
+   * The return value, map structure contains matched pattern of input events.
+   * It consists of state name as key and input event list as value.
    */
   ContinuousStream<Map<String, List<T>>> cepOperator(final List<CepEvent<T>> cepEvents,
                                                      final long windowTime) throws IOException;

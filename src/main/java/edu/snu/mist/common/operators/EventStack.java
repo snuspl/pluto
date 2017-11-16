@@ -38,7 +38,7 @@ public final class EventStack<T> {
      * Checks whether this stack already emitted or not.
      * If it was emitted, then this indicate should be false.
      */
-    private boolean emitable;
+    private boolean isEmitted;
 
     /**
      * Checks whether this stack include last event or not.
@@ -48,7 +48,7 @@ public final class EventStack<T> {
     public EventStack(final long firstEventTime) {
         this.eventStack = new Stack<>();
         this.firstEventTime = firstEventTime;
-        this.emitable = true;
+        this.isEmitted = true;
         this.includeLast = true;
     }
 
@@ -60,8 +60,8 @@ public final class EventStack<T> {
         return firstEventTime;
     }
 
-    public boolean isEmitable() {
-        return emitable;
+    public boolean isEmitted() {
+        return isEmitted;
     }
 
     public boolean isIncludingLast() {
@@ -74,7 +74,7 @@ public final class EventStack<T> {
     }
 
     public void setAlreadyEmitted() {
-        emitable = false;
+        isEmitted = false;
     }
 
     public void setIncludeLast(final boolean includeLastParam) {
@@ -85,10 +85,10 @@ public final class EventStack<T> {
      * Copy current event stack to make a new instance.
      * @return copied current event stack
      */
-    public EventStack<T> copyStack() {
+    public EventStack<T> deepCopy() {
         final Stack<EventStackEntry<T>> copiedStack = new Stack<>();
         for (final EventStackEntry<T> iterEntry : eventStack) {
-            copiedStack.push(iterEntry.copyEntry());
+            copiedStack.push(iterEntry.deepCopy());
         }
         final EventStack<T> copiedOutput = new EventStack<>(firstEventTime);
         copiedOutput.setStack(copiedStack);

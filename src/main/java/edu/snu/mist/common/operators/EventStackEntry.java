@@ -73,7 +73,7 @@ public final class EventStackEntry<T> {
      * Copy current entry and make a new instance.
      * @return event stack entry.
      */
-    public EventStackEntry<T> copyEntry() {
+    public EventStackEntry<T> deepCopy() {
         final EventStackEntry<T> copiedEntry = new EventStackEntry<>(index);
         final List<T> copiedList = new ArrayList<>(events);
         copiedEntry.setList(copiedList);

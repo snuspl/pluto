@@ -99,17 +99,19 @@ public final class CepOperator<T> extends OneStreamOperator {
         this.matchedEventStackList = new ArrayList<>();
 
         // Find minimum index of final state.
-        int eventIndex = eventList.size() - 1;
-        for (; eventIndex > 1; eventIndex--) {
+        for (int eventIndex = eventList.size() - 1; true; eventIndex--) {
             if (!eventList.get(eventIndex).isOptional()) {
+                this.minFinalStateIndex = eventIndex;
+                break;
+            } else if (eventIndex == 1) {
+                this.minFinalStateIndex = 1;
                 break;
             }
         }
-        this.minFinalStateIndex = eventIndex;
 
         // Initialize proceed index list.
         this.proceedIndexList = new ArrayList<>();
-        for (eventIndex = 0; eventIndex < eventList.size(); eventIndex++) {
+        for (int eventIndex = 0; eventIndex < eventList.size(); eventIndex++) {
             int minIndex;
             int maxIndex;
 
@@ -123,7 +125,7 @@ public final class CepOperator<T> extends OneStreamOperator {
                 maxIndex = minIndex;
             }
 
-            // calculate the maximum index.ㅋ
+            // calculate the maximum index.
             for (int i = eventIndex + 1; i < eventList.size() - 1; i++) {
                 // If next state is optional, increase max index.
                 if (eventList.get(i).isOptional()) {
@@ -204,12 +206,12 @@ public final class CepOperator<T> extends OneStreamOperator {
                                  // If current entry satisfies times condition.
                                  if (currEvent.getMaxTimes() == -1 || times < currEvent.getMaxTimes()) {
                                     final EventStack<T> newStack = new EventStack<>(stack.getFirstEventTime());
-                                    newStack.setStack(stack.copyStack().getStack());
+                                    newStack.setStack(stack.deepCopy().getStack());
                                     newStack.getStack().peek().addEvent(input);
                                     newMatchedEventStackList.add(newStack);
 
                                     // Emit the final state's stack.
-                                    if (proceedIndex >= minFinalStateIndex && newStack.isEmitable()) {
+                                    if (proceedIndex >= minFinalStateIndex && newStack.isEmitted()) {
                                         emit(data, newStack);
                                     }
 
@@ -248,7 +250,7 @@ public final class CepOperator<T> extends OneStreamOperator {
                             }
 
                             final EventStack<T> newStack = new EventStack<>(stack.getFirstEventTime());
-                            newStack.setStack(stack.copyStack().getStack());
+                            newStack.setStack(stack.deepCopy().getStack());
                             final EventStackEntry<T> newEntry = new EventStackEntry<>(proceedIndex);
                             newEntry.addEvent(input);
                             newStack.getStack().push(newEntry);
@@ -275,9 +277,9 @@ public final class CepOperator<T> extends OneStreamOperator {
 
             // Check whether current stack should be discard or not.
             if (!isDiscard) {
-                final EventStack<T> newStack = stack.copyStack();
+                final EventStack<T> newStack = stack.deepCopy();
                 newStack.setIncludeLast(false);
-                if (!stack.isEmitable()) {
+                if (!stack.isEmitted()) {
                     newStack.setAlreadyEmitted();
                 }
                 newMatchedEventStackList.add(newStack);
