@@ -77,6 +77,7 @@ public final class MistGroupSchedulingTaskConfigs {
   private final boolean groupIsolation;
 
   private final boolean pinning;
+  private final long processingTimeout;
 
   @Inject
   private MistGroupSchedulingTaskConfigs(
@@ -97,7 +98,8 @@ public final class MistGroupSchedulingTaskConfigs {
       @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
       @Parameter(GroupIsolationEnabled.class) final boolean groupIsolation,
       @Parameter(IsolationTriggerPeriod.class) final long isolationTriggerPeriod,
-      @Parameter(UnderloadedGroupThreshold.class) final double underloadedGroupThreshold) {
+      @Parameter(UnderloadedGroupThreshold.class) final double underloadedGroupThreshold,
+      @Parameter(ProcessingTimeout.class) final long processingTimeout) {
     this.epaType = epaType;
     this.cpuUtilLowThreshold = cpuUtilLowThreshold;
     this.eventNumHighThreshold = eventNumHighThreshold;
@@ -116,6 +118,7 @@ public final class MistGroupSchedulingTaskConfigs {
     this.groupIsolation = groupIsolation;
     this.isolationTriggerPeriod = isolationTriggerPeriod;
     this.underloadedGroupThreshold = underloadedGroupThreshold;
+    this.processingTimeout = processingTimeout;
   }
 
   /**
@@ -201,6 +204,7 @@ public final class MistGroupSchedulingTaskConfigs {
     jcb.bindNamedParameter(GroupRebalancingPeriod.class, Long.toString(rebalancingPeriod));
     jcb.bindNamedParameter(IsolationTriggerPeriod.class, Long.toString(isolationTriggerPeriod));
     jcb.bindNamedParameter(UnderloadedGroupThreshold.class, Double.toString(underloadedGroupThreshold));
+    jcb.bindNamedParameter(ProcessingTimeout.class, Long.toString(processingTimeout));
 
     return Configurations.merge(getConfigurationForExecutionModel(), jcb.build());
   }
@@ -228,6 +232,8 @@ public final class MistGroupSchedulingTaskConfigs {
         .registerShortNameOfClass(GroupRebalancingPeriod.class)
         .registerShortNameOfClass(GroupIsolationEnabled.class)
         .registerShortNameOfClass(IsolationTriggerPeriod.class)
-        .registerShortNameOfClass(UnderloadedGroupThreshold.class);
+        .registerShortNameOfClass(UnderloadedGroupThreshold.class)
+        .registerShortNameOfClass(ProcessingTimeout.class)
+        .registerShortNameOfClass(Pinning.class);
   }
 }
