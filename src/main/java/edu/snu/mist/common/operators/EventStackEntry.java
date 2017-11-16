@@ -36,12 +36,12 @@ public final class EventStackEntry<T> {
     /**
      * Check whether stop condition is triggered or not.
      */
-    private boolean isStoped;
+    private boolean isStopped;
 
     public EventStackEntry(final int index) {
         this.index = index;
         this.events = new ArrayList<>();
-        this.isStoped = false;
+        this.isStopped = false;
     }
 
     public int getIndex() {
@@ -52,8 +52,8 @@ public final class EventStackEntry<T> {
         return events;
     }
 
-    public boolean isStoped() {
-        return isStoped;
+    public boolean isStopped() {
+        return isStopped;
     }
 
     public void setList(final List<T> eventListParam) {
@@ -65,8 +65,8 @@ public final class EventStackEntry<T> {
         this.events.add(event);
     }
 
-    public void setStoped() {
-        isStoped = true;
+    public void setStopped() {
+        isStopped = true;
     }
 
     /**
