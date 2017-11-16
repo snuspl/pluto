@@ -80,6 +80,16 @@ public final class MistDriver {
   public static final String MIST_DRIVER_ID = "MIST_DRIVER";
 
   /**
+   * Indicates that the ActiveContext is a MIST Master.
+   */
+  public static final String MIST_MASTER_ID = "MistMaster";
+
+  /**
+   * Indicates that the ActiveContext is a MIST Task.
+   */
+  public static final String MIST_TASK_ID = "MistTask";
+
+  /**
    * An evaluator requestor.
    */
   private final EvaluatorRequestor requestor;
@@ -214,7 +224,7 @@ public final class MistDriver {
 
   public final class EvaluatorAllocatedHandler implements EventHandler<AllocatedEvaluator> {
     @Override
-    public void onNext(final AllocatedEvaluator allocatedEvaluator) {
+    public synchronized void onNext(final AllocatedEvaluator allocatedEvaluator) {
       LOG.log(Level.INFO, "Submitting Context to AllocatedEvaluator: {0}", allocatedEvaluator);
       if (allocatedEvaluator.getEvaluatorDescriptor().getRuntimeName().equals(MIST_MASTER_RUNTIME_NAME)) {
         // Submit master tasks
@@ -249,9 +259,9 @@ public final class MistDriver {
           .set(NameResolverConfiguration.NAME_SERVICE_PORT, nameServer.getPort())
           .set(NameResolverConfiguration.NAME_SERVER_HOSTNAME, localAddressProvider.getLocalAddress())
           .build();
-      if (taskId.startsWith("MistMaster")) {
+      if (taskId.startsWith(MIST_MASTER_ID)) {
         mistMasterQueue.add(activeContext);
-      } else if (taskId.startsWith("MistTask")) {
+      } else if (taskId.startsWith(MIST_TASK_ID)) {
         mistTaskQueue.add(activeContext);
       } else {
         LOG.log(Level.SEVERE, "Invalid contextId: {0}", taskId);
@@ -280,6 +290,11 @@ public final class MistDriver {
           masterConfBuilder.bindNamedParameter(TaskToMasterServerPortNum.class,
               String.valueOf(taskToMasterRpcPort));
 
+          /**
+           * TODO : [MIST-928] Policy on task assignment to multiple masters
+           * Currently, each master gets a maximum of "taskNumPerMaster" tasks.
+           * We must decide a better policy that reflects the load of each master in the future.
+           */
           while (!mistTaskQueue.isEmpty() && taskCount < taskNumPerMaster) {
             final ActiveContext taskContext = mistTaskQueue.remove();
             // Allocate the port to the thread

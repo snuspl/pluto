@@ -69,7 +69,7 @@ public final class MistMaster implements Task {
                      @Parameter(ClientToMasterServerPortNum.class) final int clientToMasterPortNum,
                      @Parameter(ClientToTaskServerAddressSet.class) final Set<String> clientToTaskServerAddressSet)
       throws InjectionException {
-    countDownLatch = new CountDownLatch(1);
+    this.countDownLatch = new CountDownLatch(1);
 
     final JavaConfigurationBuilder clientToMasterServerConfBuilder = tang.newConfigurationBuilder();
     clientToMasterServerConfBuilder.bindImplementation(ClientToMasterMessage.class, TaskSelector.class);
