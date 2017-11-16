@@ -15,12 +15,12 @@
  */
 package edu.snu.mist.common.operators;
 
-import edu.snu.mist.api.cep.CepEvent;
+import edu.snu.mist.api.cep.CepEventPattern;
 import edu.snu.mist.api.cep.CepEventContiguity;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
-import edu.snu.mist.common.parameters.CepEvents;
+import edu.snu.mist.common.parameters.CepEventPatterns;
 import edu.snu.mist.common.parameters.WindowTime;
 import edu.snu.mist.common.types.Tuple2;
 import org.apache.reef.tang.annotations.Parameter;
@@ -43,7 +43,7 @@ public final class CepOperator<T> extends OneStreamOperator {
     /**
      * Input event pattern sequence.
      */
-    private final List<CepEvent<T>> eventList;
+    private final List<CepEventPattern<T>> eventPatternList;
 
     /**
      * The minimum index of final state.
@@ -72,7 +72,7 @@ public final class CepOperator<T> extends OneStreamOperator {
 
     @Inject
     private CepOperator(
-            @Parameter(CepEvents.class) final String serializedEvents,
+            @Parameter(CepEventPatterns.class) final String serializedEvents,
             @Parameter(WindowTime.class) final long windowTime,
             final ClassLoader classLoader) throws IOException, ClassNotFoundException {
         this(SerializeUtils.deserializeFromString(serializedEvents, classLoader), windowTime);
@@ -80,27 +80,27 @@ public final class CepOperator<T> extends OneStreamOperator {
 
     /**
      * Constructor of cep operator.
-     * @param cepEvents cep event list
+     * @param cepEventPatterns cep event list
      * @param windowTime window time
      */
     public CepOperator(
-            final List<CepEvent<T>> cepEvents,
+            final List<CepEventPattern<T>> cepEventPatterns,
             final long windowTime) {
 
         // Add all the event sequence.
-        this.eventList = new ArrayList<>();
-        this.eventList.addAll(cepEvents);
+        this.eventPatternList = new ArrayList<>();
+        this.eventPatternList.addAll(cepEventPatterns);
 
         // Add first initial state as null cep event.
-        this.eventList.add(0, null);
+        this.eventPatternList.add(0, null);
 
         // Set window time.
         this.windowTime = windowTime;
         this.matchedEventStackList = new ArrayList<>();
 
         // Find minimum index of final state.
-        for (int eventIndex = eventList.size() - 1; true; eventIndex--) {
-            if (!eventList.get(eventIndex).isOptional()) {
+        for (int eventIndex = eventPatternList.size() - 1; true; eventIndex--) {
+            if (!eventPatternList.get(eventIndex).isOptional()) {
                 this.minFinalStateIndex = eventIndex;
                 break;
             } else if (eventIndex == 1) {
@@ -111,12 +111,12 @@ public final class CepOperator<T> extends OneStreamOperator {
 
         // Initialize proceed index list.
         this.proceedIndexList = new ArrayList<>();
-        for (int eventIndex = 0; eventIndex < eventList.size(); eventIndex++) {
+        for (int eventIndex = 0; eventIndex < eventPatternList.size(); eventIndex++) {
             int minIndex;
             int maxIndex;
 
             // If loop state, set it to minimum index.
-            if (eventIndex != 0 && eventList.get(eventIndex).isTimes()) {
+            if (eventIndex != 0 && eventPatternList.get(eventIndex).isTimes()) {
                 minIndex = eventIndex;
                 maxIndex = eventIndex + 1;
             // else normal state, (current index + 1) to minimum index.
@@ -126,9 +126,9 @@ public final class CepOperator<T> extends OneStreamOperator {
             }
 
             // calculate the maximum index.
-            for (int i = eventIndex + 1; i < eventList.size() - 1; i++) {
+            for (int i = eventIndex + 1; i < eventPatternList.size() - 1; i++) {
                 // If next state is optional, increase max index.
-                if (eventList.get(i).isOptional()) {
+                if (eventPatternList.get(i).isOptional()) {
                     maxIndex++;
                 } else {
                     break;
@@ -136,10 +136,10 @@ public final class CepOperator<T> extends OneStreamOperator {
             }
 
             // No proceed state for current state, set min and max index to (-1).
-            if (minIndex >= eventList.size()) {
+            if (minIndex >= eventPatternList.size()) {
                 minIndex = -1;
                 maxIndex = -1;
-            } else if (maxIndex >= eventList.size()) {
+            } else if (maxIndex >= eventPatternList.size()) {
                 maxIndex = minIndex;
             }
             final Tuple2<Integer, Integer> proceedIndexTup = new Tuple2<>(minIndex, maxIndex);
@@ -152,11 +152,8 @@ public final class CepOperator<T> extends OneStreamOperator {
 
         final T input = (T) data.getValue();
         final long timeStamp = data.getTimestamp();
-        final long limitTime = timeStamp - windowTime;
-
 
         // Save the index of delete stack.
-        // final Set<Integer> deleteStackIndex = new HashSet<>();
         final List<EventStack<T>> newMatchedEventStackList = new ArrayList<>();
         for (int iterStackIndex = 0; iterStackIndex < matchedEventStackList.size(); iterStackIndex++) {
             final EventStack<T> stack = matchedEventStackList.get(iterStackIndex);
@@ -164,7 +161,7 @@ public final class CepOperator<T> extends OneStreamOperator {
             // Flag whether discard original event stack or not.
             boolean isDiscard = true;
 
-            if (stack.getFirstEventTime() >= limitTime) {
+            if (stack.getFirstEventTime() + windowTime >= timeStamp) {
                 final int stateIndex = stack.getStack().peek().getIndex();
                 final int minProceedIndex = (int) proceedIndexList.get(stateIndex).get(0);
                 final int maxProceedIndex = (int) proceedIndexList.get(stateIndex).get(1);
@@ -175,36 +172,36 @@ public final class CepOperator<T> extends OneStreamOperator {
                 }
 
                 // Current state.
-                final CepEvent<T> currEvent = eventList.get(stateIndex);
+                final CepEventPattern<T> currEventPattern = eventPatternList.get(stateIndex);
 
                 for (int proceedIndex = minProceedIndex; proceedIndex <= maxProceedIndex; proceedIndex++) {
 
                     // If the current state is loop state.
                     if (proceedIndex == stateIndex && proceedIndex != 0) {
-                        if (currEvent.isTimes() && !stack.getStack().peek().isStopped()) {
+                        if (currEventPattern.isTimes() && !stack.getStack().peek().isStopped()) {
 
                             // Current looping state's iteration times.
                             final int times = stack.getStack().peek().getlist().size();
 
                             // Stop condition is triggered.
-                            if (currEvent.getStopCondition().test(input)) {
+                            if (currEventPattern.getStopCondition().test(input)) {
                                 stack.getStack().peek().setStopped();
 
                                 // If the current event does not satisfy the min times, continue the iteration.
-                                if (times < currEvent.getMinTimes()) {
+                                if (times < currEventPattern.getMinTimes()) {
                                     continue;
                                 }
 
-                            } else if (currEvent.getCondition().test(input)) {
+                            } else if (currEventPattern.getCondition().test(input)) {
                                 // If the current continguity is strict, but the stack does not include the last event,
                                 // then it would be eliminated.
-                                if (currEvent.getInnerContiguity() == CepEventContiguity.STRICT
+                                if (currEventPattern.getInnerContiguity() == CepEventContiguity.STRICT
                                         && !stack.isIncludingLast()) {
                                     continue;
                                 }
 
                                  // If current entry satisfies times condition.
-                                 if (currEvent.getMaxTimes() == -1 || times < currEvent.getMaxTimes()) {
+                                 if (currEventPattern.getMaxTimes() == -1 || times < currEventPattern.getMaxTimes()) {
                                     final EventStack<T> newStack = new EventStack<>(stack.getFirstEventTime());
                                     newStack.setStack(stack.deepCopy().getStack());
                                     newStack.getStack().peek().addEvent(input);
@@ -216,7 +213,7 @@ public final class CepOperator<T> extends OneStreamOperator {
                                     }
 
                                     // If the current contiguity is NDR, then the stack should not be discarded.
-                                    if (currEvent.getInnerContiguity()
+                                    if (currEventPattern.getInnerContiguity()
                                             == CepEventContiguity.NON_DETERMINISTIC_RELAXED) {
                                         isDiscard = false;
                                     }
@@ -224,27 +221,28 @@ public final class CepOperator<T> extends OneStreamOperator {
 
                             // If the current input does not satisfy the transition condition.
                             } else {
-                                if (currEvent.getInnerContiguity() == CepEventContiguity.STRICT) {
+                                if (currEventPattern.getInnerContiguity() == CepEventContiguity.STRICT) {
                                     stack.getStack().peek().setStopped();
                                 }
 
                                 // If transition condition of relaxed contiguity is not satisfied,
                                 // the current original stack should not be discarded.
-                                if (currEvent.getInnerContiguity() == CepEventContiguity.RELAXED
-                                    || currEvent.getInnerContiguity() == CepEventContiguity.NON_DETERMINISTIC_RELAXED) {
+                                if (currEventPattern.getInnerContiguity() == CepEventContiguity.RELAXED ||
+                                        currEventPattern.getInnerContiguity()
+                                                == CepEventContiguity.NON_DETERMINISTIC_RELAXED) {
                                     isDiscard = false;
                                 }
                             }
                         }
                     } else {
-                        final CepEvent<T> cepEvent = eventList.get(proceedIndex);
+                        final CepEventPattern<T> cepEventPattern = eventPatternList.get(proceedIndex);
                         final int times = stack.getStack().peek().getlist().size();
 
-                            if (cepEvent.getCondition().test(input)) {
+                            if (cepEventPattern.getCondition().test(input)) {
 
                             // If the current continguity is strict, but the stack does not include the last event,
                             // then it would be eliminated.
-                            if (cepEvent.getContiguity() == CepEventContiguity.STRICT
+                            if (cepEventPattern.getContiguity() == CepEventContiguity.STRICT
                                     && !stack.isIncludingLast()) {
                                 continue;
                             }
@@ -261,13 +259,13 @@ public final class CepOperator<T> extends OneStreamOperator {
                                 emit(data, newStack);
                             }
                             // Do not discard the stack of ndr contiguity.
-                            if (cepEvent.getContiguity() == CepEventContiguity.NON_DETERMINISTIC_RELAXED) {
+                            if (cepEventPattern.getContiguity() == CepEventContiguity.NON_DETERMINISTIC_RELAXED) {
                                 isDiscard = false;
                             }
                         } else {
                              // If transition condition of ndr contiguity is not satisfied,
                              // the current original stack should not be discarded.
-                            if (cepEvent.getContiguity() == CepEventContiguity.NON_DETERMINISTIC_RELAXED) {
+                            if (cepEventPattern.getContiguity() == CepEventContiguity.NON_DETERMINISTIC_RELAXED) {
                                 isDiscard = false;
                             }
                         }
@@ -291,8 +289,8 @@ public final class CepOperator<T> extends OneStreamOperator {
         final int minProceedIndex = (int) proceedIndexList.get(0).get(0);
         final int maxProceedIndex = (int) proceedIndexList.get(0).get(1);
         for (int proceedIndex = minProceedIndex; proceedIndex <= maxProceedIndex; proceedIndex++) {
-            final CepEvent<T> cepEvent = eventList.get(proceedIndex);
-            if (cepEvent.getCondition().test(input)) {
+            final CepEventPattern<T> cepEventPattern = eventPatternList.get(proceedIndex);
+            if (cepEventPattern.getCondition().test(input)) {
                 final EventStack<T> newStack = new EventStack<>(timeStamp);
                 final EventStackEntry<T> newEntry = new EventStackEntry<>(proceedIndex);
                 newEntry.addEvent(input);
@@ -330,14 +328,14 @@ public final class CepOperator<T> extends OneStreamOperator {
         final int finalStateIndex = eventStack.getStack().peek().getIndex();
         final EventStackEntry<T> finalEntry = eventStack.getStack().peek();
         final int times = finalEntry.getlist().size();
-        final CepEvent<T> finalState = eventList.get(finalStateIndex);
+        final CepEventPattern<T> finalState = eventPatternList.get(finalStateIndex);
         if (!finalState.isTimes()
                 || (times >= finalState.getMinTimes()
                 && (finalState.getMaxTimes() == -1 || times <= finalState.getMaxTimes()))) {
 
             // Make an output data.
             for (final EventStackEntry<T> iterEntry : eventStack.getStack()) {
-                output.put(eventList.get(iterEntry.getIndex()).getEventName(), iterEntry.getlist());
+                output.put(eventPatternList.get(iterEntry.getIndex()).getEventPatternName(), iterEntry.getlist());
             }
 
             if (LOG.isLoggable(Level.FINE)) {

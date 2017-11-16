@@ -74,7 +74,7 @@ public final class MISTCepNewQueryTest {
             .build();
 
     private final MISTPredicate examplePredicate = s -> true;
-    private final CepEvent exampleEvent = new CepEvent.Builder()
+    private final CepEventPattern exampleEvent = new CepEventPattern.Builder()
             .setName("test-event")
             .setCondition(examplePredicate)
             .setContiguity(CepEventContiguity.STRICT)
@@ -154,9 +154,9 @@ public final class MISTCepNewQueryTest {
             .build();
 
         Assert.assertEquals(exampleCepSocketInput, exampleQuery.getCepInput());
-        final List<CepEvent> expectedEventSequence = new ArrayList<>();
+        final List<CepEventPattern> expectedEventSequence = new ArrayList<>();
         expectedEventSequence.add(exampleEvent);
-        Assert.assertEquals(expectedEventSequence, exampleQuery.getCepEventSequence());
+        Assert.assertEquals(expectedEventSequence, exampleQuery.getCepEventPatternSequence());
         Assert.assertEquals(exampleQualifier, exampleQuery.getCepQualifier());
         Assert.assertEquals(exampleQuery.getCepAction(), new CepAction.Builder()
             .setActionType(CepActionType.TEXT_WRITE)

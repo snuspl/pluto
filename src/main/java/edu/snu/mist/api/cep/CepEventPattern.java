@@ -20,8 +20,8 @@ import edu.snu.mist.common.functions.MISTPredicate;
 /**
  * Event of cep query, consists of event name and condition.
  */
-public final class CepEvent<T> {
-    private final String eventName;
+public final class CepEventPattern<T> {
+    private final String eventPatternName;
     private final MISTPredicate<T> condition;
     private final Class<T> classType;
 
@@ -55,8 +55,8 @@ public final class CepEvent<T> {
      */
     private final MISTPredicate<T> stopCondition;
 
-    private CepEvent(
-            final String eventName,
+    private CepEventPattern(
+            final String eventPatternName,
             final MISTPredicate<T> condition,
             final CepEventContiguity contiguity,
             final boolean optional,
@@ -66,7 +66,7 @@ public final class CepEvent<T> {
             final CepEventContiguity innerContiguity,
             final MISTPredicate<T> stopCondition,
             final Class<T> classType) {
-        this.eventName = eventName;
+        this.eventPatternName = eventPatternName;
         this.condition = condition;
         this.contiguity = contiguity;
         this.optional = optional;
@@ -78,8 +78,8 @@ public final class CepEvent<T> {
         this.classType = classType;
     }
 
-    public String getEventName() {
-        return eventName;
+    public String getEventPatternName() {
+        return eventPatternName;
     }
 
     public MISTPredicate<T> getCondition() {
@@ -290,14 +290,14 @@ public final class CepEvent<T> {
             return this;
         }
 
-        public CepEvent<T> build() {
+        public CepEventPattern<T> build() {
             if (eventName == null
                     || contiguity == null
                     || condition == null
                     || classType == null) {
                 throw new IllegalStateException("One of event name, condition, class type is null!");
             }
-            return new CepEvent(eventName, condition, contiguity, optional,
+            return new CepEventPattern(eventName, condition, contiguity, optional,
                     times, minTimes, maxTimes, innerContiguity, stopCondition, classType);
         }
     }

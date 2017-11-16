@@ -16,7 +16,7 @@
 package edu.snu.mist.api.datastreams.configurations;
 
 import edu.snu.mist.common.operators.Operator;
-import edu.snu.mist.common.parameters.CepEvents;
+import edu.snu.mist.common.parameters.CepEventPatterns;
 import edu.snu.mist.common.parameters.WindowTime;
 import org.apache.reef.tang.formats.ConfigurationModule;
 import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
@@ -47,7 +47,7 @@ public final class CepOperatorConfiguration extends ConfigurationModuleBuilder {
      * A configuration for binding the class of the user-defined function.
      */
     public static final ConfigurationModule CONF = new CepOperatorConfiguration()
-            .bindNamedParameter(CepEvents.class, CEP_EVENTS)
+            .bindNamedParameter(CepEventPatterns.class, CEP_EVENTS)
             .bindNamedParameter(WindowTime.class, WINDOW_TIME)
             .bindImplementation(Operator.class, OPERATOR)
             .build();

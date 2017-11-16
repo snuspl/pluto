@@ -19,5 +19,5 @@ import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 @NamedParameter(doc = "Window time used in Cep operator")
-public class WindowTime implements Name<Long> {
+public final class WindowTime implements Name<Long> {
 }
