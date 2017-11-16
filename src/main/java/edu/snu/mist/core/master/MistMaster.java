@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.master;
+package edu.snu.mist.core.master;
 
 import edu.snu.mist.common.rpc.*;
-import edu.snu.mist.core.driver.TaskSelector;
 import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import edu.snu.mist.formats.avro.TaskToMasterMessage;
-import edu.snu.mist.master.parameters.ClientToMasterServerPortNum;
-import edu.snu.mist.master.parameters.ClientToTaskServerAddressSet;
-import edu.snu.mist.master.parameters.TaskToMasterServerPortNum;
+import edu.snu.mist.core.master.parameters.ClientToMasterServerPortNum;
+import edu.snu.mist.core.master.parameters.ClientToTaskServerAddressSet;
+import edu.snu.mist.core.master.parameters.TaskToMasterServerPortNum;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.reef.tang.Injector;

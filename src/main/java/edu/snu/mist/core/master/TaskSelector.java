@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.driver;
+package edu.snu.mist.core.master;
 
 import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import org.apache.reef.tang.annotations.DefaultImplementation;

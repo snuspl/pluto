@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.master.parameters;
+package edu.snu.mist.core.master;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * Policy for selecting task in MIST master.
+ * The interface which manages evaluators in mist master.
  */
-@NamedParameter (doc = "Policy for selecting task in MIST master")
-public class TaskSelectingPolicy implements Name<String> {
+@DefaultImplementation(DefaultTaskManagerImpl.class)
+public interface TaskManager extends AutoCloseable {
+  // TODO[MIST-423]: Implement tracking evaluator stats in mist master
 }

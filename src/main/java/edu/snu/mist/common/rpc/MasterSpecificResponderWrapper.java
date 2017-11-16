@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.common.rpc;
 
-import edu.snu.mist.core.driver.TaskSelector;
+import edu.snu.mist.core.master.TaskSelector;
 import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.reef.tang.ExternalConstructor;

@@ -13,7 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.core.master;
+
+import org.apache.avro.ipc.Server;
+
+import javax.inject.Inject;
+
 /**
- * Parameters used for Mist Master.
+ * The default implementation for EvaluatorManager.
  */
-package edu.snu.mist.master.parameters;
+public final class DefaultTaskManagerImpl implements TaskManager {
+
+  // TODO[MIST-423]: Implement tracking evaluator stats in mist master
+
+  @Inject
+  private DefaultTaskManagerImpl(final Server server) {
+
+  }
+
+  @Override
+  public void close() {
+
+  }
+}

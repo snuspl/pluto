@@ -13,14 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.master.parameters;
-
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
-
 /**
- * Client to master server port number used for RPC.
+ * The package which contains classes related to Mist masters.
  */
-@NamedParameter(doc = "Client to master server port number used for RPC")
-public class ClientToMasterServerPortNum implements Name<Integer> {
-}
+package edu.snu.mist.core.master;

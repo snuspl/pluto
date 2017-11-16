@@ -13,14 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.master;
-
-import org.apache.reef.tang.annotations.DefaultImplementation;
-
 /**
- * The interface which manages evaluators in mist master.
+ * Parameters used for Mist Master.
  */
-@DefaultImplementation(DefaultTaskManagerImpl.class)
-public interface TaskManager extends AutoCloseable {
-  // TODO[MIST-423]: Implement tracking evaluator stats in mist master
-}
+package edu.snu.mist.core.master.parameters;
