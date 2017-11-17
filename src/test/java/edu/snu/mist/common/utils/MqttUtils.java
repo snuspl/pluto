@@ -17,6 +17,7 @@ package edu.snu.mist.common.utils;
 
 import io.moquette.server.Server;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
 
@@ -49,7 +50,9 @@ public final class MqttUtils {
   /**
    * The directory path prefix of the broker setting.
    */
-  public static final String DIR_PATH_PREFIX = "/tmp/mist/MQTTTest-";
+  private static final String TMP_DIR = "/tmp/mist";
+
+  public static final String DIR_PATH_PREFIX = TMP_DIR + "/MQTTTest-";
 
   private MqttUtils() {
 
@@ -61,6 +64,25 @@ public final class MqttUtils {
    * @throws IOException
    */
   public static Server createMqttBroker() throws IOException {
+    // Create tmp folder
+    final File tmpDir = new File(TMP_DIR);
+
+    if (!tmpDir.exists()) {
+      System.out.println("creating directory: " + tmpDir.getName());
+      boolean result = false;
+
+      try {
+        tmpDir.mkdir();
+        result = true;
+      } catch (final SecurityException se) {
+        // do nothing
+      }
+
+      if (result) {
+        System.out.println(tmpDir.getName() + " created");
+      }
+    }
+
     // create local mqtt broker
     final Properties brokerProps = new Properties();
     brokerProps.put("port", PORT);
