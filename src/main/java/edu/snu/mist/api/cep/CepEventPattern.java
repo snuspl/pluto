@@ -20,8 +20,8 @@ import edu.snu.mist.common.functions.MISTPredicate;
 /**
  * Event of cep query, consists of event name and condition.
  */
-public final class CepEvent<T> {
-    private final String eventName;
+public final class CepEventPattern<T> {
+    private final String eventPatternName;
     private final MISTPredicate<T> condition;
     private final Class<T> classType;
 
@@ -37,49 +37,49 @@ public final class CepEvent<T> {
     private final boolean optional;
 
     /**
-     * Specifies that the pattern can occur between minTimes and maxTimes.
-     * If maxTimes is -1, it means infinite value.
+     * Specifies that the pattern can occur between minRepetition and maxRepetition.
+     * If maxRepetition is -1, it means infinite value.
      */
-    private final boolean times;
-    private final int minTimes;
-    private final int maxTimes;
+    private final boolean repetition;
+    private final int minRepetition;
+    private final int maxRepetition;
 
     /**
-     * In times quantifier, the events would be handled with inner contiguity.
+     * In repetition quantifier, the events would be handled with inner contiguity.
      */
     private final CepEventContiguity innerContiguity;
 
     /**
-     * In times quantifier, the condition which stops the accumulation of events.
-     * Only valid when maxTimes is infinite(N or more).
+     * In repetition quantifier, the condition which stops the accumulation of events.
+     * Only valid when maxRepetition is infinite(N or more).
      */
     private final MISTPredicate<T> stopCondition;
 
-    private CepEvent(
-            final String eventName,
+    private CepEventPattern(
+            final String eventPatternName,
             final MISTPredicate<T> condition,
             final CepEventContiguity contiguity,
             final boolean optional,
-            final boolean times,
-            final int minTimes,
-            final int maxTimes,
+            final boolean repetition,
+            final int minRepetition,
+            final int maxRepetition,
             final CepEventContiguity innerContiguity,
             final MISTPredicate<T> stopCondition,
             final Class<T> classType) {
-        this.eventName = eventName;
+        this.eventPatternName = eventPatternName;
         this.condition = condition;
         this.contiguity = contiguity;
         this.optional = optional;
-        this.times = times;
-        this.minTimes = minTimes;
-        this.maxTimes = maxTimes;
+        this.repetition = repetition;
+        this.minRepetition = minRepetition;
+        this.maxRepetition = maxRepetition;
         this.innerContiguity = innerContiguity;
         this.stopCondition = stopCondition;
         this.classType = classType;
     }
 
-    public String getEventName() {
-        return eventName;
+    public String getEventPatternName() {
+        return eventPatternName;
     }
 
     public MISTPredicate<T> getCondition() {
@@ -98,16 +98,16 @@ public final class CepEvent<T> {
         return optional;
     }
 
-    public boolean isTimes() {
-        return times;
+    public boolean isRepeated() {
+        return repetition;
     }
 
-    public int getMinTimes() {
-        return minTimes;
+    public int getMinRepetition() {
+        return minRepetition;
     }
 
-    public int getMaxTimes() {
-        return maxTimes;
+    public int getMaxRepetition() {
+        return maxRepetition;
     }
 
     public CepEventContiguity getInnerContiguity() {
@@ -234,8 +234,8 @@ public final class CepEvent<T> {
         }
 
         /**
-         * Set times quantifier. Exact times of events are matched.
-         * @param timesParam times
+         * Set repetition quantifier. Exact repetition of events are matched.
+         * @param timesParam repetition
          * @return builder
          */
         public Builder setTimes(final int timesParam) {
@@ -243,10 +243,10 @@ public final class CepEvent<T> {
         }
 
         /**
-         * Set times quantifier.
-         * Specifies that the pattern can occur between minTimes and maxTimes.
-         * @param minTimeParam times
-         * @param maxTimeParam times
+         * Set repetition quantifier.
+         * Specifies that the pattern can occur between minRepetition and maxRepetition.
+         * @param minTimeParam repetition
+         * @param maxTimeParam repetition
          * @return builder
          */
         public Builder setTimes(final int minTimeParam, final int maxTimeParam) {
@@ -266,7 +266,7 @@ public final class CepEvent<T> {
         }
 
         /**
-         * Set inner contiguity of times quantifier.
+         * Set inner contiguity of repetition quantifier.
          * @param innerContiguityParam contiguity
          * @return builder
          */
@@ -290,14 +290,14 @@ public final class CepEvent<T> {
             return this;
         }
 
-        public CepEvent<T> build() {
+        public CepEventPattern<T> build() {
             if (eventName == null
                     || contiguity == null
                     || condition == null
                     || classType == null) {
                 throw new IllegalStateException("One of event name, condition, class type is null!");
             }
-            return new CepEvent(eventName, condition, contiguity, optional,
+            return new CepEventPattern(eventName, condition, contiguity, optional,
                     times, minTimes, maxTimes, innerContiguity, stopCondition, classType);
         }
     }

@@ -20,7 +20,7 @@ import edu.snu.mist.common.functions.MISTPredicate;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class MISTCepEventTest {
+public class MISTCepEventPatternTest {
 
     private final String exampleEventName = "test-event";
     private final MISTPredicate exampleCondition = s -> false;
@@ -39,7 +39,7 @@ public class MISTCepEventTest {
         /**
          * Event with N or more quantifier.
          */
-        final CepEvent<CepExampleClass> exampleEvent1 = new CepEvent.Builder<CepExampleClass>()
+        final CepEventPattern<CepExampleClass> exampleEvent1 = new CepEventPattern.Builder<CepExampleClass>()
                 .setName(exampleEventName)
                 .setCondition(exampleCondition)
                 .setClass(exampleClassType)
@@ -48,13 +48,13 @@ public class MISTCepEventTest {
                 .setStopCondition(exampleStopCondition)
                 .build();
 
-        Assert.assertEquals(exampleEventName, exampleEvent1.getEventName());
+        Assert.assertEquals(exampleEventName, exampleEvent1.getEventPatternName());
         Assert.assertEquals(exampleCondition, exampleEvent1.getCondition());
         Assert.assertEquals(exampleClassType, exampleEvent1.getClassType());
         Assert.assertEquals(exampleContiguity1, exampleEvent1.getContiguity());
-        Assert.assertEquals(30, exampleEvent1.getMinTimes());
-        Assert.assertEquals(-1, exampleEvent1.getMaxTimes());
-        Assert.assertTrue(exampleEvent1.isTimes());
+        Assert.assertEquals(30, exampleEvent1.getMinRepetition());
+        Assert.assertEquals(-1, exampleEvent1.getMaxRepetition());
+        Assert.assertTrue(exampleEvent1.isRepeated());
         Assert.assertFalse(exampleEvent1.isOptional());
         Assert.assertEquals(CepEventContiguity.RELAXED, exampleEvent1.getInnerContiguity());
         Assert.assertEquals(exampleStopCondition, exampleEvent1.getStopCondition());
@@ -62,7 +62,7 @@ public class MISTCepEventTest {
         /**
          * Event with Times and optional quantifier.
          */
-        final CepEvent<CepExampleClass> exampleEvent2 = new CepEvent.Builder<CepExampleClass>()
+        final CepEventPattern<CepExampleClass> exampleEvent2 = new CepEventPattern.Builder<CepExampleClass>()
                 .setName(exampleEventName)
                 .setCondition(exampleCondition)
                 .setClass(exampleClassType)
@@ -72,13 +72,13 @@ public class MISTCepEventTest {
                 .setOptional()
                 .build();
 
-        Assert.assertEquals(exampleEventName, exampleEvent2.getEventName());
+        Assert.assertEquals(exampleEventName, exampleEvent2.getEventPatternName());
         Assert.assertEquals(exampleCondition, exampleEvent2.getCondition());
         Assert.assertEquals(exampleClassType, exampleEvent2.getClassType());
         Assert.assertEquals(exampleContiguity2, exampleEvent2.getContiguity());
-        Assert.assertEquals(10, exampleEvent2.getMinTimes());
-        Assert.assertEquals(30, exampleEvent2.getMaxTimes());
-        Assert.assertTrue(exampleEvent2.isTimes());
+        Assert.assertEquals(10, exampleEvent2.getMinRepetition());
+        Assert.assertEquals(30, exampleEvent2.getMaxRepetition());
+        Assert.assertTrue(exampleEvent2.isRepeated());
         Assert.assertTrue(exampleEvent2.isOptional());
         Assert.assertEquals(exampleInnerContiguity, exampleEvent2.getInnerContiguity());
     }
@@ -89,7 +89,7 @@ public class MISTCepEventTest {
      */
     @Test(expected = IllegalStateException.class)
     public void testCepEventException() throws IllegalStateException {
-        final CepEvent<CepExampleClass> exampleEvent = new CepEvent.Builder<CepExampleClass>()
+        final CepEventPattern<CepExampleClass> exampleEvent = new CepEventPattern.Builder<CepExampleClass>()
                 .build();
     }
 
@@ -99,7 +99,7 @@ public class MISTCepEventTest {
      */
     @Test(expected = IllegalArgumentException.class)
     public void testCepEventNOrMoreArgException() throws IllegalArgumentException {
-        final CepEvent<CepExampleClass> exampleEvent = new CepEvent.Builder<CepExampleClass>()
+        final CepEventPattern<CepExampleClass> exampleEvent = new CepEventPattern.Builder<CepExampleClass>()
                 .setName(exampleEventName)
                 .setCondition(exampleCondition)
                 .setClass(exampleClassType)
@@ -113,7 +113,7 @@ public class MISTCepEventTest {
      */
     @Test(expected = IllegalStateException.class)
     public void testCepEventDoubleOptionalException() throws IllegalArgumentException {
-        final CepEvent<CepExampleClass> exampleEvent = new CepEvent.Builder<CepExampleClass>()
+        final CepEventPattern<CepExampleClass> exampleEvent = new CepEventPattern.Builder<CepExampleClass>()
                 .setName(exampleEventName)
                 .setCondition(exampleCondition)
                 .setClass(exampleClassType)
@@ -128,7 +128,7 @@ public class MISTCepEventTest {
      */
     @Test(expected = IllegalArgumentException.class)
     public void testCepEventTimesChangedMinMaxArgException() throws IllegalArgumentException {
-        final CepEvent<CepExampleClass> exampleEvent = new CepEvent.Builder<CepExampleClass>()
+        final CepEventPattern<CepExampleClass> exampleEvent = new CepEventPattern.Builder<CepExampleClass>()
                 .setName(exampleEventName)
                 .setCondition(exampleCondition)
                 .setClass(exampleClassType)
@@ -142,7 +142,7 @@ public class MISTCepEventTest {
      */
     @Test(expected = IllegalArgumentException.class)
     public void testCepEventTimesNegetiveArgException() throws IllegalArgumentException {
-        final CepEvent<CepExampleClass> exampleEvent = new CepEvent.Builder<CepExampleClass>()
+        final CepEventPattern<CepExampleClass> exampleEvent = new CepEventPattern.Builder<CepExampleClass>()
                 .setName(exampleEventName)
                 .setCondition(exampleCondition)
                 .setClass(exampleClassType)
@@ -155,7 +155,7 @@ public class MISTCepEventTest {
      */
     @Test(expected = IllegalStateException.class)
     public void testCepEventQuantifierSetException() throws IllegalStateException {
-        final CepEvent<CepExampleClass> exampleEvent = new CepEvent.Builder<CepExampleClass>()
+        final CepEventPattern<CepExampleClass> exampleEvent = new CepEventPattern.Builder<CepExampleClass>()
                 .setName(exampleEventName)
                 .setCondition(exampleCondition)
                 .setClass(exampleClassType)
@@ -170,7 +170,7 @@ public class MISTCepEventTest {
      */
     @Test(expected = IllegalStateException.class)
     public void testCepEventInnerContiguityException() throws IllegalStateException {
-        final CepEvent<CepExampleClass> exampleEvent = new CepEvent.Builder<CepExampleClass>()
+        final CepEventPattern<CepExampleClass> exampleEvent = new CepEventPattern.Builder<CepExampleClass>()
                 .setName(exampleEventName)
                 .setCondition(exampleCondition)
                 .setClass(exampleClassType)
@@ -184,7 +184,7 @@ public class MISTCepEventTest {
      */
     @Test(expected = IllegalStateException.class)
     public void testCepEventStopConditionException() throws IllegalStateException {
-        final CepEvent<CepExampleClass> exampleEvent = new CepEvent.Builder<CepExampleClass>()
+        final CepEventPattern<CepExampleClass> exampleEvent = new CepEventPattern.Builder<CepExampleClass>()
                 .setName(exampleEventName)
                 .setCondition(exampleCondition)
                 .setClass(exampleClassType)
