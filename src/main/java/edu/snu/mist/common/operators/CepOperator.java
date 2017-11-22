@@ -116,7 +116,7 @@ public final class CepOperator<T> extends OneStreamOperator {
             int maxIndex;
 
             // If loop state, set it to minimum index.
-            if (eventIndex != 0 && eventPatternList.get(eventIndex).isTimes()) {
+            if (eventIndex != 0 && eventPatternList.get(eventIndex).isRepeated()) {
                 minIndex = eventIndex;
                 maxIndex = eventIndex + 1;
             // else normal state, (current index + 1) to minimum index.
@@ -178,7 +178,7 @@ public final class CepOperator<T> extends OneStreamOperator {
 
                     // If the current state is loop state.
                     if (proceedIndex == stateIndex && proceedIndex != 0) {
-                        if (currEventPattern.isTimes() && !stack.getStack().peek().isStopped()) {
+                        if (currEventPattern.isRepeated() && !stack.getStack().peek().isStopped()) {
 
                             // Current looping state's iteration times.
                             final int times = stack.getStack().peek().getlist().size();
@@ -188,7 +188,7 @@ public final class CepOperator<T> extends OneStreamOperator {
                                 stack.getStack().peek().setStopped();
 
                                 // If the current event does not satisfy the min times, continue the iteration.
-                                if (times < currEventPattern.getMinTimes()) {
+                                if (times < currEventPattern.getMinRepetition()) {
                                     continue;
                                 }
 
@@ -201,7 +201,8 @@ public final class CepOperator<T> extends OneStreamOperator {
                                 }
 
                                  // If current entry satisfies times condition.
-                                 if (currEventPattern.getMaxTimes() == -1 || times < currEventPattern.getMaxTimes()) {
+                                 if (currEventPattern.getMaxRepetition() == -1
+                                         || times < currEventPattern.getMaxRepetition()) {
                                     final EventStack<T> newStack = new EventStack<>(stack.getFirstEventTime());
                                     newStack.setStack(stack.deepCopy().getStack());
                                     newStack.getStack().peek().addEvent(input);
@@ -329,9 +330,9 @@ public final class CepOperator<T> extends OneStreamOperator {
         final EventStackEntry<T> finalEntry = eventStack.getStack().peek();
         final int times = finalEntry.getlist().size();
         final CepEventPattern<T> finalState = eventPatternList.get(finalStateIndex);
-        if (!finalState.isTimes()
-                || (times >= finalState.getMinTimes()
-                && (finalState.getMaxTimes() == -1 || times <= finalState.getMaxTimes()))) {
+        if (!finalState.isRepeated()
+                || (times >= finalState.getMinRepetition()
+                && (finalState.getMaxRepetition() == -1 || times <= finalState.getMaxRepetition()))) {
 
             // Make an output data.
             for (final EventStackEntry<T> iterEntry : eventStack.getStack()) {

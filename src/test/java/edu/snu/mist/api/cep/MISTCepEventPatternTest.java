@@ -52,9 +52,9 @@ public class MISTCepEventPatternTest {
         Assert.assertEquals(exampleCondition, exampleEvent1.getCondition());
         Assert.assertEquals(exampleClassType, exampleEvent1.getClassType());
         Assert.assertEquals(exampleContiguity1, exampleEvent1.getContiguity());
-        Assert.assertEquals(30, exampleEvent1.getMinTimes());
-        Assert.assertEquals(-1, exampleEvent1.getMaxTimes());
-        Assert.assertTrue(exampleEvent1.isTimes());
+        Assert.assertEquals(30, exampleEvent1.getMinRepetition());
+        Assert.assertEquals(-1, exampleEvent1.getMaxRepetition());
+        Assert.assertTrue(exampleEvent1.isRepeated());
         Assert.assertFalse(exampleEvent1.isOptional());
         Assert.assertEquals(CepEventContiguity.RELAXED, exampleEvent1.getInnerContiguity());
         Assert.assertEquals(exampleStopCondition, exampleEvent1.getStopCondition());
@@ -76,9 +76,9 @@ public class MISTCepEventPatternTest {
         Assert.assertEquals(exampleCondition, exampleEvent2.getCondition());
         Assert.assertEquals(exampleClassType, exampleEvent2.getClassType());
         Assert.assertEquals(exampleContiguity2, exampleEvent2.getContiguity());
-        Assert.assertEquals(10, exampleEvent2.getMinTimes());
-        Assert.assertEquals(30, exampleEvent2.getMaxTimes());
-        Assert.assertTrue(exampleEvent2.isTimes());
+        Assert.assertEquals(10, exampleEvent2.getMinRepetition());
+        Assert.assertEquals(30, exampleEvent2.getMaxRepetition());
+        Assert.assertTrue(exampleEvent2.isRepeated());
         Assert.assertTrue(exampleEvent2.isOptional());
         Assert.assertEquals(exampleInnerContiguity, exampleEvent2.getInnerContiguity());
     }

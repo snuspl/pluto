@@ -37,21 +37,21 @@ public final class CepEventPattern<T> {
     private final boolean optional;
 
     /**
-     * Specifies that the pattern can occur between minTimes and maxTimes.
-     * If maxTimes is -1, it means infinite value.
+     * Specifies that the pattern can occur between minRepetition and maxRepetition.
+     * If maxRepetition is -1, it means infinite value.
      */
-    private final boolean times;
-    private final int minTimes;
-    private final int maxTimes;
+    private final boolean repetition;
+    private final int minRepetition;
+    private final int maxRepetition;
 
     /**
-     * In times quantifier, the events would be handled with inner contiguity.
+     * In repetition quantifier, the events would be handled with inner contiguity.
      */
     private final CepEventContiguity innerContiguity;
 
     /**
-     * In times quantifier, the condition which stops the accumulation of events.
-     * Only valid when maxTimes is infinite(N or more).
+     * In repetition quantifier, the condition which stops the accumulation of events.
+     * Only valid when maxRepetition is infinite(N or more).
      */
     private final MISTPredicate<T> stopCondition;
 
@@ -60,9 +60,9 @@ public final class CepEventPattern<T> {
             final MISTPredicate<T> condition,
             final CepEventContiguity contiguity,
             final boolean optional,
-            final boolean times,
-            final int minTimes,
-            final int maxTimes,
+            final boolean repetition,
+            final int minRepetition,
+            final int maxRepetition,
             final CepEventContiguity innerContiguity,
             final MISTPredicate<T> stopCondition,
             final Class<T> classType) {
@@ -70,9 +70,9 @@ public final class CepEventPattern<T> {
         this.condition = condition;
         this.contiguity = contiguity;
         this.optional = optional;
-        this.times = times;
-        this.minTimes = minTimes;
-        this.maxTimes = maxTimes;
+        this.repetition = repetition;
+        this.minRepetition = minRepetition;
+        this.maxRepetition = maxRepetition;
         this.innerContiguity = innerContiguity;
         this.stopCondition = stopCondition;
         this.classType = classType;
@@ -98,16 +98,16 @@ public final class CepEventPattern<T> {
         return optional;
     }
 
-    public boolean isTimes() {
-        return times;
+    public boolean isRepeated() {
+        return repetition;
     }
 
-    public int getMinTimes() {
-        return minTimes;
+    public int getMinRepetition() {
+        return minRepetition;
     }
 
-    public int getMaxTimes() {
-        return maxTimes;
+    public int getMaxRepetition() {
+        return maxRepetition;
     }
 
     public CepEventContiguity getInnerContiguity() {
@@ -234,8 +234,8 @@ public final class CepEventPattern<T> {
         }
 
         /**
-         * Set times quantifier. Exact times of events are matched.
-         * @param timesParam times
+         * Set repetition quantifier. Exact repetition of events are matched.
+         * @param timesParam repetition
          * @return builder
          */
         public Builder setTimes(final int timesParam) {
@@ -243,10 +243,10 @@ public final class CepEventPattern<T> {
         }
 
         /**
-         * Set times quantifier.
-         * Specifies that the pattern can occur between minTimes and maxTimes.
-         * @param minTimeParam times
-         * @param maxTimeParam times
+         * Set repetition quantifier.
+         * Specifies that the pattern can occur between minRepetition and maxRepetition.
+         * @param minTimeParam repetition
+         * @param maxTimeParam repetition
          * @return builder
          */
         public Builder setTimes(final int minTimeParam, final int maxTimeParam) {
@@ -266,7 +266,7 @@ public final class CepEventPattern<T> {
         }
 
         /**
-         * Set inner contiguity of times quantifier.
+         * Set inner contiguity of repetition quantifier.
          * @param innerContiguityParam contiguity
          * @return builder
          */
