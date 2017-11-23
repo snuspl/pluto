@@ -39,7 +39,21 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The mist master which manages mist tasks.
+ * MistMaster communicates with 1) MistClients and 2) MistTasks.
+ * For 1), avro RPC is used.
+ * For 2), reef NCS is used.
+ *
+ * 1) MistMaster returns a list of MistTasks' ip addresses to MistClients,
+ * when they send messages to MistMaster.
+ * With the list of ip addresses, MistClients can connect to the mist tasks directly,
+ * in order to send their queries to the tasks.
+ *
+ * 2) MistMaster communicates with MistTasks in order to collect information about MistTasks' loads.
+ * With the information, MistMaster can decide some tasks to run the clients' queries.
+ * This logic is performed by TaskSelector.
+ *
+ * Current MistMaster cannot add/remove Tasks at runtime.
+ * TODO[MIST-#]: We need to support this feature to dynamically scale in/out Tasks.
  */
 public final class MistMaster implements Task {
 
@@ -100,6 +114,7 @@ public final class MistMaster implements Task {
     countDownLatch.await();
     taskToMasterServer.close();
     clientToMasterServer.close();
+    taskManager.close();
     return new byte[0];
   }
 

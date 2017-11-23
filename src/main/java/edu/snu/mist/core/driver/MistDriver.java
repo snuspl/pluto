@@ -15,14 +15,14 @@
  */
 package edu.snu.mist.core.driver;
 
-import edu.snu.mist.core.parameters.ClientToTaskServerPortNum;
-import edu.snu.mist.core.parameters.MasterToTaskServerPortNum;
-import edu.snu.mist.core.task.MistTask;
 import edu.snu.mist.core.master.MistMaster;
-import edu.snu.mist.core.master.TaskSelector;
 import edu.snu.mist.core.master.parameters.ClientToMasterServerPortNum;
 import edu.snu.mist.core.master.parameters.ClientToTaskServerAddressSet;
 import edu.snu.mist.core.master.parameters.TaskToMasterServerPortNum;
+import edu.snu.mist.core.parameters.ClientToTaskServerPortNum;
+import edu.snu.mist.core.parameters.MasterHostAddress;
+import edu.snu.mist.core.parameters.MasterToTaskServerPortNum;
+import edu.snu.mist.core.task.MistTask;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.driver.context.ContextConfiguration;
 import org.apache.reef.driver.evaluator.*;
@@ -49,21 +49,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * MistDriver communicates with 1) MistClients and 2) MistTasks.
- * For 1), avro RPC is used.
- * For 2), reef NCS is used.
- *
- * 1) MistDriver returns a list of MistTasks' ip addresses to MistClients,
- * when they send messages to MistDriver.
- * With the list of ip addresses, MistClients can connect to the mist tasks directly,
- * in order to send their queries to the tasks.
- *
- * 2) MistDriver communicates with MistTasks in order to collect information about MistTasks' loads.
- * With the information, MistDriver can decide some tasks to run the clients' queries.
- * This logic is performed by TaskSelector.
- *
- * Current MistDriver cannot add/remove Tasks at runtime.
- * TODO[MIST-#]: We need to support this feature to dynamically scale in/out Tasks.
+ * MistDriver initializes the MistMasters and MistTasks.
+ * It assigns MistTasks to MistMaster(s).
  */
 @Unit
 public final class MistDriver {
@@ -125,11 +112,6 @@ public final class MistDriver {
   private final LocalAddressProvider localAddressProvider;
 
   /**
-   * A task selector which selects MistTasks for executing queries.
-   */
-  private final TaskSelector taskSelector;
-
-  /**
    * Configurations necessary for the driver.
    */
   private final MistDriverConfigs mistDriverConfigs;
@@ -175,7 +157,6 @@ public final class MistDriver {
                      final JVMProcessFactory jvmProcessFactory,
                      final NameServer nameServer,
                      final LocalAddressProvider localAddressProvider,
-                     final TaskSelector taskSelector,
                      final MistDriverConfigs mistDriverConfigs,
                      final MistTaskConfigs mistTaskConfigs) {
     this.nameServer = nameServer;
@@ -185,7 +166,6 @@ public final class MistDriver {
     this.runningEvaluators = new AtomicInteger(0);
     this.taskIndex = new AtomicInteger(0);
     this.masterIndex = new AtomicInteger(0);
-    this.taskSelector = taskSelector;
     this.mistDriverConfigs = mistDriverConfigs;
     this.mistTaskConfigs = mistTaskConfigs;
     this.mistTaskQueue = new ConcurrentLinkedQueue<>();
@@ -317,6 +297,8 @@ public final class MistDriver {
             masterConfBuilder.bindSetEntry(ClientToTaskServerAddressSet.class,
                 taskHostAddress + ":" + clientToTaskRpcPort);
             taskConfBuilder.bindNamedParameter(MasterToTaskServerPortNum.class, String.valueOf(masterToTaskRpcPort));
+            taskConfBuilder.bindNamedParameter(MasterHostAddress.class, masterHostAddress);
+            taskConfBuilder.bindNamedParameter(TaskToMasterServerPortNum.class, String.valueOf(taskToMasterRpcPort));
             // submit a task
             taskContext.submitTask(
                 Configurations.merge(nameResolverConf, taskConfiguration, mistTaskConfigs.getConfiguration(),

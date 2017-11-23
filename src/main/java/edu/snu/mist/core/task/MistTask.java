@@ -20,8 +20,10 @@ import edu.snu.mist.core.parameters.ClientToTaskServerPortNum;
 import edu.snu.mist.core.parameters.MasterToTaskServerPortNum;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
+import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
+import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
@@ -79,13 +81,14 @@ public final class MistTask implements Task {
 
     final JavaConfigurationBuilder clientToTaskServerConfBuilder = tang.newConfigurationBuilder();
     clientToTaskServerConfBuilder.bindImplementation(ClientToTaskMessage.class, DefaultClientToTaskMessageImpl.class);
+    clientToTaskServerConfBuilder.bindImplementation(TaskToMasterMessage.class, DefaultTaskToMasterMessageImpl.class);
     clientToTaskServerConfBuilder.bindConstructor(SpecificResponder.class, ClientToTaskSpecificResponderWrapper.class);
     clientToTaskServerConfBuilder.bindConstructor(Server.class, AvroRPCNettyServerWrapper.class);
     clientToTaskServerConfBuilder.bindNamedParameter(RPCServerPort.class, String.valueOf(clientToTaskPortNum));
-    this.clientToTaskServer
-        = tang.newInjector(clientToTaskServerConfBuilder.build()).getInstance(Server.class);
 
-    this.queryManager = queryManager;
+    Injector injector = tang.newInjector(clientToTaskServerConfBuilder.build());
+    this.clientToTaskServer = injector.getInstance(Server.class);
+    this.queryManager = injector.getInstance(QueryManager.class);
   }
 
   @Override
