@@ -19,9 +19,13 @@ import edu.snu.mist.common.functions.*;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.WindowInformation;
 import org.apache.reef.tang.Configuration;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 
+import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Continuous Stream is a normal Stream used inside MIST. It emits one stream data (typed T) for one time.
@@ -30,8 +34,18 @@ import java.util.Map;
 public interface ContinuousStream<T> extends MISTStream<T> {
 
   /**
+   * @return the number of conditional branches diverged from this stream
+   */
+  int getCondBranchCount();
+
+  /**
+   * @return the branch index of this stream
+   */
+  int getBranchIndex();
+
+  /**
    * Applies map operation to the current stream and creates a new stream.
-   * @param mapFunc the function used for the transformation provided by a user.
+   * @param mapFunc the function used for the transformation provided by a user
    * @param <OUT> the type of newly created stream output
    * @return new transformed stream after applying the operation
    */
@@ -49,7 +63,7 @@ public interface ContinuousStream<T> extends MISTStream<T> {
 
   /**
    * Applies flatMap operation to the current stream and creates a new stream.
-   * @param flatMapFunc the function used for the transformation provided by a user.
+   * @param flatMapFunc the function used for the transformation provided by a user
    * @param <OUT> the type of newly created stream output
    * @return new transformed stream after applying the operation
    */
@@ -57,7 +71,7 @@ public interface ContinuousStream<T> extends MISTStream<T> {
 
   /**
    * Applies flatMap operation to the current stream and creates a new stream.
-   * @param clazz the class of flat-map function used for the transformation.
+   * @param clazz the class of flat-map function used for the transformation
    * @param funcConf a configuration to instantiate the flat-map function from the provided class
    * @param <OUT> the type of newly created stream output
    * @return new transformed stream after applying the operation
@@ -67,14 +81,14 @@ public interface ContinuousStream<T> extends MISTStream<T> {
 
   /**
    * Applies filter operation to the current stream and creates a new stream.
-   * @param filterFunc the function used for the transformation provided by a user.
+   * @param filterFunc the function used for the transformation provided by a user
    * @return new transformed stream after applying the operation
    */
   ContinuousStream<T> filter(MISTPredicate<T> filterFunc);
 
   /**
    * Applies filter operation to the current stream and creates a new stream.
-   * @param clazz the class of filter function used for the transformation.
+   * @param clazz the class of filter function used for the transformation
    * @param funcConf a configuration to instantiate the filter function from the provided class
    * @return new transformed stream after applying the operation
    */
@@ -118,13 +132,26 @@ public interface ContinuousStream<T> extends MISTStream<T> {
   /**
    * Applies user-defined stateful operator to the current stream.
    * This stream will produce outputs on every stream input.
-   * @param clazz the class of apply stateful function used for the transformation.
+   * @param clazz the class of apply stateful function used for the transformation
    * @param funcConf a configuration to instantiate the apply stateful function from the provided class
    * @param <OUT> the type of stream output
    * @return new transformed stream after applying the user-defined stateful operation
    */
   <OUT> ContinuousStream<OUT> applyStateful(Class<? extends ApplyStatefulFunction<T, OUT>> clazz,
                                             Configuration funcConf);
+
+  /**
+   * Applies state transition operator to the current stream.
+   * @param initialState initial state
+   * @param finalState set of final state
+   * @param stateTable state table to transition state
+   * @return new transformed stream after applying state transition operation
+   */
+  ContinuousStream<Tuple2<T, String>> stateTransition(
+          final String initialState,
+          final Set<String> finalState,
+          final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable) throws IOException;
+
   /**
    * Applies union operation to the current stream and input continuous stream passed as a parameter.
    * Both two streams for union should be continuous stream type.
@@ -169,10 +196,40 @@ public interface ContinuousStream<T> extends MISTStream<T> {
                                         WindowInformation windowInfo);
 
   /**
-   * Push the text stream to th socket server.
+   * Branches out to a continuous stream with condition.
+   * If an input data is matched with the condition, it will be routed only to the relevant downstream.
+   * If many conditions in one branch point are matched, the earliest condition will be taken.
+   * These branches can represent a control flow.
+   * @param condition the predicate which test the branch condition
+   * @return the new continuous stream which is branched out from this branch point
+   */
+  ContinuousStream<T> routeIf(MISTPredicate<T> condition);
+
+  /**
+   * Branches out to a continuous stream with condition.
+   * If an input data is matched with the condition, it will be routed only to the relevant downstream.
+   * If many conditions in one branch point are matched, the earliest condition will be taken.
+   * These branches can represent a control flow.
+   * @param clazz the class of predicate which test the branch condition
+   * @param funcConf the configurations to instantiate the predicate from the provided class
+   * @return the new continuous stream which is branched out from this branch point
+   */
+  ContinuousStream<T> routeIf(Class<? extends MISTPredicate<T>> clazz,
+                              Configuration funcConf);
+
+  /**
+   * Push the text stream to the socket server.
    * @param serverAddr socket server address
    * @param serverPort socket server port
    * @return sink stream
    */
   MISTStream<String> textSocketOutput(String serverAddr, int serverPort);
+
+  /**
+   * Publish the mqtt text stream to the mqtt broker.
+   * @param brokerURI broker URI
+   * @param topic topic
+   * @return sink stream
+   */
+  MISTStream<MqttMessage> mqttOutput(String brokerURI, String topic);
 }

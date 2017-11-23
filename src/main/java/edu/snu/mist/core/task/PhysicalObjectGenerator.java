@@ -16,8 +16,10 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.operators.Operator;
-import edu.snu.mist.common.parameters.OperatorId;
+import edu.snu.mist.common.parameters.MQTTBrokerURI;
+import edu.snu.mist.common.parameters.MQTTTopic;
 import edu.snu.mist.common.shared.KafkaSharedResource;
+import edu.snu.mist.common.shared.MQTTResource;
 import edu.snu.mist.common.shared.NettySharedResource;
 import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.sources.DataGenerator;
@@ -35,7 +37,7 @@ import java.util.concurrent.TimeUnit;
  * This is a helper class that creates physical objects (sources, operators, sinks)
  * from serialized configurations.
  */
-final class PhysicalObjectGenerator implements AutoCloseable {
+public final class PhysicalObjectGenerator implements AutoCloseable {
 
   /**
    * Scheduled executor for event generators.
@@ -53,17 +55,24 @@ final class PhysicalObjectGenerator implements AutoCloseable {
   private final KafkaSharedResource kafkaSharedResource;
 
   /**
-   * Netty shared resouces.
+   * Netty shared resources.
    */
   private final NettySharedResource nettySharedResource;
+
+  /**
+   * MQTT shared resources.
+   */
+  private final MQTTResource mqttSharedResource;
 
   @Inject
   private PhysicalObjectGenerator(final ScheduledExecutorServiceWrapper schedulerWrapper,
                                   final KafkaSharedResource kafkaSharedResource,
-                                  final NettySharedResource nettySharedResource) {
+                                  final NettySharedResource nettySharedResource,
+                                  final MQTTResource mqttSharedResource) {
     this.scheduler = schedulerWrapper.getScheduler();
     this.kafkaSharedResource = kafkaSharedResource;
     this.nettySharedResource = nettySharedResource;
+    this.mqttSharedResource = mqttSharedResource;
   }
 
   /**
@@ -99,14 +108,21 @@ final class PhysicalObjectGenerator implements AutoCloseable {
    * Get a new data generator.
    * @param conf configuration
    * @param classLoader external class loader
-   * @param <T> data type
    * @return data generator
    */
   @SuppressWarnings("unchecked")
-  public <T> DataGenerator<T> newDataGenerator(
+  public DataGenerator newDataGenerator(
       final Configuration conf,
       final ClassLoader classLoader) throws InjectionException {
     final Injector injector = newDefaultInjector(conf, classLoader);
+
+    if (injector.isParameterSet(MQTTBrokerURI.class)) {
+      // for MQTT
+      final String brokerURI = injector.getNamedInstance(MQTTBrokerURI.class);
+      final String topic = injector.getNamedInstance(MQTTTopic.class);
+      return mqttSharedResource.getDataGenerator(brokerURI, topic);
+    }
+
     // for netty
     injector.bindVolatileInstance(NettySharedResource.class, nettySharedResource);
     // for kafka
@@ -116,38 +132,37 @@ final class PhysicalObjectGenerator implements AutoCloseable {
 
   /**
    * Get a new operator.
-   * @param operatorId operator id
    * @param conf configuration
    * @param classLoader external class loader
    * @return new operator
    */
   @SuppressWarnings("unchecked")
   public Operator newOperator(
-      final String operatorId,
       final Configuration conf,
       final ClassLoader classLoader) throws InjectionException {
     final Injector injector = newDefaultInjector(conf, classLoader);
-    injector.bindVolatileParameter(OperatorId.class, operatorId);
     return injector.getInstance(Operator.class);
   }
 
   /**
    * Get a new sink.
-   * @param sinkId sink id
    * @param conf configuration
    * @param classLoader external class loader
    * @return new sink
    */
   @SuppressWarnings("unchecked")
   public <T> Sink<T> newSink(
-      final String sinkId,
       final Configuration conf,
       final ClassLoader classLoader) throws InjectionException {
     final Injector injector = newDefaultInjector(conf, classLoader);
-    injector.bindVolatileParameter(OperatorId.class, sinkId);
-    // for netty
-    injector.bindVolatileInstance(NettySharedResource.class, nettySharedResource);
-    // for kafka
+    if (injector.isParameterSet(MQTTBrokerURI.class)) {
+      // for MQTT
+      injector.bindVolatileInstance(MQTTResource.class, mqttSharedResource);
+    } else {
+      // for netty
+      injector.bindVolatileInstance(NettySharedResource.class, nettySharedResource);
+      // TODO: for kafka
+    }
     return injector.getInstance(Sink.class);
   }
 
@@ -155,5 +170,6 @@ final class PhysicalObjectGenerator implements AutoCloseable {
   public void close() throws Exception {
     kafkaSharedResource.close();
     nettySharedResource.close();
+    mqttSharedResource.close();
   }
 }

@@ -19,7 +19,6 @@ import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTFunction;
-import edu.snu.mist.common.parameters.OperatorId;
 import edu.snu.mist.common.parameters.SerializedUdf;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -43,16 +42,13 @@ public final class MapOperator<I, O> extends OneStreamOperator {
 
   @Inject
   private MapOperator(
-      @Parameter(OperatorId.class) final String operatorId,
       @Parameter(SerializedUdf.class) final String serializedObject,
       final ClassLoader classLoader) throws IOException, ClassNotFoundException {
-    this(operatorId, SerializeUtils.deserializeFromString(serializedObject, classLoader));
+    this(SerializeUtils.deserializeFromString(serializedObject, classLoader));
   }
 
   @Inject
-  public MapOperator(@Parameter(OperatorId.class) final String operatorId,
-                     final MISTFunction<I, O> mapFunc) {
-    super(operatorId);
+  public MapOperator(final MISTFunction<I, O> mapFunc) {
     this.mapFunc = mapFunc;
   }
 
@@ -62,7 +58,11 @@ public final class MapOperator<I, O> extends OneStreamOperator {
   @Override
   public void processLeftData(final MistDataEvent data) {
     final O output = mapFunc.apply((I)data.getValue());
-    LOG.log(Level.FINE, "{0} maps {1} to {2}", new Object[]{MapOperator.class, data, output});
+
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.log(Level.FINE, "{0} maps {1} to {2}", new Object[]{MapOperator.class, data, output});
+    }
+
     data.setValue(output);
     outputEmitter.emitData(data);
   }

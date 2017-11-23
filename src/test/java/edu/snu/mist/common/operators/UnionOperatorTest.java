@@ -18,6 +18,7 @@ package edu.snu.mist.common.operators;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
+import edu.snu.mist.utils.OutputBufferEmitter;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -46,10 +47,10 @@ public final class UnionOperatorTest {
     final MistDataEvent g = new MistDataEvent("g", 6L);
     final MistWatermarkEvent rw2 = new MistWatermarkEvent(11L);
 
-    final UnionOperator unionOperator = new UnionOperator("testUnionOp");
+    final UnionOperator unionOperator = new UnionOperator();
 
     final List<MistEvent> result = new LinkedList<>();
-    unionOperator.setOutputEmitter(new SimpleOutputEmitter(result));
+    unionOperator.setOutputEmitter(new OutputBufferEmitter(result));
 
     // Test:
     //  * Left: ----------W:10--W:9--c----b--------a---->

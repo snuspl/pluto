@@ -19,7 +19,6 @@ import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTPredicate;
-import edu.snu.mist.common.parameters.OperatorId;
 import edu.snu.mist.common.parameters.SerializedUdf;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -42,16 +41,13 @@ public final class FilterOperator<I> extends OneStreamOperator {
 
   @Inject
   private FilterOperator(
-      @Parameter(OperatorId.class) final String operatorId,
       @Parameter(SerializedUdf.class) final String serializedObject,
       final ClassLoader classLoader) throws IOException, ClassNotFoundException {
-    this(operatorId, SerializeUtils.deserializeFromString(serializedObject, classLoader));
+    this(SerializeUtils.deserializeFromString(serializedObject, classLoader));
   }
 
   @Inject
-  public FilterOperator(@Parameter(OperatorId.class) final String operatorId,
-                        final MISTPredicate<I> filterFunc) {
-    super(operatorId);
+  public FilterOperator(final MISTPredicate<I> filterFunc) {
     this.filterFunc = filterFunc;
   }
 
@@ -62,8 +58,12 @@ public final class FilterOperator<I> extends OneStreamOperator {
   public void processLeftData(final MistDataEvent input) {
     final I value = (I)input.getValue();
     if (filterFunc.test(value)) {
-      LOG.log(Level.FINE, "{0} Filters {1}",
-          new Object[]{FilterOperator.class, value});
+
+      if (LOG.isLoggable(Level.FINE)) {
+        LOG.log(Level.FINE, "{0} Filters {1}",
+            new Object[]{FilterOperator.class, value});
+      }
+
       outputEmitter.emitData(input);
     }
   }

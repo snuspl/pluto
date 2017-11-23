@@ -63,7 +63,7 @@ public final class SessionWindow {
                       windowData.getStart() + ", window is ended at " + windowData.getEnd() + ".";
             };
 
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group", "user1");
     queryBuilder.socketTextStream(localTextSocketSourceConf)
             .window(new SessionWindowInformation(sessionInterval))
             .aggregateWindow(aggregateFunc)
@@ -100,6 +100,6 @@ public final class SessionWindow {
   /**
    * Must not be instantiated.
    */
-  private SessionWindow(){
+  private SessionWindow() {
   }
 }

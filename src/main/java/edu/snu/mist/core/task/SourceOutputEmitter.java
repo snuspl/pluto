@@ -15,53 +15,27 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.MistDataEvent;
-import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.OutputEmitter;
-import edu.snu.mist.formats.avro.Direction;
-
-import java.util.Map;
 
 /**
- * This emitter emits the outputs to the next PartitionedQueries that get inputs from the sources.
- * It always submits jobs to MistExecutors.
- *  @param <I>
+ * This interface forwards the emitted output as a input of next operators.
  */
-final class SourceOutputEmitter<I> implements OutputEmitter {
+public interface SourceOutputEmitter extends OutputEmitter {
 
   /**
-   * Next PartitionedQueries.
+   * Process all the events in the event queue.
+   * @return number of processed events
    */
-  private final Map<PhysicalVertex, Direction> nextPartitionedQueries;
+  int processAllEvent();
 
-  public SourceOutputEmitter(final Map<PhysicalVertex, Direction> nextPartitionedQueries) {
-    this.nextPartitionedQueries = nextPartitionedQueries;
-  }
+  /**
+   * Get the number of events that are in the queue.
+   * @return the number of events in the queue
+   */
+  int numberOfEvents();
 
-  @Override
-  public void emitData(final MistDataEvent data) {
-    if (nextPartitionedQueries.size() == 1) {
-      for (final Map.Entry<PhysicalVertex, Direction> nextQuery :
-          nextPartitionedQueries.entrySet()) {
-        final Direction direction = nextQuery.getValue();
-        ((PartitionedQuery)nextQuery.getKey()).addNextEvent(data, direction);
-      }
-    } else {
-      for (final Map.Entry<PhysicalVertex, Direction> nextQuery :
-          nextPartitionedQueries.entrySet()) {
-        final Direction direction = nextQuery.getValue();
-        final MistDataEvent event = new MistDataEvent(data.getValue(), data.getTimestamp());
-        ((PartitionedQuery)nextQuery.getKey()).addNextEvent(event, direction);
-      }
-    }
-  }
-
-  @Override
-  public void emitWatermark(final MistWatermarkEvent watermark) {
-    for (final Map.Entry<PhysicalVertex, Direction> nextQuery :
-        nextPartitionedQueries.entrySet()) {
-      final Direction direction = nextQuery.getValue();
-      ((PartitionedQuery)nextQuery.getKey()).addNextEvent(watermark, direction);
-    }
-  }
+  /**
+   * Get the query that holds this source.
+   */
+  Query getQuery();
 }

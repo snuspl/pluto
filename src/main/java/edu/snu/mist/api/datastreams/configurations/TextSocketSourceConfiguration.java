@@ -34,9 +34,24 @@ import java.io.IOException;
  */
 public final class TextSocketSourceConfiguration extends ConfigurationModuleBuilder {
 
+  /**
+   * The address of the socket source.
+   */
   public static final RequiredParameter<String> SOCKET_HOST_ADDR = new RequiredParameter<>();
+
+  /**
+   * The port number of the socket source.
+   */
   public static final RequiredParameter<Integer> SOCKET_HOST_PORT = new RequiredParameter<>();
+
+  /**
+   * The parameter for timestamp extract object.
+   */
   public static final OptionalParameter<String> TIMESTAMP_EXTRACT_OBJECT = new OptionalParameter<>();
+
+  /**
+   * The parameter for timestamp extract function.
+   */
   public static final OptionalImpl<MISTFunction> TIMESTAMP_EXTRACT_FUNC = new OptionalImpl<>();
 
   private static final ConfigurationModule CONF = new TextSocketSourceConfiguration()

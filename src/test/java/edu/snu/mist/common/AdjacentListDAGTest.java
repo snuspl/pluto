@@ -16,6 +16,8 @@
 package edu.snu.mist.common;
 
 import com.google.common.collect.ImmutableList;
+import edu.snu.mist.common.graph.AdjacentListDAG;
+import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.formats.avro.Direction;
 import junit.framework.Assert;
 import org.junit.Test;
@@ -32,6 +34,7 @@ public final class AdjacentListDAGTest {
     final List<Integer> expected = ImmutableList.of(1, 2, 3, 4);
     final DAG<Integer, Direction> dag = new AdjacentListDAG<>();
     dag.addVertex(1); dag.addVertex(2); dag.addVertex(3); dag.addVertex(4);
+    Assert.assertEquals(4, dag.numberOfVertices());
     Assert.assertEquals(new HashSet<>(expected), dag.getRootVertices());
   }
 
@@ -41,6 +44,7 @@ public final class AdjacentListDAGTest {
     final DAG<Integer, Direction> dag = new AdjacentListDAG<>();
     dag.addVertex(1); dag.addVertex(2); dag.addVertex(3); dag.addVertex(4);
     dag.removeVertex(2); dag.removeVertex(4);
+    Assert.assertEquals(2, dag.numberOfVertices());
     Assert.assertEquals(new HashSet<>(expected), dag.getRootVertices());
   }
 
@@ -51,6 +55,8 @@ public final class AdjacentListDAGTest {
     dag.addEdge(1, 3, Direction.LEFT); dag.addEdge(3, 4, Direction.LEFT);
     dag.addEdge(2, 4, Direction.RIGHT);
 
+    Assert.assertEquals(4, dag.numberOfVertices());
+    Assert.assertEquals(3, dag.numberOfEdges());
     Assert.assertTrue(dag.isAdjacent(1, 3));
     Assert.assertTrue(dag.isAdjacent(3, 4));
     Assert.assertTrue(dag.isAdjacent(2, 4));
@@ -74,6 +80,7 @@ public final class AdjacentListDAGTest {
     dag.removeEdge(1, 3);
     Assert.assertFalse(dag.isAdjacent(1, 3));
     Assert.assertEquals(dag.getInDegree(3), 0);
+    Assert.assertEquals(2, dag.numberOfEdges());
     // check root vertices
     final List<Integer> expectedRoot2 = ImmutableList.of(1, 2, 3);
     Assert.assertEquals("Root vertices should be " + expectedRoot2,
@@ -82,6 +89,7 @@ public final class AdjacentListDAGTest {
     dag.removeEdge(3, 4);
     Assert.assertFalse(dag.isAdjacent(3, 4));
     Assert.assertEquals(dag.getInDegree(4), 1);
+    Assert.assertEquals(1, dag.numberOfEdges());
     // check root vertices
     final List<Integer> expectedRoot3 = ImmutableList.of(1, 2, 3);
     Assert.assertEquals("Root vertices should be " + expectedRoot3,
@@ -90,6 +98,7 @@ public final class AdjacentListDAGTest {
     dag.removeEdge(2, 4);
     Assert.assertFalse(dag.isAdjacent(2, 4));
     Assert.assertEquals(dag.getInDegree(4), 0);
+    Assert.assertEquals(0, dag.numberOfEdges());
     // check root vertices
     final List<Integer> expectedRoot4 = ImmutableList.of(1, 2, 3, 4);
     Assert.assertEquals("Root vertices should be " + expectedRoot4,

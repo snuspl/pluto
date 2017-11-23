@@ -16,11 +16,13 @@
 package edu.snu.mist.api;
 
 import edu.snu.mist.api.datastreams.MISTStream;
-import edu.snu.mist.common.DAG;
-import edu.snu.mist.common.GraphUtils;
-import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.common.graph.DAG;
+import edu.snu.mist.common.graph.GraphUtils;
+import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.formats.avro.AvroVertex;
+import edu.snu.mist.formats.avro.AvroVertexTypeEnum;
+import edu.snu.mist.formats.avro.Edge;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
 
 import java.util.*;
@@ -33,83 +35,86 @@ public final class MISTQueryImpl implements MISTQuery {
   /**
    * DAG of the query.
    */
-  private final DAG<MISTStream, Direction> dag;
-  private final QueryPartitioner queryPartitioner;
+  private final DAG<MISTStream, MISTEdge> dag;
   private final AvroConfigurationSerializer serializer;
+  private final String superGroupId;
+  private final String subGroupId;
 
-  public MISTQueryImpl(final DAG<MISTStream, Direction> dag) {
-    this.queryPartitioner = new QueryPartitioner(dag);
+  public MISTQueryImpl(final DAG<MISTStream, MISTEdge> dag,
+                       final String superGroupId,
+                       final String subGroupId) {
     this.dag = dag;
     this.serializer = new AvroConfigurationSerializer();
+    this.superGroupId = superGroupId;
+    this.subGroupId = subGroupId;
   }
 
   @Override
-  public Tuple<List<AvroVertexChain>, List<Edge>> getSerializedDAG() {
-    final DAG<List<MISTStream>, Direction> chainedDAG =
-        queryPartitioner.generatePartitionedPlan();
-    final Queue<List<MISTStream>> queue = new LinkedList<>();
-    final List<List<MISTStream>> vertices = new ArrayList<>();
+  public Tuple<List<AvroVertex>, List<Edge>> getAvroOperatorDag() {
+    final LogicalDagOptimizer logicalDagOptimizer = new LogicalDagOptimizer(dag);
+    final DAG<MISTStream, MISTEdge> optimizedDag = logicalDagOptimizer.getOptimizedDAG();
+    final Queue<MISTStream> queue = new LinkedList<>();
+    final List<MISTStream> vertices = new ArrayList<>();
     final List<Edge> edges = new ArrayList<>();
 
     // Put all vertices into a queue
-    final Iterator<List<MISTStream>> iterator = GraphUtils.topologicalSort(chainedDAG);
+    final Iterator<MISTStream> iterator = GraphUtils.topologicalSort(optimizedDag);
     while (iterator.hasNext()) {
-      final List<MISTStream> vertex = iterator.next();
+      final MISTStream vertex = iterator.next();
       queue.add(vertex);
       vertices.add(vertex);
     }
 
     // Visit each vertex and serialize its edges
     while (!queue.isEmpty()) {
-      final List<MISTStream> vertex = queue.remove();
+      final MISTStream vertex = queue.remove();
       final int fromIndex = vertices.indexOf(vertex);
-      final Map<List<MISTStream>, Direction> neighbors = chainedDAG.getEdges(vertex);
-      for (final Map.Entry<List<MISTStream>, Direction> neighbor : neighbors.entrySet()) {
+      final Map<MISTStream, MISTEdge> neighbors = optimizedDag.getEdges(vertex);
+      for (final Map.Entry<MISTStream, MISTEdge> neighbor : neighbors.entrySet()) {
         final int toIndex = vertices.indexOf(neighbor.getKey());
+        final MISTEdge edgeInfo = neighbor.getValue();
         final Edge.Builder edgeBuilder = Edge.newBuilder()
             .setFrom(fromIndex)
             .setTo(toIndex)
-            .setDirection(neighbor.getValue());
+            .setDirection(edgeInfo.getDirection())
+            .setBranchIndex(edgeInfo.getIndex());
         edges.add(edgeBuilder.build());
       }
     }
 
-    final Set<List<MISTStream>> rootVertices = chainedDAG.getRootVertices();
+    final Set<MISTStream> rootVertices = optimizedDag.getRootVertices();
     // Serialize each vertex via avro.
-    final List<AvroVertexChain> serializedVertices = new ArrayList<>();
-    for (final List<MISTStream> vertex : vertices) {
-      final AvroVertexChain.Builder builder = AvroVertexChain.newBuilder();
-      final List<Vertex> serializedVertexChain = new LinkedList<>();
-      for (final MISTStream sv : vertex) {
-        final Configuration conf = sv.getConfiguration();
-        final String confToStr = serializer.toString(conf);
-        final Vertex.Builder vertexBuilder = Vertex.newBuilder();
-        vertexBuilder.setConfiguration(confToStr);
-        serializedVertexChain.add(vertexBuilder.build());
-      }
+    final List<AvroVertex> serializedVertices = new ArrayList<>();
+    for (final MISTStream vertex : vertices) {
+      final AvroVertex.Builder vertexBuilder = AvroVertex.newBuilder();
+      vertexBuilder.setConfiguration(serializer.toString(vertex.getConfiguration()));
       // Set vertex type
-      if (vertex.size() == 1) {
-        final MISTStream v = vertex.get(0);
-        if (rootVertices.contains(vertex)) {
-          // this is a source
-          builder.setAvroVertexChainType(AvroVertexTypeEnum.SOURCE);
-        } else if (chainedDAG.getEdges(vertex).size() == 0) {
-          // this is a sink
-          builder.setAvroVertexChainType(AvroVertexTypeEnum.SINK);
-        } else {
-          builder.setAvroVertexChainType(AvroVertexTypeEnum.OPERATOR_CHAIN);
-        }
+      if (rootVertices.contains(vertex)) {
+        // this is a source
+        vertexBuilder.setAvroVertexType(AvroVertexTypeEnum.SOURCE);
+      } else if (optimizedDag.getEdges(vertex).size() == 0) {
+        // this is a sink
+        vertexBuilder.setAvroVertexType(AvroVertexTypeEnum.SINK);
       } else {
-        builder.setAvroVertexChainType(AvroVertexTypeEnum.OPERATOR_CHAIN);
+        vertexBuilder.setAvroVertexType(AvroVertexTypeEnum.OPERATOR);
       }
-      builder.setVertexChain(serializedVertexChain);
-      serializedVertices.add(builder.build());
+      serializedVertices.add(vertexBuilder.build());
     }
     return new Tuple<>(serializedVertices, edges);
   }
 
   @Override
-  public DAG<MISTStream, Direction> getDAG() {
+  public DAG<MISTStream, MISTEdge> getDAG() {
     return dag;
+  }
+
+  @Override
+  public String getSuperGroupId() {
+    return superGroupId;
+  }
+
+  @Override
+  public String getSubGroupId() {
+    return subGroupId;
   }
 }

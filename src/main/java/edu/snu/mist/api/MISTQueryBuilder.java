@@ -21,12 +21,13 @@ import edu.snu.mist.api.datastreams.MISTStream;
 import edu.snu.mist.api.datastreams.configurations.PeriodicWatermarkConfiguration;
 import edu.snu.mist.api.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.api.datastreams.configurations.WatermarkConfiguration;
-import edu.snu.mist.common.AdjacentListDAG;
-import edu.snu.mist.common.DAG;
-import edu.snu.mist.formats.avro.Direction;
+import edu.snu.mist.common.graph.AdjacentListDAG;
+import edu.snu.mist.common.graph.DAG;
+import edu.snu.mist.common.graph.MISTEdge;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 /**
  * This class builds MIST query.
@@ -36,17 +37,27 @@ public final class MISTQueryBuilder {
   /**
    * DAG of the query.
    */
-  private final DAG<MISTStream, Direction> dag;
+  private final DAG<MISTStream, MISTEdge> dag;
 
   /**
    * Period of default watermark represented in milliseconds.
    */
-  private static final int DEFAULT_WATERMARK_PERIOD = 100;
+  private static final int DEFAULT_WATERMARK_PERIOD = 1000;
 
   /**
    * Expected delay of default watermark represented in milliseconds.
    */
   private static final int DEFAULT_EXPECTED_DELAY = 0;
+
+  /**
+   * The super group id of the query.
+   */
+  private final String superGroupId;
+
+  /**
+   * The sub group id of the query.
+   */
+  private final String subGroupId;
 
   /**
    * The default watermark configuration.
@@ -58,8 +69,11 @@ public final class MISTQueryBuilder {
         .build();
   }
 
-  public MISTQueryBuilder() {
+  public MISTQueryBuilder(final String superGroupId,
+                          final String subGroupId) {
     this.dag = new AdjacentListDAG<>();
+    this.superGroupId = superGroupId;
+    this.subGroupId = subGroupId;
   }
 
   /**
@@ -120,10 +134,31 @@ public final class MISTQueryBuilder {
   }
 
   /**
+   * Create a continuous stream that subscribes data from MQTT broker.
+   * @param srcConf mqtt configuration
+   * @return a new continuous stream
+   */
+  public ContinuousStream<MqttMessage> mqttStream(final SourceConfiguration srcConf) {
+    return mqttStream(srcConf, getDefaultWatermarkConf());
+  }
+
+  /**
+   * Create a continuous stream that subscribes data from MQTT broker.
+   * @param srcConf mqtt configuration
+   * @param watermarkConf a watermark configuration
+   * @return a new continuous stream
+   */
+  public ContinuousStream<MqttMessage> mqttStream(final SourceConfiguration srcConf,
+                                                  final WatermarkConfiguration watermarkConf) {
+    assert srcConf.getType() == SourceConfiguration.SourceType.MQTT;
+    return buildStream(srcConf.getConfiguration(), watermarkConf.getConfiguration());
+  }
+
+  /**
    * Build the query.
    * @return the query
    */
   public MISTQuery build() {
-    return new MISTQueryImpl(dag);
+    return new MISTQueryImpl(dag, superGroupId, subGroupId);
   }
 }

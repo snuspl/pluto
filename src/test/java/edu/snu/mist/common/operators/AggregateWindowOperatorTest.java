@@ -21,6 +21,7 @@ import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.windows.WindowData;
 import edu.snu.mist.common.windows.WindowImpl;
+import edu.snu.mist.utils.OutputBufferEmitter;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -51,10 +52,10 @@ public final class AggregateWindowOperatorTest {
         };
 
     final AggregateWindowOperator<Integer, String> aggregateWindowOperator =
-        new AggregateWindowOperator<>("testAggOp", aggregateFunc);
+        new AggregateWindowOperator<>(aggregateFunc);
 
     final List<MistEvent> result = new LinkedList<>();
-    aggregateWindowOperator.setOutputEmitter(new SimpleOutputEmitter(result));
+    aggregateWindowOperator.setOutputEmitter(new OutputBufferEmitter(result));
 
     aggregateWindowOperator.processLeftData(dataEvent);
     Assert.assertEquals(1, result.size());

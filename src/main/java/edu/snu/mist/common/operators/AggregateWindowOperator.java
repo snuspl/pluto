@@ -19,7 +19,6 @@ import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTFunction;
-import edu.snu.mist.common.parameters.OperatorId;
 import edu.snu.mist.common.parameters.SerializedUdf;
 import edu.snu.mist.common.windows.WindowData;
 import org.apache.reef.tang.annotations.Parameter;
@@ -46,20 +45,16 @@ public final class AggregateWindowOperator<IN, OUT>
 
   @Inject
   private AggregateWindowOperator(
-      @Parameter(OperatorId.class) final String operatorId,
       @Parameter(SerializedUdf.class) final String serializedObject,
       final ClassLoader classLoader) throws IOException, ClassNotFoundException {
-    this(operatorId, SerializeUtils.deserializeFromString(serializedObject, classLoader));
+    this(SerializeUtils.deserializeFromString(serializedObject, classLoader));
   }
 
   /**
-   * @param operatorId identifier of operator
    * @param aggregateFunc the function that processes the input WindowData
    */
   @Inject
-  public AggregateWindowOperator(@Parameter(OperatorId.class) final String operatorId,
-                                 final MISTFunction<WindowData<IN>, OUT> aggregateFunc) {
-    super(operatorId);
+  public AggregateWindowOperator(final MISTFunction<WindowData<IN>, OUT> aggregateFunc) {
     this.aggregateFunc = aggregateFunc;
   }
 
@@ -68,9 +63,14 @@ public final class AggregateWindowOperator<IN, OUT>
     try {
       final WindowData<IN> windowData = (WindowData<IN>) input.getValue();
       final OUT operationResult = aggregateFunc.apply(windowData);
-      LOG.log(Level.FINE, "{0} aggregates the input window {1} which started at {2} and ended at {3}, " +
-          "and generates {4}",
-          new Object[]{getOperatorIdentifier(), input, windowData.getStart(), windowData.getEnd(), operationResult});
+
+      if (LOG.isLoggable(Level.FINE)) {
+        LOG.log(Level.FINE, "{0} aggregates the input window {1} which started at {2} and ended at {3}, " +
+                "and generates {4}",
+            new Object[]{this.getClass().getName(),
+                input, windowData.getStart(), windowData.getEnd(), operationResult});
+      }
+
       input.setValue(operationResult);
       outputEmitter.emitData(input);
     } catch (final ClassCastException e) {

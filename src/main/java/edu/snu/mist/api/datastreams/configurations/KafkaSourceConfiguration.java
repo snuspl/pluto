@@ -39,9 +39,24 @@ import java.util.Set;
  */
 public final class KafkaSourceConfiguration extends ConfigurationModuleBuilder {
 
+  /**
+   * The kafka topic.
+   */
   public static final RequiredParameter<String> KAFKA_TOPIC = new RequiredParameter<>();
+
+  /**
+   * The configuration of the kafka consumer.
+   */
   public static final RequiredParameter<String> KAFKA_CONSUMER_CONFIG = new RequiredParameter<>();
+
+  /**
+   * The parameter for timestamp extract object.
+   */
   public static final OptionalParameter<String> TIMESTAMP_EXTRACT_OBJECT = new OptionalParameter<>();
+
+  /**
+   * The parameter for timestamp extract function.
+   */
   public static final OptionalImpl<MISTFunction> TIMESTAMP_EXTRACT_FUNC = new OptionalImpl<>();
 
   private static final ConfigurationModule CONF = new KafkaSourceConfiguration()
@@ -65,7 +80,6 @@ public final class KafkaSourceConfiguration extends ConfigurationModuleBuilder {
    */
   public static final class KafkaSourceConfigurationBuilder {
 
-
     private String kafkaTopic;
     private HashMap<String, Object> kafkaConfig;
     private MISTFunction<ConsumerRecord, Tuple<ConsumerRecord, Long>> extractFunc;
@@ -77,6 +91,7 @@ public final class KafkaSourceConfiguration extends ConfigurationModuleBuilder {
      * @return the configuration
      */
     public SourceConfiguration build() {
+
       if (extractFunc != null && extractFuncClass != null) {
         throw new IllegalArgumentException("Cannot bind both extractFunc and extractFuncClass");
       }

@@ -16,6 +16,7 @@
 package edu.snu.mist.common.sources;
 
 import edu.snu.mist.common.OutputEmittable;
+import edu.snu.mist.common.OutputEmitter;
 
 /**
  * This interface represents the event source of Source class.
@@ -34,4 +35,9 @@ public interface EventGenerator<T> extends OutputEmittable, AutoCloseable {
    * Start the event generator.
    */
   void start();
+
+  /**
+   * Gets the emitter of this EventGenerator.
+   */
+  OutputEmitter getOutputEmitter();
 }

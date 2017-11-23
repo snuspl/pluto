@@ -15,8 +15,7 @@
  */
 package edu.snu.mist.core.task.stores;
 
-
-import edu.snu.mist.formats.avro.LogicalPlan;
+import edu.snu.mist.formats.avro.AvroDag;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
@@ -25,18 +24,24 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 /**
- * This interface saves the information related to a query (the logical plan of a query and jar files).
+ * This interface saves the information related to a query (the operator chain dag of a query and jar files).
  * Also, this supports loading a logical plan and removing the plan and its corresponding jar files.
  */
-@DefaultImplementation(DiskQueryInfoStore.class)
-public interface QueryInfoStore {
+@DefaultImplementation(AsyncDiskQueryInfoStore.class)
+public interface QueryInfoStore extends AutoCloseable {
   /**
-   * Saves the logical plan.
+   * Saves the avro dag.
    * @param tuple
-   * @return true if saving the logical plan is success. Otherwise return false.
    * @throws IOException
    */
-  boolean savePlan(Tuple<String, LogicalPlan> tuple) throws IOException;
+  void saveAvroDag(Tuple<String, AvroDag> tuple);
+
+  /**
+   * Check whether the query is stored properly or not.
+   * @param queryId the query id to check
+   * @return true if saving is success. Otherwise return false
+   */
+  boolean isStored(String queryId);
 
   /**
    * Saves the jar files and returns paths of the stored jar files.
@@ -47,15 +52,15 @@ public interface QueryInfoStore {
   List<String> saveJar(List<ByteBuffer> jarFiles) throws IOException;
 
   /**
-   * Loads the logical plan corresponding to the queryId.
+   * Loads the operator chain dag corresponding to the queryId.
    * @param queryId
-   * @return logical plan
+   * @return avro dag
    * @throws IOException
    */
-  LogicalPlan load(String queryId) throws IOException;
+  AvroDag load(String queryId) throws IOException;
 
   /**
-   * Deletes the logical plan and its corresponding jar files.
+   * Deletes the operator chain dag and its corresponding jar files.
    * @param queryId
    * @throws IOException
    */

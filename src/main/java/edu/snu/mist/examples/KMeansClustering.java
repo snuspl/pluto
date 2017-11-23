@@ -72,7 +72,7 @@ public final class KMeansClustering {
         };
     final ApplyStatefulFunction<Point, List<Cluster>> applyStatefulFunction = new KMeansFunction();
 
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group", "user1");
     queryBuilder.socketTextStream(localTextSocketSourceConf)
         // remove all space in the input string
         .map(s -> s.replaceAll(" ", ""))
@@ -117,7 +117,7 @@ public final class KMeansClustering {
     System.out.println("Query submission result: " + result.getQueryId());
   }
 
-  private KMeansClustering(){
+  private KMeansClustering() {
   }
 
   /**
@@ -159,7 +159,7 @@ public final class KMeansClustering {
       switch (n) {
         case 2: {
           final Point firstP = clusters.iterator().next().getClusteredPoints().iterator().next();
-          fr = newPoint.distPowTwo(firstP)/2;
+          fr = newPoint.distPowTwo(firstP) / 2;
         }
         case 1: {
           clusters.add(new Cluster(newPoint, n));
@@ -196,6 +196,12 @@ public final class KMeansClustering {
     @Override
     public Collection<Cluster> getCurrentState() {
       return clusters;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void setFunctionState(final Object loadedState) throws RuntimeException {
+      clusters = (Collection<Cluster>) loadedState;
     }
 
     /**

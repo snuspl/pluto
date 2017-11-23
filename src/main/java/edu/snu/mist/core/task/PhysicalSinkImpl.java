@@ -20,11 +20,14 @@ import edu.snu.mist.common.sinks.Sink;
 /**
  * This is an implementation of PhysicalSink.
  */
-final class PhysicalSinkImpl<I> implements PhysicalSink<I> {
+public final class PhysicalSinkImpl<I> extends BasePhysicalVertex implements PhysicalSink<I> {
 
   private final Sink<I> sink;
 
-  public PhysicalSinkImpl(final Sink<I> sink) {
+  public PhysicalSinkImpl(final String sinkId,
+                          final String configuration,
+                          final Sink<I> sink) {
+    super(sinkId, configuration);
     this.sink = sink;
   }
 
@@ -35,5 +38,33 @@ final class PhysicalSinkImpl<I> implements PhysicalSink<I> {
   @Override
   public Type getType() {
     return Type.SINK;
+  }
+
+  @Override
+  public String getIdentifier() {
+    return id;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    final PhysicalSinkImpl<I> that = (PhysicalSinkImpl<I>) o;
+
+    if (!id.equals(that.id)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    return id.hashCode();
   }
 }

@@ -59,7 +59,7 @@ public final class UnionMist {
     // Simple reduce function.
     final MISTBiFunction<Integer, Integer, Integer> reduceFunction = (v1, v2) -> { return v1 + v2; };
 
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group", "user1");
     final ContinuousStream sourceStream1 = queryBuilder.socketTextStream(localTextSocketSource1Conf)
         .map(s -> new Tuple2(s, 1));
     final ContinuousStream sourceStream2 = queryBuilder.socketTextStream(localTextSocketSource2Conf)
@@ -100,6 +100,6 @@ public final class UnionMist {
     System.out.println("Query submission result: " + result.getQueryId());
   }
 
-  private UnionMist(){
+  private UnionMist() {
   }
 }

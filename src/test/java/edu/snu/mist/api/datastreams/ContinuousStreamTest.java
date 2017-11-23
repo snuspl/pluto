@@ -17,9 +17,10 @@ package edu.snu.mist.api.datastreams;
 
 import edu.snu.mist.api.MISTQuery;
 import edu.snu.mist.api.MISTQueryBuilder;
-import edu.snu.mist.common.DAG;
+import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.*;
+import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.*;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.CountWindowInformation;
@@ -33,6 +34,7 @@ import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -60,7 +62,8 @@ public final class ContinuousStreamTest {
 
   @Before
   public void setUp() {
-    queryBuilder = new MISTQueryBuilder();
+    queryBuilder =
+        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID, TestParameters.SUB_GROUP_ID);
     sourceStream = queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
     filteredStream = sourceStream.filter(defaultFilter);
     filteredMappedStream = filteredStream.map(defaultMap);
@@ -70,7 +73,6 @@ public final class ContinuousStreamTest {
   public void tearDown() {
     queryBuilder = null;
   }
-
 
   /**
    * Test for basic stateless OperatorStreams.
@@ -83,16 +85,20 @@ public final class ContinuousStreamTest {
     Assert.assertEquals(SerializeUtils.serializeToString(defaultMap), serializedMap);
 
     final MISTQuery query = queryBuilder.build();
-    final DAG<MISTStream, Direction> dag = query.getDAG();
+    final DAG<MISTStream, MISTEdge> dag = query.getDAG();
     // Check src -> filiter
-    final Map<MISTStream, Direction> neighbors = dag.getEdges(sourceStream);
+    final Map<MISTStream, MISTEdge> neighbors = dag.getEdges(sourceStream);
     Assert.assertEquals(1, neighbors.size());
-    Assert.assertEquals(Direction.LEFT, neighbors.get(filteredStream));
+    final MISTEdge edgeInfo = neighbors.get(filteredStream);
+    Assert.assertEquals(Direction.LEFT, edgeInfo.getDirection());
+    Assert.assertEquals(0, edgeInfo.getIndex());
 
     // Check filter -> map
-    final Map<MISTStream, Direction> neighbors2 = dag.getEdges(filteredStream);
+    final Map<MISTStream, MISTEdge> neighbors2 = dag.getEdges(filteredStream);
     Assert.assertEquals(1, neighbors2.size());
-    Assert.assertEquals(Direction.LEFT, neighbors2.get(filteredMappedStream));
+    final MISTEdge edgeInfo2 = neighbors2.get(filteredMappedStream);
+    Assert.assertEquals(Direction.LEFT, edgeInfo2.getDirection());
+    Assert.assertEquals(0, edgeInfo2.getIndex());
   }
 
   /**
@@ -152,7 +158,8 @@ public final class ContinuousStreamTest {
     Assert.assertEquals(SerializeUtils.serializeToString(biFunc), seFunc);
 
     // Check filter -> map -> reduceBy
-    checkEdges(queryBuilder.build().getDAG(), 1, filteredMappedStream, reducedStream, Direction.LEFT);
+    checkEdges(queryBuilder.build().getDAG(), 1, filteredMappedStream,
+        reducedStream, new MISTEdge(Direction.LEFT));
   }
 
   /**
@@ -190,7 +197,8 @@ public final class ContinuousStreamTest {
     Assert.assertEquals(SerializeUtils.serializeToString(applyStatefulFunction), seFunc);
 
     // Check filter -> map -> applyStateful
-    checkEdges(queryBuilder.build().getDAG(), 1, filteredMappedStream, statefulOperatorStream, Direction.LEFT);
+    checkEdges(queryBuilder.build().getDAG(), 1, filteredMappedStream,
+        statefulOperatorStream, new MISTEdge(Direction.LEFT));
   }
 
   /**
@@ -223,14 +231,14 @@ public final class ContinuousStreamTest {
     // Check filteredMappedStream (LEFT)  ---> union
     //       filteredMappedStream2 (RIGHT) --/
     final MISTQuery query = queryBuilder.build();
-    final DAG<MISTStream, Direction> dag = query.getDAG();
-    final Map<MISTStream, Direction> n1 = dag.getEdges(filteredMappedStream);
-    final Map<MISTStream, Direction> n2 = dag.getEdges(filteredMappedStream2);
+    final DAG<MISTStream, MISTEdge> dag = query.getDAG();
+    final Map<MISTStream, MISTEdge> n1 = dag.getEdges(filteredMappedStream);
+    final Map<MISTStream, MISTEdge> n2 = dag.getEdges(filteredMappedStream2);
 
     Assert.assertEquals(1, n1.size());
     Assert.assertEquals(1, n2.size());
-    Assert.assertEquals(Direction.LEFT, n1.get(unifiedStream));
-    Assert.assertEquals(Direction.RIGHT, n2.get(unifiedStream));
+    Assert.assertEquals(new MISTEdge(Direction.LEFT), n1.get(unifiedStream));
+    Assert.assertEquals(new MISTEdge(Direction.RIGHT), n2.get(unifiedStream));
   }
 
 
@@ -245,7 +253,8 @@ public final class ContinuousStreamTest {
     final Configuration conf = timeWindowedStream.getConfiguration();
     checkSizeBasedWindowInfo(windowSize, windowEmissionInterval, conf);
     // Check map -> timeWindow
-    checkEdges(queryBuilder.build().getDAG(), 1, filteredMappedStream, timeWindowedStream, Direction.LEFT);
+    checkEdges(queryBuilder.build().getDAG(), 1, filteredMappedStream,
+        timeWindowedStream, new MISTEdge(Direction.LEFT));
   }
 
   /**
@@ -260,7 +269,8 @@ public final class ContinuousStreamTest {
 
     checkSizeBasedWindowInfo(windowSize, windowEmissionInterval, countWindowedStream.getConfiguration());
     // Check map -> countWindow
-    checkEdges(queryBuilder.build().getDAG(), 1, filteredMappedStream, countWindowedStream, Direction.LEFT);
+    checkEdges(queryBuilder.build().getDAG(), 1, filteredMappedStream,
+        countWindowedStream, new MISTEdge(Direction.LEFT));
   }
 
   /**
@@ -278,7 +288,8 @@ public final class ContinuousStreamTest {
     final int desWindowInterval = injector.getNamedInstance(WindowInterval.class);
     Assert.assertEquals(sessionInterval, desWindowInterval);
     // Check map -> countWindow
-    checkEdges(queryBuilder.build().getDAG(), 1, filteredMappedStream, sessionWindowedStream, Direction.LEFT);
+    checkEdges(queryBuilder.build().getDAG(), 1, filteredMappedStream,
+        sessionWindowedStream, new MISTEdge(Direction.LEFT));
   }
 
   /**
@@ -301,22 +312,28 @@ public final class ContinuousStreamTest {
 
     // Check first input -> mapped
     final MISTQuery query = queryBuilder.build();
-    final DAG<MISTStream, Direction> dag = query.getDAG();
-    final MISTStream firstMappedInputStream = getNextOperatorStream(dag, 1, firstInputStream, Direction.LEFT);
+    final DAG<MISTStream, MISTEdge> dag = query.getDAG();
+    final MISTStream firstMappedInputStream = getNextOperatorStream(dag, 1,
+        firstInputStream, new MISTEdge(Direction.LEFT));
 
     // Check second input -> mapped
-    final MISTStream secondMappedInputStream = getNextOperatorStream(dag, 1, secondInputStream, Direction.LEFT);
+    final MISTStream secondMappedInputStream = getNextOperatorStream(dag, 1,
+        secondInputStream, new MISTEdge(Direction.LEFT));
 
     // Check two mapped input -> unified
-    final MISTStream firstUnifiedStream = getNextOperatorStream(dag, 1, firstMappedInputStream, Direction.LEFT);
-    final MISTStream secondUnifiedStream = getNextOperatorStream(dag, 1, secondMappedInputStream, Direction.RIGHT);
+    final MISTStream firstUnifiedStream = getNextOperatorStream(dag, 1,
+        firstMappedInputStream, new MISTEdge(Direction.LEFT));
+    final MISTStream secondUnifiedStream = getNextOperatorStream(dag, 1,
+        secondMappedInputStream, new MISTEdge(Direction.RIGHT));
     Assert.assertEquals(firstUnifiedStream, secondUnifiedStream);
 
     // Check unified stream -> windowed
-    final MISTStream windowedStream = getNextOperatorStream(dag, 1, firstUnifiedStream, Direction.LEFT);
+    final MISTStream windowedStream = getNextOperatorStream(dag, 1,
+        firstUnifiedStream, new MISTEdge(Direction.LEFT));
 
     // Check windowed stream -> joined
-    checkEdges(dag, 1, windowedStream, joinedStream, Direction.LEFT);
+    checkEdges(dag, 1, windowedStream,
+        joinedStream, new MISTEdge(Direction.LEFT));
   }
 
   /**
@@ -339,10 +356,48 @@ public final class ContinuousStreamTest {
   }
 
   /**
+   * Test for creating conditional branch operator.
+   */
+  @Test
+  public void testConditionalBranchOperatorStream() {
+
+    final ContinuousStream<Tuple2<String, Integer>> branch1 =
+        filteredMappedStream
+            .routeIf((t) -> t.get(1).equals(1));
+    final ContinuousStream<Tuple2<String, Integer>> branch2 =
+        filteredMappedStream
+            .routeIf((t) -> t.get(1).equals(2));
+    final ContinuousStream<Tuple2<String, Integer>> branch3 =
+        filteredMappedStream
+            .routeIf((t) -> t.get(1).equals(3));
+    final ContinuousStream<String> mapStream =
+        filteredMappedStream
+            .map((t) -> (String) t.get(0));
+
+    //                      --> branch 1
+    // filteredMappedStream --> branch 2
+    //                      --> branch 3
+    //                      --> mapStream
+    final DAG<MISTStream, MISTEdge> dag = queryBuilder.build().getDAG();
+    final Map<MISTStream, MISTEdge> edges = dag.getEdges(filteredMappedStream);
+
+    Assert.assertEquals(3, filteredMappedStream.getCondBranchCount());
+    Assert.assertEquals(4, edges.size());
+    Assert.assertEquals(new MISTEdge(Direction.LEFT), edges.get(branch1));
+    Assert.assertEquals(new MISTEdge(Direction.LEFT), edges.get(branch2));
+    Assert.assertEquals(new MISTEdge(Direction.LEFT), edges.get(branch3));
+    Assert.assertEquals(new MISTEdge(Direction.LEFT), edges.get(mapStream));
+    Assert.assertEquals(1, branch1.getBranchIndex());
+    Assert.assertEquals(2, branch2.getBranchIndex());
+    Assert.assertEquals(3, branch3.getBranchIndex());
+    Assert.assertEquals(0, mapStream.getBranchIndex());
+  }
+
+  /**
    * Test for SinkImpl.
    */
   @Test
-  public void testSinkImpl() throws InjectionException {
+  public void testTextSocketSinkImpl() throws InjectionException {
     final MISTStream<String> sink =
         filteredMappedStream.textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
     final Configuration conf = sink.getConfiguration();
@@ -353,10 +408,31 @@ public final class ContinuousStreamTest {
     Assert.assertEquals(TestParameters.SINK_PORT, desPort);
 
     // Check src -> sink
-    final DAG<MISTStream, Direction> dag = queryBuilder.build().getDAG();
-    final Map<MISTStream, Direction> neighbors = dag.getEdges(filteredMappedStream);
+    final DAG<MISTStream, MISTEdge> dag = queryBuilder.build().getDAG();
+    final Map<MISTStream, MISTEdge> neighbors = dag.getEdges(filteredMappedStream);
     Assert.assertEquals(1, neighbors.size());
-    Assert.assertEquals(Direction.LEFT, neighbors.get(sink));
+    Assert.assertEquals(new MISTEdge(Direction.LEFT), neighbors.get(sink));
+  }
+
+  /**
+   * Test for Mqtt sink.
+   */
+  @Test
+  public void testMqttSink() throws InjectionException {
+    final MISTStream<MqttMessage> sink =
+        filteredMappedStream.mqttOutput(TestParameters.HOST, TestParameters.TOPIC);
+    final Configuration conf = sink.getConfiguration();
+    final Injector injector = Tang.Factory.getTang().newInjector(conf);
+    final String brokerAddr = injector.getNamedInstance(MQTTBrokerURI.class);
+    final String topic = injector.getNamedInstance(MQTTTopic.class);
+    Assert.assertEquals(TestParameters.HOST, brokerAddr);
+    Assert.assertEquals(TestParameters.TOPIC, topic);
+
+    // Check src -> sink
+    final DAG<MISTStream, MISTEdge> dag = queryBuilder.build().getDAG();
+    final Map<MISTStream, MISTEdge> neighbors = dag.getEdges(filteredMappedStream);
+    Assert.assertEquals(1, neighbors.size());
+    Assert.assertEquals(new MISTEdge(Direction.LEFT), neighbors.get(sink));
   }
 
   private void checkSizeBasedWindowInfo(
@@ -373,28 +449,28 @@ public final class ContinuousStreamTest {
   /**
    * Checks the size and direction of the edges from upstream.
    */
-  private void checkEdges(final DAG<MISTStream, Direction> dag,
+  private void checkEdges(final DAG<MISTStream, MISTEdge> dag,
                           final int edgesSize,
                           final MISTStream upStream,
                           final MISTStream downStream,
-                          final Direction direction) {
-    final Map<MISTStream, Direction> neighbors = dag.getEdges(upStream);
+                          final MISTEdge edgeInfo) {
+    final Map<MISTStream, MISTEdge> neighbors = dag.getEdges(upStream);
     Assert.assertEquals(edgesSize, neighbors.size());
-    Assert.assertEquals(direction, neighbors.get(downStream));
+    Assert.assertEquals(edgeInfo, neighbors.get(downStream));
   }
 
   /**
    * Checks the class of next operator stream, the size and direction of the edges from upstream,
    * and return the next operator stream.
    */
-  private MISTStream getNextOperatorStream(final DAG<MISTStream, Direction> dag,
+  private MISTStream getNextOperatorStream(final DAG<MISTStream, MISTEdge> dag,
                                            final int edgesSize,
                                            final MISTStream upStream,
-                                           final Direction direction) {
-    final Map<MISTStream, Direction> neighbors = dag.getEdges(upStream);
+                                           final MISTEdge edgeInfo) {
+    final Map<MISTStream, MISTEdge> neighbors = dag.getEdges(upStream);
     Assert.assertEquals(edgesSize, neighbors.size());
     final Object key = neighbors.keySet().iterator().next();
-    Assert.assertEquals(direction, neighbors.get(key));
+    Assert.assertEquals(edgeInfo, neighbors.get(key));
     return (MISTStream) key;
   }
 }

@@ -17,8 +17,6 @@ package edu.snu.mist.common.operators;
 
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
-import edu.snu.mist.common.parameters.OperatorId;
-import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.Queue;
@@ -40,19 +38,18 @@ public final class UnionOperator extends TwoStreamOperator {
   private final Queue<MistDataEvent> leftUpstreamQueue;
   private final Queue<MistDataEvent> rightUpstreamQueue;
   private final MistWatermarkEvent defaultWatermark;
-  private MistWatermarkEvent recentLeftWatermark;
-  private MistWatermarkEvent recentRightWatermark;
+  private MistWatermarkEvent latestLeftWatermark;
+  private MistWatermarkEvent latestRightWatermark;
   private long recentLeftTimestamp;
   private long recentRightTimestamp;
 
   @Inject
-  public UnionOperator(@Parameter(OperatorId.class) final String operatorId) {
-    super(operatorId);
+  public UnionOperator() {
     this.leftUpstreamQueue = new LinkedBlockingQueue<>();
     this.rightUpstreamQueue = new LinkedBlockingQueue<>();
     defaultWatermark = new MistWatermarkEvent(0L);
-    this.recentLeftWatermark = defaultWatermark;
-    this.recentRightWatermark = defaultWatermark;
+    this.latestLeftWatermark = defaultWatermark;
+    this.latestRightWatermark = defaultWatermark;
     this.recentLeftTimestamp = 0L;
     this.recentRightTimestamp = 0L;
   }
@@ -82,14 +79,18 @@ public final class UnionOperator extends TwoStreamOperator {
 
   /**
    * Emits events which have less timestamp than the minimum watermark
-   * calculated from the leftUpstreamQueue, currentLeftWatermark, rightUpstreamQueue, and currentRightWatermark,.
+   * calculated from the leftUpstreamQueue, currentLeftWatermark, rightUpstreamQueue, and currentRightWatermark.
+   * This method is not thread-safe now. Therefore, only one event processor have to process union operation at once.
    */
   private void drainUntilMinimumWatermark() {
-    final long leftWatermarkTimestamp = recentLeftWatermark.getTimestamp();
-    final long rightWatermarkTimestamp = recentRightWatermark.getTimestamp();
+    final long leftWatermarkTimestamp = latestLeftWatermark.getTimestamp();
+    final long rightWatermarkTimestamp = latestRightWatermark.getTimestamp();
     final long timestamp = getMinimumWatermark(leftWatermarkTimestamp, rightWatermarkTimestamp);
-    LOG.log(Level.FINE, "{0} drains inputs until timestamp {1}",
-        new Object[]{getOperatorIdentifier(), timestamp});
+
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.log(Level.FINE, "{0} drains inputs until timestamp {1}",
+          new Object[]{this.getClass().getName(), timestamp});
+    }
 
     // The events in the queue is ordered by timestamp, so just peeks one by one
     while (!leftUpstreamQueue.isEmpty() && !rightUpstreamQueue.isEmpty()) {
@@ -147,13 +148,13 @@ public final class UnionOperator extends TwoStreamOperator {
   private void emitWatermarkUntilTimestamp(final long leftWatermarkTimestamp,
                                            final long rightWatermarkTimestamp,
                                            final long minimumWatermark) {
-    if (recentLeftWatermark != defaultWatermark && leftWatermarkTimestamp <= minimumWatermark) {
-      outputEmitter.emitWatermark(recentLeftWatermark);
-      recentLeftWatermark = defaultWatermark;
+    if (latestLeftWatermark != defaultWatermark && leftWatermarkTimestamp <= minimumWatermark) {
+      outputEmitter.emitWatermark(latestLeftWatermark);
+      latestLeftWatermark = defaultWatermark;
     }
-    if (recentRightWatermark != defaultWatermark && rightWatermarkTimestamp <= minimumWatermark) {
-      outputEmitter.emitWatermark(recentRightWatermark);
-      recentRightWatermark = defaultWatermark;
+    if (latestRightWatermark != defaultWatermark && rightWatermarkTimestamp <= minimumWatermark) {
+      outputEmitter.emitWatermark(latestRightWatermark);
+      latestRightWatermark = defaultWatermark;
     }
   }
 
@@ -163,7 +164,7 @@ public final class UnionOperator extends TwoStreamOperator {
     if (recentLeftTimestamp > timestamp) {
       throw new RuntimeException("The upstream events should be ordered by timestamp.");
     }
-    LOG.log(Level.FINE, "{0} gets left data {1}", new Object[]{getOperatorIdentifier(), event});
+    LOG.log(Level.FINE, "{0} gets left data {1}", new Object[]{this.getClass().getName(), event});
     recentLeftTimestamp = timestamp;
     leftUpstreamQueue.add(event);
 
@@ -177,7 +178,11 @@ public final class UnionOperator extends TwoStreamOperator {
     if (recentRightTimestamp > timestamp) {
       throw new RuntimeException("The upstream events should be ordered by timestamp.");
     }
-    LOG.log(Level.FINE, "{0} gets right data {1}", new Object[]{getOperatorIdentifier(), event});
+
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.log(Level.FINE, "{0} gets right data {1}", new Object[]{this.getClass().getName(), event});
+    }
+
     recentRightTimestamp = timestamp;
     rightUpstreamQueue.add(event);
 
@@ -187,19 +192,29 @@ public final class UnionOperator extends TwoStreamOperator {
 
   @Override
   public void processLeftWatermark(final MistWatermarkEvent event) {
-    LOG.log(Level.FINE, "{0} gets left watermark {1}", new Object[]{getOperatorIdentifier(), event});
-    recentLeftWatermark = event;
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.log(Level.FINE, "{0} gets left watermark {1}", new Object[]{this.getClass().getName(), event});
+    }
 
-    // Drain events until the minimum watermark.
-    drainUntilMinimumWatermark();
+    if (latestLeftWatermark.getTimestamp() < event.getTimestamp()) {
+      latestLeftWatermark = event;
+
+      // Drain events until the minimum watermark.
+      drainUntilMinimumWatermark();
+    }
   }
 
   @Override
   public void processRightWatermark(final MistWatermarkEvent event) {
-    LOG.log(Level.FINE, "{0} gets right watermark {1}", new Object[]{getOperatorIdentifier(), event});
-    recentRightWatermark = event;
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.log(Level.FINE, "{0} gets right watermark {1}", new Object[]{this.getClass().getName(), event});
+    }
 
-    // Drain events until the minimum watermark.
-    drainUntilMinimumWatermark();
+    if (latestRightWatermark.getTimestamp() < event.getTimestamp()) {
+      latestRightWatermark = event;
+
+      // Drain events until the minimum watermark.
+      drainUntilMinimumWatermark();
+    }
   }
 }

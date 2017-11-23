@@ -15,20 +15,15 @@
  */
 package edu.snu.mist.core.task;
 
+import edu.snu.mist.common.OutputEmitter;
 import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;
-import org.apache.reef.wake.Identifier;
 
 /**
  * This class represents the implementation of Source interface.
  * @param <T> the type of input data
  */
-final class PhysicalSourceImpl<T> implements PhysicalSource<T> {
-
-  /**
-   * Source id.
-   */
-  private final Identifier sourceId;
+public final class PhysicalSourceImpl<T> extends BasePhysicalVertex implements PhysicalSource {
 
   /**
    * Data generator that generates data.
@@ -40,9 +35,10 @@ final class PhysicalSourceImpl<T> implements PhysicalSource<T> {
    */
   private final EventGenerator<T> eventGenerator;
 
-  public PhysicalSourceImpl(final Identifier sourceId,
+  public PhysicalSourceImpl(final String sourceId,
+                            final String configuration,
                             final DataGenerator<T> dataGenerator, final EventGenerator<T> eventGenerator) {
-    this.sourceId = sourceId;
+    super(sourceId, configuration);
     this.dataGenerator = dataGenerator;
     this.eventGenerator = eventGenerator;
   }
@@ -60,29 +56,56 @@ final class PhysicalSourceImpl<T> implements PhysicalSource<T> {
   }
 
   @Override
+  public EventGenerator getEventGenerator() {
+    return eventGenerator;
+  }
+
+  @Override
+  public SourceOutputEmitter getSourceOutputEmitter() {
+    return (SourceOutputEmitter)eventGenerator.getOutputEmitter();
+  }
+
+  @Override
   public void close() throws Exception {
     dataGenerator.close();
     eventGenerator.close();
   }
 
-
-  @Override
-  public Identifier getIdentifier() {
-    return sourceId;
-  }
-
-  @Override
-  public DataGenerator<T> getDataGenerator() {
-    return dataGenerator;
-  }
-
-  @Override
-  public EventGenerator<T> getEventGenerator() {
-    return eventGenerator;
-  }
-
   @Override
   public Type getType() {
     return Type.SOURCE;
+  }
+
+  @Override
+  public String getIdentifier() {
+    return id;
+  }
+
+  @Override
+  public void setOutputEmitter(final OutputEmitter emitter) {
+    eventGenerator.setOutputEmitter(emitter);
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    final PhysicalSourceImpl<T> that = (PhysicalSourceImpl<T>) o;
+
+    if (!id.equals(that.id)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    return id.hashCode();
   }
 }

@@ -15,25 +15,35 @@
  */
 package edu.snu.mist.core.driver;
 
+import edu.snu.mist.core.parameters.ClientToTaskServerPortNum;
+import edu.snu.mist.core.parameters.MasterToTaskServerPortNum;
 import edu.snu.mist.core.task.MistTask;
-import org.apache.avro.ipc.Server;
+import edu.snu.mist.core.master.MistMaster;
+import edu.snu.mist.core.master.TaskSelector;
+import edu.snu.mist.core.master.parameters.ClientToMasterServerPortNum;
+import edu.snu.mist.core.master.parameters.ClientToTaskServerAddressSet;
+import edu.snu.mist.core.master.parameters.TaskToMasterServerPortNum;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.driver.context.ContextConfiguration;
-import org.apache.reef.driver.evaluator.AllocatedEvaluator;
-import org.apache.reef.driver.evaluator.EvaluatorRequest;
-import org.apache.reef.driver.evaluator.EvaluatorRequestor;
+import org.apache.reef.driver.evaluator.*;
 import org.apache.reef.driver.task.RunningTask;
 import org.apache.reef.driver.task.TaskConfiguration;
 import org.apache.reef.io.network.naming.NameResolverConfiguration;
 import org.apache.reef.io.network.naming.NameServer;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
+import org.apache.reef.tang.JavaConfigurationBuilder;
+import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Unit;
 import org.apache.reef.wake.EventHandler;
 import org.apache.reef.wake.remote.address.LocalAddressProvider;
 import org.apache.reef.wake.time.event.StartTime;
 
 import javax.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -70,12 +80,37 @@ public final class MistDriver {
   public static final String MIST_DRIVER_ID = "MIST_DRIVER";
 
   /**
+   * Indicates that the ActiveContext is a MIST Master.
+   */
+  public static final String MIST_MASTER_ID = "MistMaster";
+
+  /**
+   * Indicates that the ActiveContext is a MIST Task.
+   */
+  public static final String MIST_TASK_ID = "MistTask";
+
+  /**
    * An evaluator requestor.
    */
   private final EvaluatorRequestor requestor;
 
   /**
-   * Index of MistTasks.
+   * An jvm process factory.
+   */
+  private final JVMProcessFactory jvmProcessFactory;
+
+  /**
+   * Index of all running tasks and masters.
+   */
+  private final AtomicInteger runningEvaluators;
+
+  /**
+   * Index of Mist masters.
+   */
+  private final AtomicInteger masterIndex;
+
+  /**
+   * Index of Mist tasks.
    */
   private final AtomicInteger taskIndex;
 
@@ -95,45 +130,122 @@ public final class MistDriver {
   private final TaskSelector taskSelector;
 
   /**
-   * Configurations for MistTask.
+   * Configurations necessary for the driver.
+   */
+  private final MistDriverConfigs mistDriverConfigs;
+
+  /**
+   * Configurations for mist task.
    */
   private final MistTaskConfigs mistTaskConfigs;
 
+  /**
+   * The runtime name for mist tasks.
+   */
+  private static final String MIST_TASK_RUNTIME_NAME = "mist-task";
+
+  /**
+   * The runtime name for mist masters.
+   */
+  private static final String MIST_MASTER_RUNTIME_NAME = "mist-master";
+
+  /**
+   * The submitter submits evaluators for Mist tasks after all of the Mist masters launched.
+   */
+
+  /**
+   * This is a queue that holds the tasks that were submitted as contexts.
+   */
+  private final Queue<ActiveContext> mistTaskQueue;
+
+  /**
+   * This is a queue that holds the masters that were submitted as contexts.
+   */
+  private final Queue<ActiveContext> mistMasterQueue;
+
+  /**
+   * This counts the number of contexts submitted.
+   */
+  private final AtomicInteger activeContextCounter;
+
+  private final Tang tang = Tang.Factory.getTang();
+
   @Inject
   private MistDriver(final EvaluatorRequestor requestor,
+                     final JVMProcessFactory jvmProcessFactory,
                      final NameServer nameServer,
                      final LocalAddressProvider localAddressProvider,
                      final TaskSelector taskSelector,
-                     final Server server,
+                     final MistDriverConfigs mistDriverConfigs,
                      final MistTaskConfigs mistTaskConfigs) {
     this.nameServer = nameServer;
     this.localAddressProvider = localAddressProvider;
     this.requestor = requestor;
+    this.jvmProcessFactory = jvmProcessFactory;
+    this.runningEvaluators = new AtomicInteger(0);
     this.taskIndex = new AtomicInteger(0);
+    this.masterIndex = new AtomicInteger(0);
     this.taskSelector = taskSelector;
+    this.mistDriverConfigs = mistDriverConfigs;
     this.mistTaskConfigs = mistTaskConfigs;
+    this.mistTaskQueue = new ConcurrentLinkedQueue<>();
+    this.mistMasterQueue = new ConcurrentLinkedQueue<>();
+    this.activeContextCounter = new AtomicInteger(0);
   }
 
   public final class StartHandler implements EventHandler<StartTime> {
     @Override
     public void onNext(final StartTime startTime) {
+      // Request master resources
       requestor.submit(EvaluatorRequest.newBuilder()
-          .setNumber(mistTaskConfigs.getNumTasks())
-          .setMemory(mistTaskConfigs.getTaskMemSize())
-          .setNumberOfCores(mistTaskConfigs.getNumTaskCores())
+          .setNumber(mistDriverConfigs.getNumMasters())
+          .setMemory(mistDriverConfigs.getMasterMemSize())
+          .setNumberOfCores(mistDriverConfigs.getNumMasterCores())
+          .setRuntimeName(MIST_MASTER_RUNTIME_NAME)
           .build());
-      LOG.log(Level.INFO, "Requested Evaluator.");
+      LOG.log(Level.INFO, "Requested {0} evaluators with {1} cores and {2}m memory for MIST masters.",
+          new Object[] {mistDriverConfigs.getNumMasters(), mistDriverConfigs.getMasterMemSize(), mistDriverConfigs
+              .getNumMasterCores()});
+
+      // Request task resources
+      requestor.submit(EvaluatorRequest.newBuilder()
+          .setNumber(mistDriverConfigs.getNumTasks())
+          .setMemory(mistDriverConfigs.getTaskMemSize())
+          .setNumberOfCores(mistDriverConfigs.getNumTaskCores())
+          .setRuntimeName(MIST_TASK_RUNTIME_NAME)
+          .build());
+      LOG.log(Level.INFO,
+          "Requested {0} evaluators with {1} cores and {2}m memory for MIST tasks.",
+          new Object[] {mistDriverConfigs.getNumTasks(),
+              mistDriverConfigs.getTaskMemSize(),
+              mistDriverConfigs.getNumTaskCores()});
     }
   }
 
   public final class EvaluatorAllocatedHandler implements EventHandler<AllocatedEvaluator> {
     @Override
-    public void onNext(final AllocatedEvaluator allocatedEvaluator) {
+    public synchronized void onNext(final AllocatedEvaluator allocatedEvaluator) {
       LOG.log(Level.INFO, "Submitting Context to AllocatedEvaluator: {0}", allocatedEvaluator);
-      final String taskId = "MistTask-" + taskIndex.getAndIncrement();
-      allocatedEvaluator.submitContext(ContextConfiguration.CONF
-          .set(ContextConfiguration.IDENTIFIER, taskId)
-          .build());
+      if (allocatedEvaluator.getEvaluatorDescriptor().getRuntimeName().equals(MIST_MASTER_RUNTIME_NAME)) {
+        // Submit master tasks
+        final String masterId = "MistMaster-" + masterIndex.getAndIncrement();
+        allocatedEvaluator.submitContext(ContextConfiguration.CONF
+        .set(ContextConfiguration.IDENTIFIER, masterId)
+        .build());
+      } else if (allocatedEvaluator.getEvaluatorDescriptor().getRuntimeName().equals(MIST_TASK_RUNTIME_NAME)) {
+        // Store allocated task evaluators and launch them after
+        final String taskId = "MistTask-" + taskIndex.getAndIncrement();
+        final JVMProcess jvmProcess = jvmProcessFactory.newEvaluatorProcess()
+            .setMemory(mistDriverConfigs.getTaskMemSize())
+            .addOption("-XX:NewRatio=" + mistDriverConfigs.getNewRatio())
+            .addOption("-XX:ReservedCodeCacheSize=" + mistDriverConfigs.getReservedCodeCacheSize() + "m");
+        allocatedEvaluator.setProcess(jvmProcess);
+        allocatedEvaluator.submitContext(ContextConfiguration.CONF
+            .set(ContextConfiguration.IDENTIFIER, taskId)
+            .build());
+      } else {
+        LOG.log(Level.SEVERE, "Invalid runtime name!");
+      }
     }
   }
 
@@ -147,15 +259,82 @@ public final class MistDriver {
           .set(NameResolverConfiguration.NAME_SERVICE_PORT, nameServer.getPort())
           .set(NameResolverConfiguration.NAME_SERVER_HOSTNAME, localAddressProvider.getLocalAddress())
           .build();
-      // Task configuration
-      final Configuration taskConfiguration = TaskConfiguration.CONF
-          .set(TaskConfiguration.IDENTIFIER, taskId)
-          .set(TaskConfiguration.TASK, MistTask.class)
-          .set(TaskConfiguration.ON_CLOSE, MistTask.TaskCloseHandler.class)
-          .build();
-      // submit a task
-      activeContext.submitTask(
-          Configurations.merge(nameResolverConf, taskConfiguration, mistTaskConfigs.getConfiguration()));
+      if (taskId.startsWith(MIST_MASTER_ID)) {
+        mistMasterQueue.add(activeContext);
+      } else if (taskId.startsWith(MIST_TASK_ID)) {
+        mistTaskQueue.add(activeContext);
+      } else {
+        LOG.log(Level.SEVERE, "Invalid contextId: {0}", taskId);
+      }
+      // All the active contexts are now submitted
+      if (activeContextCounter.incrementAndGet()
+          == mistDriverConfigs.getNumMasters() + mistDriverConfigs.getNumTasks()) {
+        final Map<String, AtomicInteger> hostPortMap = new HashMap<>();
+        final int taskNumPerMaster = (int) Math.ceil(
+            (double) mistDriverConfigs.getNumTasks() / (double) mistDriverConfigs.getNumMasters());
+
+        while (!mistMasterQueue.isEmpty()) {
+          final ActiveContext masterContext = mistMasterQueue.remove();
+          int taskCount = 0;
+          final JavaConfigurationBuilder masterConfBuilder = tang.newConfigurationBuilder();
+          final String masterHostAddress =
+              masterContext.getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress().getHostName();
+          if (!hostPortMap.containsKey(masterHostAddress)) {
+            hostPortMap.put(masterHostAddress,
+                new AtomicInteger(mistDriverConfigs.getAvroRpcServerPortStart()));
+          }
+          final int clientToMasterRpcPort = hostPortMap.get(masterHostAddress).getAndIncrement();
+          final int taskToMasterRpcPort = hostPortMap.get(masterHostAddress).getAndIncrement();
+          masterConfBuilder.bindNamedParameter(ClientToMasterServerPortNum.class,
+              String.valueOf(clientToMasterRpcPort));
+          masterConfBuilder.bindNamedParameter(TaskToMasterServerPortNum.class,
+              String.valueOf(taskToMasterRpcPort));
+
+          /**
+           * TODO : [MIST-928] Policy on task assignment to multiple masters
+           * Currently, each master gets a maximum of "taskNumPerMaster" tasks.
+           * We must decide a better policy that reflects the load of each master in the future.
+           */
+          while (!mistTaskQueue.isEmpty() && taskCount < taskNumPerMaster) {
+            final ActiveContext taskContext = mistTaskQueue.remove();
+            // Allocate the port to the thread
+            final String taskHostAddress =
+                taskContext.getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress().getHostName();
+            if (!hostPortMap.containsKey(taskHostAddress)) {
+              hostPortMap.put(taskHostAddress,
+                  new AtomicInteger(mistDriverConfigs.getAvroRpcServerPortStart()));
+            }
+            final int clientToTaskRpcPort = hostPortMap.get(taskHostAddress).getAndIncrement();
+            final int masterToTaskRpcPort = hostPortMap.get(taskHostAddress).getAndIncrement();
+            // Task configuration
+            final Configuration taskConfiguration = TaskConfiguration.CONF
+                .set(TaskConfiguration.IDENTIFIER, taskContext.getId())
+                .set(TaskConfiguration.TASK, MistTask.class)
+                .set(TaskConfiguration.ON_CLOSE, MistTask.TaskCloseHandler.class)
+                .build();
+            final JavaConfigurationBuilder taskConfBuilder = tang.newConfigurationBuilder();
+            taskConfBuilder.bindNamedParameter(ClientToTaskServerPortNum.class, String.valueOf(clientToTaskRpcPort));
+            masterConfBuilder.bindSetEntry(ClientToTaskServerAddressSet.class,
+                taskHostAddress + ":" + clientToTaskRpcPort);
+            taskConfBuilder.bindNamedParameter(MasterToTaskServerPortNum.class, String.valueOf(masterToTaskRpcPort));
+            // submit a task
+            taskContext.submitTask(
+                Configurations.merge(nameResolverConf, taskConfiguration, mistTaskConfigs.getConfiguration(),
+                    taskConfBuilder.build()));
+            taskCount++;
+          }
+          // Master configuration
+          final Configuration masterConfiguration = TaskConfiguration.CONF
+              .set(TaskConfiguration.IDENTIFIER, masterContext.getId())
+              .set(TaskConfiguration.TASK, MistMaster.class)
+              .set(TaskConfiguration.ON_CLOSE, MistMaster.MasterCloseHandler.class)
+              .build();
+          // submit a task
+          masterContext.submitTask(
+              Configurations.merge(nameResolverConf, masterConfiguration, mistTaskConfigs.getConfiguration(),
+                  masterConfBuilder.build()));
+        }
+      }
     }
   }
 
@@ -163,8 +342,6 @@ public final class MistDriver {
     @Override
     public void onNext(final RunningTask runningTask) {
       LOG.log(Level.INFO, "Task {0} is running", runningTask.getId());
-      // Registers the running task to TaskSelector
-      taskSelector.registerRunningTask(runningTask);
     }
   }
 }

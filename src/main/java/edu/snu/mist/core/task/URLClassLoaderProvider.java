@@ -19,20 +19,37 @@ import javax.inject.Inject;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
- * URL class loader provider.
+ * URL class loader provider that shares jar files when the urls are the same.
  */
 final class URLClassLoaderProvider implements ClassLoaderProvider {
 
+  private final ConcurrentMap<Set<URL>, ClassLoader> classLoaderConcurrentMap;
+
   @Inject
   private URLClassLoaderProvider() {
+    this.classLoaderConcurrentMap = new ConcurrentHashMap<>();
   }
 
   @Override
   public ClassLoader newInstance(final URL[] urls) {
-    return new URLClassLoader(urls);
+    final Set<URL> urlSet = new HashSet<>(urls.length);
+    for (int i = 0; i < urls.length; i++) {
+      urlSet.add(urls[i]);
+    }
+
+    if (classLoaderConcurrentMap.get(urlSet) == null) {
+      classLoaderConcurrentMap.putIfAbsent(urlSet, new URLClassLoader(urls));
+      return classLoaderConcurrentMap.get(urlSet);
+    } else {
+      return classLoaderConcurrentMap.get(urlSet);
+    }
   }
 
   @Override

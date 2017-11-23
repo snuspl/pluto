@@ -49,7 +49,7 @@ public final class HelloMist {
     final SourceConfiguration localTextSocketSourceConf =
         MISTExampleUtils.getLocalTextSocketSourceConf(sourceSocket);
 
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group", "user1");
     queryBuilder.socketTextStream(localTextSocketSourceConf)
         .filter(s -> s.startsWith("HelloMIST:"))
         .map(s -> s.substring("HelloMIST:".length()).trim())
@@ -86,6 +86,6 @@ public final class HelloMist {
   /**
    * Must not be instantiated.
    */
-  private HelloMist(){
+  private HelloMist() {
   }
 }

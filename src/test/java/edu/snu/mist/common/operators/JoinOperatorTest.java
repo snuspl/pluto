@@ -22,6 +22,7 @@ import edu.snu.mist.common.functions.MISTBiPredicate;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.WindowData;
 import edu.snu.mist.common.windows.WindowImpl;
+import edu.snu.mist.utils.OutputBufferEmitter;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -54,14 +55,14 @@ public final class JoinOperatorTest {
         (tuple1, tuple2) -> tuple1.get(1).equals(tuple2.get(0));
 
     final JoinOperator<Tuple2<String, Integer>, Tuple2<Integer, Long>> joinOperator =
-        new JoinOperator<>("testJoinOp", joinPredicate);
+        new JoinOperator<>(joinPredicate);
 
     // expected pairs
     // {Hello, 1} and {1, 3000L}
     // {Hello, 1} and {1, 4000L}
     // {MIST, 2} and {2, 5000L}
     final List<MistEvent> result = new LinkedList<>();
-    joinOperator.setOutputEmitter(new SimpleOutputEmitter(result));
+    joinOperator.setOutputEmitter(new OutputBufferEmitter(result));
 
     joinOperator.processLeftData(dataEvent);
     Assert.assertEquals(1, result.size());

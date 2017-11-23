@@ -18,9 +18,10 @@ package edu.snu.mist.api.datastreams;
 
 
 import edu.snu.mist.api.datastreams.configurations.*;
-import edu.snu.mist.common.DAG;
+import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.*;
+import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.*;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.CountWindowInformation;
@@ -30,21 +31,53 @@ import edu.snu.mist.formats.avro.Direction;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
 import org.apache.reef.tang.formats.ConfigurationModule;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This class implements ContinuousStream by configuring operations using Tang.
  * <T> data type of the stream.
  */
-public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements ContinuousStream<T> {
+public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements ContinuousStream<T> {
 
-  public ContinuousStreamImpl(final DAG<MISTStream, Direction> dag,
+  /**
+   * The number of branches diverged from this stream.
+   */
+  private int condBranchCount;
+  /**
+   * The branch index that represents the order of branch.
+   * If this index is n which is greater than 0,
+   * than it means that this stream is n'th (conditional) branch from upstream.
+   */
+  private final int branchIndex;
+
+  public ContinuousStreamImpl(final DAG<MISTStream, MISTEdge> dag,
                               final Configuration conf) {
+    this(dag, conf, 0);
+  }
+
+  private ContinuousStreamImpl(final DAG<MISTStream, MISTEdge> dag,
+                               final Configuration conf,
+                               final int branchIndex) {
     super(dag, conf);
+    this.condBranchCount = 0;
+    this.branchIndex = branchIndex;
+  }
+
+  @Override
+  public int getCondBranchCount() {
+    return condBranchCount;
+  }
+
+  @Override
+  public int getBranchIndex() {
+    return branchIndex;
   }
 
   /**
@@ -60,7 +93,7 @@ public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements 
       final MISTStream upStream) {
     final WindowedStream<OUT> downStream = new WindowedStreamImpl<>(dag, conf);
     dag.addVertex(downStream);
-    dag.addEdge(upStream, downStream, Direction.LEFT);
+    dag.addEdge(upStream, downStream, new MISTEdge(Direction.LEFT));
     return downStream;
   }
 
@@ -79,8 +112,8 @@ public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements 
       final MISTStream rightStream) {
     final ContinuousStream<OUT> downStream = new ContinuousStreamImpl<>(dag, conf);
     dag.addVertex(downStream);
-    dag.addEdge(leftStream, downStream, Direction.LEFT);
-    dag.addEdge(rightStream, downStream, Direction.RIGHT);
+    dag.addEdge(leftStream, downStream, new MISTEdge(Direction.LEFT));
+    dag.addEdge(rightStream, downStream, new MISTEdge(Direction.RIGHT));
     return downStream;
   }
 
@@ -96,9 +129,9 @@ public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements 
       final Serializable udf,
       final Class<? extends Operator> clazz) {
     try {
-      final Configuration opConf = SingleInputOperatorUDFConfiguration.CONF
-          .set(SingleInputOperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(udf))
-          .set(SingleInputOperatorUDFConfiguration.OPERATOR, clazz)
+      final Configuration opConf = OperatorUDFConfiguration.CONF
+          .set(OperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(udf))
+          .set(OperatorUDFConfiguration.OPERATOR, clazz)
           .build();
       return transformToSingleInputContinuousStream(opConf, this);
     } catch (final IOException e) {
@@ -184,6 +217,24 @@ public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements 
   }
 
   @Override
+  public ContinuousStream<Tuple2<T, String>> stateTransition(
+          final String initialState,
+          final Set<String> finalState,
+          final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable) throws IOException {
+    ConfigurationModule opConfModule = StateTransitionOperatorConfiguration.CONF
+        .set(StateTransitionOperatorConfiguration.INITIAL_STATE, initialState)
+        .set(StateTransitionOperatorConfiguration.STATE_TABLE,
+                SerializeUtils.serializeToString((Serializable) stateTable))
+        .set(StateTransitionOperatorConfiguration.OPERATOR, StateTransitionOperator.class);
+
+    for (final String iterState : finalState) {
+      opConfModule = opConfModule.set(StateTransitionOperatorConfiguration.FINAL_STATE, iterState);
+    }
+    final Configuration opConf = opConfModule.build();
+    return transformToSingleInputContinuousStream(opConf, this);
+  }
+
+  @Override
   public <K, V> ContinuousStream<Map<K, V>> reduceByKey(final int keyFieldNum,
                                                         final Class<K> keyType,
                                                         final MISTBiFunction<V, V, V> reduceFunc) {
@@ -258,9 +309,9 @@ public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements 
         .union(inputStream.map(secondMapFunc))
         .window(windowInfo);
     try {
-      final Configuration opConf = SingleInputOperatorUDFConfiguration.CONF
-          .set(SingleInputOperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(joinBiPredicate))
-          .set(SingleInputOperatorUDFConfiguration.OPERATOR, JoinOperator.class)
+      final Configuration opConf = OperatorUDFConfiguration.CONF
+          .set(OperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(joinBiPredicate))
+          .set(OperatorUDFConfiguration.OPERATOR, JoinOperator.class)
           .build();
       return transformToWindowedStream(opConf, windowedStream);
     } catch (final IOException e) {
@@ -289,15 +340,52 @@ public final class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements 
   }
 
   @Override
+  public ContinuousStream<T> routeIf(final MISTPredicate<T> condition) {
+    condBranchCount++;
+    try {
+      final Configuration opConf = UDFConfiguration.CONF
+          .set(UDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(condition))
+          .build();
+
+      final ContinuousStream<T> downStream = new ContinuousStreamImpl<>(dag, opConf, condBranchCount);
+      dag.addVertex(downStream);
+      dag.addEdge(this, downStream, new MISTEdge(Direction.LEFT));
+      return downStream;
+    } catch (final IOException e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public ContinuousStream<T> routeIf(final Class<? extends MISTPredicate<T>> clazz,
+                                     final Configuration funcConf) {
+    // TODO: [MIST-436] Support predicate list generation through tang in branch operator API
+    throw new RuntimeException("Branch operator setting through Tang is not supported yet.");
+  }
+
+  @Override
   public MISTStream<String> textSocketOutput(final String serverAddress,
-                               final int serverPort) {
+                                             final int serverPort) {
     final Configuration opConf = TextSocketSinkConfiguration.CONF
         .set(TextSocketSinkConfiguration.SOCKET_HOST_ADDRESS, serverAddress)
         .set(TextSocketSinkConfiguration.SOCKET_HOST_PORT, serverPort)
         .build();
     final MISTStream<String> sink = new MISTStreamImpl<>(dag, opConf);
     dag.addVertex(sink);
-    dag.addEdge(this, sink, Direction.LEFT);
+    dag.addEdge(this, sink, new MISTEdge(Direction.LEFT));
+    return sink;
+  }
+
+  @Override
+  public MISTStream<MqttMessage> mqttOutput(final String brokerURI, final String topic) {
+    final Configuration opConf = MqttSinkConfiguration.CONF
+        .set(MqttSinkConfiguration.MQTT_BROKER_URI, brokerURI)
+        .set(MqttSinkConfiguration.MQTT_TOPIC, topic)
+        .build();
+    final MISTStream<MqttMessage> sink = new MISTStreamImpl<>(dag, opConf);
+    dag.addVertex(sink);
+    dag.addEdge(this, sink, new MISTEdge(Direction.LEFT));
     return sink;
   }
 }

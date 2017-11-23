@@ -50,7 +50,7 @@ public final class KafkaSource {
     final SourceConfiguration localKafkaSourceConf =
         MISTExampleUtils.getLocalKafkaSourceConf("KafkaSource", sourceSocket);
 
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group", "user1");
     queryBuilder.kafkaStream(localKafkaSourceConf)
         .map(consumerRecord -> ((ConsumerRecord)consumerRecord).value())
         .textSocketOutput(MISTExampleUtils.SINK_HOSTNAME, MISTExampleUtils.SINK_PORT);
@@ -86,6 +86,6 @@ public final class KafkaSource {
   /**
    * Must not be instantiated.
    */
-  private KafkaSource(){
+  private KafkaSource() {
   }
 }

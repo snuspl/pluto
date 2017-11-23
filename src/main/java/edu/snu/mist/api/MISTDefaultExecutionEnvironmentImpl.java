@@ -34,17 +34,17 @@ import java.util.concurrent.ConcurrentMap;
  * First, it communicates with MIST Driver to get a list of MIST Tasks.
  * After retrieving Tasks, it chooses a Task, and uploads its jar files to the MIST Task.
  * Then, the Task returns the paths of the stored jar files.
- * If the upload succeeds, it converts the query into avro LogicalPlan, and submits the logical plan to the task.
+ * If the upload succeeds, it converts the query into AvroLogicalPlan, and submits the logical plan to the task.
  */
 public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionEnvironment {
   /**
    * A proxy that communicates with MIST Driver.
    */
-  private final MistTaskProvider proxyToDriver;
+  private final ClientToMasterMessage proxyToDriver;
   /**
    * A list of MIST Tasks.
    */
-  private final List<IPAddress> tasks;
+  private final IPAddress task;
   /**
    * A map of proxies that has an ip address of the MIST Task as a key,
    * and a proxy communicating with a MIST Task as a value.
@@ -62,9 +62,8 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
                                              final int serverPort) throws IOException {
     // Step 1: Get a task list from Driver
     final NettyTransceiver clientToDriver = new NettyTransceiver(new InetSocketAddress(serverAddr, serverPort));
-    this.proxyToDriver = SpecificRequestor.getClient(MistTaskProvider.class, clientToDriver);
-    final TaskList taskList = proxyToDriver.getTasks(new QueryInfo());
-    this.tasks = taskList.getTasks();
+    this.proxyToDriver = SpecificRequestor.getClient(ClientToMasterMessage.class, clientToDriver);
+    this.task = proxyToDriver.getTask(new QueryInfo());
     this.taskProxyMap = new ConcurrentHashMap<>();
   }
 
@@ -78,9 +77,6 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
   @Override
   public APIQueryControlResult submit(final MISTQuery queryToSubmit,
                                       final String[] jarFilePaths) throws IOException {
-    // Choose a task
-    final IPAddress task = tasks.get(0);
-
     ClientToTaskMessage proxyToTask = taskProxyMap.get(task);
     if (proxyToTask == null) {
       final NettyTransceiver clientToTask = new NettyTransceiver(
@@ -106,19 +102,21 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
     }
 
     // Build logical plan using serialized vertices and edges.
-    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDag = queryToSubmit.getSerializedDAG();
-    final LogicalPlan.Builder logicalPlanBuilder = LogicalPlan.newBuilder();
-    final LogicalPlan logicalPlan = logicalPlanBuilder
+    final Tuple<List<AvroVertex>, List<Edge>> serializedDag = queryToSubmit.getAvroOperatorDag();
+    final AvroDag.Builder avroDagBuilder = AvroDag.newBuilder();
+    final AvroDag avroDag = avroDagBuilder
         .setJarFilePaths(jarUploadResult.getPaths())
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
+        .setSuperGroupId(queryToSubmit.getSuperGroupId())
+        .setSubGroupId(queryToSubmit.getSubGroupId())
         .build();
-    final QueryControlResult queryControlResult = proxyToTask.sendQueries(logicalPlan);
+    final QueryControlResult queryControlResult = proxyToTask.sendQueries(avroDag);
 
     // Transform QueryControlResult to APIQueryControlResult
     final APIQueryControlResult apiQueryControlResult =
         new APIQueryControlResultImpl(queryControlResult.getQueryId(), task,
-                  queryControlResult.getMsg(), queryControlResult.getIsSuccess());
+            queryControlResult.getMsg(), queryControlResult.getIsSuccess());
     return apiQueryControlResult;
   }
 }

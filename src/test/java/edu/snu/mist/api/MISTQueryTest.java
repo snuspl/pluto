@@ -23,10 +23,9 @@ import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.TimeWindowInformation;
-import edu.snu.mist.formats.avro.AvroVertexChain;
+import edu.snu.mist.formats.avro.AvroVertex;
 import edu.snu.mist.formats.avro.Direction;
 import edu.snu.mist.formats.avro.Edge;
-import edu.snu.mist.formats.avro.Vertex;
 import edu.snu.mist.utils.TestParameters;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -64,7 +63,8 @@ public final class MISTQueryTest {
    */
   @Test
   public void mistComplexQuerySerializeTest() throws InjectionException, IOException, URISyntaxException {
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    final MISTQueryBuilder queryBuilder =
+        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID, TestParameters.SUB_GROUP_ID);
     final ContinuousStream<String> sourceStream =
         queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF,
             TestParameters.PUNCTUATED_WATERMARK_CONF);
@@ -80,55 +80,34 @@ public final class MISTQueryTest {
 
     // Build a query
     final MISTQuery complexQuery = queryBuilder.build();
-    final Tuple<List<AvroVertexChain>, List<Edge>> serializedDAG = complexQuery.getSerializedDAG();
-    final List<AvroVertexChain> vertices = serializedDAG.getKey();
-    Assert.assertEquals(3, vertices.size());
+    final Tuple<List<AvroVertex>, List<Edge>> serializedDAG = complexQuery.getAvroOperatorDag();
+    final List<AvroVertex> vertices = serializedDAG.getKey();
+    Assert.assertEquals(7, vertices.size());
 
-    for (final AvroVertexChain vertexChain : vertices) {
-      switch (vertexChain.getAvroVertexChainType()) {
-        case SOURCE:
-          final Vertex sourceVertex = vertexChain.getVertexChain().get(0);
-          Assert.assertEquals(avroSerializer.toString(sourceStream.getConfiguration()),
-              sourceVertex.getConfiguration());
-          break;
-        case OPERATOR_CHAIN:
-          Assert.assertEquals(5, vertexChain.getVertexChain().size());
-          // Check flat-map conf
-          final Vertex flatMapVertex = vertexChain.getVertexChain().get(0);
-          Assert.assertEquals(avroSerializer.toString(flatMapStream.getConfiguration()),
-              flatMapVertex.getConfiguration());
-          // Check filter conf
-          final Vertex filterVertex = vertexChain.getVertexChain().get(1);
-          Assert.assertEquals(avroSerializer.toString(filterStream.getConfiguration()),
-              filterVertex.getConfiguration());
-          // Check map conf
-          final Vertex mapVertex = vertexChain.getVertexChain().get(2);
-          Assert.assertEquals(avroSerializer.toString(mapStream.getConfiguration()),
-              mapVertex.getConfiguration());
-          // Check window conf
-          final Vertex windowVertex = vertexChain.getVertexChain().get(3);
-          Assert.assertEquals(avroSerializer.toString(windowedStream.getConfiguration()),
-              windowVertex.getConfiguration());
-          // Check ReduceBy conf
-          final Vertex reduceByVertex = vertexChain.getVertexChain().get(4);
-          Assert.assertEquals(avroSerializer.toString(reduceByKeyStream.getConfiguration()),
-              reduceByVertex.getConfiguration());
-          break;
-        case SINK:
-          // Check sink conf
-          final Vertex sinkVertex = vertexChain.getVertexChain().get(0);
-          Assert.assertEquals(avroSerializer.toString(sinkStream.getConfiguration()),
-              sinkVertex.getConfiguration());
-          break;
-        default:
-          throw new RuntimeException("Not supported type");
-      }
-    }
+    Assert.assertEquals(avroSerializer.toString(sourceStream.getConfiguration()),
+        vertices.get(0).getConfiguration());
+    Assert.assertEquals(avroSerializer.toString(flatMapStream.getConfiguration()),
+        vertices.get(1).getConfiguration());
+    Assert.assertEquals(avroSerializer.toString(filterStream.getConfiguration()),
+        vertices.get(2).getConfiguration());
+    Assert.assertEquals(avroSerializer.toString(mapStream.getConfiguration()),
+        vertices.get(3).getConfiguration());
+    Assert.assertEquals(avroSerializer.toString(windowedStream.getConfiguration()),
+        vertices.get(4).getConfiguration());
+    Assert.assertEquals(avroSerializer.toString(reduceByKeyStream.getConfiguration()),
+        vertices.get(5).getConfiguration());
+    Assert.assertEquals(avroSerializer.toString(sinkStream.getConfiguration()),
+        vertices.get(6).getConfiguration());
+
 
     final List<Edge> edges = serializedDAG.getValue();
     final List<Edge> expectedEdges = Arrays.asList(
-        Edge.newBuilder().setFrom(0).setTo(1).setDirection(Direction.LEFT).build(),
-        Edge.newBuilder().setFrom(1).setTo(2).setDirection(Direction.LEFT).build());
+        Edge.newBuilder().setFrom(0).setTo(1).setDirection(Direction.LEFT).setBranchIndex(0).build(),
+        Edge.newBuilder().setFrom(1).setTo(2).setDirection(Direction.LEFT).setBranchIndex(0).build(),
+        Edge.newBuilder().setFrom(2).setTo(3).setDirection(Direction.LEFT).setBranchIndex(0).build(),
+        Edge.newBuilder().setFrom(3).setTo(4).setDirection(Direction.LEFT).setBranchIndex(0).build(),
+        Edge.newBuilder().setFrom(4).setTo(5).setDirection(Direction.LEFT).setBranchIndex(0).build(),
+        Edge.newBuilder().setFrom(5).setTo(6).setDirection(Direction.LEFT).setBranchIndex(0).build());
     Assert.assertEquals(new HashSet<>(expectedEdges), new HashSet<>(edges));
   }
 }

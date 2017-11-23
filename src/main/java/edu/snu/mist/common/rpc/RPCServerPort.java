@@ -18,7 +18,9 @@ package edu.snu.mist.common.rpc;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The port number of the RPC server", short_name = "port", default_value = "20332")
-public final class RPCServerPort implements Name<Integer> {
-  // empty
+/**
+ * The port number of RPC server.
+ */
+@NamedParameter(doc = "The port number of RPC Server")
+public class RPCServerPort implements Name<Integer> {
 }

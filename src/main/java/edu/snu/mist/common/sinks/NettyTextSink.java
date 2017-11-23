@@ -16,7 +16,6 @@
 package edu.snu.mist.common.sinks;
 
 import edu.snu.mist.common.OutputEmitter;
-import edu.snu.mist.common.parameters.OperatorId;
 import edu.snu.mist.common.parameters.SocketServerIp;
 import edu.snu.mist.common.parameters.SocketServerPort;
 import edu.snu.mist.common.shared.NettySharedResource;
@@ -25,7 +24,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.tang.annotations.Parameter;
-import org.apache.reef.wake.Identifier;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -34,11 +32,6 @@ import java.io.IOException;
  * This class receives text data stream via Netty.
  */
 public final class NettyTextSink implements Sink<String> {
-
-  /**
-   * Sink id.
-   */
-  private final Identifier sinkId;
 
   /**
    * Output emitter.
@@ -57,12 +50,10 @@ public final class NettyTextSink implements Sink<String> {
 
   @Inject
   public NettyTextSink(
-      @Parameter(OperatorId.class) final String sinkId,
       @Parameter(SocketServerIp.class) final String serverAddress,
       @Parameter(SocketServerPort.class) final int port,
       final NettySharedResource sharedResource,
       final StringIdentifierFactory identifierFactory) throws IOException {
-    this.sinkId = identifierFactory.getNewInstance(sinkId);
     final Bootstrap clientBootstrap = sharedResource.getClientBootstrap();
     final ChannelFuture channelFuture = clientBootstrap.connect(serverAddress, port);
     channelFuture.awaitUninterruptibly();
@@ -73,11 +64,6 @@ public final class NettyTextSink implements Sink<String> {
       throw new RuntimeException(sb.toString());
     }
     this.channel = channelFuture.channel();
-  }
-
-  @Override
-  public Identifier getIdentifier() {
-    return sinkId;
   }
 
   @Override

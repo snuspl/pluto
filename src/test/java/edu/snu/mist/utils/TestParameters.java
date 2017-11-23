@@ -33,20 +33,23 @@ public final class TestParameters {
   public static final String HOST = "localhost";
   public static final int SERVER_PORT = 13666;
   public static final int SINK_PORT = 13667;
+  public static final String TOPIC = "mqttTopic";
+  public static final String SUPER_GROUP_ID = "test-group";
+  public static final String SUB_GROUP_ID = "user1";
 
   public static final SourceConfiguration LOCAL_TEXT_SOCKET_SOURCE_CONF =
       TextSocketSourceConfiguration.newBuilder()
-      .setHostAddress(HOST)
-      .setHostPort(SERVER_PORT)
-      .build();
+          .setHostAddress(HOST)
+          .setHostPort(SERVER_PORT)
+          .build();
 
   public static final SourceConfiguration LOCAL_TEXT_SOCKET_EVENTTIME_SOURCE_CONF =
       TextSocketSourceConfiguration.newBuilder()
-      .setHostAddress(HOST)
-      .setHostPort(SERVER_PORT)
-      .setTimestampExtractionFunction(input -> new Tuple<>(input.split(":")[0],
-          Long.parseLong(input.split(":")[1])))
-      .build();
+          .setHostAddress(HOST)
+          .setHostPort(SERVER_PORT)
+          .setTimestampExtractionFunction(input -> new Tuple<>(input.split(":")[0],
+              Long.parseLong(input.split(":")[1])))
+          .build();
 
   public static final WatermarkConfiguration PUNCTUATED_WATERMARK_CONF =
       PunctuatedWatermarkConfiguration.<String>newBuilder()

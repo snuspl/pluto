@@ -47,51 +47,18 @@ public final class MISTQueryControl {
    * @return It returns a result message of deletion.
    * @throws IOException
    */
-  public static APIQueryControlResult delete(final String queryId, final IPAddress taskAddress) throws IOException {
+  public static APIQueryControlResult delete(final String groupId,
+                                             final String queryId,
+                                             final IPAddress taskAddress) throws IOException {
     final ClientToTaskMessage proxy = getProxy(taskAddress);
-    final QueryControlResult queryControlResult =  proxy.deleteQueries(queryId);
+    final QueryControlResult queryControlResult =  proxy.deleteQueries(groupId, queryId);
     final APIQueryControlResult apiQueryControlResult =
         new APIQueryControlResultImpl(queryControlResult.getQueryId(), taskAddress,
             queryControlResult.getMsg(), queryControlResult.getIsSuccess());
     return apiQueryControlResult;
   }
 
-  /**
-   * request task to stop the query.
-   * TODO[MIST-290]: Return a message to Client.
-   * @param queryId
-   * @param taskAddress
-   * @return It returns a result message of stop.
-   * @throws IOException
-   */
-  public static APIQueryControlResult stop(final String queryId, final IPAddress taskAddress) throws IOException {
-    final ClientToTaskMessage proxy = getProxy(taskAddress);
-    final QueryControlResult queryControlResult =  proxy.stopQueries(queryId);
-    final APIQueryControlResult apiQueryControlResult =
-        new APIQueryControlResultImpl(queryControlResult.getQueryId(), taskAddress,
-            queryControlResult.getMsg(), queryControlResult.getIsSuccess());
-    return apiQueryControlResult;
-  }
-
-  /**
-   * request task to resume the query.
-   * TODO[MIST-290]: Return a message to Client.
-   * @param queryId
-   * @param taskAddress
-   * @return It returns a result message of resume.
-   * @throws IOException
-   */
-  public static APIQueryControlResult resume(final String queryId, final IPAddress taskAddress) throws IOException {
-    final ClientToTaskMessage proxy = getProxy(taskAddress);
-    final QueryControlResult queryControlResult =  proxy.resumeQueries(queryId);
-    final APIQueryControlResult apiQueryControlResult =
-        new APIQueryControlResultImpl(queryControlResult.getQueryId(), taskAddress,
-            queryControlResult.getMsg(), queryControlResult.getIsSuccess());
-    return apiQueryControlResult;
-  }
-
-
-  private static ClientToTaskMessage getProxy(final IPAddress taskAddress) throws IOException{
+  private static ClientToTaskMessage getProxy(final IPAddress taskAddress) throws IOException {
     ClientToTaskMessage proxyToTask = TASK_PROXY_MAP.get(taskAddress);
     if (proxyToTask == null) {
       final NettyTransceiver clientToTask = new NettyTransceiver(

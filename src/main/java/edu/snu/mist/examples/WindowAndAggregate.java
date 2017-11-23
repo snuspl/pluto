@@ -62,7 +62,7 @@ public final class WindowAndAggregate {
               windowData.getStart() + ", window is ended at " + windowData.getEnd() + ".";
         };
 
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group", "user1");
     queryBuilder.socketTextStream(localTextSocketSourceConf)
         .window(new TimeWindowInformation(windowSize, windowEmissionInterval))
         .aggregateWindow(aggregateFunc)
@@ -98,6 +98,6 @@ public final class WindowAndAggregate {
   /**
    * Must not be instantiated.
    */
-  private WindowAndAggregate(){
+  private WindowAndAggregate() {
   }
 }

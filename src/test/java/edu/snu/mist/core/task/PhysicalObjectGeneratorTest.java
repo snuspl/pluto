@@ -21,10 +21,13 @@ import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.common.operators.*;
+import edu.snu.mist.common.sinks.MqttSink;
 import edu.snu.mist.common.sinks.NettyTextSink;
 import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.sources.*;
+import edu.snu.mist.common.utils.MqttUtils;
 import edu.snu.mist.utils.OperatorTestUtils;
+import io.moquette.server.Server;
 import junit.framework.Assert;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
@@ -32,6 +35,7 @@ import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -63,7 +67,7 @@ public final class PhysicalObjectGeneratorTest {
    * Test if the physical object generator throws an InjectionException
    * when a wrong configuration is injected.
    */
-  @Test(expected=InjectionException.class)
+  @Test(expected = InjectionException.class)
   public void testInjectionExceptionOfDataGenerator() throws IOException, InjectionException {
     final Configuration conf = UnionOperatorConfiguration.CONF.build();
     generator.newDataGenerator(conf, classLoader);
@@ -119,7 +123,32 @@ public final class PhysicalObjectGeneratorTest {
     Assert.assertTrue(dataGenerator instanceof KafkaDataGenerator);
   }
 
-  @Test(expected=InjectionException.class)
+  @Test
+  public void testSuccessOfMQTTDataGenerator() throws Exception {
+    final Configuration conf = MQTTSourceConfiguration.newBuilder()
+        .setBrokerURI("tcp://localhost:12345")
+        .setTopic("topic")
+        .build().getConfiguration();
+    final DataGenerator<MqttMessage> dataGenerator =
+        generator.newDataGenerator(conf, classLoader);
+    Assert.assertTrue(dataGenerator instanceof MQTTDataGenerator);
+
+  }
+
+  @Test
+  public void testSuccessOfMQTTDataGeneratorWithClassBinding() throws Exception {
+    final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
+    final Configuration conf = MQTTSourceConfiguration.newBuilder()
+        .setBrokerURI("tcp://localhost:12345")
+        .setTopic("topic")
+        .setTimestampExtractionFunction(OperatorTestUtils.TestMQTTTimestampExtractFunc.class, funcConf)
+        .build().getConfiguration();
+    final DataGenerator<MqttMessage> dataGenerator =
+        generator.newDataGenerator(conf, classLoader);
+    Assert.assertTrue(dataGenerator instanceof MQTTDataGenerator);
+  }
+
+  @Test(expected = InjectionException.class)
   public void testInjectionExceptionOfEventGenerator() throws IOException, InjectionException {
     final Configuration conf = UnionOperatorConfiguration.CONF.build();
     generator.newEventGenerator(conf, classLoader);
@@ -166,13 +195,13 @@ public final class PhysicalObjectGeneratorTest {
    * Test if the physical object generator throws an InjectionException
    * when a wrong configuration is injected.
    */
-  @Test(expected=InjectionException.class)
+  @Test(expected = InjectionException.class)
   public void testInjectionExceptionOfOperator() throws IOException, InjectionException {
     final Configuration conf = TextSocketSourceConfiguration.newBuilder()
         .setHostAddress("localhost")
         .setHostPort(13666)
         .build().getConfiguration();
-    generator.newOperator("test", conf, classLoader);
+    generator.newOperator(conf, classLoader);
   }
 
   /**
@@ -181,7 +210,7 @@ public final class PhysicalObjectGeneratorTest {
    * @return operator
    */
   private Operator getOperator(final Configuration conf) throws IOException, InjectionException {
-    return generator.newOperator("test", conf, classLoader);
+    return generator.newOperator(conf, classLoader);
   }
 
   /**
@@ -192,9 +221,9 @@ public final class PhysicalObjectGeneratorTest {
    */
   private Operator getSingleUdfOperator(final Class<? extends Operator> operatorClass,
                                         final Serializable obj) throws IOException, InjectionException {
-    final Configuration conf = SingleInputOperatorUDFConfiguration.CONF
-        .set(SingleInputOperatorUDFConfiguration.OPERATOR, operatorClass)
-        .set(SingleInputOperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(obj))
+    final Configuration conf = OperatorUDFConfiguration.CONF
+        .set(OperatorUDFConfiguration.OPERATOR, operatorClass)
+        .set(OperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(obj))
         .build();
     return getOperator(conf);
   }
@@ -365,25 +394,41 @@ public final class PhysicalObjectGeneratorTest {
    * Test if the physical object generator throws an InjectionException
    * when a wrong configuration is injected.
    */
-  @Test(expected=InjectionException.class)
+  @Test(expected = InjectionException.class)
   public void testInjectionExceptionOfSink() throws IOException, InjectionException {
     final Configuration conf = TextSocketSourceConfiguration.newBuilder()
         .setHostAddress("localhost")
         .setHostPort(13666)
         .build().getConfiguration();
-    generator.newSink("test", conf, classLoader);
+    generator.newSink(conf, classLoader);
   }
 
   @Test
-  public void testSucessOfSink() throws IOException, InjectionException {
+  public void testSuccessOfSink() throws IOException, InjectionException {
     final int port = 13667;
     final ServerSocket socket = new ServerSocket(port);
     final Configuration conf = TextSocketSinkConfiguration.CONF
         .set(TextSocketSinkConfiguration.SOCKET_HOST_ADDRESS, "localhost")
         .set(TextSocketSinkConfiguration.SOCKET_HOST_PORT, port)
         .build();
-    final Sink sink = generator.newSink("test", conf, classLoader);
+    final Sink sink = generator.newSink(conf, classLoader);
     Assert.assertTrue(sink instanceof NettyTextSink);
     socket.close();
+  }
+
+  /**
+   * Test if the mqtt sink is created successfully.
+   */
+  @Test
+  public void testSuccessOfMqttSink() throws IOException, InjectionException {
+    final Server mqttBroker = MqttUtils.createMqttBroker();
+    final String topic = "mqttTest";
+    final Configuration conf = MqttSinkConfiguration.CONF
+        .set(MqttSinkConfiguration.MQTT_BROKER_URI, MqttUtils.BROKER_URI)
+        .set(MqttSinkConfiguration.MQTT_TOPIC, topic)
+        .build();
+    final Sink sink = generator.newSink(conf, classLoader);
+    Assert.assertTrue(sink instanceof MqttSink);
+    mqttBroker.stopServer();
   }
 }

@@ -15,16 +15,17 @@
  */
 package edu.snu.mist.common.operators;
 
-import edu.snu.mist.common.SerializeUtils;
-import edu.snu.mist.common.functions.ApplyStatefulFunction;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
-import edu.snu.mist.common.parameters.OperatorId;
+import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.functions.ApplyStatefulFunction;
 import edu.snu.mist.common.parameters.SerializedUdf;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,7 +34,8 @@ import java.util.logging.Logger;
  * @param <IN> the type of input data
  * @param <OUT> the type of output data
  */
-public final class ApplyStatefulOperator<IN, OUT> extends OneStreamOperator {
+public final class ApplyStatefulOperator<IN, OUT>
+    extends OneStreamOperator implements StateHandler {
 
   private static final Logger LOG = Logger.getLogger(ApplyStatefulOperator.class.getName());
 
@@ -44,20 +46,16 @@ public final class ApplyStatefulOperator<IN, OUT> extends OneStreamOperator {
 
   @Inject
   private ApplyStatefulOperator(
-      @Parameter(OperatorId.class) final String operatorId,
       @Parameter(SerializedUdf.class) final String serializedObject,
       final ClassLoader classLoader) throws IOException, ClassNotFoundException {
-    this(operatorId, SerializeUtils.deserializeFromString(serializedObject, classLoader));
+    this(SerializeUtils.deserializeFromString(serializedObject, classLoader));
   }
 
   /**
-   * @param operatorId identifier of operator
    * @param applyStatefulFunction the user-defined ApplyStatefulFunction.
    */
   @Inject
-  public ApplyStatefulOperator(@Parameter(OperatorId.class) final String operatorId,
-                               final ApplyStatefulFunction<IN, OUT> applyStatefulFunction) {
-    super(operatorId);
+  public ApplyStatefulOperator(final ApplyStatefulFunction<IN, OUT> applyStatefulFunction) {
     this.applyStatefulFunction = applyStatefulFunction;
     this.applyStatefulFunction.initialize();
   }
@@ -67,8 +65,12 @@ public final class ApplyStatefulOperator<IN, OUT> extends OneStreamOperator {
     applyStatefulFunction.update((IN)input.getValue());
     final OUT output = applyStatefulFunction.produceResult();
 
-    LOG.log(Level.FINE, "{0} updates the state to {1} with input {2}, and generates {3}",
-        new Object[]{getOperatorIdentifier(), applyStatefulFunction.getCurrentState(), input, output});
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.log(Level.FINE, "{0} updates the state to {1} with input {2}, and generates {3}",
+          new Object[]{this.getClass().getName(),
+              applyStatefulFunction.getCurrentState(), input, output});
+    }
+
     input.setValue(output);
     outputEmitter.emitData(input);
   }
@@ -76,5 +78,17 @@ public final class ApplyStatefulOperator<IN, OUT> extends OneStreamOperator {
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
     outputEmitter.emitWatermark(input);
+  }
+
+  @Override
+  public Map<String, Object> getOperatorState() {
+    final Map<String, Object> stateMap = new HashMap<>();
+    stateMap.put("applyStatefulFunctionState", applyStatefulFunction.getCurrentState());
+    return stateMap;
+  }
+
+  @Override
+  public void setState(final Map<String, Object> loadedState) {
+    applyStatefulFunction.setFunctionState(loadedState.get("applyStatefulFunctionState"));
   }
 }

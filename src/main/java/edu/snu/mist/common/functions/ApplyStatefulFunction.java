@@ -49,6 +49,11 @@ public interface ApplyStatefulFunction<T, R> extends Serializable {
   Object getCurrentState();
 
   /**
+   * Set the current state.
+   */
+  void setFunctionState(final Object state);
+
+  /**
    * Produces a final result with the current state.
    * This method will be called for every input during the stateful operation for continuous stream.
    * On the other hand, it will be called for each window during the stateful operation for windowed stream.

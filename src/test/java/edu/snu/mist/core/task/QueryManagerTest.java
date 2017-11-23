@@ -15,36 +15,42 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.AdjacentListDAG;
-import edu.snu.mist.common.DAG;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
-import edu.snu.mist.common.operators.*;
-import edu.snu.mist.common.sinks.Sink;
-import edu.snu.mist.common.sources.*;
+import edu.snu.mist.common.graph.AdjacentListDAG;
+import edu.snu.mist.common.graph.DAG;
+import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.common.operators.FilterOperator;
+import edu.snu.mist.common.operators.FlatMapOperator;
+import edu.snu.mist.common.operators.MapOperator;
+import edu.snu.mist.common.operators.ReduceByKeyOperator;
+import edu.snu.mist.common.rpc.RPCServerPort;
+import edu.snu.mist.common.sources.EventGenerator;
+import edu.snu.mist.common.sources.PunctuatedEventGenerator;
 import edu.snu.mist.common.types.Tuple2;
-import edu.snu.mist.core.parameters.NumThreads;
+import edu.snu.mist.core.driver.MistTaskConfigs;
+import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
+import edu.snu.mist.core.driver.parameters.GroupAware;
 import edu.snu.mist.core.parameters.PlanStorePath;
+import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.task.globalsched.parameters.GroupSchedModelType;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
+import edu.snu.mist.core.task.utils.TestDataGenerator;
+import edu.snu.mist.core.task.utils.TestWithCountDownSink;
+import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.Direction;
-import edu.snu.mist.formats.avro.LogicalPlan;
 import junit.framework.Assert;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.io.network.util.StringIdentifierFactory;
+import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
-import org.apache.reef.wake.Identifier;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -83,9 +89,55 @@ public final class QueryManagerTest {
   private final MISTFunction<Map<String, Integer>, Integer> totalCountMapFunc =
       (input) -> input.values().stream().reduce(0, (x, y) -> x + y);
 
+  @Test(timeout = 10000)
+  public void testSubmitComplextQueryInMIST() throws Exception {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(RPCServerPort.class, "20338");
+    jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "mist");
+    jcb.bindNamedParameter(GroupSchedModelType.class, "dispatching");
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final MistTaskConfigs taskConfigs = injector.getInstance(MistTaskConfigs.class);
+    testSubmitComplexQueryHelper(taskConfigs.getConfiguration());
+  }
+
+  @Test(timeout = 10000)
+  public void testSubmitComplextQueryInMISTGroupUnaware() throws Exception {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(RPCServerPort.class, "20339");
+    jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "mist");
+    jcb.bindNamedParameter(GroupSchedModelType.class, "dispatching");
+    jcb.bindNamedParameter(GroupAware.class, "false");
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final MistTaskConfigs taskConfigs = injector.getInstance(MistTaskConfigs.class);
+    testSubmitComplexQueryHelper(taskConfigs.getConfiguration());
+  }
+
+  @Test(timeout = 10000)
+  public void testSubmitComplexQueryInThreadBased() throws Exception {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(RPCServerPort.class, "20334");
+    jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "tpq");
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final MistTaskConfigs taskConfigs = injector.getInstance(MistTaskConfigs.class);
+    testSubmitComplexQueryHelper(taskConfigs.getConfiguration());
+  }
+
+  @Test(timeout = 10000)
+  public void testSubmitComplexQueryInThreadPool() throws Exception {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(RPCServerPort.class, "20335");
+    jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
+    jcb.bindNamedParameter(ExecutionModelOption.class, "tp");
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final MistTaskConfigs taskConfigs = injector.getInstance(MistTaskConfigs.class);
+    testSubmitComplexQueryHelper(taskConfigs.getConfiguration());
+  }
+
   @SuppressWarnings("unchecked")
-  @Test(timeout = 5000)
-  public void testSubmitComplexQuery() throws Exception {
+  private void testSubmitComplexQueryHelper(final Configuration conf) throws Exception {
     final String queryId = "testQuery";
     final List<String> inputs = Arrays.asList(
         "mist is a cloud of tiny water droplets suspended in the atmosphere",
@@ -105,39 +157,44 @@ public final class QueryManagerTest {
     // Number of expected outputs
     final CountDownLatch countDownAllOutputs = new CountDownLatch(intermediateResult.size() * 2);
 
-    // Create the DAG of the query
-    final DAG<PhysicalVertex, Direction> dag = new AdjacentListDAG<>();
+    // Create the execution DAG of the query
+    final ExecutionDag executionDag = new ExecutionDag(new AdjacentListDAG<>());
 
     // Create source
-    final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
     final TestDataGenerator dataGenerator = new TestDataGenerator(inputs);
     final EventGenerator eventGenerator =
         new PunctuatedEventGenerator(null, input -> false, null);
-    final PhysicalSource src = new PhysicalSourceImpl(identifierFactory.getNewInstance("testSource"),
-        dataGenerator, eventGenerator);
+    final PhysicalSource src = new PhysicalSourceImpl("testSource",
+        "conf", dataGenerator, eventGenerator);
 
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(NumThreads.class, Integer.toString(4));
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final Injector injector = Tang.Factory.getTang().newInjector(conf);
 
     // Create sinks
     final List<String> sink1Result = new LinkedList<>();
     final List<Integer> sink2Result = new LinkedList<>();
-    final Sink sink1 = new TestSink<String>(sink1Result, countDownAllOutputs);
-    final Sink sink2 = new TestSink<Integer>(sink2Result, countDownAllOutputs);
+    final PhysicalSink sink1 = new PhysicalSinkImpl<>("sink1",
+        null, new TestWithCountDownSink<String>(sink1Result, countDownAllOutputs));
+    final PhysicalSink sink2 = new PhysicalSinkImpl<>("sink2",
+        null, new TestWithCountDownSink<Integer>(sink2Result, countDownAllOutputs));
 
-    // Fake logical plan of QueryManager
-    final Tuple<String, LogicalPlan> tuple = new Tuple<>(queryId, new LogicalPlan());
+    // Fake operator chain dag of QueryManager
+    final AvroDag fakeAvroDag = new AvroDag();
+    fakeAvroDag.setSuperGroupId("testGroup");
+    fakeAvroDag.setSubGroupId("user1");
+    final Tuple<String, AvroDag> tuple = new Tuple<>(queryId, fakeAvroDag);
 
-    // Construct physical plan
-    constructPhysicalPlan(tuple, dag, src, sink1, sink2);
+    // Construct execution dag
+    constructExecutionDag(tuple, executionDag, src, sink1, sink2);
 
-    // Create mock PhysicalPlanGenerator. It returns the above physical plan
-    final PhysicalPlanGenerator physicalPlanGenerator = mock(PhysicalPlanGenerator.class);
-    when(physicalPlanGenerator.generate(tuple)).thenReturn(dag);
+    // Create mock DagGenerator. It returns the above  execution dag
+    final ConfigDagGenerator configDagGenerator = mock(ConfigDagGenerator.class);
+    final DAG<ConfigVertex, MISTEdge> configDag = mock(DAG.class);
+    when(configDagGenerator.generate(tuple.getValue())).thenReturn(configDag);
+    final DagGenerator dagGenerator = mock(DagGenerator.class);
+    when(dagGenerator.generate(configDag, tuple.getValue().getJarFilePaths())).thenReturn(executionDag);
 
     // Build QueryManager
-    final QueryManager queryManager = queryManagerBuild(tuple, physicalPlanGenerator, injector);
+    final QueryManager queryManager = queryManagerBuild(tuple, configDagGenerator, dagGenerator, injector);
     queryManager.create(tuple);
 
     // Wait until all of the outputs are generated
@@ -148,122 +205,6 @@ public final class QueryManagerTest {
     Assert.assertEquals(expectedSink2Output, sink2Result);
 
     src.close();
-    queryManager.close();
-
-    // Delete plan directory and plans
-    deletePlans(injector);
-  }
-
-  /**
-   * There are two sources, two DAGs. One is for before stop,
-   * the other is for after resume.
-   * If first src generates total strings, src stops and then resume.
-   * After resume, the second src generates strings.
-   * QueryManager stops and resumes the running query correctly without any error.
-   * and the operators are executed correctly.
-   */
-  @SuppressWarnings("unchecked")
-  @Test(timeout = 5000)
-  public void testStopAndResumeQuery() throws Exception {
-    final String queryId = "testQuery";
-    final List<String> beforeStopInputs = Arrays.asList(
-        "mist is a cloud of tiny water droplets suspended in the atmosphere",
-        "a mist rose out of the river",
-        "the peaks were shrouded in mist");
-    final List<String> afterResumeInputs = Arrays.asList(
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-        "In in leo nec erat fringilla mattis eu non massa.",
-        "Cras quis diam suscipit, commodo enim id, pulvinar nunc.");
-
-    // Expected results
-    final List<Map<String, Integer>> beforeStopResult = getIntermediateResult(beforeStopInputs);
-    final List<Map<String, Integer>> afterResumeResult = getIntermediateResult(afterResumeInputs);
-
-    final List<String> beforeStopExpectedSink1Output = beforeStopResult.stream()
-        .map(input -> input.toString())
-        .collect(Collectors.toList());
-    final List<Integer> beforeStopExpectedSink2Output = beforeStopResult.stream()
-        .map(totalCountMapFunc)
-        .collect(Collectors.toList());
-    final List<String> afterResumeExpectedSink1Output2 = afterResumeResult.stream()
-        .map(input -> input.toString())
-        .collect(Collectors.toList());
-    final List<Integer> afterResumeExpectedSink2Output2 = afterResumeResult.stream()
-        .map(totalCountMapFunc)
-        .collect(Collectors.toList());
-
-    // Number of expected outputs
-    final CountDownLatch countDownBeforeStopOutputs = new CountDownLatch(beforeStopResult.size() * 2);
-    final CountDownLatch countDownAfterResumeOutputs = new CountDownLatch(afterResumeResult.size() * 2);
-
-    // Create the two DAGs of the queries
-    final DAG<PhysicalVertex, Direction> beforeStopDAG = new AdjacentListDAG<>();
-    final DAG<PhysicalVertex, Direction> afterResumeDAG = new AdjacentListDAG<>();
-
-    // Create two sources
-    final StringIdentifierFactory identifierFactory = new StringIdentifierFactory();
-    final TestDataGenerator beforeStopDataGenerator = new TestDataGenerator(beforeStopInputs);
-    final EventGenerator eventGenerator =
-        new PunctuatedEventGenerator(null, input -> false, null);
-    final PhysicalSource beforeStopSrc = new PhysicalSourceImpl(
-        identifierFactory.getNewInstance("testSource"), beforeStopDataGenerator, eventGenerator);
-
-    final TestDataGenerator afterResumeDataGenerator = new TestDataGenerator(afterResumeInputs);
-    final PhysicalSource afterResumeSrc = new PhysicalSourceImpl(
-        identifierFactory.getNewInstance("testSource2"), afterResumeDataGenerator, eventGenerator);
-
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(NumThreads.class, Integer.toString(4));
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-
-    // Create sinks
-    final List<String> beforeStopSink1Result = new LinkedList<>();
-    final List<Integer> beforeStopSink2Result = new LinkedList<>();
-    final List<String> afterResumeSink1Result = new LinkedList<>();
-    final List<Integer> afterResumeSink2Result = new LinkedList<>();
-
-    final Sink beforeStopSink1 = new TestSink<String>(beforeStopSink1Result, countDownBeforeStopOutputs);
-    final Sink beforeStopSink2 = new TestSink<Integer>(beforeStopSink2Result, countDownBeforeStopOutputs);
-    final Sink afterResumeSink1 = new TestSink<String>(afterResumeSink1Result, countDownAfterResumeOutputs);
-    final Sink afterResumeSink2 = new TestSink<Integer>(afterResumeSink2Result, countDownAfterResumeOutputs);
-
-    // Fake logical plan of QueryManager
-    final Tuple<String, LogicalPlan> tuple = new Tuple<>(queryId, new LogicalPlan());
-
-    // Construct two physical plans
-    constructPhysicalPlan(tuple, beforeStopDAG, beforeStopSrc, beforeStopSink1, beforeStopSink2);
-    constructPhysicalPlan(tuple, afterResumeDAG, afterResumeSrc, afterResumeSink1, afterResumeSink2);
-
-    // Create mock PhysicalPlanGenerator. It returns the above physical plan
-    final PhysicalPlanGenerator physicalPlanGenerator = mock(PhysicalPlanGenerator.class);
-    when(physicalPlanGenerator.generate(tuple)).thenReturn(beforeStopDAG, afterResumeDAG);
-
-    // Build QueryManager
-    final QueryManager queryManager = queryManagerBuild(tuple, physicalPlanGenerator, injector);
-    queryManager.create(tuple);
-
-    // Wait until all of the outputs are generated
-    countDownBeforeStopOutputs.await();
-
-    // Stop the query
-    queryManager.stop(queryId);
-
-    // Check the outputs
-    Assert.assertEquals(beforeStopExpectedSink1Output, beforeStopSink1Result);
-    Assert.assertEquals(beforeStopExpectedSink2Output, beforeStopSink2Result);
-
-    // Resume the query
-    queryManager.resume(queryId);
-
-    // Wait until all of the outputs are generated
-    countDownAfterResumeOutputs.await();
-
-    // Check the outputs
-    Assert.assertEquals(afterResumeExpectedSink1Output2, afterResumeSink1Result);
-    Assert.assertEquals(afterResumeExpectedSink2Output2, afterResumeSink2Result);
-
-    beforeStopSrc.close();
-    afterResumeSrc.close();
     queryManager.close();
 
     // Delete plan directory and plans
@@ -289,71 +230,74 @@ public final class QueryManagerTest {
   }
 
   /**
-   * Construct physical plan.
-   * Creates operators an partitioned queries and adds source, dag vertices, edges and sinks to dag.
+   * Construct execution dag.
+   * Creates operators and adds source, dag vertices, edges and sinks to dag.
    */
-  private void constructPhysicalPlan(final Tuple<String, LogicalPlan> tuple,
-                                     final DAG<PhysicalVertex, Direction> dag,
+  private void constructExecutionDag(final Tuple<String, AvroDag> tuple,
+                                     final ExecutionDag executionDag,
                                      final PhysicalSource src,
-                                     final Sink sink1,
-                                     final Sink sink2) {
+                                     final PhysicalSink sink1,
+                                     final PhysicalSink sink2) {
 
-    // Create operators and partitioned queries
-    //                     (pq1)                                     (pq2)
+    // Create operators
     // src -> [flatMap -> filter -> toTupleMap -> reduceByKey] -> [toStringMap]   -> sink1
     //                                                         -> [totalCountMap] -> sink2
-    //                                                               (pq3)
-    final Operator flatMap = new FlatMapOperator<>("flatMap", flatMapFunc);
-    final Operator filter = new FilterOperator<>("filter", filterFunc);
-    final Operator toTupleMap = new MapOperator<>("toTupleMap", toTupleMapFunc);
-    final Operator reduceByKey = new ReduceByKeyOperator<>("reduceByKey", 0, reduceByKeyFunc);
-    final Operator toStringMap = new MapOperator<>("toStringMap", toStringMapFunc);
-    final Operator totalCountMap = new MapOperator<>("totalCountMap", totalCountMapFunc);
+    final PhysicalOperator flatMap = new DefaultPhysicalOperatorImpl("flatMap",
+        null, new FlatMapOperator<>(flatMapFunc));
+    final PhysicalOperator filter = new DefaultPhysicalOperatorImpl("filter",
+        null, new FilterOperator<>(filterFunc));
+    final PhysicalOperator toTupleMap = new DefaultPhysicalOperatorImpl("toTupleMap",
+        null, new MapOperator<>(toTupleMapFunc));
+    final PhysicalOperator reduceByKey = new DefaultPhysicalOperatorImpl("reduceByKey",
+        null, new ReduceByKeyOperator<>(0, reduceByKeyFunc));
+    final PhysicalOperator toStringMap = new DefaultPhysicalOperatorImpl("toStringMap",
+        null, new MapOperator<>(toStringMapFunc));
+    final PhysicalOperator totalCountMap = new DefaultPhysicalOperatorImpl("totalCountMap",
+        null, new MapOperator<>(totalCountMapFunc));
 
-    final PartitionedQuery pq1 = new DefaultPartitionedQuery();
-    pq1.insertToTail(flatMap);
-    pq1.insertToTail(filter);
-    pq1.insertToTail(toTupleMap);
-    pq1.insertToTail(reduceByKey);
-    final PartitionedQuery pq2 = new DefaultPartitionedQuery();
-    pq2.insertToTail(toStringMap);
-    final PartitionedQuery pq3 = new DefaultPartitionedQuery();
-    pq3.insertToTail(totalCountMap);
+    // Build the execution dag
+    final DAG<ExecutionVertex, MISTEdge> dag = executionDag.getDag();
 
     // Add Source
     dag.addVertex(src);
 
     // Add dag vertices and edges
-    dag.addVertex(pq1);
-    dag.addEdge(src, pq1, Direction.LEFT);
-    dag.addVertex(pq2);
-    dag.addEdge(pq1, pq2, Direction.LEFT);
-    dag.addVertex(pq3);
-    dag.addEdge(pq1, pq3, Direction.LEFT);
+    dag.addVertex(flatMap);
+    dag.addVertex(filter);
+    dag.addVertex(toTupleMap);
+    dag.addVertex(reduceByKey);
+    dag.addVertex(toStringMap);
+    dag.addVertex(totalCountMap);
+
+    dag.addEdge(src, flatMap, new MISTEdge(Direction.LEFT));
+    dag.addEdge(flatMap, filter, new MISTEdge(Direction.LEFT));
+    dag.addEdge(filter, toTupleMap, new MISTEdge(Direction.LEFT));
+    dag.addEdge(toTupleMap, reduceByKey, new MISTEdge(Direction.LEFT));
+    dag.addEdge(reduceByKey, toStringMap, new MISTEdge(Direction.LEFT));
+    dag.addEdge(reduceByKey, totalCountMap, new MISTEdge(Direction.LEFT));
 
     // Add Sink
-    final PhysicalSink physicalSink1 = new PhysicalSinkImpl<>(sink1);
-    final PhysicalSink physicalSink2 = new PhysicalSinkImpl<>(sink2);
-    dag.addVertex(physicalSink1);
-    dag.addEdge(pq2, physicalSink1, Direction.LEFT);
-    dag.addVertex(physicalSink2);
-    dag.addEdge(pq3, physicalSink2, Direction.LEFT);
+    dag.addVertex(sink1);
+    dag.addEdge(toStringMap, sink1, new MISTEdge(Direction.LEFT));
+    dag.addVertex(sink2);
+    dag.addEdge(totalCountMap, sink2, new MISTEdge(Direction.LEFT));
   }
 
   /**
    * QueryManager Builder.
    * It receives inputs tuple, physicalPlanGenerator, injector then makes query manager.
    */
-  private QueryManager queryManagerBuild(final Tuple<String, LogicalPlan> tuple,
-                                         final PhysicalPlanGenerator physicalPlanGenerator,
+  private QueryManager queryManagerBuild(final Tuple<String, AvroDag> tuple,
+                                         final ConfigDagGenerator configDagGenerator,
+                                         final DagGenerator dagGenerator,
                                          final Injector injector) throws Exception {
     // Create mock PlanStore. It returns true and the above logical plan
     final QueryInfoStore planStore = mock(QueryInfoStore.class);
-    when(planStore.savePlan(tuple)).thenReturn(true);
     when(planStore.load(tuple.getKey())).thenReturn(tuple.getValue());
 
     // Create QueryManager
-    injector.bindVolatileInstance(PhysicalPlanGenerator.class, physicalPlanGenerator);
+    injector.bindVolatileInstance(ConfigDagGenerator.class, configDagGenerator);
+    injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
     injector.bindVolatileInstance(QueryInfoStore.class, planStore);
 
     // Submit the fake logical plan
@@ -412,110 +356,6 @@ public final class QueryManagerTest {
     public static List<Map<String, Integer>> combine(final List<Map<String, Integer>> list1,
                                                      final List<Map<String, Integer>> list2) {
       return list1;
-    }
-  }
-
-  /**
-   * Test source generator which generates inputs from List.
-   */
-  final class TestDataGenerator<String> implements DataGenerator<String> {
-
-    private final AtomicBoolean closed;
-    private final AtomicBoolean started;
-    private final ExecutorService executorService;
-    private final long sleepTime;
-    private EventGenerator eventGenerator;
-    private final Iterator<String> inputs;
-
-    /**
-     * Generates input data from List and count down the number of input data.
-     */
-    TestDataGenerator(final List<String> inputs) {
-      this.executorService = Executors.newSingleThreadExecutor();
-      this.closed = new AtomicBoolean(false);
-      this.started = new AtomicBoolean(false);
-      this.sleepTime = 1000L;
-      this.inputs = inputs.iterator();
-    }
-
-    @Override
-    public void start() {
-      if (started.compareAndSet(false, true)) {
-        executorService.submit(() -> {
-          while (!closed.get()) {
-            try {
-              // fetch an input
-              final String input = nextInput();
-              if (eventGenerator == null) {
-                throw new RuntimeException("EventGenerator should be set in " +
-                    TestDataGenerator.class.getName());
-              }
-              if (input == null) {
-                Thread.sleep(sleepTime);
-              } else {
-                eventGenerator.emitData(input);
-              }
-            } catch (final IOException e) {
-              e.printStackTrace();
-              throw new RuntimeException(e);
-            } catch (final InterruptedException e) {
-              e.printStackTrace();
-            }
-          }
-        });
-      }
-    }
-
-    public String nextInput() throws IOException {
-      if (inputs.hasNext()) {
-        final String input = inputs.next();
-        return input;
-      } else {
-        return null;
-      }
-    }
-
-    @Override
-    public void close() throws Exception {
-      if (closed.compareAndSet(false, true)) {
-        executorService.shutdown();
-      }
-    }
-
-    @Override
-    public void setEventGenerator(final EventGenerator eventGenerator) {
-      this.eventGenerator = eventGenerator;
-    }
-  }
-
-  /**
-   * Test sink.
-   * It receives inputs, adds them to list, and countdown.
-   */
-  final class TestSink<I> implements Sink<I> {
-    private final List<I> result;
-    private final CountDownLatch countDownLatch;
-
-    TestSink(final List<I> result,
-             final CountDownLatch countDownLatch) {
-      this.result = result;
-      this.countDownLatch = countDownLatch;
-    }
-
-    @Override
-    public void close() throws Exception {
-      // do nothing
-    }
-
-    @Override
-    public void handle(final I input) {
-      result.add(input);
-      countDownLatch.countDown();
-    }
-
-    @Override
-    public Identifier getIdentifier() {
-      return null;
     }
   }
 }

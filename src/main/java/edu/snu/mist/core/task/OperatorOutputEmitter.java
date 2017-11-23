@@ -18,37 +18,42 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.OutputEmitter;
+import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.formats.avro.Direction;
 
 import java.util.Map;
 
 /**
- * This emitter forwards current PartitionedQuery's outputs as next PartitionedQueries' inputs.
+ * This emitter forwards current OperatorChain's outputs as next OperatorChains' inputs.
  */
-final class OperatorOutputEmitter implements OutputEmitter {
+public final class OperatorOutputEmitter implements OutputEmitter {
 
   /**
-   * Next PartitionedQueries.
+   * Next Operators.
    */
-  private final Map<PhysicalVertex, Direction> nextPartitionedQueries;
+  private final Map<ExecutionVertex, MISTEdge> nextOperators;
 
-  OperatorOutputEmitter(final Map<PhysicalVertex, Direction> nextPartitionedQueries) {
-    this.nextPartitionedQueries = nextPartitionedQueries;
+  public OperatorOutputEmitter(final Map<ExecutionVertex, MISTEdge> nextOperators) {
+    this.nextOperators = nextOperators;
   }
 
   /**
-   * Send data events to the next partitioned query if the next vertex is a partitioned query,
+   * Send data events to the next operator chain if the next vertex is an operator chain,
    * otherwise send the events to the sink.
    * @param output data output
    * @param direction direction of upstream
-   * @param nextVertex next vertex (partitioned query or sink)
+   * @param nextVertex next vertex (operator chain or sink)
    */
   private void sendData(final MistDataEvent output,
                         final Direction direction,
-                        final PhysicalVertex nextVertex) {
+                        final ExecutionVertex nextVertex) {
     switch (nextVertex.getType()) {
-      case OPERATOR_CHIAN: {
-        ((PartitionedQuery)nextVertex).addNextEvent(output, direction);
+      case OPERATOR: {
+        if (direction == Direction.LEFT) {
+          ((PhysicalOperator) nextVertex).getOperator().processLeftData(output);
+        } else {
+          ((PhysicalOperator) nextVertex).getOperator().processRightData(output);
+        }
         break;
       }
       case SINK: {
@@ -61,17 +66,21 @@ final class OperatorOutputEmitter implements OutputEmitter {
   }
 
   /**
-   * Send watermarks to the next partitioned query if the next vertex is a partitioned query.
+   * Send watermarks to the next operator chain if the next vertex is an operator chain.
    * @param watermark watermark
    * @param direction direction of upstream
-   * @param nextVertex next vertex (partitioned query or sink)
+   * @param nextVertex next vertex (operator chain or sink)
    */
   private void sendWatermark(final MistWatermarkEvent watermark,
                              final Direction direction,
-                             final PhysicalVertex nextVertex) {
+                             final ExecutionVertex nextVertex) {
     switch (nextVertex.getType()) {
-      case OPERATOR_CHIAN: {
-        ((PartitionedQuery)nextVertex).addNextEvent(watermark, direction);
+      case OPERATOR: {
+        if (direction == Direction.LEFT) {
+          ((PhysicalOperator) nextVertex).getOperator().processLeftWatermark(watermark);
+        } else {
+          ((PhysicalOperator) nextVertex).getOperator().processRightWatermark(watermark);
+        }
         break;
       }
       case SINK: {
@@ -84,38 +93,65 @@ final class OperatorOutputEmitter implements OutputEmitter {
   }
 
   /**
-   * This method emits the outputs to next PartitionedQueries.
-   * If the Executor of the current PartitionedQuery is same as that of next PartitionedQuery,
-   * the OutputEmitter directly forwards outputs of the current PartitionedQuery
-   * as inputs of the next PartitionedQuery.
-   * Otherwise, the OutputEmitter submits a job to the Executor of the next PartitionedQuery.
+   * This method emits the outputs to next OperatorChains.
+   * If the Executor of the current OperatorChain is same as that of next OperatorChain,
+   * the OutputEmitter directly forwards outputs of the current OperatorChain
+   * as inputs of the next OperatorChain.
+   * Otherwise, the OutputEmitter submits a job to the Executor of the next OperatorChain.
    * @param output an output
    */
   @Override
   public void emitData(final MistDataEvent output) {
-    // Optimization: do not create new MistEvent and reuse it if it has one downstream partitioned query.
-    if (nextPartitionedQueries.size() == 1) {
-      for (final Map.Entry<PhysicalVertex, Direction> nextQuery :
-          nextPartitionedQueries.entrySet()) {
-        final Direction direction = nextQuery.getValue();
-        sendData(output, direction, nextQuery.getKey());
+    // Optimization: do not create new MistEvent and reuse it if it has one downstream operator chain.
+    if (nextOperators.size() == 1) {
+      for (final Map.Entry<ExecutionVertex, MISTEdge> nextChain :
+          nextOperators.entrySet()) {
+        final Direction direction = nextChain.getValue().getDirection();
+        sendData(output, direction, nextChain.getKey());
       }
     } else {
-      for (final Map.Entry<PhysicalVertex, Direction> nextQuery :
-          nextPartitionedQueries.entrySet()) {
+      for (final Map.Entry<ExecutionVertex, MISTEdge> nextChain :
+          nextOperators.entrySet()) {
         final MistDataEvent event = new MistDataEvent(output.getValue(), output.getTimestamp());
-        final Direction direction = nextQuery.getValue();
-        sendData(event, direction, nextQuery.getKey());
+        final Direction direction = nextChain.getValue().getDirection();
+        sendData(event, direction, nextChain.getKey());
+      }
+    }
+  }
+
+  @Override
+  public void emitData(final MistDataEvent output, final int index) {
+    // Optimization: do not create new MistEvent and reuse it if it has one downstream operator chain.
+    if (nextOperators.size() == 1) {
+      for (final Map.Entry<ExecutionVertex, MISTEdge> nextChain :
+          nextOperators.entrySet()) {
+        final MISTEdge edge = nextChain.getValue();
+        final int edgeIndex = edge.getIndex();
+        if (edgeIndex == index) {
+          // send the data only if the index of this edge is equal to the target index
+          sendData(output, edge.getDirection(), nextChain.getKey());
+        }
+      }
+    } else {
+      for (final Map.Entry<ExecutionVertex, MISTEdge> nextChain :
+          nextOperators.entrySet()) {
+        final MISTEdge edge = nextChain.getValue();
+        final int edgeIndex = edge.getIndex();
+        if (edgeIndex == index) {
+          // send the data only if the index of this edge is equal to the target index
+          final MistDataEvent event = new MistDataEvent(output.getValue(), output.getTimestamp());
+          sendData(event, edge.getDirection(), nextChain.getKey());
+        }
       }
     }
   }
 
   @Override
   public void emitWatermark(final MistWatermarkEvent output) {
-    // Watermark is not changed, so we just forward watermark to next partitioned queries.
-    for (final Map.Entry<PhysicalVertex, Direction> nextQuery :
-        nextPartitionedQueries.entrySet()) {
-      final Direction direction = nextQuery.getValue();
+    // Watermark is not changed, so we just forward watermark to next operator chains.
+    for (final Map.Entry<ExecutionVertex, MISTEdge> nextQuery :
+        nextOperators.entrySet()) {
+      final Direction direction = nextQuery.getValue().getDirection();
       sendWatermark(output, direction, nextQuery.getKey());
     }
   }

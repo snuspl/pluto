@@ -18,6 +18,7 @@ package edu.snu.mist.common.windows;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.LinkedList;
 
@@ -25,7 +26,7 @@ import java.util.LinkedList;
  * This class implements the window.
  * @param <T> the type of data collected in this window
  */
-public final class WindowImpl<T> implements Window<T> {
+public final class WindowImpl<T> implements Window<T>, Serializable {
 
   private long latestTimestamp;
   private MistWatermarkEvent latestWatermark;
@@ -43,7 +44,7 @@ public final class WindowImpl<T> implements Window<T> {
 
   public WindowImpl(final long start, final long size, final Collection<T> dataCollection) {
     latestTimestamp = 0L;
-    latestWatermark = null;
+    latestWatermark = new MistWatermarkEvent(0L);
     this.dataCollection = dataCollection;
     this.start = start;
     this.end = start + size - 1;
@@ -77,7 +78,9 @@ public final class WindowImpl<T> implements Window<T> {
     if (latestTimestamp < timestamp) {
       latestTimestamp = timestamp;
     }
-    latestWatermark = event;
+    if (latestWatermark.getTimestamp() < timestamp) {
+      latestWatermark = event;
+    }
   }
 
   @Override
@@ -93,5 +96,41 @@ public final class WindowImpl<T> implements Window<T> {
   @Override
   public MistWatermarkEvent getLatestWatermark() {
     return latestWatermark;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    final WindowImpl<?> window = (WindowImpl<?>) o;
+
+    if (getLatestTimestamp() != window.getLatestTimestamp()) {
+      return false;
+    }
+    if (getStart() != window.getStart()) {
+      return false;
+    }
+    if (getEnd() != window.getEnd()) {
+      return false;
+    }
+    if (!getLatestWatermark().equals(window.getLatestWatermark())) {
+      return false;
+    }
+    return getDataCollection().equals(window.getDataCollection());
+  }
+
+  @Override
+  public int hashCode() {
+    int result = (int) (getLatestTimestamp() ^ (getLatestTimestamp() >>> 32));
+    result = 31 * result + getLatestWatermark().hashCode();
+    result = 31 * result + getDataCollection().hashCode();
+    result = 31 * result + (int) (getStart() ^ (getStart() >>> 32));
+    result = 31 * result + (int) (getEnd() ^ (getEnd() >>> 32));
+    return result;
   }
 }

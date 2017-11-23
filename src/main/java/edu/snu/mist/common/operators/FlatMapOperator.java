@@ -19,7 +19,6 @@ import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTFunction;
-import edu.snu.mist.common.parameters.OperatorId;
 import edu.snu.mist.common.parameters.SerializedUdf;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -42,16 +41,13 @@ public final class FlatMapOperator<I, O> extends OneStreamOperator {
 
   @Inject
   private FlatMapOperator(
-      @Parameter(OperatorId.class) final String operatorId,
       @Parameter(SerializedUdf.class) final String serializedObject,
       final ClassLoader classLoader) throws IOException, ClassNotFoundException {
-    this(operatorId, SerializeUtils.deserializeFromString(serializedObject, classLoader));
+    this(SerializeUtils.deserializeFromString(serializedObject, classLoader));
   }
 
   @Inject
-  public FlatMapOperator(@Parameter(OperatorId.class) final String operatorId,
-                         final MISTFunction<I, List<O>> flatMapFunc) {
-    super(operatorId);
+  public FlatMapOperator(final MISTFunction<I, List<O>> flatMapFunc) {
     this.flatMapFunc = flatMapFunc;
   }
 
@@ -63,8 +59,12 @@ public final class FlatMapOperator<I, O> extends OneStreamOperator {
   public void processLeftData(final MistDataEvent input) {
     final I value = (I)input.getValue();
     final List<O> outputs = flatMapFunc.apply(value);
-    LOG.log(Level.FINE, "{0} FlatMaps {1} to {2}",
-        new Object[]{FlatMapOperator.class, input, outputs});
+
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.log(Level.FINE, "{0} FlatMaps {1} to {2}",
+          new Object[]{FlatMapOperator.class, input, outputs});
+    }
+
     for (final O output : outputs) {
       final MistDataEvent event = new MistDataEvent(output, input.getTimestamp());
       outputEmitter.emitData(event);

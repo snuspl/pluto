@@ -15,47 +15,46 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.formats.avro.LogicalPlan;
+import edu.snu.mist.core.task.deactivation.GroupSourceManager;
+import edu.snu.mist.core.task.globalsched.GroupAwareGlobalSchedQueryManagerImpl;
+import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
+import java.util.List;
 
 /**
- * This interface receives a tuple of queryId and logical plan,
- * saves the logical plan to PlanStore and converts the logical plan to the physical plan,
- * chains operators, allocates the chains into Executors,
- * and starts to receive input data stream of the query.
- * And this interface receives a queryId, gets the correspond chained operators,
- * cuts the chain and closes sink and source channel.
+ * This interface manages queries that are submitted from clients.
+ * It executes the queries when they are submitted, and deletes them if requested.
  */
-@DefaultImplementation(DefaultQueryManagerImpl.class)
+@DefaultImplementation(GroupAwareGlobalSchedQueryManagerImpl.class)
 public interface QueryManager extends AutoCloseable {
   /**
-   * Converts the submitted logical plan to the physical plan,
-   * and starts to receive input data stream of the query.
-   * @param tuple
+   * Start to the query.
+   * @param tuple the query id and the avro dag
    */
-  QueryControlResult create(Tuple<String, LogicalPlan> tuple);
+  QueryControlResult create(Tuple<String, AvroDag> tuple);
+
+  /**
+   * TODO[DELETE] this code is for test.
+   * Start submitted queries in batch manner.
+   * The operator chain dag will be duplicated for test.
+   * @param tuple the query id list and the avro dag
+   */
+  QueryControlResult createBatch(Tuple<List<String>, AvroDag> tuple);
 
   /**
    * Deletes the query corresponding to the queryId submitted by client.
-   * @param queryId
+   * @param groupId group id
+   * @param queryId query id
    * @return Returns the result message of deletion.
    */
-  QueryControlResult delete(String queryId);
+  QueryControlResult delete(String groupId, String queryId);
 
   /**
-   * Stopes the query corresponding to the queryId submitted by client.
-   * @param queryId
-   * @return Returns the results message of stop.
+   * Get the GroupSourceManager.
+   * @param groupId group id
    */
-  QueryControlResult stop(String queryId);
-
-  /**
-   * Resumes the query corresponding to the queryId submitted by client.
-   * @param queryId
-   * @return Returns the result message of resume.
-   */
-  QueryControlResult resume(String queryId);
+  GroupSourceManager getGroupSourceManager(String groupId);
 }

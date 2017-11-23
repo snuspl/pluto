@@ -15,9 +15,8 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.sources.DataGenerator;
+import edu.snu.mist.common.OutputEmittable;
 import edu.snu.mist.common.sources.EventGenerator;
-import org.apache.reef.wake.Identifier;
 
 /**
  * Source receives input stream.
@@ -26,9 +25,8 @@ import org.apache.reef.wake.Identifier;
  * Also, it has EventGenerator that generates MistWatermarkEvent periodically,
  * or parse the punctuated watermark from input, and generate MistDataEvent from input that not means watermark.
  * After that, it sends the MistEvent to the OutputEmitter which forwards the inputs to next Operators.
- * @param <T> the type of input data
  */
-interface PhysicalSource<T> extends AutoCloseable, PhysicalVertex {
+public interface PhysicalSource extends AutoCloseable, OutputEmittable, PhysicalVertex, ExecutionVertex {
 
   /**
    * Starts to receive source stream and forwards inputs to the OutputEmitter.
@@ -36,20 +34,13 @@ interface PhysicalSource<T> extends AutoCloseable, PhysicalVertex {
   void start();
 
   /**
-   * Identifier of source.
-   * @return identifier of source
+   * Gets the current EventGenerator.
    */
-  Identifier getIdentifier();
+  EventGenerator getEventGenerator();
 
   /**
-   * Gets the data generator.
-   * @return the data generator
+   * Get source output emitter.
+   * @return source output emitter
    */
-  DataGenerator<T> getDataGenerator();
-
-  /**
-   * Gets the watermark source.
-   * @return the wataermark source
-   */
-  EventGenerator<T> getEventGenerator();
+  SourceOutputEmitter getSourceOutputEmitter();
 }

@@ -15,11 +15,14 @@
  */
 package edu.snu.mist.core.driver;
 
+import edu.snu.mist.core.MistLauncher;
+import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
+import edu.snu.mist.core.parameters.DriverRuntimeType;
+import edu.snu.mist.core.parameters.MasterMemorySize;
 import edu.snu.mist.core.parameters.NumTaskCores;
 import edu.snu.mist.core.parameters.TaskMemorySize;
-import edu.snu.mist.core.parameters.DriverRuntimeType;
-import edu.snu.mist.core.MistLauncher;
-import edu.snu.mist.core.parameters.NumThreads;
+import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.task.globalsched.parameters.GroupSchedModelType;
 import org.apache.reef.client.LauncherStatus;
 import org.apache.reef.runtime.local.client.LocalRuntimeConfiguration;
 import org.apache.reef.tang.Configuration;
@@ -33,16 +36,37 @@ import org.junit.Test;
 public final class MistDriverTest {
 
   /**
-   * Test whether MistDriver runs successfully.
+   * Test whether MistDriver runs the task of option3 (thread-based model) successfully.
    * @throws InjectionException
    */
   @Test
-  public void launchDriverTest() throws InjectionException {
+  public void testLaunchDriverOption3() throws InjectionException {
+    launchDriverTestHelper("tpq", "none");
+  }
+
+  /**
+   * @throws InjectionException
+   */
+  @Test
+  public void testLaunchDriverMIST() throws InjectionException {
+    launchDriverTestHelper("mist", "dispatching");
+  }
+
+  /**
+   * Test whether MistDriver runs MistTaks successfully.
+   * @throws InjectionException
+   */
+  public void launchDriverTestHelper(final String executionModelOption,
+                                     //final int rpcServerPort,
+                                     final String groupSchedModel) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(DriverRuntimeType.class, "LOCAL");
+    jcb.bindNamedParameter(MasterMemorySize.class, "1024");
     jcb.bindNamedParameter(NumTaskCores.class, "1");
-    jcb.bindNamedParameter(NumThreads.class, "1");
+    jcb.bindNamedParameter(DefaultNumEventProcessors.class, "1");
     jcb.bindNamedParameter(TaskMemorySize.class, "256");
+    jcb.bindNamedParameter(ExecutionModelOption.class, executionModelOption);
+    jcb.bindNamedParameter(GroupSchedModelType.class, groupSchedModel);
 
     final Configuration runtimeConf = LocalRuntimeConfiguration.CONF
         .build();
