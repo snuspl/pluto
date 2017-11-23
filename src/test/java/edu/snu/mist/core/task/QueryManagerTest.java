@@ -32,7 +32,6 @@ import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.core.driver.MistTaskConfigs;
 import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
 import edu.snu.mist.core.driver.parameters.GroupAware;
-import edu.snu.mist.core.parameters.MasterToTaskServerPortNum;
 import edu.snu.mist.core.parameters.PlanStorePath;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.globalsched.parameters.GroupSchedModelType;
@@ -41,7 +40,6 @@ import edu.snu.mist.core.task.utils.TestDataGenerator;
 import edu.snu.mist.core.task.utils.TestWithCountDownSink;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.Direction;
-import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import junit.framework.Assert;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Configuration;
@@ -194,11 +192,11 @@ public final class QueryManagerTest {
     when(configDagGenerator.generate(tuple.getValue())).thenReturn(configDag);
     final DagGenerator dagGenerator = mock(DagGenerator.class);
     when(dagGenerator.generate(configDag, tuple.getValue().getJarFilePaths())).thenReturn(executionDag);
-    final TaskToMasterMessage taskToMasterMessage = mock(TaskToMasterMessage.class);
+    final TaskLoadManager taskLoadManager = mock(TaskLoadManager.class);
 
     // Build QueryManager
     final QueryManager queryManager = queryManagerBuild(tuple, configDagGenerator,
-                                                        dagGenerator, taskToMasterMessage, injector);
+                                                        dagGenerator, taskLoadManager, injector);
     queryManager.create(tuple);
 
     // Wait until all of the outputs are generated
@@ -294,7 +292,7 @@ public final class QueryManagerTest {
   private QueryManager queryManagerBuild(final Tuple<String, AvroDag> tuple,
                                          final ConfigDagGenerator configDagGenerator,
                                          final DagGenerator dagGenerator,
-                                         final TaskToMasterMessage taskToMasterMessage,
+                                         final TaskLoadManager taskLoadManager,
                                          final Injector injector) throws Exception {
     // Create mock PlanStore. It returns true and the above logical plan
     final QueryInfoStore planStore = mock(QueryInfoStore.class);
@@ -304,9 +302,11 @@ public final class QueryManagerTest {
     injector.bindVolatileInstance(ConfigDagGenerator.class, configDagGenerator);
     injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
     injector.bindVolatileInstance(QueryInfoStore.class, planStore);
-    injector.bindVolatileInstance(TaskToMasterMessage.class, taskToMasterMessage);
-    injector.bindVolatileParameter(MasterToTaskServerPortNum.class, 20332);
-
+    injector.bindVolatileInstance(TaskLoadManager.class, taskLoadManager);
+    //injector.bindVolatileInstance(TaskToMasterMessage.class, taskToMasterMessage);
+    //injector.bindVolatileParameter(MasterToTaskServerPortNum.class, 20332);
+    //injector.bindVolatileParameter(MasterHostAddress.class, "localhost");
+    //injector.bindVolatileParameter(TaskToMasterServerPortNum.class, 20433);
     // Submit the fake logical plan
     // The operators in the physical plan are executed
     final QueryManager queryManager = injector.getInstance(QueryManager.class);
