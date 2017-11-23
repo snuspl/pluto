@@ -17,10 +17,11 @@ package edu.snu.mist.api.cep;
 
 import edu.snu.mist.common.functions.MISTPredicate;
 
+import java.util.List;
 import java.util.Map;
 
 /**
  * Cep Qualification to define MISTCepQuery.
  */
-public interface CepQualifier<T> extends MISTPredicate<Map<String, T>> {
+public interface CepQualifier<T> extends MISTPredicate<Map<String, List<T>>> {
 }

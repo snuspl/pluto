@@ -28,7 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class MISTCepNewQueryTest {
+public final class MISTCepQueryTest {
     //Socket source information.
     private final String cepSocketInputAddress = "some.inputaddress.com";
     private final Integer cepSocketInputPort = 8080;
@@ -48,14 +48,14 @@ public final class MISTCepNewQueryTest {
     private final MISTFunction<String, CepExampleClass> exampleClassGenFunc = new CepExampleClassGenFunc();
 
     //Build a socket source.
-    private final CepNewInput exampleCepSocketInput = new CepNewInput.TextSocketBuilder()
+    private final CepInput exampleCepSocketInput = new CepInput.TextSocketBuilder()
         .setSocketAddress(cepSocketInputAddress)
         .setSocketPort(cepSocketInputPort)
         .setClassGenFunc(exampleClassGenFunc)
         .build();
 
     //Build a mqtt source.
-    private final CepNewInput exampleCepMqttInput = new CepNewInput.MqttBuilder()
+    private final CepInput exampleCepMqttInput = new CepInput.MqttBuilder()
         .setMqttBrokerURI(cepMqttInputURI)
         .setMqttTopic(cepMqttInputTopic)
         .setClassGenFunc(exampleClassGenFunc)
@@ -141,9 +141,9 @@ public final class MISTCepNewQueryTest {
      */
     @Test
     public void testSocketCepQuery() {
-        final MISTCepQuery exampleQuery = new MISTCepQuery.Builder("test-group")
+        final MISTCepQuery exampleQuery = new MISTCepQuery.Builder("test-group", "user1")
             .input(exampleCepSocketInput)
-            .setEventSequence(exampleEvent)
+            .setEventPatternSequence(exampleEvent)
             .setQualifier(exampleQualifier)
             .setAction(new CepAction.Builder()
                 .setActionType(CepActionType.TEXT_WRITE)

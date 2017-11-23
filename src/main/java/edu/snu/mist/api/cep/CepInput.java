@@ -22,7 +22,7 @@ import java.util.*;
 /**
  * Default implementation class for CepInput.
  */
-public final class CepNewInput<T> {
+public final class CepInput<T> {
 
     private final CepInputType cepInputType;
     private final Map<String, Object> cepInputConfiguration;
@@ -34,7 +34,7 @@ public final class CepNewInput<T> {
      * @param cepInputConfigurationParam cep input configuration given by builder
      * @param cepClassGenFuncParam User-defined function that constructs user-defined class
      */
-    private CepNewInput(
+    private CepInput(
             final CepInputType cepInputTypeParam,
             final Map<String, Object> cepInputConfigurationParam,
             final MISTFunction<String, T> cepClassGenFuncParam) {
@@ -72,7 +72,7 @@ public final class CepNewInput<T> {
             return false;
         }
 
-        final CepNewInput that = (CepNewInput) o;
+        final CepInput that = (CepInput) o;
 
         if (cepInputType != that.cepInputType) {
             return false;
@@ -150,8 +150,8 @@ public final class CepNewInput<T> {
          * Creates an immutable Cep input.
          * @return new cep input
          */
-        private CepNewInput<T> build() {
-            return new CepNewInput(cepInputType, cepInputConfiguration, cepClassGenFunc);
+        private CepInput<T> build() {
+            return new CepInput(cepInputType, cepInputConfiguration, cepClassGenFunc);
         }
     }
 
@@ -197,7 +197,7 @@ public final class CepNewInput<T> {
         /**
          * @return a new CepInput
          */
-        public CepNewInput<T> build() {
+        public CepInput<T> build() {
             return builder.build();
         }
     }
@@ -244,7 +244,7 @@ public final class CepNewInput<T> {
         /**
          * @return a new CepInput
          */
-        public CepNewInput<T> build() {
+        public CepInput<T> build() {
             return builder.build();
         }
     }
