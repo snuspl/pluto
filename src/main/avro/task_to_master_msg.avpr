@@ -19,6 +19,7 @@
 {
   "namespace": "edu.snu.mist.formats.avro",
   "protocol": "TaskToMasterMessage",
+  /* TODO[IMPLEMENT] Implement master to task message */
   "types":
   [
     {
@@ -38,18 +39,13 @@
     {
       "name": "TaskLoadInfo",
       "type": "record",
-      "fields":
-      [
+      "fields": [
         {
-          "name": "TaskIPAddress",
-          "type": "IPAddress"
-        },
-        {
-          "name": "TotalLoad",
+          "name": "totalLoad",
           "type": "double"
         },
         {
-          "name": "GroupLoadMap",
+          "name": "groupLoadMap",
           "type":
           {
             "type": "map",
@@ -63,16 +59,31 @@
       ]
     },
     {
-      "name": "SendTaskLoadInfoResult",
+      "name": "TaskAddressAndLoadInfo",
       "type": "record",
       "fields":
       [
         {
-          "name": "IsSuccess",
+          "name": "taskIPAddress",
+          "type": "IPAddress"
+        },
+        {
+          "name": "taskLoadInfo",
+          "type": "TaskLoadInfo"
+        }
+      ]
+    },
+    {
+      "name": "SendTaskAddressAndLoadInfoResult",
+      "type": "record",
+      "fields":
+      [
+        {
+          "name": "isSuccess",
           "type": "boolean"
         },
         {
-          "name": "Msg",
+          "name": "msg",
           "type": "string"
         }
 
@@ -81,16 +92,16 @@
   ],
   "messages":
   {
-    "sendTaskLoadInfo":
+    "sendTaskAddressAndLoadInfo":
     {
       "request":
       [
         {
-          "name": "taskLoadInfo",
-          "type": "TaskLoadInfo"
+          "name": "taskAddressAndLoadInfo",
+          "type": "TaskAddressAndLoadInfo"
         }
       ],
-      "response": "SendTaskLoadInfoResult"
+      "response": "SendTaskAddressAndLoadInfoResult"
     }
   }
 }

@@ -15,8 +15,9 @@
  */
 package edu.snu.mist.common.rpc;
 
-import edu.snu.mist.formats.avro.SendTaskLoadInfoResult;
-import edu.snu.mist.formats.avro.TaskLoadInfo;
+import edu.snu.mist.core.master.TaskAddressAndLoadInfoMap;
+import edu.snu.mist.formats.avro.SendTaskAddressAndLoadInfoResult;
+import edu.snu.mist.formats.avro.TaskAddressAndLoadInfo;
 import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import org.apache.avro.AvroRemoteException;
 
@@ -26,14 +27,20 @@ import javax.inject.Inject;
  * Default implementation of task to master message.
  */
 public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage {
+
+  private final TaskAddressAndLoadInfoMap taskAddressAndLoadInfoMap;
+
   @Inject
-  private DefaultTaskToMasterMessageImpl() {
-    //Do nothing
+  private DefaultTaskToMasterMessageImpl(final TaskAddressAndLoadInfoMap taskAddressAndLoadInfoMap) {
+    this.taskAddressAndLoadInfoMap = taskAddressAndLoadInfoMap;
   }
 
   @Override
-  public SendTaskLoadInfoResult sendTaskLoadInfo(final TaskLoadInfo taskLoadInfo) throws AvroRemoteException {
-    final SendTaskLoadInfoResult result = SendTaskLoadInfoResult.newBuilder()
+  public SendTaskAddressAndLoadInfoResult sendTaskAddressAndLoadInfo(
+      final TaskAddressAndLoadInfo taskAddressAndLoadInfo) throws AvroRemoteException {
+    taskAddressAndLoadInfoMap.put(taskAddressAndLoadInfo.getTaskIPAddress(),
+                                  taskAddressAndLoadInfo.getTaskLoadInfo());
+    final SendTaskAddressAndLoadInfoResult result = SendTaskAddressAndLoadInfoResult.newBuilder()
             .setIsSuccess(true)
             .setMsg("Success")
             .build();

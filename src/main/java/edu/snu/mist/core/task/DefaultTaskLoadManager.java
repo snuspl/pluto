@@ -22,6 +22,7 @@ import edu.snu.mist.core.task.eventProcessors.EventProcessor;
 import edu.snu.mist.core.task.eventProcessors.GroupAllocationTable;
 import edu.snu.mist.formats.avro.IPAddress;
 import edu.snu.mist.formats.avro.TaskLoadInfo;
+import edu.snu.mist.formats.avro.TaskAddressAndLoadInfo;
 import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import org.apache.avro.AvroRemoteException;
 import org.apache.avro.ipc.NettyTransceiver;
@@ -57,15 +58,19 @@ public final class DefaultTaskLoadManager implements TaskLoadManager {
   public void sendLoadToMaster() throws AvroRemoteException, UnknownHostException {
     final TaskLoadInfo taskLoadInfo = new TaskLoadInfo();
     final IPAddress ipAddress = new IPAddress();
+    final TaskAddressAndLoadInfo taskAddressAndLoadInfo = new TaskAddressAndLoadInfo();
 
     ipAddress.setHostAddress(InetAddress.getLocalHost().getHostName());
     ipAddress.setPort(masterToTaskServerPortNum);
 
     taskLoadInfo.setGroupLoadMap(null);
-    taskLoadInfo.setTaskIPAddress(ipAddress);
     taskLoadInfo.setTotalLoad(getTaskLoad());
     taskLoadInfo.setMeasurementTime(System.currentTimeMillis());
-    taskToMasterMessage.sendTaskLoadInfo(taskLoadInfo);
+
+    taskAddressAndLoadInfo.setTaskIPAddress(ipAddress);
+    taskAddressAndLoadInfo.setTaskLoadInfo(taskLoadInfo);
+
+    taskToMasterMessage.sendTaskAddressAndLoadInfo(taskAddressAndLoadInfo);
   }
 
   // TODO: Get group load
