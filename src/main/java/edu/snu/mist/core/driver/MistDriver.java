@@ -146,6 +146,11 @@ public final class MistDriver {
   private final Queue<ActiveContext> mistMasterQueue;
 
   /**
+   * This counts the number of evaluators which can be master.
+   */
+  private final AtomicInteger masterEvaluatorCounter;
+
+  /**
    * This counts the number of contexts submitted.
    */
   private final AtomicInteger activeContextCounter;
@@ -170,6 +175,7 @@ public final class MistDriver {
     this.mistTaskConfigs = mistTaskConfigs;
     this.mistTaskQueue = new ConcurrentLinkedQueue<>();
     this.mistMasterQueue = new ConcurrentLinkedQueue<>();
+    this.masterEvaluatorCounter = new AtomicInteger(0);
     this.activeContextCounter = new AtomicInteger(0);
   }
 
@@ -205,15 +211,18 @@ public final class MistDriver {
   public final class EvaluatorAllocatedHandler implements EventHandler<AllocatedEvaluator> {
     @Override
     public synchronized void onNext(final AllocatedEvaluator allocatedEvaluator) {
-      LOG.log(Level.INFO, "Submitting Context to AllocatedEvaluator: {0}", allocatedEvaluator);
-      if (allocatedEvaluator.getEvaluatorDescriptor().getRuntimeName().equals(MIST_MASTER_RUNTIME_NAME)) {
-        // Submit master tasks
+      LOG.log(Level.INFO, "Submitting Context to AllocatedEvaluator: {0}", allocatedEvaluator.getId());
+      final EvaluatorDescriptor descriptor = allocatedEvaluator.getEvaluatorDescriptor();
+      if (descriptor.getMemory() == mistDriverConfigs.getMasterMemSize()
+          && descriptor.getNumberOfCores() == mistDriverConfigs.getNumMasterCores()
+          && masterEvaluatorCounter.getAndIncrement() < mistDriverConfigs.getNumMasters()) {
         final String masterId = "MistMaster-" + masterIndex.getAndIncrement();
         allocatedEvaluator.submitContext(ContextConfiguration.CONF
         .set(ContextConfiguration.IDENTIFIER, masterId)
         .build());
-      } else if (allocatedEvaluator.getEvaluatorDescriptor().getRuntimeName().equals(MIST_TASK_RUNTIME_NAME)) {
-        // Store allocated task evaluators and launch them after
+      } else if (
+          descriptor.getMemory() == mistDriverConfigs.getTaskMemSize()
+          && descriptor.getNumberOfCores() == mistDriverConfigs.getNumTaskCores()) {
         final String taskId = "MistTask-" + taskIndex.getAndIncrement();
         final JVMProcess jvmProcess = jvmProcessFactory.newEvaluatorProcess()
             .setMemory(mistDriverConfigs.getTaskMemSize())
@@ -313,8 +322,7 @@ public final class MistDriver {
               .build();
           // submit a task
           masterContext.submitTask(
-              Configurations.merge(nameResolverConf, masterConfiguration, mistTaskConfigs.getConfiguration(),
-                  masterConfBuilder.build()));
+              Configurations.merge(nameResolverConf, masterConfiguration, masterConfBuilder.build()));
         }
       }
     }

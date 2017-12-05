@@ -15,8 +15,6 @@
  */
 package edu.snu.mist.core.master;
 
-import org.apache.avro.ipc.Server;
-
 import javax.inject.Inject;
 
 /**
@@ -27,7 +25,7 @@ public final class DefaultTaskManagerImpl implements TaskManager {
   // TODO[MIST-423]: Implement tracking evaluator stats in mist master
 
   @Inject
-  private DefaultTaskManagerImpl(final Server server) {
+  private DefaultTaskManagerImpl() {
 
   }
 

@@ -20,7 +20,6 @@ import edu.snu.mist.core.parameters.ClientToTaskServerPortNum;
 import edu.snu.mist.core.parameters.MasterToTaskServerPortNum;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
-import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.reef.tang.Injector;
@@ -44,18 +43,30 @@ import java.util.logging.Logger;
  */
 @Unit
 public final class MistTask implements Task {
+
   private static final Logger LOG = Logger.getLogger(MistTask.class.getName());
+
+  private final Tang tang = Tang.Factory.getTang();
 
   /**
    * A count down latch for sleeping and terminating this task.
    */
   private final CountDownLatch countDownLatch;
 
+  /**
+   * The Avro RPC server used to get messages from servers.
+   */
   private final Server masterToTaskServer;
-  private final Server clientToTaskServer;
-  private final QueryManager queryManager;
 
-  private final Tang tang = Tang.Factory.getTang();
+  /**
+   * The Avro RPC server used to get messages from clients.
+   */
+  private final Server clientToTaskServer;
+
+  /**
+   * The query manager.
+   */
+  private final QueryManager queryManager;
 
   /**
    * Default constructor of MistTask.
@@ -81,12 +92,12 @@ public final class MistTask implements Task {
 
     final JavaConfigurationBuilder clientToTaskServerConfBuilder = tang.newConfigurationBuilder();
     clientToTaskServerConfBuilder.bindImplementation(ClientToTaskMessage.class, DefaultClientToTaskMessageImpl.class);
-    clientToTaskServerConfBuilder.bindImplementation(TaskToMasterMessage.class, DefaultTaskToMasterMessageImpl.class);
     clientToTaskServerConfBuilder.bindConstructor(SpecificResponder.class, ClientToTaskSpecificResponderWrapper.class);
     clientToTaskServerConfBuilder.bindConstructor(Server.class, AvroRPCNettyServerWrapper.class);
     clientToTaskServerConfBuilder.bindNamedParameter(RPCServerPort.class, String.valueOf(clientToTaskPortNum));
 
     Injector injector = tang.newInjector(clientToTaskServerConfBuilder.build());
+    injector.bindVolatileInstance(QueryManager.class, queryManager);
     this.clientToTaskServer = injector.getInstance(Server.class);
     this.queryManager = injector.getInstance(QueryManager.class);
   }

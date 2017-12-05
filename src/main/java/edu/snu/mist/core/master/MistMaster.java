@@ -27,6 +27,7 @@ import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
+import org.apache.reef.tang.annotations.Unit;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.task.Task;
 import org.apache.reef.task.events.CloseEvent;
@@ -55,6 +56,7 @@ import java.util.logging.Logger;
  * Current MistMaster cannot add/remove Tasks at runtime.
  * TODO[MIST-#]: We need to support this feature to dynamically scale in/out Tasks.
  */
+@Unit
 public final class MistMaster implements Task {
 
   private static final Logger LOG = Logger.getLogger(MistMaster.class.getName());
@@ -83,7 +85,7 @@ public final class MistMaster implements Task {
                      @Parameter(ClientToMasterServerPortNum.class) final int clientToMasterPortNum,
                      @Parameter(ClientToTaskServerAddressSet.class) final Set<String> clientToTaskServerAddressSet)
       throws InjectionException {
-    this.countDownLatch = new CountDownLatch(1);
+      this.countDownLatch = new CountDownLatch(1);
 
     final JavaConfigurationBuilder clientToMasterServerConfBuilder = tang.newConfigurationBuilder();
     clientToMasterServerConfBuilder.bindImplementation(ClientToMasterMessage.class, TaskSelector.class);

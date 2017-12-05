@@ -18,6 +18,7 @@ package edu.snu.mist.core.master;
 import edu.snu.mist.formats.avro.IPAddress;
 import edu.snu.mist.formats.avro.TaskLoadInfo;
 
+import javax.inject.Inject;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class TaskAddressAndLoadInfoMap {
   private Map<IPAddress, TaskLoadInfo> taskAddressAndLoadInfoMap;
 
+  @Inject
   private TaskAddressAndLoadInfoMap() {
     this.taskAddressAndLoadInfoMap = new ConcurrentHashMap<>();
   }
