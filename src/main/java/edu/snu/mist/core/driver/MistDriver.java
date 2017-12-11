@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.core.driver;
 
+import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
+import edu.snu.mist.core.parameters.JavaAgentPath;
 import edu.snu.mist.core.task.MistTask;
 import org.apache.avro.ipc.Server;
 import org.apache.reef.driver.context.ActiveContext;
@@ -26,6 +28,7 @@ import org.apache.reef.io.network.naming.NameResolverConfiguration;
 import org.apache.reef.io.network.naming.NameServer;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
+import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.annotations.Unit;
 import org.apache.reef.wake.EventHandler;
 import org.apache.reef.wake.remote.address.LocalAddressProvider;
@@ -107,6 +110,10 @@ public final class MistDriver {
    */
   private final JVMProcessFactory jvmProcessFactory;
 
+  private final String executionModelOption;
+
+  private final String javaAgentPath;
+
   @Inject
   private MistDriver(final EvaluatorRequestor requestor,
                      final JVMProcessFactory jvmProcessFactory,
@@ -114,6 +121,8 @@ public final class MistDriver {
                      final LocalAddressProvider localAddressProvider,
                      final TaskSelector taskSelector,
                      final Server server,
+                     @Parameter(ExecutionModelOption.class) final String executionModelOption,
+                     @Parameter(JavaAgentPath.class) final String javaAgentPath,
                      final MistDriverConfigs mistDriverConfigs,
                      final MistTaskConfigs mistTaskConfigs) {
     this.nameServer = nameServer;
@@ -124,6 +133,8 @@ public final class MistDriver {
     this.taskSelector = taskSelector;
     this.mistDriverConfigs = mistDriverConfigs;
     this.mistTaskConfigs = mistTaskConfigs;
+    this.executionModelOption = executionModelOption;
+    this.javaAgentPath = javaAgentPath;
   }
 
   public final class StartHandler implements EventHandler<StartTime> {
@@ -143,10 +154,22 @@ public final class MistDriver {
     public void onNext(final AllocatedEvaluator allocatedEvaluator) {
       LOG.log(Level.INFO, "Submitting Context to AllocatedEvaluator: {0}", allocatedEvaluator);
       final String taskId = "MistTask-" + taskIndex.getAndIncrement();
-      final JVMProcess jvmProcess = jvmProcessFactory.newEvaluatorProcess()
-          .setMemory(mistDriverConfigs.getTaskMemSize())
-          .addOption("-XX:NewRatio=" + mistDriverConfigs.getNewRatio())
-          .addOption("-XX:ReservedCodeCacheSize=" + mistDriverConfigs.getReservedCodeCacheSize() + "m");
+
+
+      final JVMProcess jvmProcess;
+      if (executionModelOption.equals("fiber")) {
+        jvmProcess = jvmProcessFactory.newEvaluatorProcess()
+            .setMemory(mistDriverConfigs.getTaskMemSize())
+            .addOption("-XX:NewRatio=" + mistDriverConfigs.getNewRatio())
+            .addOption("-XX:ReservedCodeCacheSize=" + mistDriverConfigs.getReservedCodeCacheSize() + "m")
+            .addOption("-javaagent:" + javaAgentPath);
+      } else {
+        jvmProcess = jvmProcessFactory.newEvaluatorProcess()
+            .setMemory(mistDriverConfigs.getTaskMemSize())
+            .addOption("-XX:NewRatio=" + mistDriverConfigs.getNewRatio())
+            .addOption("-XX:ReservedCodeCacheSize=" + mistDriverConfigs.getReservedCodeCacheSize() + "m");
+      }
+
       allocatedEvaluator.setProcess(jvmProcess);
       allocatedEvaluator.submitContext(ContextConfiguration.CONF
           .set(ContextConfiguration.IDENTIFIER, taskId)
