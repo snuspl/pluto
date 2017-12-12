@@ -293,6 +293,7 @@ limitations under the License.
                 </executions>
             </plugin>
 
+            <!-- Quasar java agent for test
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -300,10 +301,10 @@ limitations under the License.
                 <configuration>
                     <argLine>-Dco.paralleluniverse.fibers.verifyInstrumentation=true</argLine>
 
-                    <!-- Quasar Agent -->
-                    <argLine>-javaagent:/Users/taegeonum/.m2/repository/co/paralleluniverse/quasar-core/0.7.9/quasar-core-0.7.9-jdk8.jar</argLine>
+                    <argLine>-javaagent:${env.M3_HOME}/repository/co/paralleluniverse/quasar-core/0.7.9/quasar-core-0.7.9.jar</argLine>
                 </configuration>
             </plugin>
+            -->
 
         </plugins>
     </build>

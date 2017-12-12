@@ -15,24 +15,10 @@
  */
 package edu.snu.mist.core.task;
 
-import co.paralleluniverse.fibers.Fiber;
-import co.paralleluniverse.fibers.FiberForkJoinScheduler;
-import co.paralleluniverse.fibers.FiberScheduler;
-import co.paralleluniverse.fibers.SuspendExecution;
-import co.paralleluniverse.strands.SuspendableRunnable;
-import co.paralleluniverse.strands.channels.Channel;
-import co.paralleluniverse.strands.channels.Channels;
-
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-
-/**
- * Created by taegeonum on 12/11/17.
- */
+/*
 public class FiberTest {
 
-  //@Test
+  @Test
   public void fiberTest() throws ExecutionException, InterruptedException {
     final FiberScheduler scheduler = new FiberForkJoinScheduler("test", 1, null, false);
 
@@ -74,7 +60,7 @@ public class FiberTest {
     fiber4.join();
   }
 
-  //@Test
+  @Test
   public void createManyFibersTest() throws ExecutionException, InterruptedException {
     final Set<Fiber> fibers = new HashSet<>();
     final FiberScheduler scheduler = new FiberForkJoinScheduler("test", 3, null, false);
@@ -108,7 +94,7 @@ public class FiberTest {
     }
   }
 
-  //@Test
+  @Test
   public void fiberSleepAndWakeTest() throws ExecutionException, InterruptedException, SuspendExecution {
     final Channel<Integer> ch = Channels.newChannel(5);
 
@@ -129,20 +115,7 @@ public class FiberTest {
       Thread.sleep(10);
     }
 
-    /*
-    final Fiber fiber2 = new Fiber(scheduler, new SuspendableRunnable() {
-      @Override
-      public void run() throws SuspendExecution, InterruptedException {
-        int count = 0;
-        while (true) {
-          ch.send(count);
-          count += 1;
-        }
-      }
-    }).start();
-    */
-
     fiber1.join();
-    //fiber2.join();
   }
 }
+*/
