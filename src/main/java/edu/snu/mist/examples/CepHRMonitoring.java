@@ -91,7 +91,7 @@ public final class CepHRMonitoring {
                         .build())
                 .build();
 
-        final MISTQuery query = new CepTranslator(cepQuery).translate();
+        final MISTQuery query = CepUtils.translate(cepQuery);
         return MISTExampleUtils.submit(query, configuration);
 
     }

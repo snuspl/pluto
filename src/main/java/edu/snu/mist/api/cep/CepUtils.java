@@ -36,19 +36,13 @@ import java.util.Map;
  * And Qualifier can be implemented by filter operator.
  * Finally, convert CepAction into socketTextStream, and send the parameter to the sink.
  */
-public final class CepTranslator<T> {
-
-    private final MISTCepQuery<T> query;
-
-    public CepTranslator(final MISTCepQuery query) {
-        this.query = query;
-    }
+public final class CepUtils {
 
     /**
      * Translate cep query into MIST query.
      * @return MIST query
      */
-    public MISTQuery translate() throws IOException {
+    public static <T> MISTQuery translate(final MISTCepQuery query) throws IOException {
         final String superGroupId = query.getSuperGroupId();
         final String subGroupId = query.getSubGroupId();
         final CepInput<T> cepInput = query.getCepInput();
@@ -58,22 +52,20 @@ public final class CepTranslator<T> {
         final CepAction cepAction = query.getCepAction();
 
         final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(superGroupId, subGroupId);
-        final ContinuousStream<T> inputMapStream = cepInputTranslator(queryBuilder, cepInput);
-        final ContinuousStream<Map<String, List<T>>> cepOperatorOutputStream =
-                cepOperatorTranslator(inputMapStream, cepEventPatterns, windowTime);
+        final ContinuousStream<T> inputMapStream = convertCepInputToSourceStream(queryBuilder, cepInput);
         final ContinuousStream<Map<String, List<T>>> qualifierFilterStream =
-                cepQualiferTranslator(cepOperatorOutputStream, cepQualifier);
+                inputMapStream.cepOperator(cepEventPatterns, windowTime).filter(cepQualifier);
         cepActionTranslator(qualifierFilterStream, cepAction);
         return queryBuilder.build();
     }
 
     /**
-     * Translate cep input stream into user-defined class.
+     * Convert cep input stream into source stream.
      * @param queryBuilder mist query builder
      * @param cepInput cep input
-     * @return continuous stream of user-defined class
+     * @return source stream.
      */
-    private ContinuousStream<T> cepInputTranslator(
+    private static <T> ContinuousStream<T> convertCepInputToSourceStream(
             final MISTQueryBuilder queryBuilder,
             final CepInput<T> cepInput) {
         final MISTFunction<String, T> classGenFunc = cepInput.getClassGenFunc();
@@ -102,34 +94,8 @@ public final class CepTranslator<T> {
                         .map(classGenFunc);
             }
             default:
-                throw new IllegalStateException("No other source is ready yet!");
+                throw new IllegalStateException("Invalid source type");
         }
-    }
-
-    /**
-     * Add cep operator stream to translated cep input stream.
-     * @param inputMapStream continuous stream of translated cep input
-     * @param cepEvents cep event pattern
-     * @param windowTime window time
-     * @return output of cep operator with Map type
-     */
-    private ContinuousStream<Map<String, List<T>>> cepOperatorTranslator(
-            final ContinuousStream<T> inputMapStream,
-            final List<CepEventPattern<T>> cepEvents,
-            final long windowTime) throws IOException {
-        return inputMapStream.cepOperator(cepEvents, windowTime);
-    }
-
-    /**
-     * Add filter of cep qualifier to cep operator output stream.
-     * @param cepOperatorOutputStream
-     * @param cepQualifier
-     * @return output of cep qualifier stream
-     */
-    private ContinuousStream<Map<String, List<T>>> cepQualiferTranslator(
-            final ContinuousStream<Map<String, List<T>>> cepOperatorOutputStream,
-            final CepQualifier<T> cepQualifier) {
-        return cepOperatorOutputStream.filter(cepQualifier);
     }
 
     /**
@@ -137,7 +103,7 @@ public final class CepTranslator<T> {
      * @param qualifierFilterStream
      * @param cepAction cep action
      */
-    private void cepActionTranslator(
+    private static <T> void cepActionTranslator(
             final ContinuousStream<Map<String, List<T>>> qualifierFilterStream,
             final CepAction cepAction) {
         final CepSink sink = cepAction.getCepSink();
@@ -174,5 +140,11 @@ public final class CepTranslator<T> {
                 throw new NotImplementedException("TEXT_SOCKET_OUTPUT and MQTT_OUTPUT are supported now!: " +
                         sink.getCepSinkType().toString());
         }
+    }
+
+    /**
+     * Must not be instantiated.
+     */
+    private CepUtils() {
     }
 }
