@@ -17,10 +17,12 @@ package edu.snu.mist.api.cep;
 
 import edu.snu.mist.common.functions.MISTPredicate;
 
+import java.io.Serializable;
+
 /**
  * Event of cep query, consists of event name and condition.
  */
-public final class CepEventPattern<T> {
+public final class CepEventPattern<T> implements Serializable {
     private final String eventPatternName;
     private final MISTPredicate<T> condition;
     private final Class<T> classType;

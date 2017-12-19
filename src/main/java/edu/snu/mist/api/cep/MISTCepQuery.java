@@ -24,29 +24,33 @@ import java.util.Set;
  * Default Implementation for MISTCepQuery.
  */
 public final class MISTCepQuery<T> {
-    private final String groupId;
-    private final CepNewInput<T> cepInput;
-    private final List<CepEventPattern> cepEventPatternSequence;
+    private final String superGroupId;
+    private final String subGroupId;
+    private final CepInput<T> cepInput;
+    private final List<CepEventPattern<T>> cepEventPatternSequence;
     private final CepQualifier<T> cepQualifier;
     private final long windowTime;
     private final CepAction cepAction;
 
     /**
      * Creates an immutable MISTCepQuery using given parameters.
-     * @param groupId group id
+     * @param superGroupId super group id
+     * @param subGroupId sub group id
      * @param cepInput cep input
      * @param cepEventPatternSequence sequence of event
      * @param cepQualifier pattern qualification
      * @param cepAction cep action
      */
     private MISTCepQuery(
-            final String groupId,
-            final CepNewInput<T> cepInput,
-            final List<CepEventPattern> cepEventPatternSequence,
+            final String superGroupId,
+            final String subGroupId,
+            final CepInput<T> cepInput,
+            final List<CepEventPattern<T>> cepEventPatternSequence,
             final CepQualifier<T> cepQualifier,
             final long windowTime,
             final CepAction cepAction) {
-        this.groupId = groupId;
+        this.superGroupId = superGroupId;
+        this.subGroupId = subGroupId;
         this.cepInput = cepInput;
         this.cepEventPatternSequence = cepEventPatternSequence;
         this.cepQualifier = cepQualifier;
@@ -54,15 +58,19 @@ public final class MISTCepQuery<T> {
         this.cepAction = cepAction;
     }
 
-    public String getGroupId() {
-        return groupId;
+    public String getSuperGroupId() {
+        return superGroupId;
     }
 
-    public CepNewInput<T> getCepInput() {
+    public String getSubGroupId() {
+        return subGroupId;
+    }
+
+    public CepInput<T> getCepInput() {
         return cepInput;
     }
 
-    public List<CepEventPattern> getCepEventPatternSequence() {
+    public List<CepEventPattern<T>> getCepEventPatternSequence() {
         return cepEventPatternSequence;
     }
 
@@ -82,15 +90,17 @@ public final class MISTCepQuery<T> {
      * A builder class for MISTCepQuery.
      */
     public static class Builder<T> {
-        private final String groupId;
-        private CepNewInput<T> cepInput;
-        private List<CepEventPattern> cepEventPatternSequence;
+        private final String superGroupId;
+        private final String subGroupId;
+        private CepInput<T> cepInput;
+        private List<CepEventPattern<T>> cepEventPatternSequence;
         private CepQualifier<T> cepQualifier;
         private long windowTime;
         private CepAction cepAction;
 
-        public Builder(final String groupId) {
-            this.groupId = groupId;
+        public Builder(final String superGroupId, final String subGroupId) {
+            this.superGroupId = superGroupId;
+            this.subGroupId = subGroupId;
             this.cepInput = null;
             this.cepEventPatternSequence = null;
             this.cepQualifier = null;
@@ -103,7 +113,7 @@ public final class MISTCepQuery<T> {
          * @param input input for this query
          * @return builder
          */
-        public Builder input(final CepNewInput<T> input) {
+        public Builder input(final CepInput<T> input) {
             if (this.cepInput != null) {
                 throw new IllegalStateException("Input couldn't be declared twice!");
             }
@@ -116,7 +126,7 @@ public final class MISTCepQuery<T> {
          * @param events input cep events
          * @return builder
          */
-        public Builder setEventSequence(final CepEventPattern... events) {
+        public Builder setEventPatternSequence(final CepEventPattern<T>... events) {
             cepEventPatternSequence = Arrays.asList(events);
             return this;
         }
@@ -164,19 +174,21 @@ public final class MISTCepQuery<T> {
         }
 
         public MISTCepQuery<T> build() {
-            if (groupId == null
+            if (superGroupId == null
+                    || subGroupId == null
                     || cepInput == null
                     || cepEventPatternSequence == null
                     || cepQualifier == null
                     || windowTime < 0
                     || cepAction == null) {
                 throw new IllegalStateException(
-                        "One of group id, input, event sequence, qualifier, window, or action is not set!");
+                        "One of group id, input, event pattern sequence, qualifier, window, or action is not set!");
             }
             if (!checkSequence()) {
                 throw new IllegalStateException("Each event should have a different event name!");
             }
-            return new MISTCepQuery(groupId, cepInput, cepEventPatternSequence, cepQualifier, windowTime, cepAction);
+            return new MISTCepQuery(superGroupId, subGroupId, cepInput,
+                    cepEventPatternSequence, cepQualifier, windowTime, cepAction);
         }
     }
 }

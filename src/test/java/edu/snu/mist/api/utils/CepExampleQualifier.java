@@ -17,11 +17,12 @@ package edu.snu.mist.api.utils;
 
 import edu.snu.mist.api.cep.CepQualifier;
 
+import java.util.List;
 import java.util.Map;
 
 public final class CepExampleQualifier<T> implements CepQualifier<T> {
     @Override
-    public boolean test(final Map<String, T> stringCepClassTypeMap) {
+    public boolean test(final Map<String, List<T>> stringCepClassTypeMap) {
         return true;
     }
 

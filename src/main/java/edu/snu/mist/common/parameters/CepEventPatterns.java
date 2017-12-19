@@ -18,6 +18,6 @@ package edu.snu.mist.common.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "Cep event pattenr list")
+@NamedParameter(doc = "Cep event pattern list")
 public final class CepEventPatterns implements Name<String> {
 }
