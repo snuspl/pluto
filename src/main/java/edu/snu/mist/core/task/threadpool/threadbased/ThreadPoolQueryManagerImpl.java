@@ -84,6 +84,11 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
   private final ExecutorService executorService;
 
   /**
+   * The Manager for collecting task load information and sending it to the master.
+   */
+  private final TaskLoadManager taskLoadManager;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -92,7 +97,8 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
                                      final QueryInfoStore planStore,
                                      @Parameter(DefaultNumEventProcessors.class) final int defaultNumEventProcessors,
                                      final ConfigDagGenerator configDagGenerator,
-                                     final BatchQueryCreator batchQueryCreator) {
+                                     final BatchQueryCreator batchQueryCreator,
+                                     final TaskLoadManager taskLoadManager) {
     this.executorService = Executors.newFixedThreadPool(defaultNumEventProcessors);
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
@@ -101,6 +107,7 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
     this.configDagGenerator = configDagGenerator;
     this.numThreads = defaultNumEventProcessors;
     //this.threadsQueue = new ArrayList<>(defaultNumEventProcessors);
+    this.taskLoadManager = taskLoadManager;
   }
 
   /**

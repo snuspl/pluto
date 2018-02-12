@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.rpc;
+package edu.snu.mist.core.parameters;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * The port number of RPC server.
+ * The number of MIST masters.
  */
-@NamedParameter(doc = "The port number of RPC Server")
-public class RPCServerPort implements Name<Integer> {
+@NamedParameter(doc = "The number of MIST masters.", short_name = "num_masters", default_value = "1")
+public final class NumMasters implements Name<Integer> {
 }

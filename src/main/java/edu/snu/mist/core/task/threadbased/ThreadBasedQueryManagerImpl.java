@@ -78,6 +78,11 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
   private final ConfigDagGenerator configDagGenerator;
 
   /**
+   * The Manager for collecting task load information and sending it to the master.
+   */
+  private final TaskLoadManager taskLoadManager;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -85,13 +90,15 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
                                       final ScheduledExecutorServiceWrapper schedulerWrapper,
                                       final QueryInfoStore planStore,
                                       final ConfigDagGenerator configDagGenerator,
-                                      final BatchQueryCreator batchQueryCreator) {
+                                      final BatchQueryCreator batchQueryCreator,
+                                      final TaskLoadManager taskLoadManager) {
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.threads = new ConcurrentSet<>();
     this.batchQueryCreator = batchQueryCreator;
     this.configDagGenerator = configDagGenerator;
+    this.taskLoadManager = taskLoadManager;
   }
 
   /**

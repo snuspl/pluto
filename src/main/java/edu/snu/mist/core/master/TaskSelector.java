@@ -13,24 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.driver;
+package edu.snu.mist.core.master;
 
-import edu.snu.mist.formats.avro.MistTaskProvider;
-import org.apache.reef.driver.task.RunningTask;
+import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * TaskSelector returns a list of tasks for executing client queries
+ * TaskSelector returns a task for executing client queries
  * by collecting information about MistTasks.
  * It extends MistTaskProvider which is a generated avro RPC protocol.
  */
-@DefaultImplementation(DefaultTaskSelectorImpl.class)
-public interface TaskSelector extends MistTaskProvider {
+@DefaultImplementation(RandomTaskSelectorImpl.class)
+public interface TaskSelector extends ClientToMasterMessage {
   /**
    * Registers a running task to task selector.
    * @param runningTask running task
    */
-  void registerRunningTask(final RunningTask runningTask);
+  void registerRunningTask(final String runningTask);
 
   /**
    * Unregisters the task.

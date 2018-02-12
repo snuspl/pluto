@@ -15,10 +15,10 @@
  */
 package edu.snu.mist.core.driver;
 
-import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.core.MistLauncher;
 import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
 import edu.snu.mist.core.parameters.DriverRuntimeType;
+import edu.snu.mist.core.parameters.MasterMemorySize;
 import edu.snu.mist.core.parameters.NumTaskCores;
 import edu.snu.mist.core.parameters.TaskMemorySize;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
@@ -41,7 +41,7 @@ public final class MistDriverTest {
    */
   @Test
   public void testLaunchDriverOption3() throws InjectionException {
-    launchDriverTestHelper("tpq", 20334, "none");
+    launchDriverTestHelper("tpq", "none");
   }
 
   /**
@@ -49,7 +49,7 @@ public final class MistDriverTest {
    */
   @Test
   public void testLaunchDriverMIST() throws InjectionException {
-    launchDriverTestHelper("mist", 20331, "dispatching");
+    launchDriverTestHelper("mist", "dispatching");
   }
 
   /**
@@ -57,14 +57,14 @@ public final class MistDriverTest {
    * @throws InjectionException
    */
   public void launchDriverTestHelper(final String executionModelOption,
-                                     final int rpcServerPort,
+                                     //final int rpcServerPort,
                                      final String groupSchedModel) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(DriverRuntimeType.class, "LOCAL");
+    jcb.bindNamedParameter(MasterMemorySize.class, "1024");
     jcb.bindNamedParameter(NumTaskCores.class, "1");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "1");
     jcb.bindNamedParameter(TaskMemorySize.class, "256");
-    jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
     jcb.bindNamedParameter(ExecutionModelOption.class, executionModelOption);
     jcb.bindNamedParameter(GroupSchedModelType.class, groupSchedModel);
 

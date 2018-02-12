@@ -128,6 +128,11 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
   private final GroupAllocationTableModifier groupAllocationTableModifier;
 
   /**
+   * The Manager for collecting task load information and sending it to the master.
+   */
+  private final TaskLoadManager taskLoadManager;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -144,7 +149,8 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
                                                 final NettySharedResource nettySharedResource,
                                                 final DagGenerator dagGenerator,
                                                 final GroupAllocationTableModifier groupAllocationTableModifier,
-                                                @Parameter(GroupSchedModelType.class) final String executionModel) {
+                                                @Parameter(GroupSchedModelType.class) final String executionModel,
+                                                final TaskLoadManager taskLoadManager) {
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.groupInfoMap = groupInfoMap;
@@ -160,6 +166,7 @@ public final class GroupAwareGlobalSchedQueryManagerImpl implements QueryManager
     this.dagGenerator = dagGenerator;
     this.groupAllocationTableModifier = groupAllocationTableModifier;
     this.groupMap = new ConcurrentHashMap<>();
+    this.taskLoadManager = taskLoadManager;
   }
 
   /**

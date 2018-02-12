@@ -22,8 +22,8 @@ import edu.snu.mist.api.utils.MockDriverServer;
 import edu.snu.mist.api.utils.MockTaskServer;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.types.Tuple2;
+import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
-import edu.snu.mist.formats.avro.MistTaskProvider;
 import edu.snu.mist.utils.TestParameters;
 import org.apache.avro.ipc.NettyServer;
 import org.apache.avro.ipc.Server;
@@ -56,7 +56,7 @@ public class BatchSubExecutionEnvironmentTest {
   public void testMISTDefaultExecutionEnvironment() throws IOException {
     // Step 1: Launch mock RPC Server
     final Server driverServer = new NettyServer(
-        new SpecificResponder(MistTaskProvider.class, new MockDriverServer(driverHost, taskPortNum)),
+        new SpecificResponder(ClientToMasterMessage.class, new MockDriverServer(driverHost, taskPortNum)),
         new InetSocketAddress(driverPortNum));
     final Server taskServer = new NettyServer(
         new SpecificResponder(ClientToTaskMessage.class, new MockTaskServer(testQueryResult)),

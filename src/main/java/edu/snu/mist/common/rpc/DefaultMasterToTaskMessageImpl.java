@@ -13,31 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.driver;
+package edu.snu.mist.common.rpc;
 
-import edu.snu.mist.formats.avro.MistTaskProvider;
-import org.apache.avro.ipc.specific.SpecificResponder;
-import org.apache.reef.tang.ExternalConstructor;
+import edu.snu.mist.formats.avro.MasterToTaskMessage;
 
 import javax.inject.Inject;
 
 /**
- * A wrapper class for Avro SpecificResponder.
+ * Default implementation of master to task message.
  */
-public final class SpecificResponderWrapper implements ExternalConstructor<SpecificResponder> {
-
-  /**
-   * A Specific responder.
-   */
-  private final SpecificResponder responder;
+public final class DefaultMasterToTaskMessageImpl implements MasterToTaskMessage {
 
   @Inject
-  private SpecificResponderWrapper(final TaskSelector taskSelector) {
-    this.responder = new SpecificResponder(MistTaskProvider.class, taskSelector);
-  }
-
-  @Override
-  public SpecificResponder newInstance() {
-    return responder;
+  private DefaultMasterToTaskMessageImpl() {
+    // Do nothing
   }
 }

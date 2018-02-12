@@ -15,8 +15,6 @@
  */
 package edu.snu.mist.core.driver;
 
-import edu.snu.mist.common.rpc.AvroRPCNettyServerWrapper;
-import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.core.driver.parameters.DeactivationEnabled;
 import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
 import edu.snu.mist.core.driver.parameters.JarSharing;
@@ -29,16 +27,15 @@ import edu.snu.mist.core.parameters.MqttSinkKeepAliveSec;
 import edu.snu.mist.core.parameters.MqttSourceKeepAliveSec;
 import edu.snu.mist.core.parameters.NumPeriodicSchedulerThreads;
 import edu.snu.mist.core.parameters.TempFolderPath;
-import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.ClassLoaderProvider;
+import edu.snu.mist.core.task.NoSharingURLClassLoaderProvider;
+import edu.snu.mist.core.task.QueryManager;
 import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorLowerBound;
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorUpperBound;
 import edu.snu.mist.core.task.eventProcessors.parameters.GracePeriod;
 import edu.snu.mist.core.task.threadbased.ThreadBasedQueryManagerImpl;
 import edu.snu.mist.core.task.threadpool.threadbased.ThreadPoolQueryManagerImpl;
-import edu.snu.mist.formats.avro.ClientToTaskMessage;
-import org.apache.avro.ipc.Server;
-import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -69,11 +66,6 @@ public final class MistTaskConfigs {
    * The number of threads for the periodic service scheduler.
    */
   private final int numSchedulerThreads;
-
-  /**
-   * The port number of rpc server of a MistTask.
-   */
-  private final int rpcServerPort;
 
   /**
    * Enabling the merging of queries in Mist task.
@@ -130,7 +122,6 @@ public final class MistTaskConfigs {
 
   @Inject
   private MistTaskConfigs(@Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
-                          @Parameter(RPCServerPort.class) final int rpcServerPort,
                           @Parameter(TempFolderPath.class) final String tempFolderPath,
                           @Parameter(NumPeriodicSchedulerThreads.class) final int numSchedulerThreads,
                           @Parameter(MergingEnabled.class) final boolean mergingEnabled,
@@ -147,7 +138,6 @@ public final class MistTaskConfigs {
                           final MistGroupSchedulingTaskConfigs option2TaskConfigs) {
     this.numEventProcessors = numEventProcessors;
     this.tempFolderPath = tempFolderPath;
-    this.rpcServerPort = rpcServerPort + 10 > MAX_PORT_NUM ? rpcServerPort - 10 : rpcServerPort + 10;
     this.numSchedulerThreads = numSchedulerThreads;
     this.mergingEnabled = mergingEnabled;
     this.deactivationEnabled = deactivationEnabled;
@@ -221,7 +211,6 @@ public final class MistTaskConfigs {
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, Integer.toString(numEventProcessors));
     jcb.bindNamedParameter(TempFolderPath.class, tempFolderPath);
     jcb.bindNamedParameter(NumPeriodicSchedulerThreads.class, Integer.toString(numSchedulerThreads));
-    jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
     jcb.bindNamedParameter(MergingEnabled.class, Boolean.toString(mergingEnabled));
     jcb.bindNamedParameter(DeactivationEnabled.class, Boolean.toString(deactivationEnabled));
     jcb.bindNamedParameter(EventProcessorLowerBound.class, Integer.toString(eventProcessorLowerBound));
@@ -231,10 +220,6 @@ public final class MistTaskConfigs {
     jcb.bindNamedParameter(MqttSinkKeepAliveSec.class, Integer.toString(mqttSinkKeepAliveSec));
     jcb.bindNamedParameter(IsSplit.class, Boolean.toString(isSplit));
 
-    // Implementation
-    jcb.bindImplementation(ClientToTaskMessage.class, DefaultClientToTaskMessageImpl.class);
-    jcb.bindConstructor(Server.class, AvroRPCNettyServerWrapper.class);
-    jcb.bindConstructor(SpecificResponder.class, TaskSpecificResponderWrapper.class);
     return Configurations.merge(jcb.build(), getConfigurationForExecutionModel());
   }
 

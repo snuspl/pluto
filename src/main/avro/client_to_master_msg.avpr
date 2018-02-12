@@ -22,7 +22,7 @@
   */
 {
   "namespace": "edu.snu.mist.formats.avro",
-  "protocol": "MistTaskProvider",
+  "protocol": "ClientToMasterMessage",
   "types":
   [
     {
@@ -33,10 +33,9 @@
       ]
     },
     {
-      "name": "IPAddress",
       "type": "record",
-      "fields":
-      [
+      "name": "IPAddress",
+      "fields": [
         {
           "name": "hostAddress",
           "type": "string"
@@ -46,26 +45,11 @@
           "type": "int"
         }
       ]
-    },
-    {
-      "name": "TaskList",
-      "type": "record",
-      "fields":
-      [
-        {
-          "name": "tasks",
-          "type":
-          {
-            "type": "array",
-            "items": "IPAddress"
-          }
-        }
-      ]
     }
   ],
   "messages":
   {
-    "getTasks":
+    "getTask":
     {
       "request":
       [
@@ -74,7 +58,7 @@
           "type": "QueryInfo"
         }
       ],
-      "response": "TaskList"
+      "response": "IPAddress"
     }
   }
 }

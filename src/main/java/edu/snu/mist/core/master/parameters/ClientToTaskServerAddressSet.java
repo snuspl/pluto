@@ -13,14 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.rpc;
+package edu.snu.mist.core.master.parameters;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
+import java.util.Set;
+
 /**
- * The port number of RPC server.
+ * The client to task server address set.
  */
-@NamedParameter(doc = "The port number of RPC Server")
-public class RPCServerPort implements Name<Integer> {
+@NamedParameter(doc = "The client to task server address set.")
+public final class ClientToTaskServerAddressSet implements Name<Set<String>> {
 }

@@ -13,14 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.rpc;
+package edu.snu.mist.core.task;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import org.apache.avro.AvroRemoteException;
+import org.apache.reef.tang.annotations.DefaultImplementation;
+
+import java.net.UnknownHostException;
 
 /**
- * The port number of RPC server.
+ * Runs on the QueryManager and collects the load of the running queries on this Task.
+ * It sends the load information to the Master.
  */
-@NamedParameter(doc = "The port number of RPC Server")
-public class RPCServerPort implements Name<Integer> {
+@DefaultImplementation(DefaultTaskLoadManager.class)
+public interface TaskLoadManager {
+  void sendLoadToMaster() throws AvroRemoteException, UnknownHostException;
 }

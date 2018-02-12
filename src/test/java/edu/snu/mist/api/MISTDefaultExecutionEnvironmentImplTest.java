@@ -50,7 +50,7 @@ public class MISTDefaultExecutionEnvironmentImplTest {
   public void testMISTDefaultExecutionEnvironment() throws IOException {
     // Step 1: Launch mock RPC Server
     final Server driverServer = new NettyServer(
-        new SpecificResponder(MistTaskProvider.class, new MockDriverServer(driverHost, taskPortNum)),
+        new SpecificResponder(ClientToMasterMessage.class, new MockDriverServer(driverHost, taskPortNum)),
         new InetSocketAddress(driverPortNum));
     final Server taskServer = new NettyServer(
         new SpecificResponder(ClientToTaskMessage.class, new MockTaskServer(testQueryResult)),

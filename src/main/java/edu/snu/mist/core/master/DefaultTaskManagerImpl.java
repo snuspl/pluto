@@ -13,14 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.rpc;
+package edu.snu.mist.core.master;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import javax.inject.Inject;
 
 /**
- * The port number of RPC server.
+ * The default implementation for EvaluatorManager.
  */
-@NamedParameter(doc = "The port number of RPC Server")
-public class RPCServerPort implements Name<Integer> {
+public final class DefaultTaskManagerImpl implements TaskManager {
+
+  // TODO[MIST-423]: Implement tracking evaluator stats in mist master
+
+  @Inject
+  private DefaultTaskManagerImpl() {
+
+  }
+
+  @Override
+  public void close() {
+
+  }
 }

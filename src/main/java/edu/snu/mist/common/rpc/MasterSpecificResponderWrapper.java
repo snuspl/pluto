@@ -13,28 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.api.utils;
+package edu.snu.mist.common.rpc;
 
+import edu.snu.mist.core.master.TaskSelector;
 import edu.snu.mist.formats.avro.ClientToMasterMessage;
-import edu.snu.mist.formats.avro.IPAddress;
-import edu.snu.mist.formats.avro.QueryInfo;
-import org.apache.avro.AvroRemoteException;
+import org.apache.avro.ipc.specific.SpecificResponder;
+import org.apache.reef.tang.ExternalConstructor;
+
+import javax.inject.Inject;
 
 /**
- * A task provider for test.
+ * A wrapper class for Avro SpecificResponder.
  */
-public class MockDriverServer implements ClientToMasterMessage {
-  private final String driverHost;
-  private final int taskPortNum;
+public final class MasterSpecificResponderWrapper implements ExternalConstructor<SpecificResponder> {
 
-  public MockDriverServer(final String driverHost,
-                          final int taskPortNum) {
-    this.driverHost = driverHost;
-    this.taskPortNum = taskPortNum;
+  /**
+   * A Specific responder.
+   */
+  private final SpecificResponder responder;
+
+  @Inject
+  private MasterSpecificResponderWrapper(final TaskSelector taskSelector) {
+    this.responder = new SpecificResponder(ClientToMasterMessage.class, taskSelector);
   }
 
   @Override
-  public IPAddress getTask(final QueryInfo queryInfo) throws AvroRemoteException {
-    return new IPAddress(driverHost, taskPortNum);
+  public SpecificResponder newInstance() {
+    return responder;
   }
 }
