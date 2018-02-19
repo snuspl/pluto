@@ -34,6 +34,7 @@ import edu.snu.mist.core.task.eventProcessors.parameters.DefaultNumEventProcesso
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorLowerBound;
 import edu.snu.mist.core.task.eventProcessors.parameters.EventProcessorUpperBound;
 import edu.snu.mist.core.task.eventProcessors.parameters.GracePeriod;
+import edu.snu.mist.core.task.fiberbased.FiberBasedQueryManagerImpl;
 import edu.snu.mist.core.task.threadbased.ThreadBasedQueryManagerImpl;
 import edu.snu.mist.core.task.threadpool.threadbased.ThreadPoolQueryManagerImpl;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
@@ -174,6 +175,8 @@ public final class MistTaskConfigs {
         return threadPoolOption();
       case "mist":
         return option2TaskConfigs.getConfiguration();
+      case "fiber":
+        return fiberBasedOption();
       default:
         throw new RuntimeException("Undefined execution model: " + executionModelOption);
     }
@@ -186,6 +189,18 @@ public final class MistTaskConfigs {
   private Configuration threadBasedOption() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindImplementation(QueryManager.class, ThreadBasedQueryManagerImpl.class);
+    if (!this.jarSharing) {
+      jcb.bindImplementation(ClassLoaderProvider.class, NoSharingURLClassLoaderProvider.class);
+    }
+    if (!this.networkSharing) {
+      jcb.bindImplementation(MQTTResource.class, MQTTNoSharedResource.class);
+    }
+    return jcb.build();
+  }
+
+  private Configuration fiberBasedOption() {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindImplementation(QueryManager.class, FiberBasedQueryManagerImpl.class);
     if (!this.jarSharing) {
       jcb.bindImplementation(ClassLoaderProvider.class, NoSharingURLClassLoaderProvider.class);
     }
@@ -258,6 +273,7 @@ public final class MistTaskConfigs {
         .registerShortNameOfClass(MqttSinkKeepAliveSec.class)
         .registerShortNameOfClass(IsSplit.class)
         .registerShortNameOfClass(JarSharing.class)
+        .registerShortNameOfClass(JavaAgentPath.class)
         .registerShortNameOfClass(NetworkSharing.class);
     return MistGroupSchedulingTaskConfigs.addCommandLineConf(cmd);
   }
