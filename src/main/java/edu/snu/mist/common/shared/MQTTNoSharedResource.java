@@ -25,6 +25,7 @@ import org.eclipse.paho.client.mqttv3.IMqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -34,16 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * MQTT ClientManager which does not share MQTT Shared Resource.
  */
 public final class MQTTNoSharedResource implements MQTTResource {
-
-  /**
-   * MQTT publisher id.
-   */
-  private static final String MQTT_PUBLISHER_ID_PREFIX = "MIST_MQTT_PUBLISHER_";
-
-  /**
-   * MQTT subscriber id.
-   */
-  private static final String MQTT_SUBSCRIBER_ID_PREFIX = "MIST_MQTT_SUBSCRIBER_";
 
   private final AtomicInteger sourceClientCounter;
 
@@ -71,10 +62,13 @@ public final class MQTTNoSharedResource implements MQTTResource {
   public IMqttAsyncClient getMqttSinkClient(final String brokerURI, final String topic)
       throws MqttException, IOException {
     final IMqttAsyncClient client = new MqttAsyncClient(brokerURI, MQTT_PUBLISHER_ID_PREFIX + sinkClientCounter
-        .getAndIncrement());
+        .getAndIncrement(), new MemoryPersistence());
     final MqttConnectOptions connectOptions = new MqttConnectOptions();
     connectOptions.setMaxInflight(maxInflightMqttEventNum);
     connectOptions.setKeepAliveInterval(mqttSinkKeepAliveSec);
+    if (MQTTAWSIoTAuth.needAuth(brokerURI)) {
+      MQTTAWSIoTAuth.applyAuth(connectOptions, brokerURI);
+    }
     client.connect(connectOptions).waitForCompletion();
     return client;
   }

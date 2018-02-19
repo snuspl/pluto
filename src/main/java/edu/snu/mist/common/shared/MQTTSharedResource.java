@@ -20,6 +20,7 @@ import edu.snu.mist.common.sources.MQTTSubscribeClient;
 import edu.snu.mist.core.parameters.*;
 import org.apache.reef.tang.annotations.Parameter;
 import org.eclipse.paho.client.mqttv3.*;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -36,16 +37,6 @@ import java.util.logging.Logger;
  */
 public final class MQTTSharedResource implements MQTTResource {
   private static final Logger LOG = Logger.getLogger(MQTTSharedResource.class.getName());
-
-  /**
-   * MQTT publisher id.
-   */
-  public static final String MQTT_PUBLISHER_ID_PREFIX = "MIST_MQTT_PUBLISHER_";
-
-  /**
-   * MQTT subscriber id.
-   */
-  public static final String MQTT_SUBSCRIBER_ID_PREFIX = "MIST_MQTT_SUBSCRIBER_";
 
   /**
    * The map containing topic-subscriber information.
@@ -196,10 +187,13 @@ public final class MQTTSharedResource implements MQTTResource {
   private void createSinkClient(final String brokerURI, final List<IMqttAsyncClient> mqttAsyncClientList)
       throws MqttException, IOException {
     final IMqttAsyncClient client = new MqttAsyncClient(brokerURI, MQTT_PUBLISHER_ID_PREFIX + brokerURI +
-        mqttAsyncClientList.size());
+        mqttAsyncClientList.size(), new MemoryPersistence());
     final MqttConnectOptions connectOptions = new MqttConnectOptions();
     connectOptions.setMaxInflight(maxInflightMqttEventNum);
     connectOptions.setKeepAliveInterval(mqttSinkKeepAliveSec);
+    if (MQTTAWSIoTAuth.needAuth(brokerURI)) {
+      MQTTAWSIoTAuth.applyAuth(connectOptions, brokerURI);
+    }
     client.connect(connectOptions).waitForCompletion();
     mqttAsyncClientList.add(client);
     publisherSinkNumMap.put(client, 0);
