@@ -16,17 +16,18 @@
 package edu.snu.mist.core.task.groupaware.rebalancer;
 
 import edu.snu.mist.core.task.Query;
-import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
+import edu.snu.mist.core.task.groupaware.Group;
 import edu.snu.mist.core.task.groupaware.GroupAllocationTable;
+import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GroupRebalancingPeriod;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.OverloadedThreshold;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.UnderloadedThreshold;
-import edu.snu.mist.core.task.groupaware.Group;
 import edu.snu.mist.core.task.groupaware.parameters.DefaultGroupLoad;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -244,8 +245,18 @@ public final class DefaultGroupMergerImpl implements GroupMerger {
                 if (merge(highLoadGroup, highLoadGroups, highLoadThread, lowLoadGroup)) {
                   rebNum += 1;
                 }
+
+                // Prevent lots of groups from being reassigned
+                if (rebNum >= TimeUnit.MILLISECONDS.toSeconds(rebalancingPeriod)) {
+                  break;
+                }
               }
             }
+          }
+
+          // Prevent lots of groups from being reassigned
+          if (rebNum >= TimeUnit.MILLISECONDS.toSeconds(rebalancingPeriod)) {
+            break;
           }
         }
       }

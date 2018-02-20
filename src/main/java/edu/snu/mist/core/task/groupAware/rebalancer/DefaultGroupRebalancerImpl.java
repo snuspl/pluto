@@ -22,10 +22,12 @@ import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.OverloadedThr
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.UnderloadedThreshold;
 import edu.snu.mist.core.task.groupaware.Group;
 import edu.snu.mist.core.task.groupaware.parameters.DefaultGroupLoad;
+import edu.snu.mist.core.task.groupaware.parameters.GroupPinningTime;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -65,9 +67,15 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
    */
   private final double alpha;
 
+  /**
+   * Group pinning time.
+   */
+  private final long groupPinningTime;
+
   @Inject
   private DefaultGroupRebalancerImpl(final GroupAllocationTable groupAllocationTable,
                                      @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
+                                     @Parameter(GroupPinningTime.class) final long groupPinningTime,
                                      @Parameter(DefaultGroupLoad.class) final double defaultGroupLoad,
                                      @Parameter(OverloadedThreshold.class) final double beta,
                                      @Parameter(UnderloadedThreshold.class) final double alpha) {
@@ -76,6 +84,7 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
     this.defaultGroupLoad = defaultGroupLoad;
     this.alpha = alpha;
     this.beta = beta;
+    this.groupPinningTime = groupPinningTime;
   }
 
   /**
@@ -122,12 +131,13 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
     final Collection<Group> lowLoadGroups =
         groupAllocationTable.getValue(lowLoadThread);
 
+    lowLoadGroups.add(highLoadGroup);
+    highLoadGroup.setEventProcessor(lowLoadThread);
+
     while (highLoadThread.removeActiveGroup(highLoadGroup)) {
       // remove all elements
     }
 
-    lowLoadGroups.add(highLoadGroup);
-    highLoadGroup.setEventProcessor(lowLoadThread);
     highLoadGroups.remove(highLoadGroup);
 
     // Update overloaded thread load
@@ -210,19 +220,34 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
           });
 
           for (final Group highLoadGroup : sortedHighLoadGroups) {
-            final double groupLoad = highLoadGroup.getLoad();
+            // do not move a group if it is already moved before GROUP_PINNING_TIME
+            if (System.currentTimeMillis() - highLoadGroup.getLatestMovedTime()
+                >= TimeUnit.SECONDS.toMillis(groupPinningTime)) {
+              final double groupLoad = highLoadGroup.getLoad();
 
-            if (!highLoadGroup.isSplited()) {
-              // Rebalance!!!
-              if (highLoadThread.getLoad() - groupLoad >= targetLoad) {
-                final EventProcessor peek = underloadedThreads.peek();
-                if (peek.getLoad() + groupLoad <= targetLoad) {
-                  final EventProcessor lowLoadThread = underloadedThreads.poll();
-                  moveGroup(highLoadGroup, highLoadGroups, highLoadThread, lowLoadThread, underloadedThreads);
-                  rebNum += 1;
+              if (!highLoadGroup.isSplited()) {
+                // Rebalance!!!
+                if (highLoadThread.getLoad() - groupLoad >= targetLoad) {
+                  final EventProcessor peek = underloadedThreads.peek();
+                  if (peek.getLoad() + groupLoad <= targetLoad) {
+                    final EventProcessor lowLoadThread = underloadedThreads.poll();
+                    moveGroup(highLoadGroup, highLoadGroups, highLoadThread, lowLoadThread, underloadedThreads);
+                    rebNum += 1;
+                    highLoadGroup.setLatestMovedTime(System.currentTimeMillis());
+
+                    // Prevent lots of groups from being reassigned
+                    if (rebNum >= TimeUnit.MILLISECONDS.toSeconds(rebalancingPeriod)) {
+                      break;
+                    }
+                  }
                 }
               }
             }
+          }
+
+          // Prevent lots of groups from being reassigned
+          if (rebNum >= TimeUnit.MILLISECONDS.toSeconds(rebalancingPeriod)) {
+            break;
           }
         }
       }
