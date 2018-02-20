@@ -73,6 +73,7 @@ public final class MistGroupSchedulingTaskConfigs {
 
   private final boolean pinning;
   private final long processingTimeout;
+  private final long groupPinningTime;
 
   @Inject
   private MistGroupSchedulingTaskConfigs(
@@ -92,6 +93,7 @@ public final class MistGroupSchedulingTaskConfigs {
       @Parameter(GroupIsolationEnabled.class) final boolean groupIsolation,
       @Parameter(IsolationTriggerPeriod.class) final long isolationTriggerPeriod,
       @Parameter(UnderloadedGroupThreshold.class) final double underloadedGroupThreshold,
+      @Parameter(GroupPinningTime.class) final long groupPinningTime,
       @Parameter(ProcessingTimeout.class) final long processingTimeout) {
     this.epaType = epaType;
     this.cpuUtilLowThreshold = cpuUtilLowThreshold;
@@ -105,6 +107,7 @@ public final class MistGroupSchedulingTaskConfigs {
     this.dispatcherThreadNum = dispatcherThreadNum;
     this.groupAssignerType = groupAssignerType;
     this.rebalancing = rebalancing;
+    this.groupPinningTime = groupPinningTime;
     this.rebalancingPeriod = rebalancingPeriod;
     this.groupIsolation = groupIsolation;
     this.isolationTriggerPeriod = isolationTriggerPeriod;
@@ -193,6 +196,7 @@ public final class MistGroupSchedulingTaskConfigs {
     jcb.bindNamedParameter(IsolationTriggerPeriod.class, Long.toString(isolationTriggerPeriod));
     jcb.bindNamedParameter(UnderloadedGroupThreshold.class, Double.toString(underloadedGroupThreshold));
     jcb.bindNamedParameter(ProcessingTimeout.class, Long.toString(processingTimeout));
+    jcb.bindNamedParameter(GroupPinningTime.class, Long.toString(groupPinningTime));
 
     return Configurations.merge(getConfigurationForExecutionModel(), jcb.build());
   }
@@ -220,6 +224,7 @@ public final class MistGroupSchedulingTaskConfigs {
         .registerShortNameOfClass(IsolationTriggerPeriod.class)
         .registerShortNameOfClass(UnderloadedGroupThreshold.class)
         .registerShortNameOfClass(ProcessingTimeout.class)
-        .registerShortNameOfClass(Pinning.class);
+        .registerShortNameOfClass(Pinning.class)
+        .registerShortNameOfClass(GroupPinningTime.class);
   }
 }

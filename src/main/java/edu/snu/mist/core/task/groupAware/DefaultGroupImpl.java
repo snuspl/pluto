@@ -67,16 +67,16 @@ final class DefaultGroupImpl implements Group {
    */
   private final AtomicLong totalProcessingEvent;
   /**
-   * The latest rebalance time.
+   * The latest moved time.
    */
-  private long latestRebalanceTime;
+  private long latestMovedTime;
 
   @Inject
   private DefaultGroupImpl(@Parameter(GroupId.class) final String groupId) {
     this.groupId = groupId;
     this.activeQueryQueue = new ConcurrentLinkedQueue<>();
     this.eventProcessor = new AtomicReference<>(null);
-    this.latestRebalanceTime = System.nanoTime();
+    this.latestMovedTime = System.currentTimeMillis();
     this.totalProcessingEvent = new AtomicLong(0);
   }
 
@@ -228,8 +228,8 @@ final class DefaultGroupImpl implements Group {
   }
 
   @Override
-  public void setLatestRebalanceTime(final long rebalanceTime) {
-    latestRebalanceTime = rebalanceTime;
+  public void setLatestMovedTime(final long t) {
+    latestMovedTime = t;
   }
 
   @Override
@@ -244,8 +244,8 @@ final class DefaultGroupImpl implements Group {
   }
 
   @Override
-  public long getLatestRebalanceTime() {
-    return latestRebalanceTime;
+  public long getLatestMovedTime() {
+    return latestMovedTime;
   }
 
   @Override

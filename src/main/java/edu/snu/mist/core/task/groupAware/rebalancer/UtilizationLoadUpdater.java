@@ -17,8 +17,8 @@ package edu.snu.mist.core.task.groupaware.rebalancer;
 
 import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.groupaware.Group;
-import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
 import edu.snu.mist.core.task.groupaware.GroupAllocationTable;
+import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
 import edu.snu.mist.core.task.groupaware.parameters.DefaultGroupLoad;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -40,11 +40,14 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
    */
   private final GroupAllocationTable groupAllocationTable;
 
+  private long previousUpdateTime;
+
   @Inject
   private UtilizationLoadUpdater(final GroupAllocationTable groupAllocationTable,
                                  @Parameter(DefaultGroupLoad.class) final double defaultGroupLoad) {
     this.defaultGroupLoad = defaultGroupLoad;
     this.groupAllocationTable = groupAllocationTable;
+    this.previousUpdateTime = System.currentTimeMillis();
   }
 
   @Override
@@ -67,7 +70,9 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
     //boolean isOverloaded = false;
 
     double eventProcessorLoad = 0.0;
-    final long startTime = System.nanoTime();
+    final long startTime = System.currentTimeMillis();
+    final long elapsedTime = startTime - previousUpdateTime;
+    previousUpdateTime = startTime;
 
     for (final Group group : groups) {
       double load = 0.0;
@@ -78,9 +83,6 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
       final long incomingEvent = processingEvent + group.numberOfRemainingEvents();
       final long processingEventTime = group.getProcessingTime().get();
       group.getProcessingTime().addAndGet(-processingEventTime);
-
-      final long incomingEventTime = startTime - group.getLatestRebalanceTime();
-      group.setLatestRebalanceTime(startTime);
 
       // Calculate group load
       // No processed. This thread is overloaded!
@@ -93,7 +95,7 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
         load = defaultGroupLoad;
       } else {
         // processed event, incoming event
-        final double inputRate = (incomingEvent * 1000000000) / (double) incomingEventTime;
+        final double inputRate = (incomingEvent * 1000000000) / (double) elapsedTime;
         final double processingRate = (processingEvent * 1000000000) / (double) processingEventTime;
         final double groupLoad = inputRate / processingRate;
         load = groupLoad;

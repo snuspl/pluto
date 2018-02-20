@@ -130,14 +130,14 @@ public interface Group extends AutoCloseable {
   boolean isSplited();
 
   /**
-   * Get latest rebalance time.
+   * Get the latest time that the group is assigned to another event processor.
    */
-  long getLatestRebalanceTime();
+  long getLatestMovedTime();
 
   /**
-   * Set latest rebalance time.
+   * Set the latest time that the group is assigned to another event processor.
    */
-  void setLatestRebalanceTime(long t);
+  void setLatestMovedTime(long t);
 
   /**
    * The number of remaining events.
