@@ -21,6 +21,7 @@ import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.common.operators.StateHandler;
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.codeshare.ClassLoaderProvider;
 import edu.snu.mist.core.task.stores.AvroExecutionVertexStore;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.*;

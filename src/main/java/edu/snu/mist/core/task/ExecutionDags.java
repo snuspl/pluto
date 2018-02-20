@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
+import edu.snu.mist.core.task.merging.NoMergingExecutionDags;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.Collection;

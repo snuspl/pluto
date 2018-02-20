@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.core.task.globalsched.Group;
+import edu.snu.mist.core.task.groupAware.Group;
 
 import javax.inject.Inject;
 import java.util.Iterator;

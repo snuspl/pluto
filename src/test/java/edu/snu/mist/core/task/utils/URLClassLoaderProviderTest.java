@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.utils;
 
-import edu.snu.mist.core.task.ClassLoaderProvider;
+import edu.snu.mist.core.task.codeshare.ClassLoaderProvider;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;

@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task.metrics;
 
-import edu.snu.mist.core.task.globalsched.metrics.DefaultEventProcessorNumAssigner;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.wake.EventHandler;
 

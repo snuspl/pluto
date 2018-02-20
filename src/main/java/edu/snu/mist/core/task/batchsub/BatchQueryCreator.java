@@ -29,7 +29,7 @@ import edu.snu.mist.common.functions.WatermarkTimestampFunction;
 import edu.snu.mist.common.parameters.MQTTBrokerURI;
 import edu.snu.mist.common.parameters.MergeFakeParameter;
 import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
-import edu.snu.mist.core.task.ClassLoaderProvider;
+import edu.snu.mist.core.task.codeshare.ClassLoaderProvider;
 import edu.snu.mist.core.task.QueryManager;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroDag;
