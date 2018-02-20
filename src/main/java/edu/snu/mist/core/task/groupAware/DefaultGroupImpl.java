@@ -217,7 +217,11 @@ final class DefaultGroupImpl implements Group {
 
       // Reschedule this group if it still has events to process
       if (elapsedTime(startTime) > timeout) {
-        eventProcessor.get().addActiveGroup(this);
+        final EventProcessor ep = eventProcessor.get();
+        // This could be null when the group merger merges the group
+        if (ep != null) {
+          ep.addActiveGroup(this);
+        }
         break;
       }
 
