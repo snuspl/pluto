@@ -16,7 +16,7 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.core.task.deactivation.GroupSourceManager;
-import edu.snu.mist.core.task.globalsched.GroupAwareGlobalSchedQueryManagerImpl;
+import edu.snu.mist.core.task.groupaware.GroupAwareQueryManagerImpl;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
@@ -28,7 +28,7 @@ import java.util.List;
  * This interface manages queries that are submitted from clients.
  * It executes the queries when they are submitted, and deletes them if requested.
  */
-@DefaultImplementation(GroupAwareGlobalSchedQueryManagerImpl.class)
+@DefaultImplementation(GroupAwareQueryManagerImpl.class)
 public interface QueryManager extends AutoCloseable {
   /**
    * Start to the query.

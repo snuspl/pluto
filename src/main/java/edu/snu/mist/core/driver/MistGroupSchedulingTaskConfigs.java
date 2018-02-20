@@ -20,21 +20,18 @@ import edu.snu.mist.core.driver.parameters.GroupAware;
 import edu.snu.mist.core.driver.parameters.GroupIsolationEnabled;
 import edu.snu.mist.core.parameters.Pinning;
 import edu.snu.mist.core.task.QueryManager;
-import edu.snu.mist.core.task.eventProcessors.*;
-import edu.snu.mist.core.task.eventProcessors.groupAssigner.GroupAssigner;
-import edu.snu.mist.core.task.eventProcessors.groupAssigner.MinLoadGroupAssignerImpl;
-import edu.snu.mist.core.task.eventProcessors.groupAssigner.RoundRobinGroupAssignerImpl;
-import edu.snu.mist.core.task.eventProcessors.parameters.*;
-import edu.snu.mist.core.task.eventProcessors.rebalancer.DefaultGroupRebalancerImpl;
-import edu.snu.mist.core.task.eventProcessors.rebalancer.GroupRebalancer;
-import edu.snu.mist.core.task.eventProcessors.rebalancer.NoGroupRebalancerImpl;
-import edu.snu.mist.core.task.globalsched.*;
-import edu.snu.mist.core.task.globalsched.cfs.CfsSchedulingPeriodCalculator;
-import edu.snu.mist.core.task.globalsched.cfs.parameters.CfsSchedulingPeriod;
-import edu.snu.mist.core.task.globalsched.cfs.parameters.MinSchedulingPeriod;
-import edu.snu.mist.core.task.globalsched.dispatch.DispatcherGroupSelectorFactory;
-import edu.snu.mist.core.task.globalsched.metrics.DefaultEventProcessorNumAssigner;
-import edu.snu.mist.core.task.globalsched.parameters.*;
+import edu.snu.mist.core.task.groupaware.eventprocessor.*;
+import edu.snu.mist.core.task.groupaware.groupassigner.GroupAssigner;
+import edu.snu.mist.core.task.groupaware.groupassigner.MinLoadGroupAssignerImpl;
+import edu.snu.mist.core.task.groupaware.groupassigner.RoundRobinGroupAssignerImpl;
+import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.*;
+import edu.snu.mist.core.task.metrics.AIADEventProcessorNumAssigner;
+import edu.snu.mist.core.task.metrics.MISDEventProcessorNumAssigner;
+import edu.snu.mist.core.task.groupaware.rebalancer.*;
+import edu.snu.mist.core.task.groupaware.*;
+import edu.snu.mist.core.task.groupaware.eventprocessor.dispatch.DispatcherGroupSelectorFactory;
+import edu.snu.mist.core.task.metrics.DefaultEventProcessorNumAssigner;
+import edu.snu.mist.core.task.groupaware.parameters.*;
 import edu.snu.mist.core.task.metrics.EventProcessorNumAssigner;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
@@ -62,8 +59,6 @@ public final class MistGroupSchedulingTaskConfigs {
   private final double eventNumLowThreshold;
   private final int eventProcessorDecreaseNum;
   private final double eventProcessorIncreaseRate;
-  private final long cfsSchedulingPeriod;
-  private final long minSchedulingPeriod;
   private final int eventProcessorIncreaseNum;
   private final int dispatcherThreadNum;
   private final long rebalancingPeriod;
@@ -87,8 +82,6 @@ public final class MistGroupSchedulingTaskConfigs {
       @Parameter(EventNumLowThreshold.class) final double eventNumLowThreshold,
       @Parameter(EventProcessorDecreaseNum.class) final int eventProcessorDecreaseNum,
       @Parameter(EventProcessorIncreaseRate.class) final double eventProcessorIncreaseRate,
-      @Parameter(CfsSchedulingPeriod.class) final long cfsSchedulingPeriod,
-      @Parameter(MinSchedulingPeriod.class) final long minSchedulingPeriod,
       @Parameter(EventProcessorIncreaseNum.class) final int eventProcessorIncreaseNum,
       @Parameter(Pinning.class) final boolean pinning,
       @Parameter(DispatcherThreadNum.class) final int dispatcherThreadNum,
@@ -106,8 +99,6 @@ public final class MistGroupSchedulingTaskConfigs {
     this.eventNumLowThreshold = eventNumLowThreshold;
     this.eventProcessorDecreaseNum = eventProcessorDecreaseNum;
     this.eventProcessorIncreaseRate = eventProcessorIncreaseRate;
-    this.cfsSchedulingPeriod = cfsSchedulingPeriod;
-    this.minSchedulingPeriod = minSchedulingPeriod;
     this.eventProcessorIncreaseNum = eventProcessorIncreaseNum;
     this.pinning = pinning;
     this.groupAware = groupAware;
@@ -160,10 +151,9 @@ public final class MistGroupSchedulingTaskConfigs {
    */
   public Configuration getConfiguration() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindImplementation(QueryManager.class, GroupAwareGlobalSchedQueryManagerImpl.class);
+    jcb.bindImplementation(QueryManager.class, GroupAwareQueryManagerImpl.class);
     jcb.bindImplementation(EventProcessorNumAssigner.class, getEpaClass());
     jcb.bindImplementation(EventProcessorManager.class, DefaultEventProcessorManager.class);
-    jcb.bindImplementation(SchedulingPeriodCalculator.class, CfsSchedulingPeriodCalculator.class);
 
     switch (groupAssignerType) {
       case "min": {
@@ -196,8 +186,6 @@ public final class MistGroupSchedulingTaskConfigs {
     jcb.bindNamedParameter(EventNumLowThreshold.class, Double.toString(eventNumLowThreshold));
     jcb.bindNamedParameter(EventProcessorDecreaseNum.class, Integer.toString(eventProcessorDecreaseNum));
     jcb.bindNamedParameter(EventProcessorIncreaseRate.class, Double.toString(eventProcessorIncreaseRate));
-    jcb.bindNamedParameter(CfsSchedulingPeriod.class, Long.toString(cfsSchedulingPeriod));
-    jcb.bindNamedParameter(MinSchedulingPeriod.class, Long.toString(minSchedulingPeriod));
     jcb.bindNamedParameter(EventProcessorIncreaseNum.class, Integer.toString(eventProcessorIncreaseNum));
     jcb.bindNamedParameter(GroupAware.class, Boolean.toString(groupAware));
     jcb.bindNamedParameter(DispatcherThreadNum.class, Integer.toString(dispatcherThreadNum));
@@ -221,8 +209,6 @@ public final class MistGroupSchedulingTaskConfigs {
         .registerShortNameOfClass(EventProcessorDecreaseNum.class)
         .registerShortNameOfClass(EventProcessorIncreaseRate.class)
         .registerShortNameOfClass(EventProcessorNumAssignerType.class)
-        .registerShortNameOfClass(CfsSchedulingPeriod.class)
-        .registerShortNameOfClass(MinSchedulingPeriod.class)
         .registerShortNameOfClass(EventProcessorIncreaseNum.class)
         .registerShortNameOfClass(GroupSchedModelType.class)
         .registerShortNameOfClass(DispatcherThreadNum.class)

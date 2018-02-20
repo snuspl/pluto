@@ -20,6 +20,7 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.codeshare.ClassLoaderProvider;
 import edu.snu.mist.core.task.deactivation.ActiveExecutionVertexIdMap;
 import org.apache.reef.tang.exceptions.InjectionException;
 
