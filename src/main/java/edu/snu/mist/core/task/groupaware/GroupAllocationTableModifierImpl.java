@@ -84,12 +84,24 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
    */
   private final GroupIsolator groupIsolator;
 
+  /**
+   * Group merger that merges two groups from underloaded event processors when the groups use the same codes.
+   */
   private final GroupMerger groupMerger;
 
+  /**
+   * Group splitter that splits groups.
+   */
   private final GroupSplitter groupSplitter;
 
+  /**
+   * TODO:DELETE For test.
+   */
   private final boolean isSplit;
 
+  /**
+   * A random variable.
+   */
   private final Random random = new Random();
 
   @Inject
