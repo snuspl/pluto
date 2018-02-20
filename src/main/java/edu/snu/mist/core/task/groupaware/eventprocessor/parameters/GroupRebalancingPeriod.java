@@ -13,7 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * This package contains classes related to group dispatcher.
- */
-package edu.snu.mist.core.task.groupAware.eventProcessors.dispatch;
+package edu.snu.mist.core.task.groupaware.eventprocessor.parameters;
+
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
+
+@NamedParameter(doc = "The period of the group rebalancing (ms)",
+    short_name = "rp", default_value = "30000")
+public final class GroupRebalancingPeriod implements Name<Long> {
+}

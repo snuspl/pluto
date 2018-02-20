@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware.rebalancer;
+package edu.snu.mist.core.task.groupaware.rebalancer;
 
-import edu.snu.mist.core.task.groupAware.eventProcessors.EventProcessor;
-import edu.snu.mist.core.task.groupAware.GroupAllocationTable;
-import edu.snu.mist.core.task.groupAware.Group;
+import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
+import edu.snu.mist.core.task.groupaware.GroupAllocationTable;
+import edu.snu.mist.core.task.groupaware.Group;
 import org.apache.reef.io.Tuple;
 
 import javax.inject.Inject;

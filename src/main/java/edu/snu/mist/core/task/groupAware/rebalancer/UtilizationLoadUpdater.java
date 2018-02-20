@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware.rebalancer;
+package edu.snu.mist.core.task.groupaware.rebalancer;
 
 import edu.snu.mist.core.task.Query;
-import edu.snu.mist.core.task.groupAware.Group;
-import edu.snu.mist.core.task.groupAware.eventProcessors.EventProcessor;
-import edu.snu.mist.core.task.groupAware.GroupAllocationTable;
-import edu.snu.mist.core.task.groupAware.parameters.DefaultGroupLoad;
+import edu.snu.mist.core.task.groupaware.Group;
+import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
+import edu.snu.mist.core.task.groupaware.GroupAllocationTable;
+import edu.snu.mist.core.task.groupaware.parameters.DefaultGroupLoad;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;

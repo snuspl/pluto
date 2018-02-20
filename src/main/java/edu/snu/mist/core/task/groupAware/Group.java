@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware;
+package edu.snu.mist.core.task.groupaware;
 
 import edu.snu.mist.core.task.Query;
-import edu.snu.mist.core.task.groupAware.eventProcessors.EventProcessor;
+import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.List;

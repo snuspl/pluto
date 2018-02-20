@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware.eventProcessors;
-
-import edu.snu.mist.core.task.groupAware.GlobalSchedNonBlockingEventProcessorFactory;
+package edu.snu.mist.core.task.groupaware.eventprocessor;
+import edu.snu.mist.core.task.groupaware.eventprocessor.dispatch.DispatcherGroupSelectorFactory;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * This is a factory of event processor.
+ * This is a factory class for NextGroupSelector.
  */
-@DefaultImplementation(GlobalSchedNonBlockingEventProcessorFactory.class)
-public interface EventProcessorFactory {
-
+@DefaultImplementation(DispatcherGroupSelectorFactory.class)
+public interface NextGroupSelectorFactory {
   /**
-   * Create a new event processor.
-   * @return event processor
+   * Creates a new next group selector.
+   * @return next group selector
    */
-  EventProcessor newEventProcessor();
+  NextGroupSelector newInstance();
 }

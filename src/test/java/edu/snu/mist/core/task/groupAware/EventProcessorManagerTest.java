@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware;
+package edu.snu.mist.core.task.groupaware;
 
-import edu.snu.mist.core.task.groupAware.eventProcessors.EventProcessor;
-import edu.snu.mist.core.task.groupAware.eventProcessors.EventProcessorFactory;
-import edu.snu.mist.core.task.groupAware.eventProcessors.parameters.DefaultNumEventProcessors;
-import edu.snu.mist.core.task.groupAware.eventProcessors.parameters.EventProcessorLowerBound;
-import edu.snu.mist.core.task.groupAware.eventProcessors.parameters.EventProcessorUpperBound;
-import edu.snu.mist.core.task.groupAware.eventProcessors.parameters.GracePeriod;
-import edu.snu.mist.core.task.groupAware.groupAssigner.GroupAssigner;
-import edu.snu.mist.core.task.groupAware.rebalancer.GroupRebalancer;
+import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
+import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessorFactory;
+import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.EventProcessorLowerBound;
+import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.EventProcessorUpperBound;
+import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GracePeriod;
+import edu.snu.mist.core.task.groupaware.groupassigner.GroupAssigner;
+import edu.snu.mist.core.task.groupaware.rebalancer.GroupRebalancer;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;

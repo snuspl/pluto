@@ -13,12 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware.eventProcessors.parameters;
+package edu.snu.mist.core.task.groupaware.eventprocessor;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import edu.snu.mist.core.task.groupaware.GlobalSchedNonBlockingEventProcessorFactory;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
-@NamedParameter(doc = "The threshold of utilization factor to determine underloaded threads (beta)",
-    short_name = "alpha", default_value = "0.8")
-public final class UnderloadedThreshold implements Name<Double> {
+/**
+ * This is a factory of event processor.
+ */
+@DefaultImplementation(GlobalSchedNonBlockingEventProcessorFactory.class)
+public interface EventProcessorFactory {
+
+  /**
+   * Create a new event processor.
+   * @return event processor
+   */
+  EventProcessor newEventProcessor();
 }

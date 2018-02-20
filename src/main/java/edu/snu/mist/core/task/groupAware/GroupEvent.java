@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.snu.mist.core.task.groupAware;
+package edu.snu.mist.core.task.groupaware;
 
 /**
  * This is an event for group addition/deletion.

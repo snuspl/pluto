@@ -16,7 +16,7 @@
 package edu.snu.mist.core.task.metrics;
 
 import edu.snu.mist.core.task.MistPubSubEventHandler;
-import edu.snu.mist.core.task.groupAware.GlobalSchedGroupInfoMap;
+import edu.snu.mist.core.task.groupaware.GlobalSchedGroupInfoMap;
 
 import javax.inject.Inject;
 

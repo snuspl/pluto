@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware;
+package edu.snu.mist.core.task.groupaware;
 
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.parameters.SubGroupId;
 import edu.snu.mist.core.task.DefaultQueryImpl;
 import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.SourceOutputEmitter;
-import edu.snu.mist.core.task.groupAware.eventProcessors.EventProcessor;
-import edu.snu.mist.core.task.groupAware.eventProcessors.NextGroupSelector;
+import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
+import edu.snu.mist.core.task.groupaware.eventprocessor.NextGroupSelector;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;

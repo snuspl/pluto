@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware;
+package edu.snu.mist.core.task.groupaware;
 
-import edu.snu.mist.core.task.groupAware.eventProcessors.EventProcessor;
-import edu.snu.mist.core.task.groupAware.eventProcessors.EventProcessorFactory;
-import edu.snu.mist.core.task.groupAware.eventProcessors.parameters.DefaultNumEventProcessors;
-import edu.snu.mist.core.task.groupAware.eventProcessors.parameters.IsolationTriggerPeriod;
-import edu.snu.mist.core.task.groupAware.rebalancer.DefaultGroupIsolatorImpl;
-import edu.snu.mist.core.task.groupAware.rebalancer.GroupIsolator;
+import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
+import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessorFactory;
+import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.IsolationTriggerPeriod;
+import edu.snu.mist.core.task.groupaware.rebalancer.DefaultGroupIsolatorImpl;
+import edu.snu.mist.core.task.groupaware.rebalancer.GroupIsolator;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;

@@ -16,4 +16,4 @@
 /**
  * This package contains classes related to execution model of global scheduling.
  */
-package edu.snu.mist.core.task.groupAware;
+package edu.snu.mist.core.task.groupaware;

@@ -21,7 +21,7 @@ import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
 import edu.snu.mist.core.task.deactivation.GroupSourceManager;
-import edu.snu.mist.core.task.groupAware.eventProcessors.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.QueryControlResult;

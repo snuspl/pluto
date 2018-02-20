@@ -13,12 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware.eventProcessors.parameters;
+package edu.snu.mist.core.task.groupaware.eventprocessor.dispatch;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import edu.snu.mist.core.task.groupaware.eventprocessor.NextGroupSelector;
+import edu.snu.mist.core.task.groupaware.eventprocessor.NextGroupSelectorFactory;
 
-@NamedParameter(doc = "The grace period (sec) for preventing the adjustment of the number of event processors",
-    short_name = "grace_period", default_value = "1")
-public final class GracePeriod implements Name<Integer> {
+import javax.inject.Inject;
+
+/**
+ * A dispatcher group selector factory.
+ */
+public final class DispatcherGroupSelectorFactory implements NextGroupSelectorFactory {
+
+  @Inject
+  private DispatcherGroupSelectorFactory() {
+  }
+
+  @Override
+  public NextGroupSelector newInstance() {
+    return new DispatcherGroupSelector();
+  }
 }

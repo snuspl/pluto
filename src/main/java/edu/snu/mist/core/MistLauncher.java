@@ -23,7 +23,7 @@ import edu.snu.mist.core.parameters.DriverRuntimeType;
 import edu.snu.mist.core.parameters.NumTaskCores;
 import edu.snu.mist.core.parameters.NumTasks;
 import edu.snu.mist.core.parameters.TaskMemorySize;
-import edu.snu.mist.core.task.groupAware.eventProcessors.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.reef.client.DriverConfiguration;

@@ -16,8 +16,8 @@
 package edu.snu.mist.core.task.metrics;
 
 import edu.snu.mist.core.task.MistPubSubEventHandler;
-import edu.snu.mist.core.task.groupAware.GlobalSchedGroupInfoMap;
-import edu.snu.mist.core.task.groupAware.SubGroup;
+import edu.snu.mist.core.task.groupaware.GlobalSchedGroupInfoMap;
+import edu.snu.mist.core.task.groupaware.SubGroup;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;

@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware;
+package edu.snu.mist.core.task.groupaware;
 
 import edu.snu.mist.core.parameters.IsSplit;
 import edu.snu.mist.core.task.Query;
-import edu.snu.mist.core.task.groupAware.eventProcessors.EventProcessor;
-import edu.snu.mist.core.task.groupAware.groupAssigner.GroupAssigner;
-import edu.snu.mist.core.task.groupAware.rebalancer.*;
+import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
+import edu.snu.mist.core.task.groupaware.groupassigner.GroupAssigner;
+import edu.snu.mist.core.task.groupaware.rebalancer.*;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.Parameter;
 

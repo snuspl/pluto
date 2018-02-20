@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware.eventProcessors;
+package edu.snu.mist.core.task.groupaware.eventprocessor;
 
-import edu.snu.mist.core.task.groupAware.Group;
+import edu.snu.mist.core.task.groupaware.Group;
 
 /**
  * This is an interface of EventProcessor that processes events of queries.

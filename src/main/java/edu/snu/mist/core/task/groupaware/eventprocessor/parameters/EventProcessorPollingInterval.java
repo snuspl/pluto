@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware.eventProcessors.parameters;
+package edu.snu.mist.core.task.groupaware.eventprocessor.parameters;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The number of dispatcher threads.",
-    short_name = "dispatcher_threads", default_value = "1")
-public final class DispatcherThreadNum implements Name<Integer> {
+@NamedParameter(doc = "The polling interval when the event processor wakes up and polls",
+    default_value = "100")
+public final class EventProcessorPollingInterval implements Name<Integer> {
+  // empty
 }

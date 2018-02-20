@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware.eventProcessors.dispatch;
+package edu.snu.mist.core.task.groupaware.eventprocessor.dispatch;
 
-import edu.snu.mist.core.task.groupAware.Group;
-import edu.snu.mist.core.task.groupAware.GroupEvent;
-import edu.snu.mist.core.task.groupAware.eventProcessors.NextGroupSelector;
+import edu.snu.mist.core.task.groupaware.Group;
+import edu.snu.mist.core.task.groupaware.GroupEvent;
+import edu.snu.mist.core.task.groupaware.eventprocessor.NextGroupSelector;
 
 import java.util.Collection;
 import java.util.concurrent.BlockingQueue;

@@ -17,9 +17,9 @@ package edu.snu.mist.core.task.metrics;
 
 import edu.snu.mist.core.parameters.ThreadNumLimit;
 import edu.snu.mist.core.task.MistPubSubEventHandler;
-import edu.snu.mist.core.task.groupAware.EventProcessorManager;
-import edu.snu.mist.core.task.groupAware.eventProcessors.parameters.DefaultNumEventProcessors;
-import edu.snu.mist.core.task.groupAware.parameters.*;
+import edu.snu.mist.core.task.groupaware.EventProcessorManager;
+import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.task.groupaware.parameters.*;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;

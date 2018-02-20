@@ -13,12 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware.eventProcessors.parameters;
-
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
-
-@NamedParameter(doc = "The lowest number of event processors",
-    short_name = "event_processor_lower_bound", default_value = "1")
-public final class EventProcessorLowerBound implements Name<Integer> {
-}
+/**
+ * This package contains classes related to group dispatcher.
+ */
+package edu.snu.mist.core.task.groupaware.eventprocessor.dispatch;

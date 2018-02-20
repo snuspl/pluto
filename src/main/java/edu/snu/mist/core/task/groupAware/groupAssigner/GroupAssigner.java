@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware.groupAssigner;
+package edu.snu.mist.core.task.groupaware.groupassigner;
 
-import edu.snu.mist.core.task.groupAware.Group;
+import edu.snu.mist.core.task.groupaware.Group;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**

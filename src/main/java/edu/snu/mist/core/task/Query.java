@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.core.task.groupAware.Group;
+import edu.snu.mist.core.task.groupaware.Group;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.concurrent.atomic.AtomicLong;

@@ -13,13 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware.eventProcessors.parameters;
-
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
-
-@NamedParameter(doc = "The polling interval when the event processor wakes up and polls",
-    default_value = "100")
-public final class EventProcessorPollingInterval implements Name<Integer> {
-  // empty
-}
+/**
+ * A package related to event processors.
+ */
+package edu.snu.mist.core.task.groupaware.eventprocessor;

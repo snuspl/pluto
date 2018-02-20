@@ -16,4 +16,4 @@
 /**
  * Test classes for execution model of global scheduling.
  */
-package edu.snu.mist.core.task.groupAware;
+package edu.snu.mist.core.task.groupaware;

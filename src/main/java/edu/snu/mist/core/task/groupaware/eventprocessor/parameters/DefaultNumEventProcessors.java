@@ -13,7 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * A package of parameters for event processors.
- */
-package edu.snu.mist.core.task.groupAware.eventProcessors.parameters;
+package edu.snu.mist.core.task.groupaware.eventprocessor.parameters;
+
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
+
+@NamedParameter(doc = "The default number of event processors (per group)",
+    short_name = "num_threads", default_value = "50")
+public final class DefaultNumEventProcessors implements Name<Integer> {
+}

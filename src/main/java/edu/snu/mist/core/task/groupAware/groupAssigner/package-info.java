@@ -16,4 +16,4 @@
 /**
  * A package related to group load balancer.
  */
-package edu.snu.mist.core.task.groupAware.groupAssigner;
+package edu.snu.mist.core.task.groupaware.groupassigner;

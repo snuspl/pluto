@@ -13,11 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware.eventProcessors.parameters;
-
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
-
-@NamedParameter(doc = "Enable (disable) rebalancing", short_name = "rb", default_value = "true")
-public final class Rebalancing implements Name<Boolean> {
-}
+/**
+ * A package of parameters for event processors.
+ */
+package edu.snu.mist.core.task.groupaware.eventprocessor.parameters;

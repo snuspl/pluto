@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware;
+package edu.snu.mist.core.task.groupaware;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
@@ -26,7 +26,7 @@ import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
 import edu.snu.mist.core.task.deactivation.GroupSourceManager;
-import edu.snu.mist.core.task.groupAware.parameters.GroupSchedModelType;
+import edu.snu.mist.core.task.groupaware.parameters.GroupSchedModelType;
 import edu.snu.mist.core.task.merging.*;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroDag;

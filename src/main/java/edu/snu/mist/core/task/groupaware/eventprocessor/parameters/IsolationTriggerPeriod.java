@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware.eventProcessors.parameters;
+package edu.snu.mist.core.task.groupaware.eventprocessor.parameters;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The threshold to determine underloaded groups (for isolated groups)",
-    short_name = "underloaded_group", default_value = "0.3")
-public final class UnderloadedGroupThreshold implements Name<Double> {
+@NamedParameter(doc = "Group isolation trigger period (ms)", short_name = "ip", default_value = "500")
+public final class IsolationTriggerPeriod implements Name<Long> {
 }

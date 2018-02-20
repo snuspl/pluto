@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware;
+package edu.snu.mist.core.task.groupaware;
 
-import edu.snu.mist.core.task.groupAware.eventProcessors.EventProcessor;
-import edu.snu.mist.core.task.groupAware.eventProcessors.EventProcessorFactory;
-import edu.snu.mist.core.task.groupAware.eventProcessors.parameters.DefaultNumEventProcessors;
-import edu.snu.mist.core.task.groupAware.eventProcessors.parameters.GroupBalancerGracePeriod;
-import edu.snu.mist.core.task.groupAware.groupAssigner.GroupAssigner;
-import edu.snu.mist.core.task.groupAware.groupAssigner.MinLoadGroupAssignerImpl;
-import edu.snu.mist.core.task.groupAware.groupAssigner.RoundRobinGroupAssignerImpl;
+import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
+import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessorFactory;
+import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GroupBalancerGracePeriod;
+import edu.snu.mist.core.task.groupaware.groupassigner.GroupAssigner;
+import edu.snu.mist.core.task.groupaware.groupassigner.MinLoadGroupAssignerImpl;
+import edu.snu.mist.core.task.groupaware.groupassigner.RoundRobinGroupAssignerImpl;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;

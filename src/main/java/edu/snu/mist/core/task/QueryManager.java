@@ -16,7 +16,7 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.core.task.deactivation.GroupSourceManager;
-import edu.snu.mist.core.task.groupAware.GroupAwareQueryManagerImpl;
+import edu.snu.mist.core.task.groupaware.GroupAwareQueryManagerImpl;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;

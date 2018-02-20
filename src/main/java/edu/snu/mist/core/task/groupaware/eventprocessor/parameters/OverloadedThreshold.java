@@ -13,24 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware.eventProcessors.dispatch;
+package edu.snu.mist.core.task.groupaware.eventprocessor.parameters;
 
-import edu.snu.mist.core.task.groupAware.eventProcessors.NextGroupSelector;
-import edu.snu.mist.core.task.groupAware.eventProcessors.NextGroupSelectorFactory;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-import javax.inject.Inject;
-
-/**
- * A dispatcher group selector factory.
- */
-public final class DispatcherGroupSelectorFactory implements NextGroupSelectorFactory {
-
-  @Inject
-  private DispatcherGroupSelectorFactory() {
-  }
-
-  @Override
-  public NextGroupSelector newInstance() {
-    return new DispatcherGroupSelector();
-  }
+@NamedParameter(doc = "The threshold of utilization factor to determine overloaded threads (beta)",
+    short_name = "beta", default_value = "0.95")
+public final class OverloadedThreshold implements Name<Double> {
 }

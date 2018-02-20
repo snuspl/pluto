@@ -16,4 +16,4 @@
 /**
  * A package related to group rebalancer.
  */
-package edu.snu.mist.core.task.groupAware.rebalancer;
+package edu.snu.mist.core.task.groupaware.rebalancer;

@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware.eventProcessors.parameters;
+package edu.snu.mist.core.task.groupaware.eventprocessor.parameters;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The type of group assigner (min/rr)", short_name = "ga", default_value = "min")
-public final class GroupAssignerType implements Name<String> {
+@NamedParameter(doc = "Enable (disable) rebalancing", short_name = "rb", default_value = "true")
+public final class Rebalancing implements Name<Boolean> {
 }

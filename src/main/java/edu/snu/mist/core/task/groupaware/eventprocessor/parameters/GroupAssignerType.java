@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupAware.eventProcessors.parameters;
+package edu.snu.mist.core.task.groupaware.eventprocessor.parameters;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The highest number of event processors",
-    short_name = "event_processor_upper_bound", default_value = "300")
-public final class EventProcessorUpperBound implements Name<Integer> {
+@NamedParameter(doc = "The type of group assigner (min/rr)", short_name = "ga", default_value = "min")
+public final class GroupAssignerType implements Name<String> {
 }

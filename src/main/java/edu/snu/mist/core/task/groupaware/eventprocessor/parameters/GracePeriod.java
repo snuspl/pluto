@@ -13,7 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * A package of parameters of the global scheduling package.
- */
-package edu.snu.mist.core.task.groupaware.parameters;
+package edu.snu.mist.core.task.groupaware.eventprocessor.parameters;
+
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
+
+@NamedParameter(doc = "The grace period (sec) for preventing the adjustment of the number of event processors",
+    short_name = "grace_period", default_value = "1")
+public final class GracePeriod implements Name<Integer> {
+}
