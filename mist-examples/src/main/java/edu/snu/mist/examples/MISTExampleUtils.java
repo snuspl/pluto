@@ -108,6 +108,11 @@ public final class MISTExampleUtils {
         .build();
   }
 
+  private static String getJarFilePath() throws URISyntaxException {
+    final String path = MISTExampleUtils.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
+    return path;
+  }
+
   /**
    * Submit query to MIST driver.
    */
@@ -119,7 +124,7 @@ public final class MISTExampleUtils {
     final int driverPort = Integer.parseInt(driverSocket[1]);
     final MISTExecutionEnvironment executionEnvironment =
         new MISTDefaultExecutionEnvironmentImpl(driverHostname, driverPort);
-    return executionEnvironment.submit(query);
+    return executionEnvironment.submit(query, getJarFilePath());
   }
 
   public static CommandLine getDefaultCommandLine(final JavaConfigurationBuilder jcb) {

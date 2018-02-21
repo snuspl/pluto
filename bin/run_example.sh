@@ -18,13 +18,14 @@
 # This code starts HelloMist
 # You should set the $MIST_HOME variable.
 
-SELF_JAR=`echo $MIST_HOME/target/mist-*-shaded.jar`
+CLIENT_JAR=`echo $MIST_HOME/mist-client/target/mist-client-*.jar`
+SELF_JAR=`echo $MIST_HOME/mist-examples/target/mist-examples-*.jar`
 
 CLASSPATH=$YARN_HOME/share/hadoop/common/*:$YARN_HOME/share/hadoop/common/lib/*:$YARN_HOME/share/hadoop/yarn/*:$YARN_HOME/share/hadoop/hdfs/*:$YARN_HOME/share/hadoop/mapreduce/lib/*:$YARN_HOME/share/hadoop/mapreduce/*
 
 YARN_CONF_DIR=$YARN_HOME/etc/hadoop
 
-CMD="java -cp $YARN_CONF_DIR:$SELF_JAR:$CLASSPATH $LOCAL_RUNTIME_TMP $LOGGING_CONFIG edu.snu.mist.examples.$*"
+CMD="java -cp $YARN_CONF_DIR:$CLIENT_JAR:$SELF_JAR:$CLASSPATH $LOCAL_RUNTIME_TMP $LOGGING_CONFIG edu.snu.mist.examples.$*"
 
 case $1 in
   HelloMist) ;; 

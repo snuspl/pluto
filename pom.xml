@@ -60,63 +60,7 @@ limitations under the License.
     </repositories>
 
     <dependencies>
-      <!-- https://mvnrepository.com/artifact/net.openhft/affinity -->
-      <!-- thread affinityy -->
-      <dependency>
-        <groupId>net.openhft</groupId>
-        <artifactId>affinity</artifactId>
-        <version>3.0.6</version>
-      </dependency>
-        <dependency>
-            <groupId>org.apache.reef</groupId>
-            <artifactId>reef-common</artifactId>
-            <version>${reef.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.reef</groupId>
-            <artifactId>reef-runtime-local</artifactId>
-            <version>${reef.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.reef</groupId>
-            <artifactId>reef-runtime-yarn</artifactId>
-            <version>${reef.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.reef</groupId>
-            <artifactId>reef-io</artifactId>
-            <version>${reef.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.reef</groupId>
-            <artifactId>wake</artifactId>
-            <version>${reef.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.reef</groupId>
-            <artifactId>tang</artifactId>
-            <version>${reef.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-common</artifactId>
-            <version>${hadoop.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-mapreduce-client-core</artifactId>
-            <version>${hadoop.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.orientechnologies</groupId>
-            <artifactId>orientdb-core</artifactId>
-            <version>2.1.9</version>
-        </dependency>
-        <dependency>
-            <groupId>uk.com.robust-it</groupId>
-            <artifactId>cloning</artifactId>
-            <version>${cloner.version}</version>
-        </dependency>
+
 
         <!-- Test -->
         <!-- JUnit -->
@@ -134,42 +78,6 @@ limitations under the License.
             <version>1.8.4</version>
         </dependency>
 
-        <!-- Avro -->
-        <dependency>
-            <groupId>org.apache.avro</groupId>
-            <artifactId>avro-ipc</artifactId>
-            <version>${avro.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.avro</groupId>
-            <artifactId>avro</artifactId>
-            <version>${avro.version}</version>
-        </dependency>
-
-        <!-- Kafka -->
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka-clients</artifactId>
-            <version>${kafka.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka_2.11</artifactId>
-            <version>${kafka.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- MQTT -->
-        <dependency>
-            <groupId>org.eclipse.paho</groupId>
-            <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
-            <version>${paho.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.moquette</groupId>
-            <artifactId>moquette-broker</artifactId>
-            <version>${moquette.version}</version>
-        </dependency>
     </dependencies>
 
     <build>
@@ -208,35 +116,6 @@ limitations under the License.
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <outputFile>
-                        ${project.build.directory}/${project.artifactId}-${project.version}-shaded.jar
-                    </outputFile>
-                    <filters>
-                        <filter>
-                            <artifact>*:*</artifact>
-                            <excludes>
-                                <exclude>yarn-default.xml</exclude>
-                                <exclude>yarn-version-info.properties</exclude>
-                                <exclude>core-default.xml</exclude>
-                                <exclude>LICENSE</exclude>
-                                <exclude>META-INF/*</exclude>
-                            </excludes>
-                        </filter>
-                    </filters>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.rat</groupId>
