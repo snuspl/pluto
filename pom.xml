@@ -19,7 +19,13 @@ limitations under the License.
     <artifactId>mist</artifactId>
     <name>MIST</name>
     <version>0.1-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <modules>
+        <module>mist-client</module>
+        <module>mist-core</module>
+        <module>mist-common</module>
+        <module>mist-examples</module>
+    </modules>
+    <packaging>pom</packaging>
 
     <properties>
         <reef.version>0.16.0</reef.version>
@@ -188,7 +194,7 @@ limitations under the License.
                     </dependency>
                 </dependencies>
                 <configuration>
-                    <configLocation>src/main/resources/checkstyle.xml</configLocation>
+                    <configLocation>mist-common/src/main/resources/checkstyle.xml</configLocation>
                     <outputFile>${project.build.directory}/checkstyle-errors.xml</outputFile>
                     <includeTestSourceDirectory>true</includeTestSourceDirectory>
                 </configuration>
@@ -261,27 +267,6 @@ limitations under the License.
                         <goals>
                             <goal>check</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.avro</groupId>
-                <artifactId>avro-maven-plugin</artifactId>
-                <version>${avro.version}</version>
-                <executions>
-                    <execution>
-                        <id>schemas</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>schema</goal>
-                            <goal>protocol</goal>
-                            <goal>idl-protocol</goal>
-                        </goals>
-                        <configuration>
-                            <stringType>String</stringType>
-                            <sourceDirectory>${project.basedir}/src/main/avro/</sourceDirectory>
-                            <outputDirectory>${project.basedir}/target/generated-sources/avro/</outputDirectory>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
