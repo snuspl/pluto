@@ -190,6 +190,7 @@ public final class MistEvaluationConfigs {
   public static CommandLine addCommandLineConf(final CommandLine commandLine) {
     return commandLine
         .registerShortNameOfClass(GroupSchedModelType.class)
+        .registerShortNameOfClass(ExecutionModelOption.class)
         .registerShortNameOfClass(GroupAware.class)
         .registerShortNameOfClass(Rebalancing.class)
         .registerShortNameOfClass(GroupAssignerType.class)
