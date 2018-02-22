@@ -17,25 +17,15 @@ package edu.snu.mist.core.driver;
 
 import edu.snu.mist.common.rpc.AvroRPCNettyServerWrapper;
 import edu.snu.mist.common.rpc.RPCServerPort;
-import edu.snu.mist.common.shared.MQTTNoSharedResource;
-import edu.snu.mist.common.shared.MQTTResource;
 import edu.snu.mist.common.shared.parameters.MqttSinkKeepAliveSec;
 import edu.snu.mist.common.shared.parameters.MqttSourceKeepAliveSec;
-import edu.snu.mist.core.driver.parameters.*;
-import edu.snu.mist.core.parameters.IsSplit;
-import edu.snu.mist.core.parameters.NumPeriodicSchedulerThreads;
 import edu.snu.mist.core.parameters.TempFolderPath;
 import edu.snu.mist.core.task.DefaultClientToTaskMessageImpl;
-import edu.snu.mist.core.task.QueryManager;
 import edu.snu.mist.core.task.TaskSpecificResponderWrapper;
-import edu.snu.mist.core.task.codeshare.ClassLoaderProvider;
-import edu.snu.mist.core.task.codeshare.NoSharingURLClassLoaderProvider;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
-import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.EventProcessorLowerBound;
-import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.EventProcessorUpperBound;
-import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GracePeriod;
-import edu.snu.mist.core.task.threadbased.ThreadBasedQueryManagerImpl;
-import edu.snu.mist.core.task.threadpool.ThreadPoolQueryManagerImpl;
+import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GroupRebalancingPeriod;
+import edu.snu.mist.core.task.groupaware.parameters.GroupPinningTime;
+import edu.snu.mist.core.task.groupaware.parameters.ProcessingTimeout;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
@@ -65,10 +55,6 @@ public final class MistTaskConfigs {
    */
   private final String tempFolderPath;
 
-  /**
-   * The number of threads for the periodic service scheduler.
-   */
-  private final int numSchedulerThreads;
 
   /**
    * The port number of rpc server of a MistTask.
@@ -76,39 +62,9 @@ public final class MistTaskConfigs {
   private final int rpcServerPort;
 
   /**
-   * Enabling the merging of queries in Mist task.
-   */
-  private final boolean mergingEnabled;
-
-  /**
-   * Enabling the deactivation of queries in Mist task.
-   */
-  private final boolean deactivationEnabled;
-
-  /**
-   * The execution model of Mist.
-   */
-  private final String executionModelOption;
-
-  /**
    * Configuration for execution model 2 (global scheduling).
    */
-  private final MistGroupSchedulingTaskConfigs option2TaskConfigs;
-
-  /**
-   * The lowest number of event processors.
-   */
-  private final int eventProcessorLowerBound;
-
-  /**
-   * The highest number of event processors.
-   */
-  private final int eventProcessorUpperBound;
-
-  /**
-   * The grace period for adjusting the number of event processors.
-   */
-  private final int gracePeriod;
+  private final MistEvaluationConfigs evaluationConfig;
 
   /**
    * The mqtt keep alive time for sources in seconds.
@@ -121,93 +77,39 @@ public final class MistTaskConfigs {
   private final int mqttSinkKeepAliveSec;
 
   /**
-   * Decides whether the jar files within a same group to be shared or not inside a group when running Option 3.
+   * Group rebalancing period.
    */
-  private final boolean jarSharing;
+  private final long rebalancingPeriod;
 
-  private final boolean isSplit;
-  private final boolean networkSharing;
+  /**
+   * Group processing preemption timeout.
+   */
+  private final long processingTimeout;
+
+  /**
+   * Group pinning time.
+   */
+  private final long groupPinningTime;
 
   @Inject
   private MistTaskConfigs(@Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
                           @Parameter(RPCServerPort.class) final int rpcServerPort,
                           @Parameter(TempFolderPath.class) final String tempFolderPath,
-                          @Parameter(NumPeriodicSchedulerThreads.class) final int numSchedulerThreads,
-                          @Parameter(MergingEnabled.class) final boolean mergingEnabled,
-                          @Parameter(DeactivationEnabled.class) final boolean deactivationEnabled,
-                          @Parameter(ExecutionModelOption.class) final String executionModelOption,
-                          @Parameter(EventProcessorLowerBound.class) final int eventProcessorLowerBound,
-                          @Parameter(EventProcessorUpperBound.class) final int eventProcessorUpperBound,
-                          @Parameter(GracePeriod.class) final int gracePeriod,
                           @Parameter(MqttSourceKeepAliveSec.class) final int mqttSourceKeepAliveSec,
                           @Parameter(MqttSinkKeepAliveSec.class) final int mqttSinkKeepAliveSec,
-                          @Parameter(JarSharing.class) final boolean jarSharing,
-                          @Parameter(IsSplit.class) final boolean isSplit,
-                          @Parameter(NetworkSharing.class) final boolean networkSharing,
-                          final MistGroupSchedulingTaskConfigs option2TaskConfigs) {
+                          @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
+                          @Parameter(ProcessingTimeout.class) final long processingTimeout,
+                          @Parameter(GroupPinningTime.class) final long groupPinningTime,
+                          final MistEvaluationConfigs evaluationConfig) {
     this.numEventProcessors = numEventProcessors;
     this.tempFolderPath = tempFolderPath;
     this.rpcServerPort = rpcServerPort + 10 > MAX_PORT_NUM ? rpcServerPort - 10 : rpcServerPort + 10;
-    this.numSchedulerThreads = numSchedulerThreads;
-    this.mergingEnabled = mergingEnabled;
-    this.deactivationEnabled = deactivationEnabled;
-    this.eventProcessorUpperBound = eventProcessorUpperBound;
-    this.eventProcessorLowerBound = eventProcessorLowerBound;
-    this.executionModelOption = executionModelOption;
-    this.gracePeriod = gracePeriod;
-    this.option2TaskConfigs = option2TaskConfigs;
+    this.rebalancingPeriod = rebalancingPeriod;
     this.mqttSourceKeepAliveSec = mqttSourceKeepAliveSec;
-    this.jarSharing = jarSharing;
-    this.networkSharing = networkSharing;
     this.mqttSinkKeepAliveSec = mqttSinkKeepAliveSec;
-    this.isSplit = isSplit;
-  }
-
-  /**
-   * Get the configuration for the execution model.
-   */
-  private Configuration getConfigurationForExecutionModel() {
-    switch (executionModelOption) {
-      case "tpq":
-        return threadBasedOption();
-      case "tp":
-        return threadPoolOption();
-      case "mist":
-        return option2TaskConfigs.getConfiguration();
-      default:
-        throw new RuntimeException("Undefined execution model: " + executionModelOption);
-    }
-  }
-
-  /**
-   * Get the configuration for thread-based execution model
-   * that creates a new thread per query.
-   */
-  private Configuration threadBasedOption() {
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindImplementation(QueryManager.class, ThreadBasedQueryManagerImpl.class);
-    if (!this.jarSharing) {
-      jcb.bindImplementation(ClassLoaderProvider.class, NoSharingURLClassLoaderProvider.class);
-    }
-    if (!this.networkSharing) {
-      jcb.bindImplementation(MQTTResource.class, MQTTNoSharedResource.class);
-    }
-    return jcb.build();
-  }
-
-  /**
-   * Get the configuration for thread pool execution model.
-   */
-  private Configuration threadPoolOption() {
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindImplementation(QueryManager.class, ThreadPoolQueryManagerImpl.class);
-    if (!this.jarSharing) {
-      jcb.bindImplementation(ClassLoaderProvider.class, NoSharingURLClassLoaderProvider.class);
-    }
-    if (!this.networkSharing) {
-      jcb.bindImplementation(MQTTResource.class, MQTTNoSharedResource.class);
-    }
-    return jcb.build();
+    this.groupPinningTime = groupPinningTime;
+    this.processingTimeout = processingTimeout;
+    this.evaluationConfig = evaluationConfig;
   }
 
   /**
@@ -220,22 +122,17 @@ public final class MistTaskConfigs {
     // Parameter
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, Integer.toString(numEventProcessors));
     jcb.bindNamedParameter(TempFolderPath.class, tempFolderPath);
-    jcb.bindNamedParameter(NumPeriodicSchedulerThreads.class, Integer.toString(numSchedulerThreads));
     jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
-    jcb.bindNamedParameter(MergingEnabled.class, Boolean.toString(mergingEnabled));
-    jcb.bindNamedParameter(DeactivationEnabled.class, Boolean.toString(deactivationEnabled));
-    jcb.bindNamedParameter(EventProcessorLowerBound.class, Integer.toString(eventProcessorLowerBound));
-    jcb.bindNamedParameter(EventProcessorUpperBound.class, Integer.toString(eventProcessorUpperBound));
-    jcb.bindNamedParameter(GracePeriod.class, Integer.toString(gracePeriod));
     jcb.bindNamedParameter(MqttSourceKeepAliveSec.class, Integer.toString(mqttSourceKeepAliveSec));
     jcb.bindNamedParameter(MqttSinkKeepAliveSec.class, Integer.toString(mqttSinkKeepAliveSec));
-    jcb.bindNamedParameter(IsSplit.class, Boolean.toString(isSplit));
+    jcb.bindNamedParameter(GroupRebalancingPeriod.class, Long.toString(rebalancingPeriod));
 
     // Implementation
     jcb.bindImplementation(ClientToTaskMessage.class, DefaultClientToTaskMessageImpl.class);
     jcb.bindConstructor(Server.class, AvroRPCNettyServerWrapper.class);
     jcb.bindConstructor(SpecificResponder.class, TaskSpecificResponderWrapper.class);
-    return Configurations.merge(jcb.build(), getConfigurationForExecutionModel());
+
+    return Configurations.merge(jcb.build(), evaluationConfig.getConfiguration());
   }
 
   /**
@@ -247,18 +144,12 @@ public final class MistTaskConfigs {
     final CommandLine cmd = commandLine
         .registerShortNameOfClass(DefaultNumEventProcessors.class)
         .registerShortNameOfClass(TempFolderPath.class)
-        .registerShortNameOfClass(NumPeriodicSchedulerThreads.class)
-        .registerShortNameOfClass(MergingEnabled.class)
-        .registerShortNameOfClass(DeactivationEnabled.class)
-        .registerShortNameOfClass(EventProcessorLowerBound.class)
-        .registerShortNameOfClass(EventProcessorUpperBound.class)
-        .registerShortNameOfClass(ExecutionModelOption.class)
-        .registerShortNameOfClass(GracePeriod.class)
         .registerShortNameOfClass(MqttSourceKeepAliveSec.class)
         .registerShortNameOfClass(MqttSinkKeepAliveSec.class)
-        .registerShortNameOfClass(IsSplit.class)
-        .registerShortNameOfClass(JarSharing.class)
-        .registerShortNameOfClass(NetworkSharing.class);
-    return MistGroupSchedulingTaskConfigs.addCommandLineConf(cmd);
+        .registerShortNameOfClass(ProcessingTimeout.class)
+        .registerShortNameOfClass(GroupPinningTime.class)
+        .registerShortNameOfClass(GroupRebalancingPeriod.class);
+
+    return MistEvaluationConfigs.addCommandLineConf(cmd);
   }
 }

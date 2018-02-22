@@ -25,7 +25,7 @@ import edu.snu.mist.core.task.PhysicalOperator;
 import edu.snu.mist.formats.avro.Direction;
 
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.BlockingQueue;
 
 /**
  * This emitter emits the outputs to the next OperatorChains that get inputs from the sources.
@@ -40,22 +40,22 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
    */
   private final Map<ExecutionVertex, MISTEdge> nextOperators;
 
-  private final ExecutorService executorService;
-
   private final QueryProgress queryProgress;
 
+  private final BlockingQueue<Runnable> queue;
+
   public ThreadPoolOutputEmitter(final Map<ExecutionVertex, MISTEdge> nextOperators,
-                                 final ExecutorService executorService,
+                                 final BlockingQueue<Runnable> queue,
                                  final QueryProgress queryProgress) {
     this.nextOperators = nextOperators;
-    this.executorService = executorService;
+    this.queue = queue;
     this.queryProgress = queryProgress;
   }
 
   @Override
   public void emitData(final MistDataEvent data) {
     final long eventNum = queryProgress.getEventNum().getAndIncrement();
-    executorService.submit(new Runnable() {
+    queue.add(new Runnable() {
       @Override
       public void run() {
         try {
@@ -91,7 +91,7 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
   public void emitData(final MistDataEvent data, final int index) {
     // source output emitter does not emit data according to the index
     final long eventNum = queryProgress.getEventNum().getAndIncrement();
-    executorService.submit(new Runnable() {
+    queue.add(new Runnable() {
       @Override
       public void run() {
         try {
@@ -127,7 +127,7 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
   @Override
   public void emitWatermark(final MistWatermarkEvent watermark) {
     final long eventNum = queryProgress.getEventNum().getAndIncrement();
-    executorService.submit(new Runnable() {
+    queue.add(new Runnable() {
       @Override
       public void run() {
         try {

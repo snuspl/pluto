@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupaware;
+package edu.snu.mist.core.task.ptq;
 
+import edu.snu.mist.core.parameters.IsSplit;
 import edu.snu.mist.core.task.Query;
+import edu.snu.mist.core.task.groupaware.*;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
-import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.Rebalancing;
 import edu.snu.mist.core.task.groupaware.groupassigner.GroupAssigner;
 import edu.snu.mist.core.task.groupaware.rebalancer.*;
 import org.apache.reef.io.Tuple;
@@ -25,7 +26,6 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.Collection;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -36,11 +36,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * TODO[REMOVE]: This is a class for testing ptq model.
  * A single writer thread that modifies the group allocation table.
  * We use a single writer in order to reduce concurrent modification of the group allocation table.
  * By doing so, we can guarantee that only a single thread modifies the group allocation table.
  */
-public final class GroupAllocationTableModifierImpl implements GroupAllocationTableModifier {
+public final class PTQGroupAllocationTableModifier implements GroupAllocationTableModifier {
   private static final Logger LOG = Logger.getLogger(DefaultEventProcessorManager.class.getName());
 
 
@@ -84,35 +85,22 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
    */
   private final GroupIsolator groupIsolator;
 
-  /**
-   * Group merger that merges two groups from underloaded event processors when the groups use the same codes.
-   */
   private final GroupMerger groupMerger;
 
-  /**
-   * Group splitter that splits groups.
-   */
   private final GroupSplitter groupSplitter;
 
-  /**
-   * TODO:DELETE For test.
-   */
-  private final boolean rebalancing;
+  private final boolean isSplit;
 
-  /**
-   * A random variable.
-   */
   private final Random random = new Random();
-
   @Inject
-  private GroupAllocationTableModifierImpl(final GroupAllocationTable groupAllocationTable,
-                                           final GroupAssigner groupAssigner,
-                                           final GroupRebalancer groupRebalancer,
-                                           final LoadUpdater loadUpdater,
-                                           final GroupIsolator groupIsolator,
-                                           final GroupMerger groupMerger,
-                                           final GroupSplitter groupSplitter,
-                                           @Parameter(Rebalancing.class) final boolean rebalancing) {
+  private PTQGroupAllocationTableModifier(final GroupAllocationTable groupAllocationTable,
+                                          final GroupAssigner groupAssigner,
+                                          final GroupRebalancer groupRebalancer,
+                                          final LoadUpdater loadUpdater,
+                                          final GroupIsolator groupIsolator,
+                                          final GroupMerger groupMerger,
+                                          final GroupSplitter groupSplitter,
+                                          @Parameter(IsSplit.class) final boolean isSplit) {
     this.groupAllocationTable = groupAllocationTable;
     this.groupAssigner = groupAssigner;
     this.groupRebalancer = groupRebalancer;
@@ -122,7 +110,7 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
     this.groupIsolator = groupIsolator;
     this.groupMerger = groupMerger;
     this.groupSplitter = groupSplitter;
-    this.rebalancing = rebalancing;
+    this.isSplit = isSplit;
     // Create a writer thread
     singleWriter.submit(new SingleWriterThread());
   }
@@ -159,25 +147,18 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
           final WritingEvent event = writingEventQueue.take();
           switch (event.getEventType()) {
             case GROUP_ADD: {
-              final Tuple<MetaGroup, Group> tuple = (Tuple<MetaGroup, Group>) event.getValue();
-              final MetaGroup metaGroup = tuple.getKey();
-              final Group group = tuple.getValue();
-              metaGroup.addGroup(group);
+              final Group group = (Group) event.getValue();
               groupAssigner.assignGroup(group);
               break;
             }
             case QUERY_ADD: {
-              final Tuple<MetaGroup, Query> tuple = (Tuple<MetaGroup, Query>) event.getValue();
-              final MetaGroup metaGroup = tuple.getKey();
+              final Tuple<Group, Query> tuple = (Tuple<Group, Query>) event.getValue();
+              final Group group = tuple.getKey();
               final Query query = tuple.getValue();
               // TODO: pluggable
               // Find minimum load group
-              final List<Group> groups = metaGroup.getGroups();
-              final int index = random.nextInt(groups.size());
-              final Group minGroup = groups.get(index);
-
-              query.setGroup(minGroup);
-              minGroup.addQuery(query);
+              query.setGroup(group);
+              group.addQuery(query);
               break;
             }
             case GROUP_REMOVE: {
@@ -192,22 +173,8 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
               // TODO
               break;
             case REBALANCE:
-              loadUpdater.update();
-              //isolatedGroupReassigner.reassignIsolatedGroups();
-
-              // 1. merging first
-              if (rebalancing) {
-                groupMerger.groupMerging();
-
-                // 2. reassignment
-                groupRebalancer.triggerRebalancing();
-
-                // 3. split groups
-                groupSplitter.splitGroup();
-              }
               break;
             case ISOLATION:
-              groupIsolator.triggerIsolation();
               break;
             default:
               throw new RuntimeException("Not supported event type: " + event.getEventType());
