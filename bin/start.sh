@@ -18,15 +18,15 @@
 # This code starts MistLauncher
 # You should set the $MIST_HOME variable.
 
-SELF_JAR=`echo $MIST_HOME/target/mist-*-shaded.jar`
+SELF_JAR=`echo $MIST_HOME/mist-core/target/mist-core-*-shaded.jar`
 
 CLASSPATH=$YARN_HOME/share/hadoop/common/*:$YARN_HOME/share/hadoop/common/lib/*:$YARN_HOME/share/hadoop/yarn/*:$YARN_HOME/share/hadoop/hdfs/*:$YARN_HOME/share/hadoop/mapreduce/lib/*:$YARN_HOME/share/hadoop/mapreduce/*
 
 YARN_CONF_DIR=$YARN_HOME/etc/hadoop
 
-LOGGING_CONFIG="-Djava.util.logging.config.file=$MIST_HOME/src/main/resources/logging.properties"
+LOGGING_CONFIG="-Djava.util.logging.config.file=$MIST_HOME/mist-common/src/main/resources/logging.properties"
 
-CMD="java -cp $YARN_CONF_DIR:$SELF_JAR:$CLASSPATH $LOCAL_RUNTIME_TMP $LOGGING_CONFIG edu.snu.mist.Mist $*"
+CMD="java -cp $YARN_CONF_DIR:$SELF_JAR:$CLASSPATH $LOCAL_RUNTIME_TMP $LOGGING_CONFIG edu.snu.mist.core.Mist $*"
 
 echo $CMD
 $CMD
