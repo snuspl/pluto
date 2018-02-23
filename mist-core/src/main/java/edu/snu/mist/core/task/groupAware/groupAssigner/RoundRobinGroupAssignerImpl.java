@@ -15,9 +15,9 @@
  */
 package edu.snu.mist.core.task.groupaware.groupassigner;
 
-import edu.snu.mist.core.task.groupaware.Group;
-import edu.snu.mist.core.task.groupaware.GroupAllocationTable;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
+import edu.snu.mist.core.task.groupaware.GroupAllocationTable;
+import edu.snu.mist.core.task.groupaware.Group;
 
 import javax.inject.Inject;
 import java.util.Collection;
@@ -72,24 +72,13 @@ public final class RoundRobinGroupAssignerImpl implements GroupAssigner {
 
   @Override
   public void assignGroup(final Group newGroup) {
-    try {
-      final String groupId = newGroup.getGroupId();
-      int index = Integer.valueOf(groupId.substring(3));
-
-      index = index % groupAllocationTable.size();
-
-      //final int index = (int)(Integer.valueOf(newGroup.getSuperGroupId()) % groupAllocationTable.size());
-      final EventProcessor eventProcessor = groupAllocationTable
-          .getEventProcessorsNotRunningIsolatedGroup().get(index);
-      final double defaultLoad = getDefaultLoad(eventProcessor);
-      newGroup.setLoad(defaultLoad);
-      groupAllocationTable.getValue(eventProcessor).add(newGroup);
-      newGroup.setEventProcessor(eventProcessor);
-      eventProcessor.setLoad(eventProcessor.getLoad() + defaultLoad);
-    } catch (final Exception e) {
-      e.printStackTrace();
-      throw new RuntimeException(e);
-    }
+    int index = (int)counter.getAndIncrement() % groupAllocationTable.size();
+    final EventProcessor eventProcessor =
+        groupAllocationTable.getEventProcessorsNotRunningIsolatedGroup().get(index);
+    final double defaultLoad = getDefaultLoad(eventProcessor);
+    newGroup.setLoad(defaultLoad);
+    groupAllocationTable.getValue(eventProcessor).add(newGroup);
+    newGroup.setEventProcessor(eventProcessor);
   }
 
   @Override
