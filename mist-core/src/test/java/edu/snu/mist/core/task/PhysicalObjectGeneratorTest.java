@@ -26,7 +26,7 @@ import edu.snu.mist.common.sinks.NettyTextSink;
 import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.sources.*;
 import edu.snu.mist.core.utils.MqttUtils;
-import edu.snu.mist.core.utils.OperatorTestUtils;
+import edu.snu.mist.core.utils.UDFTestUtils;
 import io.moquette.server.Server;
 import junit.framework.Assert;
 import org.apache.reef.tang.Configuration;
@@ -90,7 +90,7 @@ public final class PhysicalObjectGeneratorTest {
     final Configuration conf = TextSocketSourceConfiguration.newBuilder()
         .setHostAddress("localhost")
         .setHostPort(13666)
-        .setTimestampExtractionFunction(OperatorTestUtils.TestNettyTimestampExtractFunc.class, funcConf)
+        .setTimestampExtractionFunction(UDFTestUtils.TestNettyTimestampExtractFunc.class, funcConf)
         .build().getConfiguration();
     final DataGenerator<String> dataGenerator =
         generator.newDataGenerator(conf, classLoader);
@@ -116,7 +116,7 @@ public final class PhysicalObjectGeneratorTest {
     final Configuration conf = KafkaSourceConfiguration.newBuilder()
         .setTopic("localhost")
         .setConsumerConfig(kafkaConsumerConf)
-        .setTimestampExtractionFunction(OperatorTestUtils.TestKafkaTimestampExtractFunc.class, funcConf)
+        .setTimestampExtractionFunction(UDFTestUtils.TestKafkaTimestampExtractFunc.class, funcConf)
         .build().getConfiguration();
     final DataGenerator dataGenerator =
         generator.newDataGenerator(conf, classLoader);
@@ -141,7 +141,7 @@ public final class PhysicalObjectGeneratorTest {
     final Configuration conf = MQTTSourceConfiguration.newBuilder()
         .setBrokerURI("tcp://localhost:12345")
         .setTopic("topic")
-        .setTimestampExtractionFunction(OperatorTestUtils.TestMQTTTimestampExtractFunc.class, funcConf)
+        .setTimestampExtractionFunction(UDFTestUtils.TestMQTTTimestampExtractFunc.class, funcConf)
         .build().getConfiguration();
     final DataGenerator<MqttMessage> dataGenerator =
         generator.newDataGenerator(conf, classLoader);
@@ -178,13 +178,13 @@ public final class PhysicalObjectGeneratorTest {
   public void testSuccessOfPunctuatedEventGeneratorWithClassBinding() throws IOException, InjectionException {
     final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
     final Configuration watermarkConf = PunctuatedWatermarkConfiguration.<String>newBuilder()
-        .setParsingWatermarkFunction(OperatorTestUtils.TestWatermarkTimestampExtractFunc.class, funcConf)
-        .setWatermarkPredicate(OperatorTestUtils.TestPredicate.class, funcConf)
+        .setParsingWatermarkFunction(UDFTestUtils.TestWatermarkTimestampExtractFunc.class, funcConf)
+        .setWatermarkPredicate(UDFTestUtils.TestPredicate.class, funcConf)
         .build().getConfiguration();
     final Configuration srcConf = TextSocketSourceConfiguration.newBuilder()
         .setHostAddress("localhost")
         .setHostPort(13666)
-        .setTimestampExtractionFunction(OperatorTestUtils.TestNettyTimestampExtractFunc.class, funcConf)
+        .setTimestampExtractionFunction(UDFTestUtils.TestNettyTimestampExtractFunc.class, funcConf)
         .build().getConfiguration();
     final Configuration conf = Configurations.merge(watermarkConf, srcConf);
     final EventGenerator eg = generator.newEventGenerator(conf, classLoader);
@@ -246,7 +246,7 @@ public final class PhysicalObjectGeneratorTest {
   @Test
   public void testSuccessOfApplyStatefulOperator() throws Exception {
     final Operator operator = getSingleUdfOperator(ApplyStatefulOperator.class,
-        new OperatorTestUtils.TestApplyStatefulFunction());
+        new UDFTestUtils.TestApplyStatefulFunction());
     Assert.assertTrue(operator instanceof ApplyStatefulOperator);
   }
 
@@ -254,7 +254,7 @@ public final class PhysicalObjectGeneratorTest {
   public void testSuccessOfApplyStatefulOperatorWithClassBinding() throws Exception {
     final Configuration conf = ApplyStatefulOperatorConfiguration.CONF
         .set(ApplyStatefulOperatorConfiguration.OPERATOR, ApplyStatefulOperator.class)
-        .set(ApplyStatefulOperatorConfiguration.UDF, OperatorTestUtils.TestApplyStatefulFunction.class)
+        .set(ApplyStatefulOperatorConfiguration.UDF, UDFTestUtils.TestApplyStatefulFunction.class)
         .build();
     final Operator operator = getOperator(conf);
     Assert.assertTrue(operator instanceof ApplyStatefulOperator);
@@ -263,7 +263,7 @@ public final class PhysicalObjectGeneratorTest {
   @Test
   public void testSuccessOfApplyStatefulWindowOperator() throws Exception {
     final Operator operator = getSingleUdfOperator(ApplyStatefulWindowOperator.class,
-        new OperatorTestUtils.TestApplyStatefulFunction());
+        new UDFTestUtils.TestApplyStatefulFunction());
     Assert.assertTrue(operator instanceof ApplyStatefulWindowOperator);
   }
 
@@ -271,7 +271,7 @@ public final class PhysicalObjectGeneratorTest {
   public void testSuccessOfApplyStatefulWindowOperatorWithClassBinding() throws Exception {
     final Configuration conf = ApplyStatefulOperatorConfiguration.CONF
         .set(ApplyStatefulOperatorConfiguration.OPERATOR, ApplyStatefulWindowOperator.class)
-        .set(ApplyStatefulOperatorConfiguration.UDF, OperatorTestUtils.TestApplyStatefulFunction.class)
+        .set(ApplyStatefulOperatorConfiguration.UDF, UDFTestUtils.TestApplyStatefulFunction.class)
         .build();
     final Operator operator = getOperator(conf);
     Assert.assertTrue(operator instanceof ApplyStatefulWindowOperator);
@@ -288,7 +288,7 @@ public final class PhysicalObjectGeneratorTest {
   public void testSuccessOfAggregateWindowOperatorWithClassBinding() throws Exception {
     final Configuration conf = MISTFuncOperatorConfiguration.CONF
         .set(MISTFuncOperatorConfiguration.OPERATOR, AggregateWindowOperator.class)
-        .set(MISTFuncOperatorConfiguration.UDF, OperatorTestUtils.TestFunction.class)
+        .set(MISTFuncOperatorConfiguration.UDF, UDFTestUtils.TestFunction.class)
         .build();
     final Operator operator = getOperator(conf);
     Assert.assertTrue(operator instanceof AggregateWindowOperator);
@@ -304,7 +304,7 @@ public final class PhysicalObjectGeneratorTest {
   @Test
   public void testSuccessOfFilterOperatorWithClassBinding() throws Exception {
     final Configuration conf = FilterOperatorConfiguration.CONF
-        .set(FilterOperatorConfiguration.MIST_PREDICATE, OperatorTestUtils.TestPredicate.class)
+        .set(FilterOperatorConfiguration.MIST_PREDICATE, UDFTestUtils.TestPredicate.class)
         .build();
     final Operator operator = getOperator(conf);
     Assert.assertTrue(operator instanceof FilterOperator);
@@ -321,7 +321,7 @@ public final class PhysicalObjectGeneratorTest {
   public void testSuccessOfFlatMapOperatorWithClassBinding() throws Exception {
     final Configuration conf = MISTFuncOperatorConfiguration.CONF
         .set(MISTFuncOperatorConfiguration.OPERATOR, FlatMapOperator.class)
-        .set(MISTFuncOperatorConfiguration.UDF, OperatorTestUtils.TestFunction.class)
+        .set(MISTFuncOperatorConfiguration.UDF, UDFTestUtils.TestFunction.class)
         .build();
     final Operator operator = getOperator(conf);
     Assert.assertTrue(operator instanceof FlatMapOperator);
@@ -338,7 +338,7 @@ public final class PhysicalObjectGeneratorTest {
   public void testSuccessOfMapOperatorWithClassBinding() throws Exception {
     final Configuration conf = MISTFuncOperatorConfiguration.CONF
         .set(MISTFuncOperatorConfiguration.OPERATOR, MapOperator.class)
-        .set(MISTFuncOperatorConfiguration.UDF, OperatorTestUtils.TestFunction.class)
+        .set(MISTFuncOperatorConfiguration.UDF, UDFTestUtils.TestFunction.class)
         .build();
     final Operator operator = getOperator(conf);
     Assert.assertTrue(operator instanceof MapOperator);
@@ -359,7 +359,7 @@ public final class PhysicalObjectGeneratorTest {
   public void testSuccessOfReduceByKeyOperatorWithClassBinding() throws Exception {
     final Configuration conf = ReduceByKeyOperatorConfiguration.CONF
         .set(ReduceByKeyOperatorConfiguration.KEY_INDEX, 0)
-        .set(ReduceByKeyOperatorConfiguration.MIST_BI_FUNC, OperatorTestUtils.TestBiFunction.class)
+        .set(ReduceByKeyOperatorConfiguration.MIST_BI_FUNC, UDFTestUtils.TestBiFunction.class)
         .build();
     final Operator operator = getOperator(conf);
     Assert.assertTrue(operator instanceof ReduceByKeyOperator);

@@ -16,7 +16,7 @@
 package edu.snu.mist.client.datastreams;
 
 import edu.snu.mist.client.MISTQueryBuilder;
-import edu.snu.mist.client.utils.OperatorTestUtils;
+import edu.snu.mist.client.utils.UDFTestUtils;
 import edu.snu.mist.client.utils.TestParameters;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.ApplyStatefulFunction;
@@ -95,14 +95,14 @@ public class WindowedStreamTest {
   public void testReduceByKeyWindowClassBinding() throws InjectionException {
     final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
     final ContinuousStream<Map<String, Integer>> reducedWindowStream =
-        timeWindowedStream.reduceByKeyWindow(0, String.class, OperatorTestUtils.TestBiFunction.class, funcConf);
+        timeWindowedStream.reduceByKeyWindow(0, String.class, UDFTestUtils.TestBiFunction.class, funcConf);
 
     // Get info
     final Injector injector = Tang.Factory.getTang().newInjector(reducedWindowStream.getConfiguration());
     final int desKeyIndex = injector.getNamedInstance(KeyIndex.class);
     final MISTBiFunction biFunction = injector.getInstance(MISTBiFunction.class);
     Assert.assertEquals(0, desKeyIndex);
-    Assert.assertTrue(biFunction instanceof OperatorTestUtils.TestBiFunction);
+    Assert.assertTrue(biFunction instanceof UDFTestUtils.TestBiFunction);
 
     // Check windowed -> reduce by key
     checkEdges(queryBuilder.build().getDAG(), 1, timeWindowedStream,
@@ -115,9 +115,9 @@ public class WindowedStreamTest {
   @Test
   public void testApplyStatefulWindowStream() throws InjectionException, IOException {
     final ApplyStatefulFunction<Tuple2<String, Integer>, Integer> func =
-        new OperatorTestUtils.TestApplyStatefulFunction();
+        new UDFTestUtils.TestApplyStatefulFunction();
     final ContinuousStream<Integer> applyStatefulWindowStream =
-        timeWindowedStream.applyStatefulWindow(new OperatorTestUtils.TestApplyStatefulFunction());
+        timeWindowedStream.applyStatefulWindow(new UDFTestUtils.TestApplyStatefulFunction());
 
     /* Simulate two data inputs on UDF stream */
     final Configuration conf = applyStatefulWindowStream.getConfiguration();
@@ -138,13 +138,13 @@ public class WindowedStreamTest {
   public void testApplyStatefulWindowClassBinding() throws InjectionException {
     final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
     final ContinuousStream<Integer> applyStatefulWindowStream =
-        timeWindowedStream.applyStatefulWindow(OperatorTestUtils.TestApplyStatefulFunction.class, funcConf);
+        timeWindowedStream.applyStatefulWindow(UDFTestUtils.TestApplyStatefulFunction.class, funcConf);
 
     /* Simulate two data inputs on UDF stream */
     final Configuration conf = applyStatefulWindowStream.getConfiguration();
     final Injector injector = Tang.Factory.getTang().newInjector(conf);
     final ApplyStatefulFunction func = injector.getInstance(ApplyStatefulFunction.class);
-    Assert.assertTrue(func instanceof OperatorTestUtils.TestApplyStatefulFunction);
+    Assert.assertTrue(func instanceof UDFTestUtils.TestApplyStatefulFunction);
 
     // Check windowed -> stateful operation applied
     checkEdges(

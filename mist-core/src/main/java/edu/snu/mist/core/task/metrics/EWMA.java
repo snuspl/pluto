@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.stats;
+package edu.snu.mist.core.task.metrics;
 
 /**
  * A class for calculating EWMA.
