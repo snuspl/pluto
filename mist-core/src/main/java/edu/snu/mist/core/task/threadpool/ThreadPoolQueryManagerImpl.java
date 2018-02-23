@@ -29,10 +29,7 @@ import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -81,7 +78,9 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
 
   private final AtomicLong queryIdCounter = new AtomicLong();
 
-  private final ExecutorService executorService;
+  private final BlockingQueue<Runnable> globalQueue;
+
+  private final List<Thread> threads;
 
   /**
    * Default query manager in MistTask.
@@ -93,13 +92,30 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
                                      @Parameter(DefaultNumEventProcessors.class) final int defaultNumEventProcessors,
                                      final ConfigDagGenerator configDagGenerator,
                                      final BatchQueryCreator batchQueryCreator) {
-    this.executorService = Executors.newFixedThreadPool(defaultNumEventProcessors);
     this.dagGenerator = dagGenerator;
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.batchQueryCreator = batchQueryCreator;
     this.configDagGenerator = configDagGenerator;
     this.numThreads = defaultNumEventProcessors;
+    this.threads = new ArrayList<>(numThreads);
+
+    this.globalQueue = new LockConcurrentLinkedQueue<>();
+
+    for (int i = 0; i < numThreads; i++) {
+      final Thread thread = new Thread(() -> {
+        while (!Thread.interrupted()) {
+          try {
+            final Runnable runnable = globalQueue.take();
+            runnable.run();
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+        }
+      });
+      thread.start();
+      threads.add(thread);
+    }
     //this.threadsQueue = new ArrayList<>(defaultNumEventProcessors);
   }
 
@@ -197,7 +213,7 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
           final PhysicalSource source = (PhysicalSource)executionVertex;
           final Map<ExecutionVertex, MISTEdge> nextOps = dag.getEdges(source);
           // 3) Sets output emitters
-          source.setOutputEmitter(new ThreadPoolOutputEmitter<>(nextOps, executorService, queryProgress));
+          source.setOutputEmitter(new ThreadPoolOutputEmitter<>(nextOps, globalQueue, queryProgress));
           sources.add(source);
           break;
         }
@@ -227,7 +243,9 @@ public final class ThreadPoolQueryManagerImpl implements QueryManager {
   public void close() throws Exception {
     scheduler.shutdown();
     planStore.close();
-    executorService.shutdown();
+    for (final Thread t : threads) {
+      t.interrupt();
+    }
   }
 
   /**
