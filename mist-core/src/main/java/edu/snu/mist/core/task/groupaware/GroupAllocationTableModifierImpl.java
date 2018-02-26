@@ -185,6 +185,10 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
               removeGroupInWriterThread(group);
               break;
             }
+            case GROUP_REMOVE_ALL: {
+              removeAllGroupsInWriterThread();
+              break;
+            }
             case EP_ADD:
               // TODO
               break;
@@ -217,6 +221,20 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
         } catch (final Exception e) {
           e.printStackTrace();
           throw new RuntimeException(e);
+        }
+      }
+    }
+  }
+
+  private void removeAllGroupsInWriterThread() {
+    for (final EventProcessor eventProcessor : groupAllocationTable.getKeys()) {
+      final Collection<Group> groups = groupAllocationTable.getValue(eventProcessor);
+      for (final Group group : groups) {
+        if (groups.remove(group)) {
+          // deleted
+          if (LOG.isLoggable(Level.FINE)) {
+            LOG.log(Level.FINE, "Group {0} is removed from {1}", new Object[]{group, eventProcessor});
+          }
         }
       }
     }

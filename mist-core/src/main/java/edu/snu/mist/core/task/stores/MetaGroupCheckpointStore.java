@@ -13,25 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.task.stores;
 
-import edu.snu.mist.core.task.merging.MergeAwareQueryRemover;
+import edu.snu.mist.formats.avro.CheckpointResult;
+import edu.snu.mist.formats.avro.MetaGroupCheckpoint;
+import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
-/**
- * This removes the query from MIST.
- */
-@DefaultImplementation(MergeAwareQueryRemover.class)
-public interface QueryRemover {
+import java.io.IOException;
+
+@DefaultImplementation(DefaultMetaGroupCheckpointStore.class)
+public interface MetaGroupCheckpointStore extends AutoCloseable {
 
   /**
-   * Delete the query from the group.
-   * @param queryId query id
+   * Saves a MetaGroupCheckpoint.
+   * @param tuple the groupId and MetaGroupCheckpoint
    */
-  void deleteQuery(String queryId);
+  CheckpointResult saveMetaGroupCheckpoint(Tuple<String, MetaGroupCheckpoint> tuple);
 
   /**
-   * Deletes all queries from the group.
+   * Loads a MetaGroupCheckpoint with the given groupId.
+   * @param groupId
+   * @return
    */
-  void deleteAllQueries();
+  MetaGroupCheckpoint loadMetaGroupCheckpoint(String groupId) throws IOException;
 }

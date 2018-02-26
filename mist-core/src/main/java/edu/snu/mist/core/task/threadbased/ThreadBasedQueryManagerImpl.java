@@ -23,6 +23,7 @@ import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
+import edu.snu.mist.core.task.checkpointing.CheckpointManager;
 import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroDag;
@@ -281,5 +282,11 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
   public GroupSourceManager getGroupSourceManager(final String groupId) {
     // This method should not be used in option 3.
     throw new RuntimeException("getGroupSourceManager should not be used in option 3.");
+  }
+
+  @Override
+  public CheckpointManager getCheckpointManager() {
+    LOG.log(Level.SEVERE, "This QueryManager does not support checkpointing.");
+    return null;
   }
 }

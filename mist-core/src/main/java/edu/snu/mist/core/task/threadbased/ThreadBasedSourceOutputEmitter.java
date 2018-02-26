@@ -15,10 +15,7 @@
  */
 package edu.snu.mist.core.task.threadbased;
 
-import edu.snu.mist.common.MistDataEvent;
-import edu.snu.mist.common.MistEvent;
-import edu.snu.mist.common.MistWatermarkEvent;
-import edu.snu.mist.common.OutputEmitter;
+import edu.snu.mist.common.*;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.ExecutionVertex;
 import org.apache.reef.io.Tuple;
@@ -63,5 +60,10 @@ public final class ThreadBasedSourceOutputEmitter<I> implements OutputEmitter {
   @Override
   public void emitWatermark(final MistWatermarkEvent watermark) {
     queue.add(new Tuple<>(watermark, nextOperators));
+  }
+
+  @Override
+  public void emitCheckpoint(final MistCheckpointEvent mistCheckpointEvent) {
+    // do nothing
   }
 }

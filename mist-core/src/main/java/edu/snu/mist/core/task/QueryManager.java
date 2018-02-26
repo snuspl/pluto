@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
+import edu.snu.mist.core.task.checkpointing.CheckpointManager;
 import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.groupaware.GroupAwareQueryManagerImpl;
 import edu.snu.mist.formats.avro.AvroDag;
@@ -57,4 +58,9 @@ public interface QueryManager extends AutoCloseable {
    * @param groupId group id
    */
   GroupSourceManager getGroupSourceManager(String groupId);
+
+  /**
+   * Get the CheckpointManager.
+   */
+  CheckpointManager getCheckpointManager();
 }

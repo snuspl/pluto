@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.mockito.Mockito.mock;
 
@@ -91,6 +92,11 @@ public final class MergeAwareQueryRemoverTest {
    */
   private ExecutionVertexDagMap executionVertexDagMap;
 
+  /**
+   * Atomic ID used for generating ConfigVertex Ids.
+   */
+  private AtomicLong configVertexId;
+
   @Before
   public void setUp() throws InjectionException, IOException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
@@ -104,6 +110,7 @@ public final class MergeAwareQueryRemoverTest {
     configExecutionVertexMap = injector.getInstance(ConfigExecutionVertexMap.class);
     queryIdConfigDagMap = injector.getInstance(QueryIdConfigDagMap.class);
     idAndConfGenerator = new IdAndConfGenerator();
+    configVertexId = new AtomicLong();
   }
 
   /**
@@ -188,9 +195,12 @@ public final class MergeAwareQueryRemoverTest {
     final PhysicalSink<String> sink = generateSink(sinkConf, result);
 
     // Config vertices
-    final ConfigVertex srcVertex = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf);
-    final ConfigVertex ocVertex = new ConfigVertex(ExecutionVertex.Type.OPERATOR, ocConf);
-    final ConfigVertex sinkVertex = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf);
+    final ConfigVertex srcVertex = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SOURCE, sourceConf);
+    final ConfigVertex ocVertex = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.OPERATOR, ocConf);
+    final ConfigVertex sinkVertex = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SINK, sinkConf);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>
@@ -268,9 +278,12 @@ public final class MergeAwareQueryRemoverTest {
     final PhysicalSink<String> sink1 = generateSink(sinkConf1, result1);
 
     // Config vertices
-    final ConfigVertex srcVertex1 = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf1);
-    final ConfigVertex ocVertex1 = new ConfigVertex(ExecutionVertex.Type.OPERATOR, ocConf1);
-    final ConfigVertex sinkVertex1 = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf1);
+    final ConfigVertex srcVertex1 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SOURCE, sourceConf1);
+    final ConfigVertex ocVertex1 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.OPERATOR, ocConf1);
+    final ConfigVertex sinkVertex1 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SINK, sinkConf1);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>
@@ -292,9 +305,12 @@ public final class MergeAwareQueryRemoverTest {
     final PhysicalSink<String> sink2 = generateSink(sinkConf2, result1);
 
     // Config vertices
-    final ConfigVertex srcVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf2);
-    final ConfigVertex ocVertex2 = new ConfigVertex(ExecutionVertex.Type.OPERATOR, ocConf2);
-    final ConfigVertex sinkVertex2 = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf2);
+    final ConfigVertex srcVertex2 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SOURCE, sourceConf2);
+    final ConfigVertex ocVertex2 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.OPERATOR, ocConf2);
+    final ConfigVertex sinkVertex2 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SINK, sinkConf2);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>
@@ -409,9 +425,12 @@ public final class MergeAwareQueryRemoverTest {
     final PhysicalSink<String> sink1 = generateSink(sinkConf1, result1);
 
     // Config vertices
-    final ConfigVertex srcVertex1 = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf);
-    final ConfigVertex ocVertex1 = new ConfigVertex(ExecutionVertex.Type.OPERATOR, operatorConf);
-    final ConfigVertex sinkVertex1 = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf1);
+    final ConfigVertex srcVertex1 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SOURCE, sourceConf);
+    final ConfigVertex ocVertex1 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.OPERATOR, operatorConf);
+    final ConfigVertex sinkVertex1 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SINK, sinkConf1);
     final List<String> paths1 = mock(List.class);
 
     // Create dag
@@ -430,9 +449,12 @@ public final class MergeAwareQueryRemoverTest {
     final List<String> paths2 = mock(List.class);
 
     // Config vertices
-    final ConfigVertex srcVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf);
-    final ConfigVertex ocVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, operatorConf);
-    final ConfigVertex sinkVertex2 = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf2);
+    final ConfigVertex srcVertex2 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SOURCE, sourceConf);
+    final ConfigVertex ocVertex2 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SOURCE, operatorConf);
+    final ConfigVertex sinkVertex2 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SINK, sinkConf2);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>

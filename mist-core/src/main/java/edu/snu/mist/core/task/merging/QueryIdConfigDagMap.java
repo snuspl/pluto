@@ -51,4 +51,8 @@ public final class QueryIdConfigDagMap {
   public Collection<DAG<ConfigVertex, MISTEdge>> getConfigDags() {
     return map.values();
   }
+
+  public Collection<String> getKeys() {
+    return map.keySet();
+  }
 }

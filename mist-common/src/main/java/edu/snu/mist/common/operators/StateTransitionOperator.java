@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
@@ -51,6 +52,11 @@ public final class StateTransitionOperator extends OneStreamOperator implements 
     // changing state table: Map<current state, Tuple2<condition, next state>>
     private final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable;
 
+    /**
+     * The latest Checkpoint Timestamp.
+     */
+    private long latestCheckpointTimestamp;
+
     @Inject
     private StateTransitionOperator(
         @Parameter(InitialState.class) final String initialState,
@@ -71,6 +77,7 @@ public final class StateTransitionOperator extends OneStreamOperator implements 
         this.currState = initialState;
         this.finalState = finalState;
         this.stateTable = stateTable;
+        this.latestCheckpointTimestamp = 0L;
     }
 
     // update state with input data
@@ -122,5 +129,16 @@ public final class StateTransitionOperator extends OneStreamOperator implements 
     @Override
     public void setState(final Map<String, Object> loadedState) {
         currState = (String) loadedState.get("stateTransitionOperatorState");
+    }
+
+    @Override
+    public void processLeftCheckpoint(final MistCheckpointEvent input) {
+        latestCheckpointTimestamp = input.getTimestamp();
+        outputEmitter.emitCheckpoint(input);
+    }
+
+    @Override
+    public long getLatestCheckpointTimestamp() {
+        return latestCheckpointTimestamp;
     }
 }

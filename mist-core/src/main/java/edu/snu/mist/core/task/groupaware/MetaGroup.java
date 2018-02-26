@@ -18,6 +18,7 @@ package edu.snu.mist.core.task.groupaware;
 import edu.snu.mist.core.task.ExecutionDags;
 import edu.snu.mist.core.task.QueryRemover;
 import edu.snu.mist.core.task.QueryStarter;
+import edu.snu.mist.formats.avro.MetaGroupCheckpoint;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.List;
@@ -62,4 +63,9 @@ public interface MetaGroup {
    * The number of split groups.
    */
   AtomicInteger numGroups();
+
+  /**
+   * Return a checkpoint of this MetaGroup.
+   */
+  MetaGroupCheckpoint checkpoint();
 }

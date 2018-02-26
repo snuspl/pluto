@@ -15,10 +15,18 @@
  */
 package edu.snu.mist.core.task;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * This class holds the configuration of the execution vertex.
  */
 public final class ConfigVertex {
+
+  /**
+   * The id of this vertex.
+   */
+  private final String id;
 
   /**
    * The type of this vertex (src, operator, sink).
@@ -26,14 +34,44 @@ public final class ConfigVertex {
   private final ExecutionVertex.Type type;
 
   /**
+   * State of this ConfigVertex, if this is a stateful operator from a checkpoint.
+   */
+  private final Map<String, Object> state;
+
+  /**
+   * The latest Checkpoint timestamp.
+   * It is initially 0, and stays 0 if this vertex is stateless.
+   */
+  private final long latestCheckpointTimestamp;
+
+  /**
    * The configuration of the vertex.
    */
   private final String configuration;
 
-  public ConfigVertex(final ExecutionVertex.Type type,
-                      final String configuration) {
+  public ConfigVertex(final String id,
+                      final ExecutionVertex.Type type,
+                      final String configuration,
+                      final Map<String, Object> state,
+                      final long latestCheckpointTimestamp) {
+    this.id = id;
     this.type = type;
     this.configuration = configuration;
+    this.state = new HashMap<>();
+    if (state != null) {
+      this.state.putAll(state);
+    }
+    this.latestCheckpointTimestamp = latestCheckpointTimestamp;
+  }
+
+  public ConfigVertex(final String id,
+                      final ExecutionVertex.Type type,
+                      final String configuration) {
+    this(id, type, configuration, null, 0L);
+  }
+
+  public String getId() {
+    return id;
   }
 
   public ExecutionVertex.Type getType() {
@@ -42,5 +80,32 @@ public final class ConfigVertex {
 
   public String getConfiguration() {
     return configuration;
+  }
+
+  public Map<String, Object> getState() {
+    return state;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    final ConfigVertex that = (ConfigVertex) o;
+
+    if (!id.equals(that.id)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    return id.hashCode();
   }
 }

@@ -13,33 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common;
-
 /**
- * This interface represents events of Mist.
- * MistEvent can be data or watermark.
+ * A test package for batch submission in task side.
  */
-public interface MistEvent {
-  /**
-   * The type of events.
-   */
-  public static enum EventType {
-    DATA, // DATA: actual event data stream
-    WATERMARK, // WATERMARK: watermark data
-  }
-
-  /**
-   * Return true if it is DATA type, false if it is WATERMARK.
-   */
-  boolean isData();
-
-  /**
-   * Return true if is CHECKPOINT type.
-   */
-  boolean isCheckpoint();
-
-  /**
-   * Get timestamp of the MistEvent.
-   */
-  long getTimestamp();
-}
+package edu.snu.mist.core.task.checkpointing;

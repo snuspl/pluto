@@ -25,6 +25,7 @@ import edu.snu.mist.core.driver.parameters.DeactivationEnabled;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
+import edu.snu.mist.core.task.checkpointing.CheckpointManager;
 import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.groupaware.parameters.GroupSchedModelType;
 import edu.snu.mist.core.task.merging.*;
@@ -39,8 +40,6 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -71,7 +70,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
    */
   private final GlobalSchedGroupInfoMap groupInfoMap;
 
-  private final ConcurrentMap<String, Tuple<MetaGroup, AtomicBoolean>> groupMap;
+  private final GroupMap groupMap;
 
   /**
    * Merging enabled or not.
@@ -122,6 +121,8 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
 
   private final GroupAllocationTableModifier groupAllocationTableModifier;
 
+  private final CheckpointManager checkpointManager;
+
   /**
    * Default query manager in MistTask.
    */
@@ -139,7 +140,9 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
                                      final NettySharedResource nettySharedResource,
                                      final DagGenerator dagGenerator,
                                      final GroupAllocationTableModifier groupAllocationTableModifier,
-                                     @Parameter(GroupSchedModelType.class) final String executionModel) {
+                                     final GroupMap groupMap,
+                                     @Parameter(GroupSchedModelType.class) final String executionModel,
+                                     final CheckpointManager checkpointManager) {
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.groupInfoMap = groupInfoMap;
@@ -154,7 +157,8 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     this.nettySharedResource = nettySharedResource;
     this.dagGenerator = dagGenerator;
     this.groupAllocationTableModifier = groupAllocationTableModifier;
-    this.groupMap = new ConcurrentHashMap<>();
+    this.groupMap = groupMap;
+    this.checkpointManager = checkpointManager;
   }
 
   /**
@@ -319,5 +323,10 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
   @Override
   public GroupSourceManager getGroupSourceManager(final String groupId) {
     return null;
+  }
+
+  @Override
+  public CheckpointManager getCheckpointManager() {
+    return checkpointManager;
   }
 }

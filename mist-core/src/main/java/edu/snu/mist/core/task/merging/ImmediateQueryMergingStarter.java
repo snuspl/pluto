@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * This starter tries to merges the submitted dag with the currently running dag.
@@ -87,6 +88,11 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
    */
   private final ActiveExecutionVertexIdMap activeExecutionVertexIdMap;
 
+  /**
+   * The list of jar file paths.
+   */
+  private final List<String> groupJarFilePaths;
+
   @Inject
   private ImmediateQueryMergingStarter(final CommonSubDagFinder commonSubDagFinder,
                                        final SrcAndDagMap<String> srcAndDagMap,
@@ -108,6 +114,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
     this.executionVertexCountMap = executionVertexCountMap;
     this.executionVertexDagMap = executionVertexDagMap;
     this.activeExecutionVertexIdMap = activeExecutionVertexIdMap;
+    this.groupJarFilePaths = new CopyOnWriteArrayList<>();
   }
 
   @Override
@@ -121,6 +128,12 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
     // Get a class loader
     final URL[] urls = SerializeUtils.getJarFileURLs(jarFilePaths);
     final ClassLoader classLoader = classLoaderProvider.newInstance(urls);
+
+    synchronized (groupJarFilePaths) {
+      if (jarFilePaths != null && jarFilePaths.size() != 0) {
+        groupJarFilePaths.addAll(jarFilePaths);
+      }
+    }
 
     // Synchronize the execution dags to evade concurrent modifications
     // TODO:[MIST-590] We need to improve this code for concurrent modification
@@ -397,5 +410,10 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
       }
     }
     return mergeableDags;
+  }
+
+  @Override
+  public List<String> getJarFilePaths() {
+    return groupJarFilePaths;
   }
 }
