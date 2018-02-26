@@ -15,45 +15,23 @@
  */
 package edu.snu.mist.client.utils;
 
-import edu.snu.mist.common.MistDataEvent;
-import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.functions.*;
 import edu.snu.mist.common.types.Tuple2;
-import edu.snu.mist.common.windows.WindowData;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.reef.io.Tuple;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.junit.Assert;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 /**
- * This is a utility class for operator test.
+ * This is a utility class for user-defined functions.
  */
-public final class OperatorTestUtils {
+public final class UDFTestUtils {
 
-  private OperatorTestUtils() {
+  private UDFTestUtils() {
     // empty constructor
-  }
-
-  /**
-   * Checks the windowed result is equal to the expected result.
-   */
-  public static void checkWindowData(final MistEvent result,
-                                     final Collection<Integer> expectedResult,
-                                     final long expectedWindowStartMoment,
-                                     final long expectedWindowSize,
-                                     final long expectedWindowTimestamp) {
-    Assert.assertTrue(result.isData());
-    Assert.assertTrue(((MistDataEvent)result).getValue() instanceof WindowData);
-    final WindowData windowData = (WindowData)((MistDataEvent)result).getValue();
-    Assert.assertEquals(expectedResult, windowData.getDataCollection());
-    Assert.assertEquals(expectedWindowStartMoment, windowData.getStart());
-    Assert.assertEquals(expectedWindowSize, windowData.getEnd() - windowData.getStart() + 1);
-    Assert.assertEquals(expectedWindowTimestamp, result.getTimestamp());
   }
 
   /**

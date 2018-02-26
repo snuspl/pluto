@@ -19,7 +19,7 @@ import edu.snu.mist.client.datastreams.ContinuousStream;
 import edu.snu.mist.client.datastreams.configurations.KafkaSourceConfiguration;
 import edu.snu.mist.client.datastreams.configurations.MQTTSourceConfiguration;
 import edu.snu.mist.client.datastreams.configurations.TextSocketSourceConfiguration;
-import edu.snu.mist.client.utils.OperatorTestUtils;
+import edu.snu.mist.client.utils.UDFTestUtils;
 import edu.snu.mist.client.utils.TestParameters;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTFunction;
@@ -99,7 +99,7 @@ public class MISTQueryBuilderTest {
         queryBuilder.socketTextStream(TextSocketSourceConfiguration.newBuilder()
             .setHostAddress(TestParameters.HOST)
             .setHostPort(TestParameters.SERVER_PORT)
-            .setTimestampExtractionFunction(OperatorTestUtils.TestNettyTimestampExtractFunc.class, funcConf)
+            .setTimestampExtractionFunction(UDFTestUtils.TestNettyTimestampExtractFunc.class, funcConf)
             .build());
     // check
     final Injector injector = Tang.Factory.getTang().newInjector(stream.getConfiguration());
@@ -108,7 +108,7 @@ public class MISTQueryBuilderTest {
     final MISTFunction func = injector.getInstance(MISTFunction.class);
     Assert.assertEquals(TestParameters.HOST, deHost);
     Assert.assertEquals(TestParameters.SERVER_PORT, dePort);
-    Assert.assertTrue(func instanceof OperatorTestUtils.TestNettyTimestampExtractFunc);
+    Assert.assertTrue(func instanceof UDFTestUtils.TestNettyTimestampExtractFunc);
   }
 
   /**

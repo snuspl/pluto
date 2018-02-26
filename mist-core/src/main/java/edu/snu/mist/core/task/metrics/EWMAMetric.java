@@ -15,8 +15,6 @@
  */
 package edu.snu.mist.core.task.metrics;
 
-import edu.snu.mist.common.stats.EWMA;
-
 /**
  * A class represents a metric with EWMA such as CPU or memory utilization used for system management.
  */
