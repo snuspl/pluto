@@ -27,37 +27,6 @@
       "fields":
       [
         {
-          "name": "PubTopicGenerateFunc", /* TODO[DELETE] this code is for test */
-          "type": "string",
-          "default": "null"
-        },
-        {
-          "name": "SubTopicGenerateFunc", /* TODO[DELETE] this code is for test */
-          "type": "string",
-          "default": "null"
-        },
-        {
-          "name": "SuperGroupIdList", /* TODO[DELETE] this code is for test */
-          "type": {
-            "type": "array",
-            "items": "string"
-          },
-          "default": []
-        },
-        {
-          "name": "SubGroupIdList", /* TODO[DELETE] this code is for test */
-          "type": {
-            "type": "array",
-            "items": "string"
-           },
-           "default": []
-        },
-        {
-          "name": "MergeFactor", /* TODO[DELETE] this code is for test */
-          "type": "int",
-          "default": 1
-        },
-        {
           "name": "SuperGroupId",
           "type": "string"
         },
@@ -204,21 +173,6 @@
         {
           "name": "dag",
           "type": "AvroDag"
-        }
-      ],
-      "response": "QueryControlResult"
-    },
-    "sendBatchQueries":
-    {
-      "request":
-      [
-        {
-          "name": "dag",
-          "type": "AvroDag"
-        },
-        {
-          "name": "batchSize", /* TODO[DELETE] this code is for test */
-          "type": "int"
         }
       ],
       "response": "QueryControlResult"

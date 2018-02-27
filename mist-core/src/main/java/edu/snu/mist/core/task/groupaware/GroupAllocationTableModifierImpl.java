@@ -17,11 +17,9 @@ package edu.snu.mist.core.task.groupaware;
 
 import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
-import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.Rebalancing;
 import edu.snu.mist.core.task.groupaware.groupassigner.GroupAssigner;
 import edu.snu.mist.core.task.groupaware.rebalancer.*;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.Collection;
@@ -95,11 +93,6 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
   private final GroupSplitter groupSplitter;
 
   /**
-   * TODO:DELETE For test.
-   */
-  private final boolean rebalancing;
-
-  /**
    * A random variable.
    */
   private final Random random = new Random();
@@ -111,8 +104,7 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
                                            final LoadUpdater loadUpdater,
                                            final GroupIsolator groupIsolator,
                                            final GroupMerger groupMerger,
-                                           final GroupSplitter groupSplitter,
-                                           @Parameter(Rebalancing.class) final boolean rebalancing) {
+                                           final GroupSplitter groupSplitter) {
     this.groupAllocationTable = groupAllocationTable;
     this.groupAssigner = groupAssigner;
     this.groupRebalancer = groupRebalancer;
@@ -122,7 +114,6 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
     this.groupIsolator = groupIsolator;
     this.groupMerger = groupMerger;
     this.groupSplitter = groupSplitter;
-    this.rebalancing = rebalancing;
     // Create a writer thread
     singleWriter.submit(new SingleWriterThread());
   }
@@ -196,15 +187,13 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
               //isolatedGroupReassigner.reassignIsolatedGroups();
 
               // 1. merging first
-              if (rebalancing) {
-                groupMerger.groupMerging();
+              groupMerger.groupMerging();
 
-                // 2. reassignment
-                groupRebalancer.triggerRebalancing();
+              // 2. reassignment
+              groupRebalancer.triggerRebalancing();
 
-                // 3. split groups
-                groupSplitter.splitGroup();
-              }
+              // 3. split groups
+              groupSplitter.splitGroup();
               break;
             case ISOLATION:
               groupIsolator.triggerIsolation();
