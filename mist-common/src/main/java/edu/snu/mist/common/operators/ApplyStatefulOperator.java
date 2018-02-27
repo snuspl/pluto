@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
@@ -44,6 +45,11 @@ public final class ApplyStatefulOperator<IN, OUT>
    */
   private final ApplyStatefulFunction<IN, OUT> applyStatefulFunction;
 
+  /**
+   * The latest Checkpoint Timestamp.
+   */
+  private long latestCheckpointTimestamp;
+
   @Inject
   private ApplyStatefulOperator(
       @Parameter(SerializedUdf.class) final String serializedObject,
@@ -58,6 +64,7 @@ public final class ApplyStatefulOperator<IN, OUT>
   public ApplyStatefulOperator(final ApplyStatefulFunction<IN, OUT> applyStatefulFunction) {
     this.applyStatefulFunction = applyStatefulFunction;
     this.applyStatefulFunction.initialize();
+    this.latestCheckpointTimestamp = 0L;
   }
 
   @Override
@@ -81,6 +88,12 @@ public final class ApplyStatefulOperator<IN, OUT>
   }
 
   @Override
+  public void processLeftCheckpoint(final MistCheckpointEvent input) {
+    latestCheckpointTimestamp = input.getTimestamp();
+    outputEmitter.emitCheckpoint(input);
+  }
+
+  @Override
   public Map<String, Object> getOperatorState() {
     final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("applyStatefulFunctionState", applyStatefulFunction.getCurrentState());
@@ -90,5 +103,10 @@ public final class ApplyStatefulOperator<IN, OUT>
   @Override
   public void setState(final Map<String, Object> loadedState) {
     applyStatefulFunction.setFunctionState(loadedState.get("applyStatefulFunctionState"));
+  }
+
+  @Override
+  public long getLatestCheckpointTimestamp() {
+    return latestCheckpointTimestamp;
   }
 }

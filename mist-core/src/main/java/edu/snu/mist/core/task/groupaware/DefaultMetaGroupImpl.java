@@ -15,32 +15,53 @@
  */
 package edu.snu.mist.core.task.groupaware;
 
-import edu.snu.mist.core.task.ExecutionDags;
-import edu.snu.mist.core.task.QueryRemover;
-import edu.snu.mist.core.task.QueryStarter;
+import edu.snu.mist.common.graph.DAG;
+import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.common.operators.Operator;
+import edu.snu.mist.common.operators.StateHandler;
+import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.merging.ConfigExecutionVertexMap;
+import edu.snu.mist.core.task.merging.QueryIdConfigDagMap;
+import edu.snu.mist.formats.avro.*;
 
 import javax.inject.Inject;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public final class DefaultMetaGroupImpl implements MetaGroup {
+
+  private static final Logger LOG = Logger.getLogger(DefaultMetaGroupImpl.class.getName());
 
   private final QueryStarter queryStarter;
   private final QueryRemover queryRemover;
   private final ExecutionDags executionDags;
   private final List<Group> groups;
+  private final QueryIdConfigDagMap queryIdConfigDagMap;
+  private final ConfigExecutionVertexMap configExecutionVertexMap;
 
   private final AtomicInteger numGroups = new AtomicInteger(0);
+
+  /**
+   * The list of jar file paths.
+   */
+  private final List<String> groupJarFilePaths;
 
   @Inject
   private DefaultMetaGroupImpl(final QueryStarter queryStarter,
                                final QueryRemover queryRemover,
-                               final ExecutionDags executionDags) {
+                               final ExecutionDags executionDags,
+                               final QueryIdConfigDagMap queryIdConfigDagMap,
+                               final ConfigExecutionVertexMap configExecutionVertexMap) {
     this.queryStarter = queryStarter;
     this.queryRemover = queryRemover;
     this.executionDags = executionDags;
     this.groups = new LinkedList<>();
+    this.queryIdConfigDagMap = queryIdConfigDagMap;
+    this.configExecutionVertexMap = configExecutionVertexMap;
+    this.groupJarFilePaths = new CopyOnWriteArrayList<>();
   }
 
   @Override
@@ -73,5 +94,115 @@ public final class DefaultMetaGroupImpl implements MetaGroup {
   @Override
   public AtomicInteger numGroups() {
     return numGroups;
+  }
+
+  @Override
+  public void setJarFilePaths(final List<String> jarFilePaths) {
+    if (jarFilePaths != null && jarFilePaths.size() != 0) {
+      groupJarFilePaths.addAll(jarFilePaths);
+    }
+  }
+
+  @Override
+  public MetaGroupCheckpoint checkpoint() {
+    final Map<String, AvroConfigDag> avroConfigDagMap = new HashMap<>();
+    final GroupMinimumLatestWatermarkTimeStamp groupTimestamp = new GroupMinimumLatestWatermarkTimeStamp();
+
+    if (queryIdConfigDagMap.getKeys().size() == 0) {
+      LOG.log(Level.WARNING, "There are no queries in the queryIdConfigDagMap for checkpointing.");
+    }
+    for (final String queryId : queryIdConfigDagMap.getKeys()) {
+      LOG.log(Level.INFO, "query with id {0} is being checkpointed", new Object[]{queryId});
+      avroConfigDagMap.put(queryId, convertToAvroConfigDag(queryIdConfigDagMap.get(queryId), groupTimestamp));
+    }
+
+    return MetaGroupCheckpoint.newBuilder()
+        .setAvroConfigDags(avroConfigDagMap)
+        .setMinimumLatestCheckpointTimestamp(groupTimestamp.getValue())
+        .setJarFilePaths(groupJarFilePaths)
+        .build();
+  }
+
+  /**
+   * Convert a ConfigDag to an AvroConfigDag.
+   */
+  private AvroConfigDag convertToAvroConfigDag(final DAG<ConfigVertex, MISTEdge> configDag,
+                                               final GroupMinimumLatestWatermarkTimeStamp groupTimestamp) {
+    final Map<ConfigVertex, Integer> indexMap = new HashMap<>();
+    final List<AvroConfigVertex> avroConfigVertexList = new ArrayList<>();
+    final List<AvroConfigMISTEdge> avroConfigMISTEdgeList = new ArrayList<>();
+
+    for (final ConfigVertex cv : configDag.getVertices()) {
+      final ExecutionVertex ev = configExecutionVertexMap.get(cv);
+      Map<String, Object> state = new HashMap<>();
+      long latestWatermarkTimestamp = Long.MAX_VALUE;
+      if (ev.getType() == ExecutionVertex.Type.OPERATOR) {
+        final Operator op = ((DefaultPhysicalOperatorImpl) ev).getOperator();
+        if (op instanceof StateHandler) {
+          final StateHandler stateHandler = (StateHandler) op;
+          state = StateSerializer.serializeStateMap(stateHandler.getOperatorState());
+          latestWatermarkTimestamp = stateHandler.getLatestCheckpointTimestamp();
+          groupTimestamp.compareAndSetValue(latestWatermarkTimestamp);
+        }
+      }
+      final AvroConfigVertexType type;
+      if (cv.getType() == ExecutionVertex.Type.SOURCE) {
+        type = AvroConfigVertexType.SOURCE;
+      } else if (cv.getType() == ExecutionVertex.Type.OPERATOR) {
+        type = AvroConfigVertexType.OPERATOR;
+      } else {
+        type = AvroConfigVertexType.SINK;
+      }
+      final AvroConfigVertex acv = AvroConfigVertex.newBuilder()
+          .setId(cv.getId())
+          .setType(type)
+          .setConfiguration(cv.getConfiguration())
+          .setState(state)
+          .setLatestCheckpointTimestamp(latestWatermarkTimestamp)
+          .build();
+      avroConfigVertexList.add(acv);
+      indexMap.put(cv, avroConfigVertexList.size() - 1);
+    }
+
+    for (final ConfigVertex cv : configDag.getVertices()) {
+      for (final Map.Entry<ConfigVertex, MISTEdge> entry : configDag.getEdges(cv).entrySet()) {
+        final MISTEdge mEdge = entry.getValue();
+        final AvroConfigMISTEdge edge = AvroConfigMISTEdge.newBuilder()
+            .setIndex(mEdge.getIndex())
+            .setDirection(mEdge.getDirection())
+            .setFromVertexIndex(indexMap.get(cv))
+            .setToVertexIndex(indexMap.get(entry.getKey()))
+            .build();
+        avroConfigMISTEdgeList.add(edge);
+      }
+    }
+
+    return AvroConfigDag.newBuilder()
+        .setAvroConfigVertices(avroConfigVertexList)
+        .setAvroConfigMISTEdges(avroConfigMISTEdgeList)
+        .build();
+  }
+
+  /**
+   * This class serves as a wrapper for the Long class.
+   * Its performance is better than that of an AtomicLong class or volatile long type
+   * because there are no needs for synchronization.
+   */
+  private final class GroupMinimumLatestWatermarkTimeStamp {
+    private long timestamp;
+
+    public GroupMinimumLatestWatermarkTimeStamp() {
+      this.timestamp = Long.MAX_VALUE;
+    }
+
+    public long getValue() {
+      return timestamp;
+    }
+
+    public void compareAndSetValue(final long newValue) {
+      if (newValue < timestamp) {
+        timestamp = newValue;
+      }
+    }
   }
 }

@@ -15,10 +15,7 @@
  */
 package edu.snu.mist.common.utils;
 
-import edu.snu.mist.common.MistDataEvent;
-import edu.snu.mist.common.MistEvent;
-import edu.snu.mist.common.MistWatermarkEvent;
-import edu.snu.mist.common.OutputEmitter;
+import edu.snu.mist.common.*;
 
 import java.util.List;
 
@@ -44,5 +41,9 @@ public final class OutputBufferEmitter implements OutputEmitter {
   @Override
   public void emitWatermark(final MistWatermarkEvent watermark) {
     list.add(watermark);
+  }
+  @Override
+  public void emitCheckpoint(final MistCheckpointEvent mistCheckpointEvent) {
+    // do nothing
   }
 }

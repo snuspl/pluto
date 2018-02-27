@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task.deactivation;
 
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.OutputEmitter;
@@ -132,5 +133,10 @@ final class DeactivatedSourceOutputEmitter implements OutputEmitter {
     }
 
     */
+  }
+
+  @Override
+  public void emitCheckpoint(final MistCheckpointEvent mistCheckpointEvent) {
+    // do nothing
   }
 }

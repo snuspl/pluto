@@ -17,24 +17,21 @@ package edu.snu.mist.common;
 
 import edu.snu.mist.common.exceptions.NegativeTimestampException;
 
-import java.io.Serializable;
+public class MistCheckpointEvent implements MistEvent {
 
-/**
- * This class represents watermark event.
- */
-public final class MistWatermarkEvent implements MistEvent, Serializable {
   /**
-   * Timestamp for the WATERMARK.
+   * Timestamp for the data.
    */
   private long timestamp;
 
-  public MistWatermarkEvent(final long timestamp) {
+  public MistCheckpointEvent(final long timestamp) {
     if (timestamp < 0L) {
       throw new NegativeTimestampException("Negative timestamp in watermark is not allowed.");
     }
     this.timestamp = timestamp;
   }
 
+  @Override
   public long getTimestamp() {
     return timestamp;
   }
@@ -46,7 +43,7 @@ public final class MistWatermarkEvent implements MistEvent, Serializable {
 
   @Override
   public boolean isCheckpoint() {
-    return false;
+    return true;
   }
 
   @Override
@@ -57,7 +54,7 @@ public final class MistWatermarkEvent implements MistEvent, Serializable {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    return timestamp == ((MistWatermarkEvent) o).getTimestamp();
+    return timestamp == ((MistCheckpointEvent) o).getTimestamp();
   }
 
   @Override
@@ -67,7 +64,7 @@ public final class MistWatermarkEvent implements MistEvent, Serializable {
 
   @Override
   public String toString() {
-    return new StringBuilder("MistWatermarkEvent with timestamp: ")
+    return new StringBuilder("MistCheckpointEvent with timestamp: ")
         .append(timestamp)
         .toString();
   }

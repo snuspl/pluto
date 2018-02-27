@@ -33,4 +33,9 @@ public interface StateHandler {
    */
   void setState(Map<String, Object> loadedState);
 
+  /**
+   * Get the latest checkpoint timestamp.
+   */
+  long getLatestCheckpointTimestamp();
+
 }

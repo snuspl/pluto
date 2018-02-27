@@ -39,6 +39,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -59,6 +60,7 @@ public final class ImmediateQueryMergingStarterTest {
   private QueryIdConfigDagMap queryIdConfigDagMap;
   private SrcAndDagMap<String> srcAndDagMap;
   private QueryStarter queryStarter;
+  private AtomicLong configVertexId;
 
   @Before
   public void setUp() throws InjectionException, IOException {
@@ -78,6 +80,7 @@ public final class ImmediateQueryMergingStarterTest {
     queryIdConfigDagMap = injector.getInstance(QueryIdConfigDagMap.class);
     srcAndDagMap = injector.getInstance(SrcAndDagMap.class);
     queryStarter = injector.getInstance(QueryStarter.class);
+    configVertexId = new AtomicLong();
   }
 
   /**
@@ -183,9 +186,12 @@ public final class ImmediateQueryMergingStarterTest {
     final PhysicalSink<String> sink = generateSink(sinkConf, result);
 
     // Config vertices
-    final ConfigVertex srcVertex = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf);
-    final ConfigVertex ocVertex = new ConfigVertex(ExecutionVertex.Type.OPERATOR, ocConf);
-    final ConfigVertex sinkVertex = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf);
+    final ConfigVertex srcVertex = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SOURCE, sourceConf);
+    final ConfigVertex ocVertex = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.OPERATOR, ocConf);
+    final ConfigVertex sinkVertex = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SINK, sinkConf);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>
@@ -256,9 +262,12 @@ public final class ImmediateQueryMergingStarterTest {
     final PhysicalSink<String> sink1 = generateSink(sinkConf1, result1);
 
     // Config vertices
-    final ConfigVertex srcVertex1 = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf1);
-    final ConfigVertex ocVertex1 = new ConfigVertex(ExecutionVertex.Type.OPERATOR, ocConf1);
-    final ConfigVertex sinkVertex1 = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf1);
+    final ConfigVertex srcVertex1 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SOURCE, sourceConf1);
+    final ConfigVertex ocVertex1 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.OPERATOR, ocConf1);
+    final ConfigVertex sinkVertex1 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SINK, sinkConf1);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>
@@ -280,9 +289,12 @@ public final class ImmediateQueryMergingStarterTest {
     final PhysicalSink<String> sink2 = generateSink(sinkConf2, result2);
 
     // Config vertices
-    final ConfigVertex srcVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf2);
-    final ConfigVertex ocVertex2 = new ConfigVertex(ExecutionVertex.Type.OPERATOR, ocConf2);
-    final ConfigVertex sinkVertex2 = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf2);
+    final ConfigVertex srcVertex2 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SOURCE, sourceConf2);
+    final ConfigVertex ocVertex2 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.OPERATOR, ocConf2);
+    final ConfigVertex sinkVertex2 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SINK, sinkConf2);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>
@@ -381,9 +393,12 @@ public final class ImmediateQueryMergingStarterTest {
     final PhysicalSink<String> sink1 = generateSink(sinkConf1, result1);
 
     // Config vertices
-    final ConfigVertex srcVertex1 = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf);
-    final ConfigVertex ocVertex1 = new ConfigVertex(ExecutionVertex.Type.OPERATOR, operatorConf);
-    final ConfigVertex sinkVertex1 = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf1);
+    final ConfigVertex srcVertex1 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SOURCE, sourceConf);
+    final ConfigVertex ocVertex1 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.OPERATOR, operatorConf);
+    final ConfigVertex sinkVertex1 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SINK, sinkConf1);
     final List<String> paths1 = mock(List.class);
 
     // Create dag
@@ -402,9 +417,12 @@ public final class ImmediateQueryMergingStarterTest {
     final List<String> paths2 = mock(List.class);
 
     // Config vertices
-    final ConfigVertex srcVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf);
-    final ConfigVertex ocVertex2 = new ConfigVertex(ExecutionVertex.Type.OPERATOR, operatorConf);
-    final ConfigVertex sinkVertex2 = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf2);
+    final ConfigVertex srcVertex2 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SOURCE, sourceConf);
+    final ConfigVertex ocVertex2 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.OPERATOR, operatorConf);
+    final ConfigVertex sinkVertex2 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SINK, sinkConf2);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>
@@ -501,9 +519,12 @@ public final class ImmediateQueryMergingStarterTest {
     final PhysicalSink<String> sink1 = generateSink(sinkConf1, result1);
 
     // Config vertices
-    final ConfigVertex srcVertex1 = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf);
-    final ConfigVertex ocVertex1 = new ConfigVertex(ExecutionVertex.Type.OPERATOR, ocConf1);
-    final ConfigVertex sinkVertex1 = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf1);
+    final ConfigVertex srcVertex1 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SOURCE, sourceConf);
+    final ConfigVertex ocVertex1 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.OPERATOR, ocConf1);
+    final ConfigVertex sinkVertex1 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SINK, sinkConf1);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>
@@ -523,9 +544,12 @@ public final class ImmediateQueryMergingStarterTest {
     final List<String> paths2 = mock(List.class);
 
     // Config vertices
-    final ConfigVertex srcVertex2 = new ConfigVertex(ExecutionVertex.Type.SOURCE, sourceConf);
-    final ConfigVertex ocVertex2 = new ConfigVertex(ExecutionVertex.Type.OPERATOR, ocConf2);
-    final ConfigVertex sinkVertex2 = new ConfigVertex(ExecutionVertex.Type.SINK, sinkConf2);
+    final ConfigVertex srcVertex2 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SOURCE, sourceConf);
+    final ConfigVertex ocVertex2 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.OPERATOR, ocConf2);
+    final ConfigVertex sinkVertex2 = new ConfigVertex(Long.toString(configVertexId.getAndIncrement()),
+        ExecutionVertex.Type.SINK, sinkConf2);
 
     // Create dag
     final Tuple<DAG<ConfigVertex, MISTEdge>, ExecutionDag>

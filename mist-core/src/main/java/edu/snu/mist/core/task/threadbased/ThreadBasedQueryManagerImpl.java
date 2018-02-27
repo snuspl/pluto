@@ -23,7 +23,6 @@ import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
-import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.Direction;
@@ -278,8 +277,9 @@ public final class ThreadBasedQueryManagerImpl implements QueryManager {
   }
 
   @Override
-  public GroupSourceManager getGroupSourceManager(final String groupId) {
-    // This method should not be used in option 3.
-    throw new RuntimeException("getGroupSourceManager should not be used in option 3.");
+  public Query addNewQueryInfo(final String groupId, final String queryId, final List<String> jarFilePaths) {
+    // This class will be deleted.
+    // Do nothing.
+    return null;
   }
 }

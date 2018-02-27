@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task.merging;
 
+import edu.snu.mist.common.operators.StateHandler;
 import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;
 import edu.snu.mist.core.task.*;
@@ -70,6 +71,10 @@ final class DefaultExecutionVertexGeneratorImpl implements ExecutionVertexGenera
             configVertex.getConfiguration(), new ClassHierarchyImpl(urls));
         final PhysicalOperator operator = new DefaultPhysicalOperatorImpl(operatorId, configVertex.getConfiguration(),
             physicalObjectGenerator.newOperator(conf, classLoader));
+        if (configVertex.getState().size() != 0) {
+          ((StateHandler) operator.getOperator()).setState(
+              StateSerializer.deserializeStateMap(configVertex.getState()));
+        }
         return operator;
       }
       case SINK:

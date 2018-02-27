@@ -25,7 +25,6 @@ import edu.snu.mist.core.driver.parameters.DeactivationEnabled;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
-import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.groupaware.parameters.GroupSchedModelType;
 import edu.snu.mist.core.task.merging.*;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
@@ -39,8 +38,6 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -71,7 +68,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
    */
   private final GlobalSchedGroupInfoMap groupInfoMap;
 
-  private final ConcurrentMap<String, Tuple<MetaGroup, AtomicBoolean>> groupMap;
+  private final GroupMap groupMap;
 
   /**
    * Merging enabled or not.
@@ -139,6 +136,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
                                      final NettySharedResource nettySharedResource,
                                      final DagGenerator dagGenerator,
                                      final GroupAllocationTableModifier groupAllocationTableModifier,
+                                     final GroupMap groupMap,
                                      @Parameter(GroupSchedModelType.class) final String executionModel) {
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
@@ -154,7 +152,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     this.nettySharedResource = nettySharedResource;
     this.dagGenerator = dagGenerator;
     this.groupAllocationTableModifier = groupAllocationTableModifier;
-    this.groupMap = new ConcurrentHashMap<>();
+    this.groupMap = groupMap;
   }
 
   /**
@@ -187,6 +185,32 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
             new Object[]{groupId, subGroupId, queryId});
       }
 
+      final List<String> jarFilePaths = tuple.getValue().getJarFilePaths();
+      final Query query = addNewQueryInfo(groupId, queryId, jarFilePaths);
+
+      // Start the submitted dag
+      final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
+      final Tuple<MetaGroup, AtomicBoolean> mGroup = groupMap.get(groupId);
+      mGroup.getKey().getQueryStarter().start(queryId, query, configDag, jarFilePaths);
+
+      queryControlResult.setIsSuccess(true);
+      queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
+      return queryControlResult;
+    } catch (final Exception e) {
+      e.printStackTrace();
+      // [MIST-345] We need to release all of the information that is required for the query when it fails.
+      LOG.log(Level.SEVERE, "An exception occurred while starting {0} query: {1}",
+          new Object[] {tuple.getKey(), e.toString()});
+
+      queryControlResult.setIsSuccess(false);
+      queryControlResult.setMsg(e.getMessage());
+      return queryControlResult;
+    }
+  }
+
+  @Override
+  public Query addNewQueryInfo(final String groupId, final String queryId, final List<String> jarFilePaths) {
+    try {
       if (groupMap.get(groupId) == null) {
         // Add new group id, if it doesn't exist
         final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
@@ -215,6 +239,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
         }
 
         final MetaGroup metaGroup = injector.getInstance(MetaGroup.class);
+        metaGroup.setJarFilePaths(jarFilePaths);
 
         if (groupMap.putIfAbsent(groupId, new Tuple<>(metaGroup, new AtomicBoolean(false))) == null) {
           LOG.log(Level.FINE, "Create Group: {0}", new Object[]{groupId});
@@ -228,12 +253,12 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
             mGroup.notifyAll();
           }
 
-          /*
-          synchronized (metaGroup.getGroups()) {
-            metaGroup.getGroups().add(group);
-            eventProcessorManager.addGroup(group);
-          }
-          */
+            /*
+            synchronized (metaGroup.getGroups()) {
+              metaGroup.getGroups().add(group);
+              eventProcessorManager.addGroup(group);
+            }
+            */
         }
       }
 
@@ -247,23 +272,10 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
       final Query query = new DefaultQueryImpl(queryId);
       groupAllocationTableModifier.addEvent(new WritingEvent(WritingEvent.EventType.QUERY_ADD,
           new Tuple<>(mGroup.getKey(), query)));
-
-      // Start the submitted dag
-      final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
-      mGroup.getKey().getQueryStarter().start(queryId, query, configDag, tuple.getValue().getJarFilePaths());
-
-      queryControlResult.setIsSuccess(true);
-      queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
-      return queryControlResult;
+      return query;
     } catch (final Exception e) {
       e.printStackTrace();
-      // [MIST-345] We need to release all of the information that is required for the query when it fails.
-      LOG.log(Level.SEVERE, "An exception occurred while starting {0} query: {1}",
-          new Object[] {tuple.getKey(), e.toString()});
-
-      queryControlResult.setIsSuccess(false);
-      queryControlResult.setMsg(e.getMessage());
-      return queryControlResult;
+      return null;
     }
   }
 
@@ -314,10 +326,5 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     queryControlResult.setIsSuccess(true);
     queryControlResult.setMsg(ResultMessage.deleteSuccess(queryId));
     return queryControlResult;
-  }
-
-  @Override
-  public GroupSourceManager getGroupSourceManager(final String groupId) {
-    return null;
   }
 }

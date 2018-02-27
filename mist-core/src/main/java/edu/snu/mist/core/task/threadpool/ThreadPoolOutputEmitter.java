@@ -15,10 +15,7 @@
  */
 package edu.snu.mist.core.task.threadpool;
 
-import edu.snu.mist.common.MistDataEvent;
-import edu.snu.mist.common.MistEvent;
-import edu.snu.mist.common.MistWatermarkEvent;
-import edu.snu.mist.common.OutputEmitter;
+import edu.snu.mist.common.*;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.ExecutionVertex;
 import edu.snu.mist.core.task.PhysicalOperator;
@@ -190,5 +187,10 @@ public final class ThreadPoolOutputEmitter<I> implements OutputEmitter {
     } catch (final NullPointerException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public void emitCheckpoint(final MistCheckpointEvent mistCheckpointEvent) {
+    // do nothing
   }
 }

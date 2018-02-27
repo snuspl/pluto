@@ -26,7 +26,6 @@ import edu.snu.mist.core.driver.parameters.GroupAware;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
-import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.groupaware.*;
 import edu.snu.mist.core.task.groupaware.parameters.GroupSchedModelType;
 import edu.snu.mist.core.task.merging.*;
@@ -302,7 +301,9 @@ public final class PTQQueryManagerImpl implements QueryManager {
   }
 
   @Override
-  public GroupSourceManager getGroupSourceManager(final String groupId) {
+  public Query addNewQueryInfo(final String groupId, final String queryId, final List<String> jarFilePaths) {
+    // This class will be deleted.
+    // Do nothing.
     return null;
   }
 }
