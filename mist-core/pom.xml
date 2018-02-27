@@ -78,11 +78,6 @@ limitations under the License.
             <artifactId>hadoop-mapreduce-client-core</artifactId>
             <version>${hadoop.version}</version>
         </dependency>
-        <dependency>
-            <groupId>edu.snu.mist</groupId>
-            <artifactId>mist-examples</artifactId>
-            <version>0.1-SNAPSHOT</version>
-        </dependency>
     </dependencies>
 
     <build>

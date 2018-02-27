@@ -25,8 +25,6 @@ import edu.snu.mist.core.driver.parameters.DeactivationEnabled;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
-import edu.snu.mist.core.task.checkpointing.CheckpointManager;
-import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.groupaware.parameters.GroupSchedModelType;
 import edu.snu.mist.core.task.merging.*;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
@@ -121,8 +119,6 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
 
   private final GroupAllocationTableModifier groupAllocationTableModifier;
 
-  private final CheckpointManager checkpointManager;
-
   /**
    * Default query manager in MistTask.
    */
@@ -141,8 +137,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
                                      final DagGenerator dagGenerator,
                                      final GroupAllocationTableModifier groupAllocationTableModifier,
                                      final GroupMap groupMap,
-                                     @Parameter(GroupSchedModelType.class) final String executionModel,
-                                     final CheckpointManager checkpointManager) {
+                                     @Parameter(GroupSchedModelType.class) final String executionModel) {
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.groupInfoMap = groupInfoMap;
@@ -158,7 +153,6 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     this.dagGenerator = dagGenerator;
     this.groupAllocationTableModifier = groupAllocationTableModifier;
     this.groupMap = groupMap;
-    this.checkpointManager = checkpointManager;
   }
 
   /**
@@ -191,6 +185,31 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
             new Object[]{groupId, subGroupId, queryId});
       }
 
+      final Query query = addNewQueryInfo(groupId, queryId);
+
+      // Start the submitted dag
+      final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
+      final Tuple<MetaGroup, AtomicBoolean> mGroup = groupMap.get(groupId);
+      mGroup.getKey().getQueryStarter().start(queryId, query, configDag, tuple.getValue().getJarFilePaths());
+
+      queryControlResult.setIsSuccess(true);
+      queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
+      return queryControlResult;
+    } catch (final Exception e) {
+      e.printStackTrace();
+      // [MIST-345] We need to release all of the information that is required for the query when it fails.
+      LOG.log(Level.SEVERE, "An exception occurred while starting {0} query: {1}",
+          new Object[] {tuple.getKey(), e.toString()});
+
+      queryControlResult.setIsSuccess(false);
+      queryControlResult.setMsg(e.getMessage());
+      return queryControlResult;
+    }
+  }
+
+  @Override
+  public Query addNewQueryInfo(final String groupId, final String queryId) {
+    try {
       if (groupMap.get(groupId) == null) {
         // Add new group id, if it doesn't exist
         final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
@@ -232,12 +251,12 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
             mGroup.notifyAll();
           }
 
-          /*
-          synchronized (metaGroup.getGroups()) {
-            metaGroup.getGroups().add(group);
-            eventProcessorManager.addGroup(group);
-          }
-          */
+            /*
+            synchronized (metaGroup.getGroups()) {
+              metaGroup.getGroups().add(group);
+              eventProcessorManager.addGroup(group);
+            }
+            */
         }
       }
 
@@ -251,23 +270,10 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
       final Query query = new DefaultQueryImpl(queryId);
       groupAllocationTableModifier.addEvent(new WritingEvent(WritingEvent.EventType.QUERY_ADD,
           new Tuple<>(mGroup.getKey(), query)));
-
-      // Start the submitted dag
-      final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
-      mGroup.getKey().getQueryStarter().start(queryId, query, configDag, tuple.getValue().getJarFilePaths());
-
-      queryControlResult.setIsSuccess(true);
-      queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
-      return queryControlResult;
+      return query;
     } catch (final Exception e) {
       e.printStackTrace();
-      // [MIST-345] We need to release all of the information that is required for the query when it fails.
-      LOG.log(Level.SEVERE, "An exception occurred while starting {0} query: {1}",
-          new Object[] {tuple.getKey(), e.toString()});
-
-      queryControlResult.setIsSuccess(false);
-      queryControlResult.setMsg(e.getMessage());
-      return queryControlResult;
+      return null;
     }
   }
 
@@ -318,15 +324,5 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     queryControlResult.setIsSuccess(true);
     queryControlResult.setMsg(ResultMessage.deleteSuccess(queryId));
     return queryControlResult;
-  }
-
-  @Override
-  public GroupSourceManager getGroupSourceManager(final String groupId) {
-    return null;
-  }
-
-  @Override
-  public CheckpointManager getCheckpointManager() {
-    return checkpointManager;
   }
 }

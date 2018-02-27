@@ -18,21 +18,19 @@ package edu.snu.mist.core.task.checkpointing;
 import edu.snu.mist.common.graph.AdjacentListDAG;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.common.shared.KafkaSharedResource;
 import edu.snu.mist.common.shared.MQTTResource;
 import edu.snu.mist.common.shared.NettySharedResource;
 import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.task.*;
-import edu.snu.mist.core.task.groupaware.*;
-import edu.snu.mist.core.task.merging.*;
+import edu.snu.mist.core.task.groupaware.GroupAllocationTableModifier;
+import edu.snu.mist.core.task.groupaware.GroupMap;
+import edu.snu.mist.core.task.groupaware.MetaGroup;
+import edu.snu.mist.core.task.groupaware.WritingEvent;
 import edu.snu.mist.core.task.stores.MetaGroupCheckpointStore;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.*;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.JavaConfigurationBuilder;
-import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -90,6 +88,11 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
    */
   private final boolean mergingEnabled;
 
+  /**
+   * The query manager for the task.
+   */
+  private final QueryManager queryManager;
+
   @Inject
   private DefaultCheckpointManagerImpl(final GroupMap groupMap,
                                        final MetaGroupCheckpointStore metaGroupCheckpointStore,
@@ -99,7 +102,8 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
                                        final NettySharedResource nettySharedResource,
                                        final QueryInfoStore planStore,
                                        final DagGenerator dagGenerator,
-                                       @Parameter(MergingEnabled.class) final boolean mergingEnabled) {
+                                       @Parameter(MergingEnabled.class) final boolean mergingEnabled,
+                                       final QueryManager queryManager) {
     this.groupMap = groupMap;
     this.checkpointStore = metaGroupCheckpointStore;
     this.groupAllocationTableModifier = groupAllocationTableModifier;
@@ -109,6 +113,7 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
     this.planStore = planStore;
     this.dagGenerator = dagGenerator;
     this.mergingEnabled = mergingEnabled;
+    this.queryManager = queryManager;
   }
 
   @Override
@@ -153,66 +158,9 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
               new Object[]{groupId, queryId});
         }
 
-        if (groupMap.get(groupId) == null) {
-          // Add new group id, if it doesn't exist
-          final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-          jcb.bindNamedParameter(GroupId.class, groupId);
-
-          // TODO[DELETE] start: for test
-          if (mergingEnabled) {
-            jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
-            jcb.bindImplementation(QueryRemover.class, MergeAwareQueryRemover.class);
-            jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
-          } else {
-            jcb.bindImplementation(QueryStarter.class, NoMergingQueryStarter.class);
-            jcb.bindImplementation(QueryRemover.class, NoMergingAwareQueryRemover.class);
-            jcb.bindImplementation(ExecutionDags.class, NoMergingExecutionDags.class);
-          }
-          // TODO[DELETE] end: for test
-
-          final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-          injector.bindVolatileInstance(MQTTResource.class, mqttSharedResource);
-          injector.bindVolatileInstance(KafkaSharedResource.class, kafkaSharedResource);
-          injector.bindVolatileInstance(NettySharedResource.class, nettySharedResource);
-          injector.bindVolatileInstance(QueryInfoStore.class, planStore);
-
-          if (!mergingEnabled) {
-            injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
-          }
-
-          final MetaGroup metaGroup = injector.getInstance(MetaGroup.class);
-
-          if (groupMap.putIfAbsent(groupId, new Tuple<>(metaGroup, new AtomicBoolean(false))) == null) {
-            LOG.log(Level.FINE, "Create Group: {0}", new Object[]{groupId});
-            final Group group = injector.getInstance(Group.class);
-            groupAllocationTableModifier.addEvent(
-                new WritingEvent(WritingEvent.EventType.GROUP_ADD, new Tuple<>(metaGroup, group)));
-
-            final Tuple<MetaGroup, AtomicBoolean> mGroup = groupMap.get(groupId);
-            synchronized (mGroup) {
-              mGroup.getValue().set(true);
-              mGroup.notifyAll();
-            }
-
-            /*
-            synchronized (metaGroup.getGroups()) {
-              metaGroup.getGroups().add(group);
-              eventProcessorManager.addGroup(group);
-            }
-            */
-          }
-        }
-
+        // Add the query info to the queryManager.
+        final Query query = queryManager.addNewQueryInfo(groupId, queryId);
         final Tuple<MetaGroup, AtomicBoolean> mGroup = groupMap.get(groupId);
-        synchronized (mGroup) {
-          if (!mGroup.getValue().get()) {
-            mGroup.wait();
-          }
-        }
-
-        final Query query = new DefaultQueryImpl(queryId);
-        groupAllocationTableModifier.addEvent(new WritingEvent(WritingEvent.EventType.QUERY_ADD,
-            new Tuple<>(mGroup.getKey(), query)));
 
         // Start the submitted dag
         mGroup.getKey().getQueryStarter().start(queryId, query, configDag, checkpoint.getJarFilePaths());
@@ -268,5 +216,10 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
   @Override
   public MetaGroup getGroup(final String groupId) {
     return groupMap.get(groupId).getKey();
+  }
+
+  @Override
+  public void close() throws Exception {
+    checkpointStore.close();
   }
 }

@@ -20,6 +20,7 @@ import edu.snu.mist.client.MISTQuery;
 import edu.snu.mist.client.MISTQueryBuilder;
 import edu.snu.mist.client.datastreams.configurations.PeriodicWatermarkConfiguration;
 import edu.snu.mist.client.datastreams.configurations.SourceConfiguration;
+import edu.snu.mist.client.datastreams.configurations.TextSocketSourceConfiguration;
 import edu.snu.mist.client.datastreams.configurations.WatermarkConfiguration;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
@@ -32,7 +33,6 @@ import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.groupaware.GroupAwareQueryManagerImpl;
 import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
 import edu.snu.mist.core.task.utils.TestSinkConfiguration;
-import edu.snu.mist.examples.MISTExampleUtils;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.AvroVertex;
 import edu.snu.mist.formats.avro.Edge;
@@ -87,9 +87,10 @@ public class GroupRecoveryTest {
      * Build the query which consists of:
      * SRC1 -> toTuple -> reduceByKey -> sort -> toString -> sink1
      */
-    final String source1Socket = "localhost:16118";
-    final SourceConfiguration localTextSocketSource1Conf =
-        MISTExampleUtils.getLocalTextSocketSourceConf(source1Socket);
+    final SourceConfiguration localTextSocketSource1Conf = TextSocketSourceConfiguration.newBuilder()
+        .setHostAddress("localhost")
+        .setHostPort(16118)
+        .build();
 
     final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("testGroup", "user1");
 
@@ -120,7 +121,6 @@ public class GroupRecoveryTest {
     // Submit query.
     final MISTQuery query = buildQuery();
 
-
     // Generate avro chained dag : needed parts from MISTExamplesUtils.submit()
     final Tuple<List<AvroVertex>, List<Edge>> initialAvroOpChainDag = query.getAvroOperatorDag();
 
@@ -140,7 +140,8 @@ public class GroupRecoveryTest {
     jcb.bindImplementation(QueryManager.class, GroupAwareQueryManagerImpl.class);
     jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-
+    final CheckpointManager checkpointManager = injector.getInstance(CheckpointManager.class);
+    injector.bindVolatileInstance(CheckpointManager.class, checkpointManager);
     final QueryManager queryManager = injector.getInstance(QueryManager.class);
 
     // Modify the sinks of the avroChainedDag
@@ -153,7 +154,6 @@ public class GroupRecoveryTest {
     // Wait until all sources connect to stream generator
     sourceCountDownLatch1.await();
 
-    final CheckpointManager checkpointManager = queryManager.getCheckpointManager();
     final ExecutionDags executionDags = checkpointManager.getGroup(groupId).getExecutionDags();
     Assert.assertEquals(executionDags.values().size(), 1);
     final ExecutionDag executionDag = executionDags.values().iterator().next();
