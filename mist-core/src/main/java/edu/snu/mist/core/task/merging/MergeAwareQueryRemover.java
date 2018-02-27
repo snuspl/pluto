@@ -122,4 +122,11 @@ public final class MergeAwareQueryRemover implements QueryRemover {
       }
     }
   }
+
+  @Override
+  public void deleteAllQueries() {
+    for (final String queryId : queryIdConfigDagMap.getKeys()) {
+      deleteQuery(queryId);
+    }
+  }
 }

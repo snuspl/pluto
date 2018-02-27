@@ -34,6 +34,11 @@ public interface MistEvent {
   boolean isData();
 
   /**
+   * Return true if is CHECKPOINT type.
+   */
+  boolean isCheckpoint();
+
+  /**
    * Get timestamp of the MistEvent.
    */
   long getTimestamp();

@@ -15,12 +15,13 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.core.task.deactivation.GroupSourceManager;
 import edu.snu.mist.core.task.groupaware.GroupAwareQueryManagerImpl;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
+
+import java.util.List;
 
 /**
  * This interface manages queries that are submitted from clients.
@@ -35,16 +36,19 @@ public interface QueryManager extends AutoCloseable {
   QueryControlResult create(Tuple<String, AvroDag> tuple);
 
   /**
+   * Add a new query info to the query manager.
+   * @param groupId
+   * @param queryId
+   * @param jarFilePaths for this group
+   * @return
+   */
+  Query addNewQueryInfo(String groupId, String queryId, List<String> jarFilePaths);
+
+  /**
    * Deletes the query corresponding to the queryId submitted by client.
    * @param groupId group id
    * @param queryId query id
    * @return Returns the result message of deletion.
    */
   QueryControlResult delete(String groupId, String queryId);
-
-  /**
-   * Get the GroupSourceManager.
-   * @param groupId group id
-   */
-  GroupSourceManager getGroupSourceManager(String groupId);
 }

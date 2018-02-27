@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.parameters.WindowInterval;
@@ -58,10 +59,16 @@ public final class SessionWindowOperator<T> extends OneStreamOperator implements
    */
   private boolean startedNewWindow = false;
 
+  /**
+   * The latest Checkpoint Timestamp.
+   */
+  private long latestCheckpointTimestamp;
+
   @Inject
   public SessionWindowOperator(@Parameter(WindowInterval.class) final int sessionInterval) {
     this.sessionInterval = sessionInterval;
     currentWindow = null;
+    this.latestCheckpointTimestamp = 0L;
   }
 
   /**
@@ -110,6 +117,12 @@ public final class SessionWindowOperator<T> extends OneStreamOperator implements
   }
 
   @Override
+  public void processLeftCheckpoint(final MistCheckpointEvent input) {
+    latestCheckpointTimestamp = input.getTimestamp();
+    outputEmitter.emitCheckpoint(input);
+  }
+
+  @Override
   public Map<String, Object> getOperatorState() {
     final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("currentWindow", currentWindow);
@@ -124,5 +137,10 @@ public final class SessionWindowOperator<T> extends OneStreamOperator implements
     currentWindow = (Window<T>)loadedState.get("currentWindow");
     latestDataTimestamp = (long)loadedState.get("latestDataTimestamp");
     startedNewWindow = (boolean)loadedState.get("startedNewWindow");
+  }
+
+  @Override
+  public long getLatestCheckpointTimestamp() {
+    return latestCheckpointTimestamp;
   }
 }

@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 /**
- * A package for defining fine-grained & stateful monitoring cep rules.
+ * A package for batch query submission to support test in task side.
  */
-package edu.snu.mist.client.cep;
+package edu.snu.mist.core.task.batchsub;
