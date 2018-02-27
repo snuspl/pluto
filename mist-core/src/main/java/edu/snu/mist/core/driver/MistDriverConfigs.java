@@ -15,12 +15,9 @@
  */
 package edu.snu.mist.core.driver;
 
-import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.core.driver.parameters.NewRatio;
 import edu.snu.mist.core.driver.parameters.ReservedCodeCacheSize;
-import edu.snu.mist.core.parameters.NumTaskCores;
-import edu.snu.mist.core.parameters.NumTasks;
-import edu.snu.mist.core.parameters.TaskMemorySize;
+import edu.snu.mist.core.parameters.*;
 import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.formats.CommandLine;
 
@@ -49,9 +46,14 @@ public final class MistDriverConfigs {
   private final int numTaskCores;
 
   /**
-   * The port number of rpc server of a MistTask.
+   * The memory size of a MistMaster.
    */
-  private final int rpcServerPort;
+  private final int masterMemSize;
+
+  /**
+   * The number of cores of a MistMaster.
+   */
+  private final int numMasterCores;
 
   /**
    * The new ratio of the JVM process.
@@ -63,35 +65,76 @@ public final class MistDriverConfigs {
    */
   private final int reservedCodeCacheSize;
 
+  /**
+   * The client-to-master RPC port number.
+   */
+  private final int clientToMasterPort;
+
+  /**
+   * The client-to-task RPC port number.
+   */
+  private final int clientToTaskPort;
+
+  /**
+   * The master-to-task RPC port number.
+   */
+  private final int masterToTaskPort;
+
+  /**
+   * The task-to-master RPC port number.
+   */
+  private final int taskToMasterPort;
+
+  /**
+   * The driver-to-master RPC port number.
+   */
+  private final int driverToMasterPort;
+
   @Inject
   private MistDriverConfigs(@Parameter(NumTasks.class) final int numTasks,
                             @Parameter(TaskMemorySize.class) final int taskMemSize,
                             @Parameter(NumTaskCores.class) final int numTaskCores,
-                            @Parameter(RPCServerPort.class) final int rpcServerPort,
+                            @Parameter(MasterMemorySize.class) final int masterMemSize,
+                            @Parameter(NumMasterCores.class) final int numMasterCores,
                             @Parameter(NewRatio.class) final int newRatio,
-                            @Parameter(ReservedCodeCacheSize.class) final int reservedCodeCacheSize) {
+                            @Parameter(ReservedCodeCacheSize.class) final int reservedCodeCacheSize,
+                            @Parameter(ClientToMasterPort.class) final int clientToMasterPort,
+                            @Parameter(ClientToTaskPort.class) final int clientToTaskPort,
+                            @Parameter(MasterToTaskPort.class) final int masterToTaskPort,
+                            @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
+                            @Parameter(DriverToMasterPort.class) final int driverToMasterPort) {
     this.numTasks = numTasks;
     this.taskMemSize = taskMemSize;
     this.numTaskCores = numTaskCores;
-    this.rpcServerPort = rpcServerPort + 10 > MAX_PORT_NUM ? rpcServerPort - 10 : rpcServerPort + 10;
+    this.masterMemSize = masterMemSize;
+    this.numMasterCores = numMasterCores;
     this.newRatio = newRatio;
     this.reservedCodeCacheSize = reservedCodeCacheSize;
+    this.clientToMasterPort = clientToMasterPort;
+    this.clientToTaskPort = clientToTaskPort;
+    this.masterToTaskPort = masterToTaskPort;
+    this.taskToMasterPort = taskToMasterPort;
+    this.driverToMasterPort = driverToMasterPort;
   }
 
   public int getNumTasks() {
-   return numTasks;
+   return this.numTasks;
   }
 
   public int getTaskMemSize() {
-    return taskMemSize;
+    return this.taskMemSize;
   }
 
   public int getNumTaskCores() {
-    return numTaskCores;
+    return this.numTaskCores;
   }
 
-  public int getRpcServerPort() {
-    return rpcServerPort;
+  public int getMasterMemSize() {
+    return this.masterMemSize;
+  }
+
+  public int getNumMasterCores() {
+    return this.numMasterCores;
   }
 
   public int getNewRatio() {
@@ -102,6 +145,26 @@ public final class MistDriverConfigs {
     return this.reservedCodeCacheSize;
   }
 
+  public int getClientToMasterPort() {
+    return this.clientToMasterPort;
+  }
+
+  public int getClientToTaskPort() {
+    return this.clientToTaskPort;
+  }
+
+  public int getMasterToTaskPort() {
+    return this.masterToTaskPort;
+  }
+
+  public int getTaskToMasterPort() {
+    return this.taskToMasterPort;
+  }
+
+  public int getDriverToMasterPort() {
+    return this.driverToMasterPort;
+  }
+
   /**
    * Add parameters to the command line.
    * @param commandLine command line
@@ -110,9 +173,15 @@ public final class MistDriverConfigs {
   public static CommandLine addCommandLineConf(final CommandLine commandLine) {
     return commandLine.registerShortNameOfClass(NumTaskCores.class)
         .registerShortNameOfClass(NumTasks.class)
-        .registerShortNameOfClass(RPCServerPort.class)
         .registerShortNameOfClass(TaskMemorySize.class)
+        .registerShortNameOfClass(NumMasterCores.class)
+        .registerShortNameOfClass(MasterMemorySize.class)
         .registerShortNameOfClass(NewRatio.class)
-        .registerShortNameOfClass(ReservedCodeCacheSize.class);
+        .registerShortNameOfClass(ReservedCodeCacheSize.class)
+        .registerShortNameOfClass(ClientToMasterPort.class)
+        .registerShortNameOfClass(ClientToTaskPort.class)
+        .registerShortNameOfClass(MasterToTaskPort.class)
+        .registerShortNameOfClass(TaskToMasterPort.class)
+        .registerShortNameOfClass(DriverToMasterPort.class);
   }
 }

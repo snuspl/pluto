@@ -40,7 +40,7 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
   /**
    * A proxy that communicates with MIST Driver.
    */
-  private final MistTaskProvider proxyToDriver;
+  private final ClientToMasterMessage proxyToMaster;
   /**
    * A list of MIST Tasks.
    */
@@ -61,9 +61,9 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
   public MISTDefaultExecutionEnvironmentImpl(final String serverAddr,
                                              final int serverPort) throws IOException {
     // Step 1: Get a task list from Driver
-    final NettyTransceiver clientToDriver = new NettyTransceiver(new InetSocketAddress(serverAddr, serverPort));
-    this.proxyToDriver = SpecificRequestor.getClient(MistTaskProvider.class, clientToDriver);
-    final TaskList taskList = proxyToDriver.getTasks(new QueryInfo());
+    final NettyTransceiver clientToMaster = new NettyTransceiver(new InetSocketAddress(serverAddr, serverPort));
+    this.proxyToMaster = SpecificRequestor.getClient(ClientToMasterMessage.class, clientToMaster);
+    final TaskList taskList = proxyToMaster.getTasks(new QueryInfo());
     this.tasks = taskList.getTasks();
     this.taskProxyMap = new ConcurrentHashMap<>();
   }

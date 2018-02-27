@@ -15,12 +15,11 @@
  */
 package edu.snu.mist.client;
 
-import edu.snu.mist.client.utils.MockDriverServer;
+import edu.snu.mist.client.utils.MockMasterServer;
 import edu.snu.mist.client.utils.MockTaskServer;
 import edu.snu.mist.client.utils.TestParameters;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
-import edu.snu.mist.formats.avro.MistTaskProvider;
 import org.apache.avro.ipc.NettyServer;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
@@ -50,8 +49,8 @@ public class MISTDefaultExecutionEnvironmentImplTest {
   @Test
   public void testMISTDefaultExecutionEnvironment() throws IOException {
     // Step 1: Launch mock RPC Server
-    final Server driverServer = new NettyServer(
-        new SpecificResponder(MistTaskProvider.class, new MockDriverServer(driverHost, taskPortNum)),
+    final Server masterServer = new NettyServer(
+        new SpecificResponder(ClientToTaskMessage.class, new MockMasterServer(driverHost, taskPortNum)),
         new InetSocketAddress(driverPortNum));
     final Server taskServer = new NettyServer(
         new SpecificResponder(ClientToTaskMessage.class, new MockTaskServer(testQueryResult)),
@@ -79,7 +78,7 @@ public class MISTDefaultExecutionEnvironmentImplTest {
         driverHost, driverPortNum);
     final APIQueryControlResult result = executionEnvironment.submit(query, tempJarFile.toString());
     Assert.assertEquals(result.getQueryId(), testQueryResult);
-    driverServer.close();
+    masterServer.close();
     taskServer.close();
     Files.delete(tempJarFile);
   }

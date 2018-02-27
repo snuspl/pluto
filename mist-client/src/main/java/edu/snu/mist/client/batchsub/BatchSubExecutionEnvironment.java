@@ -46,7 +46,7 @@ public final class BatchSubExecutionEnvironment {
   /**
    * A proxy that communicates with MIST Driver.
    */
-  private final MistTaskProvider proxyToDriver;
+  private final ClientToMasterMessage proxyToMaster;
   /**
    * A list of MIST Tasks.
    */
@@ -69,8 +69,8 @@ public final class BatchSubExecutionEnvironment {
     // Step 1: Get a task list from Driver
     final NettyTransceiver clientToDriver =
         new NettyTransceiver(new InetSocketAddress(driverServerAddr, driverServerPort));
-    this.proxyToDriver = SpecificRequestor.getClient(MistTaskProvider.class, clientToDriver);
-    final TaskList taskList = proxyToDriver.getTasks(new QueryInfo());
+    this.proxyToMaster = SpecificRequestor.getClient(ClientToMasterMessage.class, clientToDriver);
+    final TaskList taskList = proxyToMaster.getTasks(new QueryInfo());
     this.tasks = taskList.getTasks();
     this.taskProxyMap = new ConcurrentHashMap<>();
   }
