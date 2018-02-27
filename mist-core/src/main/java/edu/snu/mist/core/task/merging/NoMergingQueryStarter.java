@@ -24,7 +24,6 @@ import org.apache.reef.tang.exceptions.InjectionException;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * This query starter does not merge queries.
@@ -47,11 +46,6 @@ public final class NoMergingQueryStarter implements QueryStarter {
    */
   private final ActiveExecutionVertexIdMap activeExecutionVertexIdMap;
 
-  /**
-   * The list of jar file paths.
-   */
-  private final List<String> groupJarFilePaths;
-
   @Inject
   private NoMergingQueryStarter(final ExecutionPlanDagMap executionPlanDagMap,
                                 final DagGenerator dagGenerator,
@@ -59,7 +53,6 @@ public final class NoMergingQueryStarter implements QueryStarter {
     this.executionPlanDagMap = executionPlanDagMap;
     this.dagGenerator = dagGenerator;
     this.activeExecutionVertexIdMap = activeExecutionVertexIdMap;
-    this.groupJarFilePaths = new CopyOnWriteArrayList<>();
   }
 
   /**
@@ -72,11 +65,6 @@ public final class NoMergingQueryStarter implements QueryStarter {
                     final DAG<ConfigVertex, MISTEdge> configDag,
                     final List<String> jarFilePaths)
       throws InjectionException, IOException, ClassNotFoundException {
-    synchronized (groupJarFilePaths) {
-      if (jarFilePaths != null && jarFilePaths.size() != 0 && groupJarFilePaths.size() != 0) {
-        groupJarFilePaths.addAll(jarFilePaths);
-      }
-    }
 
     final ExecutionDag submittedExecutionDag = dagGenerator.generate(configDag, jarFilePaths);
     executionPlanDagMap.put(queryId, submittedExecutionDag);
@@ -91,10 +79,5 @@ public final class NoMergingQueryStarter implements QueryStarter {
     for (final ExecutionVertex executionVertex : dag.getVertices()) {
       activeExecutionVertexIdMap.put(executionVertex.getIdentifier(), executionVertex);
     }
-  }
-
-  @Override
-  public List<String> getJarFilePaths() {
-    return groupJarFilePaths;
   }
 }

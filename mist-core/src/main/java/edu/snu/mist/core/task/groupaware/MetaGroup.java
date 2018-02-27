@@ -65,6 +65,12 @@ public interface MetaGroup {
   AtomicInteger numGroups();
 
   /**
+   * Set the jarFilePaths.
+   * @param jarFilePaths
+   */
+  void setJarFilePaths(List<String> jarFilePaths);
+
+  /**
    * Return a checkpoint of this MetaGroup.
    */
   MetaGroupCheckpoint checkpoint();

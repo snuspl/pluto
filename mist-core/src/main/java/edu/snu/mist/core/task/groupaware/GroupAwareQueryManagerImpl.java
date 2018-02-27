@@ -185,12 +185,13 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
             new Object[]{groupId, subGroupId, queryId});
       }
 
-      final Query query = addNewQueryInfo(groupId, queryId);
+      final List<String> jarFilePaths = tuple.getValue().getJarFilePaths();
+      final Query query = addNewQueryInfo(groupId, queryId, jarFilePaths);
 
       // Start the submitted dag
       final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
       final Tuple<MetaGroup, AtomicBoolean> mGroup = groupMap.get(groupId);
-      mGroup.getKey().getQueryStarter().start(queryId, query, configDag, tuple.getValue().getJarFilePaths());
+      mGroup.getKey().getQueryStarter().start(queryId, query, configDag, jarFilePaths);
 
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
@@ -208,7 +209,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
   }
 
   @Override
-  public Query addNewQueryInfo(final String groupId, final String queryId) {
+  public Query addNewQueryInfo(final String groupId, final String queryId, final List<String> jarFilePaths) {
     try {
       if (groupMap.get(groupId) == null) {
         // Add new group id, if it doesn't exist
@@ -238,6 +239,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
         }
 
         final MetaGroup metaGroup = injector.getInstance(MetaGroup.class);
+        metaGroup.setJarFilePaths(jarFilePaths);
 
         if (groupMap.putIfAbsent(groupId, new Tuple<>(metaGroup, new AtomicBoolean(false))) == null) {
           LOG.log(Level.FINE, "Create Group: {0}", new Object[]{groupId});

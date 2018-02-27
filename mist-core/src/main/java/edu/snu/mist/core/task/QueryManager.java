@@ -39,9 +39,10 @@ public interface QueryManager extends AutoCloseable {
    * Add a new query info to the query manager.
    * @param groupId
    * @param queryId
+   * @param jarFilePaths for this group
    * @return
    */
-  Query addNewQueryInfo(String groupId, String queryId);
+  Query addNewQueryInfo(String groupId, String queryId, List<String> jarFilePaths);
 
   /**
    * TODO[DELETE] this code is for test.

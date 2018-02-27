@@ -18,20 +18,17 @@ package edu.snu.mist.core.task.checkpointing;
 import edu.snu.mist.common.graph.AdjacentListDAG;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.common.shared.KafkaSharedResource;
-import edu.snu.mist.common.shared.MQTTResource;
-import edu.snu.mist.common.shared.NettySharedResource;
-import edu.snu.mist.core.driver.parameters.MergingEnabled;
-import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.ConfigVertex;
+import edu.snu.mist.core.task.ExecutionVertex;
+import edu.snu.mist.core.task.Query;
+import edu.snu.mist.core.task.QueryManager;
 import edu.snu.mist.core.task.groupaware.GroupAllocationTableModifier;
 import edu.snu.mist.core.task.groupaware.GroupMap;
 import edu.snu.mist.core.task.groupaware.MetaGroup;
 import edu.snu.mist.core.task.groupaware.WritingEvent;
 import edu.snu.mist.core.task.stores.MetaGroupCheckpointStore;
-import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.*;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.FileNotFoundException;
@@ -62,33 +59,6 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
   private final GroupAllocationTableModifier groupAllocationTableModifier;
 
   /**
-   * A globally shared MQTTSharedResource.
-   */
-  private final MQTTResource mqttSharedResource;
-
-  /**
-   * A globally shared KafkaSharedResource.
-   */
-  private final KafkaSharedResource kafkaSharedResource;
-
-  /**
-   * A globally shared NettySharedResource.
-   */
-  private final NettySharedResource nettySharedResource;
-
-  /**
-   * A plan store.
-   */
-  private final QueryInfoStore planStore;
-
-  private final DagGenerator dagGenerator;
-
-  /**
-   * Merging enabled or not.
-   */
-  private final boolean mergingEnabled;
-
-  /**
    * The query manager for the task.
    */
   private final QueryManager queryManager;
@@ -97,22 +67,10 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
   private DefaultCheckpointManagerImpl(final GroupMap groupMap,
                                        final MetaGroupCheckpointStore metaGroupCheckpointStore,
                                        final GroupAllocationTableModifier groupAllocationTableModifier,
-                                       final MQTTResource mqttSharedResource,
-                                       final KafkaSharedResource kafkaSharedResource,
-                                       final NettySharedResource nettySharedResource,
-                                       final QueryInfoStore planStore,
-                                       final DagGenerator dagGenerator,
-                                       @Parameter(MergingEnabled.class) final boolean mergingEnabled,
                                        final QueryManager queryManager) {
     this.groupMap = groupMap;
     this.checkpointStore = metaGroupCheckpointStore;
     this.groupAllocationTableModifier = groupAllocationTableModifier;
-    this.mqttSharedResource = mqttSharedResource;
-    this.kafkaSharedResource = kafkaSharedResource;
-    this.nettySharedResource = nettySharedResource;
-    this.planStore = planStore;
-    this.dagGenerator = dagGenerator;
-    this.mergingEnabled = mergingEnabled;
     this.queryManager = queryManager;
   }
 
@@ -159,11 +117,12 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
         }
 
         // Add the query info to the queryManager.
-        final Query query = queryManager.addNewQueryInfo(groupId, queryId);
+        final List<String> jarFilePaths = checkpoint.getJarFilePaths();
+        final Query query = queryManager.addNewQueryInfo(groupId, queryId, jarFilePaths);
         final Tuple<MetaGroup, AtomicBoolean> mGroup = groupMap.get(groupId);
 
         // Start the submitted dag
-        mGroup.getKey().getQueryStarter().start(queryId, query, configDag, checkpoint.getJarFilePaths());
+        mGroup.getKey().getQueryStarter().start(queryId, query, configDag, jarFilePaths);
       } catch (final Exception e) {
         e.printStackTrace();
         // [MIST-345] We need to release all of the information that is required for the query when it fails.

@@ -26,6 +26,7 @@ import edu.snu.mist.formats.avro.*;
 
 import javax.inject.Inject;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,6 +44,11 @@ public final class DefaultMetaGroupImpl implements MetaGroup {
 
   private final AtomicInteger numGroups = new AtomicInteger(0);
 
+  /**
+   * The list of jar file paths.
+   */
+  private final List<String> groupJarFilePaths;
+
   @Inject
   private DefaultMetaGroupImpl(final QueryStarter queryStarter,
                                final QueryRemover queryRemover,
@@ -55,6 +61,7 @@ public final class DefaultMetaGroupImpl implements MetaGroup {
     this.groups = new LinkedList<>();
     this.queryIdConfigDagMap = queryIdConfigDagMap;
     this.configExecutionVertexMap = configExecutionVertexMap;
+    this.groupJarFilePaths = new CopyOnWriteArrayList<>();
   }
 
   @Override
@@ -90,6 +97,13 @@ public final class DefaultMetaGroupImpl implements MetaGroup {
   }
 
   @Override
+  public void setJarFilePaths(final List<String> jarFilePaths) {
+    if (jarFilePaths != null && jarFilePaths.size() != 0) {
+      groupJarFilePaths.addAll(jarFilePaths);
+    }
+  }
+
+  @Override
   public MetaGroupCheckpoint checkpoint() {
     final Map<String, AvroConfigDag> avroConfigDagMap = new HashMap<>();
     final GroupMinimumLatestWatermarkTimeStamp groupTimestamp = new GroupMinimumLatestWatermarkTimeStamp();
@@ -105,7 +119,7 @@ public final class DefaultMetaGroupImpl implements MetaGroup {
     return MetaGroupCheckpoint.newBuilder()
         .setAvroConfigDags(avroConfigDagMap)
         .setMinimumLatestCheckpointTimestamp(groupTimestamp.getValue())
-        .setJarFilePaths(queryStarter.getJarFilePaths())
+        .setJarFilePaths(groupJarFilePaths)
         .build();
   }
 

@@ -301,7 +301,7 @@ public final class PTQQueryManagerImpl implements QueryManager {
   }
 
   @Override
-  public Query addNewQueryInfo(final String groupId, final String queryId) {
+  public Query addNewQueryInfo(final String groupId, final String queryId, final List<String> jarFilePaths) {
     // This class will be deleted.
     // Do nothing.
     return null;

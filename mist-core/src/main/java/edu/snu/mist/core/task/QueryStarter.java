@@ -38,9 +38,4 @@ public interface QueryStarter {
   void start(String queryId,
              Query query, DAG<ConfigVertex, MISTEdge> configDag, List<String> jarFilePaths)
       throws InjectionException, IOException, ClassNotFoundException;
-
-  /**
-   * Return the group's jar file paths.
-   */
-  List<String> getJarFilePaths();
 }

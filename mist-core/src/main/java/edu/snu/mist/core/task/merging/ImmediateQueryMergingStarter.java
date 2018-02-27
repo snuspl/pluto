@@ -411,9 +411,4 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
     }
     return mergeableDags;
   }
-
-  @Override
-  public List<String> getJarFilePaths() {
-    return groupJarFilePaths;
-  }
 }

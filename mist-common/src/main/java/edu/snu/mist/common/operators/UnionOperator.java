@@ -219,6 +219,7 @@ public final class UnionOperator extends TwoStreamOperator {
     }
   }
 
+  // TODO [MIST-966] : Integrate MistCheckpointEvent into MistWatermarkEvent
   @Override
   public void processLeftCheckpoint(final MistCheckpointEvent event) {
     if (LOG.isLoggable(Level.FINE)) {
@@ -226,6 +227,7 @@ public final class UnionOperator extends TwoStreamOperator {
     }
   }
 
+  // TODO [MIST-966] : Integrate MistCheckpointEvent into MistWatermarkEvent
   @Override
   public void processRightCheckpoint(final MistCheckpointEvent event) {
     if (LOG.isLoggable(Level.FINE)) {
