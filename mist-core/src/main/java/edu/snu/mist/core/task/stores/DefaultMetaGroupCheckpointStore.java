@@ -30,9 +30,6 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -52,25 +49,11 @@ public final class DefaultMetaGroupCheckpointStore implements MetaGroupCheckpoin
    */
   private final DatumReader<MetaGroupCheckpoint> datumReader;
 
-  /**
-   * Contains a groupId as the key
-   * and the latch that indicates whether checkpointing for this groupId has finished as a value.
-   */
-  private Map<String, CountDownLatch> groupIdCheckpointingLatchMap;
-
-  /**
-   * Contains a groupId as the key
-   * and the latch that indicates whether loading for this groupId has finished as a value.
-   */
-  private Map<String, CountDownLatch> groupIdLoadingLatchMap;
-
   @Inject
   private DefaultMetaGroupCheckpointStore(@Parameter(TempFolderPath.class) final String tmpFolderpath) {
     this.tmpFolderPath = tmpFolderpath;
     this.datumWriter = new SpecificDatumWriter<>(MetaGroupCheckpoint.class);
     this.datumReader = new SpecificDatumReader<>(MetaGroupCheckpoint.class);
-    this.groupIdCheckpointingLatchMap = new ConcurrentHashMap<>();
-    this.groupIdLoadingLatchMap = new ConcurrentHashMap<>();
     // Create a folder that stores the dags and jar files
     final File folder = new File(tmpFolderPath);
     if (!folder.exists()) {
@@ -96,40 +79,20 @@ public final class DefaultMetaGroupCheckpointStore implements MetaGroupCheckpoin
     try {
       final String groupId = tuple.getKey();
       final MetaGroupCheckpoint gmc = tuple.getValue();
-      if (groupIdCheckpointingLatchMap.putIfAbsent(groupId, new CountDownLatch(1)) != null) {
-        // If checkpointing is waiting to be done, skip this checkpoint.
-        LOG.log(Level.INFO, "This group " + groupId + " is already waiting to be checkpointed.");
-        return CheckpointResult.newBuilder()
-            .setIsSuccess(false)
-            .setMsg(tuple.getKey() + " is already waiting to be checkpointed")
-            .setPathToCheckpoint("")
-            .build();
-      } else {
-        // If loading is waiting to be done on this groupId, wait until that loading finishes before checkpointing.
-        CountDownLatch loadingLatch = groupIdLoadingLatchMap.get(groupId);
-        while (loadingLatch != null && loadingLatch.getCount() > 0) {
-          loadingLatch.await();
-          loadingLatch = groupIdLoadingLatchMap.get(groupId);
-        }
 
-        // Write the file.
-        final File storedFile = getMetaGroupCheckpointFile(groupId);
-        if (storedFile.exists()) {
-          storedFile.delete();
-          LOG.log(Level.INFO, "Checkpoint deleted for groupId: {0}", groupId);
-        }
-        if (!storedFile.exists()) {
-          storedFile.getParentFile().mkdirs();
-          final DataFileWriter<MetaGroupCheckpoint> dataFileWriter = new DataFileWriter<>(datumWriter);
-          dataFileWriter.create(gmc.getSchema(), storedFile);
-          dataFileWriter.append(gmc);
-          dataFileWriter.close();
-          LOG.log(Level.INFO, "Checkpoint completed for groupId: {0}", groupId);
-        }
-
-        groupIdCheckpointingLatchMap.get(groupId).countDown();
-        groupIdCheckpointingLatchMap.remove(groupId);
-        LOG.log(Level.INFO, "Checkpoint submitted for groupId: {0}", tuple.getKey());
+      // Write the file.
+      final File storedFile = getMetaGroupCheckpointFile(groupId);
+      if (storedFile.exists()) {
+        storedFile.delete();
+        LOG.log(Level.INFO, "Checkpoint deleted for groupId: {0}", groupId);
+      }
+      if (!storedFile.exists()) {
+        storedFile.getParentFile().mkdirs();
+        final DataFileWriter<MetaGroupCheckpoint> dataFileWriter = new DataFileWriter<>(datumWriter);
+        dataFileWriter.create(gmc.getSchema(), storedFile);
+        dataFileWriter.append(gmc);
+        dataFileWriter.close();
+        LOG.log(Level.INFO, "Checkpoint completed for groupId: {0}", groupId);
       }
     } catch (final Exception e) {
       e.printStackTrace();
@@ -148,23 +111,7 @@ public final class DefaultMetaGroupCheckpointStore implements MetaGroupCheckpoin
 
   @Override
   public MetaGroupCheckpoint loadMetaGroupCheckpoint(final String groupId) throws IOException {
-    try {
-      if (groupIdLoadingLatchMap.putIfAbsent(groupId, new CountDownLatch(1)) != null) {
-        // If loading is waiting to be done, skip this loading.
-        LOG.log(Level.INFO, "This group " + groupId + " is already waiting to be loaded.");
-      } else {
-        // If checkpointing is waiting to be done on this groupId, wait until that checkpoint finishes before loading.
-        CountDownLatch checkpointingLatch = groupIdCheckpointingLatchMap.get(groupId);
-        while (checkpointingLatch != null && checkpointingLatch.getCount() > 0) {
-          checkpointingLatch.await();
-          checkpointingLatch = groupIdCheckpointingLatchMap.get(groupId);
-        }
-      }
-    } catch (final InterruptedException e) {
-        e.printStackTrace();
-    }
-
-    // Write the file.
+    // Load the file.
     final File storedFile = getMetaGroupCheckpointFile(groupId);
     final DataFileReader<MetaGroupCheckpoint> dataFileReader =
         new DataFileReader<MetaGroupCheckpoint>(storedFile, datumReader);
@@ -175,9 +122,6 @@ public final class DefaultMetaGroupCheckpointStore implements MetaGroupCheckpoin
     } else {
       LOG.log(Level.WARNING, "Checkpoint file not found or error during loading. groupId is " + groupId);
     }
-
-    groupIdLoadingLatchMap.get(groupId).countDown();
-    groupIdLoadingLatchMap.remove(groupId);
     return mgc;
   }
 }
