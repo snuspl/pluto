@@ -176,9 +176,4 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
   public MetaGroup getGroup(final String groupId) {
     return groupMap.get(groupId).getKey();
   }
-
-  @Override
-  public void close() throws Exception {
-    checkpointStore.close();
-  }
 }

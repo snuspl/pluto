@@ -26,7 +26,7 @@ import java.io.IOException;
  * The reloading also involves replaying of events.
  */
 @DefaultImplementation(DefaultCheckpointManagerImpl.class)
-public interface CheckpointManager extends AutoCloseable {
+public interface CheckpointManager {
   /**
    * Recover a stored group in this MIST Task.
    * @param groupId

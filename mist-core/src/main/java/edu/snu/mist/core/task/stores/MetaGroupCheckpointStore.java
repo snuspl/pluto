@@ -23,7 +23,7 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
 import java.io.IOException;
 
 @DefaultImplementation(DefaultMetaGroupCheckpointStore.class)
-public interface MetaGroupCheckpointStore extends AutoCloseable {
+public interface MetaGroupCheckpointStore {
 
   /**
    * Saves a MetaGroupCheckpoint.
