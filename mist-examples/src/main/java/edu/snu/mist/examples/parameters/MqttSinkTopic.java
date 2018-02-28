@@ -13,7 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * A package for defining batch query submission to support test.
- */
-package edu.snu.mist.client.batchsub;
+package edu.snu.mist.examples.parameters;
+
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
+
+@NamedParameter(doc = "mqtt sink topic", short_name = "sink_topic", default_value = "/sink")
+public final class MqttSinkTopic implements Name<String> {
+}

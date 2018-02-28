@@ -48,6 +48,9 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
 
   private final IPAddress taskIPAddress;
 
+  private final NettyTransceiver clientToDriver;
+
+  private final NettyTransceiver clientToTask;
   /**
    * Default constructor for MISTDefaultExecutionEnvironmentImpl.
    * A list of the Task is retrieved from the MIST Driver.
@@ -58,14 +61,14 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
   public MISTDefaultExecutionEnvironmentImpl(final String serverAddr,
                                              final int serverPort) throws IOException {
     // Step 1: Get a task list from Driver
-    final NettyTransceiver clientToDriver = new NettyTransceiver(new InetSocketAddress(serverAddr, serverPort));
+    clientToDriver = new NettyTransceiver(new InetSocketAddress(serverAddr, serverPort));
     this.proxyToDriver = SpecificRequestor.getClient(MistTaskProvider.class, clientToDriver);
     final TaskList taskList = proxyToDriver.getTasks(new QueryInfo());
 
     final List<IPAddress> tasks = taskList.getTasks();
     // Choose a task (TODO: Randomly select a task)
     taskIPAddress = tasks.get(0);
-    final NettyTransceiver clientToTask = new NettyTransceiver(
+    clientToTask = new NettyTransceiver(
         new InetSocketAddress(taskIPAddress.getHostAddress().toString(), taskIPAddress.getPort()));
     proxyToTask = SpecificRequestor.getClient(ClientToTaskMessage.class, clientToTask);
   }
@@ -113,5 +116,11 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
       throw new RuntimeException(jarUploadResult.getMsg().toString());
     }
     return jarUploadResult;
+  }
+
+  @Override
+  public void close() throws Exception {
+    clientToDriver.close();
+    clientToTask.close();
   }
 }

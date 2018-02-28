@@ -25,7 +25,7 @@ import java.util.List;
  * Execution Environment for MIST.
  * MIST Client can submit queries via this class.
  */
-public interface MISTExecutionEnvironment {
+public interface MISTExecutionEnvironment extends AutoCloseable {
   /**
    * Submit the query and its corresponding jar files to MIST.
    * @param queryToSubmit a query to be submitted.
