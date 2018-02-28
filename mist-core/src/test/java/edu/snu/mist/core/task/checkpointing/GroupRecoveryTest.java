@@ -28,7 +28,6 @@ import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.stream.NettyChannelHandler;
 import edu.snu.mist.common.stream.textmessage.NettyTextMessageStreamGenerator;
 import edu.snu.mist.common.types.Tuple2;
-import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.groupaware.GroupAwareQueryManagerImpl;
 import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
@@ -136,7 +135,6 @@ public class GroupRecoveryTest {
 
     // Build QueryManager and start the query.
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(MergingEnabled.class, "true");
     jcb.bindImplementation(QueryManager.class, GroupAwareQueryManagerImpl.class);
     jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());

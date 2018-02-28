@@ -21,12 +21,7 @@ import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.common.shared.KafkaSharedResource;
 import edu.snu.mist.common.shared.MQTTResource;
 import edu.snu.mist.common.shared.NettySharedResource;
-import edu.snu.mist.core.driver.parameters.DeactivationEnabled;
-import edu.snu.mist.core.driver.parameters.MergingEnabled;
 import edu.snu.mist.core.task.*;
-import edu.snu.mist.core.task.batchsub.BatchQueryCreator;
-import edu.snu.mist.core.task.groupaware.parameters.GroupSchedModelType;
-import edu.snu.mist.core.task.merging.*;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
@@ -34,7 +29,6 @@ import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
-import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -71,34 +65,14 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
   private final GroupMap groupMap;
 
   /**
-   * Merging enabled or not.
-   */
-  private final boolean mergingEnabled;
-
-  /**
-   * Deactivation enabled or not.
-   */
-  private final boolean deactivationEnabled;
-
-  /**
    * Event processor manager.
    */
   private final EventProcessorManager eventProcessorManager;
 
   /**
-   * A batch query submission helper.
-   */
-  private final BatchQueryCreator batchQueryCreator;
-
-  /**
    * A dag generator that creates DAG<ConfigVertex, MISTEdge> from avro dag.
    */
   private final ConfigDagGenerator configDagGenerator;
-
-  /**
-   * The execution model of event processor (dispatching).
-   */
-  private final String executionModel;
 
   /**
    * A globally shared MQTTSharedResource.
@@ -127,26 +101,18 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
                                      final GlobalSchedGroupInfoMap groupInfoMap,
                                      final QueryInfoStore planStore,
                                      final EventProcessorManager eventProcessorManager,
-                                     @Parameter(MergingEnabled.class) final boolean mergingEnabled,
-                                     @Parameter(DeactivationEnabled.class) final boolean deactivateEnabled,
                                      final ConfigDagGenerator configDagGenerator,
-                                     final BatchQueryCreator batchQueryCreator,
                                      final MQTTResource mqttSharedResource,
                                      final KafkaSharedResource kafkaSharedResource,
                                      final NettySharedResource nettySharedResource,
                                      final DagGenerator dagGenerator,
                                      final GroupAllocationTableModifier groupAllocationTableModifier,
-                                     final GroupMap groupMap,
-                                     @Parameter(GroupSchedModelType.class) final String executionModel) {
+                                     final GroupMap groupMap) {
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.groupInfoMap = groupInfoMap;
-    this.mergingEnabled = mergingEnabled;
-    this.deactivationEnabled = deactivateEnabled;
     this.eventProcessorManager = eventProcessorManager;
     this.configDagGenerator = configDagGenerator;
-    this.batchQueryCreator = batchQueryCreator;
-    this.executionModel = executionModel;
     this.mqttSharedResource = mqttSharedResource;
     this.kafkaSharedResource = kafkaSharedResource;
     this.nettySharedResource = nettySharedResource;
@@ -216,27 +182,11 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
         final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
         jcb.bindNamedParameter(GroupId.class, groupId);
 
-        // TODO[DELETE] start: for test
-        if (mergingEnabled) {
-          jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
-          jcb.bindImplementation(QueryRemover.class, MergeAwareQueryRemover.class);
-          jcb.bindImplementation(ExecutionDags.class, MergingExecutionDags.class);
-        } else {
-          jcb.bindImplementation(QueryStarter.class, NoMergingQueryStarter.class);
-          jcb.bindImplementation(QueryRemover.class, NoMergingAwareQueryRemover.class);
-          jcb.bindImplementation(ExecutionDags.class, NoMergingExecutionDags.class);
-        }
-        // TODO[DELETE] end: for test
-
         final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
         injector.bindVolatileInstance(MQTTResource.class, mqttSharedResource);
         injector.bindVolatileInstance(KafkaSharedResource.class, kafkaSharedResource);
         injector.bindVolatileInstance(NettySharedResource.class, nettySharedResource);
         injector.bindVolatileInstance(QueryInfoStore.class, planStore);
-
-        if (!mergingEnabled) {
-          injector.bindVolatileInstance(DagGenerator.class, dagGenerator);
-        }
 
         final MetaGroup metaGroup = injector.getInstance(MetaGroup.class);
         metaGroup.setJarFilePaths(jarFilePaths);
@@ -252,13 +202,6 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
             mGroup.getValue().set(true);
             mGroup.notifyAll();
           }
-
-            /*
-            synchronized (metaGroup.getGroups()) {
-              metaGroup.getGroups().add(group);
-              eventProcessorManager.addGroup(group);
-            }
-            */
         }
       }
 
@@ -276,35 +219,6 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     } catch (final Exception e) {
       e.printStackTrace();
       return null;
-    }
-  }
-
-  /**
-   * TODO[DELETE] this code is for test.
-   * Start submitted queries in batch manner.
-   * The operator chain dag will be duplicated for test.
-   * @param tuple a pair of the query id and the avro dag
-   * @return submission result
-   */
-  @Override
-  public QueryControlResult createBatch(final Tuple<List<String>, AvroDag> tuple) {
-    final List<String> queryIdList = tuple.getKey();
-    final QueryControlResult queryControlResult = new QueryControlResult();
-    queryControlResult.setQueryId(queryIdList.get(0));
-    try {
-      batchQueryCreator.duplicate(tuple, this);
-
-      queryControlResult.setIsSuccess(true);
-      queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey().get(0)));
-      return queryControlResult;
-    } catch (final Exception e) {
-      e.printStackTrace();
-      // [MIST-345] We need to release all of the information that is required for the query when it fails.
-      LOG.log(Level.SEVERE, "An exception occurred while starting from {0} to {1} batch query: {2}",
-          new Object[] {queryIdList.get(0), queryIdList.get(queryIdList.size() - 1), e.toString()});
-      queryControlResult.setIsSuccess(false);
-      queryControlResult.setMsg(e.getMessage());
-      return queryControlResult;
     }
   }
 

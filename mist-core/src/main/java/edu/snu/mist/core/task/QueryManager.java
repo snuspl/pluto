@@ -45,14 +45,6 @@ public interface QueryManager extends AutoCloseable {
   Query addNewQueryInfo(String groupId, String queryId, List<String> jarFilePaths);
 
   /**
-   * TODO[DELETE] this code is for test.
-   * Start submitted queries in batch manner.
-   * The operator chain dag will be duplicated for test.
-   * @param tuple the query id list and the avro dag
-   */
-  QueryControlResult createBatch(Tuple<List<String>, AvroDag> tuple);
-
-  /**
    * Deletes the query corresponding to the queryId submitted by client.
    * @param groupId group id
    * @param queryId query id

@@ -30,7 +30,6 @@ import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.reef.tang.Configuration;
-import org.apache.reef.tang.Configurations;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
@@ -60,11 +59,6 @@ public final class MistTaskConfigs {
    * The port number of rpc server of a MistTask.
    */
   private final int rpcServerPort;
-
-  /**
-   * Configuration for execution model 2 (global scheduling).
-   */
-  private final MistEvaluationConfigs evaluationConfig;
 
   /**
    * The mqtt keep alive time for sources in seconds.
@@ -99,8 +93,7 @@ public final class MistTaskConfigs {
                           @Parameter(MqttSinkKeepAliveSec.class) final int mqttSinkKeepAliveSec,
                           @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
                           @Parameter(ProcessingTimeout.class) final long processingTimeout,
-                          @Parameter(GroupPinningTime.class) final long groupPinningTime,
-                          final MistEvaluationConfigs evaluationConfig) {
+                          @Parameter(GroupPinningTime.class) final long groupPinningTime) {
     this.numEventProcessors = numEventProcessors;
     this.tempFolderPath = tempFolderPath;
     this.rpcServerPort = rpcServerPort + 10 > MAX_PORT_NUM ? rpcServerPort - 10 : rpcServerPort + 10;
@@ -109,7 +102,6 @@ public final class MistTaskConfigs {
     this.mqttSinkKeepAliveSec = mqttSinkKeepAliveSec;
     this.groupPinningTime = groupPinningTime;
     this.processingTimeout = processingTimeout;
-    this.evaluationConfig = evaluationConfig;
   }
 
   /**
@@ -132,7 +124,7 @@ public final class MistTaskConfigs {
     jcb.bindConstructor(Server.class, AvroRPCNettyServerWrapper.class);
     jcb.bindConstructor(SpecificResponder.class, TaskSpecificResponderWrapper.class);
 
-    return Configurations.merge(jcb.build(), evaluationConfig.getConfiguration());
+    return jcb.build();
   }
 
   /**
@@ -150,6 +142,6 @@ public final class MistTaskConfigs {
         .registerShortNameOfClass(GroupPinningTime.class)
         .registerShortNameOfClass(GroupRebalancingPeriod.class);
 
-    return MistEvaluationConfigs.addCommandLineConf(cmd);
+    return cmd;
   }
 }

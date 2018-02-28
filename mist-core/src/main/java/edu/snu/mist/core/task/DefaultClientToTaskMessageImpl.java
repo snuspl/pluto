@@ -16,14 +16,16 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.core.task.stores.QueryInfoStore;
-import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.formats.avro.AvroDag;
+import edu.snu.mist.formats.avro.ClientToTaskMessage;
+import edu.snu.mist.formats.avro.JarUploadResult;
+import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.avro.AvroRemoteException;
 import org.apache.reef.io.Tuple;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -85,19 +87,6 @@ public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage
   public QueryControlResult sendQueries(final AvroDag avroDag) throws AvroRemoteException {
     final String queryId = queryIdGenerator.generate(avroDag);
     return queryManager.create(new Tuple<>(queryId, avroDag));
-  }
-
-  /**
-   *  TODO[DELETE] this code is for test.
-   */
-  @Override
-  public QueryControlResult sendBatchQueries(final AvroDag avroDag,
-                                             final int batchSize) throws AvroRemoteException {
-    final List<String> queryIdList = new ArrayList<>();
-    for (int i = 0; i < batchSize; i++) {
-      queryIdList.add(queryIdGenerator.generate(avroDag));
-    }
-    return queryManager.createBatch(new Tuple<>(queryIdList, avroDag));
   }
 
   @Override
