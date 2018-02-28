@@ -30,10 +30,8 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.Map;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -54,6 +52,12 @@ public final class DefaultMetaGroupCheckpointStore implements MetaGroupCheckpoin
   private final DatumReader<MetaGroupCheckpoint> datumReader;
 
   /**
+   * Contains a groupId as a key,
+   * and the latch that indicates whether checkpointing for this groupId has finished as a value.
+   */
+  private final Map<String, CountDownLatch> checkpointFinishedMap;
+
+  /**
    * A executor service that contains a thread.
    */
   private final ExecutorService executor;
@@ -69,6 +73,7 @@ public final class DefaultMetaGroupCheckpointStore implements MetaGroupCheckpoin
     this.tmpFolderPath = tmpFolderpath;
     this.datumWriter = new SpecificDatumWriter<>(MetaGroupCheckpoint.class);
     this.datumReader = new SpecificDatumReader<>(MetaGroupCheckpoint.class);
+    this.checkpointFinishedMap = new ConcurrentHashMap<>();
     // Create a folder that stores the dags and jar files
     final File folder = new File(tmpFolderPath);
     if (!folder.exists()) {
@@ -103,6 +108,9 @@ public final class DefaultMetaGroupCheckpointStore implements MetaGroupCheckpoin
               dataFileWriter.close();
               LOG.log(Level.INFO, "Checkpoint completed for groupId: {0}", groupId);
             }
+            final CountDownLatch checkpointIsFinishedLatch = checkpointFinishedMap.get(groupId);
+            checkpointIsFinishedLatch.countDown();
+            checkpointFinishedMap.remove(groupId);
           }
         } catch (final Exception e) {
           e.printStackTrace();
@@ -126,6 +134,7 @@ public final class DefaultMetaGroupCheckpointStore implements MetaGroupCheckpoin
   @Override
   public CheckpointResult saveMetaGroupCheckpoint(final Tuple<String, MetaGroupCheckpoint> tuple) {
     try {
+      checkpointFinishedMap.putIfAbsent(tuple.getKey(), new CountDownLatch(1));
       metaGroupCheckpointQueue.put(tuple);
       LOG.log(Level.INFO, "Checkpoint submitted for groupId: {0}", tuple.getKey());
     } catch (final InterruptedException ie) {
@@ -145,6 +154,15 @@ public final class DefaultMetaGroupCheckpointStore implements MetaGroupCheckpoin
 
   @Override
   public MetaGroupCheckpoint loadMetaGroupCheckpoint(final String groupId) throws IOException {
+    final CountDownLatch checkpointFinishedLatch = checkpointFinishedMap.get(groupId);
+    // If checkpointing is waiting to be done on this groupId, wait until that checkpoint finishes before loading.
+    if (checkpointFinishedLatch != null) {
+      try {
+        checkpointFinishedLatch.await();
+      } catch (final InterruptedException ie) {
+        ie.printStackTrace();
+      }
+    }
     final File storedFile = getMetaGroupCheckpointFile(groupId);
     final DataFileReader<MetaGroupCheckpoint> dataFileReader =
         new DataFileReader<MetaGroupCheckpoint>(storedFile, datumReader);
