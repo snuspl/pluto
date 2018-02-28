@@ -17,7 +17,6 @@
 package edu.snu.mist.examples;
 
 import edu.snu.mist.client.APIQueryControlResult;
-import edu.snu.mist.client.MISTQuery;
 import edu.snu.mist.client.MISTQueryBuilder;
 import edu.snu.mist.client.datastreams.ContinuousStream;
 import edu.snu.mist.client.datastreams.configurations.SourceConfiguration;
@@ -52,7 +51,7 @@ public final class MQTTNoiseSensing {
     final SourceConfiguration localMQTTSourceConf =
         MISTExampleUtils.getMQTTSourceConf("MISTExampleSub", brokerURI);
 
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group");
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     final ContinuousStream<Integer> sensedData = queryBuilder.mqttStream(localMQTTSourceConf)
         .map((mqttMessage) -> Integer.parseInt(new String(mqttMessage.getPayload())));
 
@@ -72,9 +71,7 @@ public final class MQTTNoiseSensing {
         .map((value) -> new MqttMessage("OFF".getBytes()))
         .mqttOutput(brokerURI, "MISTExamplePub");
 
-    final MISTQuery query = queryBuilder.build();
-
-    return MISTExampleUtils.submit(query, configuration);
+    return MISTExampleUtils.submit(queryBuilder, configuration);
   }
 
   /**

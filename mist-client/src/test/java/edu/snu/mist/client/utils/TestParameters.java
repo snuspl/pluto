@@ -35,7 +35,7 @@ public final class TestParameters {
   public static final int SINK_PORT = 13667;
   public static final String TOPIC = "mqttTopic";
   public static final String SUPER_GROUP_ID = "test-group";
-  public static final String SUB_GROUP_ID = "user1";
+
 
   public static final SourceConfiguration LOCAL_TEXT_SOCKET_SOURCE_CONF =
       TextSocketSourceConfiguration.newBuilder()

@@ -19,12 +19,13 @@ package edu.snu.mist.examples;
 import edu.snu.mist.client.APIQueryControlResult;
 import edu.snu.mist.client.MISTDefaultExecutionEnvironmentImpl;
 import edu.snu.mist.client.MISTExecutionEnvironment;
-import edu.snu.mist.client.MISTQuery;
+import edu.snu.mist.client.MISTQueryBuilder;
 import edu.snu.mist.client.datastreams.configurations.KafkaSourceConfiguration;
 import edu.snu.mist.client.datastreams.configurations.MQTTSourceConfiguration;
 import edu.snu.mist.client.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.client.datastreams.configurations.TextSocketSourceConfiguration;
 import edu.snu.mist.examples.parameters.DriverAddress;
+import edu.snu.mist.formats.avro.JarUploadResult;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -33,7 +34,9 @@ import org.apache.reef.tang.formats.CommandLine;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Common behavior and basic defaults for MIST examples.
@@ -116,15 +119,24 @@ public final class MISTExampleUtils {
   /**
    * Submit query to MIST driver.
    */
-  public static APIQueryControlResult submit(final MISTQuery query, final Configuration configuration)
+  public static APIQueryControlResult submit(final MISTQueryBuilder queryBuilder,
+                                             final Configuration configuration)
       throws IOException, URISyntaxException, InjectionException {
     final String[] driverSocket =
         Tang.Factory.getTang().newInjector(configuration).getNamedInstance(DriverAddress.class).split(":");
     final String driverHostname = driverSocket[0];
     final int driverPort = Integer.parseInt(driverSocket[1]);
+
     final MISTExecutionEnvironment executionEnvironment =
         new MISTDefaultExecutionEnvironmentImpl(driverHostname, driverPort);
-    return executionEnvironment.submit(query, getJarFilePath());
+
+    // Upload jar
+    final String jarFilePath = getJarFilePath();
+    final List<String> jarFilePaths = Arrays.asList(jarFilePath);
+    final JarUploadResult result = executionEnvironment.submitJar(jarFilePaths);
+    queryBuilder.setApplicationId(result.getIdentifier());
+
+    return executionEnvironment.submitQuery(queryBuilder.build());
   }
 
   public static CommandLine getDefaultCommandLine(final JavaConfigurationBuilder jcb) {

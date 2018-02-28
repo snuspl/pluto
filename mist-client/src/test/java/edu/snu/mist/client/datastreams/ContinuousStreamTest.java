@@ -63,7 +63,8 @@ public final class ContinuousStreamTest {
   @Before
   public void setUp() {
     queryBuilder =
-        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID);
+        new MISTQueryBuilder();
+    queryBuilder.setApplicationId(TestParameters.SUPER_GROUP_ID);
     sourceStream = queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
     filteredStream = sourceStream.filter(defaultFilter);
     filteredMappedStream = filteredStream.map(defaultMap);

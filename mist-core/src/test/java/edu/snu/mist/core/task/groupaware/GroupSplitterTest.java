@@ -23,6 +23,8 @@ import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessorFactory;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.OverloadedThreshold;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.UnderloadedThreshold;
+import edu.snu.mist.core.task.groupaware.parameters.ApplicationIdentifier;
+import edu.snu.mist.core.task.groupaware.parameters.JarFilePath;
 import edu.snu.mist.core.task.groupaware.rebalancer.GroupSplitter;
 import edu.snu.mist.core.task.groupaware.rebalancer.LoadUpdater;
 import junit.framework.Assert;
@@ -43,6 +45,9 @@ public final class GroupSplitterTest {
 
   private MetaGroup createMetaGroup() throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(ApplicationIdentifier.class, "app");
+    jcb.bindNamedParameter(JarFilePath.class, "");
+
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final QueryStarter queryStarter = mock(QueryStarter.class);
     final QueryRemover queryRemover = mock(QueryRemover.class);

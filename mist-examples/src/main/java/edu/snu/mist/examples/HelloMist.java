@@ -17,7 +17,6 @@
 package edu.snu.mist.examples;
 
 import edu.snu.mist.client.APIQueryControlResult;
-import edu.snu.mist.client.MISTQuery;
 import edu.snu.mist.client.MISTQueryBuilder;
 import edu.snu.mist.client.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.examples.parameters.NettySourceAddress;
@@ -49,14 +48,13 @@ public final class HelloMist {
     final SourceConfiguration localTextSocketSourceConf =
         MISTExampleUtils.getLocalTextSocketSourceConf(sourceSocket);
 
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group");
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     queryBuilder.socketTextStream(localTextSocketSourceConf)
         .filter(s -> s.startsWith("HelloMIST:"))
         .map(s -> s.substring("HelloMIST:".length()).trim())
         .textSocketOutput(MISTExampleUtils.SINK_HOSTNAME, MISTExampleUtils.SINK_PORT);
-    final MISTQuery query = queryBuilder.build();
 
-    return MISTExampleUtils.submit(query, configuration);
+    return MISTExampleUtils.submit(queryBuilder, configuration);
   }
 
   /**

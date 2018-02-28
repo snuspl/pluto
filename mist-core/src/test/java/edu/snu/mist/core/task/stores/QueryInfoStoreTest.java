@@ -20,6 +20,8 @@ import edu.snu.mist.client.MISTQuery;
 import edu.snu.mist.client.MISTQueryBuilder;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.core.parameters.TempFolderPath;
+import edu.snu.mist.core.task.groupaware.GroupMap;
+import edu.snu.mist.core.task.groupaware.MetaGroup;
 import edu.snu.mist.core.utils.TestParameters;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.AvroVertex;
@@ -40,6 +42,9 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 public class QueryInfoStoreTest {
   /**
    * Tests whether the PlanStore correctly saves, deletes and loads the operator chain dag.
@@ -50,7 +55,8 @@ public class QueryInfoStoreTest {
   public void diskStoreTest() throws InjectionException, IOException {
     // Generate a query
     final MISTQueryBuilder queryBuilder =
-        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID);
+        new MISTQueryBuilder();
+    queryBuilder.setApplicationId(TestParameters.SUPER_GROUP_ID);
     queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
         .flatMap(s -> Arrays.asList(s.split(" ")))
         .filter(s -> s.startsWith("A"))
@@ -62,12 +68,12 @@ public class QueryInfoStoreTest {
     // Jar files
     final List<ByteBuffer> jarFiles = new LinkedList<>();
     final ByteBuffer byteBuffer1 = ByteBuffer.wrap(new byte[]{0, 1, 0, 1, 1, 1});
-    final ByteBuffer byteBuffer2 = ByteBuffer.wrap(new byte[]{1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0});
     jarFiles.add(byteBuffer1);
-    jarFiles.add(byteBuffer2);
 
     final Injector injector = Tang.Factory.getTang().newInjector();
     final QueryInfoStore store = injector.getInstance(QueryInfoStore.class);
+    final GroupMap groupMap = injector.getInstance(GroupMap.class);
+
     final String queryId1 = "testQuery1";
     final String queryId2 = "testQuery2";
     final String tmpFolderPath = injector.getNamedInstance(TempFolderPath.class);
@@ -84,18 +90,21 @@ public class QueryInfoStoreTest {
       Assert.assertEquals(jarFiles.get(i), buf);
     }
 
+    final MetaGroup metaGroup = mock(MetaGroup.class);
+    when(metaGroup.getApplicationId()).thenReturn(TestParameters.SUPER_GROUP_ID);
+    when(metaGroup.getJarFilePath()).thenReturn(paths);
+    groupMap.putIfAbsent(TestParameters.SUPER_GROUP_ID, metaGroup);
+
     // Generate logical plan
     final Tuple<List<AvroVertex>, List<Edge>> serializedDag = query.getAvroOperatorDag();
     final AvroDag.Builder avroDagBuilder = AvroDag.newBuilder();
     final AvroDag avroDag1 = avroDagBuilder
-        .setSuperGroupId(TestParameters.SUPER_GROUP_ID)
-        .setJarFilePaths(paths)
+        .setAppId(TestParameters.SUPER_GROUP_ID)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .build();
     final AvroDag avroDag2 = avroDagBuilder
-        .setSuperGroupId(TestParameters.SUPER_GROUP_ID)
-        .setJarFilePaths(paths)
+        .setAppId(TestParameters.SUPER_GROUP_ID)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .build();

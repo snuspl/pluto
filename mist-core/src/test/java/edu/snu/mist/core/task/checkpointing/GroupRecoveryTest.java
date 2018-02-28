@@ -47,7 +47,6 @@ import org.junit.Test;
 
 import javax.inject.Inject;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -91,7 +90,8 @@ public class GroupRecoveryTest {
         .setHostPort(16118)
         .build();
 
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("testGroup");
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    queryBuilder.setApplicationId("test-group");
 
     final int defaultWatermarkPeriod = 100;
     final WatermarkConfiguration testConf = PeriodicWatermarkConfiguration.newBuilder()
@@ -108,7 +108,6 @@ public class GroupRecoveryTest {
     return queryBuilder.build();
   }
 
-
   @Test(timeout = 500000)
   public void testSingleQueryRecovery() throws Exception {
 
@@ -120,14 +119,13 @@ public class GroupRecoveryTest {
     // Submit query.
     final MISTQuery query = buildQuery();
 
-    // Generate avro chained dag : needed parts from MISTExamplesUtils.submit()
+    // Generate avro chained dag : needed parts from MISTExamplesUtils.submitQuery()
     final Tuple<List<AvroVertex>, List<Edge>> initialAvroOpChainDag = query.getAvroOperatorDag();
 
     final String groupId = "testGroup";
     final AvroDag.Builder avroDagBuilder = AvroDag.newBuilder();
     final AvroDag avroDag = avroDagBuilder
-        .setSuperGroupId(groupId)
-        .setJarFilePaths(new LinkedList<>())
+        .setAppId(groupId)
         .setAvroVertices(initialAvroOpChainDag.getKey())
         .setEdges(initialAvroOpChainDag.getValue())
         .build();
@@ -145,6 +143,7 @@ public class GroupRecoveryTest {
     final AvroDag modifiedAvroDag = modifySinkAvroChainedDag(avroDag);
 
     final Tuple<String, AvroDag> tuple = new Tuple<>("testQuery", modifiedAvroDag);
+    queryManager.createMetaGroup(groupId, Arrays.asList(""));
     queryManager.create(tuple);
 
 
@@ -195,6 +194,7 @@ public class GroupRecoveryTest {
     // Close the generators.
     textMessageStreamGenerator2.close();
   }
+
 
 
   /**

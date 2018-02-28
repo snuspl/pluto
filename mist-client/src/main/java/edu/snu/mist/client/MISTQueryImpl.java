@@ -37,13 +37,13 @@ public final class MISTQueryImpl implements MISTQuery {
    */
   private final DAG<MISTStream, MISTEdge> dag;
   private final AvroConfigurationSerializer serializer;
-  private final String superGroupId;
+  private final String applicationId;
 
   public MISTQueryImpl(final DAG<MISTStream, MISTEdge> dag,
-                       final String superGroupId) {
+                       final String applicationId) {
     this.dag = dag;
     this.serializer = new AvroConfigurationSerializer();
-    this.superGroupId = superGroupId;
+    this.applicationId = applicationId;
   }
 
   @Override
@@ -106,7 +106,7 @@ public final class MISTQueryImpl implements MISTQuery {
   }
 
   @Override
-  public String getSuperGroupId() {
-    return superGroupId;
+  public String getApplicationId() {
+    return applicationId;
   }
 }

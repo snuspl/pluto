@@ -134,6 +134,10 @@
             "type": "array",
             "items": "string"
           }
+        },
+        {
+          "name": "ApplicationId",
+          "type": "string"
         }
       ]
     },

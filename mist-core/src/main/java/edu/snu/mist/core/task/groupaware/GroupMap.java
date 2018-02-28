@@ -15,36 +15,33 @@
  */
 package edu.snu.mist.core.task.groupaware;
 
-import org.apache.reef.io.Tuple;
-
 import javax.inject.Inject;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A map for managing MetaGroups.
- * The key is a groupId, and the value is the corresponding MetaGroup.
+ * The key is a app id, and the value is the corresponding MetaGroup.
  */
 public final class GroupMap {
 
-  private final ConcurrentMap<String, Tuple<MetaGroup, AtomicBoolean>> map;
+  private final ConcurrentMap<String, MetaGroup> map;
 
   @Inject
   private GroupMap() {
     this.map = new ConcurrentHashMap<>();
   }
 
-  public Tuple<MetaGroup, AtomicBoolean> get(final String groupId) {
+  public MetaGroup get(final String groupId) {
     return map.get(groupId);
   }
 
-  public Tuple<MetaGroup, AtomicBoolean> putIfAbsent(final String groupId,
-                                                     final Tuple<MetaGroup, AtomicBoolean> groupInfo) {
-    return map.putIfAbsent(groupId, groupInfo);
+  public MetaGroup putIfAbsent(final String groupId,
+                               final MetaGroup metaGroup) {
+    return map.putIfAbsent(groupId, metaGroup);
   }
 
-  public Tuple<MetaGroup, AtomicBoolean> remove(final String groupId) {
+  public MetaGroup remove(final String groupId) {
     return map.remove(groupId);
   }
 

@@ -27,16 +27,8 @@
       "fields":
       [
         {
-          "name": "SuperGroupId",
+          "name": "AppId",
           "type": "string"
-        },
-        {
-          "name": "JarFilePaths",
-          "type":
-          {
-            "type": "array",
-            "items": "string"
-          }
         },
         {
           "name": "AvroVertices",
@@ -117,11 +109,8 @@
           "type": "string"
         },
         {
-          "name": "Paths",
-          "type": {
-            "type": "array",
-            "items": "string"
-          }
+          "name": "Identifier",
+          "type": "string"
         }
       ]
     },

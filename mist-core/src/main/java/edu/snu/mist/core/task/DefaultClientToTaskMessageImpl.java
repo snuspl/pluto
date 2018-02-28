@@ -15,13 +15,13 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import edu.snu.mist.formats.avro.JarUploadResult;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.avro.AvroRemoteException;
 import org.apache.reef.io.Tuple;
+import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -48,28 +48,21 @@ public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage
    */
   private final QueryIdGenerator queryIdGenerator;
 
-  /**
-   * A query info store that saves jar files and logical plans.
-   */
-  private final QueryInfoStore queryInfoStore;
-
   @Inject
   private DefaultClientToTaskMessageImpl(final QueryIdGenerator queryIdGenerator,
-                                         final QueryManager queryManager,
-                                         final QueryInfoStore queryInfoStore) {
+                                         final QueryManager queryManager) {
     this.queryIdGenerator = queryIdGenerator;
     this.queryManager = queryManager;
-    this.queryInfoStore = queryInfoStore;
   }
 
   @Override
-  public JarUploadResult uploadJarFiles(final List<ByteBuffer> jarFiles) throws AvroRemoteException {
+  public JarUploadResult uploadJarFiles(final List<ByteBuffer> jarFile) throws AvroRemoteException {
     try {
-      final List<String> paths = queryInfoStore.saveJar(jarFiles);
+      final String appId = queryManager.uploadJarFile(jarFile);
       final JarUploadResult result = JarUploadResult.newBuilder()
           .setIsSuccess(true)
           .setMsg("Success")
-          .setPaths(paths)
+          .setIdentifier(appId)
           .build();
       return result;
     } catch (final IOException e) {
@@ -77,9 +70,12 @@ public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage
       final JarUploadResult result = JarUploadResult.newBuilder()
           .setIsSuccess(false)
           .setMsg(e.getMessage())
-          .setPaths(null)
+          .setIdentifier(null)
           .build();
       return result;
+    } catch (final InjectionException e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
     }
   }
 

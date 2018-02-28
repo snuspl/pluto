@@ -16,6 +16,7 @@
 package edu.snu.mist.core.task.stores;
 
 import edu.snu.mist.core.parameters.TempFolderPath;
+import edu.snu.mist.core.task.groupaware.GroupMap;
 import edu.snu.mist.formats.avro.AvroDag;
 import io.netty.util.internal.ConcurrentSet;
 import org.apache.avro.file.DataFileReader;
@@ -91,14 +92,18 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
    */
   private final Map<ByteBuffer, List<Tuple<ByteBuffer, String>>> hashInfoMap;
 
+  private final GroupMap metaGroupMap;
+
   @Inject
   private AsyncDiskQueryInfoStore(@Parameter(TempFolderPath.class) final String tmpFolderPath,
+                                  final GroupMap metaGroupMap,
                                   final FileNameGenerator fileNameGenerator) {
     this.tmpFolderPath = tmpFolderPath;
     this.fileNameGenerator = fileNameGenerator;
     this.datumWriter = new SpecificDatumWriter<>(AvroDag.class);
     this.datumReader = new SpecificDatumReader<>(AvroDag.class);
     this.hashInfoMap = new ConcurrentHashMap<>();
+    this.metaGroupMap = metaGroupMap;
     // Create a folder that stores the dags and jar files
     final File folder = new File(tmpFolderPath);
     if (!folder.exists()) {
@@ -307,7 +312,8 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
     storedQuerySet.remove(queryId);
     final File storedFile = getAvroOperatorChainDagFile(queryId);
     final AvroDag logicalPlan = loadFromFile(storedFile);
-    final List<String> paths = logicalPlan.getJarFilePaths();
+    final String appId = logicalPlan.getAppId();
+    final List<String> paths = metaGroupMap.get(appId).getJarFilePath();
 
     // Delete jar files for the query
     for (final String path : paths) {
