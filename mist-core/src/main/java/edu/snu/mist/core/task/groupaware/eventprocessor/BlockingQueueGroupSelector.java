@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupaware.eventprocessor.dispatch;
+package edu.snu.mist.core.task.groupaware.eventprocessor;
 
 import edu.snu.mist.core.task.groupaware.Group;
-import edu.snu.mist.core.task.groupaware.eventprocessor.NextGroupSelector;
 import edu.snu.mist.core.task.groupaware.GroupEvent;
 
 import java.util.Collection;
@@ -25,15 +24,15 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Logger;
 
 /**
- * This schedules groups according to the round-robin policy.
+ * This schedules groups by using a blocking queue.
  */
-public final class DispatcherGroupSelector implements NextGroupSelector {
+public final class BlockingQueueGroupSelector implements NextGroupSelector {
 
-  private static final Logger LOG = Logger.getLogger(DispatcherGroupSelector.class.getName());
+  private static final Logger LOG = Logger.getLogger(BlockingQueueGroupSelector.class.getName());
 
   private final BlockingQueue<Group> queue;
 
-  DispatcherGroupSelector() {
+  BlockingQueueGroupSelector() {
     this.queue = new LinkedBlockingQueue<>();
   }
 

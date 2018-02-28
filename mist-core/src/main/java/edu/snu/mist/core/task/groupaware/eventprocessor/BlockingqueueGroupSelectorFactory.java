@@ -13,24 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupaware.eventprocessor.dispatch;
-
-import edu.snu.mist.core.task.groupaware.eventprocessor.NextGroupSelector;
-import edu.snu.mist.core.task.groupaware.eventprocessor.NextGroupSelectorFactory;
+package edu.snu.mist.core.task.groupaware.eventprocessor;
 
 import javax.inject.Inject;
 
 /**
- * A dispatcher group selector factory.
+ * Blocking-queue group selector factory.
  */
-public final class DispatcherGroupSelectorFactory implements NextGroupSelectorFactory {
+public final class BlockingQueueGroupSelectorFactory implements NextGroupSelectorFactory {
 
   @Inject
-  private DispatcherGroupSelectorFactory() {
+  private BlockingQueueGroupSelectorFactory() {
   }
 
   @Override
   public NextGroupSelector newInstance() {
-    return new DispatcherGroupSelector();
+    return new BlockingQueueGroupSelector();
   }
 }

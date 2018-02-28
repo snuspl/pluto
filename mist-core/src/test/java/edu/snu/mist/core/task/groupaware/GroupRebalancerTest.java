@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task.groupaware;
 
+import edu.snu.mist.core.task.groupaware.eventprocessor.DefaultEventProcessorFactory;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessorFactory;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
@@ -68,7 +69,7 @@ public final class GroupRebalancerTest {
     final GroupRebalancer rebalancer = injector.getInstance(FirstFitRebalancerImpl.class);
     final LoadUpdater loadUpdater = injector.getInstance(LoadUpdater.class);
 
-    final EventProcessorFactory epFactory = injector.getInstance(GlobalSchedNonBlockingEventProcessorFactory.class);
+    final EventProcessorFactory epFactory = injector.getInstance(DefaultEventProcessorFactory.class);
     final List<EventProcessor> eventProcessors = new LinkedList<>();
     for (int i = 0; i < 4; i++) {
       eventProcessors.add(epFactory.newEventProcessor());
@@ -129,7 +130,7 @@ public final class GroupRebalancerTest {
     final GroupRebalancer rebalancer = injector.getInstance(DefaultGroupRebalancerImpl.class);
     final LoadUpdater loadUpdater = injector.getInstance(LoadUpdater.class);
 
-    final EventProcessorFactory epFactory = injector.getInstance(GlobalSchedNonBlockingEventProcessorFactory.class);
+    final EventProcessorFactory epFactory = injector.getInstance(DefaultEventProcessorFactory.class);
     final List<EventProcessor> eventProcessors = new LinkedList<>();
     for (int i = 0; i < 5; i++) {
       eventProcessors.add(epFactory.newEventProcessor());

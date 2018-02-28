@@ -17,6 +17,7 @@ package edu.snu.mist.core.task.groupaware;
 
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.groupaware.eventprocessor.DefaultEventProcessorFactory;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessorFactory;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
@@ -80,7 +81,7 @@ public final class GroupMergerTest {
     final GroupMerger groupMerger = injector.getInstance(GroupMerger.class);
     final LoadUpdater loadUpdater = injector.getInstance(LoadUpdater.class);
 
-    final EventProcessorFactory epFactory = injector.getInstance(GlobalSchedNonBlockingEventProcessorFactory.class);
+    final EventProcessorFactory epFactory = injector.getInstance(DefaultEventProcessorFactory.class);
     final List<EventProcessor> eventProcessors = new LinkedList<>();
     for (int i = 0; i < 2; i++) {
       eventProcessors.add(epFactory.newEventProcessor());

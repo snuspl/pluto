@@ -13,12 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupaware;
+package edu.snu.mist.core.task.groupaware.eventprocessor;
 
-import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessorFactory;
-import edu.snu.mist.core.task.groupaware.eventprocessor.NextGroupSelector;
-import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
-import edu.snu.mist.core.task.groupaware.eventprocessor.NextGroupSelectorFactory;
 import edu.snu.mist.core.task.groupaware.parameters.ProcessingTimeout;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -26,9 +22,9 @@ import javax.inject.Inject;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * The factory class of GlobalSchedNonBlockingEventPrcoessor.
+ * The factory class of aefault event processor.
  */
-public final class GlobalSchedNonBlockingEventProcessorFactory implements EventProcessorFactory {
+public final class DefaultEventProcessorFactory implements EventProcessorFactory {
 
   /**
    * Next group selector factory.
@@ -43,7 +39,7 @@ public final class GlobalSchedNonBlockingEventProcessorFactory implements EventP
   private final long timeout;
 
   @Inject
-  private GlobalSchedNonBlockingEventProcessorFactory(
+  private DefaultEventProcessorFactory(
       final NextGroupSelectorFactory nextGroupSelectorFactory,
       @Parameter(ProcessingTimeout.class) final long timeout) {
     this.nextGroupSelectorFactory = nextGroupSelectorFactory;
@@ -53,6 +49,6 @@ public final class GlobalSchedNonBlockingEventProcessorFactory implements EventP
   @Override
   public EventProcessor newEventProcessor() {
     final NextGroupSelector nextGroupSelector = nextGroupSelectorFactory.newInstance();
-    return new GlobalSchedNonBlockingEventProcessor(nextGroupSelector, id.getAndIncrement(), timeout);
+    return new DefaultEventProcessor(nextGroupSelector, id.getAndIncrement(), timeout);
   }
 }
