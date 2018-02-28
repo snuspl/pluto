@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.core.task.merging.NoMergingExecutionDags;
+import edu.snu.mist.core.task.merging.MergingExecutionDags;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.Collection;
@@ -23,7 +23,7 @@ import java.util.Collection;
 /**
  * This class holds the physical execution dags.
  */
-@DefaultImplementation(NoMergingExecutionDags.class)
+@DefaultImplementation(MergingExecutionDags.class)
 public interface ExecutionDags {
 
   /**
