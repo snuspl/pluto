@@ -108,7 +108,7 @@ public class GroupRecoveryTest {
     return queryBuilder.build();
   }
 
-  //@Test(timeout = 500000)
+  @Test(timeout = 500000)
   public void testSingleQueryRecovery() throws Exception {
 
     // Start source servers.
@@ -143,6 +143,7 @@ public class GroupRecoveryTest {
     final AvroDag modifiedAvroDag = modifySinkAvroChainedDag(avroDag);
 
     final Tuple<String, AvroDag> tuple = new Tuple<>("testQuery", modifiedAvroDag);
+    queryManager.createMetaGroup(groupId, Arrays.asList(""));
     queryManager.create(tuple);
 
 
