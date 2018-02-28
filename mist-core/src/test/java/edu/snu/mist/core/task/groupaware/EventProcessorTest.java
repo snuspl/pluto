@@ -20,6 +20,7 @@ import edu.snu.mist.core.task.DefaultQueryImpl;
 import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.SourceOutputEmitter;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
+import edu.snu.mist.core.task.groupaware.eventprocessor.DefaultEventProcessor;
 import edu.snu.mist.core.task.groupaware.eventprocessor.NextGroupSelector;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -107,7 +108,7 @@ public final class EventProcessorTest {
     final NextGroupSelector nextGroupSelector = new TestNextGroupSelector(queue);
 
     final EventProcessor eventProcessor =
-        new GlobalSchedNonBlockingEventProcessor(nextGroupSelector, 1, Long.MAX_VALUE);
+        new DefaultEventProcessor(nextGroupSelector, 1, Long.MAX_VALUE);
 
     group1.setEventProcessor(eventProcessor);
     group2.setEventProcessor(eventProcessor);

@@ -17,7 +17,6 @@ package edu.snu.mist.core.task.groupaware.eventprocessor;
 
 import edu.snu.mist.core.task.groupaware.Group;
 import edu.snu.mist.core.task.groupaware.GroupEvent;
-import edu.snu.mist.core.task.groupaware.eventprocessor.dispatch.DispatcherGroupSelector;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.wake.EventHandler;
 
@@ -26,7 +25,7 @@ import java.util.Collection;
 /**
  * This is an interface that picks a next group for processing queries.
  */
-@DefaultImplementation(DispatcherGroupSelector.class)
+@DefaultImplementation(BlockingQueueGroupSelector.class)
 public interface NextGroupSelector extends EventHandler<GroupEvent>, AutoCloseable {
 
   /**

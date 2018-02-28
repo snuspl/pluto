@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task.groupaware;
 
+import edu.snu.mist.core.task.groupaware.eventprocessor.DefaultEventProcessorFactory;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessorFactory;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
@@ -44,7 +45,7 @@ public final class GroupAssignerTest {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "0");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final EventProcessorFactory epFactory = injector.getInstance(GlobalSchedNonBlockingEventProcessorFactory.class);
+    final EventProcessorFactory epFactory = injector.getInstance(DefaultEventProcessorFactory.class);
     groupAllocationTable = injector.getInstance(GroupAllocationTable.class);
 
     ep1 = epFactory.newEventProcessor();

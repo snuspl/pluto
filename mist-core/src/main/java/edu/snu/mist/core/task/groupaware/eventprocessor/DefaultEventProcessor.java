@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupaware;
+package edu.snu.mist.core.task.groupaware.eventprocessor;
 
-import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
-import edu.snu.mist.core.task.groupaware.eventprocessor.NextGroupSelector;
-import edu.snu.mist.core.task.groupaware.eventprocessor.RuntimeProcessingInfo;
+import edu.snu.mist.core.task.groupaware.Group;
 
 import java.util.logging.Logger;
 
@@ -28,9 +26,9 @@ import java.util.logging.Logger;
  * It also selects another operator chain manager when there are no active operator chain,
  * which means it does not block when the group has no active operator chain.
  */
-public final class GlobalSchedNonBlockingEventProcessor extends Thread implements EventProcessor {
+public final class DefaultEventProcessor extends Thread implements EventProcessor {
 
-  private static final Logger LOG = Logger.getLogger(GlobalSchedNonBlockingEventProcessor.class.getName());
+  private static final Logger LOG = Logger.getLogger(DefaultEventProcessor.class.getName());
 
   /**
    * Variable for checking close or not.
@@ -71,9 +69,9 @@ public final class GlobalSchedNonBlockingEventProcessor extends Thread implement
 
   private final long timeout;
 
-  public GlobalSchedNonBlockingEventProcessor(final NextGroupSelector nextGroupSelector,
-                                              final int id,
-                                              final long timeout) {
+  public DefaultEventProcessor(final NextGroupSelector nextGroupSelector,
+                               final int id,
+                               final long timeout) {
     super();
     this.nextGroupSelector = nextGroupSelector;
     this.load = 0.0;
