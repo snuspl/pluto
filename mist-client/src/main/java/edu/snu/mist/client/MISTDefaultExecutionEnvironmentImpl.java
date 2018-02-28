@@ -16,6 +16,7 @@
 package edu.snu.mist.client;
 
 import edu.snu.mist.formats.avro.*;
+import org.apache.avro.AvroRemoteException;
 import org.apache.avro.ipc.NettyTransceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.reef.io.Tuple;
@@ -23,10 +24,8 @@ import org.apache.reef.io.Tuple;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * The default implementation class for MISTExecutionEnvironment.
@@ -41,15 +40,13 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
    * A proxy that communicates with MIST Driver.
    */
   private final MistTaskProvider proxyToDriver;
+
   /**
-   * A list of MIST Tasks.
+   * A proxy that communicates with MIST Task.
    */
-  private final List<IPAddress> tasks;
-  /**
-   * A map of proxies that has an ip address of the MIST Task as a key,
-   * and a proxy communicating with a MIST Task as a value.
-   */
-  private final ConcurrentMap<IPAddress, ClientToTaskMessage> taskProxyMap;
+  private final ClientToTaskMessage proxyToTask;
+
+  private final IPAddress taskIPAddress;
 
   /**
    * Default constructor for MISTDefaultExecutionEnvironmentImpl.
@@ -64,62 +61,57 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
     final NettyTransceiver clientToDriver = new NettyTransceiver(new InetSocketAddress(serverAddr, serverPort));
     this.proxyToDriver = SpecificRequestor.getClient(MistTaskProvider.class, clientToDriver);
     final TaskList taskList = proxyToDriver.getTasks(new QueryInfo());
-    this.tasks = taskList.getTasks();
-    this.taskProxyMap = new ConcurrentHashMap<>();
+
+    final List<IPAddress> tasks = taskList.getTasks();
+    // Choose a task (TODO: Randomly select a task)
+    taskIPAddress = tasks.get(0);
+    final NettyTransceiver clientToTask = new NettyTransceiver(
+        new InetSocketAddress(taskIPAddress.getHostAddress().toString(), taskIPAddress.getPort()));
+    proxyToTask = SpecificRequestor.getClient(ClientToTaskMessage.class, clientToTask);
   }
 
   /**
    * Submit the query to the MIST Task.
    * It serializes the jar files, and uploads the files, and sends the query to the Task.
    * @param queryToSubmit the query to be submitted.
-   * @param jarFilePaths paths of the jar files that are required for instantiating the query.
    * @return the result of the submitted query.
    */
   @Override
-  public APIQueryControlResult submit(final MISTQuery queryToSubmit,
-                                      final String[] jarFilePaths) throws IOException {
-    // Choose a task
-    final IPAddress task = tasks.get(0);
-
-    ClientToTaskMessage proxyToTask = taskProxyMap.get(task);
-    if (proxyToTask == null) {
-      final NettyTransceiver clientToTask = new NettyTransceiver(
-          new InetSocketAddress(task.getHostAddress().toString(), task.getPort()));
-      final ClientToTaskMessage proxy = SpecificRequestor.getClient(ClientToTaskMessage.class, clientToTask);
-      taskProxyMap.putIfAbsent(task, proxy);
-      proxyToTask = taskProxyMap.get(task);
-    }
-
-    // Serialize jar files
-    final List<ByteBuffer> jarFiles = new LinkedList<>();
-    for (int i = 0; i < jarFilePaths.length; i++) {
-      final String jarPath = jarFilePaths[i];
-      final byte[] jarBytes = JarFileUtils.serializeJarFile(jarPath);
-      final ByteBuffer byteBuffer = ByteBuffer.wrap(jarBytes);
-      jarFiles.add(byteBuffer);
-    }
-
-    // Upload jar files
-    final JarUploadResult jarUploadResult = proxyToTask.uploadJarFiles(jarFiles);
-    if (!jarUploadResult.getIsSuccess()) {
-      throw new RuntimeException(jarUploadResult.getMsg().toString());
-    }
+  public APIQueryControlResult submitQuery(final MISTQuery queryToSubmit) throws AvroRemoteException {
 
     // Build logical plan using serialized vertices and edges.
     final Tuple<List<AvroVertex>, List<Edge>> serializedDag = queryToSubmit.getAvroOperatorDag();
     final AvroDag.Builder avroDagBuilder = AvroDag.newBuilder();
     final AvroDag avroDag = avroDagBuilder
-        .setJarFilePaths(jarUploadResult.getPaths())
+        .setAppId(queryToSubmit.getApplicationId())
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
-        .setSuperGroupId(queryToSubmit.getSuperGroupId())
         .build();
     final QueryControlResult queryControlResult = proxyToTask.sendQueries(avroDag);
 
     // Transform QueryControlResult to APIQueryControlResult
     final APIQueryControlResult apiQueryControlResult =
-        new APIQueryControlResultImpl(queryControlResult.getQueryId(), task,
+        new APIQueryControlResultImpl(queryControlResult.getQueryId(), taskIPAddress,
             queryControlResult.getMsg(), queryControlResult.getIsSuccess());
     return apiQueryControlResult;
+  }
+
+  @Override
+  public JarUploadResult submitJar(final List<String> jarFilePaths) throws IOException {
+    final List<ByteBuffer> jarByteBuffers = new ArrayList<>(jarFilePaths.size());
+
+    for (final String jarFilePath : jarFilePaths) {
+      // Serialize jar files
+      final byte[] jarBytes = JarFileUtils.serializeJarFile(jarFilePath);
+      final ByteBuffer byteBuffer = ByteBuffer.wrap(jarBytes);
+      jarByteBuffers.add(byteBuffer);
+    }
+
+    // Upload jar files
+    final JarUploadResult jarUploadResult = proxyToTask.uploadJarFiles(jarByteBuffers);
+    if (!jarUploadResult.getIsSuccess()) {
+      throw new RuntimeException(jarUploadResult.getMsg().toString());
+    }
+    return jarUploadResult;
   }
 }

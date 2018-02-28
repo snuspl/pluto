@@ -20,7 +20,6 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.ConfigVertex;
 import edu.snu.mist.core.task.ExecutionVertex;
-import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.QueryManager;
 import edu.snu.mist.core.task.groupaware.GroupAllocationTableModifier;
 import edu.snu.mist.core.task.groupaware.GroupMap;
@@ -35,7 +34,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -75,13 +73,13 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
   }
 
   @Override
-  public void recoverGroup(final String groupId) throws IOException {
+  public void recoverGroup(final String appId) throws IOException {
     final MetaGroupCheckpoint checkpoint;
     try {
-      checkpoint = checkpointStore.loadMetaGroupCheckpoint(groupId);
+      checkpoint = checkpointStore.loadMetaGroupCheckpoint(appId);
     } catch (final FileNotFoundException ie) {
       LOG.log(Level.WARNING, "Failed in loading group {0}, this group may not exist in the checkpoint store.",
-          new Object[]{groupId});
+          new Object[]{appId});
       return;
     }
 
@@ -90,7 +88,7 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
     for (final Map.Entry<String, AvroConfigDag> entry : checkpoint.getAvroConfigDags().entrySet()) {
       final String queryId = entry.getKey();
       LOG.log(Level.INFO, "Query with id {0} is being submitted during recovery of group id {1}",
-          new Object[]{queryId, groupId});
+          new Object[]{queryId, appId});
       final AvroConfigDag dag = entry.getValue();
       final List<AvroConfigVertex> vertexList = dag.getAvroConfigVertices();
       final List<AvroConfigMISTEdge> edgeList = dag.getAvroConfigMISTEdges();
@@ -113,21 +111,19 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
       try {
         if (LOG.isLoggable(Level.FINE)) {
           LOG.log(Level.FINE, "Recover Query [gid: {0}, qid: {1}]",
-              new Object[]{groupId, queryId});
+              new Object[]{appId, queryId});
         }
 
         // Add the query info to the queryManager.
         final List<String> jarFilePaths = checkpoint.getJarFilePaths();
-        final Query query = queryManager.addNewQueryInfo(groupId, queryId, jarFilePaths);
-        final Tuple<MetaGroup, AtomicBoolean> mGroup = groupMap.get(groupId);
-
+        final MetaGroup metaGroup = queryManager.createMetaGroup(appId, jarFilePaths);
         // Start the submitted dag
-        mGroup.getKey().getQueryStarter().start(queryId, query, configDag, jarFilePaths);
+        queryManager.createAndStartQuery(queryId, metaGroup, configDag);
       } catch (final Exception e) {
         e.printStackTrace();
         // [MIST-345] We need to release all of the information that is required for the query when it fails.
         LOG.log(Level.SEVERE, "An exception occurred while recovering {0} query: {1}",
-            new Object[] {groupId, e.toString()});
+            new Object[] {appId, e.toString()});
       }
     }
   }
@@ -148,25 +144,24 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
   @Override
   public void checkpointGroup(final String groupId) {
     LOG.log(Level.INFO, "Checkpoint started for groupId : {0}", groupId);
-    final Tuple<MetaGroup, AtomicBoolean> tuple = groupMap.get(groupId);
-    if (tuple == null) {
+    final MetaGroup metaGroup = groupMap.get(groupId);
+    if (metaGroup == null) {
       LOG.log(Level.WARNING, "There is no such group {0}.",
           new Object[] {groupId});
       return;
     }
-    final MetaGroup group = tuple.getKey();
-    checkpointStore.saveMetaGroupCheckpoint(new Tuple<>(groupId, group.checkpoint()));
+    checkpointStore.saveMetaGroupCheckpoint(new Tuple<>(groupId, metaGroup.checkpoint()));
   }
 
   @Override
   public void deleteGroup(final String groupId) {
-    final Tuple<MetaGroup, AtomicBoolean> tuple = groupMap.get(groupId);
-    if (tuple == null) {
+    final MetaGroup metaGroup = groupMap.get(groupId);
+    if (metaGroup == null) {
       LOG.log(Level.WARNING, "There is no such group {0}.",
           new Object[] {groupId});
       return;
     }
-    tuple.getKey().getQueryRemover().deleteAllQueries();
+    metaGroup.getQueryRemover().deleteAllQueries();
     groupMap.remove(groupId);
     groupAllocationTableModifier.addEvent(
         new WritingEvent(WritingEvent.EventType.GROUP_REMOVE_ALL, null));
@@ -174,7 +169,7 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
 
   @Override
   public MetaGroup getGroup(final String groupId) {
-    return groupMap.get(groupId).getKey();
+    return groupMap.get(groupId);
   }
 
   @Override

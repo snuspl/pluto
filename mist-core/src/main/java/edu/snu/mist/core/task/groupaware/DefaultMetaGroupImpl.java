@@ -20,13 +20,15 @@ import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.common.operators.StateHandler;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.groupaware.parameters.ApplicationIdentifier;
+import edu.snu.mist.core.task.groupaware.parameters.JarFilePath;
 import edu.snu.mist.core.task.merging.ConfigExecutionVertexMap;
 import edu.snu.mist.core.task.merging.QueryIdConfigDagMap;
 import edu.snu.mist.formats.avro.*;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,15 +47,22 @@ public final class DefaultMetaGroupImpl implements MetaGroup {
   private final AtomicInteger numGroups = new AtomicInteger(0);
 
   /**
-   * The list of jar file paths.
+   * The jar file path.
    */
-  private final List<String> groupJarFilePaths;
+  private final List<String> jarFilePath;
+
+  /**
+   * The application identifier.
+   */
+  private final String appId;
 
   @Inject
   private DefaultMetaGroupImpl(final QueryStarter queryStarter,
                                final QueryRemover queryRemover,
                                final ExecutionDags executionDags,
                                final QueryIdConfigDagMap queryIdConfigDagMap,
+                               @Parameter(ApplicationIdentifier.class) final String appId,
+                               @Parameter(JarFilePath.class) final String jarFilePath,
                                final ConfigExecutionVertexMap configExecutionVertexMap) {
     this.queryStarter = queryStarter;
     this.queryRemover = queryRemover;
@@ -61,7 +70,8 @@ public final class DefaultMetaGroupImpl implements MetaGroup {
     this.groups = new LinkedList<>();
     this.queryIdConfigDagMap = queryIdConfigDagMap;
     this.configExecutionVertexMap = configExecutionVertexMap;
-    this.groupJarFilePaths = new CopyOnWriteArrayList<>();
+    this.jarFilePath = Arrays.asList(jarFilePath);
+    this.appId = appId;
   }
 
   @Override
@@ -97,10 +107,13 @@ public final class DefaultMetaGroupImpl implements MetaGroup {
   }
 
   @Override
-  public void setJarFilePaths(final List<String> jarFilePaths) {
-    if (jarFilePaths != null && jarFilePaths.size() != 0) {
-      groupJarFilePaths.addAll(jarFilePaths);
-    }
+  public String getApplicationId() {
+    return appId;
+  }
+
+  @Override
+  public List<String> getJarFilePath() {
+    return jarFilePath;
   }
 
   @Override
@@ -119,7 +132,8 @@ public final class DefaultMetaGroupImpl implements MetaGroup {
     return MetaGroupCheckpoint.newBuilder()
         .setAvroConfigDags(avroConfigDagMap)
         .setMinimumLatestCheckpointTimestamp(groupTimestamp.getValue())
-        .setJarFilePaths(groupJarFilePaths)
+        .setJarFilePaths(jarFilePath)
+        .setApplicationId(appId)
         .build();
   }
 

@@ -15,12 +15,18 @@
  */
 package edu.snu.mist.core.task;
 
+import edu.snu.mist.common.graph.DAG;
+import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.groupaware.GroupAwareQueryManagerImpl;
+import edu.snu.mist.core.task.groupaware.MetaGroup;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
+import org.apache.reef.tang.exceptions.InjectionException;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.List;
 
 /**
@@ -36,13 +42,29 @@ public interface QueryManager extends AutoCloseable {
   QueryControlResult create(Tuple<String, AvroDag> tuple);
 
   /**
-   * Add a new query info to the query manager.
-   * @param groupId
-   * @param queryId
-   * @param jarFilePaths for this group
+   * Create a query (this is for checkpointing).
+   * @param queryId query id
+   * @param metaGroup meta group
+   */
+  Query createAndStartQuery(String queryId,
+                            MetaGroup metaGroup,
+                            DAG<ConfigVertex, MISTEdge> configDag)
+      throws IOException, InjectionException, ClassNotFoundException;
+
+  /**
+   * Store the jar file and return application identifier for the jar file.
+   * @param jar jar file
+   * @return application identifier
+   */
+  String uploadJarFile(List<ByteBuffer> jar) throws IOException, InjectionException;
+
+  /**
+   * Create a meta group that has the application id and the jar files (this is for checkpointing).
+   * @param appId
+   * @param jarFilePath for this application
    * @return
    */
-  Query addNewQueryInfo(String groupId, String queryId, List<String> jarFilePaths);
+  MetaGroup createMetaGroup(String appId, final List<String> jarFilePath) throws InjectionException;
 
   /**
    * Deletes the query corresponding to the queryId submitted by client.

@@ -17,7 +17,7 @@
 package edu.snu.mist.examples;
 
 import edu.snu.mist.client.APIQueryControlResult;
-import edu.snu.mist.client.MISTQuery;
+import edu.snu.mist.client.MISTQueryBuilder;
 import edu.snu.mist.client.rulebased.*;
 import edu.snu.mist.client.rulebased.conditions.ComparisonCondition;
 import edu.snu.mist.examples.parameters.TestMQTTBrokerURI;
@@ -107,8 +107,8 @@ public final class RuleBasedMQTTNoiseSensing {
                         .build())
                 .build();
 
-        final MISTQuery query = RuleBasedTranslator.statelessTranslator(ruleBasedQuery);
-        return MISTExampleUtils.submit(query, configuration);
+        final MISTQueryBuilder queryBuilder = RuleBasedTranslator.statelessTranslator(ruleBasedQuery);
+        return MISTExampleUtils.submit(queryBuilder, configuration);
     }
 
     /**

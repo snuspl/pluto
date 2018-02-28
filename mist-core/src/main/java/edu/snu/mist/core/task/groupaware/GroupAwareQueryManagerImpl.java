@@ -22,6 +22,8 @@ import edu.snu.mist.common.shared.KafkaSharedResource;
 import edu.snu.mist.common.shared.MQTTResource;
 import edu.snu.mist.common.shared.NettySharedResource;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.groupaware.parameters.ApplicationIdentifier;
+import edu.snu.mist.core.task.groupaware.parameters.JarFilePath;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
@@ -29,11 +31,14 @@ import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
+import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -89,6 +94,11 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
   private final GroupAllocationTableModifier groupAllocationTableModifier;
 
   /**
+   * TODO: This should be generate globally unique numbers.
+   */
+  private final AtomicLong applicationNum = new AtomicLong(0);
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -134,21 +144,17 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
       planStore.saveAvroDag(tuple);
       final String queryId = tuple.getKey();
 
-      // Update group information
-      final String groupId = tuple.getValue().getSuperGroupId();
+      // Update app information
+      final String appId = tuple.getValue().getAppId();
 
       if (LOG.isLoggable(Level.FINE)) {
-        LOG.log(Level.FINE, "Create Query [gid: {0}, qid: {2}]",
-            new Object[]{groupId, queryId});
+        LOG.log(Level.FINE, "Create Query [aid: {0}, qid: {2}]",
+            new Object[]{appId, queryId});
       }
 
-      final List<String> jarFilePaths = tuple.getValue().getJarFilePaths();
-      final Query query = addNewQueryInfo(groupId, queryId, jarFilePaths);
-
-      // Start the submitted dag
+      final MetaGroup metaGroup = groupMap.get(appId);
       final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
-      final Tuple<MetaGroup, AtomicBoolean> mGroup = groupMap.get(groupId);
-      mGroup.getKey().getQueryStarter().start(queryId, query, configDag, jarFilePaths);
+      final Query query = createAndStartQuery(queryId, metaGroup, configDag);
 
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
@@ -166,51 +172,51 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
   }
 
   @Override
-  public Query addNewQueryInfo(final String groupId, final String queryId, final List<String> jarFilePaths) {
-    try {
-      if (groupMap.get(groupId) == null) {
-        // Add new group id, if it doesn't exist
-        final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-        jcb.bindNamedParameter(GroupId.class, groupId);
+  public Query createAndStartQuery(final String queryId,
+                                   final MetaGroup metaGroup,
+                                   final DAG<ConfigVertex, MISTEdge> configDag)
+      throws InjectionException, ClassNotFoundException, IOException {
+    final Query query = new DefaultQueryImpl(queryId);
+    groupAllocationTableModifier.addEvent(new WritingEvent(WritingEvent.EventType.QUERY_ADD,
+        new Tuple<>(metaGroup, query)));
+    // Start the submitted dag
+    metaGroup.getQueryStarter().start(queryId, query, configDag, metaGroup.getJarFilePath());
+    return query;
+  }
 
-        final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-        injector.bindVolatileInstance(MQTTResource.class, mqttSharedResource);
-        injector.bindVolatileInstance(KafkaSharedResource.class, kafkaSharedResource);
-        injector.bindVolatileInstance(NettySharedResource.class, nettySharedResource);
-        injector.bindVolatileInstance(QueryInfoStore.class, planStore);
+  @Override
+  public String uploadJarFile(final List<ByteBuffer> jars) throws IOException, InjectionException {
+    // Create a meta group for this application
+    final String appId = Long.toString(applicationNum.getAndIncrement());
+    final List<String> paths = planStore.saveJar(jars);
+    createMetaGroup(appId, paths);
+    return appId;
+  }
 
-        final MetaGroup metaGroup = injector.getInstance(MetaGroup.class);
-        metaGroup.setJarFilePaths(jarFilePaths);
+  @Override
+  public MetaGroup createMetaGroup(final String appId, final List<String> paths) throws InjectionException {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
 
-        if (groupMap.putIfAbsent(groupId, new Tuple<>(metaGroup, new AtomicBoolean(false))) == null) {
-          LOG.log(Level.FINE, "Create Group: {0}", new Object[]{groupId});
-          final Group group = injector.getInstance(Group.class);
-          groupAllocationTableModifier.addEvent(
-              new WritingEvent(WritingEvent.EventType.GROUP_ADD, new Tuple<>(metaGroup, group)));
+    jcb.bindNamedParameter(ApplicationIdentifier.class, appId);
+    // TODO: Submit a single jar instead of list of jars
+    jcb.bindNamedParameter(JarFilePath.class, paths.get(0));
+    jcb.bindNamedParameter(GroupId.class, appId);
 
-          final Tuple<MetaGroup, AtomicBoolean> mGroup = groupMap.get(groupId);
-          synchronized (mGroup) {
-            mGroup.getValue().set(true);
-            mGroup.notifyAll();
-          }
-        }
-      }
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    injector.bindVolatileInstance(MQTTResource.class, mqttSharedResource);
+    injector.bindVolatileInstance(KafkaSharedResource.class, kafkaSharedResource);
+    injector.bindVolatileInstance(NettySharedResource.class, nettySharedResource);
+    injector.bindVolatileInstance(QueryInfoStore.class, planStore);
 
-      final Tuple<MetaGroup, AtomicBoolean> mGroup = groupMap.get(groupId);
-      synchronized (mGroup) {
-        if (!mGroup.getValue().get()) {
-          mGroup.wait();
-        }
-      }
+    final MetaGroup metaGroup = injector.getInstance(MetaGroup.class);
 
-      final Query query = new DefaultQueryImpl(queryId);
-      groupAllocationTableModifier.addEvent(new WritingEvent(WritingEvent.EventType.QUERY_ADD,
-          new Tuple<>(mGroup.getKey(), query)));
-      return query;
-    } catch (final Exception e) {
-      e.printStackTrace();
-      return null;
-    }
+    groupMap.putIfAbsent(appId, metaGroup);
+
+    final Group group = injector.getInstance(Group.class);
+    groupAllocationTableModifier.addEvent(
+        new WritingEvent(WritingEvent.EventType.GROUP_ADD, new Tuple<>(metaGroup, group)));
+
+    return metaGroup;
   }
 
   @Override
@@ -225,7 +231,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
    */
   @Override
   public QueryControlResult delete(final String groupId, final String queryId) {
-    groupMap.get(groupId).getKey().getQueryRemover().deleteQuery(queryId);
+    groupMap.get(groupId).getQueryRemover().deleteQuery(queryId);
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(queryId);
     queryControlResult.setIsSuccess(true);

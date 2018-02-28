@@ -17,7 +17,6 @@
 package edu.snu.mist.examples;
 
 import edu.snu.mist.client.APIQueryControlResult;
-import edu.snu.mist.client.MISTQuery;
 import edu.snu.mist.client.MISTQueryBuilder;
 import edu.snu.mist.client.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.common.functions.ApplyStatefulFunction;
@@ -72,7 +71,7 @@ public final class KMeansClustering {
         };
     final ApplyStatefulFunction<Point, List<Cluster>> applyStatefulFunction = new KMeansFunction();
 
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group");
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     queryBuilder.socketTextStream(localTextSocketSourceConf)
         // remove all space in the input string
         .map(s -> s.replaceAll(" ", ""))
@@ -89,9 +88,8 @@ public final class KMeansClustering {
         .flatMap(flatMapFunc)
             // display the result
         .textSocketOutput(MISTExampleUtils.SINK_HOSTNAME, MISTExampleUtils.SINK_PORT);
-    final MISTQuery query = queryBuilder.build();
 
-    return MISTExampleUtils.submit(query, configuration);
+    return MISTExampleUtils.submit(queryBuilder, configuration);
   }
 
   /**

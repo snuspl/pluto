@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task.deactivation;
 
-import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.common.operators.StateHandler;
@@ -330,12 +329,15 @@ public final class DeactivationGroupSourceManager implements GroupSourceManager 
    */
   private Tuple<URL[], ClassLoader> getURLsAndClassLoader(final String queryId)
       throws IOException {
+    throw new RuntimeException("not implemented");
+    /*
     if (planStore.isStored(queryId)) {
       final URL[] urls = SerializeUtils.getJarFileURLs(planStore.load(queryId).getJarFilePaths());
       return new Tuple<>(urls, classLoaderProvider.newInstance(urls));
     } else {
       throw new RuntimeException("The plan for the query was not found in plan store.");
     }
+    */
   }
 
   /**

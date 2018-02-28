@@ -21,6 +21,8 @@ import edu.snu.mist.core.task.groupaware.eventprocessor.DefaultEventProcessorFac
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessorFactory;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.task.groupaware.parameters.ApplicationIdentifier;
+import edu.snu.mist.core.task.groupaware.parameters.JarFilePath;
 import edu.snu.mist.core.task.groupaware.rebalancer.GroupMerger;
 import edu.snu.mist.core.task.groupaware.rebalancer.LoadUpdater;
 import junit.framework.Assert;
@@ -41,6 +43,8 @@ public final class GroupMergerTest {
 
   private MetaGroup createMetaGroup() throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(ApplicationIdentifier.class, "app");
+    jcb.bindNamedParameter(JarFilePath.class, "");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final QueryStarter queryStarter = mock(QueryStarter.class);
     final QueryRemover queryRemover = mock(QueryRemover.class);

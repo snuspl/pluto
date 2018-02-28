@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * This interface represents a meta group that manages the split groups.
+ * This interface represents a meta group for each application.
  * Network connections, codes are shared within this meta group.
  * Query merging is also being performed in this meta group.
  */
@@ -65,10 +65,16 @@ public interface MetaGroup {
   AtomicInteger numGroups();
 
   /**
-   * Set the jarFilePaths.
-   * @param jarFilePaths
+   * Get the application id.
+   * @return
    */
-  void setJarFilePaths(List<String> jarFilePaths);
+  String getApplicationId();
+
+  /**
+   * Get a jar file path of the application.
+   * @return
+   */
+  List<String> getJarFilePath();
 
   /**
    * Return a checkpoint of this MetaGroup.

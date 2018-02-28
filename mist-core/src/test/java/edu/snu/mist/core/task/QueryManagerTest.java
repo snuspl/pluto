@@ -139,7 +139,7 @@ public final class QueryManagerTest {
 
     // Fake operator chain dag of QueryManager
     final AvroDag fakeAvroDag = new AvroDag();
-    fakeAvroDag.setSuperGroupId("testGroup");
+    //fakeAvroDag.setSuperGroupId("testGroup");
     final Tuple<String, AvroDag> tuple = new Tuple<>(queryId, fakeAvroDag);
 
     // Construct execution dag
@@ -150,7 +150,7 @@ public final class QueryManagerTest {
     final DAG<ConfigVertex, MISTEdge> configDag = mock(DAG.class);
     when(configDagGenerator.generate(tuple.getValue())).thenReturn(configDag);
     final DagGenerator dagGenerator = mock(DagGenerator.class);
-    when(dagGenerator.generate(configDag, tuple.getValue().getJarFilePaths())).thenReturn(executionDag);
+    //when(dagGenerator.generate(configDag, tuple.getValue().getJarFilePaths())).thenReturn(executionDag);
 
     // Build QueryManager
     final QueryManager queryManager = queryManagerBuild(tuple, configDagGenerator, dagGenerator, injector);

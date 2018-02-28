@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.parameters;
+package edu.snu.mist.core.task.groupaware.parameters;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-import java.util.List;
-
-@NamedParameter(doc = "Jar file paths that will be used for loading class loaders")
-public final class JarFilePaths implements Name<List<String>> {
-  // empty
+@NamedParameter(doc = "The application identifier")
+public final class ApplicationIdentifier implements Name<String> {
 }
