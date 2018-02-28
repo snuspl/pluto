@@ -52,7 +52,7 @@ public final class MQTTNoiseSensing {
     final SourceConfiguration localMQTTSourceConf =
         MISTExampleUtils.getMQTTSourceConf("MISTExampleSub", brokerURI);
 
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group", "user1");
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group");
     final ContinuousStream<Integer> sensedData = queryBuilder.mqttStream(localMQTTSourceConf)
         .map((mqttMessage) -> Integer.parseInt(new String(mqttMessage.getPayload())));
 

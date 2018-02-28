@@ -50,7 +50,7 @@ public class QueryInfoStoreTest {
   public void diskStoreTest() throws InjectionException, IOException {
     // Generate a query
     final MISTQueryBuilder queryBuilder =
-        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID, TestParameters.SUB_GROUP_ID);
+        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID);
     queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
         .flatMap(s -> Arrays.asList(s.split(" ")))
         .filter(s -> s.startsWith("A"))
@@ -89,14 +89,12 @@ public class QueryInfoStoreTest {
     final AvroDag.Builder avroDagBuilder = AvroDag.newBuilder();
     final AvroDag avroDag1 = avroDagBuilder
         .setSuperGroupId(TestParameters.SUPER_GROUP_ID)
-        .setSubGroupId(TestParameters.SUB_GROUP_ID)
         .setJarFilePaths(paths)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .build();
     final AvroDag avroDag2 = avroDagBuilder
         .setSuperGroupId(TestParameters.SUPER_GROUP_ID)
-        .setSubGroupId(TestParameters.SUB_GROUP_ID)
         .setJarFilePaths(paths)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())

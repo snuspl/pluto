@@ -16,7 +16,6 @@
 package edu.snu.mist.core.task.groupaware;
 
 import edu.snu.mist.common.parameters.GroupId;
-import edu.snu.mist.core.parameters.SubGroupId;
 import edu.snu.mist.core.task.DefaultQueryImpl;
 import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.SourceOutputEmitter;
@@ -51,13 +50,6 @@ public final class EventProcessorTest {
     jcb.bindNamedParameter(GroupId.class, groupId);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     return injector.getInstance(Group.class);
-  }
-
-  private SubGroup createSubGroup(final String subGroupId) throws InjectionException {
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(SubGroupId.class, subGroupId);
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    return injector.getInstance(SubGroup.class);
   }
 
   @Test

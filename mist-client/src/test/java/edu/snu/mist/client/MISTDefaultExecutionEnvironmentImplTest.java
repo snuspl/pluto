@@ -59,7 +59,7 @@ public class MISTDefaultExecutionEnvironmentImplTest {
 
     // Step 2: Generate a new query
     final MISTQueryBuilder queryBuilder =
-        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID, TestParameters.SUB_GROUP_ID);
+        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID);
     queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF)
         .flatMap(s -> Arrays.asList(s.split(" ")))
         .map(s -> new Tuple2<>(s, 1))

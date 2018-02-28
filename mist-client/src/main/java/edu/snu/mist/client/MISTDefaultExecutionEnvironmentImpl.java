@@ -113,7 +113,6 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .setSuperGroupId(queryToSubmit.getSuperGroupId())
-        .setSubGroupId(queryToSubmit.getSubGroupId())
         .build();
     final QueryControlResult queryControlResult = proxyToTask.sendQueries(avroDag);
 

@@ -91,7 +91,7 @@ public class GroupRecoveryTest {
         .setHostPort(16118)
         .build();
 
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("testGroup", "user1");
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("testGroup");
 
     final int defaultWatermarkPeriod = 100;
     final WatermarkConfiguration testConf = PeriodicWatermarkConfiguration.newBuilder()
@@ -127,7 +127,6 @@ public class GroupRecoveryTest {
     final AvroDag.Builder avroDagBuilder = AvroDag.newBuilder();
     final AvroDag avroDag = avroDagBuilder
         .setSuperGroupId(groupId)
-        .setSubGroupId(groupId)
         .setJarFilePaths(new LinkedList<>())
         .setAvroVertices(initialAvroOpChainDag.getKey())
         .setEdges(initialAvroOpChainDag.getValue())

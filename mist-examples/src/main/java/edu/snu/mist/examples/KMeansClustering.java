@@ -72,7 +72,7 @@ public final class KMeansClustering {
         };
     final ApplyStatefulFunction<Point, List<Cluster>> applyStatefulFunction = new KMeansFunction();
 
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group", "user1");
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group");
     queryBuilder.socketTextStream(localTextSocketSourceConf)
         // remove all space in the input string
         .map(s -> s.replaceAll(" ", ""))

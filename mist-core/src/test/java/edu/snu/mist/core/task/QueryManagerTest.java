@@ -140,7 +140,6 @@ public final class QueryManagerTest {
     // Fake operator chain dag of QueryManager
     final AvroDag fakeAvroDag = new AvroDag();
     fakeAvroDag.setSuperGroupId("testGroup");
-    fakeAvroDag.setSubGroupId("user1");
     final Tuple<String, AvroDag> tuple = new Tuple<>(queryId, fakeAvroDag);
 
     // Construct execution dag

@@ -45,14 +45,13 @@ public final class CepUtils {
      */
     public static <T> MISTQuery translate(final MISTCepQuery query) throws IOException {
         final String superGroupId = query.getSuperGroupId();
-        final String subGroupId = query.getSubGroupId();
         final CepInput<T> cepInput = query.getCepInput();
         final List<CepEventPattern<T>> cepEventPatterns = query.getCepEventPatternSequence();
         final CepQualifier<T> cepQualifier = query.getCepQualifier();
         final long windowTime = query.getWindowTime();
         final CepAction cepAction = query.getCepAction();
 
-        final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(superGroupId, subGroupId);
+        final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(superGroupId);
         final ContinuousStream<T> inputMapStream = convertCepInputToSourceStream(queryBuilder, cepInput);
         final ContinuousStream<Map<String, List<T>>> qualifierFilterStream =
                 inputMapStream.cepOperator(cepEventPatterns, windowTime).filter(cepQualifier);
