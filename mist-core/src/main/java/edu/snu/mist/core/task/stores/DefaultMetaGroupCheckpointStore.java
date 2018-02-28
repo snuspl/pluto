@@ -30,10 +30,6 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,17 +49,6 @@ public final class DefaultMetaGroupCheckpointStore implements MetaGroupCheckpoin
    */
   private final DatumReader<MetaGroupCheckpoint> datumReader;
 
-  /**
-   * A executor service that contains a thread.
-   */
-  private final ExecutorService executor;
-
-  /**
-   * A blocking queue that contains the MetaGroupCheckpoints to be stored.
-   * The key of the tuple is a group Id.
-   */
-  private final BlockingQueue<Tuple<String, MetaGroupCheckpoint>> metaGroupCheckpointQueue;
-
   @Inject
   private DefaultMetaGroupCheckpointStore(@Parameter(TempFolderPath.class) final String tmpFolderpath) {
     this.tmpFolderPath = tmpFolderpath;
@@ -80,35 +65,6 @@ public final class DefaultMetaGroupCheckpointStore implements MetaGroupCheckpoin
         des.delete();
       }
     }
-    this.metaGroupCheckpointQueue = new LinkedBlockingDeque<>();
-    this.executor = Executors.newSingleThreadExecutor();
-    executor.submit(new Runnable() {
-      @Override
-      public void run() {
-        try {
-          while (true) {
-            final Tuple<String, MetaGroupCheckpoint> tuple = metaGroupCheckpointQueue.take();
-            final String groupId = tuple.getKey();
-            final MetaGroupCheckpoint gmc = tuple.getValue();
-            final File storedFile = getMetaGroupCheckpointFile(groupId);
-            if (storedFile.exists()) {
-              storedFile.delete();
-              LOG.log(Level.INFO, "Checkpoint deleted for groupId: {0}", groupId);
-            }
-            if (!storedFile.exists()) {
-              storedFile.getParentFile().mkdirs();
-              final DataFileWriter<MetaGroupCheckpoint> dataFileWriter = new DataFileWriter<>(datumWriter);
-              dataFileWriter.create(gmc.getSchema(), storedFile);
-              dataFileWriter.append(gmc);
-              dataFileWriter.close();
-              LOG.log(Level.INFO, "Checkpoint completed for groupId: {0}", groupId);
-            }
-          }
-        } catch (final Exception e) {
-          e.printStackTrace();
-        }
-      }
-    });
   }
 
   private File getMetaGroupCheckpointFile(final String groupId) {
@@ -117,19 +73,29 @@ public final class DefaultMetaGroupCheckpointStore implements MetaGroupCheckpoin
     return new File(tmpFolderPath, sb.toString());
   }
 
-  @Override
-  public void close() {
-    executor.shutdown();
-  }
-
 
   @Override
   public CheckpointResult saveMetaGroupCheckpoint(final Tuple<String, MetaGroupCheckpoint> tuple) {
     try {
-      metaGroupCheckpointQueue.put(tuple);
-      LOG.log(Level.INFO, "Checkpoint submitted for groupId: {0}", tuple.getKey());
-    } catch (final InterruptedException ie) {
-      ie.printStackTrace();
+      final String groupId = tuple.getKey();
+      final MetaGroupCheckpoint gmc = tuple.getValue();
+
+      // Write the file.
+      final File storedFile = getMetaGroupCheckpointFile(groupId);
+      if (storedFile.exists()) {
+        storedFile.delete();
+        LOG.log(Level.INFO, "Checkpoint deleted for groupId: {0}", groupId);
+      }
+      if (!storedFile.exists()) {
+        storedFile.getParentFile().mkdirs();
+        final DataFileWriter<MetaGroupCheckpoint> dataFileWriter = new DataFileWriter<>(datumWriter);
+        dataFileWriter.create(gmc.getSchema(), storedFile);
+        dataFileWriter.append(gmc);
+        dataFileWriter.close();
+        LOG.log(Level.INFO, "Checkpoint completed for groupId: {0}", groupId);
+      }
+    } catch (final Exception e) {
+      e.printStackTrace();
       return CheckpointResult.newBuilder()
           .setIsSuccess(false)
           .setMsg("Unsuccessful in checkpointing group " + tuple.getKey())
@@ -145,6 +111,7 @@ public final class DefaultMetaGroupCheckpointStore implements MetaGroupCheckpoin
 
   @Override
   public MetaGroupCheckpoint loadMetaGroupCheckpoint(final String groupId) throws IOException {
+    // Load the file.
     final File storedFile = getMetaGroupCheckpointFile(groupId);
     final DataFileReader<MetaGroupCheckpoint> dataFileReader =
         new DataFileReader<MetaGroupCheckpoint>(storedFile, datumReader);
