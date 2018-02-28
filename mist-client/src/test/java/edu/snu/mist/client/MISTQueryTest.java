@@ -64,7 +64,7 @@ public final class MISTQueryTest {
   @Test
   public void mistComplexQuerySerializeTest() throws InjectionException, IOException, URISyntaxException {
     final MISTQueryBuilder queryBuilder =
-        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID, TestParameters.SUB_GROUP_ID);
+        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID);
     final ContinuousStream<String> sourceStream =
         queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF,
             TestParameters.PUNCTUATED_WATERMARK_CONF);

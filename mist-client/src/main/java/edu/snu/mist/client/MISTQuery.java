@@ -43,9 +43,4 @@ public interface MISTQuery {
    * Get the super-group id.
    */
   String getSuperGroupId();
-
-  /**
-   * Get the sub-group id.
-   */
-  String getSubGroupId();
 }

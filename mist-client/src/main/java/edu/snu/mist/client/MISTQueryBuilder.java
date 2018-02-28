@@ -55,11 +55,6 @@ public final class MISTQueryBuilder {
   private final String superGroupId;
 
   /**
-   * The sub group id of the query.
-   */
-  private final String subGroupId;
-
-  /**
    * The default watermark configuration.
    */
   private WatermarkConfiguration getDefaultWatermarkConf() {
@@ -69,11 +64,9 @@ public final class MISTQueryBuilder {
         .build();
   }
 
-  public MISTQueryBuilder(final String superGroupId,
-                          final String subGroupId) {
+  public MISTQueryBuilder(final String superGroupId) {
     this.dag = new AdjacentListDAG<>();
     this.superGroupId = superGroupId;
-    this.subGroupId = subGroupId;
   }
 
   /**
@@ -159,6 +152,6 @@ public final class MISTQueryBuilder {
    * @return the query
    */
   public MISTQuery build() {
-    return new MISTQueryImpl(dag, superGroupId, subGroupId);
+    return new MISTQueryImpl(dag, superGroupId);
   }
 }

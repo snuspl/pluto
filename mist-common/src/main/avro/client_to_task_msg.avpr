@@ -31,10 +31,6 @@
           "type": "string"
         },
         {
-          "name": "SubGroupId",
-          "type": "string"
-        },
-        {
           "name": "JarFilePaths",
           "type":
           {

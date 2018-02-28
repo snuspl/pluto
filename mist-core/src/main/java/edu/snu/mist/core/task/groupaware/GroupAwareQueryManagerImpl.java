@@ -57,11 +57,6 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
    */
   private final QueryInfoStore planStore;
 
-  /**
-   * A map which contains groups and their information.
-   */
-  private final GlobalSchedGroupInfoMap groupInfoMap;
-
   private final GroupMap groupMap;
 
   /**
@@ -98,7 +93,6 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
    */
   @Inject
   private GroupAwareQueryManagerImpl(final ScheduledExecutorServiceWrapper schedulerWrapper,
-                                     final GlobalSchedGroupInfoMap groupInfoMap,
                                      final QueryInfoStore planStore,
                                      final EventProcessorManager eventProcessorManager,
                                      final ConfigDagGenerator configDagGenerator,
@@ -110,7 +104,6 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
                                      final GroupMap groupMap) {
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
-    this.groupInfoMap = groupInfoMap;
     this.eventProcessorManager = eventProcessorManager;
     this.configDagGenerator = configDagGenerator;
     this.mqttSharedResource = mqttSharedResource;
@@ -143,12 +136,10 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
 
       // Update group information
       final String groupId = tuple.getValue().getSuperGroupId();
-      final String subGroupId = tuple.getValue().getSubGroupId();
-
 
       if (LOG.isLoggable(Level.FINE)) {
-        LOG.log(Level.FINE, "Create Query [gid: {0}, sgid: {1}, qid: {2}]",
-            new Object[]{groupId, subGroupId, queryId});
+        LOG.log(Level.FINE, "Create Query [gid: {0}, qid: {2}]",
+            new Object[]{groupId, queryId});
       }
 
       final List<String> jarFilePaths = tuple.getValue().getJarFilePaths();
