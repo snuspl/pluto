@@ -26,16 +26,24 @@ import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.stream.NettyChannelHandler;
+import edu.snu.mist.common.stream.textmessage.NettyTextMessageStreamGenerator;
 import edu.snu.mist.common.types.Tuple2;
-import edu.snu.mist.core.task.ExecutionDag;
-import edu.snu.mist.core.task.ExecutionVertex;
-import edu.snu.mist.core.task.PhysicalSinkImpl;
+import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.groupaware.GroupAwareQueryManagerImpl;
+import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
 import edu.snu.mist.core.task.utils.TestSinkConfiguration;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.AvroVertex;
+import edu.snu.mist.formats.avro.Edge;
 import io.netty.channel.ChannelHandlerContext;
+import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Configuration;
+import org.apache.reef.tang.Injector;
+import org.apache.reef.tang.JavaConfigurationBuilder;
+import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
+import org.junit.Assert;
+import org.junit.Test;
 
 import javax.inject.Inject;
 import java.util.Arrays;
@@ -100,9 +108,7 @@ public class GroupRecoveryTest {
     return queryBuilder.build();
   }
 
-
-  /*
-  @Test(timeout = 500000)
+  //@Test(timeout = 500000)
   public void testSingleQueryRecovery() throws Exception {
 
     // Start source servers.
@@ -187,7 +193,7 @@ public class GroupRecoveryTest {
     // Close the generators.
     textMessageStreamGenerator2.close();
   }
-  */
+
 
 
   /**
