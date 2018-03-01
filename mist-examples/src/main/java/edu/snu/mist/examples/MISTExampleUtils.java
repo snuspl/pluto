@@ -127,16 +127,20 @@ public final class MISTExampleUtils {
     final String driverHostname = driverSocket[0];
     final int driverPort = Integer.parseInt(driverSocket[1]);
 
-    final MISTExecutionEnvironment executionEnvironment =
-        new MISTDefaultExecutionEnvironmentImpl(driverHostname, driverPort);
+    try (final MISTExecutionEnvironment executionEnvironment =
+        new MISTDefaultExecutionEnvironmentImpl(driverHostname, driverPort)) {
 
-    // Upload jar
-    final String jarFilePath = getJarFilePath();
-    final List<String> jarFilePaths = Arrays.asList(jarFilePath);
-    final JarUploadResult result = executionEnvironment.submitJar(jarFilePaths);
-    queryBuilder.setApplicationId(result.getIdentifier());
+      // Upload jar
+      final String jarFilePath = getJarFilePath();
+      final List<String> jarFilePaths = Arrays.asList(jarFilePath);
+      final JarUploadResult result = executionEnvironment.submitJar(jarFilePaths);
+      queryBuilder.setApplicationId(result.getIdentifier());
 
-    return executionEnvironment.submitQuery(queryBuilder.build());
+      return executionEnvironment.submitQuery(queryBuilder.build());
+    } catch (final Exception e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
+    }
   }
 
   public static CommandLine getDefaultCommandLine(final JavaConfigurationBuilder jcb) {
