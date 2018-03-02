@@ -75,7 +75,7 @@ public final class DefaultAppInfoCheckpointStore implements AppInfoCheckpointSto
 
 
   @Override
-  public CheckpointResult saveMetaGroupCheckpoint(final Tuple<String, ApplicationInfoCheckpoint> tuple) {
+  public CheckpointResult saveAppInfoCheckpoint(final Tuple<String, ApplicationInfoCheckpoint> tuple) {
     try {
       final String groupId = tuple.getKey();
       final ApplicationInfoCheckpoint gmc = tuple.getValue();

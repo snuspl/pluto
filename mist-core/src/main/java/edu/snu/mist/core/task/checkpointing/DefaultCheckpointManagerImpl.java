@@ -150,7 +150,7 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
           new Object[] {appId});
       return;
     }
-    checkpointStore.saveMetaGroupCheckpoint(new Tuple<>(appId, applicationInfo.checkpoint()));
+    checkpointStore.saveAppInfoCheckpoint(new Tuple<>(appId, applicationInfo.checkpoint()));
   }
 
   @Override

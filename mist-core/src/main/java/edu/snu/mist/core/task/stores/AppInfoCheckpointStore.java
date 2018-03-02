@@ -29,7 +29,7 @@ public interface AppInfoCheckpointStore {
    * Saves a ApplicationInfoCheckpoint.
    * @param tuple the appId and ApplicationInfoCheckpoint
    */
-  CheckpointResult saveMetaGroupCheckpoint(Tuple<String, ApplicationInfoCheckpoint> tuple);
+  CheckpointResult saveAppInfoCheckpoint(Tuple<String, ApplicationInfoCheckpoint> tuple);
 
   /**
    * Loads a ApplicationInfoCheckpoint with the given appId.
