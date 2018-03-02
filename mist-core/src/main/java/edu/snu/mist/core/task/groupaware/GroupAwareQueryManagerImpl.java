@@ -189,7 +189,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
 
   @Override
   public String uploadJarFile(final List<ByteBuffer> jars) throws IOException, InjectionException {
-    // Create a meta group for this application
+    // Create an app info
     final String appId = Long.toString(applicationNum.getAndIncrement());
     final List<String> paths = planStore.saveJar(jars);
     createApplication(appId, paths);

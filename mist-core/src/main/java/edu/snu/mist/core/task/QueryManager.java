@@ -44,7 +44,7 @@ public interface QueryManager extends AutoCloseable {
   /**
    * Create a query (this is for checkpointing).
    * @param queryId query id
-   * @param applicationInfo meta group
+   * @param applicationInfo app info
    */
   Query createAndStartQuery(String queryId,
                             ApplicationInfo applicationInfo,
