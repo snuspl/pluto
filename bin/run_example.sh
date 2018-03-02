@@ -18,7 +18,7 @@
 # This code starts HelloMist
 # You should set the $MIST_HOME variable.
 
-CLIENT_JAR=`echo $MIST_HOME/mist-client/target/mist-client-*.jar`
+CLIENT_JAR=`echo $MIST_HOME/mist-client/target/mist-client-*-shaded.jar`
 SELF_JAR=`echo $MIST_HOME/mist-examples/target/mist-examples-*.jar`
 
 CLASSPATH=$YARN_HOME/share/hadoop/common/*:$YARN_HOME/share/hadoop/common/lib/*:$YARN_HOME/share/hadoop/yarn/*:$YARN_HOME/share/hadoop/hdfs/*:$YARN_HOME/share/hadoop/mapreduce/lib/*:$YARN_HOME/share/hadoop/mapreduce/*
@@ -45,6 +45,7 @@ case $1 in
   RuleBasedMQTTHelloMist) ;;
   RuleBasedMQTTNoiseSensing) ;;
   CepHRMonitoring) ;;
+  MqttFilterApplication) ;;
   *)
     echo "Invalid input. Here is an example for using this script."
     echo "If you want to run HelloMIST with sink source option, please type like below."

@@ -21,13 +21,13 @@ import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.codeshare.ClassLoaderProvider;
-import edu.snu.mist.core.task.deactivation.ActiveExecutionVertexIdMap;
 import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * This starter tries to merges the submitted dag with the currently running dag.
@@ -83,9 +83,9 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
   private final ExecutionVertexDagMap executionVertexDagMap;
 
   /**
-   * The map holding the Id and ExecutionVertex of active ExecutionVertices.
+   * The list of jar file paths.
    */
-  private final ActiveExecutionVertexIdMap activeExecutionVertexIdMap;
+  private final List<String> groupJarFilePaths;
 
   @Inject
   private ImmediateQueryMergingStarter(final CommonSubDagFinder commonSubDagFinder,
@@ -96,8 +96,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
                                        final ExecutionVertexCountMap executionVertexCountMap,
                                        final ClassLoaderProvider classLoaderProvider,
                                        final ExecutionVertexGenerator executionVertexGenerator,
-                                       final ExecutionVertexDagMap executionVertexDagMap,
-                                       final ActiveExecutionVertexIdMap activeExecutionVertexIdMap) {
+                                       final ExecutionVertexDagMap executionVertexDagMap) {
     this.commonSubDagFinder = commonSubDagFinder;
     this.srcAndDagMap = srcAndDagMap;
     this.queryIdConfigDagMap = queryIdConfigDagMap;
@@ -107,7 +106,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
     this.configExecutionVertexMap = configExecutionVertexMap;
     this.executionVertexCountMap = executionVertexCountMap;
     this.executionVertexDagMap = executionVertexDagMap;
-    this.activeExecutionVertexIdMap = activeExecutionVertexIdMap;
+    this.groupJarFilePaths = new CopyOnWriteArrayList<>();
   }
 
   @Override
@@ -121,6 +120,12 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
     // Get a class loader
     final URL[] urls = SerializeUtils.getJarFileURLs(jarFilePaths);
     final ClassLoader classLoader = classLoaderProvider.newInstance(urls);
+
+    synchronized (groupJarFilePaths) {
+      if (jarFilePaths != null && jarFilePaths.size() != 0) {
+        groupJarFilePaths.addAll(jarFilePaths);
+      }
+    }
 
     // Synchronize the execution dags to evade concurrent modifications
     // TODO:[MIST-590] We need to improve this code for concurrent modification
@@ -147,11 +152,6 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
         }
 
         executionDags.add(executionDag);
-
-        // Add the execution vertices to the ActiveExecutionVertexIdMap.
-        for (final ExecutionVertex executionVertex : executionDag.getDag().getVertices()) {
-          activeExecutionVertexIdMap.put(executionVertex.getIdentifier(), executionVertex);
-        }
         return;
       }
 
@@ -210,14 +210,6 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
         if (!subDagMap.containsKey(source)) {
           srcAndDagMap.put(source.getConfiguration(), sharableExecutionDag);
           ((PhysicalSource)configExecutionVertexMap.get(source)).start();
-        }
-      }
-
-      // Add the execution vertices to the ActiveExecutionVertexIdMap.
-      for (final ExecutionVertex executionVertex : sharableExecutionDag.getDag().getVertices()) {
-        final String vertexId = executionVertex.getIdentifier();
-        if (!activeExecutionVertexIdMap.containsKey(vertexId)) {
-          activeExecutionVertexIdMap.put(executionVertex.getIdentifier(), executionVertex);
         }
       }
     }

@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.client.cep;
 
-import edu.snu.mist.client.MISTQuery;
 import edu.snu.mist.client.MISTQueryBuilder;
 import edu.snu.mist.client.datastreams.ContinuousStream;
 import edu.snu.mist.client.datastreams.configurations.MQTTSourceConfiguration;
@@ -43,21 +42,20 @@ public final class CepUtils {
      * Translate cep query into MIST query.
      * @return MIST query
      */
-    public static <T> MISTQuery translate(final MISTCepQuery query) throws IOException {
+    public static <T> MISTQueryBuilder translate(final MISTCepQuery query) throws IOException {
         final String superGroupId = query.getSuperGroupId();
-        final String subGroupId = query.getSubGroupId();
         final CepInput<T> cepInput = query.getCepInput();
         final List<CepEventPattern<T>> cepEventPatterns = query.getCepEventPatternSequence();
         final CepQualifier<T> cepQualifier = query.getCepQualifier();
         final long windowTime = query.getWindowTime();
         final CepAction cepAction = query.getCepAction();
 
-        final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(superGroupId, subGroupId);
+        final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
         final ContinuousStream<T> inputMapStream = convertCepInputToSourceStream(queryBuilder, cepInput);
         final ContinuousStream<Map<String, List<T>>> qualifierFilterStream =
                 inputMapStream.cepOperator(cepEventPatterns, windowTime).filter(cepQualifier);
         cepActionTranslator(qualifierFilterStream, cepAction);
-        return queryBuilder.build();
+        return queryBuilder;
     }
 
     /**

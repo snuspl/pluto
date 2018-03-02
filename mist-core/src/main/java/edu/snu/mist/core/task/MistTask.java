@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
+import edu.snu.mist.core.task.checkpointing.CheckpointManager;
 import org.apache.avro.ipc.Server;
 import org.apache.reef.tang.annotations.Unit;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -42,6 +43,7 @@ public final class MistTask implements Task {
 
   private final Server server;
   private final QueryManager queryManager;
+  private final CheckpointManager checkpointManager;
 
   /**
    * Default constructor of MistTask.
@@ -50,10 +52,12 @@ public final class MistTask implements Task {
    */
   @Inject
   private MistTask(final Server server,
-                   final QueryManager queryManager) throws InjectionException {
+                   final QueryManager queryManager,
+                   final CheckpointManager checkpointManager) throws InjectionException {
     this.countDownLatch = new CountDownLatch(1);
     this.server = server;
     this.queryManager = queryManager;
+    this.checkpointManager = checkpointManager;
   }
 
   @Override

@@ -29,4 +29,9 @@ public interface QueryRemover {
    * @param queryId query id
    */
   void deleteQuery(String queryId);
+
+  /**
+   * Deletes all queries from the group.
+   */
+  void deleteAllQueries();
 }

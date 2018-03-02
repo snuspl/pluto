@@ -17,9 +17,12 @@ package edu.snu.mist.core.task.groupaware;
 
 import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.groupaware.eventprocessor.DefaultEventProcessorFactory;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessorFactory;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.core.task.groupaware.parameters.ApplicationIdentifier;
+import edu.snu.mist.core.task.groupaware.parameters.JarFilePath;
 import edu.snu.mist.core.task.groupaware.rebalancer.GroupMerger;
 import edu.snu.mist.core.task.groupaware.rebalancer.LoadUpdater;
 import junit.framework.Assert;
@@ -38,8 +41,10 @@ import static org.mockito.Mockito.mock;
 
 public final class GroupMergerTest {
 
-  private MetaGroup createMetaGroup() throws InjectionException {
+  private ApplicationInfo createMetaGroup() throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(ApplicationIdentifier.class, "app");
+    jcb.bindNamedParameter(JarFilePath.class, "");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final QueryStarter queryStarter = mock(QueryStarter.class);
     final QueryRemover queryRemover = mock(QueryRemover.class);
@@ -49,7 +54,7 @@ public final class GroupMergerTest {
     injector.bindVolatileInstance(QueryRemover.class, queryRemover);
     injector.bindVolatileInstance(ExecutionDags.class, executionDags);
 
-    return injector.getInstance(MetaGroup.class);
+    return injector.getInstance(ApplicationInfo.class);
   }
   private Group createGroup(final String id) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
@@ -80,7 +85,7 @@ public final class GroupMergerTest {
     final GroupMerger groupMerger = injector.getInstance(GroupMerger.class);
     final LoadUpdater loadUpdater = injector.getInstance(LoadUpdater.class);
 
-    final EventProcessorFactory epFactory = injector.getInstance(GlobalSchedNonBlockingEventProcessorFactory.class);
+    final EventProcessorFactory epFactory = injector.getInstance(DefaultEventProcessorFactory.class);
     final List<EventProcessor> eventProcessors = new LinkedList<>();
     for (int i = 0; i < 2; i++) {
       eventProcessors.add(epFactory.newEventProcessor());
@@ -90,25 +95,25 @@ public final class GroupMergerTest {
     final EventProcessor ep1 = eventProcessors.get(0);
     final EventProcessor ep2 = eventProcessors.get(1);
 
-    final MetaGroup mg1 = createMetaGroup();
+    final ApplicationInfo mg1 = createMetaGroup();
     final Group g1 = createGroup("g1");
     mg1.addGroup(g1);
     g1.setLoad(0.4);
     g1.setEventProcessor(ep1);
 
-    final MetaGroup mg2 = createMetaGroup();
+    final ApplicationInfo mg2 = createMetaGroup();
     final Group g2 = createGroup("g2");
     mg2.addGroup(g2);
     g2.setLoad(0.2);
     g2.setEventProcessor(ep1);
 
-    final MetaGroup mg3 = createMetaGroup();
+    final ApplicationInfo mg3 = createMetaGroup();
     final Group g3 = createGroup("g3");
     mg3.addGroup(g3);
     g3.setLoad(0.3);
     g3.setEventProcessor(ep1);
 
-    final MetaGroup mg4 = createMetaGroup();
+    final ApplicationInfo mg4 = createMetaGroup();
     final Group g4 = createGroup("g4");
     mg4.addGroup(g4);
     g4.setLoad(0.1);
@@ -124,7 +129,7 @@ public final class GroupMergerTest {
     sg3.setLoad(0.04);
     g4.addQuery(sg3);
 
-    final MetaGroup mg5 = createMetaGroup();
+    final ApplicationInfo mg5 = createMetaGroup();
     final Group g5 = createGroup("g5");
     mg5.addGroup(g5);
     g5.setLoad(0.05);
@@ -137,13 +142,13 @@ public final class GroupMergerTest {
     sg5.setLoad(0.03);
     g5.addQuery(sg5);
 
-    final MetaGroup mg6 = createMetaGroup();
+    final ApplicationInfo mg6 = createMetaGroup();
     final Group g6 = createGroup("g6");
     mg6.addGroup(g6);
     g6.setLoad(0.1);
     g6.setEventProcessor(ep2);
 
-    final MetaGroup mg7 = createMetaGroup();
+    final ApplicationInfo mg7 = createMetaGroup();
     final Group g7 = createGroup("g7");
     mg7.addGroup(g7);
     g7.setLoad(0.1);

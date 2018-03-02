@@ -25,14 +25,21 @@ import edu.snu.mist.formats.avro.Edge;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This class generates dags consisting of vertex configuration.
  */
 public final class DefaultConfigDagGeneratorImpl implements ConfigDagGenerator {
 
+  /**
+   * Atomic ID used for generating ConfigVertex Ids.
+   */
+  private final AtomicLong configVertexId;
+
   @Inject
   private DefaultConfigDagGeneratorImpl() {
+    this.configVertexId = new AtomicLong();
   }
 
   /**
@@ -68,7 +75,8 @@ public final class DefaultConfigDagGeneratorImpl implements ConfigDagGenerator {
       final ExecutionVertex.Type type = getVertexType(avroVertex);
 
       // Create a config vertex
-      final ConfigVertex configVertex = new ConfigVertex(type, avroVertex.getConfiguration());
+      final ConfigVertex configVertex =
+          new ConfigVertex(Long.toString(configVertexId.getAndIncrement()), type, avroVertex.getConfiguration());
       deserializedVertices.add(configVertex);
       configDag.addVertex(configVertex);
     }

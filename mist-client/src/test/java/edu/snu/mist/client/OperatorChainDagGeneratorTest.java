@@ -48,7 +48,7 @@ public final class OperatorChainDagGeneratorTest {
   public void testComplexQueryPartitioning() throws InjectionException {
     // Build a operator chain dag
     final MISTQueryBuilder queryBuilder =
-        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID, TestParameters.SUB_GROUP_ID);
+        new MISTQueryBuilder();
     final ContinuousStream<String> src1 =
         queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
     final ContinuousStream<String> src2 =
@@ -64,6 +64,7 @@ public final class OperatorChainDagGeneratorTest {
     final MISTStream<String> sink1 = op15.textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
     final MISTStream<String> sink2 = op23.textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
 
+    queryBuilder.setApplicationId(TestParameters.SUPER_GROUP_ID);
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
     final OperatorChainDagGenerator chainDagGenerator = new OperatorChainDagGenerator(dag);
@@ -131,7 +132,7 @@ public final class OperatorChainDagGeneratorTest {
   @Test
   public void testSequentialChaining() throws InjectionException {
     final MISTQueryBuilder queryBuilder =
-        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID, TestParameters.SUB_GROUP_ID);
+        new MISTQueryBuilder();
     final ContinuousStream<String> src1 =
         queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
     final ContinuousStream<String> op11 = src1.filter((x) -> true);
@@ -139,6 +140,7 @@ public final class OperatorChainDagGeneratorTest {
     final ContinuousStream<String> op13 = op12.filter((x) -> true);
     final MISTStream<String> sink1 = op13.textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
 
+    queryBuilder.setApplicationId(TestParameters.SUPER_GROUP_ID);
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
     final OperatorChainDagGenerator chainDagGenerator = new OperatorChainDagGenerator(dag);
@@ -175,7 +177,7 @@ public final class OperatorChainDagGeneratorTest {
   @Test
   public void testBranchTest() throws InjectionException {
     final MISTQueryBuilder queryBuilder =
-        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID, TestParameters.SUB_GROUP_ID);
+        new MISTQueryBuilder();
     final ContinuousStream<String> src1 =
         queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
     final ContinuousStream<String> op11 = src1.filter((x) -> true);
@@ -187,6 +189,7 @@ public final class OperatorChainDagGeneratorTest {
     final MISTStream<String> sink2 = op14.textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
     final MISTStream<String> sink3 = op15.textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
 
+    queryBuilder.setApplicationId(TestParameters.SUPER_GROUP_ID);
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
     final OperatorChainDagGenerator chainDagGenerator = new OperatorChainDagGenerator(dag);
@@ -250,7 +253,7 @@ public final class OperatorChainDagGeneratorTest {
   @Test
   public void testMergingQueryPartitioning() throws InjectionException {
     final MISTQueryBuilder queryBuilder =
-        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID, TestParameters.SUB_GROUP_ID);
+        new MISTQueryBuilder();
     final ContinuousStream<String> src1 =
         queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
     final ContinuousStream<String> src2 =
@@ -265,6 +268,7 @@ public final class OperatorChainDagGeneratorTest {
     final ContinuousStream<String> op14 = op13.union(op31);
     final MISTStream<String> sink1 = op14.textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
 
+    queryBuilder.setApplicationId(TestParameters.SUPER_GROUP_ID);
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
     final OperatorChainDagGenerator chainDagGenerator = new OperatorChainDagGenerator(dag);
@@ -339,7 +343,7 @@ public final class OperatorChainDagGeneratorTest {
   @Test
   public void testForkAndMergeChaining() throws InjectionException {
     final MISTQueryBuilder queryBuilder =
-        new MISTQueryBuilder(TestParameters.SUPER_GROUP_ID, TestParameters.SUB_GROUP_ID);
+        new MISTQueryBuilder();
     final ContinuousStream<String> src1 =
         queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
     final ContinuousStream<String> opA = src1.filter((x) -> true);
@@ -350,6 +354,7 @@ public final class OperatorChainDagGeneratorTest {
     final ContinuousStream<String> opD = opC.union(opB3);
     final MISTStream<String> sink1 = opD.textSocketOutput(TestParameters.HOST, TestParameters.SINK_PORT);
 
+    queryBuilder.setApplicationId(TestParameters.SUPER_GROUP_ID);
     final MISTQuery query = queryBuilder.build();
     final DAG<MISTStream, MISTEdge> dag = query.getDAG();
     final OperatorChainDagGenerator chainDagGenerator = new OperatorChainDagGenerator(dag);

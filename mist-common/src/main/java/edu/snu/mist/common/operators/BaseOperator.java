@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.OutputEmitter;
 
 import java.util.logging.Logger;
@@ -33,5 +34,10 @@ public abstract class BaseOperator implements Operator {
   @Override
   public void setOutputEmitter(final OutputEmitter emitter) {
     this.outputEmitter = emitter;
+  }
+
+  @Override
+  public void processLeftCheckpoint(final MistCheckpointEvent input) {
+    outputEmitter.emitCheckpoint(input);
   }
 }

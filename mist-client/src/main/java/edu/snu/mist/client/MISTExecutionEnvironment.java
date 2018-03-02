@@ -15,20 +15,31 @@
  */
 package edu.snu.mist.client;
 
+import edu.snu.mist.formats.avro.JarUploadResult;
+import org.apache.avro.AvroRemoteException;
+
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Execution Environment for MIST.
  * MIST Client can submit queries via this class.
  */
-public interface MISTExecutionEnvironment {
+public interface MISTExecutionEnvironment extends AutoCloseable {
   /**
    * Submit the query and its corresponding jar files to MIST.
    * @param queryToSubmit a query to be submitted.
-   * @param jarFilePaths paths of jar files that are required for the query.
    * @return the result of the query submission.
    * @throws IOException an exception occurs when connecting with MIST and serializing the jar files.
    */
-  APIQueryControlResult submit(MISTQuery queryToSubmit,
-                               String... jarFilePaths) throws IOException;
+  APIQueryControlResult submitQuery(MISTQuery queryToSubmit)  throws AvroRemoteException;
+
+  /**
+   * Submit jar files for the application.
+   * It returns the identifier of the jar file and the client can submit multiple queries of the application.
+   * @param jarFilePaths jar file paths
+   * @return upload result
+   * @throws IOException exception when the jar file does not exist
+   */
+  JarUploadResult submitJar(List<String> jarFilePaths) throws IOException;
 }

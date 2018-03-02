@@ -45,6 +45,11 @@ public final class MistWatermarkEvent implements MistEvent, Serializable {
   }
 
   @Override
+  public boolean isCheckpoint() {
+    return false;
+  }
+
+  @Override
   public boolean equals(final Object o) {
     if (this == o) {
       return true;

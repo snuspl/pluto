@@ -17,7 +17,6 @@
 package edu.snu.mist.examples;
 
 import edu.snu.mist.client.APIQueryControlResult;
-import edu.snu.mist.client.MISTQuery;
 import edu.snu.mist.client.MISTQueryBuilder;
 import edu.snu.mist.client.datastreams.ContinuousStream;
 import edu.snu.mist.client.datastreams.configurations.SourceConfiguration;
@@ -65,7 +64,7 @@ public final class JoinAndApplyStateful {
 
     final MISTBiPredicate<String, String> joinPred = (s1, s2) -> s1.equals(s2);
     final ApplyStatefulFunction<Tuple2<String, String>, String> applyStatefulFunction = new FoldStringTupleFunction();
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group", "user1");
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     final ContinuousStream sourceStream1 = queryBuilder.socketTextStream(localTextSocketSource1Conf);
     final ContinuousStream sourceStream2 = queryBuilder.socketTextStream(localTextSocketSource2Conf);
 
@@ -74,9 +73,7 @@ public final class JoinAndApplyStateful {
         .applyStatefulWindow(applyStatefulFunction)
         .textSocketOutput(MISTExampleUtils.SINK_HOSTNAME, MISTExampleUtils.SINK_PORT);
 
-    final MISTQuery query = queryBuilder.build();
-
-    return MISTExampleUtils.submit(query, configuration);
+    return MISTExampleUtils.submit(queryBuilder, configuration);
   }
 
   /**

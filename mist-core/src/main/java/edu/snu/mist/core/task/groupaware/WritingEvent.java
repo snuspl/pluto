@@ -26,6 +26,7 @@ public final class WritingEvent<V> {
     GROUP_ADD,
     QUERY_ADD,
     GROUP_REMOVE,
+    GROUP_REMOVE_ALL,
     EP_ADD,
     EP_REMOVE,
     REBALANCE,

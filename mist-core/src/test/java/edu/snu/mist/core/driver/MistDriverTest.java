@@ -17,12 +17,10 @@ package edu.snu.mist.core.driver;
 
 import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.core.MistLauncher;
-import edu.snu.mist.core.driver.parameters.ExecutionModelOption;
 import edu.snu.mist.core.parameters.DriverRuntimeType;
 import edu.snu.mist.core.parameters.NumTaskCores;
 import edu.snu.mist.core.parameters.TaskMemorySize;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
-import edu.snu.mist.core.task.groupaware.parameters.GroupSchedModelType;
 import org.apache.reef.client.LauncherStatus;
 import org.apache.reef.runtime.local.client.LocalRuntimeConfiguration;
 import org.apache.reef.tang.Configuration;
@@ -36,37 +34,24 @@ import org.junit.Test;
 public final class MistDriverTest {
 
   /**
-   * Test whether MistDriver runs the task of option3 (thread-based model) successfully.
-   * @throws InjectionException
-   */
-  @Test
-  public void testLaunchDriverOption3() throws InjectionException {
-    launchDriverTestHelper("tpq", 20334, "none");
-  }
-
-  /**
    * @throws InjectionException
    */
   @Test
   public void testLaunchDriverMIST() throws InjectionException {
-    launchDriverTestHelper("mist", 20331, "dispatching");
+    launchDriverTestHelper(20331);
   }
 
   /**
    * Test whether MistDriver runs MistTaks successfully.
    * @throws InjectionException
    */
-  public void launchDriverTestHelper(final String executionModelOption,
-                                     final int rpcServerPort,
-                                     final String groupSchedModel) throws InjectionException {
+  public void launchDriverTestHelper(final int rpcServerPort) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(DriverRuntimeType.class, "LOCAL");
     jcb.bindNamedParameter(NumTaskCores.class, "1");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "1");
     jcb.bindNamedParameter(TaskMemorySize.class, "256");
     jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
-    jcb.bindNamedParameter(ExecutionModelOption.class, executionModelOption);
-    jcb.bindNamedParameter(GroupSchedModelType.class, groupSchedModel);
 
     final Configuration runtimeConf = LocalRuntimeConfiguration.CONF
         .build();

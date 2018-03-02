@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
@@ -59,6 +60,11 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
    */
   private HashMap<K, V> state;
 
+  /**
+   * The latest Checkpoint Timestamp.
+   */
+  private long latestCheckpointTimestamp;
+
   @Inject
   private ReduceByKeyOperator(
       @Parameter(KeyIndex.class) final int keyIndex,
@@ -77,6 +83,7 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
     this.reduceFunc = reduceFunc;
     this.keyIndex = keyIndex;
     this.state = createInitialState();
+    this.latestCheckpointTimestamp = 0L;
   }
 
   private HashMap<K, V> createInitialState() {
@@ -135,6 +142,12 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
   }
 
   @Override
+  public void processLeftCheckpoint(final MistCheckpointEvent input) {
+    latestCheckpointTimestamp = input.getTimestamp();
+    outputEmitter.emitCheckpoint(input);
+  }
+
+  @Override
   public Map<String, Object> getOperatorState() {
     final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("reduceByKeyState", state);
@@ -145,5 +158,10 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
   @Override
   public void setState(final Map<String, Object> loadedState) {
     state = (HashMap<K, V>)loadedState.get("reduceByKeyState");
+  }
+
+  @Override
+  public long getLatestCheckpointTimestamp() {
+    return latestCheckpointTimestamp;
   }
 }

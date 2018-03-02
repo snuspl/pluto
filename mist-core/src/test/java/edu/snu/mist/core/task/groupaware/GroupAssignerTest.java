@@ -15,13 +15,12 @@
  */
 package edu.snu.mist.core.task.groupaware;
 
-import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessorFactory;
-import edu.snu.mist.core.task.groupaware.groupassigner.MinLoadGroupAssignerImpl;
-import edu.snu.mist.core.task.groupaware.groupassigner.RoundRobinGroupAssignerImpl;
+import edu.snu.mist.core.task.groupaware.eventprocessor.DefaultEventProcessorFactory;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
+import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessorFactory;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GroupBalancerGracePeriod;
-import edu.snu.mist.core.task.groupaware.groupassigner.GroupAssigner;
+import edu.snu.mist.core.task.groupaware.groupassigner.MinLoadGroupAssignerImpl;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -46,7 +45,7 @@ public final class GroupAssignerTest {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "0");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final EventProcessorFactory epFactory = injector.getInstance(GlobalSchedNonBlockingEventProcessorFactory.class);
+    final EventProcessorFactory epFactory = injector.getInstance(DefaultEventProcessorFactory.class);
     groupAllocationTable = injector.getInstance(GroupAllocationTable.class);
 
     ep1 = epFactory.newEventProcessor();
@@ -62,29 +61,6 @@ public final class GroupAssignerTest {
     ep2.close();
   }
 
-  /**
-   * Test whether the round-robin group balancer assigns the groups correctly.
-   */
-  //@Test
-  public void roundRobinGroupBalancerTest() throws InjectionException {
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    injector.bindVolatileInstance(GroupAllocationTable.class, groupAllocationTable);
-    final GroupAssigner groupAssigner = injector.getInstance(RoundRobinGroupAssignerImpl.class);
-
-    final Group group1 = mock(Group.class);
-    final Group group2 = mock(Group.class);
-
-    groupAssigner.initialize();
-
-    groupAssigner.assignGroup(group1);
-
-    Assert.assertTrue(groupAllocationTable.getValue(ep1).contains(group1));
-    Assert.assertEquals(0, groupAllocationTable.getValue(ep2).size());
-
-    groupAssigner.assignGroup(group2);
-    Assert.assertTrue(groupAllocationTable.getValue(ep2).contains(group2));
-  }
 
   /**
    * Check whether the minimum load balancer assigns groups correctly.

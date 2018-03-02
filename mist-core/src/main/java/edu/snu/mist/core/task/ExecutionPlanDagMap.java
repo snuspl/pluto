@@ -49,4 +49,8 @@ public final class ExecutionPlanDagMap {
   public Collection<ExecutionDag> getExecutionDags() {
     return map.values();
   }
+
+  public Collection<String> getQueryIds() {
+    return map.keySet();
+  }
 }

@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
@@ -146,6 +147,20 @@ public final class NonBlockingQueueSourceOutputEmitter<I> implements SourceOutpu
   public void emitWatermark(final MistWatermarkEvent watermark) {
     try {
       queue.add(watermark);
+      final int n = numEvents.getAndIncrement();
+
+      if (n == 0) {
+        query.insert(this);
+      }
+    } catch (final Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void emitCheckpoint(final MistCheckpointEvent mistCheckpointEvent) {
+    try {
+      queue.add(mistCheckpointEvent);
       final int n = numEvents.getAndIncrement();
 
       if (n == 0) {

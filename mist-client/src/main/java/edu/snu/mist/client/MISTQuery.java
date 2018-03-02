@@ -40,12 +40,7 @@ public interface MISTQuery {
   DAG<MISTStream, MISTEdge> getDAG();
 
   /**
-   * Get the super-group id.
+   * Get the application id.
    */
-  String getSuperGroupId();
-
-  /**
-   * Get the sub-group id.
-   */
-  String getSubGroupId();
+  String getApplicationId();
 }

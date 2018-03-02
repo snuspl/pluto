@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2018 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package edu.snu.mist.examples;
 
 import edu.snu.mist.client.APIQueryControlResult;
-import edu.snu.mist.client.MISTQuery;
 import edu.snu.mist.client.MISTQueryBuilder;
 import edu.snu.mist.client.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.common.functions.MISTFunction;
@@ -63,15 +62,14 @@ public final class SessionWindow {
                       windowData.getStart() + ", window is ended at " + windowData.getEnd() + ".";
             };
 
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group", "user1");
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     queryBuilder.socketTextStream(localTextSocketSourceConf)
             .window(new SessionWindowInformation(sessionInterval))
             .aggregateWindow(aggregateFunc)
             .textSocketOutput(MISTExampleUtils.SINK_HOSTNAME, MISTExampleUtils.SINK_PORT);
 
-    final MISTQuery query = queryBuilder.build();
     System.out.println("End of submitQuery");
-    return MISTExampleUtils.submit(query, configuration);
+    return MISTExampleUtils.submit(queryBuilder, configuration);
   }
 
   /**

@@ -15,13 +15,18 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.core.task.deactivation.GroupSourceManager;
+import edu.snu.mist.common.graph.DAG;
+import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.groupaware.GroupAwareQueryManagerImpl;
+import edu.snu.mist.core.task.groupaware.ApplicationInfo;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
+import org.apache.reef.tang.exceptions.InjectionException;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.List;
 
 /**
@@ -37,24 +42,36 @@ public interface QueryManager extends AutoCloseable {
   QueryControlResult create(Tuple<String, AvroDag> tuple);
 
   /**
-   * TODO[DELETE] this code is for test.
-   * Start submitted queries in batch manner.
-   * The operator chain dag will be duplicated for test.
-   * @param tuple the query id list and the avro dag
+   * Create a query (this is for checkpointing).
+   * @param queryId query id
+   * @param applicationInfo app info
    */
-  QueryControlResult createBatch(Tuple<List<String>, AvroDag> tuple);
+  Query createAndStartQuery(String queryId,
+                            ApplicationInfo applicationInfo,
+                            DAG<ConfigVertex, MISTEdge> configDag)
+      throws IOException, InjectionException, ClassNotFoundException;
+
+  /**
+   * Store the jar file and return application identifier for the jar file.
+   * @param jar jar file
+   * @return application identifier
+   */
+  String uploadJarFile(List<ByteBuffer> jar) throws IOException, InjectionException;
+
+  /**
+   * Create an application with id and the jar files (this is for checkpointing).
+   * @param appId app id
+   * @param jarFilePath for this application
+   * @return
+   */
+  ApplicationInfo createApplication(String appId,
+                                        List<String> jarFilePath) throws InjectionException;
 
   /**
    * Deletes the query corresponding to the queryId submitted by client.
-   * @param groupId group id
+   * @param appId app id
    * @param queryId query id
    * @return Returns the result message of deletion.
    */
-  QueryControlResult delete(String groupId, String queryId);
-
-  /**
-   * Get the GroupSourceManager.
-   * @param groupId group id
-   */
-  GroupSourceManager getGroupSourceManager(String groupId);
+  QueryControlResult delete(String appId, String queryId);
 }

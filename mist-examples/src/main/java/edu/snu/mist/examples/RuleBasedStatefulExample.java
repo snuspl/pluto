@@ -16,7 +16,7 @@
 package edu.snu.mist.examples;
 
 import edu.snu.mist.client.APIQueryControlResult;
-import edu.snu.mist.client.MISTQuery;
+import edu.snu.mist.client.MISTQueryBuilder;
 import edu.snu.mist.client.rulebased.*;
 import edu.snu.mist.client.rulebased.conditions.ComparisonCondition;
 import edu.snu.mist.client.rulebased.conditions.UnionCondition;
@@ -133,8 +133,8 @@ public final class RuleBasedStatefulExample {
         /**
          * Translate statelessQuery into MISTQuery
          */
-        final MISTQuery query = RuleBasedTranslator.statefulTranslator(ruleBasedQuery);
-        return MISTExampleUtils.submit(query, configuration);
+        final MISTQueryBuilder queryBuilder = RuleBasedTranslator.statefulTranslator(ruleBasedQuery);
+        return MISTExampleUtils.submit(queryBuilder, configuration);
     }
 
     /**

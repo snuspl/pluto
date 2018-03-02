@@ -51,4 +51,11 @@ public final class NoMergingAwareQueryRemover implements QueryRemover {
       }
     }
   }
+
+  @Override
+  public void deleteAllQueries() {
+    for (final String queryId : executionPlanDagMap.getQueryIds()) {
+      deleteQuery(queryId);
+    }
+  }
 }

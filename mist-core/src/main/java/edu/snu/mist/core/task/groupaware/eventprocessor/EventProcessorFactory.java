@@ -15,13 +15,12 @@
  */
 package edu.snu.mist.core.task.groupaware.eventprocessor;
 
-import edu.snu.mist.core.task.groupaware.GlobalSchedNonBlockingEventProcessorFactory;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
  * This is a factory of event processor.
  */
-@DefaultImplementation(GlobalSchedNonBlockingEventProcessorFactory.class)
+@DefaultImplementation(DefaultEventProcessorFactory.class)
 public interface EventProcessorFactory {
 
   /**

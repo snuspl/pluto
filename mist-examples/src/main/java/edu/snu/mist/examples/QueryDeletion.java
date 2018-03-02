@@ -18,7 +18,6 @@
 package edu.snu.mist.examples;
 
 import edu.snu.mist.client.APIQueryControlResult;
-import edu.snu.mist.client.MISTQuery;
 import edu.snu.mist.client.MISTQueryBuilder;
 import edu.snu.mist.client.MISTQueryControl;
 import edu.snu.mist.client.datastreams.configurations.SourceConfiguration;
@@ -59,16 +58,15 @@ public final class QueryDeletion {
 
     // Simple reduce function.
     final MISTBiFunction<Integer, Integer, Integer> reduceFunction = (v1, v2) -> { return v1 + v2; };
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group", "user1");
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     queryBuilder.socketTextStream(localTextSocketSourceConf)
         .filter(s -> isAlpha(s))
         .map(s -> new Tuple2(s, 1))
         .reduceByKey(0, String.class, reduceFunction)
         .map(s -> s.toString())
         .textSocketOutput(MISTExampleUtils.SINK_HOSTNAME, MISTExampleUtils.SINK_PORT);
-    final MISTQuery query = queryBuilder.build();
 
-    return MISTExampleUtils.submit(query, configuration);
+    return MISTExampleUtils.submit(queryBuilder, configuration);
   }
 
   /**

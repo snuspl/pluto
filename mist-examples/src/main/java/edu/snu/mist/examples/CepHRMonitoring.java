@@ -16,7 +16,7 @@
 package edu.snu.mist.examples;
 
 import edu.snu.mist.client.APIQueryControlResult;
-import edu.snu.mist.client.MISTQuery;
+import edu.snu.mist.client.MISTQueryBuilder;
 import edu.snu.mist.client.cep.*;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
@@ -93,8 +93,8 @@ public final class CepHRMonitoring {
                         .build())
                 .build();
 
-        final MISTQuery query = CepUtils.translate(cepQuery);
-        return MISTExampleUtils.submit(query, configuration);
+        final MISTQueryBuilder queryBuilder = CepUtils.translate(cepQuery);
+        return MISTExampleUtils.submit(queryBuilder, configuration);
 
     }
 

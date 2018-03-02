@@ -17,7 +17,6 @@
 package edu.snu.mist.examples;
 
 import edu.snu.mist.client.APIQueryControlResult;
-import edu.snu.mist.client.MISTQuery;
 import edu.snu.mist.client.MISTQueryBuilder;
 import edu.snu.mist.client.datastreams.ContinuousStream;
 import edu.snu.mist.client.datastreams.configurations.SourceConfiguration;
@@ -59,7 +58,7 @@ public final class UnionMist {
     // Simple reduce function.
     final MISTBiFunction<Integer, Integer, Integer> reduceFunction = (v1, v2) -> { return v1 + v2; };
 
-    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder("example-group", "user1");
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
     final ContinuousStream sourceStream1 = queryBuilder.socketTextStream(localTextSocketSource1Conf)
         .map(s -> new Tuple2(s, 1));
     final ContinuousStream sourceStream2 = queryBuilder.socketTextStream(localTextSocketSource2Conf)
@@ -71,9 +70,7 @@ public final class UnionMist {
         .map(s -> s.toString())
         .textSocketOutput(MISTExampleUtils.SINK_HOSTNAME, MISTExampleUtils.SINK_PORT);
 
-    final MISTQuery query = queryBuilder.build();
-
-    return MISTExampleUtils.submit(query, configuration);
+    return MISTExampleUtils.submit(queryBuilder, configuration);
   }
 
   /**

@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.client.rulebased;
 
-import edu.snu.mist.client.MISTQuery;
 import edu.snu.mist.client.MISTQueryBuilder;
 import edu.snu.mist.client.rulebased.conditions.AbstractCondition;
 import edu.snu.mist.client.rulebased.conditions.ComparisonCondition;
@@ -49,15 +48,15 @@ public final class RuleBasedTranslator {
      * @param query StatelessQuery
      * @return translated Mist query
      */
-    public static MISTQuery statelessTranslator(final MISTStatelessQuery query) {
+    public static MISTQueryBuilder statelessTranslator(final MISTStatelessQuery query) {
         final RuleBasedInput input = query.getInput();
         final List<StatelessRule> statelessRules = query.getStatelessRules();
 
-        final MISTQueryBuilder queryBuilder = new MISTQueryBuilder(query.getSuperGroupId(), query.getSubGroupId());
+        final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
         final ContinuousStream<Map<String, Object>> inputMapStream =
                 inputTranslator(queryBuilder, input);
         statelessRulesTranslator(inputMapStream, statelessRules);
-        return queryBuilder.build();
+        return queryBuilder;
     }
 
     /**
@@ -65,18 +64,18 @@ public final class RuleBasedTranslator {
      * @param query RuleBasedStatefulQuery
      * @return translated MIST query
      */
-    public static MISTQuery statefulTranslator(final MISTStatefulQuery query) {
+    public static MISTQueryBuilder statefulTranslator(final MISTStatefulQuery query) {
         final RuleBasedInput input = query.getInput();
         final String initialState = query.getInitialState();
         final List<StatefulRule> statefulRules = query.getStatefulRules();
         final Map<String, RuleBasedAction> finalStates = query.getFinalState();
 
         final MISTQueryBuilder queryBuilder =
-            new MISTQueryBuilder(query.getSuperGroupId(), query.getSubGroupId());
+            new MISTQueryBuilder();
         final ContinuousStream<Map<String, Object>> inputMapStream =
                 inputTranslator(queryBuilder, input);
         statefulRulesTranslator(inputMapStream, initialState, statefulRules, finalStates);
-        return queryBuilder.build();
+        return queryBuilder;
     }
 
     /**

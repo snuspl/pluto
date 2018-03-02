@@ -18,7 +18,6 @@ package edu.snu.mist.core.task.merging;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.*;
-import edu.snu.mist.core.task.deactivation.ActiveExecutionVertexIdMap;
 import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
@@ -41,18 +40,11 @@ public final class NoMergingQueryStarter implements QueryStarter {
    */
   private final DagGenerator dagGenerator;
 
-  /**
-   * The map holding the Id and ExecutionVertex of active ExecutionVertices.
-   */
-  private final ActiveExecutionVertexIdMap activeExecutionVertexIdMap;
-
   @Inject
   private NoMergingQueryStarter(final ExecutionPlanDagMap executionPlanDagMap,
-                                final DagGenerator dagGenerator,
-                                final ActiveExecutionVertexIdMap activeExecutionVertexIdMap) {
+                                final DagGenerator dagGenerator) {
     this.executionPlanDagMap = executionPlanDagMap;
     this.dagGenerator = dagGenerator;
-    this.activeExecutionVertexIdMap = activeExecutionVertexIdMap;
   }
 
   /**
@@ -65,6 +57,7 @@ public final class NoMergingQueryStarter implements QueryStarter {
                     final DAG<ConfigVertex, MISTEdge> configDag,
                     final List<String> jarFilePaths)
       throws InjectionException, IOException, ClassNotFoundException {
+
     final ExecutionDag submittedExecutionDag = dagGenerator.generate(configDag, jarFilePaths);
     executionPlanDagMap.put(queryId, submittedExecutionDag);
     QueryStarterUtils.setUpOutputEmitters(submittedExecutionDag, query);
@@ -73,10 +66,6 @@ public final class NoMergingQueryStarter implements QueryStarter {
     for (final ExecutionVertex source : dag.getRootVertices()) {
       final PhysicalSource ps = (PhysicalSource)source;
       ps.start();
-    }
-    // Add the execution vertices to the ActiveExecutionVertexIdMap.
-    for (final ExecutionVertex executionVertex : dag.getVertices()) {
-      activeExecutionVertexIdMap.put(executionVertex.getIdentifier(), executionVertex);
     }
   }
 }

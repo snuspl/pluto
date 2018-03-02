@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 package edu.snu.mist.core.task.groupaware.eventprocessor;
-import edu.snu.mist.core.task.groupaware.eventprocessor.dispatch.DispatcherGroupSelectorFactory;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
  * This is a factory class for NextGroupSelector.
  */
-@DefaultImplementation(DispatcherGroupSelectorFactory.class)
+@DefaultImplementation(BlockingQueueGroupSelectorFactory.class)
 public interface NextGroupSelectorFactory {
   /**
    * Creates a new next group selector.

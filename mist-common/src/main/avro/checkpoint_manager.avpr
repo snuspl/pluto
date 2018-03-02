@@ -1,0 +1,178 @@
+/*
+ * Copyright (C) 2018 Seoul National University
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+ /**
+  * This protocol defines the Avro Execution Dags(AEDs) for checkpointing or migration.
+  */
+{
+  "namespace": "edu.snu.mist.formats.avro",
+  "protocol": "CheckpointManagerProtocol",
+  "types":
+  [
+    {
+      "name": "AvroConfigDag",
+      "type": "record",
+      "fields":
+      [
+        {
+          "name": "AvroConfigVertices",
+          "type": {
+            "type": "array",
+            "items":
+            {
+              "name": "AvroConfigVertex",
+              "type": "record",
+              "fields":
+              [
+                {
+                  "name": "Id",
+                  "type": "string"
+                },
+                {
+                  "name": "Type",
+                  "type": {
+                    "name": "AvroConfigVertexType",
+                    "type": "enum",
+                    "symbols": ["SOURCE", "OPERATOR", "SINK"]
+                  }
+                },
+                {
+                  "name": "Configuration",
+                  "type": "string"
+                },
+                {
+                  "name": "State",
+                  "type":
+                  {
+                    "type": "map",
+                    "values":
+                    [
+                      "boolean", "int", "long", "float", "double", "string", "bytes"
+                    ]
+                  }
+                },
+                {
+                  "name": "LatestCheckpointTimestamp",
+                  "type": "long",
+                  "default": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "AvroConfigMISTEdges",
+          "type": {
+            "type": "array",
+            "items":
+            {
+              "name": "AvroConfigMISTEdge",
+              "type": "record",
+              "fields":
+              [
+                {
+                  "name": "Direction",
+                  "type": {
+                    "name": "Direction",
+                    "type": "enum",
+                    "symbols": ["LEFT", "RIGHT"]
+                  }
+                },
+                {
+                  "name": "Index",
+                  "type": "int"
+                },
+                {
+                  "name": "FromVertexIndex",
+                  "type": "int"
+                },
+                {
+                 "name": "ToVertexIndex",
+                 "type": "int"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ApplicationInfoCheckpoint",
+      "type": "record",
+      "fields":
+      [
+        {
+          "name": "AvroConfigDags",
+          "type":
+          {
+            "type": "map",
+            "values": "AvroConfigDag"
+          }
+        },
+        {
+          "name": "MinimumLatestCheckpointTimestamp",
+          "type": "long",
+          "default": 0
+        },
+        {
+          "name": "JarFilePaths",
+          "type":
+          {
+            "type": "array",
+            "items": "string"
+          }
+        },
+        {
+          "name": "ApplicationId",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "CheckpointResult",
+      "type": "record",
+      "fields":
+      [
+        {
+          "name": "IsSuccess",
+          "type": "boolean"
+        },
+        {
+          "name": "Msg",
+          "type": "string"
+        },
+        {
+          "name": "pathToCheckpoint",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "messages":
+  {
+    "checkpointGroup":
+    {
+      "request":
+      [
+        {
+          "name": "appInfoCheckpoint",
+          "type": "ApplicationInfoCheckpoint"
+        }
+      ],
+      "response": "CheckpointResult"
+    }
+  }
+}
