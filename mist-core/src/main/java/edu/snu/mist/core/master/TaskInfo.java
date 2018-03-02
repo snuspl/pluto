@@ -13,16 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.parameters;
-
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
-
-import java.util.Set;
+package edu.snu.mist.core.master;
 
 /**
- * The set of task addresses.
+ * The class which contains MistTask information maintained by master.
  */
-@NamedParameter(doc = "The set of task addresses")
-public class TaskHostAddressSet implements Name<Set<String>> {
+public class TaskInfo {
+
+  /**
+   * The cpu load of the task.
+   */
+  private double cpuLoad;
+
+  public TaskInfo() {
+    this.cpuLoad = 0.0;
+  }
+
+  public double getCpuLoad() {
+    return this.cpuLoad;
+  }
+
+  public void setCpuLoad() {
+    this.cpuLoad = 0;
+  }
 }

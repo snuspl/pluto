@@ -277,7 +277,7 @@ public final class MistDriver {
               .build();
           final JavaConfigurationBuilder taskConfBuilder = tang.newConfigurationBuilder();
           taskConfBuilder.bindNamedParameter(ClientToTaskPort.class, String.valueOf(clientToTaskPort));
-          masterConfBuilder.bindSetEntry(TaskHostAddressSet.class,
+          masterConfBuilder.bindSetEntry(TaskHostSet.class,
               taskHostAddress);
           taskConfBuilder.bindNamedParameter(MasterToTaskPort.class, String.valueOf(masterToTaskPort));
           taskConfBuilder.bindNamedParameter(MasterHostAddress.class, masterHostAddress);

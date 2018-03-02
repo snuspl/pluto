@@ -15,12 +15,22 @@
  */
 package edu.snu.mist.core.master;
 
+import edu.snu.mist.core.parameters.*;
+import edu.snu.mist.formats.avro.ClientToMasterMessage;
+import edu.snu.mist.formats.avro.DriverToMasterMessage;
+import edu.snu.mist.formats.avro.TaskToMasterMessage;
+import org.apache.avro.ipc.NettyServer;
+import org.apache.avro.ipc.Server;
+import org.apache.avro.ipc.specific.SpecificResponder;
+import org.apache.reef.tang.Tang;
+import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.annotations.Unit;
 import org.apache.reef.task.Task;
 import org.apache.reef.task.events.CloseEvent;
 import org.apache.reef.wake.EventHandler;
 
 import javax.inject.Inject;
+import java.net.InetSocketAddress;
 import java.util.logging.Logger;
 
 /**
@@ -31,8 +41,58 @@ public final class MistMaster implements Task {
 
   private static final Logger LOG = Logger.getLogger(MistMaster.class.getName());
 
+  /**
+   * Shared tang object.
+   */
+  private Tang tang = Tang.Factory.getTang();
+
+  /**
+   * Avro RPC servers.
+   */
+  private final Server driverToMasterServer;
+
+  private final Server clientToMasterServer;
+
+  private final Server taskToMasterServer;
+
+  /**
+   * The port number used for master-to-task RPC.
+   */
+  private final int masterToTaskPort;
+
+  /**
+   * A helper method for making avro servers
+   * @param messageClass The class of message.
+   * @param messageInstance The actual messaging instance.
+   * @param serverAddress The server host name and port number.
+   * @param <T> The class type of messaging instance.
+   * @return The avro server.
+   */
+  private <T> Server createAvroServer(
+      final Class<T> messageClass,
+      final T messageInstance,
+      final InetSocketAddress serverAddress) {
+    final SpecificResponder responder = new SpecificResponder(messageClass, messageInstance);
+    return new NettyServer(responder,serverAddress);
+  }
+
   @Inject
-  private MistMaster() {
+  private MistMaster(
+      @Parameter(DriverToMasterPort.class) final int driverToMasterPort,
+      @Parameter(ClientToMasterPort.class) final int clientToMasterPort,
+      @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
+      @Parameter(MasterToTaskPort.class) final int masterToTaskPort,
+      @Parameter(MasterHostAddress.class) final String masterHostAddress,
+      final DriverToMasterMessage driverToMasterMessage,
+      final ClientToMasterMessage clientToMasterMessage,
+      final TaskToMasterMessage taskToMasterMessage) {
+    // Launch servers for RPC
+    this.driverToMasterServer = createAvroServer(DriverToMasterMessage.class, driverToMasterMessage,
+        new InetSocketAddress(masterHostAddress, driverToMasterPort));
+    this.clientToMasterServer = createAvroServer(ClientToMasterMessage.class, clientToMasterMessage,
+        new InetSocketAddress(masterHostAddress, clientToMasterPort));
+    this.taskToMasterServer = createAvroServer(TaskToMasterMessage.class, taskToMasterMessage,
+        new InetSocketAddress(masterHostAddress, taskToMasterPort));
 
   }
 

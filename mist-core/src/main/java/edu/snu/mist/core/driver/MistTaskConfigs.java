@@ -20,7 +20,7 @@ import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.common.shared.parameters.MqttSinkKeepAliveSec;
 import edu.snu.mist.common.shared.parameters.MqttSourceKeepAliveSec;
 import edu.snu.mist.core.parameters.TempFolderPath;
-import edu.snu.mist.core.task.DefaultClientToTaskMessageImpl;
+import edu.snu.mist.core.rpc.DefaultClientToTaskMessageImpl;
 import edu.snu.mist.core.task.TaskSpecificResponderWrapper;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GroupRebalancingPeriod;

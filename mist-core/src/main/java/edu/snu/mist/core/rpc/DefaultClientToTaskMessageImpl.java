@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.rpc;
 
-import edu.snu.mist.formats.avro.AvroDag;
-import edu.snu.mist.formats.avro.ClientToTaskMessage;
-import edu.snu.mist.formats.avro.JarUploadResult;
-import edu.snu.mist.formats.avro.QueryControlResult;
+import edu.snu.mist.core.task.QueryIdGenerator;
+import edu.snu.mist.core.task.QueryManager;
+import edu.snu.mist.formats.avro.*;
 import org.apache.avro.AvroRemoteException;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.exceptions.InjectionException;

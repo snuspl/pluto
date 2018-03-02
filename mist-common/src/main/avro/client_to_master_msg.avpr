@@ -29,7 +29,11 @@
       "name": "QueryInfo",
       "type": "record",
       "fields":
-      [ /* TODO[MIST-92]: Define avro RPC protocol between client and driver */
+      [
+        {
+          "name": "groupName",
+          "type": "string"
+        }
       ]
     },
     {
