@@ -42,7 +42,7 @@ limitations under the License.
 
     <organization>
         <name>SNU</name>
-        <url>http://cmslab.snu.ac.kr</url>
+        <url>http://spl.snu.ac.kr</url>
     </organization>
 
     <!--Mosquitte for local MQTT-->
