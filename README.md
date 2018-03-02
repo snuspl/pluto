@@ -11,7 +11,7 @@ MIST is built on top of [Apache REEF](http://reef.apache.org/).
 1. Build MIST:
 
     ```
-    git clone https://github.com/cmssnu/mist
+    git clone https://github.com/snuspl/mist
     cd mist
     Set $MIST_HOME (export MIST_HOME=`pwd`)
     mvn clean install
