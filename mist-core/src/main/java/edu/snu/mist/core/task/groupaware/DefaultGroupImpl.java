@@ -56,7 +56,7 @@ final class DefaultGroupImpl implements Group {
 
   private final List<Query> queryList = new LinkedList<>();
 
-  private MetaGroup metaGroup;
+  private ApplicationInfo applicationInfo;
 
   private final AtomicReference<GroupStatus> groupStatus = new AtomicReference<>(GroupStatus.READY);
 
@@ -139,13 +139,13 @@ final class DefaultGroupImpl implements Group {
   }
 
   @Override
-  public MetaGroup getMetaGroup() {
-    return metaGroup;
+  public ApplicationInfo getApplicationInfo() {
+    return applicationInfo;
   }
 
   @Override
-  public void setMetaGroup(final MetaGroup mGroup) {
-    metaGroup = mGroup;
+  public void setApplicationInfo(final ApplicationInfo mGroup) {
+    applicationInfo = mGroup;
   }
 
   @Override
@@ -254,7 +254,7 @@ final class DefaultGroupImpl implements Group {
 
   @Override
   public boolean isSplited() {
-    return metaGroup.getGroups().size() > 1;
+    return applicationInfo.getGroups().size() > 1;
   }
 
   @Override

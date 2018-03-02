@@ -43,7 +43,7 @@ import static org.mockito.Mockito.mock;
 
 public final class GroupSplitterTest {
 
-  private MetaGroup createMetaGroup() throws InjectionException {
+  private ApplicationInfo createMetaGroup() throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(ApplicationIdentifier.class, "app");
     jcb.bindNamedParameter(JarFilePath.class, "");
@@ -57,7 +57,7 @@ public final class GroupSplitterTest {
     injector.bindVolatileInstance(QueryRemover.class, queryRemover);
     injector.bindVolatileInstance(ExecutionDags.class, executionDags);
 
-    return injector.getInstance(MetaGroup.class);
+    return injector.getInstance(ApplicationInfo.class);
   }
 
   private Group createGroup(final String id) throws InjectionException {
@@ -116,25 +116,25 @@ public final class GroupSplitterTest {
     final EventProcessor ep3 = eventProcessors.get(2);
     final EventProcessor ep4 = eventProcessors.get(3);
 
-    final MetaGroup mg1 = createMetaGroup();
+    final ApplicationInfo mg1 = createMetaGroup();
     final Group g1 = createGroup("g1");
     mg1.addGroup(g1);
     g1.setLoad(0.3);
     g1.setEventProcessor(ep1);
 
-    final MetaGroup mg2 = createMetaGroup();
+    final ApplicationInfo mg2 = createMetaGroup();
     final Group g2 = createGroup("g2");
     mg2.addGroup(g2);
     g2.setLoad(0.2);
     g2.setEventProcessor(ep1);
 
-    final MetaGroup mg3 = createMetaGroup();
+    final ApplicationInfo mg3 = createMetaGroup();
     final Group g3 = createGroup("g3");
     mg3.addGroup(g3);
     g3.setLoad(0.2);
     g3.setEventProcessor(ep1);
 
-    final MetaGroup mg4 = createMetaGroup();
+    final ApplicationInfo mg4 = createMetaGroup();
     final Group g4 = createGroup("g4");
     mg4.addGroup(g4);
     g4.setLoad(0.3);
@@ -147,13 +147,13 @@ public final class GroupSplitterTest {
       g4.addQuery(sg1);
     }
 
-    final MetaGroup mg5 = createMetaGroup();
+    final ApplicationInfo mg5 = createMetaGroup();
     final Group g5 = createGroup("g5");
     mg5.addGroup(g5);
     g5.setLoad(0.2);
     g5.setEventProcessor(ep2);
 
-    final MetaGroup mg6 = createMetaGroup();
+    final ApplicationInfo mg6 = createMetaGroup();
     final Group g6 = createGroup("g6");
     mg6.addGroup(g6);
     g6.setLoad(0.5);
@@ -166,19 +166,19 @@ public final class GroupSplitterTest {
       g6.addQuery(sg1);
     }
 
-    final MetaGroup mg7 = createMetaGroup();
+    final ApplicationInfo mg7 = createMetaGroup();
     final Group g7 = createGroup("g7");
     g7.setLoad(0.2);
     g7.setEventProcessor(ep2);
     mg7.addGroup(g7);
 
-    final MetaGroup mg8 = createMetaGroup();
+    final ApplicationInfo mg8 = createMetaGroup();
     final Group g8 = createGroup("g8");
     g8.setLoad(0.58);
     g8.setEventProcessor(ep3);
     mg8.addGroup(g8);
 
-    final MetaGroup mg9 = createMetaGroup();
+    final ApplicationInfo mg9 = createMetaGroup();
     final Group g9 = createGroup("g9");
     g9.setLoad(0.5);
     g9.setEventProcessor(ep4);

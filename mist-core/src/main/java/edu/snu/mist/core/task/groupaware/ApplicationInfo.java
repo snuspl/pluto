@@ -18,19 +18,19 @@ package edu.snu.mist.core.task.groupaware;
 import edu.snu.mist.core.task.ExecutionDags;
 import edu.snu.mist.core.task.QueryRemover;
 import edu.snu.mist.core.task.QueryStarter;
-import edu.snu.mist.formats.avro.MetaGroupCheckpoint;
+import edu.snu.mist.formats.avro.ApplicationInfoCheckpoint;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * This interface represents a meta group for each application.
- * Network connections, codes are shared within this meta group.
- * Query merging is also being performed in this meta group.
+ * This interface represents an application.
+ * Network connections, codes are shared within this application.
+ * Query merging is also being performed in the same application.
  */
-@DefaultImplementation(DefaultMetaGroupImpl.class)
-public interface MetaGroup {
+@DefaultImplementation(DefaultApplicationInfoImpl.class)
+public interface ApplicationInfo {
 
   /**
    * Get query starter.
@@ -49,18 +49,18 @@ public interface MetaGroup {
   ExecutionDags getExecutionDags();
 
   /**
-   * Get split groups.
+   * Get groups of the application.
    */
   List<Group> getGroups();
 
   /**
-   * Add a split group.
-   * @param group split group
+   * Add a group.
+   * @param group group
    */
   boolean addGroup(Group group);
 
   /**
-   * The number of split groups.
+   * The number of groups.
    */
   AtomicInteger numGroups();
 
@@ -77,7 +77,7 @@ public interface MetaGroup {
   List<String> getJarFilePath();
 
   /**
-   * Return a checkpoint of this MetaGroup.
+   * Return a checkpoint of this app.
    */
-  MetaGroupCheckpoint checkpoint();
+  ApplicationInfoCheckpoint checkpoint();
 }

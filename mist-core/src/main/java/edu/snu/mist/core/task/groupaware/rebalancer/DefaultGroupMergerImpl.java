@@ -137,9 +137,9 @@ public final class DefaultGroupMergerImpl implements GroupMerger {
       highLoadGroup.setEventProcessor(null);
     }
 
-    synchronized (highLoadGroup.getMetaGroup().getGroups()) {
-      highLoadGroup.getMetaGroup().getGroups().remove(highLoadGroup);
-      highLoadGroup.getMetaGroup().numGroups().decrementAndGet();
+    synchronized (highLoadGroup.getApplicationInfo().getGroups()) {
+      highLoadGroup.getApplicationInfo().getGroups().remove(highLoadGroup);
+      highLoadGroup.getApplicationInfo().numGroups().decrementAndGet();
     }
 
     // Update overloaded thread load
@@ -162,7 +162,7 @@ public final class DefaultGroupMergerImpl implements GroupMerger {
     Group g = null;
     double threadLoad = Double.MAX_VALUE;
 
-    for (final Group hg : highLoadGroup.getMetaGroup().getGroups()) {
+    for (final Group hg : highLoadGroup.getApplicationInfo().getGroups()) {
       if (hg.getEventProcessor().getLoad() < threadLoad) {
         g = hg;
         threadLoad = hg.getEventProcessor().getLoad();

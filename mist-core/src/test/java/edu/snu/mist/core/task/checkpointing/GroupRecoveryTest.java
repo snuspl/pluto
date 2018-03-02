@@ -143,14 +143,14 @@ public class GroupRecoveryTest {
     final AvroDag modifiedAvroDag = modifySinkAvroChainedDag(avroDag);
 
     final Tuple<String, AvroDag> tuple = new Tuple<>("testQuery", modifiedAvroDag);
-    queryManager.createMetaGroup(groupId, Arrays.asList(""));
+    queryManager.createApplication(groupId, Arrays.asList(""));
     queryManager.create(tuple);
 
 
     // Wait until all sources connect to stream generator
     sourceCountDownLatch1.await();
 
-    final ExecutionDags executionDags = checkpointManager.getGroup(groupId).getExecutionDags();
+    final ExecutionDags executionDags = checkpointManager.getApplication(groupId).getExecutionDags();
     Assert.assertEquals(executionDags.values().size(), 1);
     final ExecutionDag executionDag = executionDags.values().iterator().next();
     final TestSink testSink = (TestSink)findSink(executionDag);
@@ -162,8 +162,8 @@ public class GroupRecoveryTest {
         testSink.getResults().get(testSink.getResults().size() - 1));
 
     // Checkpoint the entire MISTTask, delete it, and restore it to see if it works.
-    checkpointManager.checkpointGroup("testGroup");
-    checkpointManager.deleteGroup("testGroup");
+    checkpointManager.checkpointApplication("testGroup");
+    checkpointManager.deleteApplication("testGroup");
 
     // Close the generator.
     textMessageStreamGenerator1.close();
@@ -174,12 +174,12 @@ public class GroupRecoveryTest {
         SERVER_ADDR, SOURCE_PORT1, new TestChannelHandler(sourceCountDownLatch2));
 
     // Recover the group.
-    checkpointManager.recoverGroup("testGroup");
+    checkpointManager.recoverApplication("testGroup");
 
     // Wait until all sources connect to stream generator
     sourceCountDownLatch2.await();
 
-    final ExecutionDags executionDags2 = checkpointManager.getGroup(groupId).getExecutionDags();
+    final ExecutionDags executionDags2 = checkpointManager.getApplication(groupId).getExecutionDags();
     Assert.assertEquals(executionDags2.values().size(), 1);
     final ExecutionDag executionDag2 = executionDags2.values().iterator().next();
     final TestSink testSink2 = (TestSink)findSink(executionDag2);

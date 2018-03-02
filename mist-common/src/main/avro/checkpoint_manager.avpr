@@ -110,7 +110,7 @@
       ]
     },
     {
-      "name": "MetaGroupCheckpoint",
+      "name": "ApplicationInfoCheckpoint",
       "type": "record",
       "fields":
       [
@@ -168,8 +168,8 @@
       "request":
       [
         {
-          "name": "metaGroupCheckpoint",
-          "type": "MetaGroupCheckpoint"
+          "name": "appInfoCheckpoint",
+          "type": "ApplicationInfoCheckpoint"
         }
       ],
       "response": "CheckpointResult"

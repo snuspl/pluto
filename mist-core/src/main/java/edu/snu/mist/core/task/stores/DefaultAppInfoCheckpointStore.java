@@ -16,8 +16,8 @@
 package edu.snu.mist.core.task.stores;
 
 import edu.snu.mist.core.parameters.TempFolderPath;
+import edu.snu.mist.formats.avro.ApplicationInfoCheckpoint;
 import edu.snu.mist.formats.avro.CheckpointResult;
-import edu.snu.mist.formats.avro.MetaGroupCheckpoint;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.DatumReader;
@@ -33,27 +33,27 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public final class DefaultMetaGroupCheckpointStore implements MetaGroupCheckpointStore {
+public final class DefaultAppInfoCheckpointStore implements AppInfoCheckpointStore {
 
-  private static final Logger LOG = Logger.getLogger(DefaultMetaGroupCheckpointStore.class.getName());
+  private static final Logger LOG = Logger.getLogger(DefaultAppInfoCheckpointStore.class.getName());
 
   private final String tmpFolderPath;
 
   /**
-   * A writer that stores MetaGroupCheckpoints.
+   * A writer that stores ApplicationInfoCheckpoint.
    */
-  private final DatumWriter<MetaGroupCheckpoint> datumWriter;
+  private final DatumWriter<ApplicationInfoCheckpoint> datumWriter;
 
   /**
-   * A reader that reads stored MetaGroupCheckpoints.
+   * A reader that reads stored ApplicationInfoCheckpoint.
    */
-  private final DatumReader<MetaGroupCheckpoint> datumReader;
+  private final DatumReader<ApplicationInfoCheckpoint> datumReader;
 
   @Inject
-  private DefaultMetaGroupCheckpointStore(@Parameter(TempFolderPath.class) final String tmpFolderpath) {
+  private DefaultAppInfoCheckpointStore(@Parameter(TempFolderPath.class) final String tmpFolderpath) {
     this.tmpFolderPath = tmpFolderpath;
-    this.datumWriter = new SpecificDatumWriter<>(MetaGroupCheckpoint.class);
-    this.datumReader = new SpecificDatumReader<>(MetaGroupCheckpoint.class);
+    this.datumWriter = new SpecificDatumWriter<>(ApplicationInfoCheckpoint.class);
+    this.datumReader = new SpecificDatumReader<>(ApplicationInfoCheckpoint.class);
     // Create a folder that stores the dags and jar files
     final File folder = new File(tmpFolderPath);
     if (!folder.exists()) {
@@ -67,7 +67,7 @@ public final class DefaultMetaGroupCheckpointStore implements MetaGroupCheckpoin
     }
   }
 
-  private File getMetaGroupCheckpointFile(final String groupId) {
+  private File getAppInfoCheckpointFile(final String groupId) {
     final StringBuilder sb = new StringBuilder(groupId);
     sb.append(".groupcp");
     return new File(tmpFolderPath, sb.toString());
@@ -75,20 +75,20 @@ public final class DefaultMetaGroupCheckpointStore implements MetaGroupCheckpoin
 
 
   @Override
-  public CheckpointResult saveMetaGroupCheckpoint(final Tuple<String, MetaGroupCheckpoint> tuple) {
+  public CheckpointResult saveMetaGroupCheckpoint(final Tuple<String, ApplicationInfoCheckpoint> tuple) {
     try {
       final String groupId = tuple.getKey();
-      final MetaGroupCheckpoint gmc = tuple.getValue();
+      final ApplicationInfoCheckpoint gmc = tuple.getValue();
 
       // Write the file.
-      final File storedFile = getMetaGroupCheckpointFile(groupId);
+      final File storedFile = getAppInfoCheckpointFile(groupId);
       if (storedFile.exists()) {
         storedFile.delete();
         LOG.log(Level.INFO, "Checkpoint deleted for groupId: {0}", groupId);
       }
       if (!storedFile.exists()) {
         storedFile.getParentFile().mkdirs();
-        final DataFileWriter<MetaGroupCheckpoint> dataFileWriter = new DataFileWriter<>(datumWriter);
+        final DataFileWriter<ApplicationInfoCheckpoint> dataFileWriter = new DataFileWriter<>(datumWriter);
         dataFileWriter.create(gmc.getSchema(), storedFile);
         dataFileWriter.append(gmc);
         dataFileWriter.close();
@@ -110,12 +110,12 @@ public final class DefaultMetaGroupCheckpointStore implements MetaGroupCheckpoin
   }
 
   @Override
-  public MetaGroupCheckpoint loadMetaGroupCheckpoint(final String groupId) throws IOException {
+  public ApplicationInfoCheckpoint loadAppInfoCheckpoint(final String groupId) throws IOException {
     // Load the file.
-    final File storedFile = getMetaGroupCheckpointFile(groupId);
-    final DataFileReader<MetaGroupCheckpoint> dataFileReader =
-        new DataFileReader<MetaGroupCheckpoint>(storedFile, datumReader);
-    MetaGroupCheckpoint mgc = null;
+    final File storedFile = getAppInfoCheckpointFile(groupId);
+    final DataFileReader<ApplicationInfoCheckpoint> dataFileReader =
+        new DataFileReader<ApplicationInfoCheckpoint>(storedFile, datumReader);
+    ApplicationInfoCheckpoint mgc = null;
     mgc = dataFileReader.next(mgc);
     if (mgc != null) {
       LOG.log(Level.INFO, "Checkpoint file found. groupId is " + groupId);

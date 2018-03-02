@@ -150,20 +150,20 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
           final WritingEvent event = writingEventQueue.take();
           switch (event.getEventType()) {
             case GROUP_ADD: {
-              final Tuple<MetaGroup, Group> tuple = (Tuple<MetaGroup, Group>) event.getValue();
-              final MetaGroup metaGroup = tuple.getKey();
+              final Tuple<ApplicationInfo, Group> tuple = (Tuple<ApplicationInfo, Group>) event.getValue();
+              final ApplicationInfo applicationInfo = tuple.getKey();
               final Group group = tuple.getValue();
-              metaGroup.addGroup(group);
+              applicationInfo.addGroup(group);
               groupAssigner.assignGroup(group);
               break;
             }
             case QUERY_ADD: {
-              final Tuple<MetaGroup, Query> tuple = (Tuple<MetaGroup, Query>) event.getValue();
-              final MetaGroup metaGroup = tuple.getKey();
+              final Tuple<ApplicationInfo, Query> tuple = (Tuple<ApplicationInfo, Query>) event.getValue();
+              final ApplicationInfo applicationInfo = tuple.getKey();
               final Query query = tuple.getValue();
               // TODO: pluggable
               // Find minimum load group
-              final List<Group> groups = metaGroup.getGroups();
+              final List<Group> groups = applicationInfo.getGroups();
               final int index = random.nextInt(groups.size());
               final Group minGroup = groups.get(index);
 

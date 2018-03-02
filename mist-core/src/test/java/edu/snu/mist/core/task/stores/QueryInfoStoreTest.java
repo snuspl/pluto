@@ -20,8 +20,8 @@ import edu.snu.mist.client.MISTQuery;
 import edu.snu.mist.client.MISTQueryBuilder;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.core.parameters.TempFolderPath;
-import edu.snu.mist.core.task.groupaware.GroupMap;
-import edu.snu.mist.core.task.groupaware.MetaGroup;
+import edu.snu.mist.core.task.groupaware.ApplicationMap;
+import edu.snu.mist.core.task.groupaware.ApplicationInfo;
 import edu.snu.mist.core.utils.TestParameters;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.AvroVertex;
@@ -72,7 +72,7 @@ public class QueryInfoStoreTest {
 
     final Injector injector = Tang.Factory.getTang().newInjector();
     final QueryInfoStore store = injector.getInstance(QueryInfoStore.class);
-    final GroupMap groupMap = injector.getInstance(GroupMap.class);
+    final ApplicationMap applicationMap = injector.getInstance(ApplicationMap.class);
 
     final String queryId1 = "testQuery1";
     final String queryId2 = "testQuery2";
@@ -90,10 +90,10 @@ public class QueryInfoStoreTest {
       Assert.assertEquals(jarFiles.get(i), buf);
     }
 
-    final MetaGroup metaGroup = mock(MetaGroup.class);
-    when(metaGroup.getApplicationId()).thenReturn(TestParameters.SUPER_GROUP_ID);
-    when(metaGroup.getJarFilePath()).thenReturn(paths);
-    groupMap.putIfAbsent(TestParameters.SUPER_GROUP_ID, metaGroup);
+    final ApplicationInfo applicationInfo = mock(ApplicationInfo.class);
+    when(applicationInfo.getApplicationId()).thenReturn(TestParameters.SUPER_GROUP_ID);
+    when(applicationInfo.getJarFilePath()).thenReturn(paths);
+    applicationMap.putIfAbsent(TestParameters.SUPER_GROUP_ID, applicationInfo);
 
     // Generate logical plan
     final Tuple<List<AvroVertex>, List<Edge>> serializedDag = query.getAvroOperatorDag();

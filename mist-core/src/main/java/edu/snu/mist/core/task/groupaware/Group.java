@@ -61,14 +61,14 @@ public interface Group extends AutoCloseable {
   EventProcessor getEventProcessor();
 
   /**
-   * Get a meta group.
+   * Get an application.
    */
-  MetaGroup getMetaGroup();
+  ApplicationInfo getApplicationInfo();
 
   /**
-   * Set a meta group.
+   * Set an app for this group.
    */
-  void setMetaGroup(MetaGroup metaGroup);
+  void setApplicationInfo(ApplicationInfo applicationInfo);
 
   /**
    * Change the group status from ready to processing.

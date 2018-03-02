@@ -22,6 +22,7 @@ import java.util.Collection;
 /**
  * This interface holds the group information.
  */
+@Deprecated
 @DefaultImplementation(HashMapGroupInfoMap.class)
 public interface GroupInfoMap {
 

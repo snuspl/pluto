@@ -33,9 +33,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public final class DefaultMetaGroupImpl implements MetaGroup {
+public final class DefaultApplicationInfoImpl implements ApplicationInfo {
 
-  private static final Logger LOG = Logger.getLogger(DefaultMetaGroupImpl.class.getName());
+  private static final Logger LOG = Logger.getLogger(DefaultApplicationInfoImpl.class.getName());
 
   private final QueryStarter queryStarter;
   private final QueryRemover queryRemover;
@@ -57,13 +57,13 @@ public final class DefaultMetaGroupImpl implements MetaGroup {
   private final String appId;
 
   @Inject
-  private DefaultMetaGroupImpl(final QueryStarter queryStarter,
-                               final QueryRemover queryRemover,
-                               final ExecutionDags executionDags,
-                               final QueryIdConfigDagMap queryIdConfigDagMap,
-                               @Parameter(ApplicationIdentifier.class) final String appId,
-                               @Parameter(JarFilePath.class) final String jarFilePath,
-                               final ConfigExecutionVertexMap configExecutionVertexMap) {
+  private DefaultApplicationInfoImpl(final QueryStarter queryStarter,
+                                     final QueryRemover queryRemover,
+                                     final ExecutionDags executionDags,
+                                     final QueryIdConfigDagMap queryIdConfigDagMap,
+                                     @Parameter(ApplicationIdentifier.class) final String appId,
+                                     @Parameter(JarFilePath.class) final String jarFilePath,
+                                     final ConfigExecutionVertexMap configExecutionVertexMap) {
     this.queryStarter = queryStarter;
     this.queryRemover = queryRemover;
     this.executionDags = executionDags;
@@ -96,7 +96,7 @@ public final class DefaultMetaGroupImpl implements MetaGroup {
 
   @Override
   public boolean addGroup(final Group group) {
-    group.setMetaGroup(this);
+    group.setApplicationInfo(this);
     numGroups.incrementAndGet();
     return groups.add(group);
   }
@@ -117,7 +117,7 @@ public final class DefaultMetaGroupImpl implements MetaGroup {
   }
 
   @Override
-  public MetaGroupCheckpoint checkpoint() {
+  public ApplicationInfoCheckpoint checkpoint() {
     final Map<String, AvroConfigDag> avroConfigDagMap = new HashMap<>();
     final GroupMinimumLatestWatermarkTimeStamp groupTimestamp = new GroupMinimumLatestWatermarkTimeStamp();
 
@@ -129,7 +129,7 @@ public final class DefaultMetaGroupImpl implements MetaGroup {
       avroConfigDagMap.put(queryId, convertToAvroConfigDag(queryIdConfigDagMap.get(queryId), groupTimestamp));
     }
 
-    return MetaGroupCheckpoint.newBuilder()
+    return ApplicationInfoCheckpoint.newBuilder()
         .setAvroConfigDags(avroConfigDagMap)
         .setMinimumLatestCheckpointTimestamp(groupTimestamp.getValue())
         .setJarFilePaths(jarFilePath)

@@ -20,28 +20,28 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * A map for managing MetaGroups.
- * The key is a app id, and the value is the corresponding MetaGroup.
+ * A map for managing application meta info.
+ * The key is a app id, and the value is the corresponding application info.
  */
-public final class GroupMap {
+public final class ApplicationMap {
 
-  private final ConcurrentMap<String, MetaGroup> map;
+  private final ConcurrentMap<String, ApplicationInfo> map;
 
   @Inject
-  private GroupMap() {
+  private ApplicationMap() {
     this.map = new ConcurrentHashMap<>();
   }
 
-  public MetaGroup get(final String groupId) {
-    return map.get(groupId);
+  public ApplicationInfo get(final String appId) {
+    return map.get(appId);
   }
 
-  public MetaGroup putIfAbsent(final String groupId,
-                               final MetaGroup metaGroup) {
-    return map.putIfAbsent(groupId, metaGroup);
+  public ApplicationInfo putIfAbsent(final String groupId,
+                                         final ApplicationInfo applicationInfo) {
+    return map.putIfAbsent(groupId, applicationInfo);
   }
 
-  public MetaGroup remove(final String groupId) {
+  public ApplicationInfo remove(final String groupId) {
     return map.remove(groupId);
   }
 

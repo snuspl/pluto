@@ -231,7 +231,7 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
                 final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
                 sameGroup = injector.getInstance(Group.class);
                 sameGroup.setEventProcessor(lowLoadThread);
-                highLoadGroup.getMetaGroup().addGroup(sameGroup);
+                highLoadGroup.getApplicationInfo().addGroup(sameGroup);
                 groupAllocationTable.getValue(lowLoadThread).add(sameGroup);
               }
 
