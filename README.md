@@ -6,7 +6,9 @@ MIST is built on top of [Apache REEF](http://reef.apache.org/).
 
 ### Requirements
  - Java 1.8
-
+ - Maven
+ - Avro
+ 
 ### How to build and run MIST
 1. Build MIST:
 
