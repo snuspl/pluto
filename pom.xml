@@ -18,7 +18,7 @@ limitations under the License.
     <groupId>edu.snu.mist</groupId>
     <artifactId>mist</artifactId>
     <name>MIST</name>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.2-SNAPSHOT</version>
     <modules>
         <module>mist-client</module>
         <module>mist-core</module>
