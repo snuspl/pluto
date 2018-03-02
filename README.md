@@ -67,7 +67,7 @@ MIST is built on top of [Apache REEF](http://reef.apache.org/).
    
 ```
 # submit jar file
-./bin/submit_jar.sh ./mist-examples/target/mist-examples-0.1-SNAPSHOT.jar
+./bin/submit_jar.sh ./mist-examples/target/mist-examples-0.2-SNAPSHOT.jar
 ```
 
 Then, it will return the app identifier
