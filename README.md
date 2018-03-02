@@ -1,4 +1,4 @@
-MIST: High-performance IoT stream processing system 
+MIST: High-performance IoT Stream Processing
 ====================================
 
 MIST is a stream processing system that is optimized to handle large numbers of IoT stream queries. 
@@ -7,7 +7,6 @@ MIST is built on top of [Apache REEF](http://reef.apache.org/).
 ### Requirements
  - Java 1.8
  - Maven
- - Avro
  
 ### How to build and run MIST
 1. Build MIST:
