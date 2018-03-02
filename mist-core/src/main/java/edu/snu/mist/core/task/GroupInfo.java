@@ -27,6 +27,7 @@ import java.util.List;
 /**
  * A class which contains query and metric information about query group.
  */
+@Deprecated
 public final class GroupInfo implements AutoCloseable {
 
   /**

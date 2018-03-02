@@ -18,7 +18,7 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.groupaware.GroupAwareQueryManagerImpl;
-import edu.snu.mist.core.task.groupaware.MetaGroup;
+import edu.snu.mist.core.task.groupaware.ApplicationInfo;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.io.Tuple;
@@ -44,10 +44,10 @@ public interface QueryManager extends AutoCloseable {
   /**
    * Create a query (this is for checkpointing).
    * @param queryId query id
-   * @param metaGroup meta group
+   * @param applicationInfo app info
    */
   Query createAndStartQuery(String queryId,
-                            MetaGroup metaGroup,
+                            ApplicationInfo applicationInfo,
                             DAG<ConfigVertex, MISTEdge> configDag)
       throws IOException, InjectionException, ClassNotFoundException;
 
@@ -59,18 +59,19 @@ public interface QueryManager extends AutoCloseable {
   String uploadJarFile(List<ByteBuffer> jar) throws IOException, InjectionException;
 
   /**
-   * Create a meta group that has the application id and the jar files (this is for checkpointing).
-   * @param appId
+   * Create an application with id and the jar files (this is for checkpointing).
+   * @param appId app id
    * @param jarFilePath for this application
    * @return
    */
-  MetaGroup createMetaGroup(String appId, final List<String> jarFilePath) throws InjectionException;
+  ApplicationInfo createApplication(String appId,
+                                        List<String> jarFilePath) throws InjectionException;
 
   /**
    * Deletes the query corresponding to the queryId submitted by client.
-   * @param groupId group id
+   * @param appId app id
    * @param queryId query id
    * @return Returns the result message of deletion.
    */
-  QueryControlResult delete(String groupId, String queryId);
+  QueryControlResult delete(String appId, String queryId);
 }

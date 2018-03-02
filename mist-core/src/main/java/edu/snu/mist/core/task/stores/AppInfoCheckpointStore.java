@@ -15,26 +15,26 @@
  */
 package edu.snu.mist.core.task.stores;
 
+import edu.snu.mist.formats.avro.ApplicationInfoCheckpoint;
 import edu.snu.mist.formats.avro.CheckpointResult;
-import edu.snu.mist.formats.avro.MetaGroupCheckpoint;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.io.IOException;
 
-@DefaultImplementation(DefaultMetaGroupCheckpointStore.class)
-public interface MetaGroupCheckpointStore {
+@DefaultImplementation(DefaultAppInfoCheckpointStore.class)
+public interface AppInfoCheckpointStore {
 
   /**
-   * Saves a MetaGroupCheckpoint.
-   * @param tuple the groupId and MetaGroupCheckpoint
+   * Saves a ApplicationInfoCheckpoint.
+   * @param tuple the appId and ApplicationInfoCheckpoint
    */
-  CheckpointResult saveMetaGroupCheckpoint(Tuple<String, MetaGroupCheckpoint> tuple);
+  CheckpointResult saveAppInfoCheckpoint(Tuple<String, ApplicationInfoCheckpoint> tuple);
 
   /**
-   * Loads a MetaGroupCheckpoint with the given groupId.
-   * @param groupId
+   * Loads a ApplicationInfoCheckpoint with the given appId.
+   * @param appId
    * @return
    */
-  MetaGroupCheckpoint loadMetaGroupCheckpoint(String groupId) throws IOException;
+  ApplicationInfoCheckpoint loadAppInfoCheckpoint(String appId) throws IOException;
 }

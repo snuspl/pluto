@@ -62,7 +62,10 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
    */
   private final QueryInfoStore planStore;
 
-  private final GroupMap groupMap;
+  /**
+   * Application map.
+   */
+  private final ApplicationMap applicationMap;
 
   /**
    * Event processor manager.
@@ -111,7 +114,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
                                      final NettySharedResource nettySharedResource,
                                      final DagGenerator dagGenerator,
                                      final GroupAllocationTableModifier groupAllocationTableModifier,
-                                     final GroupMap groupMap) {
+                                     final ApplicationMap applicationMap) {
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.eventProcessorManager = eventProcessorManager;
@@ -121,7 +124,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     this.nettySharedResource = nettySharedResource;
     this.dagGenerator = dagGenerator;
     this.groupAllocationTableModifier = groupAllocationTableModifier;
-    this.groupMap = groupMap;
+    this.applicationMap = applicationMap;
   }
 
   /**
@@ -152,9 +155,9 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
             new Object[]{appId, queryId});
       }
 
-      final MetaGroup metaGroup = groupMap.get(appId);
+      final ApplicationInfo applicationInfo = applicationMap.get(appId);
       final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
-      final Query query = createAndStartQuery(queryId, metaGroup, configDag);
+      final Query query = createAndStartQuery(queryId, applicationInfo, configDag);
 
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
@@ -173,28 +176,28 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
 
   @Override
   public Query createAndStartQuery(final String queryId,
-                                   final MetaGroup metaGroup,
+                                   final ApplicationInfo applicationInfo,
                                    final DAG<ConfigVertex, MISTEdge> configDag)
       throws InjectionException, ClassNotFoundException, IOException {
     final Query query = new DefaultQueryImpl(queryId);
     groupAllocationTableModifier.addEvent(new WritingEvent(WritingEvent.EventType.QUERY_ADD,
-        new Tuple<>(metaGroup, query)));
+        new Tuple<>(applicationInfo, query)));
     // Start the submitted dag
-    metaGroup.getQueryStarter().start(queryId, query, configDag, metaGroup.getJarFilePath());
+    applicationInfo.getQueryStarter().start(queryId, query, configDag, applicationInfo.getJarFilePath());
     return query;
   }
 
   @Override
   public String uploadJarFile(final List<ByteBuffer> jars) throws IOException, InjectionException {
-    // Create a meta group for this application
+    // Create an app info
     final String appId = Long.toString(applicationNum.getAndIncrement());
     final List<String> paths = planStore.saveJar(jars);
-    createMetaGroup(appId, paths);
+    createApplication(appId, paths);
     return appId;
   }
 
   @Override
-  public MetaGroup createMetaGroup(final String appId, final List<String> paths) throws InjectionException {
+  public ApplicationInfo createApplication(final String appId, final List<String> paths) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
 
     jcb.bindNamedParameter(ApplicationIdentifier.class, appId);
@@ -208,15 +211,15 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     injector.bindVolatileInstance(NettySharedResource.class, nettySharedResource);
     injector.bindVolatileInstance(QueryInfoStore.class, planStore);
 
-    final MetaGroup metaGroup = injector.getInstance(MetaGroup.class);
+    final ApplicationInfo applicationInfo = injector.getInstance(ApplicationInfo.class);
 
-    groupMap.putIfAbsent(appId, metaGroup);
+    applicationMap.putIfAbsent(appId, applicationInfo);
 
     final Group group = injector.getInstance(Group.class);
     groupAllocationTableModifier.addEvent(
-        new WritingEvent(WritingEvent.EventType.GROUP_ADD, new Tuple<>(metaGroup, group)));
+        new WritingEvent(WritingEvent.EventType.GROUP_ADD, new Tuple<>(applicationInfo, group)));
 
-    return metaGroup;
+    return applicationInfo;
   }
 
   @Override
@@ -230,8 +233,8 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
    * Deletes queries from MIST.
    */
   @Override
-  public QueryControlResult delete(final String groupId, final String queryId) {
-    groupMap.get(groupId).getQueryRemover().deleteQuery(queryId);
+  public QueryControlResult delete(final String appId, final String queryId) {
+    applicationMap.get(appId).getQueryRemover().deleteQuery(queryId);
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(queryId);
     queryControlResult.setIsSuccess(true);

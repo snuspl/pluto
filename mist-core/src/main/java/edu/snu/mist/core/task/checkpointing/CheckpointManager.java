@@ -15,41 +15,41 @@
  */
 package edu.snu.mist.core.task.checkpointing;
 
-import edu.snu.mist.core.task.groupaware.MetaGroup;
+import edu.snu.mist.core.task.groupaware.ApplicationInfo;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.io.IOException;
 
 /**
- * This interface manages checkpoints of groups.
+ * This interface manages checkpoints of applications.
  * It can create checkpoints and reload them.
  * The reloading also involves replaying of events.
  */
 @DefaultImplementation(DefaultCheckpointManagerImpl.class)
 public interface CheckpointManager {
   /**
-   * Recover a stored group in this MIST Task.
-   * @param groupId
+   * Recover a stored app in this MIST Task.
+   * @param appId
    * @return
    */
-  void recoverGroup(String groupId) throws IOException;
+  void recoverApplication(String appId) throws IOException;
 
   /**
-   * Checkpoint a single group.
-   * @param groupId
+   * Checkpoint a single app.
+   * @param appId
    */
-  void checkpointGroup(String groupId);
+  void checkpointApplication(String appId);
 
   /**
-   * Delete a single group.
-   * @param groupId
+   * Delete a single app.
+   * @param appId
    */
-  void deleteGroup(String groupId);
+  void deleteApplication(String appId);
 
   /**
-   * Get the corresponding group.
-   * @param groupId group id
-   * @return MetaGroup from groupMap
+   * Get the corresponding application.
+   * @param appId app id
+   * @return ApplicationMetaInfo
    */
-  MetaGroup getGroup(String groupId);
+  ApplicationInfo getApplication(String appId);
 }
