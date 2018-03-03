@@ -103,7 +103,7 @@ public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V>
     result = scheduler.scheduleAtFixedRate(new Runnable() {
       public void run() {
         latestWatermarkTimestamp = getCurrentTimestamp() - expectedDelay;
-        outputEmitter.emitWatermark(new MistWatermarkEvent(latestWatermarkTimestamp));
+        outputEmitter.emitWatermark(new MistWatermarkEvent(latestWatermarkTimestamp, false));
       }
     }, period, period, timeUnit);
   }
