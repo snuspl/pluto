@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.common.operators;
 
-import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 
@@ -216,22 +215,6 @@ public final class UnionOperator extends TwoStreamOperator {
 
       // Drain events until the minimum watermark.
       drainUntilMinimumWatermark();
-    }
-  }
-
-  // TODO [MIST-966] : Integrate MistCheckpointEvent into MistWatermarkEvent
-  @Override
-  public void processLeftCheckpoint(final MistCheckpointEvent event) {
-    if (LOG.isLoggable(Level.FINE)) {
-      LOG.log(Level.FINE, "{0} gets left checkpoint {1}", new Object[]{this.getClass().getName(), event});
-    }
-  }
-
-  // TODO [MIST-966] : Integrate MistCheckpointEvent into MistWatermarkEvent
-  @Override
-  public void processRightCheckpoint(final MistCheckpointEvent event) {
-    if (LOG.isLoggable(Level.FINE)) {
-      LOG.log(Level.FINE, "{0} gets right checkpoint {1}", new Object[]{this.getClass().getName(), event});
     }
   }
 }

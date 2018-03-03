@@ -28,6 +28,11 @@ public final class MistWatermarkEvent implements MistEvent, Serializable {
    */
   private long timestamp;
 
+  /**
+   * Indicates if this is a checkpoint event.
+   */
+  private boolean isCheckpoint;
+
   public MistWatermarkEvent(final long timestamp) {
     if (timestamp < 0L) {
       throw new NegativeTimestampException("Negative timestamp in watermark is not allowed.");
@@ -46,7 +51,7 @@ public final class MistWatermarkEvent implements MistEvent, Serializable {
 
   @Override
   public boolean isCheckpoint() {
-    return false;
+    return isCheckpoint;
   }
 
   @Override
@@ -57,7 +62,8 @@ public final class MistWatermarkEvent implements MistEvent, Serializable {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    return timestamp == ((MistWatermarkEvent) o).getTimestamp();
+    return (timestamp == ((MistWatermarkEvent) o).getTimestamp()) &&
+        (isCheckpoint == ((MistWatermarkEvent) o).isCheckpoint);
   }
 
   @Override

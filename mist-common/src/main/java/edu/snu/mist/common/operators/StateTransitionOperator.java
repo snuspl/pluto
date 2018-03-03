@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.common.operators;
 
-import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
@@ -28,7 +27,10 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -117,6 +119,9 @@ public final class StateTransitionOperator extends OneStreamOperator implements 
     @Override
     public void processLeftWatermark(final MistWatermarkEvent input) {
         outputEmitter.emitWatermark(input);
+        if (input.isCheckpoint()) {
+            latestCheckpointTimestamp = input.getTimestamp();
+        }
     }
 
     @Override
@@ -129,12 +134,6 @@ public final class StateTransitionOperator extends OneStreamOperator implements 
     @Override
     public void setState(final Map<String, Object> loadedState) {
         currState = (String) loadedState.get("stateTransitionOperatorState");
-    }
-
-    @Override
-    public void processLeftCheckpoint(final MistCheckpointEvent input) {
-        latestCheckpointTimestamp = input.getTimestamp();
-        outputEmitter.emitCheckpoint(input);
     }
 
     @Override

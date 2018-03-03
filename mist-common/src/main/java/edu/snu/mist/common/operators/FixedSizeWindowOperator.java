@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.common.operators;
 
-import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.windows.Window;
@@ -142,6 +141,9 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements S
       final Window<T> window = itr.next();
       window.putWatermark(input);
     }
+    if (input.isCheckpoint()) {
+      latestCheckpointTimestamp = input.getTimestamp();
+    }
   }
 
   @Override
@@ -157,12 +159,6 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements S
   public void setState(final Map<String, Object> loadedState) {
     windowCreationPoint = (long)loadedState.get("windowCreationPoint");
     windowQueue.addAll((Queue<Window<T>>)loadedState.get("windowQueue"));
-  }
-
-  @Override
-  public void processLeftCheckpoint(final MistCheckpointEvent input) {
-    latestCheckpointTimestamp = input.getTimestamp();
-    outputEmitter.emitCheckpoint(input);
   }
 
   @Override
