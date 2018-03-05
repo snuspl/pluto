@@ -281,7 +281,7 @@ public final class MistDriver {
               taskHostAddress);
           taskConfBuilder.bindNamedParameter(MasterToTaskPort.class, String.valueOf(masterToTaskPort));
           taskConfBuilder.bindNamedParameter(MasterHostAddress.class, masterHostAddress);
-          LOG.info("@@@@@@@@@@@@@@@ Set master host address: " + masterHostAddress);
+          LOG.info("Set master host address: " + masterHostAddress);
           taskConfBuilder.bindNamedParameter(TaskToMasterPort.class, String.valueOf(taskToMasterPort));
           // Store task configuration.
           mistTaskConfQueue.add(Configurations.merge(

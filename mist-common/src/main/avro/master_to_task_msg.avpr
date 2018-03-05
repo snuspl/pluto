@@ -16,6 +16,7 @@
 
  /**
   * This is a skeleton protocol for RPC communication from MistMaster to MistTask.
+  * TODO: [MIST-423] Track evaluator stats in MIST Master.
   */
 {
   "namespace": "edu.snu.mist.formats.avro",

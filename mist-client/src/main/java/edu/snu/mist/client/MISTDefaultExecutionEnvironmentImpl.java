@@ -37,7 +37,7 @@ import java.util.List;
  */
 public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionEnvironment {
   /**
-   * A proxy that communicates with MIST Driver.
+   * A proxy that communicates with MIST Master.
    */
   private final ClientToMasterMessage proxyToMaster;
   /**
