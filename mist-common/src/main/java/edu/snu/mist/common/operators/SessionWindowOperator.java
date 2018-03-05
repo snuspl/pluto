@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.common.operators;
 
-import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.parameters.WindowInterval;
@@ -114,12 +113,9 @@ public final class SessionWindowOperator<T> extends OneStreamOperator implements
   public void processLeftWatermark(final MistWatermarkEvent input) {
     emitAndCreateWindow(input.getTimestamp());
     currentWindow.putWatermark(input);
-  }
-
-  @Override
-  public void processLeftCheckpoint(final MistCheckpointEvent input) {
-    latestCheckpointTimestamp = input.getTimestamp();
-    outputEmitter.emitCheckpoint(input);
+    if (input.isCheckpoint()) {
+      latestCheckpointTimestamp = input.getTimestamp();
+    }
   }
 
   @Override

@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.common.sources;
 
-import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.OutputEmitter;
@@ -290,11 +289,6 @@ public final class NettySourceTest {
     public void emitWatermark(final MistWatermarkEvent watermark) {
       watermarkList.add(watermark.getTimestamp());
       watermarkCountDownLatch.countDown();
-    }
-
-    @Override
-    public void emitCheckpoint(final MistCheckpointEvent mistCheckpointEvent) {
-      // do nothing
     }
   }
 }

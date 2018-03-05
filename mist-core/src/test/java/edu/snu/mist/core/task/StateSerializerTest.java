@@ -79,7 +79,7 @@ public final class StateSerializerTest {
     final Map<String, Integer> testMap = new HashMap<>();
     testMap.put("Cheeseburgers", 6);
     testMap.put("Drinks", 3);
-    final MistWatermarkEvent testWatermarkEvent = new MistWatermarkEvent(98L);
+    final MistWatermarkEvent testWatermarkEvent = new MistWatermarkEvent(98L, false);
     final Window<String> testWindow = new WindowImpl<>(100L);
     final Queue<Window<String>> testQueue = new LinkedList<>();
     testQueue.add(testWindow);

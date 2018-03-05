@@ -43,10 +43,10 @@ public final class FixedSizeWindowOperatorTest {
   private final MistDataEvent d8 = new MistDataEvent(8, 5000L);
   private final MistDataEvent d9 = new MistDataEvent(9, 6000L);
   private final MistDataEvent d10 = new MistDataEvent(10, 2100L);
-  private final MistWatermarkEvent w1 = new MistWatermarkEvent(1550L);
-  private final MistWatermarkEvent w2 = new MistWatermarkEvent(1800L);
-  private final MistWatermarkEvent w3 = new MistWatermarkEvent(2050L);
-  private final MistWatermarkEvent w4 = new MistWatermarkEvent(2300L);
+  private final MistWatermarkEvent w1 = new MistWatermarkEvent(1550L, false);
+  private final MistWatermarkEvent w2 = new MistWatermarkEvent(1800L, false);
+  private final MistWatermarkEvent w3 = new MistWatermarkEvent(2050L, false);
+  private final MistWatermarkEvent w4 = new MistWatermarkEvent(2300L, false);
 
   /**
    * Test TimeWindowOperator creating sliding window.

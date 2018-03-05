@@ -47,7 +47,7 @@ public final class ApplyStatefulWindowOperatorTest {
     window2.putData(new MistDataEvent(20, 120));
     final MistDataEvent dataEvent1 = new MistDataEvent(window1, 90L);
     final MistDataEvent dataEvent2 = new MistDataEvent(window2, 190L);
-    final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(201L);
+    final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(201L, false);
 
     // the state finding maximum integer value among received inputs
     final ApplyStatefulFunction<Integer, Integer> applyStatefulFunction = new FindMaxIntFunction();
