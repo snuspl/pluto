@@ -13,29 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.core.rpc;
 
- /**
-  * This is a skeleton protocol for RPC communication from MistMaster to MistTask.
-  */
-{
-  "namespace": "edu.snu.mist.formats.avro",
-  "protocol": "MasterToTaskMessage",
-  "messages":
-  {
-    "getTaskLoad":
-    {
-      "request": [
-        {
-          "name": "taskAddress",
-          "type": "IPAddress"
-        }
-      ],
-      "response":[
-        {
-          "name": "taskLoad",
-          "type": "double"
-        }
-      ]
-    }
+import edu.snu.mist.formats.avro.TaskToMasterMessage;
+import javax.inject.Inject;
+
+/**
+ * The default implementation for task-to-master avro rpc.
+ */
+public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage {
+
+  @Inject
+  private DefaultTaskToMasterMessageImpl() {
   }
 }

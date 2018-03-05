@@ -18,7 +18,7 @@ package edu.snu.mist.core.master;
 /**
  * The class which contains MistTask information maintained by master.
  */
-public class TaskInfo {
+public final class TaskInfo {
 
   /**
    * The cpu load of the task.

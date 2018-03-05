@@ -15,7 +15,10 @@
  */
 package edu.snu.mist.core.master;
 
-import edu.snu.mist.core.parameters.*;
+import edu.snu.mist.core.parameters.ClientToMasterPort;
+import edu.snu.mist.core.parameters.DriverToMasterPort;
+import edu.snu.mist.core.parameters.MasterHostAddress;
+import edu.snu.mist.core.parameters.TaskToMasterPort;
 import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
 import edu.snu.mist.formats.avro.TaskToMasterMessage;
@@ -31,6 +34,8 @@ import org.apache.reef.wake.EventHandler;
 
 import javax.inject.Inject;
 import java.net.InetSocketAddress;
+import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -40,6 +45,8 @@ import java.util.logging.Logger;
 public final class MistMaster implements Task {
 
   private static final Logger LOG = Logger.getLogger(MistMaster.class.getName());
+
+  private final CountDownLatch countDownLatch;
 
   /**
    * Shared tang object.
@@ -54,11 +61,6 @@ public final class MistMaster implements Task {
   private final Server clientToMasterServer;
 
   private final Server taskToMasterServer;
-
-  /**
-   * The port number used for master-to-task RPC.
-   */
-  private final int masterToTaskPort;
 
   /**
    * A helper method for making avro servers
@@ -81,11 +83,12 @@ public final class MistMaster implements Task {
       @Parameter(DriverToMasterPort.class) final int driverToMasterPort,
       @Parameter(ClientToMasterPort.class) final int clientToMasterPort,
       @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
-      @Parameter(MasterToTaskPort.class) final int masterToTaskPort,
       @Parameter(MasterHostAddress.class) final String masterHostAddress,
       final DriverToMasterMessage driverToMasterMessage,
       final ClientToMasterMessage clientToMasterMessage,
       final TaskToMasterMessage taskToMasterMessage) {
+    // Initialize countdown latch
+    this.countDownLatch = new CountDownLatch(1);
     // Launch servers for RPC
     this.driverToMasterServer = createAvroServer(DriverToMasterMessage.class, driverToMasterMessage,
         new InetSocketAddress(masterHostAddress, driverToMasterPort));
@@ -93,18 +96,24 @@ public final class MistMaster implements Task {
         new InetSocketAddress(masterHostAddress, clientToMasterPort));
     this.taskToMasterServer = createAvroServer(TaskToMasterMessage.class, taskToMasterMessage,
         new InetSocketAddress(masterHostAddress, taskToMasterPort));
-
   }
 
   @Override
   public byte[] call(final byte[] memento) throws Exception {
+    LOG.log(Level.INFO, "MistMaster is started");
+    this.countDownLatch.await();
+    // MistMaster has been terminated
+    this.driverToMasterServer.close();
+    this.clientToMasterServer.close();
+    this.taskToMasterServer.close();
     return null;
   }
 
   public final class MasterCloseHandler implements EventHandler<CloseEvent> {
     @Override
     public void onNext(final CloseEvent closeEvent) {
-
+      LOG.log(Level.INFO, "Closing Master");
+      countDownLatch.countDown();
     }
   }
 

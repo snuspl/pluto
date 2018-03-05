@@ -23,5 +23,5 @@ import org.apache.reef.tang.annotations.NamedParameter;
  */
 @NamedParameter(doc = "The port used for client-to-task RPC.", default_value = "20331", short_name =
     "client_to_task_port")
-public class ClientToTaskPort implements Name<Integer> {
+public final class ClientToTaskPort implements Name<Integer> {
 }

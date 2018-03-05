@@ -20,17 +20,24 @@
 {
   "namespace": "edu.snu.mist.formats.avro",
   "protocol": "TaskToMasterMessage",
-  "messages": {
-    "setupMasterToTaskConn":
+  "types":[
     {
-      "request":
+      "name": "IPAddress",
+      "type": "record",
+      "fields":
       [
         {
-          "name": "taskHostName",
+          "name": "hostAddress",
           "type": "string"
+        },
+        {
+          "name": "port",
+          "type": "int"
         }
-      ],
-      "response": "boolean"
+      ]
     }
+  ],
+  "messages": {
+
   }
 }

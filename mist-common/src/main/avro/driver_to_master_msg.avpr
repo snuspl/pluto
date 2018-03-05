@@ -20,6 +20,23 @@
 {
   "namespace": "edu.snu.mist.formats.avro",
   "protocol": "DriverToMasterMessage",
+  "types":[
+    {
+      "name": "IPAddress",
+      "type": "record",
+      "fields":
+      [
+        {
+          "name": "hostAddress",
+          "type": "string"
+        },
+        {
+          "name": "port",
+          "type": "int"
+        }
+      ]
+    }
+  ],
   "messages":
   {
     "addTask":
@@ -28,10 +45,26 @@
       [
         {
           "name": "taskAddress",
-          "type": "string"
+          "type": "IPAddress"
         }
       ],
       "response": "boolean"
+    },
+    "setupMasterToTaskConn":
+    {
+      "request":
+      [
+        {
+          "name": "taskAddress",
+          "type": "IPAddress"
+        }
+      ],
+      "response": "boolean"
+    },
+    "taskSetupFinished":
+    {
+      "request": [],
+      "response": "null"
     },
     "notifyFailedTask":
     {
@@ -39,7 +72,7 @@
       [
         {
           "name": "taskAddress",
-          "type": "string"
+          "type": "IPAddress"
         }
       ],
       "response": "boolean"
