@@ -27,17 +27,17 @@ import java.util.Arrays;
  * A task provider for test.
  */
 public class MockMasterServer implements ClientToMasterMessage {
-  private final String driverHost;
+  private final String masterHost;
   private final int taskPortNum;
 
-  public MockMasterServer(final String driverHost,
+  public MockMasterServer(final String masterHost,
                           final int taskPortNum) {
-    this.driverHost = driverHost;
+    this.masterHost = masterHost;
     this.taskPortNum = taskPortNum;
   }
 
   @Override
   public TaskList getTasks(final QueryInfo queryInfo) throws AvroRemoteException {
-    return new TaskList(Arrays.asList(new IPAddress(driverHost, taskPortNum)));
+    return new TaskList(Arrays.asList(new IPAddress(masterHost, taskPortNum)));
   }
 }
