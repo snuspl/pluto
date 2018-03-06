@@ -37,10 +37,9 @@ import java.util.List;
  */
 public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionEnvironment {
   /**
-   * A proxy that communicates with MIST Driver.
+   * A proxy that communicates with MIST Master.
    */
-  private final MistTaskProvider proxyToDriver;
-
+  private final ClientToMasterMessage proxyToMaster;
   /**
    * A proxy that communicates with MIST Task.
    */
@@ -62,8 +61,8 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
                                              final int serverPort) throws IOException {
     // Step 1: Get a task list from Driver
     clientToDriver = new NettyTransceiver(new InetSocketAddress(serverAddr, serverPort));
-    this.proxyToDriver = SpecificRequestor.getClient(MistTaskProvider.class, clientToDriver);
-    final TaskList taskList = proxyToDriver.getTasks(new QueryInfo());
+    this.proxyToMaster = SpecificRequestor.getClient(ClientToMasterMessage.class, clientToDriver);
+    final TaskList taskList = proxyToMaster.getTasks(new QueryInfo());
 
     final List<IPAddress> tasks = taskList.getTasks();
     // Choose a task (TODO: Randomly select a task)

@@ -15,14 +15,14 @@
  */
 
  /**
-  * This is a skeleton protocol for RPC communication between clients and MistDriver.
-  * When the clients send their queries, first they send messages which contains information of a query to the driver.
-  * The driver receives the message, picks some tasks which are suitable for running the queries,
+  * This is a skeleton protocol for RPC communication between clients and MistMaster.
+  * When the clients send their queries, first they send messages which contains information of a query to the master.
+  * The master receives the message, picks some tasks which are suitable for running the queries,
   * and returns the list of tasks' ip addresses to the clients.
   */
 {
   "namespace": "edu.snu.mist.formats.avro",
-  "protocol": "MistTaskProvider",
+  "protocol": "ClientToMasterMessage",
   "types":
   [
     {
