@@ -75,7 +75,7 @@ public final class MqttFilterApplication {
         .mqttOutput(brokerURI, sinkTopic);
 
     final String[] driverSocket =
-        Tang.Factory.getTang().newInjector(configuration).getNamedInstance(DriverAddress.class).split(":");
+        Tang.Factory.getTang().newInjector(configuration).getNamedInstance(MasterAddress.class).split(":");
     final String driverHostname = driverSocket[0];
     final int driverPort = Integer.parseInt(driverSocket[1]);
 

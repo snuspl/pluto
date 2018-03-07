@@ -22,6 +22,6 @@ import org.apache.reef.tang.annotations.NamedParameter;
 /**
  * Parameter for driver socket configuration.
  */
-@NamedParameter(doc = "TCP socket of running MIST driver", short_name = "d", default_value = "localhost:20332")
-public final class DriverAddress implements Name<String> {
+@NamedParameter(doc = "TCP socket of running MIST master", short_name = "d", default_value = "localhost:20332")
+public final class MasterAddress implements Name<String> {
 }
