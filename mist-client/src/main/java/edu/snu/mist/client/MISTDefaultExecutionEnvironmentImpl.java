@@ -55,14 +55,16 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
    * A list of the Task is retrieved from the MIST Driver.
    * @param serverAddr MIST Driver server address.
    * @param serverPort MIST Driver server port.
+   * @param appName Query application name.
    * @throws IOException
    */
   public MISTDefaultExecutionEnvironmentImpl(final String serverAddr,
-                                             final int serverPort) throws IOException {
+                                             final int serverPort,
+                                             final String appName) throws IOException {
     // Step 1: Get a task list from Driver
     clientToDriver = new NettyTransceiver(new InetSocketAddress(serverAddr, serverPort));
     this.proxyToMaster = SpecificRequestor.getClient(ClientToMasterMessage.class, clientToDriver);
-    final TaskList taskList = proxyToMaster.getTasks(new QueryInfo());
+    final TaskList taskList = proxyToMaster.getTasks(new QueryInfo(appName));
 
     final List<IPAddress> tasks = taskList.getTasks();
     // Choose a task (TODO: Randomly select a task)

@@ -17,14 +17,18 @@ package edu.snu.mist.core.master;
 
 import edu.snu.mist.formats.avro.IPAddress;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
+import org.apache.avro.AvroRemoteException;
 
-import javax.inject.Inject;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The updater which updates task load periodically and runs on a separate thread.
  */
 public class TaskLoadUpdater implements Runnable {
+
+  private static final Logger LOG = Logger.getLogger(TaskLoadUpdater.class.getName());
 
   /**
    * The proxy-to-task map.
@@ -36,19 +40,24 @@ public class TaskLoadUpdater implements Runnable {
    */
   private final TaskInfoMap taskInfoMap;
 
-  @Inject
-  private TaskLoadUpdater(final ProxyToTaskMap proxyToTaskMap,
+  public TaskLoadUpdater(final ProxyToTaskMap proxyToTaskMap,
                           final TaskInfoMap taskInfoMap) {
     this.proxyToTaskMap = proxyToTaskMap;
     this.taskInfoMap = taskInfoMap;
   }
 
   @Override
-  public void run() {
+  public synchronized void run() {
     // TODO: Parallelize task-load update process.
-    for(final Map.Entry<IPAddress, MasterToTaskMessage> entry: proxyToTaskMap.entrySet()) {
-      final MasterToTaskMessage proxyToTask = entry.getValue();
-      final double updatedCpuLoad = proxyToTask.getTaskLoad();
+    for (final Map.Entry<IPAddress, MasterToTaskMessage> entry : proxyToTaskMap.entrySet()) {
+      try {
+        final MasterToTaskMessage proxyToTask = entry.getValue();
+        final double updatedCpuLoad = (Double) proxyToTask.getTaskLoad();
+        final TaskInfo taskInfo = taskInfoMap.getTaskInfo(entry.getKey());
+        taskInfo.setCpuLoad(updatedCpuLoad);
+      } catch (final AvroRemoteException e) {
+        LOG.log(Level.INFO, "Remote error occured during connecting to task " + entry.getKey().toString());
+      }
     }
   }
 }

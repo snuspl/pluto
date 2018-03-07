@@ -33,7 +33,7 @@ public final class TaskInfo {
     return this.cpuLoad;
   }
 
-  public void setCpuLoad() {
-    this.cpuLoad = 0;
+  public void setCpuLoad(final double updatedCpuLoad) {
+    this.cpuLoad = updatedCpuLoad;
   }
 }

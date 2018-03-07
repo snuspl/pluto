@@ -23,14 +23,14 @@ import javax.inject.Inject;
 import java.util.List;
 
 /**
- * The default master-to-task message implementation
+ * The default master-to-task message implementation.
  */
-public class DefaultMasterToTaskMessageImpl implements MasterToTaskMessage {
+public final class DefaultMasterToTaskMessageImpl implements MasterToTaskMessage {
 
   /**
    * The group allocation table maintained by MistTask.
    */
-  final GroupAllocationTable groupAllocationTable;
+  private final GroupAllocationTable groupAllocationTable;
 
   @Inject
   private DefaultMasterToTaskMessageImpl(final GroupAllocationTable groupAllocationTable) {

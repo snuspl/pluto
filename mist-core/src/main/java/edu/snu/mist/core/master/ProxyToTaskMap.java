@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * The wrapper class which contains proxies to managed tasks.
  */
-public class ProxyToTaskMap {
+public final class ProxyToTaskMap {
 
   private ConcurrentMap<IPAddress, MasterToTaskMessage> innerMap;
 

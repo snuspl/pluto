@@ -18,16 +18,21 @@ package edu.snu.mist.core.rpc;
 import edu.snu.mist.core.master.ProxyToTaskMap;
 import edu.snu.mist.core.master.TaskInfo;
 import edu.snu.mist.core.master.TaskInfoMap;
+import edu.snu.mist.core.master.TaskLoadUpdater;
+import edu.snu.mist.core.parameters.TaskInfoGatherTerm;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
 import edu.snu.mist.formats.avro.IPAddress;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
 import org.apache.avro.ipc.NettyTransceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,7 +41,7 @@ import java.util.logging.Logger;
  */
 public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMessage {
 
-  private final Logger LOG = Logger.getLogger(DefaultDriverToMasterMessageImpl.class.getName());
+  private static final Logger LOG = Logger.getLogger(DefaultDriverToMasterMessageImpl.class.getName());
 
   /**
    * The task-taskInfo map which is shared across the servers in MistMaster.
@@ -46,14 +51,26 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   /**
    * The task-proxyClient map.
    */
-  final ProxyToTaskMap proxyToTaskMap;
+  private final ProxyToTaskMap proxyToTaskMap;
 
-  final
+  /**
+   * The thread which gets task load information regularly.
+   */
+  private final ScheduledExecutorService taskInfoGatherer;
+
+  /**
+   * The task info gathering term.
+   */
+  private final long taskInfoGatherTerm;
 
   @Inject
-  private DefaultDriverToMasterMessageImpl(final TaskInfoMap taskInfoMap, final ProxyToTaskMap proxyToTaskMap) {
+  private DefaultDriverToMasterMessageImpl(final TaskInfoMap taskInfoMap,
+                                           final ProxyToTaskMap proxyToTaskMap,
+                                           @Parameter(TaskInfoGatherTerm.class) final long taskInfoGatherTerm) {
     this.taskInfoMap = taskInfoMap;
     this.proxyToTaskMap = proxyToTaskMap;
+    this.taskInfoGatherTerm = taskInfoGatherTerm;
+    this.taskInfoGatherer = Executors.newSingleThreadScheduledExecutor();
   }
 
   @Override
@@ -79,6 +96,13 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
 
   @Override
   public Void taskSetupFinished() {
+    // All task setups are over, so start log collection.
+    taskInfoGatherer.scheduleAtFixedRate(
+        new TaskLoadUpdater(proxyToTaskMap, taskInfoMap),
+        0,
+        taskInfoGatherTerm,
+        TimeUnit.MILLISECONDS);
+    return null;
   }
 
   @Override

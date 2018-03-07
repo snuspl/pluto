@@ -15,8 +15,17 @@
  */
 package edu.snu.mist.core.task;
 
+import edu.snu.mist.core.parameters.MasterHostAddress;
+import edu.snu.mist.core.parameters.MasterToTaskPort;
+import edu.snu.mist.core.parameters.TaskToMasterPort;
+import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.checkpointing.CheckpointManager;
+import edu.snu.mist.formats.avro.MasterToTaskMessage;
+import edu.snu.mist.formats.avro.TaskToMasterMessage;
+import org.apache.avro.ipc.NettyTransceiver;
 import org.apache.avro.ipc.Server;
+import org.apache.avro.ipc.specific.SpecificRequestor;
+import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.annotations.Unit;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.task.Task;
@@ -24,6 +33,8 @@ import org.apache.reef.task.events.CloseEvent;
 import org.apache.reef.wake.EventHandler;
 
 import javax.inject.Inject;
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,22 +52,37 @@ public final class MistTask implements Task {
    */
   private final CountDownLatch countDownLatch;
 
-  private final Server server;
   private final QueryManager queryManager;
   private final CheckpointManager checkpointManager;
 
   /**
+   * The avro server for master-to-task communication.
+   */
+  private final Server masterToTaskServer;
+
+  /**
+   * Task-to-master message proxy.
+   */
+  private final TaskToMasterMessage proxyToMaster;
+
+  /**
    * Default constructor of MistTask.
-   * @param server rpc server for receiving queries
    * @throws InjectionException
    */
   @Inject
-  private MistTask(final Server server,
-                   final QueryManager queryManager,
-                   final CheckpointManager checkpointManager) throws InjectionException {
+  private MistTask(final QueryManager queryManager,
+                   final CheckpointManager checkpointManager,
+                   @Parameter(MasterToTaskPort.class) final int masterToTaskPort,
+                   @Parameter(MasterHostAddress.class) final String masterHostAddress,
+                   @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
+                   final MasterToTaskMessage masterToTaskMessage) throws InjectionException, IOException {
     this.countDownLatch = new CountDownLatch(1);
-    this.server = server;
     this.queryManager = queryManager;
+    this.masterToTaskServer = AvroUtils.createAvroServer(MasterToTaskMessage.class, masterToTaskMessage,
+        new InetSocketAddress(masterToTaskPort));
+    final NettyTransceiver nettyTransceiver = new NettyTransceiver(
+        new InetSocketAddress(masterHostAddress, taskToMasterPort));
+    this.proxyToMaster = SpecificRequestor.getClient(TaskToMasterMessage.class, nettyTransceiver);
     this.checkpointManager = checkpointManager;
   }
 
@@ -64,7 +90,7 @@ public final class MistTask implements Task {
   public byte[] call(final byte[] bytes) throws Exception {
     LOG.log(Level.INFO, "MistTask is started");
     countDownLatch.await();
-    server.close();
+    masterToTaskServer.close();
     queryManager.close();
     return new byte[0];
   }

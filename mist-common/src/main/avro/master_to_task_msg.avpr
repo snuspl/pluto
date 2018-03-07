@@ -25,12 +25,7 @@
   {
     "getTaskLoad":
     {
-      "request": [
-        {
-          "name": "taskAddress",
-          "type": "IPAddress"
-        }
-      ],
+      "request": [],
       "response":[
         {
           "name": "taskLoad",

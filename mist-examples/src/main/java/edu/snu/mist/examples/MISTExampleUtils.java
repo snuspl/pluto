@@ -128,7 +128,7 @@ public final class MISTExampleUtils {
     final int driverPort = Integer.parseInt(driverSocket[1]);
 
     try (final MISTExecutionEnvironment executionEnvironment =
-        new MISTDefaultExecutionEnvironmentImpl(driverHostname, driverPort)) {
+        new MISTDefaultExecutionEnvironmentImpl(driverHostname, driverPort, "default_app")) {
 
       // Upload jar
       final String jarFilePath = getJarFilePath();

@@ -35,6 +35,10 @@ public final class TaskInfoMap {
     this.innerMap = new ConcurrentHashMap<>();
   }
 
+  public TaskInfo getTaskInfo(final IPAddress taskAddress) {
+    return innerMap.get(taskAddress);
+  }
+
   public TaskInfo addTaskInfo(final IPAddress taskAddress, final TaskInfo taskInfo) {
     return innerMap.putIfAbsent(taskAddress, taskInfo);
   }

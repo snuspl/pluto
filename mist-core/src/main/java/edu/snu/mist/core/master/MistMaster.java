@@ -17,14 +17,12 @@ package edu.snu.mist.core.master;
 
 import edu.snu.mist.core.parameters.ClientToMasterPort;
 import edu.snu.mist.core.parameters.DriverToMasterPort;
-import edu.snu.mist.core.parameters.MasterHostAddress;
 import edu.snu.mist.core.parameters.TaskToMasterPort;
+import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
 import edu.snu.mist.formats.avro.TaskToMasterMessage;
-import org.apache.avro.ipc.NettyServer;
 import org.apache.avro.ipc.Server;
-import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.annotations.Unit;
@@ -62,40 +60,23 @@ public final class MistMaster implements Task {
 
   private final Server taskToMasterServer;
 
-  /**
-   * A helper method for making avro servers
-   * @param messageClass The class of message.
-   * @param messageInstance The actual messaging instance.
-   * @param serverAddress The server host name and port number.
-   * @param <T> The class type of messaging instance.
-   * @return The avro server.
-   */
-  private <T> Server createAvroServer(
-      final Class<T> messageClass,
-      final T messageInstance,
-      final InetSocketAddress serverAddress) {
-    final SpecificResponder responder = new SpecificResponder(messageClass, messageInstance);
-    return new NettyServer(responder,serverAddress);
-  }
-
   @Inject
   private MistMaster(
       @Parameter(DriverToMasterPort.class) final int driverToMasterPort,
       @Parameter(ClientToMasterPort.class) final int clientToMasterPort,
       @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
-      @Parameter(MasterHostAddress.class) final String masterHostAddress,
       final DriverToMasterMessage driverToMasterMessage,
       final ClientToMasterMessage clientToMasterMessage,
       final TaskToMasterMessage taskToMasterMessage) {
     // Initialize countdown latch
     this.countDownLatch = new CountDownLatch(1);
     // Launch servers for RPC
-    this.driverToMasterServer = createAvroServer(DriverToMasterMessage.class, driverToMasterMessage,
-        new InetSocketAddress(masterHostAddress, driverToMasterPort));
-    this.clientToMasterServer = createAvroServer(ClientToMasterMessage.class, clientToMasterMessage,
-        new InetSocketAddress(masterHostAddress, clientToMasterPort));
-    this.taskToMasterServer = createAvroServer(TaskToMasterMessage.class, taskToMasterMessage,
-        new InetSocketAddress(masterHostAddress, taskToMasterPort));
+    this.driverToMasterServer = AvroUtils.createAvroServer(DriverToMasterMessage.class, driverToMasterMessage,
+        new InetSocketAddress(driverToMasterPort));
+    this.clientToMasterServer = AvroUtils.createAvroServer(ClientToMasterMessage.class, clientToMasterMessage,
+        new InetSocketAddress(clientToMasterPort));
+    this.taskToMasterServer = AvroUtils.createAvroServer(TaskToMasterMessage.class, taskToMasterMessage,
+        new InetSocketAddress(taskToMasterPort));
   }
 
   @Override

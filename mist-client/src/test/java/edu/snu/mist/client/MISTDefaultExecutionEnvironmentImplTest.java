@@ -19,6 +19,7 @@ import edu.snu.mist.client.utils.MockMasterServer;
 import edu.snu.mist.client.utils.MockTaskServer;
 import edu.snu.mist.client.utils.TestParameters;
 import edu.snu.mist.common.types.Tuple2;
+import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import edu.snu.mist.formats.avro.JarUploadResult;
 import org.apache.avro.ipc.NettyServer;
@@ -39,11 +40,12 @@ import java.util.List;
  * The test class for MISTDefaultExecutionEnvironmentImpl.
  */
 public class MISTDefaultExecutionEnvironmentImplTest {
-  private final String driverHost = "localhost";
-  private final int driverPortNum = 65111;
+  private final String host = "localhost";
+  private final int masterPortNum = 65111;
   private final int taskPortNum = 65110;
   private final String testQueryResult = "TestQueryResult";
   private final String mockJarOutName = "mockJarFile.jar";
+  private final String appName = "default_app";
 
   /**
    * This unit test creates mock jar file, mocking driver, and mocking task and tests
@@ -53,8 +55,8 @@ public class MISTDefaultExecutionEnvironmentImplTest {
   public void testMISTDefaultExecutionEnvironment() throws IOException {
     // Step 1: Launch mock RPC Server
     final Server masterServer = new NettyServer(
-        new SpecificResponder(ClientToTaskMessage.class, new MockMasterServer(driverHost, taskPortNum)),
-        new InetSocketAddress(driverPortNum));
+        new SpecificResponder(ClientToMasterMessage.class, new MockMasterServer(host, taskPortNum)),
+        new InetSocketAddress(masterPortNum));
     final Server taskServer = new NettyServer(
         new SpecificResponder(ClientToTaskMessage.class, new MockTaskServer(testQueryResult)),
         new InetSocketAddress(taskPortNum));
@@ -68,7 +70,7 @@ public class MISTDefaultExecutionEnvironmentImplTest {
     final Path tempJarFile = Files.createTempFile(mockJarOutPrefix, mockJarOutSuffix);
     jarPaths.add(tempJarFile.toString());
     final MISTExecutionEnvironment executionEnvironment = new MISTDefaultExecutionEnvironmentImpl(
-        driverHost, driverPortNum);
+        host, masterPortNum, appName);
     final JarUploadResult jarUploadResult = executionEnvironment.submitJar(jarPaths);
     Assert.assertEquals(jarUploadResult.getIdentifier(), "test1");
 
