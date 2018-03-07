@@ -17,16 +17,13 @@ package edu.snu.mist.core.rpc;
 
 import edu.snu.mist.core.task.QueryIdGenerator;
 import edu.snu.mist.core.task.QueryManager;
-import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.formats.avro.AvroDag;
+import edu.snu.mist.formats.avro.ClientToTaskMessage;
+import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.avro.AvroRemoteException;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -52,30 +49,6 @@ public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage
                                          final QueryManager queryManager) {
     this.queryIdGenerator = queryIdGenerator;
     this.queryManager = queryManager;
-  }
-
-  @Override
-  public JarUploadResult uploadJarFiles(final List<ByteBuffer> jarFile) throws AvroRemoteException {
-    try {
-      final String appId = queryManager.uploadJarFile(jarFile);
-      final JarUploadResult result = JarUploadResult.newBuilder()
-          .setIsSuccess(true)
-          .setMsg("Success")
-          .setIdentifier(appId)
-          .build();
-      return result;
-    } catch (final IOException e) {
-      LOG.log(Level.SEVERE, "An exception occurred while storing jar files {0}", e.getMessage());
-      final JarUploadResult result = JarUploadResult.newBuilder()
-          .setIsSuccess(false)
-          .setMsg(e.getMessage())
-          .setIdentifier(null)
-          .build();
-      return result;
-    } catch (final InjectionException e) {
-      e.printStackTrace();
-      throw new RuntimeException(e);
-    }
   }
 
   @Override

@@ -18,7 +18,10 @@ package edu.snu.mist.core.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "Temporary folder path", short_name = "tmp", default_value = "/tmp/")
-public final class TempFolderPath implements Name<String> {
+/**
+ * The path for the shared distributed storage.
+ */
+@NamedParameter(doc = "The path for the shared storage", short_name = "shared_storage", default_value = "/tmp/")
+public final class SharedStorePath implements Name<String> {
   // empty
 }

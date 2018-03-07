@@ -45,6 +45,10 @@ public final class ApplicationMap {
     return map.remove(groupId);
   }
 
+  public boolean containsKey(final String appId) {
+    return this.map.containsKey(appId);
+  }
+
   public int size() {
     return map.size();
   }

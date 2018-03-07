@@ -52,16 +52,46 @@
       ]
     },
     {
-      "name": "TaskList",
+      "name": "QuerySubmitInfo",
       "type": "record",
       "fields":
       [
         {
-          "name": "tasks",
+          "name": "Task",
+          "type": "IPAddress"
+        },
+        {
+          "name": "JarPaths",
+          "type": {
+            "type": "array",
+            "items": "string"
+          }
+        }
+      ]
+    },
+    {
+      "type": "record",
+      "name": "JarUploadResult",
+      "fields":
+      [
+        {
+          "name": "IsSuccess",
+          "type": "boolean"
+        },
+        {
+          "name": "Msg",
+          "type": "string"
+        },
+        {
+          "name": "Identifier",
+          "type": "string"
+        },
+        {
+          "name": "JarPaths",
           "type":
           {
             "type": "array",
-            "items": "IPAddress"
+            "items": "string"
           }
         }
       ]
@@ -69,11 +99,31 @@
   ],
   "messages":
   {
-    "getTasks":
+    "uploadJarFiles":
     {
       "request":
-      [],
-      "response": "TaskList"
+      [
+        {
+          "name": "jarFiles",
+          "type":
+          {
+            "type": "array",
+            "items": "bytes"
+          }
+        }
+      ],
+      "response": "JarUploadResult"
+    },
+    "getQuerySubmitInfo":
+    {
+      "request":
+      [
+        {
+          "name": "AppId",
+          "type": "string"
+        }
+      ],
+      "response": "QuerySubmitInfo"
     }
 
   }

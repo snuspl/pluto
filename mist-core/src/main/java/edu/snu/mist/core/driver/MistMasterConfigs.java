@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.driver;
 
+import edu.snu.mist.core.parameters.SharedStorePath;
 import edu.snu.mist.core.parameters.TaskInfoGatherTerm;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -36,7 +37,8 @@ public final class MistMasterConfigs {
 
   @Inject
   private MistMasterConfigs(
-      @Parameter(TaskInfoGatherTerm.class) final long taskInfoGatherTerm
+      @Parameter(TaskInfoGatherTerm.class) final long taskInfoGatherTerm,
+      @Parameter(SharedStorePath.class) final String sharedStorePath
   ) {
     this.taskInfoGatherTerm = taskInfoGatherTerm;
   }
@@ -50,7 +52,6 @@ public final class MistMasterConfigs {
   public static CommandLine addCommandLineConf(final CommandLine commandLine) {
     final CommandLine cmd = commandLine
         .registerShortNameOfClass(TaskInfoGatherTerm.class);
-
     return cmd;
   }
 

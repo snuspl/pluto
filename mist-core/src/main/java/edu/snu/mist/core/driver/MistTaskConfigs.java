@@ -17,7 +17,6 @@ package edu.snu.mist.core.driver;
 
 import edu.snu.mist.common.shared.parameters.MqttSinkKeepAliveSec;
 import edu.snu.mist.common.shared.parameters.MqttSourceKeepAliveSec;
-import edu.snu.mist.core.parameters.TempFolderPath;
 import edu.snu.mist.core.rpc.DefaultClientToTaskMessageImpl;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GroupRebalancingPeriod;
@@ -43,11 +42,6 @@ public final class MistTaskConfigs {
    * The number of event processors of a MistTask.
    */
   private final int numEventProcessors;
-
-  /**
-   * Temporary folder path for storing temporay jar files.
-   */
-  private final String tempFolderPath;
 
   /**
    * The mqtt keep alive time for sources in seconds.
@@ -76,14 +70,12 @@ public final class MistTaskConfigs {
 
   @Inject
   private MistTaskConfigs(@Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
-                          @Parameter(TempFolderPath.class) final String tempFolderPath,
                           @Parameter(MqttSourceKeepAliveSec.class) final int mqttSourceKeepAliveSec,
                           @Parameter(MqttSinkKeepAliveSec.class) final int mqttSinkKeepAliveSec,
                           @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
                           @Parameter(ProcessingTimeout.class) final long processingTimeout,
                           @Parameter(GroupPinningTime.class) final long groupPinningTime) {
     this.numEventProcessors = numEventProcessors;
-    this.tempFolderPath = tempFolderPath;
     this.rebalancingPeriod = rebalancingPeriod;
     this.mqttSourceKeepAliveSec = mqttSourceKeepAliveSec;
     this.mqttSinkKeepAliveSec = mqttSinkKeepAliveSec;
@@ -100,7 +92,6 @@ public final class MistTaskConfigs {
 
     // Parameter
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, Integer.toString(numEventProcessors));
-    jcb.bindNamedParameter(TempFolderPath.class, tempFolderPath);
     jcb.bindNamedParameter(MqttSourceKeepAliveSec.class, Integer.toString(mqttSourceKeepAliveSec));
     jcb.bindNamedParameter(MqttSinkKeepAliveSec.class, Integer.toString(mqttSinkKeepAliveSec));
     jcb.bindNamedParameter(GroupRebalancingPeriod.class, Long.toString(rebalancingPeriod));
@@ -119,7 +110,6 @@ public final class MistTaskConfigs {
   public static CommandLine addCommandLineConf(final CommandLine commandLine) {
     final CommandLine cmd = commandLine
         .registerShortNameOfClass(DefaultNumEventProcessors.class)
-        .registerShortNameOfClass(TempFolderPath.class)
         .registerShortNameOfClass(MqttSourceKeepAliveSec.class)
         .registerShortNameOfClass(MqttSinkKeepAliveSec.class)
         .registerShortNameOfClass(ProcessingTimeout.class)

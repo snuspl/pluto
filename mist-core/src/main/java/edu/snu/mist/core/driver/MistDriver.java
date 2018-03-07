@@ -299,6 +299,8 @@ public final class MistDriver {
           LOG.info("Set master host address: " + masterHostAddress);
           taskConfBuilder.bindNamedParameter(TaskToMasterPort.class, String.valueOf(taskToMasterPort));
           taskConfBuilder.bindImplementation(MasterToTaskMessage.class, DefaultMasterToTaskMessageImpl.class);
+          taskConfBuilder.bindNamedParameter(SharedStorePath.class, String.valueOf(mistDriverConfigs
+              .getSharedStorePath()));
           // Store task configuration.
           mistTaskConfQueue.add(Configurations.merge(
               nameResolverConf,
@@ -307,6 +309,8 @@ public final class MistDriver {
               taskConfBuilder.build()));
         }
         // Master configuration
+        masterConfBuilder.bindNamedParameter(SharedStorePath.class, String.valueOf(mistDriverConfigs
+            .getSharedStorePath()));
         masterConfBuilder.bindNamedParameter(MasterToTaskPort.class, String.valueOf(masterToTaskPort));
         masterConfBuilder.bindNamedParameter(ClientToMasterPort.class, String.valueOf(clientToMasterPort));
         masterConfBuilder.bindNamedParameter(TaskToMasterPort.class, String.valueOf(taskToMasterPort));

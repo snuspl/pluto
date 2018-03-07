@@ -95,6 +95,7 @@ public final class DefaultDagGeneratorImplTest {
     final AvroDag.Builder avroDagBuilder = AvroDag.newBuilder();
     final AvroDag avroChainedDag = avroDagBuilder
         .setAppId(TestParameters.SUPER_GROUP_ID)
+        .setJarPaths(new ArrayList<>())
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .build();

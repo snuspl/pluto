@@ -15,44 +15,52 @@
  */
 package edu.snu.mist.core.rpc;
 
+import edu.snu.mist.core.master.ApplicationCodeManager;
 import edu.snu.mist.core.master.TaskInfoMap;
 import edu.snu.mist.formats.avro.ClientToMasterMessage;
-import edu.snu.mist.formats.avro.IPAddress;
-import edu.snu.mist.formats.avro.TaskList;
+import edu.snu.mist.formats.avro.JarUploadResult;
+import edu.snu.mist.formats.avro.QuerySubmitInfo;
+import org.apache.avro.AvroRemoteException;
 
 import javax.inject.Inject;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * The default implementation for ClientToMasterMessage.
  */
 public final class DefaultClientToMasterMessageImpl implements ClientToMasterMessage {
 
+  private static final Logger LOG = Logger.getLogger(DefaultClientToMasterMessageImpl.class.getName());
+
   /**
    * The task-taskInfo map which is shared across the servers in MistMaster.
    */
   private final TaskInfoMap taskInfoMap;
 
-  /**
-   * The app-task allocation map. Currently, we assume that the queries belonging to the same apps are in the same node.
-   * TODO: Support different groups in different nodes belonging to a same application.
-   */
-  private final Map<String, IPAddress> appTaskMap;
+  private final ApplicationCodeManager appCodeManager;
 
   @Inject
   private DefaultClientToMasterMessageImpl(
-      final TaskInfoMap taskInfoMap
+      final TaskInfoMap taskInfoMap,
+      final ApplicationCodeManager appCodeManager
   ) {
     this.taskInfoMap = taskInfoMap;
-    this.appTaskMap = new ConcurrentHashMap<>();
+    this.appCodeManager = appCodeManager;
   }
 
   @Override
-  public TaskList getTasks() {
-    return TaskList.newBuilder()
-        .setTasks(Arrays.asList(taskInfoMap.getMinLoadTask()))
+  public JarUploadResult uploadJarFiles(final List<ByteBuffer> jarFile) throws AvroRemoteException {
+    return appCodeManager.registerNewAppCode(jarFile);
+  }
+
+  @Override
+  public QuerySubmitInfo getQuerySubmitInfo(final String appId) {
+    // TODO: [MIST-997] Support application-aware query allocation.
+    return QuerySubmitInfo.newBuilder()
+        .setJarPaths(appCodeManager.getJarPaths(appId))
+        .setTask(taskInfoMap.getMinLoadTask())
         .build();
   }
 }

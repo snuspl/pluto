@@ -103,6 +103,7 @@ public final class MistTask implements Task {
     LOG.log(Level.INFO, "MistTask is started");
     countDownLatch.await();
     masterToTaskServer.close();
+    clientToTaskServer.close();
     queryManager.close();
     return new byte[0];
   }

@@ -17,10 +17,13 @@ package edu.snu.mist.client.utils;
 
 import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import edu.snu.mist.formats.avro.IPAddress;
-import edu.snu.mist.formats.avro.TaskList;
+import edu.snu.mist.formats.avro.JarUploadResult;
+import edu.snu.mist.formats.avro.QuerySubmitInfo;
 import org.apache.avro.AvroRemoteException;
 
-import java.util.Arrays;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A task provider for test.
@@ -36,7 +39,20 @@ public class MockMasterServer implements ClientToMasterMessage {
   }
 
   @Override
-  public TaskList getTasks() throws AvroRemoteException {
-    return new TaskList(Arrays.asList(new IPAddress(taskHost, taskPortNum)));
+  public JarUploadResult uploadJarFiles(final List<ByteBuffer> jarFiles) {
+    return JarUploadResult.newBuilder()
+        .setIsSuccess(true)
+        .setMsg("Hi!")
+        .setIdentifier("app_id")
+        .setJarPaths(new ArrayList<>())
+        .build();
+  }
+
+  @Override
+  public QuerySubmitInfo getQuerySubmitInfo(final String appId) throws AvroRemoteException {
+    return QuerySubmitInfo.newBuilder()
+        .setJarPaths(new ArrayList())
+        .setTask(new IPAddress(taskHost, taskPortNum))
+        .build();
   }
 }

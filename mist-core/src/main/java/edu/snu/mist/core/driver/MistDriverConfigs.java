@@ -90,6 +90,11 @@ public final class MistDriverConfigs {
    */
   private final int driverToMasterPort;
 
+  /**
+   * Temporary folder path for storing temporay jar files.
+   */
+  private final String sharedStorePath;
+
   @Inject
   private MistDriverConfigs(@Parameter(NumTasks.class) final int numTasks,
                             @Parameter(TaskMemorySize.class) final int taskMemSize,
@@ -102,7 +107,8 @@ public final class MistDriverConfigs {
                             @Parameter(ClientToTaskPort.class) final int clientToTaskPort,
                             @Parameter(MasterToTaskPort.class) final int masterToTaskPort,
                             @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
-                            @Parameter(DriverToMasterPort.class) final int driverToMasterPort) {
+                            @Parameter(DriverToMasterPort.class) final int driverToMasterPort,
+                            @Parameter(SharedStorePath.class) final String sharedStorePath) {
     this.numTasks = numTasks;
     this.taskMemSize = taskMemSize;
     this.numTaskCores = numTaskCores;
@@ -115,6 +121,7 @@ public final class MistDriverConfigs {
     this.masterToTaskPort = masterToTaskPort;
     this.taskToMasterPort = taskToMasterPort;
     this.driverToMasterPort = driverToMasterPort;
+    this.sharedStorePath = sharedStorePath;
   }
 
   public int getNumTasks() {
@@ -165,6 +172,10 @@ public final class MistDriverConfigs {
     return this.driverToMasterPort;
   }
 
+  public String getSharedStorePath() {
+    return this.sharedStorePath;
+  }
+
   /**
    * Add parameters to the command line.
    * @param commandLine command line
@@ -182,6 +193,7 @@ public final class MistDriverConfigs {
         .registerShortNameOfClass(ClientToTaskPort.class)
         .registerShortNameOfClass(MasterToTaskPort.class)
         .registerShortNameOfClass(TaskToMasterPort.class)
-        .registerShortNameOfClass(DriverToMasterPort.class);
+        .registerShortNameOfClass(DriverToMasterPort.class)
+        .registerShortNameOfClass(SharedStorePath.class);
   }
 }
