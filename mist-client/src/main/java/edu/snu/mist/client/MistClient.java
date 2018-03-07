@@ -28,9 +28,9 @@ public final class MistClient {
   }
 
   public static void main(final String[] args) throws IOException {
-    if (args.length < 5) {
+    if (args.length < 4) {
       System.out.println("Please enter the command-line parameters: ");
-      System.out.println("submit-jar $jar_path$ $driver_address$ $driver_port$ $app_name");
+      System.out.println("submit-jar $jar_path$ $driver_address$ $driver_port");
       return;
     }
 
@@ -46,9 +46,8 @@ public final class MistClient {
 
       final String address = args[2];
       final int port = Integer.valueOf(args[3]);
-      final String appName = args[4];
 
-      try (final MISTExecutionEnvironment ee = new MISTDefaultExecutionEnvironmentImpl(address, port, appName)) {
+      try (final MISTExecutionEnvironment ee = new MISTDefaultExecutionEnvironmentImpl(address, port)) {
         final JarUploadResult result = ee.submitJar(Arrays.asList(jarPath));
         if (result.getIsSuccess()) {
           System.out.println("App identifier: " + result.getIdentifier());

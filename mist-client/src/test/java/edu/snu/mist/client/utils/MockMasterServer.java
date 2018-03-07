@@ -17,7 +17,6 @@ package edu.snu.mist.client.utils;
 
 import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import edu.snu.mist.formats.avro.IPAddress;
-import edu.snu.mist.formats.avro.QueryInfo;
 import edu.snu.mist.formats.avro.TaskList;
 import org.apache.avro.AvroRemoteException;
 
@@ -37,7 +36,7 @@ public class MockMasterServer implements ClientToMasterMessage {
   }
 
   @Override
-  public TaskList getTasks(final QueryInfo queryInfo) throws AvroRemoteException {
+  public TaskList getTasks() throws AvroRemoteException {
     return new TaskList(Arrays.asList(new IPAddress(taskHost, taskPortNum)));
   }
 }

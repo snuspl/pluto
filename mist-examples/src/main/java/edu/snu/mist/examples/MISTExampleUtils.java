@@ -128,7 +128,7 @@ public final class MISTExampleUtils {
     final int masterPort = Integer.parseInt(masterSocket[1]);
 
     try (final MISTExecutionEnvironment executionEnvironment =
-        new MISTDefaultExecutionEnvironmentImpl(masterHostname, masterPort, "default_app")) {
+        new MISTDefaultExecutionEnvironmentImpl(masterHostname, masterPort)) {
 
       // Upload jar
       final String jarFilePath = getJarFilePath();

@@ -72,12 +72,7 @@
     "getTasks":
     {
       "request":
-      [
-        {
-          "name": "queryInfo",
-          "type": "QueryInfo"
-        }
-      ],
+      [],
       "response": "TaskList"
     }
 

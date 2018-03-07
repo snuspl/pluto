@@ -45,7 +45,6 @@ public class MISTDefaultExecutionEnvironmentImplTest {
   private final int taskPortNum = 65110;
   private final String testQueryResult = "TestQueryResult";
   private final String mockJarOutName = "mockJarFile.jar";
-  private final String appName = "default_app";
 
   /**
    * This unit test creates mock jar file, mocking driver, and mocking task and tests
@@ -70,7 +69,7 @@ public class MISTDefaultExecutionEnvironmentImplTest {
     final Path tempJarFile = Files.createTempFile(mockJarOutPrefix, mockJarOutSuffix);
     jarPaths.add(tempJarFile.toString());
     final MISTExecutionEnvironment executionEnvironment = new MISTDefaultExecutionEnvironmentImpl(
-        host, masterPortNum, appName);
+        host, masterPortNum);
     final JarUploadResult jarUploadResult = executionEnvironment.submitJar(jarPaths);
     Assert.assertEquals(jarUploadResult.getIdentifier(), "test1");
 

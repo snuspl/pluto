@@ -18,7 +18,6 @@ package edu.snu.mist.core.rpc;
 import edu.snu.mist.core.master.TaskInfoMap;
 import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import edu.snu.mist.formats.avro.IPAddress;
-import edu.snu.mist.formats.avro.QueryInfo;
 import edu.snu.mist.formats.avro.TaskList;
 
 import javax.inject.Inject;
@@ -51,16 +50,9 @@ public final class DefaultClientToMasterMessageImpl implements ClientToMasterMes
   }
 
   @Override
-  public TaskList getTasks(final QueryInfo queryInfo) {
-    final String appName = queryInfo.getAppName();
-    final IPAddress ipAddress;
-    // TODO: Solve synchronization problem when rebalancing occurs
-    if (!appTaskMap.containsKey(appName)) {
-      appTaskMap.putIfAbsent(appName, taskInfoMap.getMinLoadTask());
-    }
-    ipAddress = appTaskMap.get(appName);
+  public TaskList getTasks() {
     return TaskList.newBuilder()
-        .setTasks(Arrays.asList(ipAddress))
+        .setTasks(Arrays.asList(taskInfoMap.getMinLoadTask()))
         .build();
   }
 }

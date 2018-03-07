@@ -80,7 +80,7 @@ public final class MqttFilterApplication {
     final int driverPort = Integer.parseInt(driverSocket[1]);
 
     try (final MISTExecutionEnvironment executionEnvironment =
-        new MISTDefaultExecutionEnvironmentImpl(driverHostname, driverPort, "default_app")) {
+        new MISTDefaultExecutionEnvironmentImpl(driverHostname, driverPort)) {
       return executionEnvironment.submitQuery(queryBuilder.build());
     } catch (final Exception e) {
       e.printStackTrace();
