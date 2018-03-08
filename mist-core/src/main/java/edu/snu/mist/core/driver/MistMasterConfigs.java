@@ -30,7 +30,7 @@ import javax.inject.Inject;
 public final class MistMasterConfigs {
 
   /**
-   * Task information gathering term of MistMaster.
+   * Task information gathering period of MistMaster.
    */
   private final long taskInfoGatherPeriod;
 
