@@ -160,6 +160,10 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
 
       final ApplicationInfo applicationInfo = applicationMap.get(appId);
       final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
+      // Waiting for group information being added
+      while (applicationInfo.getGroups().isEmpty()) {
+        // Do nothing
+      }
       final Query query = createAndStartQuery(queryId, applicationInfo, configDag);
 
       queryControlResult.setIsSuccess(true);
@@ -211,7 +215,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
 
     final Group group = injector.getInstance(Group.class);
     groupAllocationTableModifier.addEvent(
-        new WritingEvent(WritingEvent.EventType.GROUP_ADD, new Tuple<>(applicationInfo, group)));
+            new WritingEvent(WritingEvent.EventType.GROUP_ADD, new Tuple<>(applicationInfo, group)));
 
     return applicationInfo;
   }
