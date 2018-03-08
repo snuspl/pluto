@@ -27,10 +27,7 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -141,10 +138,14 @@ public final class StateTransitionOperator extends OneStreamOperator implements 
 
   @Override
   public void removeStates(final long checkpointTimestamp) {
+    final Set<Long> removeStateSet = new HashSet<>();
     for (final long entryTimestamp : checkpointMap.keySet()) {
       if (entryTimestamp < checkpointTimestamp) {
-        checkpointMap.remove(entryTimestamp);
+        removeStateSet.add(entryTimestamp);
       }
+    }
+    for (final long entryTimestamp : removeStateSet) {
+      checkpointMap.remove(entryTimestamp);
     }
   }
 

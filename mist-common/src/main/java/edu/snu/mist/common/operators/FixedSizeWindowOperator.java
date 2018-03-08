@@ -172,10 +172,14 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements S
 
   @Override
   public void removeStates(final long checkpointTimestamp) {
+    final Set<Long> removeStateSet = new HashSet<>();
     for (final long entryTimestamp : checkpointMap.keySet()) {
       if (entryTimestamp < checkpointTimestamp) {
-        checkpointMap.remove(entryTimestamp);
+        removeStateSet.add(entryTimestamp);
       }
+    }
+    for (final long entryTimestamp : removeStateSet) {
+      checkpointMap.remove(entryTimestamp);
     }
   }
 
