@@ -22,6 +22,6 @@ import org.apache.reef.tang.annotations.NamedParameter;
 /**
  * Parameter for netty source socket configuration.
  */
-@NamedParameter(doc = "TCP socket of netty source", short_name = "ns", default_value = "localhost:20331")
+@NamedParameter(doc = "TCP socket of netty source", short_name = "ns", default_value = "127.0.0.1:20331")
 public final class NettySourceAddress implements Name<String> {
 }
