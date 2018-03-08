@@ -162,7 +162,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
       final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
       // Waiting for group information being added
       while (applicationInfo.getGroups().isEmpty()) {
-        // Do nothing
+        Thread.sleep(100);
       }
       final Query query = createAndStartQuery(queryId, applicationInfo, configDag);
 

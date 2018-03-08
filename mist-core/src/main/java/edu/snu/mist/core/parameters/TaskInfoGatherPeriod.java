@@ -23,5 +23,5 @@ import org.apache.reef.tang.annotations.NamedParameter;
  */
 @NamedParameter(doc = "The interval of task info gathering from master.", default_value = "5000", short_name =
     "task_info_gather_term")
-public class TaskInfoGatherTerm implements Name<Long> {
+public class TaskInfoGatherPeriod implements Name<Long> {
 }

@@ -42,10 +42,7 @@ public final class DefaultClientToMasterMessageImpl implements ClientToMasterMes
   private final ApplicationCodeManager appCodeManager;
 
   @Inject
-  private DefaultClientToMasterMessageImpl(
-      final TaskInfoMap taskInfoMap,
-      final ApplicationCodeManager appCodeManager
-  ) {
+  private DefaultClientToMasterMessageImpl(final TaskInfoMap taskInfoMap, final ApplicationCodeManager appCodeManager) {
     this.taskInfoMap = taskInfoMap;
     this.appCodeManager = appCodeManager;
   }

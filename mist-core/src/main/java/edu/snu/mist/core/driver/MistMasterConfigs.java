@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.driver;
 
-import edu.snu.mist.core.parameters.TaskInfoGatherTerm;
+import edu.snu.mist.core.parameters.TaskInfoGatherPeriod;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -36,20 +36,20 @@ public final class MistMasterConfigs {
 
   @Inject
   private MistMasterConfigs(
-      @Parameter(TaskInfoGatherTerm.class) final long taskInfoGatherPeriod
+      @Parameter(TaskInfoGatherPeriod.class) final long taskInfoGatherPeriod
   ) {
     this.taskInfoGatherPeriod = taskInfoGatherPeriod;
   }
 
   public Configuration getConfiguration() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(TaskInfoGatherTerm.class, String.valueOf(taskInfoGatherPeriod));
+    jcb.bindNamedParameter(TaskInfoGatherPeriod.class, String.valueOf(taskInfoGatherPeriod));
     return jcb.build();
   }
 
   public static CommandLine addCommandLineConf(final CommandLine commandLine) {
     final CommandLine cmd = commandLine
-        .registerShortNameOfClass(TaskInfoGatherTerm.class);
+        .registerShortNameOfClass(TaskInfoGatherPeriod.class);
     return cmd;
   }
 
