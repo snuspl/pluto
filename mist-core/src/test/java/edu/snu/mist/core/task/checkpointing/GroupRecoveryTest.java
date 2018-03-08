@@ -53,6 +53,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Logger;
 
+import static java.lang.Thread.sleep;
+
 public class GroupRecoveryTest {
 
   private static final Logger LOG = Logger.getLogger(GroupRecoveryTest.class.getName());
@@ -94,8 +96,10 @@ public class GroupRecoveryTest {
     queryBuilder.setApplicationId("test-group");
 
     final int defaultWatermarkPeriod = 100;
+    final int defaultCheckpointPeriod = 1000;
     final WatermarkConfiguration testConf = PeriodicWatermarkConfiguration.newBuilder()
         .setWatermarkPeriod(defaultWatermarkPeriod)
+        .setCheckpointPeriod(defaultCheckpointPeriod)
         .build();
 
     queryBuilder.socketTextStream(localTextSocketSource1Conf, testConf)
@@ -160,6 +164,8 @@ public class GroupRecoveryTest {
     LATCH1.await();
     Assert.assertEquals("{aa=2, bb=1, cc=1}",
         testSink.getResults().get(testSink.getResults().size() - 1));
+    // Sleep 2 seconds for the checkpoint events to be sent out.
+    sleep(2000);
 
     // Checkpoint the entire MISTTask, delete it, and restore it to see if it works.
     checkpointManager.checkpointApplication("testGroup");

@@ -23,9 +23,19 @@ import java.util.Map;
 public interface StateHandler {
 
   /**
-   * Gets the state of the current operator.
+   * Gets the most recent state of the current operator.
    */
-  Map<String, Object> getOperatorState();
+  Map<String, Object> getCurrentOperatorState();
+
+  /**
+   * Gets the state of the current operator at a certain timestamp.
+   */
+  Map<String, Object> getOperatorState(long timestamp);
+
+  /**
+   * Remove the states with timestamps less than or equal to the given timestamp.
+   */
+  void removeStates(long checkpointTimestamp);
 
   /**
    * Sets the state of the current operator.

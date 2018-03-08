@@ -125,7 +125,7 @@ public final class SessionWindowOperatorTest {
     final boolean expectedStartedNewWindow = true;
 
     // Get the current SessionWindowOperator's state.
-    final Map<String, Object> operatorState = sessionWindowOperator.getOperatorState();
+    final Map<String, Object> operatorState = sessionWindowOperator.getCurrentOperatorState();
     final Window<Integer> currentWindow = (Window<Integer>)operatorState.get("currentWindow");
     final long latestDataTimestamp = (long)operatorState.get("latestDataTimestamp");
     final boolean startedNewWindow = (boolean)operatorState.get("startedNewWindow");
@@ -160,7 +160,7 @@ public final class SessionWindowOperatorTest {
     sessionWindowOperator.setState(loadStateMap);
 
     // Compare the original and the set operator.
-    final Map<String, Object> operatorState = sessionWindowOperator.getOperatorState();
+    final Map<String, Object> operatorState = sessionWindowOperator.getCurrentOperatorState();
     final Window<Integer> currentWindow =
         (Window<Integer>)operatorState.get("currentWindow");
     final long latestDataTimestamp = (long)operatorState.get("latestDataTimestamp");

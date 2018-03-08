@@ -45,6 +45,11 @@ public final class MISTQueryBuilder {
   private static final int DEFAULT_WATERMARK_PERIOD = 1000;
 
   /**
+   * Period of default checkpoint watermark represented in milliseconds.
+   */
+  private static final int DEFAULT_CHECKPOINT_PERIOD = 5000;
+
+  /**
    * Expected delay of default watermark represented in milliseconds.
    */
   private static final int DEFAULT_EXPECTED_DELAY = 0;
@@ -60,6 +65,7 @@ public final class MISTQueryBuilder {
   private WatermarkConfiguration getDefaultWatermarkConf() {
     return PeriodicWatermarkConfiguration.newBuilder()
         .setWatermarkPeriod(DEFAULT_WATERMARK_PERIOD)
+        .setCheckpointPeriod(DEFAULT_CHECKPOINT_PERIOD)
         .setExpectedDelay(DEFAULT_EXPECTED_DELAY)
         .build();
   }

@@ -55,13 +55,32 @@ public final class CountWindowOperator<T> extends FixedSizeWindowOperator<T> imp
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
     putWatermark(input);
+    if (input.isCheckpoint()) {
+      final Map<String, Object> stateMap = checkpointMap.remove(input.getTimestamp());
+      stateMap.put("count", count);
+      checkpointMap.put(input.getTimestamp(), stateMap);
+    }
   }
 
   @Override
-  public Map<String, Object> getOperatorState() {
-    final Map<String, Object> stateMap = super.getOperatorState();
+  public Map<String, Object> getCurrentOperatorState() {
+    final Map<String, Object> stateMap = super.getCurrentOperatorState();
     stateMap.put("count", count);
     return stateMap;
+  }
+
+  @Override
+  public Map<String, Object> getOperatorState(final long timestamp) {
+    return checkpointMap.get(timestamp);
+  }
+
+  @Override
+  public void removeStates(final long checkpointTimestamp) {
+    for (final long entryTimestamp : checkpointMap.keySet()) {
+      if (entryTimestamp < checkpointTimestamp) {
+        checkpointMap.remove(entryTimestamp);
+      }
+    }
   }
 
   @Override

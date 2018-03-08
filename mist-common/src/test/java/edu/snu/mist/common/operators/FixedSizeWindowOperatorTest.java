@@ -137,7 +137,7 @@ public final class FixedSizeWindowOperatorTest {
     final long expectedWindowCreationPoint = d4.getTimestamp() + emissionInterval;
 
     // Get the current TimeWindowOperator's state.
-    final Map<String, Object> operatorState = timeWindowOperator.getOperatorState();
+    final Map<String, Object> operatorState = timeWindowOperator.getCurrentOperatorState();
     final Queue<Window<Integer>> windowQueue = (Queue<Window<Integer>>)operatorState.get("windowQueue");
     final long windowCreationPoint = (long)operatorState.get("windowCreationPoint");
 
@@ -173,7 +173,7 @@ public final class FixedSizeWindowOperatorTest {
     timeWindowOperator.setState(loadStateMap);
 
     // Get the current TimeWindowOperator's state.
-    final Map<String, Object> operatorState = timeWindowOperator.getOperatorState();
+    final Map<String, Object> operatorState = timeWindowOperator.getCurrentOperatorState();
     final Queue<Window<Integer>> windowQueue = (Queue<Window<Integer>>)operatorState.get("windowQueue");
     final long windowCreationPoint = (long)operatorState.get("windowCreationPoint");
 
@@ -334,7 +334,7 @@ public final class FixedSizeWindowOperatorTest {
     final long expectedCount = 3L;
 
     // Get the current CountWindowOperator's state.
-    final Map<String, Object> operatorState = countWindowOperator.getOperatorState();
+    final Map<String, Object> operatorState = countWindowOperator.getCurrentOperatorState();
     final Queue<Window<Integer>> windowQueue = (LinkedList<Window<Integer>>)operatorState.get("windowQueue");
     final long windowCreationPoint = (long)operatorState.get("windowCreationPoint");
     final long count = (long)operatorState.get("count");
@@ -373,7 +373,7 @@ public final class FixedSizeWindowOperatorTest {
     countWindowOperator.setState(loadStateMap);
 
     // Compare the original and the set operator.
-    final Map<String, Object> operatorState = countWindowOperator.getOperatorState();
+    final Map<String, Object> operatorState = countWindowOperator.getCurrentOperatorState();
     final Queue<Window<Integer>> windowQueue = (Queue<Window<Integer>>)operatorState.get("windowQueue");
     final long windowCreationPoint = (long)operatorState.get("windowCreationPoint");
     final long count = (long)operatorState.get("count");

@@ -49,6 +49,12 @@ public final class ApplyStatefulOperator<IN, OUT>
    */
   private long latestCheckpointTimestamp;
 
+  /**
+   * The map of states for checkpointing.
+   * The key is the time of the checkpoint event, and the value is the state of this operator at that timestamp.
+   */
+  protected Map<Long, Map<String, Object>> checkpointMap;
+
   @Inject
   private ApplyStatefulOperator(
       @Parameter(SerializedUdf.class) final String serializedObject,
@@ -64,6 +70,7 @@ public final class ApplyStatefulOperator<IN, OUT>
     this.applyStatefulFunction = applyStatefulFunction;
     this.applyStatefulFunction.initialize();
     this.latestCheckpointTimestamp = 0L;
+    this.checkpointMap = new HashMap<>();
   }
 
   @Override
@@ -86,14 +93,31 @@ public final class ApplyStatefulOperator<IN, OUT>
     outputEmitter.emitWatermark(input);
     if (input.isCheckpoint()) {
       latestCheckpointTimestamp = input.getTimestamp();
+      final Map<String, Object> stateMap = new HashMap<>();
+      stateMap.put("applyStatefulFunctionState", applyStatefulFunction.getCurrentState());
+      checkpointMap.put(input.getTimestamp(), stateMap);
     }
   }
 
   @Override
-  public Map<String, Object> getOperatorState() {
+  public Map<String, Object> getCurrentOperatorState() {
     final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("applyStatefulFunctionState", applyStatefulFunction.getCurrentState());
     return stateMap;
+  }
+
+  @Override
+  public Map<String, Object> getOperatorState(final long timestamp) {
+    return checkpointMap.get(timestamp);
+  }
+
+  @Override
+  public void removeStates(final long checkpointTimestamp) {
+    for (final long entryTimestamp : checkpointMap.keySet()) {
+      if (entryTimestamp < checkpointTimestamp) {
+        checkpointMap.remove(entryTimestamp);
+      }
+    }
   }
 
   @Override

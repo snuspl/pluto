@@ -189,7 +189,7 @@ public final class NettySourceTest {
       final DataGenerator<String> dataGenerator =
           new NettyTextDataGenerator(SERVER_ADDR, SERVER_PORT, nettySharedResource);
       final EventGenerator<String> eventGenerator =
-          new PeriodicEventGenerator<>(null, period, period, TimeUnit.MILLISECONDS, scheduler);
+          new PeriodicEventGenerator<>(null, period, 0, period, TimeUnit.MILLISECONDS, scheduler);
       dataGenerator.setEventGenerator(eventGenerator);
 
       final List<String> periodicReceivedData = new LinkedList<>();
