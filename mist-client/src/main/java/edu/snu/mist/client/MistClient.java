@@ -30,7 +30,7 @@ public final class MistClient {
   public static void main(final String[] args) throws IOException {
     if (args.length < 4) {
       System.out.println("Please enter the command-line parameters: ");
-      System.out.println("submit-jar $jar_path$ $driver_address$ $driver_port");
+      System.out.println("submit-jar $jar_path$ $driver_address$ $driver_port$");
       return;
     }
 

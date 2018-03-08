@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.driver;
 
-import edu.snu.mist.core.parameters.SharedStorePath;
 import edu.snu.mist.core.parameters.TaskInfoGatherTerm;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -33,19 +32,18 @@ public final class MistMasterConfigs {
   /**
    * Task information gathering term of MistMaster.
    */
-  private final long taskInfoGatherTerm;
+  private final long taskInfoGatherPeriod;
 
   @Inject
   private MistMasterConfigs(
-      @Parameter(TaskInfoGatherTerm.class) final long taskInfoGatherTerm,
-      @Parameter(SharedStorePath.class) final String sharedStorePath
+      @Parameter(TaskInfoGatherTerm.class) final long taskInfoGatherPeriod
   ) {
-    this.taskInfoGatherTerm = taskInfoGatherTerm;
+    this.taskInfoGatherPeriod = taskInfoGatherPeriod;
   }
 
   public Configuration getConfiguration() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(TaskInfoGatherTerm.class, String.valueOf(taskInfoGatherTerm));
+    jcb.bindNamedParameter(TaskInfoGatherTerm.class, String.valueOf(taskInfoGatherPeriod));
     return jcb.build();
   }
 

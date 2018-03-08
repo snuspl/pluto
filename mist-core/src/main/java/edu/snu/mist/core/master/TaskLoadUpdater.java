@@ -41,7 +41,7 @@ public class TaskLoadUpdater implements Runnable {
   private final TaskInfoMap taskInfoMap;
 
   public TaskLoadUpdater(final ProxyToTaskMap proxyToTaskMap,
-                          final TaskInfoMap taskInfoMap) {
+                         final TaskInfoMap taskInfoMap) {
     this.proxyToTaskMap = proxyToTaskMap;
     this.taskInfoMap = taskInfoMap;
   }

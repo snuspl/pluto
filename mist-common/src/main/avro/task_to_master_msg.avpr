@@ -16,6 +16,7 @@
 
  /**
   * This is a skeleton protocol for RPC communication from MistTask to MistMaster.
+  * TODO: Implement necessary message protocols.
   */
 {
   "namespace": "edu.snu.mist.formats.avro",
