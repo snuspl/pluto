@@ -155,7 +155,7 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
         if (op instanceof StateHandler) {
           final StateHandler stateHandler = (StateHandler) op;
           latestWatermarkTimestamp = stateHandler.getLatestCheckpointTimestamp();
-          groupTimestamp.compareAndSetValue(latestWatermarkTimestamp);
+          groupTimestamp.compareAndSetIfSmaller(latestWatermarkTimestamp);
         }
       }
     }
@@ -229,7 +229,7 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
       return timestamp;
     }
 
-    public void compareAndSetValue(final long newValue) {
+    public void compareAndSetIfSmaller(final long newValue) {
       if (newValue < timestamp) {
         timestamp = newValue;
       }

@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -47,34 +46,9 @@ public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V>
   private final long period;
 
   /**
-   * The period of checkpoint emission.
-   */
-  private final long checkpointPeriod;
-
-  /**
-   * The expected delay between the time that the data is created and processed.
-   */
-  private final long expectedDelay;
-
-  /**
-   * The unit of time for period and expectedDelay.
-   */
-  private final TimeUnit timeUnit;
-
-  /**
-   * The scheduler for periodic watermark emission.
-   */
-  private final ScheduledExecutorService scheduler;
-
-  /**
    * The result of service execution.
    */
   private ScheduledFuture result;
-
-  /**
-   * The result of the checkpoint service execution.
-   */
-  private ScheduledFuture checkpointResult;
 
   @Inject
   private PeriodicEventGenerator(
@@ -86,7 +60,7 @@ public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V>
       final TimeUnit timeUnit,
       final ScheduledExecutorService scheduler) throws IOException, ClassNotFoundException {
     this(SerializeUtils.deserializeFromString(extractFuncObj, classLoader),
-        period, delay, timeUnit, scheduler);
+        period, checkpointPeriod, delay, timeUnit, scheduler);
   }
 
   @Inject
@@ -105,17 +79,13 @@ public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V>
                                 @Parameter(PeriodicWatermarkDelay.class) final long expectedDelay,
                                 final TimeUnit timeUnit,
                                 final ScheduledExecutorService scheduler) {
-    super(extractTimestampFunc);
+    super(extractTimestampFunc, checkpointPeriod, expectedDelay, timeUnit, scheduler);
     if (period <= 0L || checkpointPeriod < 0L || expectedDelay < 0L) {
       throw new RuntimeException("The period " + period + " should be larger than 0," +
           " the checkpoint period " + checkpointPeriod + " should be larger than or equal to 0," +
           " and expected delay " + expectedDelay + " should be equal or larger than 0");
     }
     this.period = period;
-    this.checkpointPeriod = checkpointPeriod;
-    this.expectedDelay = expectedDelay;
-    this.timeUnit = timeUnit;
-    this.scheduler = scheduler;
   }
 
   @Override
@@ -126,23 +96,13 @@ public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V>
         outputEmitter.emitWatermark(new MistWatermarkEvent(latestWatermarkTimestamp, false));
       }
     }, period, period, timeUnit);
-    if (checkpointPeriod != 0) {
-      checkpointResult = scheduler.scheduleAtFixedRate(new Runnable() {
-        public void run() {
-          final long checkpointTimestamp = getCurrentTimestamp() - expectedDelay;
-          outputEmitter.emitWatermark(
-              new MistWatermarkEvent(checkpointTimestamp, true));
-          LOG.log(Level.INFO, "checkpoint event being emitted. time is : " + checkpointTimestamp);
-        }
-      }, checkpointPeriod, checkpointPeriod, timeUnit);
-    } else {
-      LOG.log(Level.INFO, "checkpointing is not turned on");
-    }
+    super.startRemain();
   }
 
   @Override
   public void close() {
     result.cancel(true);
+    super.close();
   }
 
   @Override
