@@ -41,7 +41,14 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
    */
   private final GroupAllocationTable groupAllocationTable;
 
+  /**
+   * Start time of the load update.
+   */
   private long startTime;
+
+  /**
+   * Previous load update time.
+   */
   private long previousUpdateTime;
 
   @Inject
