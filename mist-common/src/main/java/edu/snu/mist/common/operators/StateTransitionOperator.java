@@ -32,7 +32,6 @@ import java.util.logging.Logger;
 
 /**
  * This operator applies the user-defined state machine which is used in cep stateful query.
- *
  */
 public final class StateTransitionOperator extends OneStreamOperator implements StateHandler {
 

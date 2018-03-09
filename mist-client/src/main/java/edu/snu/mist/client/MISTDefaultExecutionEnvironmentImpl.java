@@ -25,7 +25,9 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The default implementation class for MISTExecutionEnvironment.
@@ -47,6 +49,11 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
   private final NettyTransceiver masterNettyTransceiver;
 
   /**
+   * Task connection map.
+   */
+  private final Map<String, Tuple<NettyTransceiver, ClientToTaskMessage>> taskConnectionMap;
+
+  /**
    * Default constructor for MISTDefaultExecutionEnvironmentImpl.
    * @param masterAddr MIST Master server address.
    * @param masterPort MIST Master server port.
@@ -56,6 +63,7 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
                                              final int masterPort) throws IOException {
     this.masterNettyTransceiver = new NettyTransceiver(new InetSocketAddress(masterAddr, masterPort));
     this.proxyToMaster = SpecificRequestor.getClient(ClientToMasterMessage.class, masterNettyTransceiver);
+    this.taskConnectionMap = new HashMap<>();
   }
 
   /**
@@ -72,10 +80,18 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
     // Step 2: Contact to the designated task and submit the query
     final String mistTaskHost = querySubmitInfo.getTask().getHostAddress();
     final int mistTaskPort = querySubmitInfo.getTask().getPort();
-    final NettyTransceiver taskNettyTransceiver =
-        new NettyTransceiver(new InetSocketAddress(mistTaskHost, mistTaskPort));
-    final ClientToTaskMessage proxyToTask = SpecificRequestor.getClient(ClientToTaskMessage.class,
-        taskNettyTransceiver);
+
+    final ClientToTaskMessage proxyToTask;
+    final String key = String.format("%s:%d", mistTaskHost, mistTaskPort);
+    if (taskConnectionMap.containsKey(key)) {
+      proxyToTask = taskConnectionMap.get(key).getValue();
+    } else {
+      final NettyTransceiver taskNettyTransceiver =
+          new NettyTransceiver(new InetSocketAddress(mistTaskHost, mistTaskPort));
+      proxyToTask = SpecificRequestor.getClient(ClientToTaskMessage.class,
+          taskNettyTransceiver);
+      taskConnectionMap.put(key, new Tuple<>(taskNettyTransceiver, proxyToTask));
+    }
 
     // Build logical plan using serialized vertices and edges.
     final Tuple<List<AvroVertex>, List<Edge>> serializedDag = queryToSubmit.getAvroOperatorDag();
@@ -92,8 +108,7 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
     final APIQueryControlResult apiQueryControlResult =
         new APIQueryControlResultImpl(queryControlResult.getQueryId(), querySubmitInfo.getTask(),
             queryControlResult.getMsg(), queryControlResult.getIsSuccess());
-    // Close the task netty transceiver
-    taskNettyTransceiver.close();
+
     return apiQueryControlResult;
   }
 
@@ -119,5 +134,8 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
   @Override
   public void close() throws Exception {
     masterNettyTransceiver.close();
+    for (final Tuple<NettyTransceiver, ClientToTaskMessage> tuple : taskConnectionMap.values()) {
+      tuple.getKey().close();
+    }
   }
 }

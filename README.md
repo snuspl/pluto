@@ -24,11 +24,13 @@ MIST is built on top of [Apache REEF](http://reef.apache.org/).
     ./bin/start.sh
     [-? Print help]
     -num_threads The number of MIST threads
-    -num_task_cores The number of cores of MIST task
+    -num_master_cores The number of cores of MIST master
+    -num_task_cores The number of cores of MIST task 
     [-num_tasks The number of mist tasks]
     [-port The port number of the RPC server that communicates with MIST client]
     [-runtime Type of the MIST Driver runtime (yarn or local. The default value is local runtime)]
-    -task_mem_size The size of MIST task memory (MB)
+    -master_mem_size The size of MIST master memory (MB)
+    -task_mem_size The size of MIST task memory (MB) 
     ```
     
 
@@ -46,7 +48,7 @@ MIST is built on top of [Apache REEF](http://reef.apache.org/).
     ```
     # 0. Build MIST first!(See above)
     # 1. Run MIST
-    ./bin/start.sh -num_threads 1 -num_task_cores 1 -task_mem_size 1024
+    ./bin/start.sh -num_threads 1 -num_master_cores 1 -num_task_cores 1 -task_mem_size 1024 -master_mem_size 256
     # 2. Launch source server (You can simply use netcat)
      nc -lk 20331
     # 3. Run a script for HelloMist
