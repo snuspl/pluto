@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 /**
  * This operator applies the user-defined state machine which is used in cep stateful query.
  */
-public final class StateTransitionOperator extends OneStreamOperator implements StateHandler {
+public final class StateTransitionOperator extends OneStreamStateHandlerOperator {
 
   private static final Logger LOG = Logger.getLogger(StateTransitionOperator.class.getName());
 
@@ -48,17 +48,6 @@ public final class StateTransitionOperator extends OneStreamOperator implements 
 
   // changing state table: Map<current state, Tuple2<condition, next state>>
   private final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable;
-
-  /**
-   * The latest Checkpoint Timestamp.
-   */
-  private long latestCheckpointTimestamp;
-
-  /**
-   * The map of states for checkpointing.
-   * The key is the time of the checkpoint event, and the value is the state of this operator at that timestamp.
-   */
-  private Map<Long, Map<String, Object>> checkpointMap;
 
   @Inject
   private StateTransitionOperator(
@@ -76,12 +65,11 @@ public final class StateTransitionOperator extends OneStreamOperator implements 
       final String initialState,
       final Set<String> finalState,
       final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable) {
+    super();
     this.initialState = initialState;
     this.currState = initialState;
     this.finalState = finalState;
     this.stateTable = stateTable;
-    this.latestCheckpointTimestamp = 0L;
-    this.checkpointMap = new HashMap<>();
   }
 
   // update state with input data
@@ -131,30 +119,7 @@ public final class StateTransitionOperator extends OneStreamOperator implements 
   }
 
   @Override
-  public Map<String, Object> getOperatorState(final long timestamp) {
-    return checkpointMap.get(timestamp);
-  }
-
-  @Override
-  public void removeStates(final long checkpointTimestamp) {
-    final Set<Long> removeStateSet = new HashSet<>();
-    for (final long entryTimestamp : checkpointMap.keySet()) {
-      if (entryTimestamp < checkpointTimestamp) {
-        removeStateSet.add(entryTimestamp);
-      }
-    }
-    for (final long entryTimestamp : removeStateSet) {
-      checkpointMap.remove(entryTimestamp);
-    }
-  }
-
-  @Override
   public void setState(final Map<String, Object> loadedState) {
     currState = (String) loadedState.get("stateTransitionOperatorState");
-  }
-
-  @Override
-  public long getLatestCheckpointTimestamp() {
-    return latestCheckpointTimestamp;
   }
 }

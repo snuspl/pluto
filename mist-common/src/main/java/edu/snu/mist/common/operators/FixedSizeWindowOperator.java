@@ -30,7 +30,7 @@ import java.util.logging.Logger;
  * reorganize the queue to have available windows and put the watermark or data into the windows.
  * @param <T> the type of data
  */
-abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements StateHandler {
+abstract class FixedSizeWindowOperator<T> extends OneStreamStateHandlerOperator {
   // TODO: [MIST-324] Refactor fixed size windowing operation semantics
   private static final Logger LOG = Logger.getLogger(FixedSizeWindowOperator.class.getName());
 
@@ -54,25 +54,13 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements S
    */
   private final Queue<Window<T>> windowQueue;
 
-  /**
-   * The latest Checkpoint Timestamp.
-   */
-  private long latestCheckpointTimestamp;
-
-  /**
-   * The map of states for checkpointing.
-   * The key is the time of the checkpoint event, and the value is the state of this operator at that timestamp.
-   */
-  protected Map<Long, Map<String, Object>> checkpointMap;
-
   protected FixedSizeWindowOperator(final int windowSize,
                                     final int windowEmissionInterval) {
+    super();
     this.windowSize = windowSize;
     this.windowEmissionInterval = windowEmissionInterval;
     this.windowQueue = new LinkedList<>();
     this.windowCreationPoint = Long.MIN_VALUE;
-    this.latestCheckpointTimestamp = 0L;
-    this.checkpointMap = new HashMap<>();
   }
 
   /**
@@ -165,33 +153,10 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements S
     return stateMap;
   }
 
-  @Override
-  public Map<String, Object> getOperatorState(final long timestamp) {
-    return checkpointMap.get(timestamp);
-  }
-
-  @Override
-  public void removeStates(final long checkpointTimestamp) {
-    final Set<Long> removeStateSet = new HashSet<>();
-    for (final long entryTimestamp : checkpointMap.keySet()) {
-      if (entryTimestamp < checkpointTimestamp) {
-        removeStateSet.add(entryTimestamp);
-      }
-    }
-    for (final long entryTimestamp : removeStateSet) {
-      checkpointMap.remove(entryTimestamp);
-    }
-  }
-
   @SuppressWarnings("unchecked")
   @Override
   public void setState(final Map<String, Object> loadedState) {
     windowCreationPoint = (long)loadedState.get("windowCreationPoint");
     windowQueue.addAll((Queue<Window<T>>)loadedState.get("windowQueue"));
-  }
-
-  @Override
-  public long getLatestCheckpointTimestamp() {
-    return latestCheckpointTimestamp;
   }
 }

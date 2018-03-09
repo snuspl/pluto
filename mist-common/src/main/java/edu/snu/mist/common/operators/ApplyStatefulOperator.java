@@ -25,9 +25,7 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,7 +35,7 @@ import java.util.logging.Logger;
  * @param <OUT> the type of output data
  */
 public final class ApplyStatefulOperator<IN, OUT>
-    extends OneStreamOperator implements StateHandler {
+    extends OneStreamStateHandlerOperator {
 
   private static final Logger LOG = Logger.getLogger(ApplyStatefulOperator.class.getName());
 
@@ -45,17 +43,6 @@ public final class ApplyStatefulOperator<IN, OUT>
    * The user-defined ApplyStatefulFunction.
    */
   private final ApplyStatefulFunction<IN, OUT> applyStatefulFunction;
-
-  /**
-   * The latest Checkpoint Timestamp.
-   */
-  private long latestCheckpointTimestamp;
-
-  /**
-   * The map of states for checkpointing.
-   * The key is the time of the checkpoint event, and the value is the state of this operator at that timestamp.
-   */
-  protected Map<Long, Map<String, Object>> checkpointMap;
 
   @Inject
   private ApplyStatefulOperator(
@@ -69,10 +56,9 @@ public final class ApplyStatefulOperator<IN, OUT>
    */
   @Inject
   public ApplyStatefulOperator(final ApplyStatefulFunction<IN, OUT> applyStatefulFunction) {
+    super();
     this.applyStatefulFunction = applyStatefulFunction;
     this.applyStatefulFunction.initialize();
-    this.latestCheckpointTimestamp = 0L;
-    this.checkpointMap = new HashMap<>();
   }
 
   @Override
@@ -109,30 +95,7 @@ public final class ApplyStatefulOperator<IN, OUT>
   }
 
   @Override
-  public Map<String, Object> getOperatorState(final long timestamp) {
-    return checkpointMap.get(timestamp);
-  }
-
-  @Override
-  public void removeStates(final long checkpointTimestamp) {
-    final Set<Long> removeStateSet = new HashSet<>();
-    for (final long entryTimestamp : checkpointMap.keySet()) {
-      if (entryTimestamp < checkpointTimestamp) {
-        removeStateSet.add(entryTimestamp);
-      }
-    }
-    for (final long entryTimestamp : removeStateSet) {
-      checkpointMap.remove(entryTimestamp);
-    }
-  }
-
-  @Override
   public void setState(final Map<String, Object> loadedState) {
     applyStatefulFunction.setFunctionState(loadedState.get("applyStatefulFunctionState"));
-  }
-
-  @Override
-  public long getLatestCheckpointTimestamp() {
-    return latestCheckpointTimestamp;
   }
 }

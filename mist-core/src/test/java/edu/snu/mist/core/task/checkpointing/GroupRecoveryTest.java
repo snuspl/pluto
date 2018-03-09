@@ -24,6 +24,7 @@ import edu.snu.mist.client.datastreams.configurations.TextSocketSourceConfigurat
 import edu.snu.mist.client.datastreams.configurations.WatermarkConfiguration;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.common.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.stream.NettyChannelHandler;
 import edu.snu.mist.common.stream.textmessage.NettyTextMessageStreamGenerator;
@@ -97,10 +98,8 @@ public class GroupRecoveryTest {
     queryBuilder.setApplicationId("test-group");
 
     final int defaultWatermarkPeriod = 100;
-    final int defaultCheckpointPeriod = 1000;
     final WatermarkConfiguration testConf = PeriodicWatermarkConfiguration.newBuilder()
         .setWatermarkPeriod(defaultWatermarkPeriod)
-        .setCheckpointPeriod(defaultCheckpointPeriod)
         .build();
 
     queryBuilder.socketTextStream(localTextSocketSource1Conf, testConf)
@@ -136,14 +135,14 @@ public class GroupRecoveryTest {
         .setEdges(initialAvroOpChainDag.getValue())
         .build();
 
-    // Build QueryManager and start the query.
+    // Build QueryManager.
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(PeriodicCheckpointPeriod.class, "1000");
     jcb.bindImplementation(QueryManager.class, GroupAwareQueryManagerImpl.class);
     jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-    final CheckpointManager checkpointManager = injector.getInstance(CheckpointManager.class);
-    injector.bindVolatileInstance(CheckpointManager.class, checkpointManager);
     final QueryManager queryManager = injector.getInstance(QueryManager.class);
+    final CheckpointManager checkpointManager = injector.getInstance(CheckpointManager.class);
 
     // Modify the sinks of the avroChainedDag
     final AvroDag modifiedAvroDag = modifySinkAvroChainedDag(avroDag);

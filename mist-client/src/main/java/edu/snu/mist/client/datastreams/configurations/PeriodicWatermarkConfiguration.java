@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.client.datastreams.configurations;
 
-import edu.snu.mist.common.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.common.parameters.PeriodicWatermarkDelay;
 import edu.snu.mist.common.parameters.PeriodicWatermarkPeriod;
 import edu.snu.mist.common.sources.EventGenerator;
@@ -31,12 +30,10 @@ import org.apache.reef.tang.formats.RequiredParameter;
 public final class PeriodicWatermarkConfiguration extends ConfigurationModuleBuilder {
 
   public static final RequiredParameter<Long> PERIOD = new RequiredParameter<>();
-  public static final OptionalParameter<Long> CHECKPOINT_PERIOD = new OptionalParameter<>();
   public static final OptionalParameter<Long> EXPECTED_DELAY = new OptionalParameter<>();
 
   public static final ConfigurationModule CONF = new PeriodicWatermarkConfiguration()
       .bindNamedParameter(PeriodicWatermarkPeriod.class, PERIOD)
-      .bindNamedParameter(PeriodicCheckpointPeriod.class, CHECKPOINT_PERIOD)
       .bindNamedParameter(PeriodicWatermarkDelay.class, EXPECTED_DELAY)
       .bindImplementation(EventGenerator.class, PeriodicEventGenerator.class)
       .build();
@@ -55,7 +52,6 @@ public final class PeriodicWatermarkConfiguration extends ConfigurationModuleBui
   public static final class PeriodicWatermarkConfigurationBuilder {
 
     private int watermarkPeriod;
-    private int checkpointPeriod;
     private int watermarkDelay;
 
     /**
@@ -65,7 +61,6 @@ public final class PeriodicWatermarkConfiguration extends ConfigurationModuleBui
     public WatermarkConfiguration build() {
       return new WatermarkConfiguration(CONF
           .set(PERIOD, watermarkPeriod)
-          .set(CHECKPOINT_PERIOD, checkpointPeriod)
           .set(EXPECTED_DELAY, watermarkDelay)
           .build());
     }
@@ -77,16 +72,6 @@ public final class PeriodicWatermarkConfiguration extends ConfigurationModuleBui
      */
     public PeriodicWatermarkConfigurationBuilder setWatermarkPeriod(final int period) {
       watermarkPeriod = period;
-      return this;
-    }
-
-    /**
-     * Sets the configuration for the watermark period to the given period.
-     * @param period the period given by users which they want to set
-     * @return the configured WatermarkBuilder
-     */
-    public PeriodicWatermarkConfigurationBuilder setCheckpointPeriod(final int period) {
-      checkpointPeriod = period;
       return this;
     }
 

@@ -22,16 +22,14 @@ import edu.snu.mist.common.parameters.WindowSize;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Logger;
 
 /**
  * This operator makes count-based windows and emits a collection of data.
  * @param <T> the type of data
  */
-public final class CountWindowOperator<T> extends FixedSizeWindowOperator<T> implements StateHandler {
+public final class CountWindowOperator<T> extends FixedSizeWindowOperator<T> {
   private static final Logger LOG = Logger.getLogger(CountWindowOperator.class.getName());
 
   /**
@@ -69,24 +67,6 @@ public final class CountWindowOperator<T> extends FixedSizeWindowOperator<T> imp
     final Map<String, Object> stateMap = super.getCurrentOperatorState();
     stateMap.put("count", count);
     return stateMap;
-  }
-
-  @Override
-  public Map<String, Object> getOperatorState(final long timestamp) {
-    return checkpointMap.get(timestamp);
-  }
-
-  @Override
-  public void removeStates(final long checkpointTimestamp) {
-    final Set<Long> removeStateSet = new HashSet<>();
-    for (final long entryTimestamp : checkpointMap.keySet()) {
-      if (entryTimestamp < checkpointTimestamp) {
-        removeStateSet.add(entryTimestamp);
-      }
-    }
-    for (final long entryTimestamp : removeStateSet) {
-      checkpointMap.remove(entryTimestamp);
-    }
   }
 
   @Override

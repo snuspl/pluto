@@ -19,7 +19,7 @@ import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 @NamedParameter(doc = "Periodic checkpoint watermarks are generated every this period. 0 means no checkpointing.",
-    default_value = "0")
+    short_name = "cp_period", default_value = "0")
 public final class PeriodicCheckpointPeriod implements Name<Long> {
   // empty
 }

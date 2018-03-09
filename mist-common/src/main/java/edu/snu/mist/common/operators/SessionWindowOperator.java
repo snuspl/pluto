@@ -24,9 +24,7 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,7 +35,7 @@ import java.util.logging.Logger;
  * After that, a new session is created.
  * @param <T> the type of data
  */
-public final class SessionWindowOperator<T> extends OneStreamOperator implements StateHandler {
+public final class SessionWindowOperator<T> extends OneStreamStateHandlerOperator {
   private static final Logger LOG = Logger.getLogger(SessionWindowOperator.class.getName());
 
   /**
@@ -60,23 +58,11 @@ public final class SessionWindowOperator<T> extends OneStreamOperator implements
    */
   private boolean startedNewWindow = false;
 
-  /**
-   * The latest Checkpoint Timestamp.
-   */
-  private long latestCheckpointTimestamp;
-
-  /**
-   * The map of states for checkpointing.
-   * The key is the time of the checkpoint event, and the value is the state of this operator at that timestamp.
-   */
-  private Map<Long, Map<String, Object>> checkpointMap;
-
   @Inject
   public SessionWindowOperator(@Parameter(WindowInterval.class) final int sessionInterval) {
+    super();
     this.sessionInterval = sessionInterval;
     currentWindow = null;
-    this.latestCheckpointTimestamp = 0L;
-    this.checkpointMap = new HashMap<>();
   }
 
   /**
@@ -141,34 +127,11 @@ public final class SessionWindowOperator<T> extends OneStreamOperator implements
     return stateMap;
   }
 
-  @Override
-  public Map<String, Object> getOperatorState(final long timestamp) {
-    return checkpointMap.get(timestamp);
-  }
-
-  @Override
-  public void removeStates(final long checkpointTimestamp) {
-    final Set<Long> removeStateSet = new HashSet<>();
-    for (final long entryTimestamp : checkpointMap.keySet()) {
-      if (entryTimestamp < checkpointTimestamp) {
-        removeStateSet.add(entryTimestamp);
-      }
-    }
-    for (final long entryTimestamp : removeStateSet) {
-      checkpointMap.remove(entryTimestamp);
-    }
-  }
-
   @SuppressWarnings("unchecked")
   @Override
   public void setState(final Map<String, Object> loadedState) {
     currentWindow = (Window<T>)loadedState.get("currentWindow");
     latestDataTimestamp = (long)loadedState.get("latestDataTimestamp");
     startedNewWindow = (boolean)loadedState.get("startedNewWindow");
-  }
-
-  @Override
-  public long getLatestCheckpointTimestamp() {
-    return latestCheckpointTimestamp;
   }
 }

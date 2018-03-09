@@ -28,9 +28,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,7 +41,7 @@ import java.util.logging.Logger;
  * This can be changed to Map when we support non-serializable state.
  */
 public final class ReduceByKeyOperator<K extends Serializable, V extends Serializable>
-    extends OneStreamOperator implements StateHandler {
+    extends OneStreamStateHandlerOperator {
   private static final Logger LOG = Logger.getLogger(ReduceByKeyOperator.class.getName());
 
   /**
@@ -61,17 +59,6 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
    */
   private HashMap<K, V> state;
 
-  /**
-   * The latest Checkpoint Timestamp.
-   */
-  private long latestCheckpointTimestamp;
-
-  /**
-   * The map of states for checkpointing.
-   * The key is the time of the checkpoint event, and the value is the state of this operator at that timestamp.
-   */
-  private Map<Long, Map<String, Object>> checkpointMap;
-
   @Inject
   private ReduceByKeyOperator(
       @Parameter(KeyIndex.class) final int keyIndex,
@@ -87,11 +74,10 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
   @Inject
   public ReduceByKeyOperator(@Parameter(KeyIndex.class) final int keyIndex,
                              final MISTBiFunction<V, V, V> reduceFunc) {
+    super();
     this.reduceFunc = reduceFunc;
     this.keyIndex = keyIndex;
     this.state = createInitialState();
-    this.latestCheckpointTimestamp = 0L;
-    this.checkpointMap = new HashMap<>();
   }
 
   private HashMap<K, V> createInitialState() {
@@ -162,32 +148,9 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
     return stateMap;
   }
 
-  @Override
-  public Map<String, Object> getOperatorState(final long timestamp) {
-    return checkpointMap.get(timestamp);
-  }
-
-  @Override
-  public void removeStates(final long checkpointTimestamp) {
-    final Set<Long> removeStateSet = new HashSet<>();
-    for (final long entryTimestamp : checkpointMap.keySet()) {
-      if (entryTimestamp < checkpointTimestamp) {
-        removeStateSet.add(entryTimestamp);
-      }
-    }
-    for (final long entryTimestamp : removeStateSet) {
-      checkpointMap.remove(entryTimestamp);
-    }
-  }
-
   @SuppressWarnings("unchecked")
   @Override
   public void setState(final Map<String, Object> loadedState) {
     state = (HashMap<K, V>)loadedState.get("reduceByKeyState");
-  }
-
-  @Override
-  public long getLatestCheckpointTimestamp() {
-    return latestCheckpointTimestamp;
   }
 }

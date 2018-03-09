@@ -35,7 +35,7 @@ public interface StateHandler {
   /**
    * Remove the states with timestamps less than or equal to the given timestamp.
    */
-  void removeStates(long checkpointTimestamp);
+  void removeOldStates(long checkpointTimestamp);
 
   /**
    * Sets the state of the current operator.

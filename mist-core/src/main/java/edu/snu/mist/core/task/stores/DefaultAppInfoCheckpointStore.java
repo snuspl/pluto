@@ -115,7 +115,7 @@ public final class DefaultAppInfoCheckpointStore implements AppInfoCheckpointSto
           final Operator op = ((DefaultPhysicalOperatorImpl) ev).getOperator();
           if (op instanceof StateHandler) {
             final StateHandler stateHandler = (StateHandler) op;
-            stateHandler.removeStates(gmc.getMinimumLatestCheckpointTimestamp());
+            stateHandler.removeOldStates(gmc.getMinimumLatestCheckpointTimestamp());
           }
         }
       }

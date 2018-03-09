@@ -18,6 +18,7 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.common.parameters.MQTTBrokerURI;
 import edu.snu.mist.common.parameters.MQTTTopic;
+import edu.snu.mist.common.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.common.shared.KafkaSharedResource;
 import edu.snu.mist.common.shared.MQTTResource;
 import edu.snu.mist.common.shared.NettySharedResource;
@@ -27,6 +28,7 @@ import edu.snu.mist.common.sources.EventGenerator;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
+import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
@@ -64,15 +66,22 @@ public final class PhysicalObjectGenerator implements AutoCloseable {
    */
   private final MQTTResource mqttSharedResource;
 
+  /**
+   * The checkpoint period.
+   */
+  private final long checkpointPeriod;
+
   @Inject
   private PhysicalObjectGenerator(final ScheduledExecutorServiceWrapper schedulerWrapper,
                                   final KafkaSharedResource kafkaSharedResource,
                                   final NettySharedResource nettySharedResource,
-                                  final MQTTResource mqttSharedResource) {
+                                  final MQTTResource mqttSharedResource,
+                                  @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod) {
     this.scheduler = schedulerWrapper.getScheduler();
     this.kafkaSharedResource = kafkaSharedResource;
     this.nettySharedResource = nettySharedResource;
     this.mqttSharedResource = mqttSharedResource;
+    this.checkpointPeriod = checkpointPeriod;
   }
 
   /**
@@ -101,6 +110,7 @@ public final class PhysicalObjectGenerator implements AutoCloseable {
     final Injector injector = newDefaultInjector(conf, classLoader);
     injector.bindVolatileInstance(TimeUnit.class, watermarkTimeUnit);
     injector.bindVolatileInstance(ScheduledExecutorService.class, scheduler);
+    injector.bindVolatileParameter(PeriodicCheckpointPeriod.class, checkpointPeriod);
     return injector.getInstance(EventGenerator.class);
   }
 
