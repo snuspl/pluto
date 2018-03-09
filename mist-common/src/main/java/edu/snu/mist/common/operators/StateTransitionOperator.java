@@ -106,7 +106,8 @@ public final class StateTransitionOperator extends OneStreamStateHandlerOperator
     if (input.isCheckpoint()) {
       latestCheckpointTimestamp = input.getTimestamp();
       final Map<String, Object> stateMap = new HashMap<>();
-      stateMap.put("stateTransitionOperatorState", currState);
+      final String currStateString = currState;
+      stateMap.put("stateTransitionOperatorState", currStateString);
       checkpointMap.put(input.getTimestamp(), stateMap);
     }
   }
@@ -114,7 +115,8 @@ public final class StateTransitionOperator extends OneStreamStateHandlerOperator
   @Override
   public Map<String, Object> getCurrentOperatorState() {
     final Map<String, Object> stateMap = new HashMap<>();
-    stateMap.put("stateTransitionOperatorState", currState);
+    final String currStateString = currState;
+    stateMap.put("stateTransitionOperatorState", currStateString);
     return stateMap;
   }
 

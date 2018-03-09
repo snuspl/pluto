@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.operators;
 
+import com.rits.cloning.Cloner;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
@@ -82,7 +83,7 @@ public final class ApplyStatefulOperator<IN, OUT>
     if (input.isCheckpoint()) {
       latestCheckpointTimestamp = input.getTimestamp();
       final Map<String, Object> stateMap = new HashMap<>();
-      stateMap.put("applyStatefulFunctionState", applyStatefulFunction.getCurrentState());
+      stateMap.put("applyStatefulFunctionState", new Cloner().deepClone(applyStatefulFunction.getCurrentState()));
       checkpointMap.put(input.getTimestamp(), stateMap);
     }
   }
@@ -90,7 +91,7 @@ public final class ApplyStatefulOperator<IN, OUT>
   @Override
   public Map<String, Object> getCurrentOperatorState() {
     final Map<String, Object> stateMap = new HashMap<>();
-    stateMap.put("applyStatefulFunctionState", applyStatefulFunction.getCurrentState());
+    stateMap.put("applyStatefulFunctionState", new Cloner().deepClone(applyStatefulFunction.getCurrentState()));
     return stateMap;
   }
 

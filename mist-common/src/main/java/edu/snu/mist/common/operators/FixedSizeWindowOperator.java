@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.operators;
 
+import com.rits.cloning.Cloner;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.windows.Window;
@@ -140,7 +141,7 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamStateHandlerOperator 
       latestCheckpointTimestamp = input.getTimestamp();
       final Map<String, Object> stateMap = new HashMap<>();
       stateMap.put("windowCreationPoint", windowCreationPoint);
-      stateMap.put("windowQueue", windowQueue);
+      stateMap.put("windowQueue", new Cloner().deepClone(windowQueue));
       checkpointMap.put(input.getTimestamp(), stateMap);
     }
   }
@@ -149,7 +150,7 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamStateHandlerOperator 
   public Map<String, Object> getCurrentOperatorState() {
     final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("windowCreationPoint", windowCreationPoint);
-    stateMap.put("windowQueue", windowQueue);
+    stateMap.put("windowQueue", new Cloner().deepClone(windowQueue));
     return stateMap;
   }
 

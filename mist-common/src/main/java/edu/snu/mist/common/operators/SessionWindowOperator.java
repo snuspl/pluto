@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.operators;
 
+import com.rits.cloning.Cloner;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.parameters.WindowInterval;
@@ -111,7 +112,7 @@ public final class SessionWindowOperator<T> extends OneStreamStateHandlerOperato
     if (input.isCheckpoint()) {
       latestCheckpointTimestamp = input.getTimestamp();
       final Map<String, Object> stateMap = new HashMap<>();
-      stateMap.put("currentWindow", currentWindow);
+      stateMap.put("currentWindow", new Cloner().deepClone(currentWindow));
       stateMap.put("latestDataTimestamp", latestDataTimestamp);
       stateMap.put("startedNewWindow", startedNewWindow);
       checkpointMap.put(input.getTimestamp(), stateMap);
@@ -121,7 +122,7 @@ public final class SessionWindowOperator<T> extends OneStreamStateHandlerOperato
   @Override
   public Map<String, Object> getCurrentOperatorState() {
     final Map<String, Object> stateMap = new HashMap<>();
-    stateMap.put("currentWindow", currentWindow);
+    stateMap.put("currentWindow", new Cloner().deepClone(currentWindow));
     stateMap.put("latestDataTimestamp", latestDataTimestamp);
     stateMap.put("startedNewWindow", startedNewWindow);
     return stateMap;
