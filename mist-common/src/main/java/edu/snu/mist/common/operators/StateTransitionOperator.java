@@ -36,108 +36,107 @@ import java.util.logging.Logger;
 
 /**
  * This operator applies the user-defined state machine which is used in cep stateful query.
- *
  */
 public final class StateTransitionOperator extends OneStreamOperator implements StateHandler {
 
-    private static final Logger LOG = Logger.getLogger(StateTransitionOperator.class.getName());
+  private static final Logger LOG = Logger.getLogger(StateTransitionOperator.class.getName());
 
-    // initial state
-    private final String initialState;
+  // initial state
+  private final String initialState;
 
-    // current state
-    private String currState;
+  // current state
+  private String currState;
 
-    // final state
-    private final Set<String> finalState;
+  // final state
+  private final Set<String> finalState;
 
-    // changing state table: Map<current state, Tuple2<condition, next state>>
-    private final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable;
+  // changing state table: Map<current state, Tuple2<condition, next state>>
+  private final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable;
 
-    /**
-     * The latest Checkpoint Timestamp.
-     */
-    private long latestCheckpointTimestamp;
+  /**
+   * The latest Checkpoint Timestamp.
+   */
+  private long latestCheckpointTimestamp;
 
-    @Inject
-    private StateTransitionOperator(
-        @Parameter(InitialState.class) final String initialState,
-        @Parameter(FinalState.class) final Set<String> finalState,
-        @Parameter(StateTable.class) final String stateTable,
-        final ClassLoader classLoader) throws IOException, ClassNotFoundException {
-        this(
-            initialState,
-            finalState,
-            SerializeUtils.deserializeFromString(stateTable, classLoader));
+  @Inject
+  private StateTransitionOperator(
+      @Parameter(InitialState.class) final String initialState,
+      @Parameter(FinalState.class) final Set<String> finalState,
+      @Parameter(StateTable.class) final String stateTable,
+      final ClassLoader classLoader) throws IOException, ClassNotFoundException {
+    this(
+        initialState,
+        finalState,
+        SerializeUtils.deserializeFromString(stateTable, classLoader));
+  }
+
+  public StateTransitionOperator(
+      final String initialState,
+      final Set<String> finalState,
+      final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable) {
+    this.initialState = initialState;
+    this.currState = initialState;
+    this.finalState = finalState;
+    this.stateTable = stateTable;
+    this.latestCheckpointTimestamp = 0L;
+  }
+
+  // update state with input data
+  private void stateTransition(final Map<String, Object> inputData) {
+    // possible transition list in current state
+    final Collection<Tuple2<MISTPredicate, String>> transitionList = stateTable.get(currState);
+    if (transitionList == null) {
+      return;
     }
-
-    public StateTransitionOperator(
-            final String initialState,
-            final Set<String> finalState,
-            final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable) {
-        this.initialState = initialState;
-        this.currState = initialState;
-        this.finalState = finalState;
-        this.stateTable = stateTable;
-        this.latestCheckpointTimestamp = 0L;
+    for (final Tuple2<MISTPredicate, String> transition : transitionList) {
+      final MISTPredicate<Map<String, Object>> predicate = (MISTPredicate<Map<String, Object>>) transition.get(0);
+      if (predicate.test(inputData)) {
+        currState = (String) transition.get(1);
+        break;
+      }
     }
+  }
 
-    // update state with input data
-    private void stateTransition(final Map<String, Object> inputData) {
-        // possible transition list in current state
-        final Collection<Tuple2<MISTPredicate, String>> transitionList = stateTable.get(currState);
-        if (transitionList == null) {
-            return;
-        }
-        for (final Tuple2<MISTPredicate, String> transition : transitionList) {
-            final MISTPredicate<Map<String, Object>> predicate = (MISTPredicate<Map<String, Object>>) transition.get(0);
-            if (predicate.test(inputData)) {
-                currState = (String) transition.get(1);
-                break;
-            }
-        }
+  @Override
+  public void processLeftData(final MistDataEvent input) {
+    stateTransition((Map<String, Object>) input.getValue());
+
+    // emit when the state is final state
+    if (finalState.contains(currState)) {
+      final Tuple2<Map<String, Object>, String> output = new Tuple2(input.getValue(), currState);
+      if (LOG.isLoggable(Level.FINE)) {
+        LOG.log(Level.FINE, "{0} updates the state to {1} with input {2}, and generates {3}",
+            new Object[]{this.getClass().getName(),
+                getOperatorState(), input, output});
+      }
+
+      input.setValue(output);
+      outputEmitter.emitData(input);
     }
+  }
 
-    @Override
-    public void processLeftData(final MistDataEvent input) {
-        stateTransition((Map<String, Object>)input.getValue());
-
-        // emit when the state is final state
-        if (finalState.contains(currState)) {
-            final Tuple2<Map<String, Object>, String> output = new Tuple2(input.getValue(), currState);
-            if (LOG.isLoggable(Level.FINE)) {
-                LOG.log(Level.FINE, "{0} updates the state to {1} with input {2}, and generates {3}",
-                        new Object[]{this.getClass().getName(),
-                                getOperatorState(), input, output});
-            }
-
-            input.setValue(output);
-            outputEmitter.emitData(input);
-        }
+  @Override
+  public void processLeftWatermark(final MistWatermarkEvent input) {
+    outputEmitter.emitWatermark(input);
+    if (input.isCheckpoint()) {
+      latestCheckpointTimestamp = input.getTimestamp();
     }
+  }
 
-    @Override
-    public void processLeftWatermark(final MistWatermarkEvent input) {
-        outputEmitter.emitWatermark(input);
-        if (input.isCheckpoint()) {
-            latestCheckpointTimestamp = input.getTimestamp();
-        }
-    }
+  @Override
+  public Map<String, Object> getOperatorState() {
+    final Map<String, Object> stateMap = new HashMap<>();
+    stateMap.put("stateTransitionOperatorState", currState);
+    return stateMap;
+  }
 
-    @Override
-    public Map<String, Object> getOperatorState() {
-        final Map<String, Object> stateMap = new HashMap<>();
-        stateMap.put("stateTransitionOperatorState", currState);
-        return stateMap;
-    }
+  @Override
+  public void setState(final Map<String, Object> loadedState) {
+    currState = (String) loadedState.get("stateTransitionOperatorState");
+  }
 
-    @Override
-    public void setState(final Map<String, Object> loadedState) {
-        currState = (String) loadedState.get("stateTransitionOperatorState");
-    }
-
-    @Override
-    public long getLatestCheckpointTimestamp() {
-        return latestCheckpointTimestamp;
-    }
+  @Override
+  public long getLatestCheckpointTimestamp() {
+    return latestCheckpointTimestamp;
+  }
 }
