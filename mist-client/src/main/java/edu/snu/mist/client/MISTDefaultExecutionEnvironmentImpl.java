@@ -37,40 +37,25 @@ import java.util.List;
  */
 public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionEnvironment {
   /**
-   * A proxy that communicates with MIST Driver.
+   * A proxy that communicates with MIST Master.
    */
-  private final MistTaskProvider proxyToDriver;
+  private final ClientToMasterMessage proxyToMaster;
 
   /**
-   * A proxy that communicates with MIST Task.
+   * The netty transceiver used for client-to-master communication.
    */
-  private final ClientToTaskMessage proxyToTask;
+  private final NettyTransceiver masterNettyTransceiver;
 
-  private final IPAddress taskIPAddress;
-
-  private final NettyTransceiver clientToDriver;
-
-  private final NettyTransceiver clientToTask;
   /**
    * Default constructor for MISTDefaultExecutionEnvironmentImpl.
-   * A list of the Task is retrieved from the MIST Driver.
-   * @param serverAddr MIST Driver server address.
-   * @param serverPort MIST Driver server port.
+   * @param masterAddr MIST Master server address.
+   * @param masterPort MIST Master server port.
    * @throws IOException
    */
-  public MISTDefaultExecutionEnvironmentImpl(final String serverAddr,
-                                             final int serverPort) throws IOException {
-    // Step 1: Get a task list from Driver
-    clientToDriver = new NettyTransceiver(new InetSocketAddress(serverAddr, serverPort));
-    this.proxyToDriver = SpecificRequestor.getClient(MistTaskProvider.class, clientToDriver);
-    final TaskList taskList = proxyToDriver.getTasks(new QueryInfo());
-
-    final List<IPAddress> tasks = taskList.getTasks();
-    // Choose a task (TODO: Randomly select a task)
-    taskIPAddress = tasks.get(0);
-    clientToTask = new NettyTransceiver(
-        new InetSocketAddress(taskIPAddress.getHostAddress().toString(), taskIPAddress.getPort()));
-    proxyToTask = SpecificRequestor.getClient(ClientToTaskMessage.class, clientToTask);
+  public MISTDefaultExecutionEnvironmentImpl(final String masterAddr,
+                                             final int masterPort) throws IOException {
+    this.masterNettyTransceiver = new NettyTransceiver(new InetSocketAddress(masterAddr, masterPort));
+    this.proxyToMaster = SpecificRequestor.getClient(ClientToMasterMessage.class, masterNettyTransceiver);
   }
 
   /**
@@ -80,13 +65,24 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
    * @return the result of the submitted query.
    */
   @Override
-  public APIQueryControlResult submitQuery(final MISTQuery queryToSubmit) throws AvroRemoteException {
+  public APIQueryControlResult submitQuery(final MISTQuery queryToSubmit) throws AvroRemoteException, IOException {
+
+    // Step 1: Get a task to submit the query and JAR file paths from MistMaster
+    final QuerySubmitInfo querySubmitInfo = proxyToMaster.getQuerySubmitInfo(queryToSubmit.getApplicationId());
+    // Step 2: Contact to the designated task and submit the query
+    final String mistTaskHost = querySubmitInfo.getTask().getHostAddress();
+    final int mistTaskPort = querySubmitInfo.getTask().getPort();
+    final NettyTransceiver taskNettyTransceiver =
+        new NettyTransceiver(new InetSocketAddress(mistTaskHost, mistTaskPort));
+    final ClientToTaskMessage proxyToTask = SpecificRequestor.getClient(ClientToTaskMessage.class,
+        taskNettyTransceiver);
 
     // Build logical plan using serialized vertices and edges.
     final Tuple<List<AvroVertex>, List<Edge>> serializedDag = queryToSubmit.getAvroOperatorDag();
     final AvroDag.Builder avroDagBuilder = AvroDag.newBuilder();
     final AvroDag avroDag = avroDagBuilder
         .setAppId(queryToSubmit.getApplicationId())
+        .setJarPaths(querySubmitInfo.getJarPaths())
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .build();
@@ -94,8 +90,10 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
 
     // Transform QueryControlResult to APIQueryControlResult
     final APIQueryControlResult apiQueryControlResult =
-        new APIQueryControlResultImpl(queryControlResult.getQueryId(), taskIPAddress,
+        new APIQueryControlResultImpl(queryControlResult.getQueryId(), querySubmitInfo.getTask(),
             queryControlResult.getMsg(), queryControlResult.getIsSuccess());
+    // Close the task netty transceiver
+    taskNettyTransceiver.close();
     return apiQueryControlResult;
   }
 
@@ -111,7 +109,7 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
     }
 
     // Upload jar files
-    final JarUploadResult jarUploadResult = proxyToTask.uploadJarFiles(jarByteBuffers);
+    final JarUploadResult jarUploadResult = proxyToMaster.uploadJarFiles(jarByteBuffers);
     if (!jarUploadResult.getIsSuccess()) {
       throw new RuntimeException(jarUploadResult.getMsg().toString());
     }
@@ -120,7 +118,6 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
 
   @Override
   public void close() throws Exception {
-    clientToDriver.close();
-    clientToTask.close();
+    masterNettyTransceiver.close();
   }
 }

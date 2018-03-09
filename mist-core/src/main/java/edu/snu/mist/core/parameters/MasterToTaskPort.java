@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package edu.snu.mist.examples.parameters;
+package edu.snu.mist.core.parameters;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * Parameter for driver socket configuration.
+ * The port used for master-to-task RPC.
  */
-@NamedParameter(doc = "TCP socket of running MIST driver", short_name = "d", default_value = "localhost:20332")
-public final class DriverAddress implements Name<String> {
+@NamedParameter(doc = "The port used for master-to-task RPC.", default_value = "20001", short_name =
+    "master_to_task_port")
+public class MasterToTaskPort implements Name<Integer> {
 }

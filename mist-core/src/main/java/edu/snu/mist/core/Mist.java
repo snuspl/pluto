@@ -17,6 +17,7 @@
 package edu.snu.mist.core;
 
 import edu.snu.mist.core.driver.MistDriverConfigs;
+import edu.snu.mist.core.driver.MistMasterConfigs;
 import edu.snu.mist.core.driver.MistTaskConfigs;
 import edu.snu.mist.core.parameters.DriverRuntimeType;
 import org.apache.reef.client.LauncherStatus;
@@ -43,6 +44,7 @@ public final class Mist {
         .registerShortNameOfClass(DriverRuntimeType.class);
     commandLine = MistDriverConfigs.addCommandLineConf(commandLine);
     commandLine = MistTaskConfigs.addCommandLineConf(commandLine);
+    commandLine = MistMasterConfigs.addCommandLineConf(commandLine);
     commandLine = commandLine.processCommandLine(args);
     if (commandLine == null) { // Option '?' was entered and processCommandLine printed the help.
       return null;

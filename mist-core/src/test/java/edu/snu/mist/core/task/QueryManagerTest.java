@@ -25,11 +25,11 @@ import edu.snu.mist.common.operators.FilterOperator;
 import edu.snu.mist.common.operators.FlatMapOperator;
 import edu.snu.mist.common.operators.MapOperator;
 import edu.snu.mist.common.operators.ReduceByKeyOperator;
-import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.common.sources.EventGenerator;
 import edu.snu.mist.common.sources.PunctuatedEventGenerator;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.core.driver.MistTaskConfigs;
+import edu.snu.mist.core.parameters.ClientToTaskPort;
 import edu.snu.mist.core.parameters.PlanStorePath;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
@@ -89,7 +89,7 @@ public final class QueryManagerTest {
   //@Test(timeout = 10000)
   public void testSubmitComplextQueryInMIST() throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(RPCServerPort.class, "20338");
+    jcb.bindNamedParameter(ClientToTaskPort.class, "20338");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "4");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final MistTaskConfigs taskConfigs = injector.getInstance(MistTaskConfigs.class);

@@ -19,9 +19,10 @@ package edu.snu.mist.core.task.stores;
 import edu.snu.mist.client.MISTQuery;
 import edu.snu.mist.client.MISTQueryBuilder;
 import edu.snu.mist.common.types.Tuple2;
-import edu.snu.mist.core.parameters.TempFolderPath;
-import edu.snu.mist.core.task.groupaware.ApplicationMap;
+import edu.snu.mist.core.master.ApplicationCodeManager;
+import edu.snu.mist.core.parameters.SharedStorePath;
 import edu.snu.mist.core.task.groupaware.ApplicationInfo;
+import edu.snu.mist.core.task.groupaware.ApplicationMap;
 import edu.snu.mist.core.utils.TestParameters;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.AvroVertex;
@@ -72,15 +73,17 @@ public class QueryInfoStoreTest {
 
     final Injector injector = Tang.Factory.getTang().newInjector();
     final QueryInfoStore store = injector.getInstance(QueryInfoStore.class);
+    final ApplicationCodeManager applicationCodeManager = injector.getInstance(ApplicationCodeManager.class);
     final ApplicationMap applicationMap = injector.getInstance(ApplicationMap.class);
 
     final String queryId1 = "testQuery1";
     final String queryId2 = "testQuery2";
-    final String tmpFolderPath = injector.getNamedInstance(TempFolderPath.class);
+    final String tmpFolderPath = injector.getNamedInstance(SharedStorePath.class);
     final File folder = new File(tmpFolderPath);
 
     // Store jar files
-    final List<String> paths = store.saveJar(jarFiles);
+
+    final List<String> paths = applicationCodeManager.registerNewAppCode(jarFiles).getJarPaths();
     for (int i = 0; i < jarFiles.size(); i++) {
       final ByteBuffer buf = ByteBuffer.allocateDirect(jarFiles.get(i).capacity());
       final String path = paths.get(i);
@@ -100,11 +103,13 @@ public class QueryInfoStoreTest {
     final AvroDag.Builder avroDagBuilder = AvroDag.newBuilder();
     final AvroDag avroDag1 = avroDagBuilder
         .setAppId(TestParameters.SUPER_GROUP_ID)
+        .setJarPaths(paths)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .build();
     final AvroDag avroDag2 = avroDagBuilder
         .setAppId(TestParameters.SUPER_GROUP_ID)
+        .setJarPaths(paths)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .build();
@@ -139,43 +144,6 @@ public class QueryInfoStoreTest {
     for (final String path : paths) {
       Assert.assertFalse(new File(path).exists());
     }
-    folder.delete();
-  }
-
-  //@Test(timeout = 1000)
-  public void hashCollisionTest() throws InjectionException, IOException {
-    // Jar files
-    final List<ByteBuffer> jarFiles1 = new LinkedList<>();
-    final ByteBuffer byteBuffer1 = ByteBuffer.wrap(new byte[]{0, 1, 0, 1, 1, 1});
-    final ByteBuffer byteBuffer2 = ByteBuffer.wrap(new byte[]{1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0});
-    final ByteBuffer byteBuffer3 = ByteBuffer.wrap(new byte[]{0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1});
-    jarFiles1.add(byteBuffer1);
-    jarFiles1.add(byteBuffer2);
-    jarFiles1.add(byteBuffer3);
-
-    final List<ByteBuffer> jarFiles2 = new LinkedList<>();
-    // byteBuffer 4 and 5 are the same as 1 and 2.
-    final ByteBuffer byteBuffer4 = ByteBuffer.wrap(new byte[]{0, 1, 0, 1, 1, 1});
-    final ByteBuffer byteBuffer5 = ByteBuffer.wrap(new byte[]{1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0});
-    final ByteBuffer byteBuffer6 = ByteBuffer.wrap(new byte[]{1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0});
-    jarFiles2.add(byteBuffer4);
-    jarFiles2.add(byteBuffer5);
-    jarFiles2.add(byteBuffer6);
-
-    final Injector injector = Tang.Factory.getTang().newInjector();
-    final QueryInfoStore store = injector.getInstance(QueryInfoStore.class);
-    final String tmpFolderPath = injector.getNamedInstance(TempFolderPath.class);
-    final File folder = new File(tmpFolderPath);
-
-    // Store jar files
-    final List<String> paths1 = store.saveJar(jarFiles1);
-    final List<String> paths2 = store.saveJar(jarFiles2);
-
-    // Test if paths were redirected to the right files.
-    Assert.assertEquals(paths2.get(0), paths1.get(0));
-    Assert.assertEquals(paths2.get(1), paths1.get(1));
-    Assert.assertNotEquals(paths2.get(2), paths1.get(2));
-
     folder.delete();
   }
 

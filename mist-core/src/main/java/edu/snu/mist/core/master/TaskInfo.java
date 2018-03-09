@@ -13,28 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package edu.snu.mist.core;
-
-import org.apache.reef.client.LauncherStatus;
-import org.apache.reef.tang.exceptions.InjectionException;
-import org.junit.Assert;
-import org.junit.Test;
+package edu.snu.mist.core.master;
 
 /**
- * The test class for MistLauncher.
+ * The class which contains MistTask information maintained by master.
  */
-public class MistLauncherTest {
+public final class TaskInfo {
+
   /**
-   * Test for MistLauncher.
-   * @throws InjectionException
+   * The cpu load of the task.
    */
-  @Test
-  public void testMistLauncher() throws InjectionException {
-    final LauncherStatus status = MistLauncher
-        .getLauncher(MistLauncher.RuntimeType.LOCAL)
-        .setTimeout(4000)
-        .run(2, 4, 1, 256, 1, 256);
-    Assert.assertEquals(LauncherStatus.FORCE_CLOSED, status);
+  private double cpuLoad;
+
+  public TaskInfo() {
+    this.cpuLoad = 0.0;
+  }
+
+  public double getCpuLoad() {
+    return this.cpuLoad;
+  }
+
+  public void setCpuLoad(final double updatedCpuLoad) {
+    this.cpuLoad = updatedCpuLoad;
   }
 }

@@ -14,27 +14,14 @@
  * limitations under the License.
  */
 
-package edu.snu.mist.core;
+package edu.snu.mist.examples.parameters;
 
-import org.apache.reef.client.LauncherStatus;
-import org.apache.reef.tang.exceptions.InjectionException;
-import org.junit.Assert;
-import org.junit.Test;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * The test class for MistLauncher.
+ * Parameter for driver socket configuration.
  */
-public class MistLauncherTest {
-  /**
-   * Test for MistLauncher.
-   * @throws InjectionException
-   */
-  @Test
-  public void testMistLauncher() throws InjectionException {
-    final LauncherStatus status = MistLauncher
-        .getLauncher(MistLauncher.RuntimeType.LOCAL)
-        .setTimeout(4000)
-        .run(2, 4, 1, 256, 1, 256);
-    Assert.assertEquals(LauncherStatus.FORCE_CLOSED, status);
-  }
+@NamedParameter(doc = "TCP socket of running MIST master", short_name = "d", default_value = "localhost:20332")
+public final class MasterAddress implements Name<String> {
 }

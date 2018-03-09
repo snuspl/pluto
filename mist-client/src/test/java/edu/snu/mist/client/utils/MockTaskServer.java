@@ -17,12 +17,8 @@ package edu.snu.mist.client.utils;
 
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
-import edu.snu.mist.formats.avro.JarUploadResult;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.avro.AvroRemoteException;
-
-import java.nio.ByteBuffer;
-import java.util.List;
 
 /**
  * A task server for test.
@@ -33,11 +29,6 @@ public class MockTaskServer implements ClientToTaskMessage {
 
   public MockTaskServer(final String testQueryResult) {
     this.testQueryResult = testQueryResult;
-  }
-
-  @Override
-  public JarUploadResult uploadJarFiles(final List<ByteBuffer> jarFile) throws AvroRemoteException {
-    return new JarUploadResult(true, "success", "test1");
   }
 
   @Override

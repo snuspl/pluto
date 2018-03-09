@@ -15,11 +15,8 @@
  */
 package edu.snu.mist.core.driver;
 
-import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.core.MistLauncher;
-import edu.snu.mist.core.parameters.DriverRuntimeType;
-import edu.snu.mist.core.parameters.NumTaskCores;
-import edu.snu.mist.core.parameters.TaskMemorySize;
+import edu.snu.mist.core.parameters.*;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
 import org.apache.reef.client.LauncherStatus;
 import org.apache.reef.runtime.local.client.LocalRuntimeConfiguration;
@@ -45,13 +42,15 @@ public final class MistDriverTest {
    * Test whether MistDriver runs MistTaks successfully.
    * @throws InjectionException
    */
-  public void launchDriverTestHelper(final int rpcServerPort) throws InjectionException {
+  public void launchDriverTestHelper(final int clientToTaskPort) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(DriverRuntimeType.class, "LOCAL");
     jcb.bindNamedParameter(NumTaskCores.class, "1");
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, "1");
     jcb.bindNamedParameter(TaskMemorySize.class, "256");
-    jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
+    jcb.bindNamedParameter(NumMasterCores.class, "1");
+    jcb.bindNamedParameter(MasterMemorySize.class, "256");
+    jcb.bindNamedParameter(ClientToTaskPort.class, Integer.toString(clientToTaskPort));
 
     final Configuration runtimeConf = LocalRuntimeConfiguration.CONF
         .build();

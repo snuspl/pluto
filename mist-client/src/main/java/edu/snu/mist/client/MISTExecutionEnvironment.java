@@ -32,7 +32,7 @@ public interface MISTExecutionEnvironment extends AutoCloseable {
    * @return the result of the query submission.
    * @throws IOException an exception occurs when connecting with MIST and serializing the jar files.
    */
-  APIQueryControlResult submitQuery(MISTQuery queryToSubmit)  throws AvroRemoteException;
+  APIQueryControlResult submitQuery(MISTQuery queryToSubmit)  throws AvroRemoteException, IOException;
 
   /**
    * Submit jar files for the application.

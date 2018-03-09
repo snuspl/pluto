@@ -13,7 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.core.parameters;
+
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
+
 /**
- * A package for RPC.
+ * The port used for task-to-master RPC.
  */
-package edu.snu.mist.common.rpc;
+@NamedParameter(doc = "The port used for task-to-master RPC.", default_value = "20002", short_name =
+    "task_to_master_port")
+public class TaskToMasterPort implements Name<Integer> {
+}

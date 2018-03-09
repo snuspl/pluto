@@ -18,7 +18,10 @@ package edu.snu.mist.core.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "Temporary folder path", short_name = "tmp", default_value = "/tmp/")
-public final class TempFolderPath implements Name<String> {
-  // empty
+/**
+ * The port used for client-to-master RPC.
+ */
+@NamedParameter(doc = "The port used for client-to-master RPC.", default_value = "20332", short_name =
+    "client_to_master_port")
+public class ClientToMasterPort implements Name<Integer> {
 }

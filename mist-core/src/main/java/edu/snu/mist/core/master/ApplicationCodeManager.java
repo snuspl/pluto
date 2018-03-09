@@ -13,28 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.driver;
+package edu.snu.mist.core.master;
 
-import edu.snu.mist.formats.avro.MistTaskProvider;
-import org.apache.reef.driver.task.RunningTask;
+import edu.snu.mist.formats.avro.JarUploadResult;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
+import java.nio.ByteBuffer;
+import java.util.List;
+
 /**
- * TaskSelector returns a list of tasks for executing client queries
- * by collecting information about MistTasks.
- * It extends MistTaskProvider which is a generated avro RPC protocol.
+ * The interface for classes which manage submitted application codes.
  */
-@DefaultImplementation(DefaultTaskSelectorImpl.class)
-public interface TaskSelector extends MistTaskProvider {
-  /**
-   * Registers a running task to task selector.
-   * @param runningTask running task
-   */
-  void registerRunningTask(final RunningTask runningTask);
+@DefaultImplementation(DefaultApplicationCodeManager.class)
+public interface ApplicationCodeManager {
 
   /**
-   * Unregisters the task.
-   * @param taskId task id
+   * Registers the new query code with a given Jar file.
+   * @return The path for the saved
    */
-  void unregisterTask(final String taskId);
+  JarUploadResult registerNewAppCode(List<ByteBuffer> jarFiles);
+
+  /**
+   * Returns the jar paths for a given application id.
+   * @param appId
+   * @return the list of jar paths
+   */
+  List<String> getJarPaths(String appId);
 }

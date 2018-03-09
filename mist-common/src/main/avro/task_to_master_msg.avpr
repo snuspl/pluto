@@ -14,14 +14,31 @@
  * limitations under the License.
  */
 
-package edu.snu.mist.examples.parameters;
+ /**
+  * This is a skeleton protocol for RPC communication from MistTask to MistMaster.
+  * TODO: Implement necessary message protocols.
+  */
+{
+  "namespace": "edu.snu.mist.formats.avro",
+  "protocol": "TaskToMasterMessage",
+  "types":[
+    {
+      "name": "IPAddress",
+      "type": "record",
+      "fields":
+      [
+        {
+          "name": "hostAddress",
+          "type": "string"
+        },
+        {
+          "name": "port",
+          "type": "int"
+        }
+      ]
+    }
+  ],
+  "messages": {
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
-
-/**
- * Parameter for netty source socket configuration.
- */
-@NamedParameter(doc = "TCP socket of netty source", short_name = "ns", default_value = "127.0.0.1:20331")
-public final class NettySourceAddress implements Name<String> {
+  }
 }

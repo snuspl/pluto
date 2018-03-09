@@ -46,6 +46,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.TreeMap;
@@ -130,6 +131,7 @@ public class GroupRecoveryTest {
     final AvroDag.Builder avroDagBuilder = AvroDag.newBuilder();
     final AvroDag avroDag = avroDagBuilder
         .setAppId(groupId)
+        .setJarPaths(new ArrayList<>())
         .setAvroVertices(initialAvroOpChainDag.getKey())
         .setEdges(initialAvroOpChainDag.getValue())
         .build();

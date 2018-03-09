@@ -13,41 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.rpc;
+package edu.snu.mist.core.rpc;
 
 import org.apache.avro.ipc.NettyServer;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
-import org.apache.reef.tang.ExternalConstructor;
-import org.apache.reef.tang.annotations.Parameter;
 
-import javax.inject.Inject;
 import java.net.InetSocketAddress;
 
 /**
- * A wrapper class for Avro RPC Netty Server.
+ * Utillization method class for avro setup.
  */
-public final class AvroRPCNettyServerWrapper implements ExternalConstructor<Server> {
+public final class AvroUtils {
 
-  /**
-   * Avro SpecificResponder.
-   */
-  private final SpecificResponder responder;
-
-  /**
-   * Avro RPC Netty Server port.
-   */
-  private final int serverPort;
-
-  @Inject
-  private AvroRPCNettyServerWrapper(final SpecificResponder responder,
-                                    @Parameter(RPCServerPort.class) final int serverPort) {
-    this.responder = responder;
-    this.serverPort = serverPort;
+  private AvroUtils() {
+    // Should not be called!
   }
 
-  @Override
-  public Server newInstance() {
-    return new NettyServer(responder, new InetSocketAddress(serverPort));
+  /**
+   * A helper method for making avro servers.
+   * @param messageClass The class of message.
+   * @param messageInstance The actual messaging instance.
+   * @param serverAddress The server host name and port number.
+   * @param <T> The class type of messaging instance.
+   * @return The avro server.
+   */
+  public static <T> Server createAvroServer(
+      final Class<T> messageClass,
+      final T messageInstance,
+      final InetSocketAddress serverAddress) {
+    final SpecificResponder responder = new SpecificResponder(messageClass, messageInstance);
+    return new NettyServer(responder, serverAddress);
   }
 }
