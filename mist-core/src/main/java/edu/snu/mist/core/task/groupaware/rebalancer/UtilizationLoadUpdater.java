@@ -26,6 +26,7 @@ import javax.inject.Inject;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 public final class UtilizationLoadUpdater implements LoadUpdater {
   private static final Logger LOG = Logger.getLogger(UtilizationLoadUpdater.class.getName());
@@ -40,6 +41,7 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
    */
   private final GroupAllocationTable groupAllocationTable;
 
+  private long startTime;
   private long previousUpdateTime;
 
   @Inject
@@ -47,15 +49,18 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
                                  @Parameter(DefaultGroupLoad.class) final double defaultGroupLoad) {
     this.defaultGroupLoad = defaultGroupLoad;
     this.groupAllocationTable = groupAllocationTable;
+    this.startTime = System.currentTimeMillis();
     this.previousUpdateTime = System.currentTimeMillis();
   }
 
   @Override
   public void update() {
+    startTime = System.currentTimeMillis();
     final List<EventProcessor> eventProcessors = groupAllocationTable.getKeys();
     for (final EventProcessor eventProcessor : eventProcessors) {
       updateGroupAndThreadLoad(eventProcessor, groupAllocationTable.getValue(eventProcessor));
     }
+    previousUpdateTime = startTime;
     LOG.info(groupAllocationTable.toString());
   }
 
@@ -70,9 +75,7 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
     //boolean isOverloaded = false;
 
     double eventProcessorLoad = 0.0;
-    final long startTime = System.currentTimeMillis();
     final long elapsedTime = startTime - previousUpdateTime;
-    previousUpdateTime = startTime;
 
     for (final Group group : groups) {
       double load = 0.0;
@@ -83,6 +86,12 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
       final long incomingEvent = processingEvent + group.numberOfRemainingEvents();
       final long processingEventTime = group.getProcessingTime().get();
       group.getProcessingTime().addAndGet(-processingEventTime);
+
+      if (LOG.isLoggable(Level.FINE)) {
+        LOG.log(Level.FINE,
+            "Group {0}, ProcessingEvent: {1}, IncomingEvent: {2}, ProcessingTime: {3}",
+            new Object[] {group.getGroupId(), processingEvent, incomingEvent, processingEventTime});
+      }
 
       // Calculate group load
       // No processed. This thread is overloaded!
@@ -95,10 +104,16 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
         load = defaultGroupLoad;
       } else {
         // processed event, incoming event
-        final double inputRate = (incomingEvent * 1000000000) / (double) elapsedTime;
+        final double inputRate = (incomingEvent * 1000) / (double) elapsedTime;
         final double processingRate = (processingEvent * 1000000000) / (double) processingEventTime;
         final double groupLoad = inputRate / processingRate;
         load = groupLoad;
+
+        if (LOG.isLoggable(Level.FINE)) {
+          LOG.log(Level.FINE,
+              "Group {0}, InputRate: {1}, ProcessingRate: {2}, GroupLoad: {3}",
+              new Object[] {group.getGroupId(), inputRate, processingRate, groupLoad});
+        }
       }
 
       eventProcessorLoad += load;
