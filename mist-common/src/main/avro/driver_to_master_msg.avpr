@@ -15,23 +15,12 @@
  */
 
  /**
-  * This is a skeleton protocol for RPC communication between clients and MistDriver.
-  * When the clients send their queries, first they send messages which contains information of a query to the driver.
-  * The driver receives the message, picks some tasks which are suitable for running the queries,
-  * and returns the list of tasks' ip addresses to the clients.
+  * This is a skeleton protocol for RPC communication from MistDriver to MistMaster message.
   */
 {
   "namespace": "edu.snu.mist.formats.avro",
-  "protocol": "MistTaskProvider",
-  "types":
-  [
-    {
-      "name": "QueryInfo",
-      "type": "record",
-      "fields":
-      [ /* TODO[MIST-92]: Define avro RPC protocol between client and driver */
-      ]
-    },
+  "protocol": "DriverToMasterMessage",
+  "types":[
     {
       "name": "IPAddress",
       "type": "record",
@@ -46,35 +35,47 @@
           "type": "int"
         }
       ]
-    },
-    {
-      "name": "TaskList",
-      "type": "record",
-      "fields":
-      [
-        {
-          "name": "tasks",
-          "type":
-          {
-            "type": "array",
-            "items": "IPAddress"
-          }
-        }
-      ]
     }
   ],
   "messages":
   {
-    "getTasks":
+    "addTask":
     {
       "request":
       [
         {
-          "name": "queryInfo",
-          "type": "QueryInfo"
+          "name": "taskAddress",
+          "type": "IPAddress"
         }
       ],
-      "response": "TaskList"
+      "response": "boolean"
+    },
+    "setupMasterToTaskConn":
+    {
+      "request":
+      [
+        {
+          "name": "taskAddress",
+          "type": "IPAddress"
+        }
+      ],
+      "response": "boolean"
+    },
+    "taskSetupFinished":
+    {
+      "request": [],
+      "response": "null"
+    },
+    "notifyFailedTask":
+    {
+      "request":
+      [
+        {
+          "name": "taskAddress",
+          "type": "IPAddress"
+        }
+      ],
+      "response": "boolean"
     }
   }
 }

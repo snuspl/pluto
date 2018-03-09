@@ -13,28 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package edu.snu.mist.core;
-
-import org.apache.reef.client.LauncherStatus;
-import org.apache.reef.tang.exceptions.InjectionException;
-import org.junit.Assert;
-import org.junit.Test;
-
 /**
- * The test class for MistLauncher.
+ * The package file related to MistMaster.
  */
-public class MistLauncherTest {
-  /**
-   * Test for MistLauncher.
-   * @throws InjectionException
-   */
-  @Test
-  public void testMistLauncher() throws InjectionException {
-    final LauncherStatus status = MistLauncher
-        .getLauncher(MistLauncher.RuntimeType.LOCAL)
-        .setTimeout(4000)
-        .run(2, 4, 1, 256, 1, 256);
-    Assert.assertEquals(LauncherStatus.FORCE_CLOSED, status);
-  }
-}
+package edu.snu.mist.core.master;

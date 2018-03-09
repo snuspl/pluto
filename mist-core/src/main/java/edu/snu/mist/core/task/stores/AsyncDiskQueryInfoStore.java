@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.stores;
 
-import edu.snu.mist.core.parameters.TempFolderPath;
+import edu.snu.mist.core.parameters.SharedStorePath;
 import edu.snu.mist.core.task.groupaware.ApplicationMap;
 import edu.snu.mist.formats.avro.AvroDag;
 import io.netty.util.internal.ConcurrentSet;
@@ -30,13 +30,12 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -95,7 +94,7 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
   private final ApplicationMap metaApplicationMap;
 
   @Inject
-  private AsyncDiskQueryInfoStore(@Parameter(TempFolderPath.class) final String tmpFolderPath,
+  private AsyncDiskQueryInfoStore(@Parameter(SharedStorePath.class) final String tmpFolderPath,
                                   final ApplicationMap metaApplicationMap,
                                   final FileNameGenerator fileNameGenerator) {
     this.tmpFolderPath = tmpFolderPath;
@@ -200,80 +199,6 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
       }
     }
     return sameJarExists;
-  }
-
-  /**
-   * Create a JarFile with the given bytes and path, and also add it to the paths.
-   * @param jarFileBytes
-   * @param jarFilePath
-   * @param paths
-   * @throws IOException
-   */
-  private void createJarFile(final ByteBuffer jarFileBytes,
-                             final Path jarFilePath,
-                             final List<String> paths) throws IOException {
-    final File jarFile = jarFilePath.toFile();
-    final FileChannel wChannel = new FileOutputStream(jarFile, false).getChannel();
-    wChannel.write(jarFileBytes);
-    wChannel.close();
-    paths.add(jarFile.getAbsolutePath());
-  }
-
-  /**
-   * Saves the serialized jar files into the disk.
-   * This generates file names for the jar files from fileNameGenerator.
-   * @param jarFiles jar files
-   * @return paths of the stored jar files
-   * @throws IOException throws an exception when the jar file is not able to be saved.
-   */
-  @Override
-  public List<String> saveJar(final List<ByteBuffer> jarFiles) throws IOException {
-    final List<String> paths = new LinkedList<>();
-    for (final ByteBuffer jarFileBytes : jarFiles) {
-      final String path = String.format("submitted-%s.jar", fileNameGenerator.generate());
-      final Path jarFilePath = Paths.get(tmpFolderPath, path);
-      createJarFile(jarFileBytes, jarFilePath, paths);
-      /** TODO: re-implement this codes
-      final byte[] byteBufferHash = HashUtils.getByteBufferHash(jarFileBytes);
-      // Check if the jarFiles already exist.
-      final ByteBuffer wrappedHash = ByteBuffer.wrap(byteBufferHash);
-      List<Tuple<ByteBuffer, String>> jarInfoList = hashInfoMap.get(wrappedHash);
-      if (jarInfoList != null) {
-        synchronized (jarInfoList) {
-          // This is the case when a jar file with the same hash was submitted previously.
-          if (!checkSameJar(jarFileBytes, jarInfoList, paths)) {
-            // This is when there was a SHA-256 hash collision between two different files, so a new jar is created.
-            final String path = String.format("submitted-%s.jar", fileNameGenerator.generate());
-            LOG.log(Level.INFO, "New jar " + path + " was submitted with a SHA-256 hash collision.");
-            final Path jarFilePath = Paths.get(tmpFolderPath, path);
-            jarInfoList.add(new Tuple<>(jarFileBytes, jarFilePath.toString()));
-            createJarFile(jarFileBytes, jarFilePath, paths);
-          }
-        }
-      } else {
-        // If the hash value is new to the MistTask, create the new jar.
-        final String path = String.format("submitted-%s.jar", fileNameGenerator.generate());
-        final Path jarFilePath = Paths.get(tmpFolderPath, path);
-        final List<Tuple<ByteBuffer, String>> newPathsList = new ArrayList<>();
-        final Tuple<ByteBuffer, String> newJarTuple = new Tuple<>(jarFileBytes, jarFilePath.toString());
-        newPathsList.add(newJarTuple);
-        if (hashInfoMap.putIfAbsent(wrappedHash, newPathsList) == null) {
-          LOG.log(Level.INFO, "New jar " + path + " was submitted.");
-          createJarFile(jarFileBytes, jarFilePath, paths);
-        } else {
-          // Two jar files with the same hash were submitted concurrently.
-          jarInfoList = hashInfoMap.get(wrappedHash);
-          synchronized (jarInfoList) {
-            if (!checkSameJar(jarFileBytes, jarInfoList, paths)) {
-              LOG.log(Level.INFO, "New jar " + path + " was submitted with a SHA-256 hash collision.");
-              jarInfoList.add(newJarTuple);
-              createJarFile(jarFileBytes, jarFilePath, paths);
-            }
-          }
-        }
-      }**/
-    }
-    return paths;
   }
 
   /**

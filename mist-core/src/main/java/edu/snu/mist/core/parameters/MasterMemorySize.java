@@ -13,28 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.core.parameters;
 
-package edu.snu.mist.core;
-
-import org.apache.reef.client.LauncherStatus;
-import org.apache.reef.tang.exceptions.InjectionException;
-import org.junit.Assert;
-import org.junit.Test;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * The test class for MistLauncher.
+ * The size of memory allocated for MIST Master.
  */
-public class MistLauncherTest {
-  /**
-   * Test for MistLauncher.
-   * @throws InjectionException
-   */
-  @Test
-  public void testMistLauncher() throws InjectionException {
-    final LauncherStatus status = MistLauncher
-        .getLauncher(MistLauncher.RuntimeType.LOCAL)
-        .setTimeout(4000)
-        .run(2, 4, 1, 256, 1, 256);
-    Assert.assertEquals(LauncherStatus.FORCE_CLOSED, status);
-  }
+@NamedParameter(doc = "Master memory size (MB)", short_name = "master_mem_size")
+public class MasterMemorySize implements Name<Integer> {
 }

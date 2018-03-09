@@ -35,7 +35,6 @@ import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
@@ -155,8 +154,16 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
             new Object[]{appId, queryId});
       }
 
+      if (!applicationMap.containsKey(appId)) {
+        createApplication(appId, tuple.getValue().getJarPaths());
+      }
+
       final ApplicationInfo applicationInfo = applicationMap.get(appId);
       final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
+      // Waiting for group information being added
+      while (applicationInfo.getGroups().isEmpty()) {
+        Thread.sleep(100);
+      }
       final Query query = createAndStartQuery(queryId, applicationInfo, configDag);
 
       queryControlResult.setIsSuccess(true);
@@ -188,15 +195,6 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
   }
 
   @Override
-  public String uploadJarFile(final List<ByteBuffer> jars) throws IOException, InjectionException {
-    // Create an app info
-    final String appId = Long.toString(applicationNum.getAndIncrement());
-    final List<String> paths = planStore.saveJar(jars);
-    createApplication(appId, paths);
-    return appId;
-  }
-
-  @Override
   public ApplicationInfo createApplication(final String appId, final List<String> paths) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
 
@@ -217,7 +215,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
 
     final Group group = injector.getInstance(Group.class);
     groupAllocationTableModifier.addEvent(
-        new WritingEvent(WritingEvent.EventType.GROUP_ADD, new Tuple<>(applicationInfo, group)));
+            new WritingEvent(WritingEvent.EventType.GROUP_ADD, new Tuple<>(applicationInfo, group)));
 
     return applicationInfo;
   }

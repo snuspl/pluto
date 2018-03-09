@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.stores;
 
-import edu.snu.mist.core.parameters.TempFolderPath;
+import edu.snu.mist.core.parameters.SharedStorePath;
 import edu.snu.mist.formats.avro.AvroPhysicalOperatorChain;
 import edu.snu.mist.formats.avro.AvroPhysicalSourceOutgoingEdgesInfo;
 import org.apache.avro.file.DataFileReader;
@@ -69,7 +69,7 @@ public final class AvroExecutionVertexStore {
   private final FileNameGenerator fileNameGenerator;
 
   @Inject
-  private AvroExecutionVertexStore(@Parameter(TempFolderPath.class) final String tmpFolderPath,
+  private AvroExecutionVertexStore(@Parameter(SharedStorePath.class) final String tmpFolderPath,
                                    final FileNameGenerator fileNameGenerator) {
     this.tmpFolderPath = tmpFolderPath;
     this.fileNameGenerator = fileNameGenerator;

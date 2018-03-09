@@ -20,8 +20,6 @@ import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.List;
 
 /**
  * This interface saves the information related to a query (the operator chain dag of a query and jar files).
@@ -42,14 +40,6 @@ public interface QueryInfoStore extends AutoCloseable {
    * @return true if saving is success. Otherwise return false
    */
   boolean isStored(String queryId);
-
-  /**
-   * Saves the jar files and returns paths of the stored jar files.
-   * @param jarFiles jar files
-   * @return paths of the jar files
-   * @throws IOException throws an exception when the jar file is not able to be saved.
-   */
-  List<String> saveJar(List<ByteBuffer> jarFiles) throws IOException;
 
   /**
    * Loads the operator chain dag corresponding to the queryId.

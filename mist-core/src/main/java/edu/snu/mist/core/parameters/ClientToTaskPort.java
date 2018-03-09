@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.rpc;
+package edu.snu.mist.core.parameters;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The port number of the RPC server", short_name = "port", default_value = "20332")
-public final class RPCServerPort implements Name<Integer> {
-  // empty
+/**
+ * The port used for client-to-task RPC.
+ */
+@NamedParameter(doc = "The port used for client-to-task RPC.", default_value = "20333", short_name =
+    "client_to_task_port")
+public final class ClientToTaskPort implements Name<Integer> {
 }

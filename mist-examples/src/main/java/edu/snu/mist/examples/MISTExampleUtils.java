@@ -24,7 +24,7 @@ import edu.snu.mist.client.datastreams.configurations.KafkaSourceConfiguration;
 import edu.snu.mist.client.datastreams.configurations.MQTTSourceConfiguration;
 import edu.snu.mist.client.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.client.datastreams.configurations.TextSocketSourceConfiguration;
-import edu.snu.mist.examples.parameters.DriverAddress;
+import edu.snu.mist.examples.parameters.MasterAddress;
 import edu.snu.mist.formats.avro.JarUploadResult;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -122,20 +122,19 @@ public final class MISTExampleUtils {
   public static APIQueryControlResult submit(final MISTQueryBuilder queryBuilder,
                                              final Configuration configuration)
       throws IOException, URISyntaxException, InjectionException {
-    final String[] driverSocket =
-        Tang.Factory.getTang().newInjector(configuration).getNamedInstance(DriverAddress.class).split(":");
-    final String driverHostname = driverSocket[0];
-    final int driverPort = Integer.parseInt(driverSocket[1]);
+    final String[] masterSocket =
+        Tang.Factory.getTang().newInjector(configuration).getNamedInstance(MasterAddress.class).split(":");
+    final String masterHostname = masterSocket[0];
+    final int masterPort = Integer.parseInt(masterSocket[1]);
 
     try (final MISTExecutionEnvironment executionEnvironment =
-        new MISTDefaultExecutionEnvironmentImpl(driverHostname, driverPort)) {
+        new MISTDefaultExecutionEnvironmentImpl(masterHostname, masterPort)) {
 
       // Upload jar
       final String jarFilePath = getJarFilePath();
       final List<String> jarFilePaths = Arrays.asList(jarFilePath);
       final JarUploadResult result = executionEnvironment.submitJar(jarFilePaths);
       queryBuilder.setApplicationId(result.getIdentifier());
-
       return executionEnvironment.submitQuery(queryBuilder.build());
     } catch (final Exception e) {
       e.printStackTrace();
@@ -145,7 +144,7 @@ public final class MISTExampleUtils {
 
   public static CommandLine getDefaultCommandLine(final JavaConfigurationBuilder jcb) {
     return new CommandLine(jcb)
-        .registerShortNameOfClass(DriverAddress.class);
+        .registerShortNameOfClass(MasterAddress.class);
   }
 
   /**

@@ -15,20 +15,14 @@
  */
 package edu.snu.mist.core.driver;
 
-import edu.snu.mist.common.rpc.AvroRPCNettyServerWrapper;
-import edu.snu.mist.common.rpc.RPCServerPort;
 import edu.snu.mist.common.shared.parameters.MqttSinkKeepAliveSec;
 import edu.snu.mist.common.shared.parameters.MqttSourceKeepAliveSec;
-import edu.snu.mist.core.parameters.TempFolderPath;
-import edu.snu.mist.core.task.DefaultClientToTaskMessageImpl;
-import edu.snu.mist.core.task.TaskSpecificResponderWrapper;
+import edu.snu.mist.core.rpc.DefaultClientToTaskMessageImpl;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GroupRebalancingPeriod;
 import edu.snu.mist.core.task.groupaware.parameters.GroupPinningTime;
 import edu.snu.mist.core.task.groupaware.parameters.ProcessingTimeout;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
-import org.apache.avro.ipc.Server;
-import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -48,17 +42,6 @@ public final class MistTaskConfigs {
    * The number of event processors of a MistTask.
    */
   private final int numEventProcessors;
-
-  /**
-   * Temporary folder path for storing temporay jar files.
-   */
-  private final String tempFolderPath;
-
-
-  /**
-   * The port number of rpc server of a MistTask.
-   */
-  private final int rpcServerPort;
 
   /**
    * The mqtt keep alive time for sources in seconds.
@@ -87,16 +70,12 @@ public final class MistTaskConfigs {
 
   @Inject
   private MistTaskConfigs(@Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
-                          @Parameter(RPCServerPort.class) final int rpcServerPort,
-                          @Parameter(TempFolderPath.class) final String tempFolderPath,
                           @Parameter(MqttSourceKeepAliveSec.class) final int mqttSourceKeepAliveSec,
                           @Parameter(MqttSinkKeepAliveSec.class) final int mqttSinkKeepAliveSec,
                           @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
                           @Parameter(ProcessingTimeout.class) final long processingTimeout,
                           @Parameter(GroupPinningTime.class) final long groupPinningTime) {
     this.numEventProcessors = numEventProcessors;
-    this.tempFolderPath = tempFolderPath;
-    this.rpcServerPort = rpcServerPort + 10 > MAX_PORT_NUM ? rpcServerPort - 10 : rpcServerPort + 10;
     this.rebalancingPeriod = rebalancingPeriod;
     this.mqttSourceKeepAliveSec = mqttSourceKeepAliveSec;
     this.mqttSinkKeepAliveSec = mqttSinkKeepAliveSec;
@@ -113,16 +92,12 @@ public final class MistTaskConfigs {
 
     // Parameter
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, Integer.toString(numEventProcessors));
-    jcb.bindNamedParameter(TempFolderPath.class, tempFolderPath);
-    jcb.bindNamedParameter(RPCServerPort.class, Integer.toString(rpcServerPort));
     jcb.bindNamedParameter(MqttSourceKeepAliveSec.class, Integer.toString(mqttSourceKeepAliveSec));
     jcb.bindNamedParameter(MqttSinkKeepAliveSec.class, Integer.toString(mqttSinkKeepAliveSec));
     jcb.bindNamedParameter(GroupRebalancingPeriod.class, Long.toString(rebalancingPeriod));
 
     // Implementation
     jcb.bindImplementation(ClientToTaskMessage.class, DefaultClientToTaskMessageImpl.class);
-    jcb.bindConstructor(Server.class, AvroRPCNettyServerWrapper.class);
-    jcb.bindConstructor(SpecificResponder.class, TaskSpecificResponderWrapper.class);
 
     return jcb.build();
   }
@@ -135,7 +110,6 @@ public final class MistTaskConfigs {
   public static CommandLine addCommandLineConf(final CommandLine commandLine) {
     final CommandLine cmd = commandLine
         .registerShortNameOfClass(DefaultNumEventProcessors.class)
-        .registerShortNameOfClass(TempFolderPath.class)
         .registerShortNameOfClass(MqttSourceKeepAliveSec.class)
         .registerShortNameOfClass(MqttSinkKeepAliveSec.class)
         .registerShortNameOfClass(ProcessingTimeout.class)
