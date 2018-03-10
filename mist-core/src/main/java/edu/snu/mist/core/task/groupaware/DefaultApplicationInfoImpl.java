@@ -154,7 +154,7 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
         final Operator op = ((DefaultPhysicalOperatorImpl) ev).getOperator();
         if (op instanceof StateHandler) {
           final StateHandler stateHandler = (StateHandler) op;
-          latestWatermarkTimestamp = stateHandler.getLatestCheckpointTimestamp();
+          latestWatermarkTimestamp = stateHandler.getLatestTimestampBeforeCheckpoint();
           groupTimestamp.compareAndSetIfSmaller(latestWatermarkTimestamp);
         }
       }

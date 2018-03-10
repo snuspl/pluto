@@ -129,16 +129,18 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
     input.setValue(output);
     outputEmitter.emitData(input);
     state = intermediateState;
+    latestTimestampBeforeCheckpoint = input.getTimestamp();
   }
 
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
     outputEmitter.emitWatermark(input);
     if (input.isCheckpoint()) {
-      latestCheckpointTimestamp = input.getTimestamp();
       final Map<String, Object> stateMap = new HashMap<>();
       stateMap.put("reduceByKeyState", new Cloner().deepClone(state));
       checkpointMap.put(input.getTimestamp(), stateMap);
+    } else {
+      latestTimestampBeforeCheckpoint = input.getTimestamp();
     }
   }
 

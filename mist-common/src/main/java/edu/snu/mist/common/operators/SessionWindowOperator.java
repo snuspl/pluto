@@ -103,6 +103,7 @@ public final class SessionWindowOperator<T> extends OneStreamStateHandlerOperato
     currentWindow.putData(input);
     startedNewWindow = true;
     latestDataTimestamp = input.getTimestamp();
+    latestTimestampBeforeCheckpoint = input.getTimestamp();
   }
 
   @Override
@@ -110,12 +111,13 @@ public final class SessionWindowOperator<T> extends OneStreamStateHandlerOperato
     emitAndCreateWindow(input.getTimestamp());
     currentWindow.putWatermark(input);
     if (input.isCheckpoint()) {
-      latestCheckpointTimestamp = input.getTimestamp();
       final Map<String, Object> stateMap = new HashMap<>();
       stateMap.put("currentWindow", new Cloner().deepClone(currentWindow));
       stateMap.put("latestDataTimestamp", latestDataTimestamp);
       stateMap.put("startedNewWindow", startedNewWindow);
       checkpointMap.put(input.getTimestamp(), stateMap);
+    } else {
+      latestTimestampBeforeCheckpoint = input.getTimestamp();
     }
   }
 

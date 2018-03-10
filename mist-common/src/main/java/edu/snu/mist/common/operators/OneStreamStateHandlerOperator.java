@@ -25,7 +25,7 @@ public abstract class OneStreamStateHandlerOperator extends OneStreamOperator im
   /**
    * The latest Checkpoint Timestamp.
    */
-  protected long latestCheckpointTimestamp;
+  protected long latestTimestampBeforeCheckpoint;
 
   /**
    * The map of states for checkpointing.
@@ -34,7 +34,7 @@ public abstract class OneStreamStateHandlerOperator extends OneStreamOperator im
   protected Map<Long, Map<String, Object>> checkpointMap;
 
   protected OneStreamStateHandlerOperator() {
-    this.latestCheckpointTimestamp = 0L;
+    this.latestTimestampBeforeCheckpoint = 0L;
     this.checkpointMap = new HashMap<>();
   }
 
@@ -47,7 +47,7 @@ public abstract class OneStreamStateHandlerOperator extends OneStreamOperator im
   public void removeOldStates(final long checkpointTimestamp) {
     final Set<Long> removeStateSet = new HashSet<>();
     for (final long entryTimestamp : checkpointMap.keySet()) {
-      if (entryTimestamp < checkpointTimestamp) {
+      if (entryTimestamp <= checkpointTimestamp) {
         removeStateSet.add(entryTimestamp);
       }
     }
@@ -57,7 +57,7 @@ public abstract class OneStreamStateHandlerOperator extends OneStreamOperator im
   }
 
   @Override
-  public long getLatestCheckpointTimestamp() {
-    return latestCheckpointTimestamp;
+  public long getLatestTimestampBeforeCheckpoint() {
+    return latestTimestampBeforeCheckpoint;
   }
 }

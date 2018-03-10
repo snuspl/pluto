@@ -138,7 +138,6 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamStateHandlerOperator 
       window.putWatermark(input);
     }
     if (input.isCheckpoint()) {
-      latestCheckpointTimestamp = input.getTimestamp();
       final Map<String, Object> stateMap = new HashMap<>();
       stateMap.put("windowCreationPoint", windowCreationPoint);
       stateMap.put("windowQueue", new Cloner().deepClone(windowQueue));

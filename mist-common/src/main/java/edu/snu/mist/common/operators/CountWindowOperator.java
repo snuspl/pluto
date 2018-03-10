@@ -50,6 +50,7 @@ public final class CountWindowOperator<T> extends FixedSizeWindowOperator<T> {
     putData(input);
     count++;
     emitElapsedWindow(count);
+    latestTimestampBeforeCheckpoint = input.getTimestamp();
   }
 
   @Override
@@ -59,6 +60,8 @@ public final class CountWindowOperator<T> extends FixedSizeWindowOperator<T> {
       final Map<String, Object> stateMap = checkpointMap.remove(input.getTimestamp());
       stateMap.put("count", count);
       checkpointMap.put(input.getTimestamp(), stateMap);
+    } else {
+      latestTimestampBeforeCheckpoint = input.getTimestamp();
     }
   }
 

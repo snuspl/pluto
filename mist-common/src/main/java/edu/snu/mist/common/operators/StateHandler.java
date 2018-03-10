@@ -44,8 +44,11 @@ public interface StateHandler {
   void setState(Map<String, Object> loadedState);
 
   /**
-   * Get the latest checkpoint timestamp.
+   * Get the latest timestamp before a checkpoint timestamp.
+   * This timestamp is not the timestamp of the latest checkpoint timestamp,
+   * but it is the timestamp of the most recently processed event(whether data or watermark)
+   * that is not a checkpoint timestamp.
    */
-  long getLatestCheckpointTimestamp();
+  long getLatestTimestampBeforeCheckpoint();
 
 }
