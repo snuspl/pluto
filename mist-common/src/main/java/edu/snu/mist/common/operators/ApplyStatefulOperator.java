@@ -82,16 +82,14 @@ public final class ApplyStatefulOperator<IN, OUT>
   public void processLeftWatermark(final MistWatermarkEvent input) {
     outputEmitter.emitWatermark(input);
     if (input.isCheckpoint()) {
-      final Map<String, Object> stateMap = new HashMap<>();
-      stateMap.put("applyStatefulFunctionState", new Cloner().deepClone(applyStatefulFunction.getCurrentState()));
-      checkpointMap.put(input.getTimestamp(), stateMap);
+      checkpointMap.put(latestTimestampBeforeCheckpoint, getStateSnapshot());
     } else {
       latestTimestampBeforeCheckpoint = input.getTimestamp();
     }
   }
 
   @Override
-  public Map<String, Object> getCurrentOperatorState() {
+  public Map<String, Object> getStateSnapshot() {
     final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("applyStatefulFunctionState", new Cloner().deepClone(applyStatefulFunction.getCurrentState()));
     return stateMap;

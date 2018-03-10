@@ -25,7 +25,7 @@ public interface StateHandler {
   /**
    * Gets the most recent state of the current operator.
    */
-  Map<String, Object> getCurrentOperatorState();
+  Map<String, Object> getStateSnapshot();
 
   /**
    * Gets the state of the current operator at a certain timestamp.

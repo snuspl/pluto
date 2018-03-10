@@ -105,18 +105,14 @@ public final class StateTransitionOperator extends OneStreamStateHandlerOperator
   public void processLeftWatermark(final MistWatermarkEvent input) {
     outputEmitter.emitWatermark(input);
     if (input.isCheckpoint()) {
-      latestTimestampBeforeCheckpoint = input.getTimestamp();
-      final Map<String, Object> stateMap = new HashMap<>();
-      final String currStateString = currState;
-      stateMap.put("stateTransitionOperatorState", currStateString);
-      checkpointMap.put(input.getTimestamp(), stateMap);
+      checkpointMap.put(input.getTimestamp(), getStateSnapshot());
     } else {
       latestTimestampBeforeCheckpoint = input.getTimestamp();
     }
   }
 
   @Override
-  public Map<String, Object> getCurrentOperatorState() {
+  public Map<String, Object> getStateSnapshot() {
     final Map<String, Object> stateMap = new HashMap<>();
     final String currStateString = currState;
     stateMap.put("stateTransitionOperatorState", currStateString);

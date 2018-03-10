@@ -96,7 +96,7 @@ public final class ApplyStatefulOperatorTest {
     final int expectedApplyStatefulOperatorState = 20;
 
     // Get the current ApplyStatefulOperator's state.
-    final Map<String, Object> operatorState = applyStatefulOperator.getCurrentOperatorState();
+    final Map<String, Object> operatorState = applyStatefulOperator.getStateSnapshot();
     final int applyStatefulOperatorState = (int)operatorState.get("applyStatefulFunctionState");
 
     // Compare the expected and original operator's state.
@@ -118,7 +118,7 @@ public final class ApplyStatefulOperatorTest {
     applyStatefulOperator.setState(loadStateMap);
 
     // Get the current ApplyStatefulOperator's state.
-    final Map<String, Object> operatorState = applyStatefulOperator.getCurrentOperatorState();
+    final Map<String, Object> operatorState = applyStatefulOperator.getStateSnapshot();
     final int applyStatefulFunctionState = (Integer)operatorState.get("applyStatefulFunctionState");
 
     // Compare the original and the set operator.

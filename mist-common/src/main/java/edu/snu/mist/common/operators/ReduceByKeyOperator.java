@@ -136,16 +136,14 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
   public void processLeftWatermark(final MistWatermarkEvent input) {
     outputEmitter.emitWatermark(input);
     if (input.isCheckpoint()) {
-      final Map<String, Object> stateMap = new HashMap<>();
-      stateMap.put("reduceByKeyState", new Cloner().deepClone(state));
-      checkpointMap.put(input.getTimestamp(), stateMap);
+      checkpointMap.put(latestTimestampBeforeCheckpoint, getStateSnapshot());
     } else {
       latestTimestampBeforeCheckpoint = input.getTimestamp();
     }
   }
 
   @Override
-  public Map<String, Object> getCurrentOperatorState() {
+  public Map<String, Object> getStateSnapshot() {
     final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("reduceByKeyState", new Cloner().deepClone(state));
     return stateMap;

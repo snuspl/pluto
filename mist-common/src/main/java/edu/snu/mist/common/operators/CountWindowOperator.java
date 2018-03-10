@@ -57,17 +57,17 @@ public final class CountWindowOperator<T> extends FixedSizeWindowOperator<T> {
   public void processLeftWatermark(final MistWatermarkEvent input) {
     putWatermark(input);
     if (input.isCheckpoint()) {
-      final Map<String, Object> stateMap = checkpointMap.remove(input.getTimestamp());
+      final Map<String, Object> stateMap = checkpointMap.remove(latestTimestampBeforeCheckpoint);
       stateMap.put("count", count);
-      checkpointMap.put(input.getTimestamp(), stateMap);
+      checkpointMap.put(latestTimestampBeforeCheckpoint, stateMap);
     } else {
       latestTimestampBeforeCheckpoint = input.getTimestamp();
     }
   }
 
   @Override
-  public Map<String, Object> getCurrentOperatorState() {
-    final Map<String, Object> stateMap = super.getCurrentOperatorState();
+  public Map<String, Object> getStateSnapshot() {
+    final Map<String, Object> stateMap = super.getStateSnapshot();
     stateMap.put("count", count);
     return stateMap;
   }
