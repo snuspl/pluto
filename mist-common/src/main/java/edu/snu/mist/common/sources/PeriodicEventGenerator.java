@@ -48,7 +48,7 @@ public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V>
   /**
    * The expected delay between the time that the data is created and processed.
    */
-  protected final long expectedDelay;
+  private final long expectedDelay;
 
   /**
    * The result of service execution.

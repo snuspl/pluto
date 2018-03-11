@@ -104,7 +104,7 @@ public final class SessionWindowOperator<T> extends OneStreamStateHandlerOperato
     currentWindow.putData(input);
     startedNewWindow = true;
     latestDataTimestamp = input.getTimestamp();
-    updateLatestEventTimestamp(input.getTimestamp());
+    updateLatestEventTimestamp(latestDataTimestamp);
   }
 
   @Override
