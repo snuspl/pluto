@@ -44,7 +44,7 @@ public final class WindowImpl<T> implements Window<T>, Serializable {
 
   public WindowImpl(final long start, final long size, final Collection<T> dataCollection) {
     latestTimestamp = 0L;
-    latestWatermark = new MistWatermarkEvent(0L, false);
+    latestWatermark = new MistWatermarkEvent(0L);
     this.dataCollection = dataCollection;
     this.start = start;
     this.end = start + size - 1;

@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 
@@ -47,7 +48,7 @@ public final class UnionOperator extends TwoStreamOperator {
   public UnionOperator() {
     this.leftUpstreamQueue = new LinkedBlockingQueue<>();
     this.rightUpstreamQueue = new LinkedBlockingQueue<>();
-    defaultWatermark = new MistWatermarkEvent(0L, false);
+    defaultWatermark = new MistWatermarkEvent(0L);
     this.latestLeftWatermark = defaultWatermark;
     this.latestRightWatermark = defaultWatermark;
     this.recentLeftTimestamp = 0L;
@@ -216,5 +217,15 @@ public final class UnionOperator extends TwoStreamOperator {
       // Drain events until the minimum watermark.
       drainUntilMinimumWatermark();
     }
+  }
+
+  @Override
+  public void processLeftCheckpoint(final MistCheckpointEvent input) {
+    outputEmitter.emitCheckpoint(input);
+  }
+
+  @Override
+  public void processRightCheckpoint(final MistCheckpointEvent input) {
+    outputEmitter.emitCheckpoint(input);
   }
 }

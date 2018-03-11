@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
@@ -344,5 +345,10 @@ public final class CepOperator<T> extends OneStreamOperator {
             outputEmitter.emitData(new MistDataEvent(output, timeStamp));
             eventStack.setAlreadyEmitted();
         }
+    }
+
+    @Override
+    public void processLeftCheckpoint(final MistCheckpointEvent input) {
+        outputEmitter.emitCheckpoint(input);
     }
 }

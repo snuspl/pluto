@@ -44,7 +44,7 @@ public class StateTransitionOperatorTest {
         value2.put("number", 2);
         final MistDataEvent data2 = new MistDataEvent(value2, 1L);
 
-        final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(7L, false);
+        final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(7L);
 
         final Map<String, Integer> value3 = new HashMap<>();
         value3.put("number", 3);

@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.OutputEmitter;
@@ -93,6 +94,33 @@ public final class OperatorOutputEmitter implements OutputEmitter {
   }
 
   /**
+   * Send watermarks to the next operator chain if the next vertex is an operator chain.
+   * @param checkpoint checkpoint
+   * @param direction direction of upstream
+   * @param nextVertex next vertex (operator chain or sink)
+   */
+  private void sendCheckpoint(final MistCheckpointEvent checkpoint,
+                              final Direction direction,
+                              final ExecutionVertex nextVertex) {
+    switch (nextVertex.getType()) {
+      case OPERATOR: {
+        if (direction == Direction.LEFT) {
+          ((PhysicalOperator) nextVertex).getOperator().processLeftCheckpoint(checkpoint);
+        } else {
+          ((PhysicalOperator) nextVertex).getOperator().processRightCheckpoint(checkpoint);
+        }
+        break;
+      }
+      case SINK: {
+        // do nothing for sink because sink does not handle checkpoints
+        break;
+      }
+      default:
+        throw new RuntimeException("Unknown type: " + nextVertex.getType());
+    }
+  }
+
+  /**
    * This method emits the outputs to next OperatorChains.
    * If the Executor of the current OperatorChain is same as that of next OperatorChain,
    * the OutputEmitter directly forwards outputs of the current OperatorChain
@@ -153,6 +181,16 @@ public final class OperatorOutputEmitter implements OutputEmitter {
         nextOperators.entrySet()) {
       final Direction direction = nextQuery.getValue().getDirection();
       sendWatermark(output, direction, nextQuery.getKey());
+    }
+  }
+
+  @Override
+  public void emitCheckpoint(final MistCheckpointEvent checkpoint) {
+    // Checkpoint is not changed, so we just forward it to the next operator chains.
+    for (final Map.Entry<ExecutionVertex, MISTEdge> nextQuery :
+        nextOperators.entrySet()) {
+      final Direction direction = nextQuery.getValue().getDirection();
+      sendCheckpoint(checkpoint, direction, nextQuery.getKey());
     }
   }
 }

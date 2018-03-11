@@ -53,12 +53,11 @@ public final class PunctuatedEventGenerator<I, V> extends EventGeneratorImpl<I, 
       @Parameter(SerializedWatermarkPredicateUdf.class) final String isWatermarkObj,
       final ClassLoader classLoader,
       @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod,
-      @Parameter(PeriodicWatermarkDelay.class) final long expectedDelay,
       final TimeUnit timeUnit,
       final ScheduledExecutorService scheduler) throws IOException, ClassNotFoundException {
     this(SerializeUtils.deserializeFromString(isWatermarkObj, classLoader),
         SerializeUtils.deserializeFromString(timestampParseObj, classLoader),
-        checkpointPeriod, expectedDelay, timeUnit, scheduler);
+        checkpointPeriod, timeUnit, scheduler);
   }
 
   @Inject
@@ -68,13 +67,12 @@ public final class PunctuatedEventGenerator<I, V> extends EventGeneratorImpl<I, 
       @Parameter(SerializedWatermarkPredicateUdf.class) final String isWatermarkObj,
       final ClassLoader classLoader,
       @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod,
-      @Parameter(PeriodicWatermarkDelay.class) final long expectedDelay,
       final TimeUnit timeUnit,
       final ScheduledExecutorService scheduler) throws IOException, ClassNotFoundException {
     this((MISTFunction)SerializeUtils.deserializeFromString(timestampExtractObj, classLoader),
         (MISTPredicate)SerializeUtils.deserializeFromString(timestampParseObj, classLoader),
         (WatermarkTimestampFunction)SerializeUtils.deserializeFromString(isWatermarkObj, classLoader),
-        checkpointPeriod, expectedDelay, timeUnit, scheduler);
+        checkpointPeriod, timeUnit, scheduler);
   }
 
   @Inject
@@ -82,11 +80,10 @@ public final class PunctuatedEventGenerator<I, V> extends EventGeneratorImpl<I, 
       final MISTPredicate<I> isWatermark,
       final WatermarkTimestampFunction<I> parseTimestamp,
       @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod,
-      @Parameter(PeriodicWatermarkDelay.class) final long expectedDelay,
       final TimeUnit timeUnit,
       final ScheduledExecutorService scheduler) {
     this(null, isWatermark, parseTimestamp,
-        checkpointPeriod, expectedDelay, timeUnit, scheduler);
+        checkpointPeriod, timeUnit, scheduler);
   }
 
   @Inject
@@ -95,10 +92,9 @@ public final class PunctuatedEventGenerator<I, V> extends EventGeneratorImpl<I, 
       final MISTPredicate<I> isWatermark,
       final WatermarkTimestampFunction<I> parseTimestamp,
       @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod,
-      @Parameter(PeriodicWatermarkDelay.class) final long expectedDelay,
       final TimeUnit timeUnit,
       final ScheduledExecutorService scheduler) {
-    super(extractTimestampFunc, checkpointPeriod, expectedDelay, timeUnit, scheduler);
+    super(extractTimestampFunc, checkpointPeriod, timeUnit, scheduler);
     this.isWatermark = isWatermark;
     this.parseTimestamp = parseTimestamp;
   }
@@ -107,7 +103,7 @@ public final class PunctuatedEventGenerator<I, V> extends EventGeneratorImpl<I, 
   public void emitData(final I input) {
     if (isWatermark.test(input)) {
       latestWatermarkTimestamp = parseTimestamp.apply(input);
-      outputEmitter.emitWatermark(new MistWatermarkEvent(latestWatermarkTimestamp, false));
+      outputEmitter.emitWatermark(new MistWatermarkEvent(latestWatermarkTimestamp));
     } else {
       MistDataEvent newInputEvent = generateEvent(input);
       if (newInputEvent != null) {

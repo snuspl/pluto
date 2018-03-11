@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
@@ -98,17 +99,13 @@ public final class StateTransitionOperator extends OneStreamStateHandlerOperator
       input.setValue(output);
       outputEmitter.emitData(input);
     }
-    latestTimestampBeforeCheckpoint = input.getTimestamp();
+    updateLatestEventTimestamp(input.getTimestamp());
   }
 
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
+    updateLatestEventTimestamp(input.getTimestamp());
     outputEmitter.emitWatermark(input);
-    if (input.isCheckpoint()) {
-      checkpointMap.put(input.getTimestamp(), getStateSnapshot());
-    } else {
-      latestTimestampBeforeCheckpoint = input.getTimestamp();
-    }
   }
 
   @Override
@@ -122,5 +119,10 @@ public final class StateTransitionOperator extends OneStreamStateHandlerOperator
   @Override
   public void setState(final Map<String, Object> loadedState) {
     currState = (String) loadedState.get("stateTransitionOperatorState");
+  }
+
+  @Override
+  public void processLeftCheckpoint(final MistCheckpointEvent input) {
+    checkpointMap.put(latestTimestampBeforeCheckpoint, getStateSnapshot());
   }
 }

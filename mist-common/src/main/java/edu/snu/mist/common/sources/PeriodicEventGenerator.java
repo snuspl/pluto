@@ -46,6 +46,11 @@ public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V>
   private final long period;
 
   /**
+   * The expected delay between the time that the data is created and processed.
+   */
+  protected final long expectedDelay;
+
+  /**
    * The result of service execution.
    */
   private ScheduledFuture result;
@@ -79,13 +84,14 @@ public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V>
                                 @Parameter(PeriodicWatermarkDelay.class) final long expectedDelay,
                                 final TimeUnit timeUnit,
                                 final ScheduledExecutorService scheduler) {
-    super(extractTimestampFunc, checkpointPeriod, expectedDelay, timeUnit, scheduler);
+    super(extractTimestampFunc, checkpointPeriod, timeUnit, scheduler);
     if (period <= 0L || checkpointPeriod < 0L || expectedDelay < 0L) {
       throw new RuntimeException("The period " + period + " should be larger than 0," +
           " the checkpoint period " + checkpointPeriod + " should be larger than or equal to 0," +
           " and expected delay " + expectedDelay + " should be equal or larger than 0");
     }
     this.period = period;
+    this.expectedDelay = expectedDelay;
   }
 
   @Override
@@ -93,7 +99,7 @@ public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V>
     result = scheduler.scheduleAtFixedRate(new Runnable() {
       public void run() {
         latestWatermarkTimestamp = getCurrentTimestamp() - expectedDelay;
-        outputEmitter.emitWatermark(new MistWatermarkEvent(latestWatermarkTimestamp, false));
+        outputEmitter.emitWatermark(new MistWatermarkEvent(latestWatermarkTimestamp));
       }
     }, period, period, timeUnit);
     super.startRemain();

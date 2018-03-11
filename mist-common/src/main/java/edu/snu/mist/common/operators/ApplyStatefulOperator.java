@@ -16,6 +16,7 @@
 package edu.snu.mist.common.operators;
 
 import com.rits.cloning.Cloner;
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
@@ -74,18 +75,14 @@ public final class ApplyStatefulOperator<IN, OUT>
     }
 
     input.setValue(output);
+    updateLatestEventTimestamp(input.getTimestamp());
     outputEmitter.emitData(input);
-    latestTimestampBeforeCheckpoint = input.getTimestamp();
   }
 
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
+    updateLatestEventTimestamp(input.getTimestamp());
     outputEmitter.emitWatermark(input);
-    if (input.isCheckpoint()) {
-      checkpointMap.put(latestTimestampBeforeCheckpoint, getStateSnapshot());
-    } else {
-      latestTimestampBeforeCheckpoint = input.getTimestamp();
-    }
   }
 
   @Override
@@ -98,5 +95,11 @@ public final class ApplyStatefulOperator<IN, OUT>
   @Override
   public void setState(final Map<String, Object> loadedState) {
     applyStatefulFunction.setFunctionState(loadedState.get("applyStatefulFunctionState"));
+  }
+
+  @Override
+  public void processLeftCheckpoint(final MistCheckpointEvent input) {
+    checkpointMap.put(latestTimestampBeforeCheckpoint, getStateSnapshot());
+    outputEmitter.emitCheckpoint(input);
   }
 }

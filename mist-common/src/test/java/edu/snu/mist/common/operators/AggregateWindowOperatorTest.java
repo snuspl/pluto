@@ -43,7 +43,7 @@ public final class AggregateWindowOperatorTest {
     window.putData(new MistDataEvent(15, 30));
     window.putData(new MistDataEvent(30, 90));
     final MistDataEvent dataEvent = new MistDataEvent(window, 90L);
-    final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(101L, false);
+    final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(101L);
 
     // functions that dealing with input WindowData
     final MISTFunction<WindowData<Integer>, String> aggregateFunc =

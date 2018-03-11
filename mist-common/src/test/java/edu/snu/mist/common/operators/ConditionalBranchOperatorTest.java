@@ -43,7 +43,7 @@ public final class ConditionalBranchOperatorTest {
     final MistDataEvent d3 = new MistDataEvent("333", 3L);
     final MistDataEvent d4 = new MistDataEvent("4444", 4L);
     final MistDataEvent d5 = new MistDataEvent("55555", 5L);
-    final MistWatermarkEvent w1 = new MistWatermarkEvent(6L, false);
+    final MistWatermarkEvent w1 = new MistWatermarkEvent(6L);
 
     // classify the string according to it's length
     final List<MISTPredicate<String>> predicates = new ArrayList<>();

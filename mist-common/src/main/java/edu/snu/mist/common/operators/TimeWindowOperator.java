@@ -42,7 +42,7 @@ public final class TimeWindowOperator<T> extends FixedSizeWindowOperator<T> {
     emitElapsedWindow(input.getTimestamp());
     createWindow(input.getTimestamp());
     putData(input);
-    latestTimestampBeforeCheckpoint = input.getTimestamp();
+    updateLatestEventTimestamp(input.getTimestamp());
   }
 
   @Override
@@ -50,8 +50,6 @@ public final class TimeWindowOperator<T> extends FixedSizeWindowOperator<T> {
     emitElapsedWindow(input.getTimestamp());
     createWindow(input.getTimestamp());
     putWatermark(input);
-    if (!input.isCheckpoint()) {
-      latestTimestampBeforeCheckpoint = input.getTimestamp();
-    }
+    updateLatestEventTimestamp(input.getTimestamp());
   }
 }

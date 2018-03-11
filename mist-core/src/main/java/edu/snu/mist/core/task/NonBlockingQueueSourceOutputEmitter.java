@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
@@ -88,7 +89,13 @@ public final class NonBlockingQueueSourceOutputEmitter<I> implements SourceOutpu
           operator.getOperator().processRightData((MistDataEvent) event);
         }
         operator.setLatestDataTimestamp(event.getTimestamp());
-      } else {
+      } else if (event.isCheckpoint()) {
+        if (direction == Direction.LEFT) {
+          operator.getOperator().processLeftCheckpoint((MistCheckpointEvent) event);
+        } else {
+          operator.getOperator().processRightCheckpoint((MistCheckpointEvent) event);
+        }
+      } else  {
         if (direction == Direction.LEFT) {
           operator.getOperator().processLeftWatermark((MistWatermarkEvent) event);
         } else {
@@ -146,6 +153,20 @@ public final class NonBlockingQueueSourceOutputEmitter<I> implements SourceOutpu
   public void emitWatermark(final MistWatermarkEvent watermark) {
     try {
       queue.add(watermark);
+      final int n = numEvents.getAndIncrement();
+
+      if (n == 0) {
+        query.insert(this);
+      }
+    } catch (final Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void emitCheckpoint(final MistCheckpointEvent checkpoint) {
+    try {
+      queue.add(checkpoint);
       final int n = numEvents.getAndIncrement();
 
       if (n == 0) {

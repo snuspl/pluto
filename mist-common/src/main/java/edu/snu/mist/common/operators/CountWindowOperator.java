@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.parameters.WindowInterval;
@@ -50,19 +51,13 @@ public final class CountWindowOperator<T> extends FixedSizeWindowOperator<T> {
     putData(input);
     count++;
     emitElapsedWindow(count);
-    latestTimestampBeforeCheckpoint = input.getTimestamp();
+    updateLatestEventTimestamp(input.getTimestamp());
   }
 
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
     putWatermark(input);
-    if (input.isCheckpoint()) {
-      final Map<String, Object> stateMap = checkpointMap.remove(latestTimestampBeforeCheckpoint);
-      stateMap.put("count", count);
-      checkpointMap.put(latestTimestampBeforeCheckpoint, stateMap);
-    } else {
-      latestTimestampBeforeCheckpoint = input.getTimestamp();
-    }
+    updateLatestEventTimestamp(input.getTimestamp());
   }
 
   @Override
@@ -76,5 +71,13 @@ public final class CountWindowOperator<T> extends FixedSizeWindowOperator<T> {
   public void setState(final Map<String, Object> loadedState) {
     super.setState(loadedState);
     count = (long)loadedState.get("count");
+  }
+
+  @Override
+  public void processLeftCheckpoint(final MistCheckpointEvent input) {
+    final Map<String, Object> stateMap = checkpointMap.remove(latestTimestampBeforeCheckpoint);
+    stateMap.put("count", count);
+    checkpointMap.put(latestTimestampBeforeCheckpoint, stateMap);
+    outputEmitter.emitCheckpoint(input);
   }
 }

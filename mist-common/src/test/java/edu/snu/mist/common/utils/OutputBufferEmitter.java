@@ -42,4 +42,8 @@ public final class OutputBufferEmitter implements OutputEmitter {
   public void emitWatermark(final MistWatermarkEvent watermark) {
     list.add(watermark);
   }
+  @Override
+  public void emitCheckpoint(final MistCheckpointEvent checkpoint) {
+    // do nothing
+  }
 }

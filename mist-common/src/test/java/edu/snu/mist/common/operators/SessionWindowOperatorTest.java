@@ -39,10 +39,10 @@ public final class SessionWindowOperatorTest {
   private final MistDataEvent d4 = new MistDataEvent(4, 1800L);
   private final MistDataEvent d5 = new MistDataEvent(5, 2000L);
   private final MistDataEvent d6 = new MistDataEvent(6, 2700L);
-  private final MistWatermarkEvent w1 = new MistWatermarkEvent(1200L, false);
-  private final MistWatermarkEvent w2 = new MistWatermarkEvent(2400L, false);
-  private final MistWatermarkEvent w3 = new MistWatermarkEvent(3100L, false);
-  private final MistWatermarkEvent w4 = new MistWatermarkEvent(3700L, false);
+  private final MistWatermarkEvent w1 = new MistWatermarkEvent(1200L);
+  private final MistWatermarkEvent w2 = new MistWatermarkEvent(2400L);
+  private final MistWatermarkEvent w3 = new MistWatermarkEvent(3100L);
+  private final MistWatermarkEvent w4 = new MistWatermarkEvent(3700L);
 
   /**
    * Test whether SessionWindowOperator creates windows properly.

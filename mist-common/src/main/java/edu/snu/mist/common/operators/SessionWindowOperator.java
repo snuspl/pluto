@@ -16,6 +16,7 @@
 package edu.snu.mist.common.operators;
 
 import com.rits.cloning.Cloner;
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.parameters.WindowInterval;
@@ -103,18 +104,14 @@ public final class SessionWindowOperator<T> extends OneStreamStateHandlerOperato
     currentWindow.putData(input);
     startedNewWindow = true;
     latestDataTimestamp = input.getTimestamp();
-    latestTimestampBeforeCheckpoint = input.getTimestamp();
+    updateLatestEventTimestamp(input.getTimestamp());
   }
 
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
     emitAndCreateWindow(input.getTimestamp());
     currentWindow.putWatermark(input);
-    if (input.isCheckpoint()) {
-      checkpointMap.put(input.getTimestamp(), getStateSnapshot());
-    } else {
-      latestTimestampBeforeCheckpoint = input.getTimestamp();
-    }
+    updateLatestEventTimestamp(input.getTimestamp());
   }
 
   @Override
@@ -132,5 +129,10 @@ public final class SessionWindowOperator<T> extends OneStreamStateHandlerOperato
     currentWindow = (Window<T>)loadedState.get("currentWindow");
     latestDataTimestamp = (long)loadedState.get("latestDataTimestamp");
     startedNewWindow = (boolean)loadedState.get("startedNewWindow");
+  }
+
+  @Override
+  public void processLeftCheckpoint(final MistCheckpointEvent input) {
+    checkpointMap.put(latestTimestampBeforeCheckpoint, getStateSnapshot());
   }
 }

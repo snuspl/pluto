@@ -38,6 +38,14 @@ public abstract class OneStreamStateHandlerOperator extends OneStreamOperator im
     this.checkpointMap = new HashMap<>();
   }
 
+  /**
+   * Updates the latest timestamp with the given event's timestamp.
+   * @param inputTimestamp the input event's timestamp
+   */
+  protected void updateLatestEventTimestamp(final long inputTimestamp) {
+    latestTimestampBeforeCheckpoint = inputTimestamp;
+  }
+
   @Override
   public Map<String, Object> getOperatorState(final long timestamp) {
     return checkpointMap.get(timestamp);
