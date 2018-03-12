@@ -17,6 +17,7 @@ package edu.snu.mist.common.operators;
 
 import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
+import edu.snu.mist.common.MistEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 
 import javax.inject.Inject;
@@ -36,8 +37,8 @@ import java.util.logging.Logger;
 public final class UnionOperator extends TwoStreamOperator {
   private static final Logger LOG = Logger.getLogger(UnionOperator.class.getName());
 
-  private final Queue<MistDataEvent> leftUpstreamQueue;
-  private final Queue<MistDataEvent> rightUpstreamQueue;
+  private final Queue<MistEvent> leftUpstreamQueue;
+  private final Queue<MistEvent> rightUpstreamQueue;
   private final MistWatermarkEvent defaultWatermark;
   private MistWatermarkEvent latestLeftWatermark;
   private MistWatermarkEvent latestRightWatermark;
@@ -61,7 +62,7 @@ public final class UnionOperator extends TwoStreamOperator {
    * @param queue queue
    * @return timestamp
    */
-  private long peekTimestamp(final Queue<MistDataEvent> queue) {
+  private long peekTimestamp(final Queue<MistEvent> queue) {
     return queue.peek().getTimestamp();
   }
 
@@ -70,10 +71,10 @@ public final class UnionOperator extends TwoStreamOperator {
    * @param queue queue
    * @param timestamp timestamp
    */
-  private void drainUntilTimestamp(final Queue<MistDataEvent> queue, final long timestamp) {
+  private void drainUntilTimestamp(final Queue<MistEvent> queue, final long timestamp) {
     // The events in the queue is ordered by timestamp, so just peeks one by one
     while (!queue.isEmpty() && peekTimestamp(queue) <= timestamp) {
-      final MistDataEvent event = queue.poll();
+      final MistDataEvent event = (MistDataEvent) queue.poll();
       outputEmitter.emitData(event);
     }
   }
@@ -95,21 +96,31 @@ public final class UnionOperator extends TwoStreamOperator {
 
     // The events in the queue is ordered by timestamp, so just peeks one by one
     while (!leftUpstreamQueue.isEmpty() && !rightUpstreamQueue.isEmpty()) {
-      // Pick minimum timestamp from left and right queue.
-      long leftTs = peekTimestamp(leftUpstreamQueue);
-      long rightTs = peekTimestamp(rightUpstreamQueue);
-
-      // End of the drain
-      if (leftTs > timestamp && rightTs > timestamp) {
-        return;
-      }
-
-      if (leftTs <= rightTs) {
-        final MistDataEvent event = leftUpstreamQueue.poll();
-        outputEmitter.emitData(event);
+      // Drain any checkpoint events first.
+      // The left and right checkpoint events do not have to be ordered because they are the same.
+      if (leftUpstreamQueue.peek().isCheckpoint()) {
+        final MistCheckpointEvent event = (MistCheckpointEvent) leftUpstreamQueue.poll();
+        outputEmitter.emitCheckpoint(event);
+      } else if (rightUpstreamQueue.peek().isCheckpoint()) {
+        final MistCheckpointEvent event = (MistCheckpointEvent) rightUpstreamQueue.poll();
+        outputEmitter.emitCheckpoint(event);
       } else {
-        final MistDataEvent event = rightUpstreamQueue.poll();
-        outputEmitter.emitData(event);
+        // Pick minimum timestamp from left and right queue.
+        long leftTs = peekTimestamp(leftUpstreamQueue);
+        long rightTs = peekTimestamp(rightUpstreamQueue);
+
+        // End of the drain
+        if (leftTs > timestamp && rightTs > timestamp) {
+          return;
+        }
+
+        if (leftTs <= rightTs) {
+          final MistDataEvent event = (MistDataEvent) leftUpstreamQueue.poll();
+          outputEmitter.emitData(event);
+        } else {
+          final MistDataEvent event = (MistDataEvent) rightUpstreamQueue.poll();
+          outputEmitter.emitData(event);
+        }
       }
     }
 
@@ -221,11 +232,13 @@ public final class UnionOperator extends TwoStreamOperator {
 
   @Override
   public void processLeftCheckpoint(final MistCheckpointEvent input) {
-    outputEmitter.emitCheckpoint(input);
+    leftUpstreamQueue.add(input);
+    drainUntilMinimumWatermark();
   }
 
   @Override
   public void processRightCheckpoint(final MistCheckpointEvent input) {
-    outputEmitter.emitCheckpoint(input);
+    rightUpstreamQueue.add(input);
+    drainUntilMinimumWatermark();
   }
 }
