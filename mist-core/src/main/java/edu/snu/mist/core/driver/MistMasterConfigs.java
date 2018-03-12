@@ -43,8 +43,7 @@ public final class MistMasterConfigs {
   @Inject
   private MistMasterConfigs(
       @Parameter(TaskInfoGatherPeriod.class) final long taskInfoGatherPeriod,
-      @Parameter(OverloadedTaskThreshold.class) final double overloadedTaskThreshold
-  ) {
+      @Parameter(OverloadedTaskThreshold.class) final double overloadedTaskThreshold) {
     this.taskInfoGatherPeriod = taskInfoGatherPeriod;
     this.overloadedTaskThreshold = overloadedTaskThreshold;
   }

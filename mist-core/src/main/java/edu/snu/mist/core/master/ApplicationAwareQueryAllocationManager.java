@@ -25,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The app-allocation manager which allocates queries in application-aware way.
@@ -37,11 +35,6 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
    * The map which maintains the app-task list information.
    */
   private final ConcurrentMap<String, List<IPAddress>> appTaskListMap;
-
-  /**
-   * The lock used for preventing race condition when modifying app task list.
-   */
-  private final ConcurrentMap<String, Lock> modifyTaskListLockMap;
 
   /**
    * The map which maintains task info.
@@ -55,10 +48,8 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
 
   @Inject
   private ApplicationAwareQueryAllocationManager(
-      @Parameter(OverloadedTaskThreshold.class) final double overloadedTaskThreshold
-  ) {
+      @Parameter(OverloadedTaskThreshold.class) final double overloadedTaskThreshold) {
     this.appTaskListMap = new ConcurrentHashMap<>();
-    this.modifyTaskListLockMap = new ConcurrentHashMap<>();
     this.taskInfoMap = new ConcurrentHashMap<>();
     this.overloadedTaskThreshold = overloadedTaskThreshold;
   }
@@ -68,37 +59,38 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
   public synchronized IPAddress getAllocatedTask(final String appId) {
     if (!appTaskListMap.containsKey(appId)) {
       appTaskListMap.putIfAbsent(appId, new ArrayList<>());
-      modifyTaskListLockMap.putIfAbsent(appId, new ReentrantLock());
     }
     final List<IPAddress> taskList = appTaskListMap.get(appId);
     double minTaskLoad = Double.MAX_VALUE;
     IPAddress minLoadTask = null;
 
-    for (final IPAddress task: taskList) {
-      final double currentTaskLoad = taskInfoMap.get(task).getCpuLoad();
-      if (minTaskLoad > currentTaskLoad) {
-        minLoadTask = task;
-        minTaskLoad = currentTaskLoad;
-      }
-    }
-    // All the tasks are overloaded. Allocate to a new task.
-    boolean isThereNotOverloadedTask = false;
-    if (minTaskLoad > overloadedTaskThreshold) {
-      for (final Map.Entry<IPAddress, TaskInfo> entry: taskInfoMap.entrySet()) {
-        final IPAddress task = entry.getKey();
-        final double currentTaskLoad = entry.getValue().getCpuLoad();
-        if (!taskList.contains(task) && minTaskLoad > currentTaskLoad) {
-          isThereNotOverloadedTask = true;
+    synchronized (this) {
+      for (final IPAddress task : taskList) {
+        final double currentTaskLoad = taskInfoMap.get(task).getCpuLoad();
+        if (minTaskLoad > currentTaskLoad) {
           minLoadTask = task;
           minTaskLoad = currentTaskLoad;
         }
       }
-      if (isThereNotOverloadedTask) {
-        // Add the new task.
-        taskList.add(minLoadTask);
-      } else {
-        // Return the overloaded but minimal loaded task right now.
-        // TODO: [MIST-1010] Automatic scale out when all the tasks are overloaded.
+      // All the tasks are overloaded. Allocate to a new task.
+      boolean isThereNotOverloadedTask = false;
+      if (minTaskLoad > overloadedTaskThreshold) {
+        for (final Map.Entry<IPAddress, TaskInfo> entry : taskInfoMap.entrySet()) {
+          final IPAddress task = entry.getKey();
+          final double currentTaskLoad = entry.getValue().getCpuLoad();
+          if (!taskList.contains(task) && minTaskLoad > currentTaskLoad) {
+            isThereNotOverloadedTask = true;
+            minLoadTask = task;
+            minTaskLoad = currentTaskLoad;
+          }
+        }
+        if (isThereNotOverloadedTask) {
+          // Add the new task.
+          taskList.add(minLoadTask);
+        } else {
+          // Return the overloaded but minimal loaded task right now.
+          // TODO: [MIST-1010] Automatic scale out when all the tasks are overloaded.
+        }
       }
     }
     return minLoadTask;
