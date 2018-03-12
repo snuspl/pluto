@@ -56,7 +56,7 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
 
   // TODO: [MIST-519] Consider query reallocation.
   @Override
-  public synchronized IPAddress getAllocatedTask(final String appId) {
+  public IPAddress getAllocatedTask(final String appId) {
     if (!appTaskListMap.containsKey(appId)) {
       appTaskListMap.putIfAbsent(appId, new ArrayList<>());
     }
