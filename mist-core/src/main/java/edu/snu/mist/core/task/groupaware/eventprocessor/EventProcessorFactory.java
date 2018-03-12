@@ -20,7 +20,7 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
 /**
  * This is a factory of event processor.
  */
-@DefaultImplementation(DefaultEventProcessorFactory.class)
+@DefaultImplementation(AffinityEventProcessorFactory.class)
 public interface EventProcessorFactory {
 
   /**
