@@ -38,12 +38,12 @@ public class TaskLoadUpdater implements Runnable {
   /**
    * The task-to-info map.
    */
-  private final TaskInfoMap taskInfoMap;
+  private final QueryAllocationManager queryAllocationManager;
 
   public TaskLoadUpdater(final ProxyToTaskMap proxyToTaskMap,
-                         final TaskInfoMap taskInfoMap) {
+                         final QueryAllocationManager queryAllocationManager) {
     this.proxyToTaskMap = proxyToTaskMap;
-    this.taskInfoMap = taskInfoMap;
+    this.queryAllocationManager = queryAllocationManager;
   }
 
   @Override
@@ -53,7 +53,7 @@ public class TaskLoadUpdater implements Runnable {
       try {
         final MasterToTaskMessage proxyToTask = entry.getValue();
         final double updatedCpuLoad = (Double) proxyToTask.getTaskLoad();
-        final TaskInfo taskInfo = taskInfoMap.getTaskInfo(entry.getKey());
+        final TaskInfo taskInfo = queryAllocationManager.getTaskInfo(entry.getKey());
         taskInfo.setCpuLoad(updatedCpuLoad);
       } catch (final AvroRemoteException e) {
         LOG.log(Level.INFO, "Remote error occured during connecting to task " + entry.getKey().toString());
