@@ -64,7 +64,7 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
     double minTaskLoad = Double.MAX_VALUE;
     IPAddress minLoadTask = null;
 
-    synchronized (this) {
+    synchronized (taskList) {
       for (final IPAddress task : taskList) {
         final double currentTaskLoad = taskInfoMap.get(task).getCpuLoad();
         if (minTaskLoad > currentTaskLoad) {
