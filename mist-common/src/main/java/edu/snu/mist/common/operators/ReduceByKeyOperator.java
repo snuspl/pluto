@@ -119,6 +119,9 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
 
   @Override
   public void processLeftData(final MistDataEvent input) {
+    if (isEarlierThanRecoveredTimestamp(input)) {
+      return;
+    }
     final HashMap<K, V> intermediateState = updateState((Tuple2)input.getValue(), state);
     final HashMap<K, V> output = generateOutput(intermediateState);
 
@@ -135,6 +138,9 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
 
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
+    if (isEarlierThanRecoveredTimestamp(input)) {
+      return;
+    }
     updateLatestEventTimestamp(input.getTimestamp());
     outputEmitter.emitWatermark(input);
   }

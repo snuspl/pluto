@@ -15,10 +15,12 @@
  */
 package edu.snu.mist.common.operators;
 
-import java.util.HashMap;
+import edu.snu.mist.common.MistEvent;
+
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 public abstract class OneStreamStateHandlerOperator extends OneStreamOperator implements StateHandler {
 
@@ -28,14 +30,21 @@ public abstract class OneStreamStateHandlerOperator extends OneStreamOperator im
   protected long latestTimestampBeforeCheckpoint;
 
   /**
-   * The map of states for checkpointing.
-   * The key is the time of the checkpoint event, and the value is the state of this operator at that timestamp.
+   * The recovered latest Checkpoint Timestamp.
    */
-  protected Map<Long, Map<String, Object>> checkpointMap;
+  protected long recoveredCheckpointTimestamp;
+
+  /**
+   * The map of states for checkpointing.
+   * The key is the timestamp of the last event before a checkpoint event,
+   * and the value is the state of this operator at that timestamp.
+   */
+  protected TreeMap<Long, Map<String, Object>> checkpointMap;
 
   protected OneStreamStateHandlerOperator() {
     this.latestTimestampBeforeCheckpoint = 0L;
-    this.checkpointMap = new HashMap<>();
+    this.recoveredCheckpointTimestamp = 0L;
+    this.checkpointMap = new TreeMap<>();
   }
 
   /**
@@ -46,9 +55,25 @@ public abstract class OneStreamStateHandlerOperator extends OneStreamOperator im
     latestTimestampBeforeCheckpoint = inputTimestamp;
   }
 
+  /**
+   * If an event has a timestamp earlier than the recovered checkpoint timestamp, it should be disregarded.
+   */
+  protected boolean isEarlierThanRecoveredTimestamp(final MistEvent event) {
+    return recoveredCheckpointTimestamp != 0 && event.getTimestamp() <= recoveredCheckpointTimestamp;
+  }
+
   @Override
   public Map<String, Object> getOperatorState(final long timestamp) {
     return checkpointMap.get(timestamp);
+  }
+
+  @Override
+  public long getMaxAvailableTimestamp(final long checkpointTimestamp) {
+    if (checkpointMap.containsKey(checkpointTimestamp)) {
+      return checkpointTimestamp;
+    } else {
+      return checkpointMap.lowerKey(checkpointTimestamp);
+    }
   }
 
   @Override
@@ -62,6 +87,11 @@ public abstract class OneStreamStateHandlerOperator extends OneStreamOperator im
     for (final long entryTimestamp : removeStateSet) {
       checkpointMap.remove(entryTimestamp);
     }
+  }
+
+  @Override
+  public void setRecoveredTimestamp(final long recoveredTimestamp) {
+    this.recoveredCheckpointTimestamp = recoveredTimestamp;
   }
 
   @Override

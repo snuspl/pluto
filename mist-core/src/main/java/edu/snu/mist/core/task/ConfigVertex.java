@@ -86,6 +86,10 @@ public final class ConfigVertex {
     return state;
   }
 
+  public long getLatestCheckpointTimestamp() {
+    return latestCheckpointTimestamp;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {

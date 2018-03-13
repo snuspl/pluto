@@ -168,11 +168,13 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
     for (final ConfigVertex cv : configDag.getVertices()) {
       final ExecutionVertex ev = configExecutionVertexMap.get(cv);
       Map<String, Object> state = new HashMap<>();
+      long checkpointTimestamp = 0L;
       if (ev.getType() == ExecutionVertex.Type.OPERATOR) {
         final Operator op = ((DefaultPhysicalOperatorImpl) ev).getOperator();
         if (op instanceof StateHandler) {
           final StateHandler stateHandler = (StateHandler) op;
-          state = StateSerializer.serializeStateMap(stateHandler.getOperatorState(groupTimestamp.getValue()));
+          checkpointTimestamp = stateHandler.getMaxAvailableTimestamp(groupTimestamp.getValue());
+          state = StateSerializer.serializeStateMap(stateHandler.getOperatorState(checkpointTimestamp));
         }
       }
       final AvroConfigVertexType type;
@@ -188,7 +190,7 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
           .setType(type)
           .setConfiguration(cv.getConfiguration())
           .setState(state)
-          .setLatestCheckpointTimestamp(latestWatermarkTimestamp)
+          .setLatestCheckpointTimestamp(checkpointTimestamp)
           .build();
       avroConfigVertexList.add(acv);
       indexMap.put(cv, avroConfigVertexList.size() - 1);

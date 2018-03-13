@@ -95,6 +95,9 @@ public final class SessionWindowOperator<T> extends OneStreamStateHandlerOperato
 
   @Override
   public void processLeftData(final MistDataEvent input) {
+    if (isEarlierThanRecoveredTimestamp(input)) {
+      return;
+    }
     if (LOG.isLoggable(Level.FINE)) {
       LOG.log(Level.FINE, "{0} puts input data {1} into current window {2}",
           new Object[]{this.getClass().getName(), input, currentWindow});
@@ -109,6 +112,9 @@ public final class SessionWindowOperator<T> extends OneStreamStateHandlerOperato
 
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
+    if (isEarlierThanRecoveredTimestamp(input)) {
+      return;
+    }
     emitAndCreateWindow(input.getTimestamp());
     currentWindow.putWatermark(input);
     updateLatestEventTimestamp(input.getTimestamp());

@@ -65,6 +65,9 @@ public final class ApplyStatefulOperator<IN, OUT>
 
   @Override
   public void processLeftData(final MistDataEvent input) {
+    if (isEarlierThanRecoveredTimestamp(input)) {
+      return;
+    }
     applyStatefulFunction.update((IN)input.getValue());
     final OUT output = applyStatefulFunction.produceResult();
 
@@ -81,6 +84,9 @@ public final class ApplyStatefulOperator<IN, OUT>
 
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
+    if (isEarlierThanRecoveredTimestamp(input)) {
+      return;
+    }
     updateLatestEventTimestamp(input.getTimestamp());
     outputEmitter.emitWatermark(input);
   }

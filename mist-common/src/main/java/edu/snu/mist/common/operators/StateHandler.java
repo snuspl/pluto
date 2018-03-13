@@ -33,6 +33,12 @@ public interface StateHandler {
   Map<String, Object> getOperatorState(long timestamp);
 
   /**
+   * Get the state timestamp that is the maximum state timestamp among the state timestamps
+   * less than or equal to the given checkpointTimestamp.
+   */
+  long getMaxAvailableTimestamp(long checkpointTimestamp);
+
+  /**
    * Remove the states with timestamps less than or equal to the given timestamp.
    */
   void removeOldStates(long checkpointTimestamp);
@@ -42,6 +48,12 @@ public interface StateHandler {
    * @param loadedState
    */
   void setState(Map<String, Object> loadedState);
+
+  /**
+   * Set the recovered timestamp, which is the timestamp of the recovered state.
+   * @param recoveredTimestamp
+   */
+  void setRecoveredTimestamp(long recoveredTimestamp);
 
   /**
    * Get the latest timestamp before a checkpoint timestamp.

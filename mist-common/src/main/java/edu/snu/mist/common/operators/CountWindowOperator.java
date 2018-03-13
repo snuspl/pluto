@@ -47,6 +47,9 @@ public final class CountWindowOperator<T> extends FixedSizeWindowOperator<T> {
 
   @Override
   public void processLeftData(final MistDataEvent input) {
+    if (isEarlierThanRecoveredTimestamp(input)) {
+      return;
+    }
     createWindow(count);
     putData(input);
     count++;
@@ -56,6 +59,9 @@ public final class CountWindowOperator<T> extends FixedSizeWindowOperator<T> {
 
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
+    if (isEarlierThanRecoveredTimestamp(input)) {
+      return;
+    }
     putWatermark(input);
     updateLatestEventTimestamp(input.getTimestamp());
   }

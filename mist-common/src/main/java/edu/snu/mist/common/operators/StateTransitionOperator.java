@@ -91,6 +91,9 @@ public final class StateTransitionOperator extends OneStreamStateHandlerOperator
 
   @Override
   public void processLeftData(final MistDataEvent input) {
+    if (isEarlierThanRecoveredTimestamp(input)) {
+      return;
+    }
     stateTransition((Map<String, Object>)input.getValue());
 
     // emit when the state is final state
@@ -104,6 +107,9 @@ public final class StateTransitionOperator extends OneStreamStateHandlerOperator
 
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
+    if (isEarlierThanRecoveredTimestamp(input)) {
+      return;
+    }
     updateLatestEventTimestamp(input.getTimestamp());
     outputEmitter.emitWatermark(input);
   }
