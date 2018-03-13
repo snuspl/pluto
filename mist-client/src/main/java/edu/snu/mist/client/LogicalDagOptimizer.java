@@ -17,15 +17,14 @@ package edu.snu.mist.client;
 
 import edu.snu.mist.client.datastreams.ContinuousStreamImpl;
 import edu.snu.mist.client.datastreams.MISTStream;
-import edu.snu.mist.client.datastreams.configurations.ConditionalBranchOperatorConfiguration;
+import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.configurations.ConfKeys;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.common.parameters.SerializedUdf;
 import edu.snu.mist.formats.avro.Direction;
-import org.apache.reef.tang.Configuration;
-import org.apache.reef.tang.Tang;
-import org.apache.reef.tang.exceptions.InjectionException;
 
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -102,19 +101,20 @@ public final class LogicalDagOptimizer {
         final List<String> udfs = new ArrayList<>(branchStreams.size());
         for (int i = 1; i <= branchStreams.size(); i++) {
           final ContinuousStreamImpl branchStream = branchStreams.get(i);
-          final Configuration conf = branchStream.getConfiguration();
-          try {
-            udfs.add(Tang.Factory.getTang().newInjector(conf).getNamedInstance(SerializedUdf.class));
-          } catch (final InjectionException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-          }
+          final Map<String, String> conf = branchStream.getConfiguration();
+          udfs.add(conf.get(ConfKeys.OperatorConf.UDF_STRING.name()));
         }
 
         // create a new conditional branch vertex to unify these branch streams
-        final Configuration opConf = ConditionalBranchOperatorConfiguration.CONF
-            .set(ConditionalBranchOperatorConfiguration.UDF_LIST_STRING, udfs)
-            .build();
+        final Map<String, String> opConf = new HashMap<>();
+        try {
+          opConf.put(ConfKeys.ConditionalBranchOperator.UDF_LIST_STRING.name(),
+              SerializeUtils.serializeToString((Serializable)udfs));
+        } catch (final IOException e) {
+          e.printStackTrace();
+          throw new RuntimeException(e);
+        }
+
         final ContinuousStreamImpl unifiedBranchStream = new ContinuousStreamImpl(dag, opConf);
         dag.addVertex(unifiedBranchStream);
         dag.addEdge(currVertex, unifiedBranchStream, new MISTEdge(Direction.LEFT));

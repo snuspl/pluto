@@ -17,6 +17,8 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.operators.Operator;
 
+import java.util.Map;
+
 /**
  * This is the default implementation of PhysicalOperator.
  */
@@ -38,7 +40,7 @@ public final class DefaultPhysicalOperatorImpl extends BasePhysicalVertex implem
   private long latestWatermarkTimestamp;
 
   public DefaultPhysicalOperatorImpl(final String id,
-                                     final String configuration,
+                                     final Map<String, String> configuration,
                                      final Operator operator) {
     super(id, configuration);
     this.operator = operator;

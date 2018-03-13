@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.core.task;
 
+import java.util.Map;
+
 /**
  * This interface represents physical vertices of the query.
  * The physical vertex is one of the source, operator, or sink.
@@ -30,10 +32,10 @@ abstract class BasePhysicalVertex implements PhysicalVertex {
   /**
    * Get the configuration.
    */
-  protected final String configuration;
+  protected final Map<String, String> configuration;
 
   public BasePhysicalVertex(final String id,
-                            final String configuration) {
+                            final Map<String, String> configuration) {
     this.id = id;
     this.configuration = configuration;
   }
@@ -44,7 +46,7 @@ abstract class BasePhysicalVertex implements PhysicalVertex {
   }
 
   @Override
-  public String getConfiguration() {
+  public Map<String, String> getConfiguration() {
     return configuration;
   }
 }

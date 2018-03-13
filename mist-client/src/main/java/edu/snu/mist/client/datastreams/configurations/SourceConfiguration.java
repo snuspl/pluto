@@ -15,40 +15,24 @@
  */
 package edu.snu.mist.client.datastreams.configurations;
 
-import org.apache.reef.tang.Configuration;
+import java.util.Map;
 
 /**
  * The class represents source configuration.
- * This is just a wrapper class that holds the configuration of Tang.
  */
 public final class SourceConfiguration {
 
-  public enum SourceType {
-    KAFKA, SOCKET, MQTT;
-  }
+  private final Map<String, String> conf;
 
-  private final Configuration conf;
-  private final SourceType type;
-
-  SourceConfiguration(final Configuration conf,
-                      final SourceType type) {
-    this.conf = conf;
-    this.type = type;
+  SourceConfiguration(final Map<String, String> confMap) {
+    this.conf = confMap;
   }
 
   /**
    * Get the configuration.
    * @return configuration
    */
-  public Configuration getConfiguration() {
+  public Map<String, String> getConfiguration() {
     return conf;
-  }
-
-  /**
-   * Get the type of the source.
-   * @return type
-   */
-  public SourceType getType() {
-    return type;
   }
 }

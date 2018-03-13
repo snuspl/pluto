@@ -20,7 +20,6 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.codeshare.ClassLoaderProvider;
 import edu.snu.mist.core.task.merging.ExecutionVertexGenerator;
-import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -54,7 +53,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
                            final DAG<ConfigVertex, MISTEdge> configDag,
                            final ExecutionDag executionDag,
                            final URL[] urls,
-                           final ClassLoader classLoader) throws IOException, InjectionException {
+                           final ClassLoader classLoader) throws IOException, ClassNotFoundException {
     final ExecutionVertex currExecutionVertex;
     final DAG<ExecutionVertex, MISTEdge> dag = executionDag.getDag();
     if (created.get(currVertex) == null) {
@@ -83,7 +82,7 @@ final class DefaultDagGeneratorImpl implements DagGenerator {
   @Override
   public ExecutionDag generate(final DAG<ConfigVertex, MISTEdge> configDag,
                                final List<String> jarFilePaths)
-      throws IOException, ClassNotFoundException, InjectionException {
+      throws IOException, ClassNotFoundException {
     // For execution dag
     final ExecutionDag executionDag = new ExecutionDag(new AdjacentListConcurrentMapDAG<>());
 

@@ -58,7 +58,7 @@ public final class ImmediateQueryMergingStarterTest {
   private ExecutionVertexDagMap executionVertexDagMap;
   private ExecutionDags executionDags;
   private QueryIdConfigDagMap queryIdConfigDagMap;
-  private SrcAndDagMap<String> srcAndDagMap;
+  private SrcAndDagMap<Map<String, String>> srcAndDagMap;
   private QueryStarter queryStarter;
   private AtomicLong configVertexId;
 
@@ -88,7 +88,7 @@ public final class ImmediateQueryMergingStarterTest {
    * @param conf source configuration
    * @return test source
    */
-  private TestSource generateSource(final String conf) {
+  private TestSource generateSource(final Map<String, String> conf) {
     return new TestSource(idAndConfGenerator.generateId(), conf);
   }
 
@@ -97,8 +97,8 @@ public final class ImmediateQueryMergingStarterTest {
    * @param conf configuration of the operator
    * @return operator chain
    */
-  private PhysicalOperator generateFilterOperator(final String conf,
-                                               final MISTPredicate<String> predicate) {
+  private PhysicalOperator generateFilterOperator(final Map<String, String> conf,
+                                                  final MISTPredicate<String> predicate) {
     final PhysicalOperator filterOp = new DefaultPhysicalOperatorImpl(idAndConfGenerator.generateId(),
         conf, new FilterOperator<>(predicate));
     return filterOp;
@@ -110,7 +110,7 @@ public final class ImmediateQueryMergingStarterTest {
    * @param result list for storing outputs
    * @return sink
    */
-  private PhysicalSink<String> generateSink(final String conf,
+  private PhysicalSink<String> generateSink(final Map<String, String> conf,
                                             final List<String> result) {
     return new PhysicalSinkImpl<>(idAndConfGenerator.generateId(), conf, new TestSink<>(result));
   }
@@ -128,7 +128,7 @@ public final class ImmediateQueryMergingStarterTest {
       final PhysicalSink<String> sink,
       final ConfigVertex srcVertex,
       final ConfigVertex ocVertex,
-      final ConfigVertex sinkVertex) throws IOException, InjectionException {
+      final ConfigVertex sinkVertex) throws IOException, ClassNotFoundException {
     // Create DAG
     final DAG<ConfigVertex, MISTEdge> dag = new AdjacentListConcurrentMapDAG<>();
     dag.addVertex(srcVertex);
@@ -178,9 +178,9 @@ public final class ImmediateQueryMergingStarterTest {
     final List<String> result = new LinkedList<>();
 
    // Physical vertices
-    final String sourceConf = idAndConfGenerator.generateConf();
-    final String ocConf = idAndConfGenerator.generateConf();
-    final String sinkConf = idAndConfGenerator.generateConf();
+    final Map<String, String> sourceConf = idAndConfGenerator.generateConf();
+    final Map<String, String> ocConf = idAndConfGenerator.generateConf();
+    final Map<String, String> sinkConf = idAndConfGenerator.generateConf();
     final TestSource source = generateSource(sourceConf);
     final PhysicalOperator physicalOperator = generateFilterOperator(ocConf, (s) -> true);
     final PhysicalSink<String> sink = generateSink(sinkConf, result);
@@ -254,9 +254,9 @@ public final class ImmediateQueryMergingStarterTest {
     final List<String> paths1 = mock(List.class);
 
     // Physical vertices
-    final String sourceConf1 = idAndConfGenerator.generateConf();
-    final String ocConf1 = idAndConfGenerator.generateConf();
-    final String sinkConf1 = idAndConfGenerator.generateConf();
+    final Map<String, String> sourceConf1 = idAndConfGenerator.generateConf();
+    final Map<String, String> ocConf1 = idAndConfGenerator.generateConf();
+    final Map<String, String> sinkConf1 = idAndConfGenerator.generateConf();
     final TestSource src1 = generateSource(sourceConf1);
     final PhysicalOperator physicalOp1 = generateFilterOperator(ocConf1, (s) -> true);
     final PhysicalSink<String> sink1 = generateSink(sinkConf1, result1);
@@ -281,9 +281,9 @@ public final class ImmediateQueryMergingStarterTest {
     final List<String> paths2 = mock(List.class);
 
     // Physical vertices
-    final String sourceConf2 = idAndConfGenerator.generateConf();
-    final String ocConf2 = idAndConfGenerator.generateConf();
-    final String sinkConf2 = idAndConfGenerator.generateConf();
+    final Map<String, String> sourceConf2 = idAndConfGenerator.generateConf();
+    final Map<String, String> ocConf2 = idAndConfGenerator.generateConf();
+    final Map<String, String> sinkConf2 = idAndConfGenerator.generateConf();
     final TestSource src2 = generateSource(sourceConf2);
     final PhysicalOperator physicalOp2 = generateFilterOperator(ocConf2, (s) -> true);
     final PhysicalSink<String> sink2 = generateSink(sinkConf2, result2);
@@ -385,10 +385,10 @@ public final class ImmediateQueryMergingStarterTest {
     // Create a query 1:
     // src1 -> oc1 -> sink1
     final List<String> result1 = new LinkedList<>();
-    final String sourceConf = idAndConfGenerator.generateConf();
-    final String operatorConf = idAndConfGenerator.generateConf();
+    final Map<String, String> sourceConf = idAndConfGenerator.generateConf();
+    final Map<String, String> operatorConf = idAndConfGenerator.generateConf();
     final TestSource src1 = generateSource(sourceConf);
-    final String sinkConf1 = idAndConfGenerator.generateConf();
+    final Map<String, String> sinkConf1 = idAndConfGenerator.generateConf();
     final PhysicalOperator physicalOp1 = generateFilterOperator(operatorConf, (s) -> true);
     final PhysicalSink<String> sink1 = generateSink(sinkConf1, result1);
 
@@ -410,7 +410,7 @@ public final class ImmediateQueryMergingStarterTest {
     // src2 -> oc2 -> sink2
     // The configuration of src2 and operatorChain2 is same as that of src1 and operatorChain2.
     final List<String> result2 = new LinkedList<>();
-    final String sinkConf2 = idAndConfGenerator.generateConf();
+    final Map<String, String> sinkConf2 = idAndConfGenerator.generateConf();
     final TestSource src2 = generateSource(sourceConf);
     final PhysicalOperator physicalOp2 = generateFilterOperator(operatorConf, (s) -> true);
     final PhysicalSink<String> sink2 = generateSink(sinkConf2, result2);
@@ -509,9 +509,9 @@ public final class ImmediateQueryMergingStarterTest {
     // Create a query 1:
     // src1 -> oc1 -> sink1
     final List<String> result1 = new LinkedList<>();
-    final String sourceConf = idAndConfGenerator.generateConf();
-    final String ocConf1 = idAndConfGenerator.generateConf();
-    final String sinkConf1 = idAndConfGenerator.generateConf();
+    final Map<String, String> sourceConf = idAndConfGenerator.generateConf();
+    final Map<String, String> ocConf1 = idAndConfGenerator.generateConf();
+    final Map<String, String> sinkConf1 = idAndConfGenerator.generateConf();
     final List<String> paths1 = mock(List.class);
 
     final TestSource src1 = generateSource(sourceConf);
@@ -535,8 +535,8 @@ public final class ImmediateQueryMergingStarterTest {
     // src2 -> oc2 -> sink2
     // The configuration of src2 and operatorChain2 is same as that of src1 and operatorChain2.
     final List<String> result2 = new LinkedList<>();
-    final String ocConf2 = idAndConfGenerator.generateConf();
-    final String sinkConf2 = idAndConfGenerator.generateConf();
+    final Map<String, String> ocConf2 = idAndConfGenerator.generateConf();
+    final Map<String, String> sinkConf2 = idAndConfGenerator.generateConf();
 
     final TestSource src2 = generateSource(sourceConf);
     final PhysicalOperator physicalOp2 = generateFilterOperator(ocConf2, (s) -> true);
@@ -648,10 +648,10 @@ public final class ImmediateQueryMergingStarterTest {
   final class TestSource implements PhysicalSource {
     private SourceOutputEmitter outputEmitter;
     private final String id;
-    private final String conf;
+    private final Map<String, String> conf;
 
     TestSource(final String id,
-               final String conf) {
+               final Map<String, String> conf) {
       this.id = id;
       this.conf = conf;
     }
@@ -709,7 +709,7 @@ public final class ImmediateQueryMergingStarterTest {
     }
 
     @Override
-    public String getConfiguration() {
+    public Map<String, String> getConfiguration() {
       return conf;
     }
   }

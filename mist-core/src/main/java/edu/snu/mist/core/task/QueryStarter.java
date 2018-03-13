@@ -19,7 +19,6 @@ import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
 import org.apache.reef.tang.annotations.DefaultImplementation;
-import org.apache.reef.tang.exceptions.InjectionException;
 
 import java.io.IOException;
 import java.util.List;
@@ -37,5 +36,5 @@ public interface QueryStarter {
    */
   void start(String queryId,
              Query query, DAG<ConfigVertex, MISTEdge> configDag, List<String> jarFilePaths)
-      throws InjectionException, IOException, ClassNotFoundException;
+      throws IOException, ClassNotFoundException;
 }

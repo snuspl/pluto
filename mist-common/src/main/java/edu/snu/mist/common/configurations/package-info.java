@@ -13,26 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.client.datastreams.configurations;
-
-import java.util.Map;
-
 /**
- * The class represents watermark configuration.
- * This is just a wrapper class that holds the configuration of Tang.
+ * A package for configurations.
  */
-public final class WatermarkConfiguration {
-
-  private final Map<String, String> conf;
-  WatermarkConfiguration(final Map<String, String> conf) {
-    this.conf = conf;
-  }
-
-  /**
-   * Get the configuration.
-   * @return configuration
-   */
-  public Map<String, String> getConfiguration() {
-    return conf;
-  }
-}
+package edu.snu.mist.common.configurations;
