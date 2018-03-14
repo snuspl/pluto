@@ -142,7 +142,7 @@ public final class MQTTSharedResource implements MQTTResource {
     Tuple<List<IMqttAsyncClient>, CountDownLatch> tuple = brokerPublisherMap.get(brokerURI);
     if (tuple == null) {
       // Initialize the broker list
-      final CountDownLatch latch = new CountDownLatch(0);
+      final CountDownLatch latch = new CountDownLatch(1);
       final List<IMqttAsyncClient> publisherClientList = new ArrayList<>();
       if (brokerPublisherMap.putIfAbsent(brokerURI, new Tuple<>(publisherClientList, latch)) == null) {
         for (int i = 0; i < mqttSinkClientNumPerBroker; i++) {
