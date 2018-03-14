@@ -23,6 +23,7 @@ import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.common.functions.WatermarkTimestampFunction;
 import edu.snu.mist.common.operators.*;
+import edu.snu.mist.common.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.common.shared.KafkaSharedResource;
 import edu.snu.mist.common.shared.MQTTResource;
 import edu.snu.mist.common.shared.NettySharedResource;
@@ -32,6 +33,7 @@ import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.sources.*;
 import edu.snu.mist.common.types.Tuple2;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
+import org.apache.reef.tang.annotations.Parameter;
 import org.eclipse.paho.client.mqttv3.MqttException;
 
 import javax.inject.Inject;
@@ -75,6 +77,11 @@ public final class PhysicalObjectGenerator implements AutoCloseable {
   private final MQTTResource mqttSharedResource;
 
   /**
+   * The checkpoint period.
+   */
+  private final long checkpointPeriod;
+
+  /**
    * Identifier factory.
    */
   private final StringIdentifierFactory identifierFactory;
@@ -84,13 +91,16 @@ public final class PhysicalObjectGenerator implements AutoCloseable {
                                   final KafkaSharedResource kafkaSharedResource,
                                   final NettySharedResource nettySharedResource,
                                   final MQTTResource mqttSharedResource,
+                                  @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod,
                                   final StringIdentifierFactory identifierFactory) {
     this.scheduler = schedulerWrapper.getScheduler();
     this.kafkaSharedResource = kafkaSharedResource;
     this.nettySharedResource = nettySharedResource;
     this.mqttSharedResource = mqttSharedResource;
+    this.checkpointPeriod = checkpointPeriod;
     this.identifierFactory = identifierFactory;
   }
+
   /**
    * Get a new event generator.
    * @param conf configuration
@@ -117,14 +127,16 @@ public final class PhysicalObjectGenerator implements AutoCloseable {
       // periodic event generator
       final long period = Long.valueOf(conf.get(ConfKeys.Watermark.PERIODIC_WATERMARK_PERIOD.name()));
       final long delay = Long.valueOf(conf.get(ConfKeys.Watermark.PERIODIC_WATERMARK_DELAY.name()));
-      return new PeriodicEventGenerator(timestampExtractFunc, period, delay, watermarkTimeUnit, scheduler);
+      return new PeriodicEventGenerator(
+          timestampExtractFunc, period, checkpointPeriod, delay, watermarkTimeUnit, scheduler);
     } else if (type.equals(ConfValues.EventGeneratorType.PUNCTUATED_EVENT_GEN.name())) {
       // punctuated event generator
       final MISTPredicate watermarkPredicate = SerializeUtils.deserializeFromString(
           conf.get(ConfKeys.Watermark.WATERMARK_PREDICATE.name()), classLoader);
       final WatermarkTimestampFunction tf = SerializeUtils.deserializeFromString(
           conf.get(ConfKeys.Watermark.TIMESTAMP_PARSE_OBJECT.name()), classLoader);
-      return new PunctuatedEventGenerator(timestampExtractFunc, watermarkPredicate, tf);
+      return new PunctuatedEventGenerator(
+          timestampExtractFunc, watermarkPredicate, tf, checkpointPeriod, watermarkTimeUnit, scheduler);
     } else {
       throw new RuntimeException("Invalid event generator: " + type);
     }

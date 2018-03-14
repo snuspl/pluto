@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.driver;
 
+import edu.snu.mist.common.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.common.shared.parameters.MqttSinkKeepAliveSec;
 import edu.snu.mist.common.shared.parameters.MqttSourceKeepAliveSec;
 import edu.snu.mist.core.rpc.DefaultClientToTaskMessageImpl;
@@ -68,19 +69,26 @@ public final class MistTaskConfigs {
    */
   private final long groupPinningTime;
 
+  /**
+   * The checkpoint period.
+   */
+  private final long checkpointPeriod;
+
   @Inject
   private MistTaskConfigs(@Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
                           @Parameter(MqttSourceKeepAliveSec.class) final int mqttSourceKeepAliveSec,
                           @Parameter(MqttSinkKeepAliveSec.class) final int mqttSinkKeepAliveSec,
                           @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
                           @Parameter(ProcessingTimeout.class) final long processingTimeout,
-                          @Parameter(GroupPinningTime.class) final long groupPinningTime) {
+                          @Parameter(GroupPinningTime.class) final long groupPinningTime,
+                          @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod) {
     this.numEventProcessors = numEventProcessors;
     this.rebalancingPeriod = rebalancingPeriod;
     this.mqttSourceKeepAliveSec = mqttSourceKeepAliveSec;
     this.mqttSinkKeepAliveSec = mqttSinkKeepAliveSec;
     this.groupPinningTime = groupPinningTime;
     this.processingTimeout = processingTimeout;
+    this.checkpointPeriod = checkpointPeriod;
   }
 
   /**
@@ -95,6 +103,7 @@ public final class MistTaskConfigs {
     jcb.bindNamedParameter(MqttSourceKeepAliveSec.class, Integer.toString(mqttSourceKeepAliveSec));
     jcb.bindNamedParameter(MqttSinkKeepAliveSec.class, Integer.toString(mqttSinkKeepAliveSec));
     jcb.bindNamedParameter(GroupRebalancingPeriod.class, Long.toString(rebalancingPeriod));
+    jcb.bindNamedParameter(PeriodicCheckpointPeriod.class, Long.toString(checkpointPeriod));
 
     // Implementation
     jcb.bindImplementation(ClientToTaskMessage.class, DefaultClientToTaskMessageImpl.class);
@@ -114,7 +123,8 @@ public final class MistTaskConfigs {
         .registerShortNameOfClass(MqttSinkKeepAliveSec.class)
         .registerShortNameOfClass(ProcessingTimeout.class)
         .registerShortNameOfClass(GroupPinningTime.class)
-        .registerShortNameOfClass(GroupRebalancingPeriod.class);
+        .registerShortNameOfClass(GroupRebalancingPeriod.class)
+        .registerShortNameOfClass(PeriodicCheckpointPeriod.class);
 
     return cmd;
   }

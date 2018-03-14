@@ -83,6 +83,12 @@ limitations under the License.
             <artifactId>avro</artifactId>
             <version>${avro.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>uk.com.robust-it</groupId>
+            <artifactId>cloning</artifactId>
+            <version>${cloner.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

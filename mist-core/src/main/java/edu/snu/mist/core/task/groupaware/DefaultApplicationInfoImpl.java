@@ -142,6 +142,25 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
    */
   private AvroConfigDag convertToAvroConfigDag(final DAG<ConfigVertex, MISTEdge> configDag,
                                                final GroupMinimumLatestWatermarkTimeStamp groupTimestamp) {
+
+    // Find the minimum of the available checkpoint timestamps for the group.
+    // Replaying will start from this timestamp, if this ConfigDag is used for recovery.
+    // This is initiated as Long.MAX_VALUE, as this means that there are no stateful operators within this dag,
+    // and therefore requires no replay.
+    long latestWatermarkTimestamp = Long.MAX_VALUE;
+    for (final ConfigVertex cv : configDag.getVertices()) {
+      final ExecutionVertex ev = configExecutionVertexMap.get(cv);
+      if (ev.getType() == ExecutionVertex.Type.OPERATOR) {
+        final Operator op = ((DefaultPhysicalOperatorImpl) ev).getOperator();
+        if (op instanceof StateHandler) {
+          final StateHandler stateHandler = (StateHandler) op;
+          latestWatermarkTimestamp = stateHandler.getLatestTimestampBeforeCheckpoint();
+          groupTimestamp.compareAndSetIfSmaller(latestWatermarkTimestamp);
+        }
+      }
+    }
+
+    // Do the checkpointing according to the retrieved group timestamp.
     final Map<ConfigVertex, Integer> indexMap = new HashMap<>();
     final List<AvroConfigVertex> avroConfigVertexList = new ArrayList<>();
     final List<AvroConfigMISTEdge> avroConfigMISTEdgeList = new ArrayList<>();
@@ -149,14 +168,13 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
     for (final ConfigVertex cv : configDag.getVertices()) {
       final ExecutionVertex ev = configExecutionVertexMap.get(cv);
       Map<String, Object> state = new HashMap<>();
-      long latestWatermarkTimestamp = Long.MAX_VALUE;
+      long checkpointTimestamp = 0L;
       if (ev.getType() == ExecutionVertex.Type.OPERATOR) {
         final Operator op = ((DefaultPhysicalOperatorImpl) ev).getOperator();
         if (op instanceof StateHandler) {
           final StateHandler stateHandler = (StateHandler) op;
-          state = StateSerializer.serializeStateMap(stateHandler.getOperatorState());
-          latestWatermarkTimestamp = stateHandler.getLatestCheckpointTimestamp();
-          groupTimestamp.compareAndSetValue(latestWatermarkTimestamp);
+          checkpointTimestamp = stateHandler.getMaxAvailableTimestamp(groupTimestamp.getValue());
+          state = StateSerializer.serializeStateMap(stateHandler.getOperatorState(checkpointTimestamp));
         }
       }
       final AvroConfigVertexType type;
@@ -172,7 +190,7 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
           .setType(type)
           .setConfiguration(cv.getConfiguration())
           .setState(state)
-          .setLatestCheckpointTimestamp(latestWatermarkTimestamp)
+          .setLatestCheckpointTimestamp(checkpointTimestamp)
           .build();
       avroConfigVertexList.add(acv);
       indexMap.put(cv, avroConfigVertexList.size() - 1);
@@ -213,7 +231,7 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
       return timestamp;
     }
 
-    public void compareAndSetValue(final long newValue) {
+    public void compareAndSetIfSmaller(final long newValue) {
       if (newValue < timestamp) {
         timestamp = newValue;
       }

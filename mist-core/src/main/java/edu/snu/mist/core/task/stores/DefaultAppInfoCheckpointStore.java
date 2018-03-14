@@ -15,6 +15,12 @@
  */
 package edu.snu.mist.core.task.stores;
 
+import edu.snu.mist.common.operators.Operator;
+import edu.snu.mist.common.operators.StateHandler;
+import edu.snu.mist.core.task.DefaultPhysicalOperatorImpl;
+import edu.snu.mist.core.task.ExecutionDag;
+import edu.snu.mist.core.task.ExecutionVertex;
+import edu.snu.mist.core.task.groupaware.ApplicationInfo;
 import edu.snu.mist.core.parameters.SharedStorePath;
 import edu.snu.mist.formats.avro.ApplicationInfoCheckpoint;
 import edu.snu.mist.formats.avro.CheckpointResult;
@@ -75,11 +81,11 @@ public final class DefaultAppInfoCheckpointStore implements AppInfoCheckpointSto
 
 
   @Override
-  public CheckpointResult saveAppInfoCheckpoint(final Tuple<String, ApplicationInfoCheckpoint> tuple) {
+  public CheckpointResult saveAppInfoCheckpoint(final Tuple<String, ApplicationInfo> tuple) {
+    final String groupId = tuple.getKey();
+    final ApplicationInfo appInfo = tuple.getValue();
+    final ApplicationInfoCheckpoint gmc = appInfo.checkpoint();
     try {
-      final String groupId = tuple.getKey();
-      final ApplicationInfoCheckpoint gmc = tuple.getValue();
-
       // Write the file.
       final File storedFile = getAppInfoCheckpointFile(groupId);
       if (storedFile.exists()) {
@@ -102,6 +108,19 @@ public final class DefaultAppInfoCheckpointStore implements AppInfoCheckpointSto
           .setPathToCheckpoint("")
           .build();
     }
+    // Delete all the unnecessary states within the stateMaps of stateful operators.
+    for (final ExecutionDag ed : appInfo.getExecutionDags().values()) {
+      for (final ExecutionVertex ev : ed.getDag().getVertices()) {
+        if (ev.getType() == ExecutionVertex.Type.OPERATOR) {
+          final Operator op = ((DefaultPhysicalOperatorImpl) ev).getOperator();
+          if (op instanceof StateHandler) {
+            final StateHandler stateHandler = (StateHandler) op;
+            stateHandler.removeOldStates(gmc.getMinimumLatestCheckpointTimestamp());
+          }
+        }
+      }
+    }
+
     return CheckpointResult.newBuilder()
         .setIsSuccess(true)
         .setMsg("Successfully checkpointed group " + tuple.getKey())

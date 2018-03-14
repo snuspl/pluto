@@ -142,15 +142,17 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
   }
 
   @Override
-  public void checkpointApplication(final String appId) {
+  public boolean checkpointApplication(final String appId) {
     LOG.log(Level.INFO, "Checkpoint started for appId : {0}", appId);
     final ApplicationInfo applicationInfo = applicationMap.get(appId);
     if (applicationInfo == null) {
       LOG.log(Level.WARNING, "There is no such app {0}.",
           new Object[] {appId});
-      return;
+      return false;
     }
-    checkpointStore.saveAppInfoCheckpoint(new Tuple<>(appId, applicationInfo.checkpoint()));
+    final CheckpointResult result =
+        checkpointStore.saveAppInfoCheckpoint(new Tuple<>(appId, applicationInfo));
+    return result.getIsSuccess();
   }
 
   @Override

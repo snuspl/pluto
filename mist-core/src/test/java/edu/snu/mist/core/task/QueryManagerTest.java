@@ -123,7 +123,7 @@ public final class QueryManagerTest {
     // Create source
     final TestDataGenerator dataGenerator = new TestDataGenerator(inputs);
     final EventGenerator eventGenerator =
-        new PunctuatedEventGenerator(null, input -> false, null);
+        new PunctuatedEventGenerator(null, input -> false, null, 0, null, null);
     final PhysicalSource src = new PhysicalSourceImpl("testSource",
         new HashMap<>(), dataGenerator, eventGenerator);
 

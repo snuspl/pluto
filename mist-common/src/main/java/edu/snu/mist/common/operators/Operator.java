@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.OutputEmittable;
@@ -48,4 +49,16 @@ public interface Operator extends OutputEmittable {
    * @param watermark watermark
    */
   void processRightWatermark(final MistWatermarkEvent watermark);
+
+  /**
+   * Process checkpoint of left upstream.
+   * @param checkpoint checkpoint
+   */
+  void processLeftCheckpoint(final MistCheckpointEvent checkpoint);
+
+  /**
+   * Process checkpoint of right upstream.
+   * @param checkpoint checkpoint
+   */
+  void processRightCheckpoint(final MistCheckpointEvent checkpoint);
 }

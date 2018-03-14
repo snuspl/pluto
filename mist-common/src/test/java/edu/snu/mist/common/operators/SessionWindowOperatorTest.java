@@ -39,10 +39,10 @@ public final class SessionWindowOperatorTest {
   private final MistDataEvent d4 = new MistDataEvent(4, 1800L);
   private final MistDataEvent d5 = new MistDataEvent(5, 2000L);
   private final MistDataEvent d6 = new MistDataEvent(6, 2700L);
-  private final MistWatermarkEvent w1 = new MistWatermarkEvent(1200L, false);
-  private final MistWatermarkEvent w2 = new MistWatermarkEvent(2400L, false);
-  private final MistWatermarkEvent w3 = new MistWatermarkEvent(3100L, false);
-  private final MistWatermarkEvent w4 = new MistWatermarkEvent(3700L, false);
+  private final MistWatermarkEvent w1 = new MistWatermarkEvent(1200L);
+  private final MistWatermarkEvent w2 = new MistWatermarkEvent(2400L);
+  private final MistWatermarkEvent w3 = new MistWatermarkEvent(3100L);
+  private final MistWatermarkEvent w4 = new MistWatermarkEvent(3700L);
 
   /**
    * Test whether SessionWindowOperator creates windows properly.
@@ -125,7 +125,7 @@ public final class SessionWindowOperatorTest {
     final boolean expectedStartedNewWindow = true;
 
     // Get the current SessionWindowOperator's state.
-    final Map<String, Object> operatorState = sessionWindowOperator.getOperatorState();
+    final Map<String, Object> operatorState = sessionWindowOperator.getStateSnapshot();
     final Window<Integer> currentWindow = (Window<Integer>)operatorState.get("currentWindow");
     final long latestDataTimestamp = (long)operatorState.get("latestDataTimestamp");
     final boolean startedNewWindow = (boolean)operatorState.get("startedNewWindow");
@@ -160,7 +160,7 @@ public final class SessionWindowOperatorTest {
     sessionWindowOperator.setState(loadStateMap);
 
     // Compare the original and the set operator.
-    final Map<String, Object> operatorState = sessionWindowOperator.getOperatorState();
+    final Map<String, Object> operatorState = sessionWindowOperator.getStateSnapshot();
     final Window<Integer> currentWindow =
         (Window<Integer>)operatorState.get("currentWindow");
     final long latestDataTimestamp = (long)operatorState.get("latestDataTimestamp");

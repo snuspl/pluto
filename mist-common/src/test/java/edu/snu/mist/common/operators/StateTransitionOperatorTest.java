@@ -44,7 +44,7 @@ public class StateTransitionOperatorTest {
         value2.put("number", 2);
         final MistDataEvent data2 = new MistDataEvent(value2, 1L);
 
-        final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(7L, false);
+        final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(7L);
 
         final Map<String, Integer> value3 = new HashMap<>();
         value3.put("number", 3);
@@ -85,29 +85,29 @@ public class StateTransitionOperatorTest {
         Assert.assertEquals(1, result.size());
         Assert.assertEquals(data1, result.get(0));
         Assert.assertEquals("1",
-                stateTransitionOperator.getOperatorState().get("stateTransitionOperatorState"));
+                stateTransitionOperator.getStateSnapshot().get("stateTransitionOperatorState"));
 
         stateTransitionOperator.processLeftData(data2);
         Assert.assertEquals(1, result.size());
         Assert.assertEquals("0",
-                stateTransitionOperator.getOperatorState().get("stateTransitionOperatorState"));
+                stateTransitionOperator.getStateSnapshot().get("stateTransitionOperatorState"));
 
         stateTransitionOperator.processLeftWatermark(watermarkEvent);
         Assert.assertEquals(2, result.size());
         Assert.assertEquals(watermarkEvent, result.get(1));
         Assert.assertEquals("0",
-                stateTransitionOperator.getOperatorState().get("stateTransitionOperatorState"));
+                stateTransitionOperator.getStateSnapshot().get("stateTransitionOperatorState"));
 
         stateTransitionOperator.processLeftData(data3);
         Assert.assertEquals(2, result.size());
         Assert.assertEquals("3",
-                stateTransitionOperator.getOperatorState().get("stateTransitionOperatorState"));
+                stateTransitionOperator.getStateSnapshot().get("stateTransitionOperatorState"));
 
         stateTransitionOperator.processLeftData(data4);
         Assert.assertEquals(3, result.size());
         Assert.assertEquals(data4, result.get(2));
         Assert.assertEquals("4",
-                stateTransitionOperator.getOperatorState().get("stateTransitionOperatorState"));
+                stateTransitionOperator.getStateSnapshot().get("stateTransitionOperatorState"));
     }
 
     /**
@@ -153,7 +153,7 @@ public class StateTransitionOperatorTest {
         final String expectedOperatorState = "2";
 
         //Get the
-        final Map<String, Object> operatorState = stateTransitionOperator.getOperatorState();
+        final Map<String, Object> operatorState = stateTransitionOperator.getStateSnapshot();
         final String stateTransitionOperatorState = (String)operatorState.get("stateTransitionOperatorState");
 
         Assert.assertEquals(expectedOperatorState, stateTransitionOperatorState);
@@ -191,7 +191,7 @@ public class StateTransitionOperatorTest {
         stateTransitionOperator.setState(loadStateMap);
 
         // Get the current StateTransitionOperator's state.
-        final Map<String, Object> operatorState = stateTransitionOperator.getOperatorState();
+        final Map<String, Object> operatorState = stateTransitionOperator.getStateSnapshot();
         final String stateTransitionOperatorState = (String)operatorState.get("stateTransitionOperatorState");
 
         // Compare the original and the set operator
@@ -215,13 +215,13 @@ public class StateTransitionOperatorTest {
         Assert.assertEquals(1, result.size());
         Assert.assertEquals(data2, result.get(0));
         Assert.assertEquals("2",
-                stateTransitionOperator.getOperatorState().get("stateTransitionOperatorState"));
+                stateTransitionOperator.getStateSnapshot().get("stateTransitionOperatorState"));
 
         stateTransitionOperator.processLeftData(data3);
         Assert.assertEquals(2, result.size());
         Assert.assertEquals(data3, result.get(1));
         Assert.assertEquals("3",
-                stateTransitionOperator.getOperatorState().get("stateTransitionOperatorState"));
+                stateTransitionOperator.getStateSnapshot().get("stateTransitionOperatorState"));
     }
 }
 

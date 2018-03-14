@@ -38,7 +38,7 @@ public interface CheckpointManager {
    * Checkpoint a single app.
    * @param appId
    */
-  void checkpointApplication(String appId);
+  boolean checkpointApplication(String appId);
 
   /**
    * Delete a single app.

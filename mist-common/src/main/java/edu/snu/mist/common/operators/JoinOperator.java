@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
@@ -112,5 +113,10 @@ public final class JoinOperator<T, U> extends OneStreamOperator {
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
     outputEmitter.emitWatermark(input);
+  }
+
+  @Override
+  public void processLeftCheckpoint(final MistCheckpointEvent input) {
+    outputEmitter.emitCheckpoint(input);
   }
 }

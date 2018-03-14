@@ -13,12 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.common.parameters;
+package edu.snu.mist.common;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+public final class MistCheckpointEvent implements MistEvent {
 
-@NamedParameter(doc = "Periodic watermark's delay that delays the watermark's timestamps", default_value = "0")
-public final class PeriodicWatermarkDelay implements Name<Long> {
-  // empty
+  @Override
+  public boolean isData() {
+    return false;
+  }
+
+  @Override
+  public boolean isCheckpoint() {
+    return true;
+  }
+
+  @Override
+  public long getTimestamp() {
+    // This should not be called for MistCheckpointEvent, as this timestamp is meaningless.
+    return -1;
+  }
 }

@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.sources;
 
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.OutputEmitter;
@@ -119,7 +120,7 @@ public final class NettySourceTest {
         final WatermarkTimestampFunction<String> parseTsFunc =
             (input) -> Long.parseLong(input.toString().split(":")[1]);
         final EventGenerator<String> eventGenerator =
-            new PunctuatedEventGenerator<>(extractFunc, isWatermark, parseTsFunc);
+            new PunctuatedEventGenerator<>(extractFunc, isWatermark, parseTsFunc, 0, null, null);
         sources.add(new Tuple<>(dataGenerator, eventGenerator));
         dataGenerator.setEventGenerator(eventGenerator);
 
@@ -189,7 +190,7 @@ public final class NettySourceTest {
       final DataGenerator<String> dataGenerator =
           new NettyTextDataGenerator(SERVER_ADDR, SERVER_PORT, nettySharedResource);
       final EventGenerator<String> eventGenerator =
-          new PeriodicEventGenerator<>(null, period, period, TimeUnit.MILLISECONDS, scheduler);
+          new PeriodicEventGenerator<>(null, period, 0, period, TimeUnit.MILLISECONDS, scheduler);
       dataGenerator.setEventGenerator(eventGenerator);
 
       final List<String> periodicReceivedData = new LinkedList<>();
@@ -289,6 +290,11 @@ public final class NettySourceTest {
     public void emitWatermark(final MistWatermarkEvent watermark) {
       watermarkList.add(watermark.getTimestamp());
       watermarkCountDownLatch.countDown();
+    }
+
+    @Override
+    public void emitCheckpoint(final MistCheckpointEvent checkpoint) {
+      // do nothing
     }
   }
 }

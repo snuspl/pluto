@@ -72,6 +72,10 @@ final class DefaultExecutionVertexGeneratorImpl implements ExecutionVertexGenera
           ((StateHandler) operator.getOperator()).setState(
               StateSerializer.deserializeStateMap(configVertex.getState()));
         }
+        if (configVertex.getLatestCheckpointTimestamp() != 0) {
+          ((StateHandler) operator.getOperator()).setRecoveredTimestamp(
+              configVertex.getLatestCheckpointTimestamp());
+        }
         return operator;
       }
       case SINK:

@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.common.operators;
 
+import com.rits.cloning.Cloner;
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
@@ -41,7 +43,7 @@ import java.util.logging.Logger;
  * This can be changed to Map when we support non-serializable state.
  */
 public final class ReduceByKeyOperator<K extends Serializable, V extends Serializable>
-    extends OneStreamOperator implements StateHandler {
+    extends OneStreamStateHandlerOperator {
   private static final Logger LOG = Logger.getLogger(ReduceByKeyOperator.class.getName());
 
   /**
@@ -59,11 +61,6 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
    */
   private HashMap<K, V> state;
 
-  /**
-   * The latest Checkpoint Timestamp.
-   */
-  private long latestCheckpointTimestamp;
-
   @Inject
   private ReduceByKeyOperator(
       @Parameter(KeyIndex.class) final int keyIndex,
@@ -79,10 +76,10 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
   @Inject
   public ReduceByKeyOperator(@Parameter(KeyIndex.class) final int keyIndex,
                              final MISTBiFunction<V, V, V> reduceFunc) {
+    super();
     this.reduceFunc = reduceFunc;
     this.keyIndex = keyIndex;
     this.state = createInitialState();
-    this.latestCheckpointTimestamp = 0L;
   }
 
   private HashMap<K, V> createInitialState() {
@@ -122,6 +119,9 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
 
   @Override
   public void processLeftData(final MistDataEvent input) {
+    if (isEarlierThanRecoveredTimestamp(input)) {
+      return;
+    }
     final HashMap<K, V> intermediateState = updateState((Tuple2)input.getValue(), state);
     final HashMap<K, V> output = generateOutput(intermediateState);
 
@@ -131,22 +131,24 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
     }
 
     input.setValue(output);
+    updateLatestEventTimestamp(input.getTimestamp());
     outputEmitter.emitData(input);
     state = intermediateState;
   }
 
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
-    outputEmitter.emitWatermark(input);
-    if (input.isCheckpoint()) {
-      latestCheckpointTimestamp = input.getTimestamp();
+    if (isEarlierThanRecoveredTimestamp(input)) {
+      return;
     }
+    updateLatestEventTimestamp(input.getTimestamp());
+    outputEmitter.emitWatermark(input);
   }
 
   @Override
-  public Map<String, Object> getOperatorState() {
+  public Map<String, Object> getStateSnapshot() {
     final Map<String, Object> stateMap = new HashMap<>();
-    stateMap.put("reduceByKeyState", state);
+    stateMap.put("reduceByKeyState", new Cloner().deepClone(state));
     return stateMap;
   }
 
@@ -157,7 +159,7 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
   }
 
   @Override
-  public long getLatestCheckpointTimestamp() {
-    return latestCheckpointTimestamp;
+  public void processLeftCheckpoint(final MistCheckpointEvent input) {
+    checkpointMap.put(latestTimestampBeforeCheckpoint, getStateSnapshot());
   }
 }

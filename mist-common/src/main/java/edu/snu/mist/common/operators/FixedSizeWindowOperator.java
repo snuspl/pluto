@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.common.operators;
 
+import com.rits.cloning.Cloner;
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.windows.Window;
@@ -30,7 +32,7 @@ import java.util.logging.Logger;
  * reorganize the queue to have available windows and put the watermark or data into the windows.
  * @param <T> the type of data
  */
-abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements StateHandler {
+abstract class FixedSizeWindowOperator<T> extends OneStreamStateHandlerOperator {
   // TODO: [MIST-324] Refactor fixed size windowing operation semantics
   private static final Logger LOG = Logger.getLogger(FixedSizeWindowOperator.class.getName());
 
@@ -54,18 +56,13 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements S
    */
   private final Queue<Window<T>> windowQueue;
 
-  /**
-   * The latest Checkpoint Timestamp.
-   */
-  private long latestCheckpointTimestamp;
-
   protected FixedSizeWindowOperator(final int windowSize,
                                     final int windowEmissionInterval) {
+    super();
     this.windowSize = windowSize;
     this.windowEmissionInterval = windowEmissionInterval;
     this.windowQueue = new LinkedList<>();
     this.windowCreationPoint = Long.MIN_VALUE;
-    this.latestCheckpointTimestamp = 0L;
   }
 
   /**
@@ -141,16 +138,13 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements S
       final Window<T> window = itr.next();
       window.putWatermark(input);
     }
-    if (input.isCheckpoint()) {
-      latestCheckpointTimestamp = input.getTimestamp();
-    }
   }
 
   @Override
-  public Map<String, Object> getOperatorState() {
+  public Map<String, Object> getStateSnapshot() {
     final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("windowCreationPoint", windowCreationPoint);
-    stateMap.put("windowQueue", windowQueue);
+    stateMap.put("windowQueue", new Cloner().deepClone(windowQueue));
     return stateMap;
   }
 
@@ -162,7 +156,8 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamOperator implements S
   }
 
   @Override
-  public long getLatestCheckpointTimestamp() {
-    return latestCheckpointTimestamp;
+  public void processLeftCheckpoint(final MistCheckpointEvent input) {
+    checkpointMap.put(latestTimestampBeforeCheckpoint, getStateSnapshot());
+    outputEmitter.emitCheckpoint(input);
   }
 }

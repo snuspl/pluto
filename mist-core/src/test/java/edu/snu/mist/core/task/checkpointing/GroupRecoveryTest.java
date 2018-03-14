@@ -25,6 +25,7 @@ import edu.snu.mist.client.datastreams.configurations.WatermarkConfiguration;
 import edu.snu.mist.common.configurations.ConfKeys;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.common.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.common.sinks.Sink;
 import edu.snu.mist.common.stream.NettyChannelHandler;
 import edu.snu.mist.common.stream.textmessage.NettyTextMessageOutputReceiver;
@@ -50,6 +51,8 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Logger;
+
+import static java.lang.Thread.sleep;
 
 public class GroupRecoveryTest {
 
@@ -133,11 +136,13 @@ public class GroupRecoveryTest {
         .setEdges(initialAvroOpChainDag.getValue())
         .build();
 
-    // Build QueryManager and start the query.
+    // Build QueryManager.
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(PeriodicCheckpointPeriod.class, "1000");
     jcb.bindImplementation(QueryManager.class, GroupAwareQueryManagerImpl.class);
     jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+
     final CheckpointManager checkpointManager = injector.getInstance(CheckpointManager.class);
     injector.bindVolatileInstance(CheckpointManager.class, checkpointManager);
 
@@ -158,7 +163,10 @@ public class GroupRecoveryTest {
     SRC0INPUT1.forEach(textMessageStreamGenerator1::write);
     LATCH1.await();
     Assert.assertEquals("{aa=2, bb=1, cc=1}",
-        handler1.getResults().get(handler1.getResults().size() - 1));
+
+    handler1.getResults().get(handler1.getResults().size() - 1));
+    // Sleep 2 seconds for the checkpoint events to be sent out.
+    sleep(2000);
 
     // Checkpoint the entire MISTTask, delete it, and restore it to see if it works.
     checkpointManager.checkpointApplication("testGroup");

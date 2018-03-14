@@ -38,14 +38,14 @@ public final class UnionOperatorTest {
     final MistDataEvent a = new MistDataEvent("a", 1L);
     final MistDataEvent b = new MistDataEvent("b", 3L);
     final MistDataEvent c = new MistDataEvent("c", 5L);
-    final MistWatermarkEvent lw1 = new MistWatermarkEvent(9L, false);
-    final MistWatermarkEvent lw2 = new MistWatermarkEvent(10L, false);
+    final MistWatermarkEvent lw1 = new MistWatermarkEvent(9L);
+    final MistWatermarkEvent lw2 = new MistWatermarkEvent(10L);
     final MistDataEvent d = new MistDataEvent("d", 1L);
     final MistDataEvent e = new MistDataEvent("e", 2L);
     final MistDataEvent f = new MistDataEvent("f", 4L);
-    final MistWatermarkEvent rw1 = new MistWatermarkEvent(3L, false);
+    final MistWatermarkEvent rw1 = new MistWatermarkEvent(3L);
     final MistDataEvent g = new MistDataEvent("g", 6L);
-    final MistWatermarkEvent rw2 = new MistWatermarkEvent(11L, false);
+    final MistWatermarkEvent rw2 = new MistWatermarkEvent(11L);
 
     final UnionOperator unionOperator = new UnionOperator();
 

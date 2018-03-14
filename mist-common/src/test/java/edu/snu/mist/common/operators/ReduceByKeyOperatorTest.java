@@ -135,7 +135,7 @@ public final class ReduceByKeyOperatorTest {
     inputStream.stream().forEach(wcOperator::processLeftData);
 
     // Get the current ReduceByKeyOperator's state.
-    final Map<String, Object> operatorStateMap = wcOperator.getOperatorState();
+    final Map<String, Object> operatorStateMap = wcOperator.getStateSnapshot();
     final Map<String, Integer> operatorState =
         (Map<String, Integer>)operatorStateMap.get("reduceByKeyState");
 
@@ -164,7 +164,7 @@ public final class ReduceByKeyOperatorTest {
     reduceByKeyOperator.setState(loadStateMap);
 
     // Compare the original and the set operator.
-    final Map<String, Object> operatorStateMap = reduceByKeyOperator.getOperatorState();
+    final Map<String, Object> operatorStateMap = reduceByKeyOperator.getStateSnapshot();
     final Map<String, Integer> operatorState = (Map<String, Integer>)operatorStateMap.get("reduceByKeyState");
     Assert.assertEquals(expectedOperatorState, operatorState);
 
