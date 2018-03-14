@@ -21,11 +21,11 @@ import java.util.List;
 import java.util.Map;
 
 public final class CepExampleQualifier<T> implements CepQualifier<T> {
-    @Override
-    public boolean test(final Map<String, List<T>> stringCepClassTypeMap) {
-        return true;
-    }
+  @Override
+  public boolean test(final Map<String, List<T>> stringCepClassTypeMap) {
+    return true;
+  }
 
-    public CepExampleQualifier() {
-    }
+  public CepExampleQualifier() {
+  }
 }

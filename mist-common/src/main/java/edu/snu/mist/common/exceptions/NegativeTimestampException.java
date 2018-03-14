@@ -21,11 +21,11 @@ package edu.snu.mist.common.exceptions;
  */
 public final class NegativeTimestampException extends RuntimeException {
 
-    public NegativeTimestampException() {
-        super();
-    }
+  public NegativeTimestampException() {
+    super();
+  }
 
-    public NegativeTimestampException(final String message) {
-        super(message);
-    }
+  public NegativeTimestampException(final String message) {
+    super(message);
+  }
 }

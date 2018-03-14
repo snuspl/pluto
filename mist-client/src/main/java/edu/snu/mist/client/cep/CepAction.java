@@ -38,16 +38,16 @@ public final class CepAction {
    * @return A pre-define action which does nothing!
    */
   public static CepAction doNothingAction() {
-      final List<Object> list = new ArrayList<>();
-      list.add("dummy");
-      return new CepAction(CepActionType.DO_NOTHING, null, list);
+    final List<Object> list = new ArrayList<>();
+    list.add("dummy");
+    return new CepAction(CepActionType.DO_NOTHING, null, list);
   }
 
   /**
    * Creates a new immutable action based on given parameters.
    * @param actionTypeArg the action type
-   * @param cepSinkArg the sink to commit action
-   * @param paramsArg parameters necessary for actions
+   * @param cepSinkArg    the sink to commit action
+   * @param paramsArg     parameters necessary for actions
    * @return new action
    */
   private CepAction newAction(final CepActionType actionTypeArg,

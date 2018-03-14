@@ -24,74 +24,74 @@ import java.util.Stack;
  */
 public final class EventStack<T> {
 
-    /**
-     * The stack of event entries.
-     */
-    private final Stack<EventStackEntry<T>> eventStack;
+  /**
+   * The stack of event entries.
+   */
+  private final Stack<EventStackEntry<T>> eventStack;
 
-    /**
-     * Save the first event time to support discarding timeout.
-     */
-    private long firstEventTime;
+  /**
+   * Save the first event time to support discarding timeout.
+   */
+  private long firstEventTime;
 
-    /**
-     * Checks whether this stack already emitted or not.
-     * If it was emitted, then this indicate should be false.
-     */
-    private boolean isEmitted;
+  /**
+   * Checks whether this stack already emitted or not.
+   * If it was emitted, then this indicate should be false.
+   */
+  private boolean isEmitted;
 
-    /**
-     * Checks whether this stack include last event or not.
-     */
-    private boolean includeLast;
+  /**
+   * Checks whether this stack include last event or not.
+   */
+  private boolean includeLast;
 
-    public EventStack(final long firstEventTime) {
-        this.eventStack = new Stack<>();
-        this.firstEventTime = firstEventTime;
-        this.isEmitted = true;
-        this.includeLast = true;
+  public EventStack(final long firstEventTime) {
+    this.eventStack = new Stack<>();
+    this.firstEventTime = firstEventTime;
+    this.isEmitted = true;
+    this.includeLast = true;
+  }
+
+  public Stack<EventStackEntry<T>> getStack() {
+    return eventStack;
+  }
+
+  public long getFirstEventTime() {
+    return firstEventTime;
+  }
+
+  public boolean isEmitted() {
+    return isEmitted;
+  }
+
+  public boolean isIncludingLast() {
+    return includeLast;
+  }
+
+  public void setStack(final Stack<EventStackEntry<T>> newStack) {
+    eventStack.clear();
+    eventStack.addAll(newStack);
+  }
+
+  public void setAlreadyEmitted() {
+    isEmitted = false;
+  }
+
+  public void setIncludeLast(final boolean includeLastParam) {
+    includeLast = includeLastParam;
+  }
+
+  /**
+   * Copy current event stack to make a new instance.
+   * @return copied current event stack
+   */
+  public EventStack<T> deepCopy() {
+    final Stack<EventStackEntry<T>> copiedStack = new Stack<>();
+    for (final EventStackEntry<T> iterEntry : eventStack) {
+      copiedStack.push(iterEntry.deepCopy());
     }
-
-    public Stack<EventStackEntry<T>> getStack() {
-        return eventStack;
-    }
-
-    public long getFirstEventTime() {
-        return firstEventTime;
-    }
-
-    public boolean isEmitted() {
-        return isEmitted;
-    }
-
-    public boolean isIncludingLast() {
-        return includeLast;
-    }
-
-    public void setStack(final Stack<EventStackEntry<T>> newStack) {
-        eventStack.clear();
-        eventStack.addAll(newStack);
-    }
-
-    public void setAlreadyEmitted() {
-        isEmitted = false;
-    }
-
-    public void setIncludeLast(final boolean includeLastParam) {
-        includeLast = includeLastParam;
-    }
-
-    /**
-     * Copy current event stack to make a new instance.
-     * @return copied current event stack
-     */
-    public EventStack<T> deepCopy() {
-        final Stack<EventStackEntry<T>> copiedStack = new Stack<>();
-        for (final EventStackEntry<T> iterEntry : eventStack) {
-            copiedStack.push(iterEntry.deepCopy());
-        }
-        final EventStack<T> copiedOutput = new EventStack<>(firstEventTime);
-        copiedOutput.setStack(copiedStack);
-        return copiedOutput;
-    }
+    final EventStack<T> copiedOutput = new EventStack<>(firstEventTime);
+    copiedOutput.setStack(copiedStack);
+    return copiedOutput;
+  }
 }

@@ -19,12 +19,12 @@ import edu.snu.mist.common.functions.MISTFunction;
 
 public final class CepExampleClassGenFunc implements MISTFunction<String, CepExampleClass> {
 
-    @Override
-    public CepExampleClass apply(final String s) {
-        final String[] parseString = s.split(",");
-        return new CepExampleClass(parseString[0], Integer.parseInt(parseString[1]));
-    }
+  @Override
+  public CepExampleClass apply(final String s) {
+    final String[] parseString = s.split(",");
+    return new CepExampleClass(parseString[0], Integer.parseInt(parseString[1]));
+  }
 
-    public CepExampleClassGenFunc() {
-    }
+  public CepExampleClassGenFunc() {
+  }
 }

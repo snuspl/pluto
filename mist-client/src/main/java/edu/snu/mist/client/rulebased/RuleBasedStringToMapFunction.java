@@ -26,72 +26,72 @@ import java.util.Map;
  * Class for Translate input String into Map.
  */
 public final class RuleBasedStringToMapFunction implements MISTFunction<String, Map<String, Object>> {
-    private final List<Tuple2<String, RuleBasedValueType>> fields;
-    private final String separator;
+  private final List<Tuple2<String, RuleBasedValueType>> fields;
+  private final String separator;
 
-    public RuleBasedStringToMapFunction(final List<Tuple2<String, RuleBasedValueType>> fieldsParam,
-                                        final String separatorParam) {
-        this.fields = fieldsParam;
-        this.separator = separatorParam;
+  public RuleBasedStringToMapFunction(final List<Tuple2<String, RuleBasedValueType>> fieldsParam,
+                                      final String separatorParam) {
+    this.fields = fieldsParam;
+    this.separator = separatorParam;
+  }
+
+  @Override
+  public Map<String, Object> apply(final String s) {
+    final String[] inputParse = s.split(separator);
+    final int inputSize = inputParse.length;
+
+    if (inputSize < fields.size()) {
+      throw new IllegalStateException("Cannot match input string to tuple since the size is different!");
     }
 
-    @Override
-    public Map<String, Object> apply(final String s) {
-        final String[] inputParse = s.split(separator);
-        final int inputSize = inputParse.length;
+    final Map<String, Object> result = new HashMap<>();
+    Object value;
 
-        if (inputSize < fields.size()) {
-            throw new IllegalStateException("Cannot match input string to tuple since the size is different!");
-        }
+    //if inputSize is larger than fields size, then the spare parts are eliminated.
+    for (int i = 0; i < fields.size(); i++) {
+      final Tuple2<String, RuleBasedValueType> tuple = fields.get(i);
+      switch ((RuleBasedValueType) tuple.get(1)) {
+        case DOUBLE:
+          value = Double.parseDouble(inputParse[i].trim());
+          break;
+        case INTEGER:
+          value = Integer.parseInt(inputParse[i].trim());
+          break;
+        case LONG:
+          value = Long.parseLong(inputParse[i].trim());
+          break;
+        case STRING:
+          value = inputParse[i].trim();
+          break;
+        default:
+          throw new IllegalStateException("Fields value type is wrong!");
+      }
+      result.put((String) tuple.get(0), value);
+    }
+    return result;
+  }
 
-        final Map<String, Object> result = new HashMap<>();
-        Object value;
-
-        //if inputSize is larger than fields size, then the spare parts are eliminated.
-        for (int i = 0; i < fields.size(); i++) {
-            final Tuple2<String, RuleBasedValueType> tuple = fields.get(i);
-            switch ((RuleBasedValueType)tuple.get(1)) {
-                case DOUBLE:
-                    value = Double.parseDouble(inputParse[i].trim());
-                    break;
-                case INTEGER:
-                    value = Integer.parseInt(inputParse[i].trim());
-                    break;
-                case LONG:
-                    value = Long.parseLong(inputParse[i].trim());
-                    break;
-                case STRING:
-                    value = inputParse[i].trim();
-                    break;
-                default:
-                    throw new IllegalStateException("Fields value type is wrong!");
-            }
-            result.put((String)tuple.get(0), value);
-        }
-        return result;
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
     }
 
-    @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+    final RuleBasedStringToMapFunction that = (RuleBasedStringToMapFunction) o;
 
-        final RuleBasedStringToMapFunction that = (RuleBasedStringToMapFunction) o;
-
-        if (fields != null ? !fields.equals(that.fields) : that.fields != null) {
-            return false;
-        }
-        return separator != null ? separator.equals(that.separator) : that.separator == null;
+    if (fields != null ? !fields.equals(that.fields) : that.fields != null) {
+      return false;
     }
+    return separator != null ? separator.equals(that.separator) : that.separator == null;
+  }
 
-    @Override
-    public int hashCode() {
-        int result = fields != null ? fields.hashCode() : 0;
-        result = 31 * result + (separator != null ? separator.hashCode() : 0);
-        return result;
-    }
+  @Override
+  public int hashCode() {
+    int result = fields != null ? fields.hashCode() : 0;
+    result = 31 * result + (separator != null ? separator.hashCode() : 0);
+    return result;
+  }
 }
