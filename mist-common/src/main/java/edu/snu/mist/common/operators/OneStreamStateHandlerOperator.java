@@ -20,7 +20,7 @@ import edu.snu.mist.common.MistEvent;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 public abstract class OneStreamStateHandlerOperator extends OneStreamOperator implements StateHandler {
 
@@ -39,12 +39,12 @@ public abstract class OneStreamStateHandlerOperator extends OneStreamOperator im
    * The key is the timestamp of the last event before a checkpoint event,
    * and the value is the state of this operator at that timestamp.
    */
-  protected TreeMap<Long, Map<String, Object>> checkpointMap;
+  protected ConcurrentSkipListMap<Long, Map<String, Object>> checkpointMap;
 
   protected OneStreamStateHandlerOperator() {
     this.latestTimestampBeforeCheckpoint = 0L;
     this.recoveredCheckpointTimestamp = 0L;
-    this.checkpointMap = new TreeMap<>();
+    this.checkpointMap = new ConcurrentSkipListMap<>();
   }
 
   /**

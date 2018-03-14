@@ -81,7 +81,7 @@ public final class CountWindowOperator<T> extends FixedSizeWindowOperator<T> {
 
   @Override
   public void processLeftCheckpoint(final MistCheckpointEvent input) {
-    final Map<String, Object> stateMap = checkpointMap.remove(latestTimestampBeforeCheckpoint);
+    final Map<String, Object> stateMap = super.getStateSnapshot();
     stateMap.put("count", count);
     checkpointMap.put(latestTimestampBeforeCheckpoint, stateMap);
     outputEmitter.emitCheckpoint(input);

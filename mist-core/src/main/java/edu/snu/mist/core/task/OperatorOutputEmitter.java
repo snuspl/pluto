@@ -94,7 +94,7 @@ public final class OperatorOutputEmitter implements OutputEmitter {
   }
 
   /**
-   * Send watermarks to the next operator chain if the next vertex is an operator chain.
+   * Send checkpoints to the next operator chain if the next vertex is an operator chain.
    * @param checkpoint checkpoint
    * @param direction direction of upstream
    * @param nextVertex next vertex (operator chain or sink)
