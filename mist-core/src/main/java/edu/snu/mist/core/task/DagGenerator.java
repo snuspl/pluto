@@ -18,7 +18,6 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import org.apache.reef.tang.annotations.DefaultImplementation;
-import org.apache.reef.tang.exceptions.InjectionException;
 
 import java.io.IOException;
 import java.util.List;
@@ -35,5 +34,5 @@ public interface DagGenerator {
    * @return execution dag
    */
   ExecutionDag generate(DAG<ConfigVertex, MISTEdge> configDag, List<String> jarFilePaths)
-      throws IOException, ClassNotFoundException, InjectionException;
+      throws IOException, ClassNotFoundException;
 }

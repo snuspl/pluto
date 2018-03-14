@@ -13,19 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupaware.eventprocessor;
-
-import org.apache.reef.tang.annotations.DefaultImplementation;
-
 /**
- * This is a factory of event processor.
+ * The package for test classes for MistMaster.
  */
-@DefaultImplementation(AffinityEventProcessorFactory.class)
-public interface EventProcessorFactory {
-
-  /**
-   * Create a new event processor.
-   * @return event processor
-   */
-  EventProcessor newEventProcessor();
-}
+package edu.snu.mist.core.master;

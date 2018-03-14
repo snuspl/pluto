@@ -47,11 +47,11 @@ public final class ConfigVertex {
   /**
    * The configuration of the vertex.
    */
-  private final String configuration;
+  private final Map<String, String> configuration;
 
   public ConfigVertex(final String id,
                       final ExecutionVertex.Type type,
-                      final String configuration,
+                      final Map<String, String> configuration,
                       final Map<String, Object> state,
                       final long latestCheckpointTimestamp) {
     this.id = id;
@@ -66,7 +66,7 @@ public final class ConfigVertex {
 
   public ConfigVertex(final String id,
                       final ExecutionVertex.Type type,
-                      final String configuration) {
+                      final Map<String, String> configuration) {
     this(id, type, configuration, null, 0L);
   }
 
@@ -78,7 +78,7 @@ public final class ConfigVertex {
     return type;
   }
 
-  public String getConfiguration() {
+  public Map<String, String> getConfiguration() {
     return configuration;
   }
 

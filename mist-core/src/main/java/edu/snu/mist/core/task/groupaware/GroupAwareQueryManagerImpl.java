@@ -194,7 +194,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
   public Query createAndStartQuery(final String queryId,
                                    final ApplicationInfo applicationInfo,
                                    final DAG<ConfigVertex, MISTEdge> configDag)
-      throws InjectionException, ClassNotFoundException, IOException {
+      throws ClassNotFoundException, IOException {
     final Query query = new DefaultQueryImpl(queryId);
     groupAllocationTableModifier.addEvent(new WritingEvent(WritingEvent.EventType.QUERY_ADD,
         new Tuple<>(applicationInfo, query)));

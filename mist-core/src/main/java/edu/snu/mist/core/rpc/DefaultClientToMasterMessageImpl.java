@@ -16,7 +16,7 @@
 package edu.snu.mist.core.rpc;
 
 import edu.snu.mist.core.master.ApplicationCodeManager;
-import edu.snu.mist.core.master.TaskInfoMap;
+import edu.snu.mist.core.master.QueryAllocationManager;
 import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import edu.snu.mist.formats.avro.JarUploadResult;
 import edu.snu.mist.formats.avro.QuerySubmitInfo;
@@ -35,15 +35,21 @@ public final class DefaultClientToMasterMessageImpl implements ClientToMasterMes
   private static final Logger LOG = Logger.getLogger(DefaultClientToMasterMessageImpl.class.getName());
 
   /**
-   * The task-taskInfo map which is shared across the servers in MistMaster.
+   * The query allocation manager.
    */
-  private final TaskInfoMap taskInfoMap;
+  private final QueryAllocationManager queryAllocationManager;
 
+  /**
+   * The application-code manager.
+   */
   private final ApplicationCodeManager appCodeManager;
 
+
+
   @Inject
-  private DefaultClientToMasterMessageImpl(final TaskInfoMap taskInfoMap, final ApplicationCodeManager appCodeManager) {
-    this.taskInfoMap = taskInfoMap;
+  private DefaultClientToMasterMessageImpl(final QueryAllocationManager queryAllocationManager,
+                                           final ApplicationCodeManager appCodeManager) {
+    this.queryAllocationManager = queryAllocationManager;
     this.appCodeManager = appCodeManager;
   }
 
@@ -57,7 +63,7 @@ public final class DefaultClientToMasterMessageImpl implements ClientToMasterMes
     // TODO: [MIST-997] Support application-aware query allocation.
     return QuerySubmitInfo.newBuilder()
         .setJarPaths(appCodeManager.getJarPaths(appId))
-        .setTask(taskInfoMap.getMinLoadTask())
+        .setTask(queryAllocationManager.getAllocatedTask(appId))
         .build();
   }
 }

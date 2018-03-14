@@ -84,7 +84,7 @@ public final class MISTQueryImpl implements MISTQuery {
     final List<AvroVertex> serializedVertices = new ArrayList<>();
     for (final MISTStream vertex : vertices) {
       final AvroVertex.Builder vertexBuilder = AvroVertex.newBuilder();
-      vertexBuilder.setConfiguration(serializer.toString(vertex.getConfiguration()));
+      vertexBuilder.setConfiguration(vertex.getConfiguration());
       // Set vertex type
       if (rootVertices.contains(vertex)) {
         // this is a source

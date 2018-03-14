@@ -16,8 +16,8 @@
 package edu.snu.mist.core.rpc;
 
 import edu.snu.mist.core.master.ProxyToTaskMap;
+import edu.snu.mist.core.master.QueryAllocationManager;
 import edu.snu.mist.core.master.TaskInfo;
-import edu.snu.mist.core.master.TaskInfoMap;
 import edu.snu.mist.core.master.TaskLoadUpdater;
 import edu.snu.mist.core.parameters.TaskInfoGatherPeriod;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
@@ -44,9 +44,9 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   private static final Logger LOG = Logger.getLogger(DefaultDriverToMasterMessageImpl.class.getName());
 
   /**
-   * The task-taskInfo map which is shared across the servers in MistMaster.
+   * The query allocation manager.
    */
-  private final TaskInfoMap taskInfoMap;
+  private final QueryAllocationManager queryAllocationManager;
 
   /**
    * The task-proxyClient map.
@@ -64,10 +64,10 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   private final long taskInfoGatherTerm;
 
   @Inject
-  private DefaultDriverToMasterMessageImpl(final TaskInfoMap taskInfoMap,
+  private DefaultDriverToMasterMessageImpl(final QueryAllocationManager queryAllocationManager,
                                            final ProxyToTaskMap proxyToTaskMap,
                                            @Parameter(TaskInfoGatherPeriod.class) final long taskInfoGatherTerm) {
-    this.taskInfoMap = taskInfoMap;
+    this.queryAllocationManager = queryAllocationManager;
     this.proxyToTaskMap = proxyToTaskMap;
     this.taskInfoGatherTerm = taskInfoGatherTerm;
     this.taskInfoGatherer = Executors.newSingleThreadScheduledExecutor();
@@ -76,7 +76,7 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   @Override
   public boolean addTask(final IPAddress taskAddress) {
     final TaskInfo oldTaskInfo;
-    oldTaskInfo = taskInfoMap.addTaskInfo(taskAddress, new TaskInfo());
+    oldTaskInfo = queryAllocationManager.addTaskInfo(taskAddress, new TaskInfo());
     return oldTaskInfo == null;
   }
 
@@ -98,7 +98,7 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   public Void taskSetupFinished() {
     // All task setups are over, so start log collection.
     taskInfoGatherer.scheduleAtFixedRate(
-        new TaskLoadUpdater(proxyToTaskMap, taskInfoMap),
+        new TaskLoadUpdater(proxyToTaskMap, queryAllocationManager),
         0,
         taskInfoGatherTerm,
         TimeUnit.MILLISECONDS);

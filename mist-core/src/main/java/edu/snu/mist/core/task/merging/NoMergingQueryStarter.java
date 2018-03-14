@@ -18,7 +18,6 @@ package edu.snu.mist.core.task.merging;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.*;
-import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -56,7 +55,7 @@ public final class NoMergingQueryStarter implements QueryStarter {
                     final Query query,
                     final DAG<ConfigVertex, MISTEdge> configDag,
                     final List<String> jarFilePaths)
-      throws InjectionException, IOException, ClassNotFoundException {
+      throws IOException, ClassNotFoundException {
 
     final ExecutionDag submittedExecutionDag = dagGenerator.generate(configDag, jarFilePaths);
     executionPlanDagMap.put(queryId, submittedExecutionDag);

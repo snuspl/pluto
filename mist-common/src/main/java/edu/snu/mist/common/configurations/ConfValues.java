@@ -13,19 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupaware.eventprocessor;
+package edu.snu.mist.common.configurations;
 
-import org.apache.reef.tang.annotations.DefaultImplementation;
+public final class ConfValues {
 
-/**
- * This is a factory of event processor.
- */
-@DefaultImplementation(AffinityEventProcessorFactory.class)
-public interface EventProcessorFactory {
+  private ConfValues() {
 
-  /**
-   * Create a new event processor.
-   * @return event processor
-   */
-  EventProcessor newEventProcessor();
+  }
+
+  public enum SourceType {
+    KAFKA,
+    NETTY,
+    MQTT
+  }
+
+  public enum OperatorType {
+    MAP,
+    FLAT_MAP,
+    FILTER,
+    APPLY_STATEFUL,
+    STATE_TRANSITION,
+    CEP,
+    REDUCE_BY_KEY,
+    UNION,
+    TIME_WINDOW,
+    COUNT_WINDOW,
+    SESSION_WINDOW,
+    JOIN,
+    AGGREGATE_WINDOW,
+    APPLY_STATEFUL_WINDOW
+  }
+
+  public enum SinkType {
+    NETTY,
+    MQTT
+  }
+
+  public enum EventGeneratorType {
+    PERIODIC_EVENT_GEN,
+    PUNCTUATED_EVENT_GEN
+  }
 }

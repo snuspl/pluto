@@ -16,17 +16,19 @@
 package edu.snu.mist.client.datastreams.configurations;
 
 import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.configurations.ConfKeys;
+import edu.snu.mist.common.configurations.ConfValues;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.parameters.MQTTBrokerURI;
 import edu.snu.mist.common.parameters.MQTTTopic;
 import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.tang.Configuration;
-import org.apache.reef.tang.Configurations;
 import org.apache.reef.tang.formats.*;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Configuration class for setting up MQTT sources.
@@ -77,37 +79,27 @@ public final class MQTTSourceConfiguration extends ConfigurationModuleBuilder {
     private String mqttBrokerURI;
     private String mqttTopic;
     private MISTFunction<MqttMessage, Tuple<MqttMessage, Long>> extractFunc;
-    private Class<? extends MISTFunction<MqttMessage, Tuple<MqttMessage, Long>>> extractFuncClass;
-    private Configuration extractFuncConf;
 
     public SourceConfiguration build() {
-
-      if (extractFunc != null && extractFuncClass != null) {
-        throw new IllegalArgumentException("Cannot bind both extractFunc and extractFuncClass");
-      }
 
       if (mqttBrokerURI == null || mqttTopic == null) {
         throw new IllegalArgumentException("MQTT broker URI and topic name should be set");
       }
 
       try {
-        if (extractFunc == null && extractFuncClass == null) {
-          return new SourceConfiguration(CONF
-              .set(MQTT_BROKER_URI, mqttBrokerURI)
-              .set(MQTT_TOPIC, mqttTopic)
-              .build(), SourceConfiguration.SourceType.MQTT);
-        } else if (extractFunc != null && extractFuncClass == null) {
-          return new SourceConfiguration(CONF
-              .set(MQTT_BROKER_URI, mqttBrokerURI)
-              .set(MQTT_TOPIC, mqttTopic)
-              .set(TIMESTAMP_EXTRACT_OBJECT, SerializeUtils.serializeToString(extractFunc))
-              .build(), SourceConfiguration.SourceType.MQTT);
+        final Map<String, String> confMap = new HashMap<>();
+        confMap.put(ConfKeys.SourceConf.SOURCE_TYPE.name(), ConfValues.SourceType.MQTT.name());
+
+        if (extractFunc == null) {
+          confMap.put(ConfKeys.MQTTSourceConf.MQTT_SRC_BROKER_URI.name(), mqttBrokerURI);
+          confMap.put(ConfKeys.MQTTSourceConf.MQTT_SRC_TOPIC.name(), mqttTopic);
+          return new SourceConfiguration(confMap);
         } else {
-          return new SourceConfiguration(Configurations.merge(CONF
-              .set(MQTT_BROKER_URI, mqttBrokerURI)
-              .set(MQTT_TOPIC, mqttTopic)
-              .set(TIMESTAMP_EXTRACT_FUNC, extractFuncClass)
-              .build(), extractFuncConf), SourceConfiguration.SourceType.MQTT);
+          confMap.put(ConfKeys.MQTTSourceConf.MQTT_SRC_BROKER_URI.name(), mqttBrokerURI);
+          confMap.put(ConfKeys.MQTTSourceConf.MQTT_SRC_TOPIC.name(), mqttTopic);
+          confMap.put(ConfKeys.SourceConf.TIMESTAMP_EXTRACT_FUNC.name(),
+              SerializeUtils.serializeToString(extractFunc));
+          return new SourceConfiguration(confMap);
         }
       } catch (final IOException e) {
         e.printStackTrace();
@@ -144,21 +136,6 @@ public final class MQTTSourceConfiguration extends ConfigurationModuleBuilder {
     public MQTTSourceConfigurationBuilder setTimestampExtractionFunction(
         final MISTFunction<MqttMessage, Tuple<MqttMessage, Long>> function) {
       this.extractFunc = function;
-      return this;
-    }
-
-    /**
-     * Sets the timestamp extract function with its class and configuration.
-     * This is an optional setting for event-time processing.
-     * @param functionClass the class of the timestamp extract function
-     * @param functionConf the configuration of the extract function
-     * @return the configured SourceBuilder
-     */
-    public MQTTSourceConfigurationBuilder setTimestampExtractionFunction(
-        final Class<? extends MISTFunction<MqttMessage, Tuple<MqttMessage, Long>>> functionClass,
-        final Configuration functionConf) {
-      this.extractFuncClass = functionClass;
-      this.extractFuncConf = functionConf;
       return this;
     }
   }

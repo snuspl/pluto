@@ -13,19 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task.groupaware.eventprocessor;
+package edu.snu.mist.core.parameters;
 
-import org.apache.reef.tang.annotations.DefaultImplementation;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * This is a factory of event processor.
+ * The threshold for determining whether a task is overloaded or not.
  */
-@DefaultImplementation(AffinityEventProcessorFactory.class)
-public interface EventProcessorFactory {
-
-  /**
-   * Create a new event processor.
-   * @return event processor
-   */
-  EventProcessor newEventProcessor();
+@NamedParameter(doc = "The overloaded task threshold.", default_value = "0.95", short_name = "over_thred")
+public class OverloadedTaskThreshold implements Name<Double> {
 }

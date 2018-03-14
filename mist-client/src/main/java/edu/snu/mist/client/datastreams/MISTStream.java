@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.client.datastreams;
 
-import org.apache.reef.tang.Configuration;
+import java.util.Map;
 
 /**
  * This interface is the basic representation of all types of MIST streams.
@@ -26,5 +26,5 @@ public interface MISTStream<T> {
    * The configuration of the stream representing how to transform the stream.
    * @return configuration
    */
-  Configuration getConfiguration();
+  Map<String, String> getConfiguration();
 }
