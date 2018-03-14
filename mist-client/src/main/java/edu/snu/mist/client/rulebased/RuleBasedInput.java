@@ -32,15 +32,15 @@ public final class RuleBasedInput {
 
   /**
    * Makes an immutable RuleBasedInput from InnerBuilder. Should not be exposed to public.
-   * @param inputTypeParam rule-based input type given by builder
+   * @param inputTypeParam          rule-based input type given by builder
    * @param inputConfigurationParam eep input configuration given by builder
-   * @param fieldsParam properties given by builder
-   * @param separatorParam rule-based input separator
+   * @param fieldsParam             properties given by builder
+   * @param separatorParam          rule-based input separator
    */
   private RuleBasedInput(final RuleBasedInputType inputTypeParam,
-                   final Map<String, Object> inputConfigurationParam,
-                   final List<Tuple2<String, RuleBasedValueType>> fieldsParam,
-                   final String separatorParam) {
+                         final Map<String, Object> inputConfigurationParam,
+                         final List<Tuple2<String, RuleBasedValueType>> fieldsParam,
+                         final String separatorParam) {
     this.inputType = inputTypeParam;
     this.inputConfiguration = inputConfigurationParam;
     this.fields = fieldsParam;
@@ -50,14 +50,14 @@ public final class RuleBasedInput {
   /**
    * Makes an immutable RuleBasedInput from InnerBuilder. Should not be exposed to public.
    * The default separator is comma.
-   * @param inputTypeParam rule-based input type given by builder
+   * @param inputTypeParam          rule-based input type given by builder
    * @param inputConfigurationParam rule-based input configuration given by builder
-   * @param fieldsParam properties given by builder
+   * @param fieldsParam             properties given by builder
    */
   private RuleBasedInput(final RuleBasedInputType inputTypeParam,
-                   final Map<String, Object> inputConfigurationParam,
-                   final List<Tuple2<String, RuleBasedValueType>> fieldsParam) {
-      this(inputTypeParam, inputConfigurationParam, fieldsParam, DEFAULT_SEPARATOR);
+                         final Map<String, Object> inputConfigurationParam,
+                         final List<Tuple2<String, RuleBasedValueType>> fieldsParam) {
+    this(inputTypeParam, inputConfigurationParam, fieldsParam, DEFAULT_SEPARATOR);
   }
 
   /**
@@ -85,7 +85,7 @@ public final class RuleBasedInput {
    * @return separator of this input
    */
   public String getSeparator() {
-      return separator;
+    return separator;
   }
 
   @Override
@@ -103,7 +103,7 @@ public final class RuleBasedInput {
   @Override
   public int hashCode() {
     return inputType.hashCode() * 1000 + inputConfiguration.hashCode() * 100
-            + fields.hashCode() * 10 + separator.hashCode();
+        + fields.hashCode() * 10 + separator.hashCode();
   }
 
   /**
@@ -140,19 +140,19 @@ public final class RuleBasedInput {
       return this;
     }
 
-      /**
-       * Set separator information (, : blank ...).
-       * @param separatorParam
-       * @return cep input builder
-       */
+    /**
+     * Set separator information (, : blank ...).
+     * @param separatorParam
+     * @return cep input builder
+     */
     private InnerBuilder setSeparator(final String separatorParam) {
-        this.separator = separatorParam;
-        return this;
+      this.separator = separatorParam;
+      return this;
     }
 
     /**
      * Add configuration values eligible for the input source type.
-     * @param key configuration key
+     * @param key   configuration key
      * @param value configuration value
      * @return rule-based input builder
      */
@@ -253,69 +253,69 @@ public final class RuleBasedInput {
     }
   }
 
-    /*
-     * A builder class for Inputs using MQTT as inputs.
-     */
-    public static final class MqttBuilder {
+  /*
+   * A builder class for Inputs using MQTT as inputs.
+   */
+  public static final class MqttBuilder {
 
-        private final String mqttInputBrokerURI = "MQTT_INPUT_BROKER_URI";
-        private final String mqttInputTopic = "MQTT_INPUT_TOPIC";
-        private final InnerBuilder builder;
+    private final String mqttInputBrokerURI = "MQTT_INPUT_BROKER_URI";
+    private final String mqttInputTopic = "MQTT_INPUT_TOPIC";
+    private final InnerBuilder builder;
 
-        public MqttBuilder() {
-            this.builder = new InnerBuilder()
-                    .setSourceType(RuleBasedInputType.MQTT_SOURCE);
-        }
-
-        /**
-         * A helper method for setting mqtt broker URI configuration.
-         * @param mqttBrokerURI mqtt broker URI
-         * @return rule-based mqtt input builder
-         */
-        public MqttBuilder setMqttBrokerURI(final String mqttBrokerURI) {
-            builder.addInputConfigValue(mqttInputBrokerURI, mqttBrokerURI);
-            return this;
-        }
-
-        /**
-         * A helper method for setting mqtt topic configuration.
-         * @param mqttTopic mqtt topic
-         * @return rule-based mqtt input builder
-         */
-        public MqttBuilder setMqttTopic(final String mqttTopic) {
-            builder.addInputConfigValue(mqttInputTopic, mqttTopic);
-            return this;
-        }
-
-        /**
-         * A helper method for setting separator.
-         * @param separator
-         * @return rule-based mqtt input builder
-         */
-        public MqttBuilder setSeparator(final String separator) {
-            builder.setSeparator(separator);
-            return this;
-        }
-
-        /**
-         * Add property information for inputs.
-         * @param fieldName name of the field
-         * @param valueType type of the field value
-         * @return rule-based input builder
-         */
-        public MqttBuilder addField(final String fieldName, final RuleBasedValueType valueType) {
-            if (builder.propertyNames.contains(fieldName)) {
-                throw new IllegalStateException("Duplicated property name");
-            }
-            builder.addField(fieldName, valueType);
-            return this;
-        }
-
-        /**
-         * @return a new RuleBasedInput
-         */
-        public RuleBasedInput build() {
-            return builder.build();
-        }
+    public MqttBuilder() {
+      this.builder = new InnerBuilder()
+          .setSourceType(RuleBasedInputType.MQTT_SOURCE);
     }
+
+    /**
+     * A helper method for setting mqtt broker URI configuration.
+     * @param mqttBrokerURI mqtt broker URI
+     * @return rule-based mqtt input builder
+     */
+    public MqttBuilder setMqttBrokerURI(final String mqttBrokerURI) {
+      builder.addInputConfigValue(mqttInputBrokerURI, mqttBrokerURI);
+      return this;
+    }
+
+    /**
+     * A helper method for setting mqtt topic configuration.
+     * @param mqttTopic mqtt topic
+     * @return rule-based mqtt input builder
+     */
+    public MqttBuilder setMqttTopic(final String mqttTopic) {
+      builder.addInputConfigValue(mqttInputTopic, mqttTopic);
+      return this;
+    }
+
+    /**
+     * A helper method for setting separator.
+     * @param separator
+     * @return rule-based mqtt input builder
+     */
+    public MqttBuilder setSeparator(final String separator) {
+      builder.setSeparator(separator);
+      return this;
+    }
+
+    /**
+     * Add property information for inputs.
+     * @param fieldName name of the field
+     * @param valueType type of the field value
+     * @return rule-based input builder
+     */
+    public MqttBuilder addField(final String fieldName, final RuleBasedValueType valueType) {
+      if (builder.propertyNames.contains(fieldName)) {
+        throw new IllegalStateException("Duplicated property name");
+      }
+      builder.addField(fieldName, valueType);
+      return this;
+    }
+
+    /**
+     * @return a new RuleBasedInput
+     */
+    public RuleBasedInput build() {
+      return builder.build();
+    }
+  }
 }

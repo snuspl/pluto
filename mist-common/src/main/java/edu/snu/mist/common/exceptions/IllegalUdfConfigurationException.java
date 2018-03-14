@@ -21,11 +21,11 @@ package edu.snu.mist.common.exceptions;
  */
 public final class IllegalUdfConfigurationException extends RuntimeException {
 
-    public IllegalUdfConfigurationException() {
-        super();
-    }
+  public IllegalUdfConfigurationException() {
+    super();
+  }
 
-    public IllegalUdfConfigurationException(final Exception e) {
-        super(e);
-    }
+  public IllegalUdfConfigurationException(final Exception e) {
+    super(e);
+  }
 }

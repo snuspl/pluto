@@ -30,51 +30,51 @@ import java.util.Map;
  */
 public final class RuleBasedConditionUtils {
 
-    /**
-     * Convert condition into MISTPredicate.
-     * @param condition Comparison condition or union condition.
-     * @return MISTPredicate
-     */
-    public static MISTPredicate<Map<String, Object>> ruleBasedConditionToPredicate(final AbstractCondition condition) {
-        if (condition instanceof ComparisonCondition) {
-            switch (condition.getConditionType()) {
-                case LT:
-                    return new RuleBasedLTPredicate(((ComparisonCondition) condition).getFieldName(),
-                            ((ComparisonCondition) condition).getComparisonValue());
-                case GT:
-                    return new RuleBasedGTPredicate(((ComparisonCondition) condition).getFieldName(),
-                            ((ComparisonCondition) condition).getComparisonValue());
-                case EQ:
-                    return new RuleBasedEQPredicate(((ComparisonCondition) condition).getFieldName(),
-                            ((ComparisonCondition) condition).getComparisonValue());
-                case GE:
-                    return new RuleBasedGEPredicate(((ComparisonCondition) condition).getFieldName(),
-                            ((ComparisonCondition) condition).getComparisonValue());
-                case LE:
-                    return new RuleBasedLEPredicate(((ComparisonCondition) condition).getFieldName(),
-                            ((ComparisonCondition) condition).getComparisonValue());
-                default:
-                    throw new IllegalStateException("The wrong condition type!");
-            }
-        } else if (condition instanceof UnionCondition) {
-            final List<AbstractCondition> conditionList = ((UnionCondition) condition).getConditions();
-            final List<MISTPredicate<Map<String, Object>>> predicateList = new ArrayList<>();
-            for (int i = 0; i < conditionList.size(); i++) {
-                predicateList.add(ruleBasedConditionToPredicate(conditionList.get(i)));
-            }
-            switch (condition.getConditionType()) {
-                case AND:
-                    return new RuleBasedANDPredicate(predicateList);
-                case OR:
-                    return new RuleBasedORPredicate(predicateList);
-                default:
-                    throw new IllegalStateException("The wrong condition type!");
-            }
-        } else {
-            throw new IllegalStateException("The wrong condition type!");
-        }
+  /**
+   * Convert condition into MISTPredicate.
+   * @param condition Comparison condition or union condition.
+   * @return MISTPredicate
+   */
+  public static MISTPredicate<Map<String, Object>> ruleBasedConditionToPredicate(final AbstractCondition condition) {
+    if (condition instanceof ComparisonCondition) {
+      switch (condition.getConditionType()) {
+        case LT:
+          return new RuleBasedLTPredicate(((ComparisonCondition) condition).getFieldName(),
+              ((ComparisonCondition) condition).getComparisonValue());
+        case GT:
+          return new RuleBasedGTPredicate(((ComparisonCondition) condition).getFieldName(),
+              ((ComparisonCondition) condition).getComparisonValue());
+        case EQ:
+          return new RuleBasedEQPredicate(((ComparisonCondition) condition).getFieldName(),
+              ((ComparisonCondition) condition).getComparisonValue());
+        case GE:
+          return new RuleBasedGEPredicate(((ComparisonCondition) condition).getFieldName(),
+              ((ComparisonCondition) condition).getComparisonValue());
+        case LE:
+          return new RuleBasedLEPredicate(((ComparisonCondition) condition).getFieldName(),
+              ((ComparisonCondition) condition).getComparisonValue());
+        default:
+          throw new IllegalStateException("The wrong condition type!");
+      }
+    } else if (condition instanceof UnionCondition) {
+      final List<AbstractCondition> conditionList = ((UnionCondition) condition).getConditions();
+      final List<MISTPredicate<Map<String, Object>>> predicateList = new ArrayList<>();
+      for (int i = 0; i < conditionList.size(); i++) {
+        predicateList.add(ruleBasedConditionToPredicate(conditionList.get(i)));
+      }
+      switch (condition.getConditionType()) {
+        case AND:
+          return new RuleBasedANDPredicate(predicateList);
+        case OR:
+          return new RuleBasedORPredicate(predicateList);
+        default:
+          throw new IllegalStateException("The wrong condition type!");
+      }
+    } else {
+      throw new IllegalStateException("The wrong condition type!");
     }
+  }
 
-    private RuleBasedConditionUtils() {
-    }
+  private RuleBasedConditionUtils() {
+  }
 }

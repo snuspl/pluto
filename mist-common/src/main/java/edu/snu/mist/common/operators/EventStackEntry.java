@@ -23,60 +23,60 @@ import java.util.List;
  * @param <T> user-defined class
  */
 public final class EventStackEntry<T> {
-    /**
-     * State index of current entry.
-     */
-    private final int index;
+  /**
+   * State index of current entry.
+   */
+  private final int index;
 
-    /**
-     * Event list of current entry.
-     */
-    private final List<T> events;
+  /**
+   * Event list of current entry.
+   */
+  private final List<T> events;
 
-    /**
-     * Check whether stop condition is triggered or not.
-     */
-    private boolean isStopped;
+  /**
+   * Check whether stop condition is triggered or not.
+   */
+  private boolean isStopped;
 
-    public EventStackEntry(final int index) {
-        this.index = index;
-        this.events = new ArrayList<>();
-        this.isStopped = false;
-    }
+  public EventStackEntry(final int index) {
+    this.index = index;
+    this.events = new ArrayList<>();
+    this.isStopped = false;
+  }
 
-    public int getIndex() {
-        return index;
-    }
+  public int getIndex() {
+    return index;
+  }
 
-    public List<T> getlist() {
-        return events;
-    }
+  public List<T> getlist() {
+    return events;
+  }
 
-    public boolean isStopped() {
-        return isStopped;
-    }
+  public boolean isStopped() {
+    return isStopped;
+  }
 
-    public void setList(final List<T> eventListParam) {
-        events.clear();
-        events.addAll(eventListParam);
-    }
+  public void setList(final List<T> eventListParam) {
+    events.clear();
+    events.addAll(eventListParam);
+  }
 
-    public void addEvent(final T event) {
-        this.events.add(event);
-    }
+  public void addEvent(final T event) {
+    this.events.add(event);
+  }
 
-    public void setStopped() {
-        isStopped = true;
-    }
+  public void setStopped() {
+    isStopped = true;
+  }
 
-    /**
-     * Copy current entry and make a new instance.
-     * @return event stack entry.
-     */
-    public EventStackEntry<T> deepCopy() {
-        final EventStackEntry<T> copiedEntry = new EventStackEntry<>(index);
-        final List<T> copiedList = new ArrayList<>(events);
-        copiedEntry.setList(copiedList);
-        return copiedEntry;
-    }
+  /**
+   * Copy current entry and make a new instance.
+   * @return event stack entry.
+   */
+  public EventStackEntry<T> deepCopy() {
+    final EventStackEntry<T> copiedEntry = new EventStackEntry<>(index);
+    final List<T> copiedList = new ArrayList<>(events);
+    copiedEntry.setList(copiedList);
+    return copiedEntry;
+  }
 }

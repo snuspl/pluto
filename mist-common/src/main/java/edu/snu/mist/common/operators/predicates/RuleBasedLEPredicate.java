@@ -25,12 +25,12 @@ import java.util.Map;
  */
 public final class RuleBasedLEPredicate extends RuleBasedCCPredicate implements MISTPredicate<Map<String, Object>> {
 
-    public RuleBasedLEPredicate(final String field, final Object value) {
-        super(field, value);
-    }
+  public RuleBasedLEPredicate(final String field, final Object value) {
+    super(field, value);
+  }
 
-    @Override
-    public boolean test(final Map<String, Object> stringObjectMap) {
-        return ruleBasedCompare(stringObjectMap.get(this.getField()), this.getValue()) <= 0;
-    }
+  @Override
+  public boolean test(final Map<String, Object> stringObjectMap) {
+    return ruleBasedCompare(stringObjectMap.get(this.getField()), this.getValue()) <= 0;
+  }
 }

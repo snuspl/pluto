@@ -38,112 +38,112 @@ import java.util.Map;
  */
 public final class CepUtils {
 
-    /**
-     * Translate cep query into MIST query.
-     * @return MIST query
-     */
-    public static <T> MISTQueryBuilder translate(final MISTCepQuery query) throws IOException {
-        final String superGroupId = query.getSuperGroupId();
-        final CepInput<T> cepInput = query.getCepInput();
-        final List<CepEventPattern<T>> cepEventPatterns = query.getCepEventPatternSequence();
-        final CepQualifier<T> cepQualifier = query.getCepQualifier();
-        final long windowTime = query.getWindowTime();
-        final CepAction cepAction = query.getCepAction();
+  /**
+   * Translate cep query into MIST query.
+   * @return MIST query
+   */
+  public static <T> MISTQueryBuilder translate(final MISTCepQuery query) throws IOException {
+    final String superGroupId = query.getSuperGroupId();
+    final CepInput<T> cepInput = query.getCepInput();
+    final List<CepEventPattern<T>> cepEventPatterns = query.getCepEventPatternSequence();
+    final CepQualifier<T> cepQualifier = query.getCepQualifier();
+    final long windowTime = query.getWindowTime();
+    final CepAction cepAction = query.getCepAction();
 
-        final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
-        final ContinuousStream<T> inputMapStream = convertCepInputToSourceStream(queryBuilder, cepInput);
-        final ContinuousStream<Map<String, List<T>>> qualifierFilterStream =
-                inputMapStream.cepOperator(cepEventPatterns, windowTime).filter(cepQualifier);
-        cepActionTranslator(qualifierFilterStream, cepAction);
-        return queryBuilder;
+    final MISTQueryBuilder queryBuilder = new MISTQueryBuilder();
+    final ContinuousStream<T> inputMapStream = convertCepInputToSourceStream(queryBuilder, cepInput);
+    final ContinuousStream<Map<String, List<T>>> qualifierFilterStream =
+        inputMapStream.cepOperator(cepEventPatterns, windowTime).filter(cepQualifier);
+    cepActionTranslator(qualifierFilterStream, cepAction);
+    return queryBuilder;
+  }
+
+  /**
+   * Convert cep input stream into source stream.
+   * @param queryBuilder mist query builder
+   * @param cepInput     cep input
+   * @return source stream.
+   */
+  private static <T> ContinuousStream<T> convertCepInputToSourceStream(
+      final MISTQueryBuilder queryBuilder,
+      final CepInput<T> cepInput) {
+    final MISTFunction<String, T> classGenFunc = cepInput.getClassGenFunc();
+    switch (cepInput.getInputType()) {
+      case TEXT_SOCKET_SOURCE: {
+        final String sourceHostname = cepInput.getSourceConfiguration().get("SOCKET_INPUT_ADDRESS").toString();
+        final int sourcePort = (int) cepInput.getSourceConfiguration().get("SOCKET_INPUT_PORT");
+        final SourceConfiguration sourceConf =
+            new TextSocketSourceConfiguration().newBuilder()
+                .setHostAddress(sourceHostname)
+                .setHostPort(sourcePort)
+                .build();
+        return queryBuilder.socketTextStream(sourceConf)
+            .map(classGenFunc);
+      }
+      case MQTT_SOURCE: {
+        final String topic = cepInput.getSourceConfiguration().get("MQTT_INPUT_TOPIC").toString();
+        final String brokerURI = cepInput.getSourceConfiguration().get("MQTT_INPUT_BROKER_URI").toString();
+        final SourceConfiguration sourceConf =
+            new MQTTSourceConfiguration().newBuilder()
+                .setTopic(topic)
+                .setBrokerURI(brokerURI)
+                .build();
+        return queryBuilder.mqttStream(sourceConf)
+            .map(mqttMessage -> new String(mqttMessage.getPayload()))
+            .map(classGenFunc);
+      }
+      default:
+        throw new IllegalStateException("Invalid source type");
+    }
+  }
+
+  /**
+   * Add output of cep action to cep qualifier.
+   * @param qualifierFilterStream
+   * @param cepAction             cep action
+   */
+  private static <T> void cepActionTranslator(
+      final ContinuousStream<Map<String, List<T>>> qualifierFilterStream,
+      final CepAction cepAction) {
+    final CepSink sink = cepAction.getCepSink();
+    final String separator = sink.getSeparator();
+    final List<Object> params = cepAction.getParams();
+
+    final StringBuilder outputBuilder = new StringBuilder();
+    for (final Object iterParam : params) {
+      outputBuilder.append(iterParam.toString());
+      outputBuilder.append(separator);
     }
 
-    /**
-     * Convert cep input stream into source stream.
-     * @param queryBuilder mist query builder
-     * @param cepInput cep input
-     * @return source stream.
-     */
-    private static <T> ContinuousStream<T> convertCepInputToSourceStream(
-            final MISTQueryBuilder queryBuilder,
-            final CepInput<T> cepInput) {
-        final MISTFunction<String, T> classGenFunc = cepInput.getClassGenFunc();
-        switch (cepInput.getInputType()) {
-            case TEXT_SOCKET_SOURCE: {
-                final String sourceHostname = cepInput.getSourceConfiguration().get("SOCKET_INPUT_ADDRESS").toString();
-                final int sourcePort = (int) cepInput.getSourceConfiguration().get("SOCKET_INPUT_PORT");
-                final SourceConfiguration sourceConf =
-                        new TextSocketSourceConfiguration().newBuilder()
-                                .setHostAddress(sourceHostname)
-                                .setHostPort(sourcePort)
-                                .build();
-                return queryBuilder.socketTextStream(sourceConf)
-                        .map(classGenFunc);
-            }
-            case MQTT_SOURCE: {
-                final String topic = cepInput.getSourceConfiguration().get("MQTT_INPUT_TOPIC").toString();
-                final String brokerURI = cepInput.getSourceConfiguration().get("MQTT_INPUT_BROKER_URI").toString();
-                final SourceConfiguration sourceConf =
-                        new MQTTSourceConfiguration().newBuilder()
-                                .setTopic(topic)
-                                .setBrokerURI(brokerURI)
-                                .build();
-                return queryBuilder.mqttStream(sourceConf)
-                        .map(mqttMessage -> new String(mqttMessage.getPayload()))
-                        .map(classGenFunc);
-            }
-            default:
-                throw new IllegalStateException("Invalid source type");
-        }
+    if (outputBuilder.length() == 0) {
+      throw new NullPointerException("No Parameters for cep sink!");
     }
 
-    /**
-     * Add output of cep action to cep qualifier.
-     * @param qualifierFilterStream
-     * @param cepAction cep action
-     */
-    private static <T> void cepActionTranslator(
-            final ContinuousStream<Map<String, List<T>>> qualifierFilterStream,
-            final CepAction cepAction) {
-        final CepSink sink = cepAction.getCepSink();
-        final String separator = sink.getSeparator();
-        final List<Object> params = cepAction.getParams();
+    outputBuilder.delete(outputBuilder.length() - separator.length(), outputBuilder.length());
 
-        final StringBuilder outputBuilder = new StringBuilder();
-        for (final Object iterParam : params) {
-            outputBuilder.append(iterParam.toString());
-            outputBuilder.append(separator);
-        }
-
-        if (outputBuilder.length() == 0) {
-            throw new NullPointerException("No Parameters for cep sink!");
-        }
-
-        outputBuilder.delete(outputBuilder.length() - separator.length(), outputBuilder.length());
-
-        switch (sink.getCepSinkType()) {
-            case TEXT_SOCKET_OUTPUT: {
-                qualifierFilterStream
-                        .map(s -> outputBuilder.toString())
-                        .textSocketOutput((String)sink.getSinkConfigs().get("SOCKET_SINK_ADDRESS"),
-                                (int)sink.getSinkConfigs().get("SOCKET_SINK_PORT"));
-                break;
-            }
-            case MQTT_OUTPUT: {
-                qualifierFilterStream
-                        .map(s -> new MqttMessage(outputBuilder.toString().getBytes()))
-                        .mqttOutput((String) sink.getSinkConfigs().get("MQTT_SINK_BROKER_URI"),
-                                (String) sink.getSinkConfigs().get("MQTT_SINK_TOPIC"));
-            }
-            default :
-                throw new NotImplementedException("TEXT_SOCKET_OUTPUT and MQTT_OUTPUT are supported now!: " +
-                        sink.getCepSinkType().toString());
-        }
+    switch (sink.getCepSinkType()) {
+      case TEXT_SOCKET_OUTPUT: {
+        qualifierFilterStream
+            .map(s -> outputBuilder.toString())
+            .textSocketOutput((String) sink.getSinkConfigs().get("SOCKET_SINK_ADDRESS"),
+                (int) sink.getSinkConfigs().get("SOCKET_SINK_PORT"));
+        break;
+      }
+      case MQTT_OUTPUT: {
+        qualifierFilterStream
+            .map(s -> new MqttMessage(outputBuilder.toString().getBytes()))
+            .mqttOutput((String) sink.getSinkConfigs().get("MQTT_SINK_BROKER_URI"),
+                (String) sink.getSinkConfigs().get("MQTT_SINK_TOPIC"));
+      }
+      default:
+        throw new NotImplementedException("TEXT_SOCKET_OUTPUT and MQTT_OUTPUT are supported now!: " +
+            sink.getCepSinkType().toString());
     }
+  }
 
-    /**
-     * Must not be instantiated.
-     */
-    private CepUtils() {
-    }
+  /**
+   * Must not be instantiated.
+   */
+  private CepUtils() {
+  }
 }

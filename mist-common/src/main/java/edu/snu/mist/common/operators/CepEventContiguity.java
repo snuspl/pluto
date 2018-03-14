@@ -19,7 +19,7 @@ package edu.snu.mist.common.operators;
  * Enum class for cep event contiguity.
  */
 public enum CepEventContiguity {
-    STRICT,
-    RELAXED,
-    NON_DETERMINISTIC_RELAXED
+  STRICT,
+  RELAXED,
+  NON_DETERMINISTIC_RELAXED
 }

@@ -35,95 +35,95 @@ import java.net.URISyntaxException;
  * Example client which submits a rule-based stateless query.
  */
 public final class RuleBasedMQTTHelloMist {
-    /**
-     * Submit a rule-based stateless query.
-     * The query reads strings from a mqtt source server, filter "ID" which is "HelloMIST",
-     * and send "Message" field's data to mqtt sink.
-     * @return result of the submission
-     * @throws IOException
-     * @throws InjectionException
-     */
-    public static APIQueryControlResult submitQuery(final Configuration configuration)
-            throws IOException, InjectionException, URISyntaxException {
-        final String brokerURI =
-                Tang.Factory.getTang().newInjector(configuration).getNamedInstance(TestMQTTBrokerURI.class);
-        final String sourceTopic = "MISTExampleSub";
-        final String sinkTopic = "MISTExamplePub";
+  /**
+   * Submit a rule-based stateless query.
+   * The query reads strings from a mqtt source server, filter "ID" which is "HelloMIST",
+   * and send "Message" field's data to mqtt sink.
+   * @return result of the submission
+   * @throws IOException
+   * @throws InjectionException
+   */
+  public static APIQueryControlResult submitQuery(final Configuration configuration)
+      throws IOException, InjectionException, URISyntaxException {
+    final String brokerURI =
+        Tang.Factory.getTang().newInjector(configuration).getNamedInstance(TestMQTTBrokerURI.class);
+    final String sourceTopic = "MISTExampleSub";
+    final String sinkTopic = "MISTExamplePub";
 
-        final String firstField = "ID";
-        final String secondField = "Message";
-        final RuleBasedValueType firstFieldType =  RuleBasedValueType.STRING;
-        final RuleBasedValueType secondFieldType = RuleBasedValueType.STRING;
-        final String sourceSeparator = ":";
-
-        /**
-         * Make rule-based Input with sourceConfiguration.
-         */
-        final RuleBasedInput input = new RuleBasedInput.MqttBuilder()
-                .setMqttBrokerURI(brokerURI)
-                .setMqttTopic(sourceTopic)
-                .addField(firstField, firstFieldType)
-                .addField(secondField, secondFieldType)
-                .setSeparator(sourceSeparator)
-                .build();
-
-        /**
-         * Make RuleBasedSink with sinkConfiguration.
-         */
-        final RuleBasedSink sink = new RuleBasedSink.MqttBuilder()
-                .setMqttBrokerURI(brokerURI)
-                .setMqttTopic(sinkTopic)
-                .build();
-
-        /**
-         * Make a RuleBasedQuery.
-         */
-        final MISTStatelessQuery ruleBasedQuery = new MISTStatelessQuery.Builder("example-group", "user1")
-                .input(input)
-                .addStatelessRule(new StatelessRule.Builder()
-                        .setCondition(ComparisonCondition.eq("ID", "HelloMIST"))
-                        .setAction(new RuleBasedAction.Builder()
-                                .setActionType(RuleBasedActionType.TEXT_WRITE)
-                                .setSink(sink)
-                                .setParams("$Message")
-                                .build())
-                        .build())
-                .build();
-
-        /**
-         * Translate statelessQuery into MISTQuery
-         */
-        final MISTQueryBuilder queryBuilder = RuleBasedTranslator.statelessTranslator(ruleBasedQuery);
-        return MISTExampleUtils.submit(queryBuilder, configuration);
-    }
+    final String firstField = "ID";
+    final String secondField = "Message";
+    final RuleBasedValueType firstFieldType = RuleBasedValueType.STRING;
+    final RuleBasedValueType secondFieldType = RuleBasedValueType.STRING;
+    final String sourceSeparator = ":";
 
     /**
-     * Set the environment(Hostname and port of driver, source, and sink) and submit a query.
-     * @param args command line parameters
-     * @throws Exception
+     * Make rule-based Input with sourceConfiguration.
      */
-    public static void main(final String[] args) throws Exception {
-        final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-
-        final CommandLine commandLine = MISTExampleUtils.getDefaultCommandLine(jcb)
-                .registerShortNameOfClass(NettySourceAddress.class) // Additional parameter
-                .processCommandLine(args);
-
-        if (commandLine == null) {  // Option '?' was entered and processCommandLine printed the help.
-            return;
-        }
-
-        Thread sinkServer = new Thread(MISTExampleUtils.getSinkServer());
-        sinkServer.start();
-
-        final APIQueryControlResult result = submitQuery(jcb.build());
-
-        System.out.println("Query submission result: " + result.getQueryId());
-    }
+    final RuleBasedInput input = new RuleBasedInput.MqttBuilder()
+        .setMqttBrokerURI(brokerURI)
+        .setMqttTopic(sourceTopic)
+        .addField(firstField, firstFieldType)
+        .addField(secondField, secondFieldType)
+        .setSeparator(sourceSeparator)
+        .build();
 
     /**
-     * Must not be instantiated.
+     * Make RuleBasedSink with sinkConfiguration.
      */
-    private RuleBasedMQTTHelloMist() {
+    final RuleBasedSink sink = new RuleBasedSink.MqttBuilder()
+        .setMqttBrokerURI(brokerURI)
+        .setMqttTopic(sinkTopic)
+        .build();
+
+    /**
+     * Make a RuleBasedQuery.
+     */
+    final MISTStatelessQuery ruleBasedQuery = new MISTStatelessQuery.Builder("example-group", "user1")
+        .input(input)
+        .addStatelessRule(new StatelessRule.Builder()
+            .setCondition(ComparisonCondition.eq("ID", "HelloMIST"))
+            .setAction(new RuleBasedAction.Builder()
+                .setActionType(RuleBasedActionType.TEXT_WRITE)
+                .setSink(sink)
+                .setParams("$Message")
+                .build())
+            .build())
+        .build();
+
+    /**
+     * Translate statelessQuery into MISTQuery
+     */
+    final MISTQueryBuilder queryBuilder = RuleBasedTranslator.statelessTranslator(ruleBasedQuery);
+    return MISTExampleUtils.submit(queryBuilder, configuration);
+  }
+
+  /**
+   * Set the environment(Hostname and port of driver, source, and sink) and submit a query.
+   * @param args command line parameters
+   * @throws Exception
+   */
+  public static void main(final String[] args) throws Exception {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+
+    final CommandLine commandLine = MISTExampleUtils.getDefaultCommandLine(jcb)
+        .registerShortNameOfClass(NettySourceAddress.class) // Additional parameter
+        .processCommandLine(args);
+
+    if (commandLine == null) {  // Option '?' was entered and processCommandLine printed the help.
+      return;
     }
+
+    Thread sinkServer = new Thread(MISTExampleUtils.getSinkServer());
+    sinkServer.start();
+
+    final APIQueryControlResult result = submitQuery(jcb.build());
+
+    System.out.println("Query submission result: " + result.getQueryId());
+  }
+
+  /**
+   * Must not be instantiated.
+   */
+  private RuleBasedMQTTHelloMist() {
+  }
 }
