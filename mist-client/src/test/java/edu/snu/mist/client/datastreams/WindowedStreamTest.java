@@ -16,23 +16,19 @@
 package edu.snu.mist.client.datastreams;
 
 import edu.snu.mist.client.MISTQueryBuilder;
-import edu.snu.mist.client.utils.UDFTestUtils;
 import edu.snu.mist.client.utils.TestParameters;
+import edu.snu.mist.client.utils.UDFTestUtils;
 import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.configurations.ConfKeys;
 import edu.snu.mist.common.functions.ApplyStatefulFunction;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.common.parameters.KeyIndex;
-import edu.snu.mist.common.parameters.SerializedUdf;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.TimeWindowInformation;
 import edu.snu.mist.common.windows.WindowData;
 import edu.snu.mist.formats.avro.Direction;
-import org.apache.reef.tang.Configuration;
-import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.After;
 import org.junit.Assert;
@@ -79,32 +75,10 @@ public class WindowedStreamTest {
         timeWindowedStream.reduceByKeyWindow(0, String.class, reduceFunc);
 
     // Get info
-    final Injector injector = Tang.Factory.getTang().newInjector(reducedWindowStream.getConfiguration());
-    final int desKeyIndex = injector.getNamedInstance(KeyIndex.class);
-    final String serializedFunc = injector.getNamedInstance(SerializedUdf.class);
-    Assert.assertEquals(0, desKeyIndex);
-    Assert.assertEquals(SerializeUtils.serializeToString(reduceFunc), serializedFunc);
-
-    // Check windowed -> reduce by key
-    checkEdges(queryBuilder.build().getDAG(), 1, timeWindowedStream,
-        reducedWindowStream, new MISTEdge(Direction.LEFT));
-  }
-
-  /**
-   * Test for binding the udf class of reduceByKeyWindow operation.
-   */
-  @Test
-  public void testReduceByKeyWindowClassBinding() throws InjectionException {
-    final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
-    final ContinuousStream<Map<String, Integer>> reducedWindowStream =
-        timeWindowedStream.reduceByKeyWindow(0, String.class, UDFTestUtils.TestBiFunction.class, funcConf);
-
-    // Get info
-    final Injector injector = Tang.Factory.getTang().newInjector(reducedWindowStream.getConfiguration());
-    final int desKeyIndex = injector.getNamedInstance(KeyIndex.class);
-    final MISTBiFunction biFunction = injector.getInstance(MISTBiFunction.class);
-    Assert.assertEquals(0, desKeyIndex);
-    Assert.assertTrue(biFunction instanceof UDFTestUtils.TestBiFunction);
+    final Map<String, String> conf = reducedWindowStream.getConfiguration();
+    Assert.assertEquals("0", conf.get(ConfKeys.ReduceByKeyOperator.KEY_INDEX.name()));
+    Assert.assertEquals(SerializeUtils.serializeToString(reduceFunc),
+        conf.get(ConfKeys.ReduceByKeyOperator.MIST_BI_FUNC.name()));
 
     // Check windowed -> reduce by key
     checkEdges(queryBuilder.build().getDAG(), 1, timeWindowedStream,
@@ -122,31 +96,9 @@ public class WindowedStreamTest {
         timeWindowedStream.applyStatefulWindow(new UDFTestUtils.TestApplyStatefulFunction());
 
     /* Simulate two data inputs on UDF stream */
-    final Configuration conf = applyStatefulWindowStream.getConfiguration();
-    final Injector injector = Tang.Factory.getTang().newInjector(conf);
-    final String seFunc = injector.getNamedInstance(SerializedUdf.class);
-    Assert.assertEquals(SerializeUtils.serializeToString(func), seFunc);
-
-    // Check windowed -> stateful operation applied
-    checkEdges(
-        queryBuilder.build().getDAG(), 1, timeWindowedStream,
-        applyStatefulWindowStream, new MISTEdge(Direction.LEFT));
-  }
-
-  /**
-   * Test for applyStatefulWindow operation.
-   */
-  @Test
-  public void testApplyStatefulWindowClassBinding() throws InjectionException {
-    final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
-    final ContinuousStream<Integer> applyStatefulWindowStream =
-        timeWindowedStream.applyStatefulWindow(UDFTestUtils.TestApplyStatefulFunction.class, funcConf);
-
-    /* Simulate two data inputs on UDF stream */
-    final Configuration conf = applyStatefulWindowStream.getConfiguration();
-    final Injector injector = Tang.Factory.getTang().newInjector(conf);
-    final ApplyStatefulFunction func = injector.getInstance(ApplyStatefulFunction.class);
-    Assert.assertTrue(func instanceof UDFTestUtils.TestApplyStatefulFunction);
+    final Map<String, String> conf = applyStatefulWindowStream.getConfiguration();
+    Assert.assertEquals(SerializeUtils.serializeToString(func),
+        conf.get(ConfKeys.OperatorConf.UDF_STRING.name()));
 
     // Check windowed -> stateful operation applied
     checkEdges(
@@ -163,26 +115,9 @@ public class WindowedStreamTest {
     final ContinuousStream<String> aggregateWindowStream
         = timeWindowedStream.aggregateWindow(func);
 
-    final Injector injector = Tang.Factory.getTang().newInjector(aggregateWindowStream.getConfiguration());
-    final String serializedFunc = injector.getNamedInstance(SerializedUdf.class);
-    Assert.assertEquals(SerializeUtils.serializeToString(func), serializedFunc);
-    // Check windowed -> aggregated
-    checkEdges(queryBuilder.build().getDAG(), 1, timeWindowedStream,
-        aggregateWindowStream, new MISTEdge(Direction.LEFT));
-  }
-
-  /**
-   * Test for binding the udf class of aggregateWindow operation.
-   */
-  @Test
-  public void testAggregateWindowClassBinding() throws InjectionException {
-    final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
-    final ContinuousStream<String> aggregateWindowStream
-        = timeWindowedStream.aggregateWindow(WindowAggregateFunction.class, funcConf);
-
-    final Injector injector = Tang.Factory.getTang().newInjector(aggregateWindowStream.getConfiguration());
-    final MISTFunction func = injector.getInstance(MISTFunction.class);
-    Assert.assertTrue(func instanceof WindowAggregateFunction);
+    final Map<String, String> conf = aggregateWindowStream.getConfiguration();
+    Assert.assertEquals(SerializeUtils.serializeToString(func),
+        conf.get(ConfKeys.OperatorConf.UDF_STRING.name()));
     // Check windowed -> aggregated
     checkEdges(queryBuilder.build().getDAG(), 1, timeWindowedStream,
         aggregateWindowStream, new MISTEdge(Direction.LEFT));

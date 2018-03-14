@@ -21,13 +21,16 @@ import edu.snu.mist.client.datastreams.MISTStream;
 import edu.snu.mist.client.datastreams.configurations.PeriodicWatermarkConfiguration;
 import edu.snu.mist.client.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.client.datastreams.configurations.WatermarkConfiguration;
+import edu.snu.mist.common.configurations.ConfKeys;
+import edu.snu.mist.common.configurations.ConfValues;
 import edu.snu.mist.common.graph.AdjacentListDAG;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.reef.tang.Configuration;
-import org.apache.reef.tang.Configurations;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class builds MIST query.
@@ -83,10 +86,13 @@ public final class MISTQueryBuilder {
    * @param <T> stream type
    * @return a new continuous stream connected with the source
    */
-  private <T> ContinuousStream<T> buildStream(final Configuration sourceConf,
-                                              final Configuration watermarkConf) {
+  private <T> ContinuousStream<T> buildStream(final Map<String, String> sourceConf,
+                                              final Map<String, String> watermarkConf) {
+    final Map<String, String> mergedMap = new HashMap<>();
+    mergedMap.putAll(sourceConf);
+    mergedMap.putAll(watermarkConf);
     final ContinuousStream<T> sourceStream =
-        new ContinuousStreamImpl<>(dag, Configurations.merge(sourceConf, watermarkConf));
+        new ContinuousStreamImpl<>(dag, mergedMap);
     dag.addVertex(sourceStream);
     return sourceStream;
   }
@@ -108,7 +114,8 @@ public final class MISTQueryBuilder {
    */
   public ContinuousStream<String> socketTextStream(final SourceConfiguration srcConf,
                                                    final WatermarkConfiguration watermarkConf) {
-    assert srcConf.getType() == SourceConfiguration.SourceType.SOCKET;
+    assert srcConf.getConfiguration()
+        .get(ConfKeys.SourceConf.SOURCE_TYPE.name()) == ConfValues.SourceType.NETTY.name();
     return buildStream(srcConf.getConfiguration(), watermarkConf.getConfiguration());
   }
 
@@ -129,7 +136,8 @@ public final class MISTQueryBuilder {
    */
   public <K, V> ContinuousStream<ConsumerRecord<K, V>> kafkaStream(final SourceConfiguration srcConf,
                                                                    final WatermarkConfiguration watermarkConf) {
-    assert srcConf.getType() == SourceConfiguration.SourceType.KAFKA;
+    assert srcConf.getConfiguration()
+        .get(ConfKeys.SourceConf.SOURCE_TYPE.name()) == ConfValues.SourceType.KAFKA.name();
     return buildStream(srcConf.getConfiguration(), watermarkConf.getConfiguration());
   }
 
@@ -150,7 +158,8 @@ public final class MISTQueryBuilder {
    */
   public ContinuousStream<MqttMessage> mqttStream(final SourceConfiguration srcConf,
                                                   final WatermarkConfiguration watermarkConf) {
-    assert srcConf.getType() == SourceConfiguration.SourceType.MQTT;
+    assert srcConf.getConfiguration()
+        .get(ConfKeys.SourceConf.SOURCE_TYPE.name()) == ConfValues.SourceType.MQTT.name();
     return buildStream(srcConf.getConfiguration(), watermarkConf.getConfiguration());
   }
 

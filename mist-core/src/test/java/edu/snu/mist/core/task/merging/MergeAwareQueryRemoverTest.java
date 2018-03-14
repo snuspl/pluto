@@ -69,7 +69,7 @@ public final class MergeAwareQueryRemoverTest {
   /**
    * The map that has the query id as a key and its execution dag as a value.
    */
-  private SrcAndDagMap<String> srcAndDagMap;
+  private SrcAndDagMap<Map<String, String>> srcAndDagMap;
 
   /**
    * The physical execution dags.
@@ -118,7 +118,7 @@ public final class MergeAwareQueryRemoverTest {
    * @param conf source configuration
    * @return test source
    */
-  private TestSource generateSource(final String conf) {
+  private TestSource generateSource(final Map<String, String> conf) {
     return new TestSource(idAndConfGenerator.generateId(), conf);
   }
 
@@ -127,8 +127,8 @@ public final class MergeAwareQueryRemoverTest {
    * @param conf configuration of the operator
    * @return operator chain
    */
-  private PhysicalOperator generateFilterOperator(final String conf,
-                                               final MISTPredicate<String> predicate) {
+  private PhysicalOperator generateFilterOperator(final Map<String, String> conf,
+                                                  final MISTPredicate<String> predicate) {
     final PhysicalOperator filterOp = new DefaultPhysicalOperatorImpl(idAndConfGenerator.generateId(),
         conf, new FilterOperator<>(predicate));
     return filterOp;
@@ -140,7 +140,7 @@ public final class MergeAwareQueryRemoverTest {
    * @param result list for storing outputs
    * @return sink
    */
-  private PhysicalSink<String> generateSink(final String conf,
+  private PhysicalSink<String> generateSink(final Map<String, String> conf,
                                             final List<String> result) {
     return new PhysicalSinkImpl<>(idAndConfGenerator.generateId(), conf, new TestSink<>(result));
   }
@@ -158,7 +158,7 @@ public final class MergeAwareQueryRemoverTest {
       final PhysicalSink<String> sink,
       final ConfigVertex srcVertex,
       final ConfigVertex ocVertex,
-      final ConfigVertex sinkVertex) throws IOException, InjectionException {
+      final ConfigVertex sinkVertex) throws IOException {
     // Create DAG
     final DAG<ConfigVertex, MISTEdge> dag = new AdjacentListDAG<>();
     dag.addVertex(srcVertex);
@@ -184,12 +184,12 @@ public final class MergeAwareQueryRemoverTest {
    * Case 1: Remove a query when there is a single execution query.
    */
   @Test
-  public void removeQueryFromSingleExecutionQuery() throws IOException, InjectionException {
+  public void removeQueryFromSingleExecutionQuery() throws IOException {
     // Physical vertices
     final List<String> result = new LinkedList<>();
-    final String sourceConf = idAndConfGenerator.generateConf();
-    final String ocConf = idAndConfGenerator.generateConf();
-    final String sinkConf = idAndConfGenerator.generateConf();
+    final Map<String, String> sourceConf = idAndConfGenerator.generateConf();
+    final Map<String, String> ocConf = idAndConfGenerator.generateConf();
+    final Map<String, String> sinkConf = idAndConfGenerator.generateConf();
     final TestSource source = generateSource(sourceConf);
     final PhysicalOperator physicalOp = generateFilterOperator(ocConf, (s) -> true);
     final PhysicalSink<String> sink = generateSink(sinkConf, result);
@@ -270,9 +270,9 @@ public final class MergeAwareQueryRemoverTest {
     final List<String> result1 = new LinkedList<>();
 
     // Physical vertices
-    final String sourceConf1 = idAndConfGenerator.generateConf();
-    final String ocConf1 = idAndConfGenerator.generateConf();
-    final String sinkConf1 = idAndConfGenerator.generateConf();
+    final Map<String, String> sourceConf1 = idAndConfGenerator.generateConf();
+    final Map<String, String> ocConf1 = idAndConfGenerator.generateConf();
+    final Map<String, String> sinkConf1 = idAndConfGenerator.generateConf();
     final TestSource src1 = generateSource(sourceConf1);
     final PhysicalOperator physicalOp1 = generateFilterOperator(ocConf1, (s) -> true);
     final PhysicalSink<String> sink1 = generateSink(sinkConf1, result1);
@@ -297,9 +297,9 @@ public final class MergeAwareQueryRemoverTest {
     final List<String> paths2 = mock(List.class);
 
     // Physical vertices
-    final String sourceConf2 = idAndConfGenerator.generateConf();
-    final String ocConf2 = idAndConfGenerator.generateConf();
-    final String sinkConf2 = idAndConfGenerator.generateConf();
+    final Map<String, String> sourceConf2 = idAndConfGenerator.generateConf();
+    final Map<String, String> ocConf2 = idAndConfGenerator.generateConf();
+    final Map<String, String> sinkConf2 = idAndConfGenerator.generateConf();
     final TestSource src2 = generateSource(sourceConf2);
     final PhysicalOperator physicalOp2 = generateFilterOperator(ocConf2, (s) -> true);
     final PhysicalSink<String> sink2 = generateSink(sinkConf2, result1);
@@ -417,10 +417,10 @@ public final class MergeAwareQueryRemoverTest {
     // Create a query 1:
     // src1 -> oc1 -> sink1
     final List<String> result1 = new LinkedList<>();
-    final String sourceConf = idAndConfGenerator.generateConf();
-    final String operatorConf = idAndConfGenerator.generateConf();
+    final Map<String, String> sourceConf = idAndConfGenerator.generateConf();
+    final Map<String, String> operatorConf = idAndConfGenerator.generateConf();
     final TestSource src1 = generateSource(sourceConf);
-    final String sinkConf1 = idAndConfGenerator.generateConf();
+    final Map<String, String> sinkConf1 = idAndConfGenerator.generateConf();
     final PhysicalOperator physicalOp1 = generateFilterOperator(operatorConf, (s) -> true);
     final PhysicalSink<String> sink1 = generateSink(sinkConf1, result1);
 
@@ -442,7 +442,7 @@ public final class MergeAwareQueryRemoverTest {
     // src2 -> oc2 -> sink2
     // The configuration of src2 and operatorChain2 is same as that of src1 and operatorChain2.
     final List<String> result2 = new LinkedList<>();
-    final String sinkConf2 = idAndConfGenerator.generateConf();
+    final Map<String, String> sinkConf2 = idAndConfGenerator.generateConf();
     final TestSource src2 = generateSource(sourceConf);
     final PhysicalOperator physicalOp2 = generateFilterOperator(operatorConf, (s) -> true);
     final PhysicalSink<String> sink2 = generateSink(sinkConf2, result2);
@@ -555,11 +555,11 @@ public final class MergeAwareQueryRemoverTest {
   final class TestSource implements PhysicalSource {
     private SourceOutputEmitter outputEmitter;
     private final String id;
-    private final String conf;
+    private final Map<String, String> conf;
     private boolean closed = false;
 
     TestSource(final String id,
-               final String conf) {
+               final Map<String, String> conf) {
       this.id = id;
       this.conf = conf;
     }
@@ -618,7 +618,7 @@ public final class MergeAwareQueryRemoverTest {
     }
 
     @Override
-    public String getConfiguration() {
+    public Map<String, String> getConfiguration() {
       return conf;
     }
   }

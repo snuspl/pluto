@@ -86,19 +86,19 @@ public final class MISTQueryTest {
     final List<AvroVertex> vertices = serializedDAG.getKey();
     Assert.assertEquals(7, vertices.size());
 
-    Assert.assertEquals(avroSerializer.toString(sourceStream.getConfiguration()),
+    Assert.assertEquals(sourceStream.getConfiguration(),
         vertices.get(0).getConfiguration());
-    Assert.assertEquals(avroSerializer.toString(flatMapStream.getConfiguration()),
+    Assert.assertEquals(flatMapStream.getConfiguration(),
         vertices.get(1).getConfiguration());
-    Assert.assertEquals(avroSerializer.toString(filterStream.getConfiguration()),
+    Assert.assertEquals(filterStream.getConfiguration(),
         vertices.get(2).getConfiguration());
-    Assert.assertEquals(avroSerializer.toString(mapStream.getConfiguration()),
+    Assert.assertEquals(mapStream.getConfiguration(),
         vertices.get(3).getConfiguration());
-    Assert.assertEquals(avroSerializer.toString(windowedStream.getConfiguration()),
+    Assert.assertEquals(windowedStream.getConfiguration(),
         vertices.get(4).getConfiguration());
-    Assert.assertEquals(avroSerializer.toString(reduceByKeyStream.getConfiguration()),
+    Assert.assertEquals(reduceByKeyStream.getConfiguration(),
         vertices.get(5).getConfiguration());
-    Assert.assertEquals(avroSerializer.toString(sinkStream.getConfiguration()),
+    Assert.assertEquals(sinkStream.getConfiguration(),
         vertices.get(6).getConfiguration());
 
 

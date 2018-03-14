@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.client.datastreams.configurations;
 
+import edu.snu.mist.common.configurations.ConfKeys;
+import edu.snu.mist.common.configurations.ConfValues;
 import edu.snu.mist.common.parameters.PeriodicWatermarkDelay;
 import edu.snu.mist.common.parameters.PeriodicWatermarkPeriod;
 import edu.snu.mist.common.sources.EventGenerator;
@@ -23,6 +25,9 @@ import org.apache.reef.tang.formats.ConfigurationModule;
 import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
 import org.apache.reef.tang.formats.OptionalParameter;
 import org.apache.reef.tang.formats.RequiredParameter;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The class represents periodic watermark configuration.
@@ -59,10 +64,12 @@ public final class PeriodicWatermarkConfiguration extends ConfigurationModuleBui
      * @return the configuration
      */
     public WatermarkConfiguration build() {
-      return new WatermarkConfiguration(CONF
-          .set(PERIOD, watermarkPeriod)
-          .set(EXPECTED_DELAY, watermarkDelay)
-          .build());
+      final Map<String, String> confMap = new HashMap<>();
+      confMap.put(ConfKeys.Watermark.EVENT_GENERATOR.name(),
+          ConfValues.EventGeneratorType.PERIODIC_EVENT_GEN.name());
+      confMap.put(ConfKeys.Watermark.PERIODIC_WATERMARK_PERIOD.name(), String.valueOf(watermarkPeriod));
+      confMap.put(ConfKeys.Watermark.PERIODIC_WATERMARK_DELAY.name(), String.valueOf(watermarkDelay));
+      return new WatermarkConfiguration(confMap);
     }
 
     /**

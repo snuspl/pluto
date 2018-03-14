@@ -18,15 +18,16 @@ package edu.snu.mist.core.task.merging;
 import edu.snu.mist.core.task.ExecutionDag;
 
 import javax.inject.Inject;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A map that has the source configuration as the key and the execution dag that contains the source as the value.
  * With this map, we can find the sharable dag efficiently by just searching the same source configuration.
  */
-final class SrcAndDagHashMap implements SrcAndDagMap<String> {
+final class SrcAndDagHashMap implements SrcAndDagMap<Map<String, String>> {
 
-  private final ConcurrentHashMap<String, ExecutionDag> map;
+  private final ConcurrentHashMap<Map<String, String>, ExecutionDag> map;
 
   @Inject
   private SrcAndDagHashMap() {
@@ -34,22 +35,22 @@ final class SrcAndDagHashMap implements SrcAndDagMap<String> {
   }
 
   @Override
-  public ExecutionDag get(final String conf) {
+  public ExecutionDag get(final Map<String, String> conf) {
     return map.get(conf);
   }
 
   @Override
-  public void put(final String conf, final ExecutionDag executionDag) {
+  public void put(final Map<String, String> conf, final ExecutionDag executionDag) {
     map.put(conf, executionDag);
   }
 
   @Override
-  public void replace(final String conf, final ExecutionDag executionDag) {
+  public void replace(final Map<String, String> conf, final ExecutionDag executionDag) {
     map.replace(conf, executionDag);
   }
 
   @Override
-  public ExecutionDag remove(final String conf) {
+  public ExecutionDag remove(final Map<String, String> conf) {
     return map.remove(conf);
   }
 

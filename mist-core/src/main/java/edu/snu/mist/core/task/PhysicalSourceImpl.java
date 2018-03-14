@@ -19,6 +19,8 @@ import edu.snu.mist.common.OutputEmitter;
 import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;
 
+import java.util.Map;
+
 /**
  * This class represents the implementation of Source interface.
  * @param <T> the type of input data
@@ -36,7 +38,7 @@ public final class PhysicalSourceImpl<T> extends BasePhysicalVertex implements P
   private final EventGenerator<T> eventGenerator;
 
   public PhysicalSourceImpl(final String sourceId,
-                            final String configuration,
+                            final Map<String, String> configuration,
                             final DataGenerator<T> dataGenerator, final EventGenerator<T> eventGenerator) {
     super(sourceId, configuration);
     this.dataGenerator = dataGenerator;

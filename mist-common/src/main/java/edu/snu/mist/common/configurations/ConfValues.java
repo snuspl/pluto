@@ -13,26 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.client.datastreams.configurations;
+package edu.snu.mist.common.configurations;
 
-import java.util.Map;
+public final class ConfValues {
 
-/**
- * The class represents watermark configuration.
- * This is just a wrapper class that holds the configuration of Tang.
- */
-public final class WatermarkConfiguration {
+  private ConfValues() {
 
-  private final Map<String, String> conf;
-  WatermarkConfiguration(final Map<String, String> conf) {
-    this.conf = conf;
   }
 
-  /**
-   * Get the configuration.
-   * @return configuration
-   */
-  public Map<String, String> getConfiguration() {
-    return conf;
+  public enum SourceType {
+    KAFKA,
+    NETTY,
+    MQTT
+  }
+
+  public enum OperatorType {
+    MAP,
+    FLAT_MAP,
+    FILTER,
+    APPLY_STATEFUL,
+    STATE_TRANSITION,
+    CEP,
+    REDUCE_BY_KEY,
+    UNION,
+    TIME_WINDOW,
+    COUNT_WINDOW,
+    SESSION_WINDOW,
+    JOIN,
+    AGGREGATE_WINDOW,
+    APPLY_STATEFUL_WINDOW
+  }
+
+  public enum SinkType {
+    NETTY,
+    MQTT
+  }
+
+  public enum EventGeneratorType {
+    PERIODIC_EVENT_GEN,
+    PUNCTUATED_EVENT_GEN
   }
 }

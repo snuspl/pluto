@@ -21,7 +21,6 @@ import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.codeshare.ClassLoaderProvider;
-import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -44,7 +43,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
   /**
    * Map that has the source conf as a key and the physical execution dag as a value.
    */
-  private final SrcAndDagMap<String> srcAndDagMap;
+  private final SrcAndDagMap<Map<String, String>> srcAndDagMap;
 
   /**
    * The map that has the query id as a key and its configuration dag as a value.
@@ -89,7 +88,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
 
   @Inject
   private ImmediateQueryMergingStarter(final CommonSubDagFinder commonSubDagFinder,
-                                       final SrcAndDagMap<String> srcAndDagMap,
+                                       final SrcAndDagMap<Map<String, String>> srcAndDagMap,
                                        final QueryIdConfigDagMap queryIdConfigDagMap,
                                        final ExecutionDags executionDags,
                                        final ConfigExecutionVertexMap configExecutionVertexMap,
@@ -114,7 +113,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
                                  final Query query,
                                  final DAG<ConfigVertex, MISTEdge> submittedDag,
                                  final List<String> jarFilePaths)
-      throws InjectionException, IOException, ClassNotFoundException {
+      throws IOException, ClassNotFoundException {
 
     queryIdConfigDagMap.put(queryId, submittedDag);
     // Get a class loader
@@ -131,7 +130,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
     // TODO:[MIST-590] We need to improve this code for concurrent modification
     synchronized (srcAndDagMap) {
       // Find mergeable DAGs from the execution dags
-      final Map<String, ExecutionDag> mergeableDags = findMergeableDags(submittedDag);
+      final Map<Map<String, String>, ExecutionDag> mergeableDags = findMergeableDags(submittedDag);
 
       // Exit the merging process if there is no mergeable dag
       if (mergeableDags.size() == 0) {
@@ -225,7 +224,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
                            final DAG<ConfigVertex, MISTEdge> configDag,
                            final ExecutionDag executionDag,
                            final URL[] urls,
-                           final ClassLoader classLoader) throws IOException, InjectionException {
+                           final ClassLoader classLoader) throws IOException, ClassNotFoundException {
     final ExecutionVertex currExecutionVertex;
     if (created.get(currVertex) == null) {
       currExecutionVertex = executionVertexGenerator.generate(currVertex, urls, classLoader);
@@ -251,7 +250,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
    */
   private ExecutionDag generate(final DAG<ConfigVertex, MISTEdge> configDag,
                                                   final List<String> jarFilePaths)
-      throws IOException, ClassNotFoundException, InjectionException {
+      throws IOException, ClassNotFoundException {
     // For execution dag
     final ExecutionDag executionDag = new ExecutionDag(new AdjacentListConcurrentMapDAG<>());
 
@@ -298,7 +297,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
                         final ExecutionDag executionDag,
                         final DAG<ConfigVertex, MISTEdge> submittedDag,
                         final URL[] urls,
-                        final ClassLoader classLoader) throws IOException, InjectionException {
+                        final ClassLoader classLoader) throws IOException, ClassNotFoundException {
     if (visited.contains(currentVertex)) {
       executionDag.getDag().addEdge(parent, configExecutionVertexMap.get(currentVertex), parentEdge);
       return;
@@ -376,12 +375,12 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
    * @param configDag the configuration dag of the submitted query
    * @return mergeable dags
    */
-  private Map<String, ExecutionDag> findMergeableDags(
+  private Map<Map<String, String>, ExecutionDag> findMergeableDags(
       final DAG<ConfigVertex, MISTEdge> configDag) {
     final Set<ConfigVertex> sources = configDag.getRootVertices();
-    final Map<String, ExecutionDag> mergeableDags = new HashMap<>(sources.size());
+    final Map<Map<String, String>, ExecutionDag> mergeableDags = new HashMap<>(sources.size());
     for (final ConfigVertex source : sources) {
-      final String srcConf = source.getConfiguration();
+      final Map<String, String> srcConf = source.getConfiguration();
       final ExecutionDag executionDag = srcAndDagMap.get(srcConf);
       if (executionDag != null) {
         // Mergeable source

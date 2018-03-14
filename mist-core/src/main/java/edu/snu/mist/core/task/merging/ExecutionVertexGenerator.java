@@ -18,7 +18,6 @@ package edu.snu.mist.core.task.merging;
 import edu.snu.mist.core.task.ConfigVertex;
 import edu.snu.mist.core.task.ExecutionVertex;
 import org.apache.reef.tang.annotations.DefaultImplementation;
-import org.apache.reef.tang.exceptions.InjectionException;
 
 import java.io.IOException;
 import java.net.URL;
@@ -38,5 +37,5 @@ public interface ExecutionVertexGenerator {
    */
   ExecutionVertex generate(ConfigVertex configVertex,
                            URL[] urls,
-                           ClassLoader classLoader) throws IOException, InjectionException;
+                           ClassLoader classLoader) throws IOException, ClassNotFoundException;
 }

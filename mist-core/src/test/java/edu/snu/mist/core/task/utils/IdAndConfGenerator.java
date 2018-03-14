@@ -15,6 +15,9 @@
  */
 package edu.snu.mist.core.task.utils;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * This class is for unique id and configuration generation.
  */
@@ -48,8 +51,10 @@ public final class IdAndConfGenerator {
    * Generate a configuration for source, operator, and sink.
    * @return configuration
    */
-  public String generateConf() {
+  public Map<String, String> generateConf() {
     confCount += 1;
-    return Integer.toString(confCount);
+    final Map<String, String> map = new HashMap<>();
+    map.put("key", Integer.toString(confCount));
+    return map;
   }
 }
