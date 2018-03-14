@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2018 Seoul National University
  *
@@ -21,6 +22,8 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class represents MQTT clients implemented with eclipse Paho.
@@ -30,7 +33,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
   /**
    * A flag for start.
    */
-  private boolean started;
+  private final AtomicBoolean started;
   /**
    * The actual Paho MQTT client.
    */
@@ -47,10 +50,8 @@ public final class MQTTSubscribeClient implements MqttCallback {
    * The map coupling MQTT topic name and list of MQTTDataGenerators.
    */
   private final ConcurrentMap<String, Queue<MQTTDataGenerator>> dataGeneratorListMap;
-  /**
-   * The lock used when a DataGenerator want to start subscription.
-   */
-  private final Object subscribeLock;
+
+  private final CountDownLatch countDownLatch;
 
   /**
    * Mqtt sink keep-alive time in seconds.
@@ -64,11 +65,11 @@ public final class MQTTSubscribeClient implements MqttCallback {
   public MQTTSubscribeClient(final String brokerURI,
                              final String clientId,
                              final int mqttSourceKeepAliveSec) {
-    this.started = false;
+    this.started = new AtomicBoolean(false);
     this.brokerURI = brokerURI;
     this.clientId = clientId;
+    this.countDownLatch = new CountDownLatch(1);
     this.dataGeneratorListMap = new ConcurrentHashMap<>();
-    this.subscribeLock = new Object();
     this.mqttSourceKeepAliveSec = mqttSourceKeepAliveSec;
   }
 
@@ -95,17 +96,24 @@ public final class MQTTSubscribeClient implements MqttCallback {
    * Start to subscribe a topic.
    */
   void subscribe(final String topic) throws MqttException {
-    synchronized (subscribeLock) {
-      if (!started) {
+
+    if (!started.get()) {
+      if (started.compareAndSet(false, true)) {
         client = new MqttAsyncClient(brokerURI, clientId);
         final MqttConnectOptions mqttConnectOptions = new MqttConnectOptions();
         mqttConnectOptions.setKeepAliveInterval(mqttSourceKeepAliveSec);
         client.connect(mqttConnectOptions).waitForCompletion();
         client.setCallback(this);
-        started = true;
+        countDownLatch.countDown();
       }
-      client.subscribe(topic, 0);
     }
+
+    try {
+      countDownLatch.await();
+    } catch (final InterruptedException e) {
+      e.printStackTrace();
+    }
+    client.subscribe(topic, 0);
   }
 
   /**

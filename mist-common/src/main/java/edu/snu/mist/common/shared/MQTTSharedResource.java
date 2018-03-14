@@ -18,6 +18,7 @@ package edu.snu.mist.common.shared;
 import edu.snu.mist.common.shared.parameters.*;
 import edu.snu.mist.common.sources.MQTTDataGenerator;
 import edu.snu.mist.common.sources.MQTTSubscribeClient;
+import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.Parameter;
 import org.eclipse.paho.client.mqttv3.IMqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
@@ -30,8 +31,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
@@ -53,32 +56,32 @@ public final class MQTTSharedResource implements MQTTResource {
   /**
    * The map containing topic-subscriber information.
    */
-  private final Map<String, Map<String, MQTTSubscribeClient>> topicSubscriberMap;
+  private final ConcurrentMap<String, Map<String, MQTTSubscribeClient>> topicSubscriberMap;
 
   /**
    * The map containing topic-publisher information.
    */
-  private final Map<String, Map<String, IMqttAsyncClient>> topicPublisherMap;
+  private final ConcurrentMap<String, Map<String, IMqttAsyncClient>> topicPublisherMap;
 
   /**
    * The map coupling MQTT broker URI and MQTTSubscribeClient.
    */
-  private final Map<String, List<MQTTSubscribeClient>> brokerSubscriberMap;
+  private final ConcurrentMap<String, Tuple<List<MQTTSubscribeClient>, CountDownLatch>> brokerSubscriberMap;
 
   /**
    * The map that has the number of sinks each mqtt clients support.
    */
-  private final Map<MQTTSubscribeClient, Integer> subscriberSourceNumMap;
+  private final ConcurrentMap<MQTTSubscribeClient, AtomicInteger> subscriberSourceNumMap;
 
   /**
    * The map that has broker URI as a key and list of mqtt clients as a value.
    */
-  private final Map<String, List<IMqttAsyncClient>> brokerPublisherMap;
+  private final ConcurrentMap<String, Tuple<List<IMqttAsyncClient>, CountDownLatch>> brokerPublisherMap;
 
   /**
    * The map that has the number of sinks each mqtt clients support.
    */
-  private final Map<IMqttAsyncClient, Integer> publisherSinkNumMap;
+  private final ConcurrentMap<IMqttAsyncClient, AtomicInteger> publisherSinkNumMap;
 
   /**
    * The number of maximum mqtt sources per client.
@@ -94,16 +97,6 @@ public final class MQTTSharedResource implements MQTTResource {
    * The maximum number of mqtt inflight events, which is waiting inside the mqtt client queue.
    */
   private final int maxInflightMqttEventNum;
-
-  /**
-   * The lock used to synchronize subscriber creation.
-   */
-  private final Lock subscriberLock;
-
-  /**
-   * The lock used to sychronize publisher creation.
-   */
-  private final Lock publisherLock;
 
   /**
    * Mqtt source keep-alive time in seconds.
@@ -122,14 +115,12 @@ public final class MQTTSharedResource implements MQTTResource {
       @Parameter(MaxInflightMqttEventNum.class) final int maxInflightMqttEventNumParam,
       @Parameter(MqttSourceKeepAliveSec.class) final int mqttSourceKeepAliveSec,
       @Parameter(MqttSinkKeepAliveSec.class) final int mqttSinkKeepAliveSec) {
-    this.brokerSubscriberMap = new HashMap<>();
-    this.subscriberSourceNumMap = new HashMap<>();
-    this.brokerPublisherMap = new HashMap<>();
-    this.publisherSinkNumMap = new HashMap<>();
-    this.topicPublisherMap = new HashMap<>();
-    this.topicSubscriberMap = new HashMap<>();
-    this.subscriberLock = new ReentrantLock();
-    this.publisherLock = new ReentrantLock();
+    this.brokerSubscriberMap = new ConcurrentHashMap<>();
+    this.subscriberSourceNumMap = new ConcurrentHashMap<>();
+    this.brokerPublisherMap = new ConcurrentHashMap<>();
+    this.publisherSinkNumMap = new ConcurrentHashMap<>();
+    this.topicPublisherMap = new ConcurrentHashMap<>();
+    this.topicSubscriberMap = new ConcurrentHashMap<>();
     this.mqttSourceClientNumPerBroker = mqttSourceClientNumPerBrokerParam;
     this.mqttSinkClientNumPerBroker = mqttSinkClientNumPerBrokerParam;
     this.maxInflightMqttEventNum = maxInflightMqttEventNumParam;
@@ -147,44 +138,50 @@ public final class MQTTSharedResource implements MQTTResource {
   public IMqttAsyncClient getMqttSinkClient(
       final String brokerURI,
       final String topic) throws MqttException, IOException {
-    this.publisherLock.lock();
-    final List<IMqttAsyncClient> mqttAsyncClientList = brokerPublisherMap.get(brokerURI);
-    if (mqttAsyncClientList == null) {
+
+    Tuple<List<IMqttAsyncClient>, CountDownLatch> tuple = brokerPublisherMap.get(brokerURI);
+    if (tuple == null) {
       // Initialize the broker list
-      brokerPublisherMap.put(brokerURI, new ArrayList<>());
-      for (int i = 0; i < mqttSinkClientNumPerBroker; i++) {
-        createSinkClient(brokerURI, brokerPublisherMap.get(brokerURI));
+      final CountDownLatch latch = new CountDownLatch(0);
+      final List<IMqttAsyncClient> publisherClientList = new ArrayList<>();
+      if (brokerPublisherMap.putIfAbsent(brokerURI, new Tuple<>(publisherClientList, latch)) == null) {
+        for (int i = 0; i < mqttSinkClientNumPerBroker; i++) {
+          createSinkClient(brokerURI, publisherClientList);
+        }
+
+        // Initialize the topic-client list
+        final HashMap<String, IMqttAsyncClient> myTopicPublisherMap = new HashMap<>();
+        topicPublisherMap.put(brokerURI, myTopicPublisherMap);
+        latch.countDown();
       }
-      // Initialize the topic-client list
-      final HashMap<String, IMqttAsyncClient> myTopicPublisherMap = new HashMap<>();
-      topicPublisherMap.put(brokerURI, myTopicPublisherMap);
-      // Get the first client...
-      final IMqttAsyncClient client = brokerPublisherMap.get(brokerURI).get(0);
-      publisherSinkNumMap.replace(client, publisherSinkNumMap.get(client) + 1);
-      myTopicPublisherMap.put(topic, client);
-      this.publisherLock.unlock();
+    }
+
+    tuple = brokerPublisherMap.get(brokerURI);
+    final CountDownLatch latch = tuple.getValue();
+    try {
+      latch.await();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+
+    final List<IMqttAsyncClient> publishClientList = tuple.getKey();
+    final Map<String, IMqttAsyncClient> myTopicPublisherMap = topicPublisherMap.get(brokerURI);
+    if (myTopicPublisherMap.containsKey(topic)) {
+      final IMqttAsyncClient client = myTopicPublisherMap.get(topic);
+      publisherSinkNumMap.get(client).getAndIncrement();
       return client;
     } else {
-      final Map<String, IMqttAsyncClient> myTopicPublisherMap = topicPublisherMap.get(brokerURI);
-      if (myTopicPublisherMap.containsKey(topic)) {
-        final IMqttAsyncClient client = myTopicPublisherMap.get(topic);
-        publisherSinkNumMap.replace(client, publisherSinkNumMap.get(client) + 1);
-        this.publisherLock.unlock();
-        return client;
-      } else {
-        int minSinkNum = Integer.MAX_VALUE;
-        IMqttAsyncClient client = null;
-        for (final IMqttAsyncClient mqttAsyncClient: brokerPublisherMap.get(brokerURI)) {
-          if (minSinkNum > publisherSinkNumMap.get(mqttAsyncClient)) {
-            minSinkNum = publisherSinkNumMap.get(mqttAsyncClient);
-            client = mqttAsyncClient;
-          }
+      int minSinkNum = Integer.MAX_VALUE;
+      IMqttAsyncClient client = null;
+      for (final IMqttAsyncClient mqttAsyncClient: publishClientList) {
+        if (minSinkNum > publisherSinkNumMap.get(mqttAsyncClient).get()) {
+          minSinkNum = publisherSinkNumMap.get(mqttAsyncClient).get();
+          client = mqttAsyncClient;
         }
-        publisherSinkNumMap.replace(client, publisherSinkNumMap.get(client) + 1);
-        myTopicPublisherMap.put(topic, client);
-        this.publisherLock.unlock();
-        return client;
       }
+      publisherSinkNumMap.get(client).getAndIncrement();
+      myTopicPublisherMap.put(topic, client);
+      return client;
     }
   }
 
@@ -205,7 +202,7 @@ public final class MQTTSharedResource implements MQTTResource {
     connectOptions.setKeepAliveInterval(mqttSinkKeepAliveSec);
     client.connect(connectOptions).waitForCompletion();
     mqttAsyncClientList.add(client);
-    publisherSinkNumMap.put(client, 0);
+    publisherSinkNumMap.put(client, new AtomicInteger(0));
   }
 
   private String getGroupName(final String mqttTopic) {
@@ -226,49 +223,61 @@ public final class MQTTSharedResource implements MQTTResource {
   public MQTTDataGenerator getDataGenerator(
       final String brokerURI,
       final String topic) {
-    this.subscriberLock.lock();
+
     // TODO: Provide group information from QueryManager
-    final List<MQTTSubscribeClient> subscribeClientList = brokerSubscriberMap.get(brokerURI);
-    if (subscribeClientList == null) {
+    Tuple<List<MQTTSubscribeClient>, CountDownLatch> tuple = brokerSubscriberMap.get(brokerURI);
+
+    if (tuple == null) {
       // Initialize the client list...
       final List<MQTTSubscribeClient> newSubscribeClientList = new ArrayList<>();
-      for (int i = 0; i < this.mqttSourceClientNumPerBroker; i++) {
-        final MQTTSubscribeClient subscribeClient = new MQTTSubscribeClient(brokerURI, MQTT_SUBSCRIBER_ID_PREFIX +
-            brokerURI + "_" + i, mqttSourceKeepAliveSec);
-        subscriberSourceNumMap.put(subscribeClient, 0);
-        newSubscribeClientList.add(subscribeClient);
+      final CountDownLatch latch = new CountDownLatch(1);
+      if (brokerSubscriberMap.putIfAbsent(brokerURI, new Tuple<>(newSubscribeClientList, latch)) == null) {
+        for (int i = 0; i < this.mqttSourceClientNumPerBroker; i++) {
+          final MQTTSubscribeClient subscribeClient = new MQTTSubscribeClient(brokerURI, MQTT_SUBSCRIBER_ID_PREFIX +
+              brokerURI + "_" + i, mqttSourceKeepAliveSec);
+          subscriberSourceNumMap.put(subscribeClient, new AtomicInteger(0));
+          newSubscribeClientList.add(subscribeClient);
+        }
+
+        // Initialize the topic-sub map
+        final Map<String, MQTTSubscribeClient> myTopicSubscriberMap = new HashMap<>();
+        topicSubscriberMap.put(brokerURI, myTopicSubscriberMap);
+        //final MQTTSubscribeClient client = newSubscribeClientList.get(0);
+        //myTopicSubscriberMap.put(topic, client);
+        //subscriberSourceNumMap.get(client).incrementAndGet();
+
+        latch.countDown();
       }
-      brokerSubscriberMap.put(brokerURI, newSubscribeClientList);
-      // Initialize the topic-sub map
-      final Map<String, MQTTSubscribeClient> myTopicSubscriberMap = new HashMap<>();
-      topicSubscriberMap.put(brokerURI, myTopicSubscriberMap);
-      final MQTTSubscribeClient client = newSubscribeClientList.get(0);
-      myTopicSubscriberMap.put(topic, client);
-      subscriberSourceNumMap.replace(client, subscriberSourceNumMap.get(client) + 1);
-      this.subscriberLock.unlock();
+    }
+
+    tuple = brokerSubscriberMap.get(brokerURI);
+    final CountDownLatch latch = tuple.getValue();
+    try {
+      latch.await();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+
+    final List<MQTTSubscribeClient> subscribeClientList = tuple.getKey();
+    final Map<String, MQTTSubscribeClient> myTopicSubscriberMap = topicSubscriberMap.get(brokerURI);
+    if (myTopicSubscriberMap.containsKey(topic)) {
+      // This is for group-sharing.
+      final MQTTSubscribeClient client = myTopicSubscriberMap.get(topic);
+      subscriberSourceNumMap.get(client).getAndIncrement();
       return client.connectToTopic(topic);
     } else {
-      final Map<String, MQTTSubscribeClient> myTopicSubscriberMap = topicSubscriberMap.get(brokerURI);
-      if (myTopicSubscriberMap.containsKey(topic)) {
-        // This is for group-sharing.
-        final MQTTSubscribeClient client = myTopicSubscriberMap.get(topic);
-        this.subscriberLock.unlock();
-        return client.connectToTopic(topic);
-      } else {
-        // This is a new group.
-        int minSourceNum = Integer.MAX_VALUE;
-        MQTTSubscribeClient client = null;
-        for (final MQTTSubscribeClient mqttSubcribeClient: subscribeClientList) {
-          if (minSourceNum > subscriberSourceNumMap.get(mqttSubcribeClient)) {
-            minSourceNum = subscriberSourceNumMap.get(mqttSubcribeClient);
-            client = mqttSubcribeClient;
-          }
+      // This is a new group.
+      int minSourceNum = Integer.MAX_VALUE;
+      MQTTSubscribeClient client = null;
+      for (final MQTTSubscribeClient mqttSubcribeClient: subscribeClientList) {
+        if (minSourceNum > subscriberSourceNumMap.get(mqttSubcribeClient).get()) {
+          minSourceNum = subscriberSourceNumMap.get(mqttSubcribeClient).get();
+          client = mqttSubcribeClient;
         }
-        subscriberSourceNumMap.replace(client, subscriberSourceNumMap.get(client) + 1);
-        myTopicSubscriberMap.put(topic, client);
-        this.subscriberLock.unlock();
-        return client.connectToTopic(topic);
       }
+      subscriberSourceNumMap.get(client).getAndIncrement();
+      myTopicSubscriberMap.put(topic, client);
+      return client.connectToTopic(topic);
     }
   }
 
@@ -276,16 +285,17 @@ public final class MQTTSharedResource implements MQTTResource {
   public void close() throws Exception {
     // TODO: [MIST-489] Deal with close and connection problem in MQTT source
     brokerSubscriberMap.forEach(
-        (brokerURI, subClientList) -> subClientList.forEach(subClient -> subClient.disconnect())
+        (brokerURI, subClientList) -> subClientList.getKey().forEach(subClient -> subClient.disconnect())
     );
-    brokerPublisherMap.forEach((address, mqttAsyncClientList) -> mqttAsyncClientList.forEach(MqttAsyncClient -> {
-          try {
-            MqttAsyncClient.disconnect();
-          } catch (final Exception e) {
-            // do nothing
-          }
-        }
-    ));
+    brokerPublisherMap.forEach((address, mqttAsyncClientList) ->
+        mqttAsyncClientList.getKey().forEach(MqttAsyncClient -> {
+              try {
+                MqttAsyncClient.disconnect();
+              } catch (final Exception e) {
+                // do nothing
+              }
+            }
+        ));
     brokerPublisherMap.clear();
   }
 }
