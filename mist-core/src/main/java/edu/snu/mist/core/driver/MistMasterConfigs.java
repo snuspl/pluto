@@ -15,6 +15,10 @@
  */
 package edu.snu.mist.core.driver;
 
+import edu.snu.mist.core.master.DistributedMasterRecoveryManager;
+import edu.snu.mist.core.master.MasterRecoveryManager;
+import edu.snu.mist.core.master.SingleNodeMasterRecoveryManager;
+import edu.snu.mist.core.parameters.DistributedRecoveryOn;
 import edu.snu.mist.core.parameters.OverloadedTaskThreshold;
 import edu.snu.mist.core.parameters.TaskInfoGatherPeriod;
 import org.apache.reef.tang.Configuration;
@@ -40,25 +44,38 @@ public final class MistMasterConfigs {
    */
   private final double overloadedTaskThreshold;
 
+  /**
+   * Indicates whether the distributed recovery is on or not.
+   */
+  private final boolean distributedRecoveryOn;
+
   @Inject
   private MistMasterConfigs(
       @Parameter(TaskInfoGatherPeriod.class) final long taskInfoGatherPeriod,
-      @Parameter(OverloadedTaskThreshold.class) final double overloadedTaskThreshold) {
+      @Parameter(OverloadedTaskThreshold.class) final double overloadedTaskThreshold,
+      @Parameter(DistributedRecoveryOn.class) final boolean distributedRecoveryOn) {
     this.taskInfoGatherPeriod = taskInfoGatherPeriod;
     this.overloadedTaskThreshold = overloadedTaskThreshold;
+    this.distributedRecoveryOn = distributedRecoveryOn;
   }
 
   public Configuration getConfiguration() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(TaskInfoGatherPeriod.class, String.valueOf(taskInfoGatherPeriod));
     jcb.bindNamedParameter(OverloadedTaskThreshold.class, String.valueOf(overloadedTaskThreshold));
+    if (distributedRecoveryOn) {
+      jcb.bindImplementation(MasterRecoveryManager.class, DistributedMasterRecoveryManager.class);
+    } else {
+      jcb.bindImplementation(MasterRecoveryManager.class, SingleNodeMasterRecoveryManager.class);
+    }
     return jcb.build();
   }
 
   public static CommandLine addCommandLineConf(final CommandLine commandLine) {
     final CommandLine cmd = commandLine
         .registerShortNameOfClass(TaskInfoGatherPeriod.class)
-        .registerShortNameOfClass(OverloadedTaskThreshold.class);
+        .registerShortNameOfClass(OverloadedTaskThreshold.class)
+        .registerShortNameOfClass(DistributedRecoveryOn.class);
     return cmd;
   }
 }

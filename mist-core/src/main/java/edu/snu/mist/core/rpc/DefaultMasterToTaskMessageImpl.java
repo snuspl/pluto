@@ -45,7 +45,7 @@ public final class DefaultMasterToTaskMessageImpl implements MasterToTaskMessage
 
     double loadSum = 0;
     final int epNum = epList.size();
-    for (final EventProcessor eventProcesser: epList) {
+    for (final EventProcessor eventProcesser : epList) {
       loadSum += eventProcesser.getLoad();
     }
     return loadSum / epNum;

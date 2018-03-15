@@ -33,6 +33,7 @@ import java.util.logging.Logger;
  * or submits the queryId to delete, stop and resume the corresponding query.
  */
 public final class DefaultClientToTaskMessageImpl implements ClientToTaskMessage {
+
   private static final Logger LOG = Logger.getLogger(DefaultClientToTaskMessageImpl.class.getName());
   /**
    * A query manager which manages the submitted query.

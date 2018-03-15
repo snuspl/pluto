@@ -16,22 +16,58 @@
 
  /**
   * This is a skeleton protocol for RPC communication from MistMaster to MistTask.
-  * TODO: [MIST-423] Track evaluator stats in MIST Master.
   */
 {
   "namespace": "edu.snu.mist.formats.avro",
   "protocol": "MasterToTaskMessage",
-  "messages":
-  {
-    "getTaskLoad":
+  "types": [
     {
-      "request": [],
-      "response":[
+      "name": "GroupStats",
+      "type": "record",
+      "fields": [
         {
-          "name": "taskLoad",
+          "name": "AppId",
+          "type": "string"
+        },
+        {
+          "name": "GroupCpuLoad",
           "type": "double"
+        },
+        {
+          "name": "GroupQueryNum",
+          "type": "int"
         }
       ]
+    },
+    {
+      "name": "TaskStats",
+      "type": "record",
+      "fields": [
+        {
+          "name": "TaskLoad",
+          "type": "double"
+        },
+        {
+          "name": "GroupStatsMap",
+          "type": {
+            "type": "map",
+            "values": "GroupStats"
+          }
+        }
+      ]
+    }
+  ],
+  "messages":
+  {
+    "getTaskStats":
+    {
+      "request": [],
+      "response": "TaskStats"
+    },
+    "startRecovery":
+    {
+      "request": [],
+      "response": "boolean"
     }
   }
 }

@@ -18,11 +18,9 @@ package edu.snu.mist.core.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-import java.util.Set;
-
 /**
- * The set of task addresses.
+ * Enable or disable distributed recovery.
  */
-@NamedParameter(doc = "The set of task addresses")
-public class TaskHostSet implements Name<Set<String>> {
+@NamedParameter(doc = "Enable or disable distributed recovery.", default_value = "false", short_name = "dr")
+public class DistributedRecoveryOn implements Name<Boolean> {
 }

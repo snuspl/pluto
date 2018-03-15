@@ -15,8 +15,8 @@
  */
 package edu.snu.mist.core.master;
 
-import edu.snu.mist.formats.avro.IPAddress;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
+import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.avro.AvroRemoteException;
 
 import java.util.Map;
@@ -26,9 +26,9 @@ import java.util.logging.Logger;
 /**
  * The updater which updates task load periodically and runs on a separate thread.
  */
-public class TaskLoadUpdater implements Runnable {
+public class TaskStatsUpdater implements Runnable {
 
-  private static final Logger LOG = Logger.getLogger(TaskLoadUpdater.class.getName());
+  private static final Logger LOG = Logger.getLogger(TaskStatsUpdater.class.getName());
 
   /**
    * The proxy-to-task map.
@@ -40,23 +40,25 @@ public class TaskLoadUpdater implements Runnable {
    */
   private final QueryAllocationManager queryAllocationManager;
 
-  public TaskLoadUpdater(final ProxyToTaskMap proxyToTaskMap,
-                         final QueryAllocationManager queryAllocationManager) {
+  public TaskStatsUpdater(final ProxyToTaskMap proxyToTaskMap,
+                          final QueryAllocationManager queryAllocationManager) {
     this.proxyToTaskMap = proxyToTaskMap;
     this.queryAllocationManager = queryAllocationManager;
   }
 
   @Override
   public synchronized void run() {
-    // TODO: Parallelize task-load update process.
-    for (final Map.Entry<IPAddress, MasterToTaskMessage> entry : proxyToTaskMap.entrySet()) {
+    // TODO: Parallelize task-stats update process.
+    for (final Map.Entry<String, MasterToTaskMessage> entry : proxyToTaskMap.entrySet()) {
       try {
+        final String taskHostname = entry.getKey();
         final MasterToTaskMessage proxyToTask = entry.getValue();
-        final double updatedCpuLoad = (Double) proxyToTask.getTaskLoad();
-        final TaskInfo taskInfo = queryAllocationManager.getTaskInfo(entry.getKey());
-        taskInfo.setCpuLoad(updatedCpuLoad);
+        final TaskStats updatedTaskStats = proxyToTask.getTaskStats();
+        queryAllocationManager.updateTaskStats(taskHostname, updatedTaskStats);
       } catch (final AvroRemoteException e) {
-        LOG.log(Level.INFO, "Remote error occured during connecting to task " + entry.getKey().toString());
+        LOG.log(Level.INFO, "Remote error occured during connecting to task " + entry.getKey());
+        LOG.log(Level.INFO, "This happens because of either network configuration error or task failure. " +
+            "Check Task node's network configuration error if it's not due to task failure");
       }
     }
   }

@@ -15,25 +15,32 @@
  */
 package edu.snu.mist.core.master;
 
+import edu.snu.mist.formats.avro.GroupStats;
+
+import java.util.List;
+import java.util.Map;
+
 /**
- * The class which contains MistTask information maintained by master.
+ * The interface for fault recovery managers.
  */
-public final class TaskInfo {
+public interface MasterRecoveryManager {
 
   /**
-   * The cpu load of the task.
+   * Add the failed groups to the recovery manager.
+   * @param failedGroups The map of group name and group stats.
    */
-  private double cpuLoad;
+  void addFailedGroups(Map<String, GroupStats> failedGroups);
 
-  public TaskInfo() {
-    this.cpuLoad = 0.0;
-  }
+  /**
+   * Start the recovery process on master recovery manager.
+   */
+  void startRecovery();
 
-  public double getCpuLoad() {
-    return this.cpuLoad;
-  }
+  /**
+   * Get the recovering groups for the designated MistTask.
+   * @param taskHostname
+   * @return The collection of groups to be recovered.
+   */
+  List<String> getRecoveringGroups(String taskHostname);
 
-  public void setCpuLoad(final double updatedCpuLoad) {
-    this.cpuLoad = updatedCpuLoad;
-  }
 }

@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.master;
 
-import edu.snu.mist.formats.avro.IPAddress;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
 
 import javax.inject.Inject;
@@ -29,18 +28,18 @@ import java.util.concurrent.ConcurrentMap;
  */
 public final class ProxyToTaskMap {
 
-  private ConcurrentMap<IPAddress, MasterToTaskMessage> innerMap;
+  private ConcurrentMap<String, MasterToTaskMessage> innerMap;
 
   @Inject
   private ProxyToTaskMap() {
     this.innerMap = new ConcurrentHashMap<>();
   }
 
-  public void addNewProxy(final IPAddress taskAddress, final MasterToTaskMessage proxyToTask) {
-    innerMap.put(taskAddress, proxyToTask);
+  public void addNewProxy(final String taskHost, final MasterToTaskMessage proxyToTask) {
+    innerMap.put(taskHost, proxyToTask);
   }
 
-  public Set<Map.Entry<IPAddress, MasterToTaskMessage>> entrySet() {
+  public Set<Map.Entry<String, MasterToTaskMessage>> entrySet() {
     return innerMap.entrySet();
   }
 }

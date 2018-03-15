@@ -15,7 +15,9 @@
  */
 package edu.snu.mist.core.master;
 
+import edu.snu.mist.formats.avro.GroupStats;
 import edu.snu.mist.formats.avro.IPAddress;
+import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
@@ -32,17 +34,37 @@ public interface QueryAllocationManager {
   IPAddress getAllocatedTask(final String appId);
 
   /**
-   * This method adds new task info to the manager.
-   * @param taskAddress
-   * @param taskInfo
+   * This method adds new task to the manager.
+   * @param taskHostname
    * @return
    */
-  TaskInfo addTaskInfo(final IPAddress taskAddress, final TaskInfo taskInfo);
+  TaskStats addTask(final String taskHostname);
 
   /**
-   * Returns task info for the given address.
-   * @param taskAddress
+   * Returns task stats for the given hostname.
+   * @param taskHostname
    * @return
    */
-  TaskInfo getTaskInfo(final IPAddress taskAddress);
+  TaskStats getTaskStats(final String taskHostname);
+
+  /**
+   * Remove the task stats for the given address.
+   * @param taskHostname
+   * @return
+   */
+  TaskStats removeTask(final String taskHostname);
+
+  /**
+   * Create the new group.
+   * @param groupStats
+   * @return the newly allocated groupId.
+   */
+  String createGroup(final String ipAddress, final GroupStats groupStats);
+
+  /**
+   * Update the task stats.
+   * @param ipAddress
+   * @param taskStats
+   */
+  void updateTaskStats(final String ipAddress, final TaskStats taskStats);
 }

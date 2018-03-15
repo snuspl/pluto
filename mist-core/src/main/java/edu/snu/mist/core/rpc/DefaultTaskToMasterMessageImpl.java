@@ -15,15 +15,52 @@
  */
 package edu.snu.mist.core.rpc;
 
+import edu.snu.mist.core.master.MasterRecoveryManager;
+import edu.snu.mist.core.master.QueryAllocationManager;
+import edu.snu.mist.formats.avro.GroupStats;
+import edu.snu.mist.formats.avro.IPAddress;
+import edu.snu.mist.formats.avro.RecoveryInfo;
 import edu.snu.mist.formats.avro.TaskToMasterMessage;
+import org.apache.avro.AvroRemoteException;
+
 import javax.inject.Inject;
+import java.util.List;
 
 /**
  * The default implementation for task-to-master avro rpc.
  */
 public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage {
 
+  /**
+   * The shared query allocation manager.
+   */
+  private final QueryAllocationManager queryAllocationManager;
+
+  /**
+   * The shared recovery manager.
+   */
+  private final MasterRecoveryManager masterRecoveryManager;
+
   @Inject
-  private DefaultTaskToMasterMessageImpl() {
+  private DefaultTaskToMasterMessageImpl(
+      final QueryAllocationManager queryAllocationManager,
+      final MasterRecoveryManager masterRecoveryManager) {
+    this.queryAllocationManager = queryAllocationManager;
+    this.masterRecoveryManager = masterRecoveryManager;
+  }
+
+  @Override
+  public String createGroup(
+      final String taskHostname,
+      final GroupStats groupStats) throws AvroRemoteException {
+    return queryAllocationManager.createGroup(taskHostname, groupStats);
+  }
+
+  @Override
+  public RecoveryInfo getRecoveringGroups(final String taskHostname) throws AvroRemoteException {
+    final List<String> recoveringGroups = masterRecoveryManager.getRecoveringGroups(taskHostname);
+    return RecoveryInfo.newBuilder()
+        .setRecoveryGroupList(recoveringGroups)
+        .build();
   }
 }
