@@ -17,9 +17,8 @@ package edu.snu.mist.core.task.recovery;
 
 import edu.snu.mist.core.parameters.MasterHostAddress;
 import edu.snu.mist.core.parameters.TaskToMasterPort;
+import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.formats.avro.TaskToMasterMessage;
-import org.apache.avro.ipc.NettyTransceiver;
-import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -48,9 +47,8 @@ public final class SingleThreadRecoveryManager implements RecoveryManager {
       @Parameter(TaskToMasterPort.class) final int taskToMasterPort) throws IOException {
     isRecoveryRunning = new AtomicBoolean(false);
     // Setup task-to-master connection.
-    final NettyTransceiver nettyTransceiver = new NettyTransceiver(
+    this.proxyToMaster = AvroUtils.createAvroProxy(TaskToMasterMessage.class,
         new InetSocketAddress(masterHostAddress, taskToMasterPort));
-    this.proxyToMaster = SpecificRequestor.getClient(TaskToMasterMessage.class, nettyTransceiver);
   }
 
   @Override

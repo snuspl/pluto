@@ -31,22 +31,30 @@ import edu.snu.mist.common.stream.NettyChannelHandler;
 import edu.snu.mist.common.stream.textmessage.NettyTextMessageOutputReceiver;
 import edu.snu.mist.common.stream.textmessage.NettyTextMessageStreamGenerator;
 import edu.snu.mist.common.types.Tuple2;
+import edu.snu.mist.core.parameters.MasterHostAddress;
+import edu.snu.mist.core.parameters.TaskToMasterPort;
+import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.groupaware.GroupAwareQueryManagerImpl;
 import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.AvroVertex;
 import edu.snu.mist.formats.avro.Edge;
+import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import io.netty.channel.ChannelHandlerContext;
+import org.apache.avro.ipc.Server;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -76,6 +84,25 @@ public class GroupRecoveryTest {
       new CountDownLatch(SRC0INPUT1.size());
   private static final CountDownLatch LATCH2 =
       new CountDownLatch(SRC0INPUT2.size());
+
+  private final Tang tang = Tang.Factory.getTang();
+
+  private Server mockMasterServer;
+
+  @Before
+  public void setUp() throws Exception {
+    final int taskToMasterPort = tang.newInjector().getNamedInstance(TaskToMasterPort.class);
+    // Setup mock master server.
+    mockMasterServer = AvroUtils.createAvroServer(
+        TaskToMasterMessage.class,
+        new MockTaskToMasterMessage(),
+        new InetSocketAddress("localhost", taskToMasterPort));
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    mockMasterServer.close();
+  }
 
   /**
    * Builds the query for this test.
@@ -141,6 +168,7 @@ public class GroupRecoveryTest {
     jcb.bindNamedParameter(PeriodicCheckpointPeriod.class, "1000");
     jcb.bindImplementation(QueryManager.class, GroupAwareQueryManagerImpl.class);
     jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
+    jcb.bindNamedParameter(MasterHostAddress.class, "localhost");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
 
     final CheckpointManager checkpointManager = injector.getInstance(CheckpointManager.class);

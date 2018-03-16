@@ -16,6 +16,9 @@
 package edu.snu.mist.core.task.groupaware;
 
 import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.core.parameters.MasterHostAddress;
+import edu.snu.mist.core.parameters.TaskToMasterPort;
+import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.groupaware.eventprocessor.DefaultEventProcessorFactory;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
@@ -27,14 +30,19 @@ import edu.snu.mist.core.task.groupaware.parameters.ApplicationIdentifier;
 import edu.snu.mist.core.task.groupaware.parameters.JarFilePath;
 import edu.snu.mist.core.task.groupaware.rebalancer.GroupSplitter;
 import edu.snu.mist.core.task.groupaware.rebalancer.LoadUpdater;
+import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import junit.framework.Assert;
+import org.apache.avro.ipc.Server;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import javax.inject.Inject;
+import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -43,12 +51,31 @@ import static org.mockito.Mockito.mock;
 
 public final class GroupSplitterTest {
 
+  private final Tang tang = Tang.Factory.getTang();
+
+  private Server mockMasterServer;
+
+  @Before
+  public void setUp() throws Exception {
+    final int taskToMasterPort = tang.newInjector().getNamedInstance(TaskToMasterPort.class);
+    // Setup mock master server.
+    mockMasterServer = AvroUtils.createAvroServer(
+        TaskToMasterMessage.class,
+        new MockTaskToMasterMessage(),
+        new InetSocketAddress("localhost", taskToMasterPort));
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    mockMasterServer.close();
+  }
+
   private ApplicationInfo createMetaGroup() throws InjectionException {
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    final JavaConfigurationBuilder jcb = tang.newConfigurationBuilder();
     jcb.bindNamedParameter(ApplicationIdentifier.class, "app");
     jcb.bindNamedParameter(JarFilePath.class, "");
 
-    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final Injector injector = tang.newInjector(jcb.build());
     final QueryStarter queryStarter = mock(QueryStarter.class);
     final QueryRemover queryRemover = mock(QueryRemover.class);
     final ExecutionDags executionDags = mock(ExecutionDags.class);
@@ -99,6 +126,7 @@ public final class GroupSplitterTest {
     jcb.bindImplementation(LoadUpdater.class, TestLoadUpdater.class);
     jcb.bindNamedParameter(OverloadedThreshold.class, "0.8");
     jcb.bindNamedParameter(UnderloadedThreshold.class, "0.6");
+    jcb.bindNamedParameter(MasterHostAddress.class, "localhost");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final GroupAllocationTable groupAllocationTable = injector.getInstance(GroupAllocationTable.class);
     final GroupSplitter groupSplitter = injector.getInstance(GroupSplitter.class);

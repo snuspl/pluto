@@ -22,12 +22,18 @@ import edu.snu.mist.common.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.common.shared.KafkaSharedResource;
 import edu.snu.mist.common.shared.MQTTResource;
 import edu.snu.mist.common.shared.NettySharedResource;
+import edu.snu.mist.core.parameters.MasterHostAddress;
+import edu.snu.mist.core.parameters.TaskToMasterPort;
+import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.groupaware.parameters.ApplicationIdentifier;
 import edu.snu.mist.core.task.groupaware.parameters.JarFilePath;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroDag;
+import edu.snu.mist.formats.avro.GroupStats;
 import edu.snu.mist.formats.avro.QueryControlResult;
+import edu.snu.mist.formats.avro.TaskToMasterMessage;
+import org.apache.avro.AvroRemoteException;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -37,6 +43,9 @@ import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
@@ -108,6 +117,11 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
   private final long checkpointPeriod;
 
   /**
+   * The avro proxy to master.
+   */
+  private final TaskToMasterMessage proxyToMaster;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -121,7 +135,9 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
                                      final DagGenerator dagGenerator,
                                      final GroupAllocationTableModifier groupAllocationTableModifier,
                                      final ApplicationMap applicationMap,
-                                     @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod) {
+                                     @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod,
+                                     @Parameter(MasterHostAddress.class) final String masterHostAddress,
+                                     @Parameter(TaskToMasterPort.class) final int taskToMasterPort) throws IOException {
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.eventProcessorManager = eventProcessorManager;
@@ -133,6 +149,8 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     this.groupAllocationTableModifier = groupAllocationTableModifier;
     this.applicationMap = applicationMap;
     this.checkpointPeriod = checkpointPeriod;
+    this.proxyToMaster = AvroUtils.createAvroProxy(TaskToMasterMessage.class,
+        new InetSocketAddress(masterHostAddress, taskToMasterPort));
   }
 
   /**
@@ -210,7 +228,18 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     jcb.bindNamedParameter(ApplicationIdentifier.class, appId);
     // TODO: Submit a single jar instead of list of jars
     jcb.bindNamedParameter(JarFilePath.class, paths.get(0));
-    jcb.bindNamedParameter(GroupId.class, appId);
+    // Get a unique group id from the MistMaster
+    try {
+      final String groupId = proxyToMaster.createGroup(InetAddress.getLocalHost().getHostName(),
+          GroupStats.newBuilder()
+              .setGroupCpuLoad(0.0)
+              .setGroupQueryNum(1)
+              .setAppId(appId)
+              .build());
+      jcb.bindNamedParameter(GroupId.class, groupId);
+    } catch (final UnknownHostException | AvroRemoteException e) {
+      e.printStackTrace();
+    }
     jcb.bindNamedParameter(PeriodicCheckpointPeriod.class, String.valueOf(checkpointPeriod));
 
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
