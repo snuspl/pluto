@@ -43,14 +43,14 @@ public final class QueryAllocationManagerTest {
     task2Stats.setTaskLoad(0.5);
     final String appId = "app_1";
     // task1 load = 0.0, task2 load = 0.5. task1 should be selected.
-    Assert.assertEquals(task1Hostname, manager.getAllocatedTask(appId));
+    Assert.assertEquals(task1Hostname, manager.getAllocatedTask(appId).getHostAddress());
 
     task1Stats.setTaskLoad(0.7);
     // app_1 is already allocated to task1 and task1 is not overloaded. So, task1 should be selected.
-    Assert.assertEquals(task1Hostname, manager.getAllocatedTask(appId));
+    Assert.assertEquals(task1Hostname, manager.getAllocatedTask(appId).getHostAddress());
 
     task1Stats.setTaskLoad(overloadedTaskThreshold + 0.01);
     // task1 is overloaded now. task2 should be selected.
-    Assert.assertEquals(task2Hostname, manager.getAllocatedTask(appId));
+    Assert.assertEquals(task2Hostname, manager.getAllocatedTask(appId).getHostAddress());
   }
 }
