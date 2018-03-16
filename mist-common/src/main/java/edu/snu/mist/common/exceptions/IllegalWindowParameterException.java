@@ -21,11 +21,11 @@ package edu.snu.mist.common.exceptions;
  */
 public final class IllegalWindowParameterException extends RuntimeException {
 
-    public IllegalWindowParameterException() {
-        super();
-    }
+  public IllegalWindowParameterException() {
+    super();
+  }
 
-    public IllegalWindowParameterException(final String message) {
-        super(message);
-    }
+  public IllegalWindowParameterException(final String message) {
+    super(message);
+  }
 }

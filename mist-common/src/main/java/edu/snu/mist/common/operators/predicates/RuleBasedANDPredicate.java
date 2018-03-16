@@ -25,21 +25,21 @@ import java.util.Map;
  */
 public final class RuleBasedANDPredicate implements MISTPredicate<Map<String, Object>> {
 
-    private final List<MISTPredicate<Map<String, Object>>> predicateList;
+  private final List<MISTPredicate<Map<String, Object>>> predicateList;
 
-    public RuleBasedANDPredicate(final List<MISTPredicate<Map<String, Object>>> predicateList) {
-        this.predicateList = predicateList;
-    }
+  public RuleBasedANDPredicate(final List<MISTPredicate<Map<String, Object>>> predicateList) {
+    this.predicateList = predicateList;
+  }
 
-    @Override
-    public boolean test(final Map<String, Object> stringObjectMap) {
-        boolean result = true;
-        for (final MISTPredicate iter : predicateList) {
-            result = result && iter.test(stringObjectMap);
-            if (!result) {
-                return false;
-            }
-        }
-        return result;
+  @Override
+  public boolean test(final Map<String, Object> stringObjectMap) {
+    boolean result = true;
+    for (final MISTPredicate iter : predicateList) {
+      result = result && iter.test(stringObjectMap);
+      if (!result) {
+        return false;
+      }
     }
+    return result;
+  }
 }

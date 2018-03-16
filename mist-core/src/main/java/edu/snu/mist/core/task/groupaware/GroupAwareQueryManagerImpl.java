@@ -18,6 +18,7 @@ package edu.snu.mist.core.task.groupaware;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.common.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.common.shared.KafkaSharedResource;
 import edu.snu.mist.common.shared.MQTTResource;
 import edu.snu.mist.common.shared.NettySharedResource;
@@ -31,6 +32,7 @@ import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
+import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
@@ -101,6 +103,11 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
   private final AtomicLong applicationNum = new AtomicLong(0);
 
   /**
+   * The checkpoint period.
+   */
+  private final long checkpointPeriod;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -113,7 +120,8 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
                                      final NettySharedResource nettySharedResource,
                                      final DagGenerator dagGenerator,
                                      final GroupAllocationTableModifier groupAllocationTableModifier,
-                                     final ApplicationMap applicationMap) {
+                                     final ApplicationMap applicationMap,
+                                     @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod) {
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.eventProcessorManager = eventProcessorManager;
@@ -124,6 +132,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     this.dagGenerator = dagGenerator;
     this.groupAllocationTableModifier = groupAllocationTableModifier;
     this.applicationMap = applicationMap;
+    this.checkpointPeriod = checkpointPeriod;
   }
 
   /**
@@ -185,7 +194,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
   public Query createAndStartQuery(final String queryId,
                                    final ApplicationInfo applicationInfo,
                                    final DAG<ConfigVertex, MISTEdge> configDag)
-      throws InjectionException, ClassNotFoundException, IOException {
+      throws ClassNotFoundException, IOException {
     final Query query = new DefaultQueryImpl(queryId);
     groupAllocationTableModifier.addEvent(new WritingEvent(WritingEvent.EventType.QUERY_ADD,
         new Tuple<>(applicationInfo, query)));
@@ -202,6 +211,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     // TODO: Submit a single jar instead of list of jars
     jcb.bindNamedParameter(JarFilePath.class, paths.get(0));
     jcb.bindNamedParameter(GroupId.class, appId);
+    jcb.bindNamedParameter(PeriodicCheckpointPeriod.class, String.valueOf(checkpointPeriod));
 
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     injector.bindVolatileInstance(MQTTResource.class, mqttSharedResource);

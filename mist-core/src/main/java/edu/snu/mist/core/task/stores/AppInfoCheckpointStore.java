@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task.stores;
 
+import edu.snu.mist.core.task.groupaware.ApplicationInfo;
 import edu.snu.mist.formats.avro.ApplicationInfoCheckpoint;
 import edu.snu.mist.formats.avro.CheckpointResult;
 import org.apache.reef.io.Tuple;
@@ -29,7 +30,7 @@ public interface AppInfoCheckpointStore {
    * Saves a ApplicationInfoCheckpoint.
    * @param tuple the appId and ApplicationInfoCheckpoint
    */
-  CheckpointResult saveAppInfoCheckpoint(Tuple<String, ApplicationInfoCheckpoint> tuple);
+  CheckpointResult saveAppInfoCheckpoint(Tuple<String, ApplicationInfo> tuple);
 
   /**
    * Loads a ApplicationInfoCheckpoint with the given appId.

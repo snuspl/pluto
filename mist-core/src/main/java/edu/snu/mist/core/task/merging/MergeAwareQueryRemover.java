@@ -22,6 +22,7 @@ import edu.snu.mist.core.task.QueryRemover;
 
 import javax.inject.Inject;
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * This removes the query from MIST.
@@ -34,7 +35,7 @@ public final class MergeAwareQueryRemover implements QueryRemover {
   /**
    * Map that has the source conf as a key and the execution dag as a value.
    */
-  private final SrcAndDagMap<String> srcAndDagMap;
+  private final SrcAndDagMap<Map<String, String>> srcAndDagMap;
 
   /**
    * The physical execution dags.
@@ -64,7 +65,7 @@ public final class MergeAwareQueryRemover implements QueryRemover {
 
   @Inject
   private MergeAwareQueryRemover(final QueryIdConfigDagMap queryIdConfigDagMap,
-                                 final SrcAndDagMap<String> srcAndDagMap,
+                                 final SrcAndDagMap<Map<String, String>> srcAndDagMap,
                                  final ExecutionDags executionDags,
                                  final ExecutionVertexCountMap executionVertexCountMap,
                                  final ConfigExecutionVertexMap configExecutionVertexMap,

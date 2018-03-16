@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
@@ -27,17 +28,13 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
  * This operator applies the user-defined state machine which is used in cep stateful query.
  */
-public final class StateTransitionOperator extends OneStreamOperator implements StateHandler {
+public final class StateTransitionOperator extends OneStreamStateHandlerOperator {
 
   private static final Logger LOG = Logger.getLogger(StateTransitionOperator.class.getName());
 
@@ -52,11 +49,6 @@ public final class StateTransitionOperator extends OneStreamOperator implements 
 
   // changing state table: Map<current state, Tuple2<condition, next state>>
   private final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable;
-
-  /**
-   * The latest Checkpoint Timestamp.
-   */
-  private long latestCheckpointTimestamp;
 
   @Inject
   private StateTransitionOperator(
@@ -74,11 +66,11 @@ public final class StateTransitionOperator extends OneStreamOperator implements 
       final String initialState,
       final Set<String> finalState,
       final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable) {
+    super();
     this.initialState = initialState;
     this.currState = initialState;
     this.finalState = finalState;
     this.stateTable = stateTable;
-    this.latestCheckpointTimestamp = 0L;
   }
 
   // update state with input data
@@ -99,34 +91,34 @@ public final class StateTransitionOperator extends OneStreamOperator implements 
 
   @Override
   public void processLeftData(final MistDataEvent input) {
-    stateTransition((Map<String, Object>) input.getValue());
+    if (isEarlierThanRecoveredTimestamp(input)) {
+      return;
+    }
+    stateTransition((Map<String, Object>)input.getValue());
 
     // emit when the state is final state
     if (finalState.contains(currState)) {
       final Tuple2<Map<String, Object>, String> output = new Tuple2(input.getValue(), currState);
-      if (LOG.isLoggable(Level.FINE)) {
-        LOG.log(Level.FINE, "{0} updates the state to {1} with input {2}, and generates {3}",
-            new Object[]{this.getClass().getName(),
-                getOperatorState(), input, output});
-      }
-
       input.setValue(output);
       outputEmitter.emitData(input);
     }
+    updateLatestEventTimestamp(input.getTimestamp());
   }
 
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
-    outputEmitter.emitWatermark(input);
-    if (input.isCheckpoint()) {
-      latestCheckpointTimestamp = input.getTimestamp();
+    if (isEarlierThanRecoveredTimestamp(input)) {
+      return;
     }
+    updateLatestEventTimestamp(input.getTimestamp());
+    outputEmitter.emitWatermark(input);
   }
 
   @Override
-  public Map<String, Object> getOperatorState() {
+  public Map<String, Object> getStateSnapshot() {
     final Map<String, Object> stateMap = new HashMap<>();
-    stateMap.put("stateTransitionOperatorState", currState);
+    final String currStateString = currState;
+    stateMap.put("stateTransitionOperatorState", currStateString);
     return stateMap;
   }
 
@@ -136,7 +128,7 @@ public final class StateTransitionOperator extends OneStreamOperator implements 
   }
 
   @Override
-  public long getLatestCheckpointTimestamp() {
-    return latestCheckpointTimestamp;
+  public void processLeftCheckpoint(final MistCheckpointEvent input) {
+    checkpointMap.put(latestTimestampBeforeCheckpoint, getStateSnapshot());
   }
 }

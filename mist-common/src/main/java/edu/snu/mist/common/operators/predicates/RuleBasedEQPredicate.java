@@ -25,12 +25,12 @@ import java.util.Map;
  */
 public final class RuleBasedEQPredicate extends RuleBasedCCPredicate implements MISTPredicate<Map<String, Object>> {
 
-    public RuleBasedEQPredicate(final String field, final Object value) {
-        super(field, value);
-    }
+  public RuleBasedEQPredicate(final String field, final Object value) {
+    super(field, value);
+  }
 
-    @Override
-    public boolean test(final Map<String, Object> stringObjectMap) {
-        return stringObjectMap.get(this.getField()).equals(this.getValue());
-    }
+  @Override
+  public boolean test(final Map<String, Object> stringObjectMap) {
+    return stringObjectMap.get(this.getField()).equals(this.getValue());
+  }
 }

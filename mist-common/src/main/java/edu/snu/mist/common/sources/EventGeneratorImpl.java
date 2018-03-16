@@ -15,11 +15,18 @@
  */
 package edu.snu.mist.common.sources;
 
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.OutputEmitter;
 import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.common.parameters.PeriodicCheckpointPeriod;
 import org.apache.reef.io.Tuple;
+import org.apache.reef.tang.annotations.Parameter;
 
+import javax.inject.Inject;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -59,10 +66,37 @@ public abstract class EventGeneratorImpl<I, V> implements EventGenerator<I> {
    */
   protected volatile long latestWatermarkTimestamp;
 
-  public EventGeneratorImpl(final MISTFunction<I, Tuple<V, Long>> extractTimestampFunc) {
+  /**
+   * The period of checkpoint emission.
+   */
+  protected final long checkpointPeriod;
+
+  /**
+   * The unit of time for period and expectedDelay.
+   */
+  protected final TimeUnit timeUnit;
+
+  /**
+   * The scheduler for periodic watermark emission.
+   */
+  protected final ScheduledExecutorService scheduler;
+
+  /**
+   * The result of the checkpoint service execution.
+   */
+  protected ScheduledFuture checkpointResult;
+
+  @Inject
+  public EventGeneratorImpl(final MISTFunction<I, Tuple<V, Long>> extractTimestampFunc,
+                            @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod,
+                            final TimeUnit timeUnit,
+                            final ScheduledExecutorService scheduler) {
     this.extractTimestampFunc = extractTimestampFunc;
     this.started = new AtomicBoolean(false);
     this.latestWatermarkTimestamp = 0L;
+    this.checkpointPeriod = checkpointPeriod;
+    this.timeUnit = timeUnit;
+    this.scheduler = scheduler;
   }
 
   @Override
@@ -84,7 +118,24 @@ public abstract class EventGeneratorImpl<I, V> implements EventGenerator<I> {
   /**
    * If there is any remainder to do during start in downstream class, conduct it.
    */
-  protected abstract void startRemain();
+  protected void startRemain() {
+    if (checkpointPeriod != 0) {
+      checkpointResult = scheduler.scheduleAtFixedRate(new Runnable() {
+        public void run() {
+          outputEmitter.emitCheckpoint(new MistCheckpointEvent());
+        }
+      }, checkpointPeriod, checkpointPeriod, timeUnit);
+    } else {
+      LOG.log(Level.INFO, "checkpointing is not turned on");
+    }
+  }
+
+  @Override
+  public void close() {
+    if (checkpointResult != null) {
+      checkpointResult.cancel(true);
+    }
+  }
 
   /**
    * Extracts the data and timestamp for MistDataEvent to generate and generate MistDataEvent.

@@ -19,14 +19,12 @@ import edu.snu.mist.common.operators.StateHandler;
 import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.EventGenerator;
 import edu.snu.mist.core.task.*;
-import org.apache.reef.tang.Configuration;
-import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
-import org.apache.reef.tang.implementation.java.ClassHierarchyImpl;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -52,37 +50,38 @@ final class DefaultExecutionVertexGeneratorImpl implements ExecutionVertexGenera
   @Override
   public ExecutionVertex generate(final ConfigVertex configVertex,
                                   final URL[] urls,
-                                  final ClassLoader classLoader) throws IOException, InjectionException {
+                                  final ClassLoader classLoader)
+      throws IOException, ClassNotFoundException {
     switch (configVertex.getType()) {
       case SOURCE: {
-        final String strConf = configVertex.getConfiguration();
-        final Configuration conf = avroConfigurationSerializer.fromString(strConf, new ClassHierarchyImpl(urls));
+        final Map<String, String> conf = configVertex.getConfiguration();
         // Create an event generator
         final EventGenerator eventGenerator = physicalObjectGenerator.newEventGenerator(conf, classLoader);
         // Create a data generator
         final DataGenerator dataGenerator = physicalObjectGenerator.newDataGenerator(conf, classLoader);
         // Create a source
         final String id = idGenerator.generateSourceId();
-        return new PhysicalSourceImpl<>(id, strConf, dataGenerator, eventGenerator);
+        return new PhysicalSourceImpl<>(id, conf, dataGenerator, eventGenerator);
       }
       case OPERATOR: {
         final String operatorId = idGenerator.generateOperatorId();
-        final Configuration conf = avroConfigurationSerializer.fromString(
-            configVertex.getConfiguration(), new ClassHierarchyImpl(urls));
-        final PhysicalOperator operator = new DefaultPhysicalOperatorImpl(operatorId, configVertex.getConfiguration(),
+        final Map<String, String> conf = configVertex.getConfiguration();
+        final PhysicalOperator operator = new DefaultPhysicalOperatorImpl(operatorId, conf,
             physicalObjectGenerator.newOperator(conf, classLoader));
         if (configVertex.getState().size() != 0) {
           ((StateHandler) operator.getOperator()).setState(
               StateSerializer.deserializeStateMap(configVertex.getState()));
         }
+        if (configVertex.getLatestCheckpointTimestamp() != 0) {
+          ((StateHandler) operator.getOperator()).setRecoveredTimestamp(
+              configVertex.getLatestCheckpointTimestamp());
+        }
         return operator;
       }
       case SINK:
-        final String strConf = configVertex.getConfiguration();
-        final Configuration conf = avroConfigurationSerializer.fromString(strConf,
-            new ClassHierarchyImpl(urls));
+        final Map<String, String> conf = configVertex.getConfiguration();
         final String id = idGenerator.generateSinkId();
-        final PhysicalSink sink = new PhysicalSinkImpl<>(id, strConf,
+        final PhysicalSink sink = new PhysicalSinkImpl<>(id, conf,
             physicalObjectGenerator.newSink(conf, classLoader));
         return sink;
       default:

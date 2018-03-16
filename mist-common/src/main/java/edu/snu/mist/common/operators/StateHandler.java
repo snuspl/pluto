@@ -23,9 +23,25 @@ import java.util.Map;
 public interface StateHandler {
 
   /**
-   * Gets the state of the current operator.
+   * Gets the most recent state of the current operator.
    */
-  Map<String, Object> getOperatorState();
+  Map<String, Object> getStateSnapshot();
+
+  /**
+   * Gets the state of the current operator at a certain timestamp.
+   */
+  Map<String, Object> getOperatorState(long timestamp);
+
+  /**
+   * Get the state timestamp that is the maximum state timestamp among the state timestamps
+   * less than or equal to the given checkpointTimestamp.
+   */
+  long getMaxAvailableTimestamp(long checkpointTimestamp);
+
+  /**
+   * Remove the states with timestamps less than or equal to the given timestamp.
+   */
+  void removeOldStates(long checkpointTimestamp);
 
   /**
    * Sets the state of the current operator.
@@ -34,8 +50,17 @@ public interface StateHandler {
   void setState(Map<String, Object> loadedState);
 
   /**
-   * Get the latest checkpoint timestamp.
+   * Set the recovered timestamp, which is the timestamp of the recovered state.
+   * @param recoveredTimestamp
    */
-  long getLatestCheckpointTimestamp();
+  void setRecoveredTimestamp(long recoveredTimestamp);
+
+  /**
+   * Get the latest timestamp before a checkpoint timestamp.
+   * This timestamp is not the timestamp of the latest checkpoint timestamp,
+   * but it is the timestamp of the most recently processed event(whether data or watermark)
+   * that is not a checkpoint timestamp.
+   */
+  long getLatestTimestampBeforeCheckpoint();
 
 }

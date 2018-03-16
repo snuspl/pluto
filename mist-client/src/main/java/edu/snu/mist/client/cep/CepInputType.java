@@ -19,7 +19,7 @@ package edu.snu.mist.client.cep;
  * Types of source defined for cep query processing.
  */
 public enum CepInputType {
-    KAFKA_SOURCE,
-    TEXT_SOCKET_SOURCE,
-    MQTT_SOURCE
+  KAFKA_SOURCE,
+  TEXT_SOCKET_SOURCE,
+  MQTT_SOURCE
 }

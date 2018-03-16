@@ -21,14 +21,14 @@ import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.common.functions.WatermarkTimestampFunction;
-import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
-import edu.snu.mist.common.parameters.SerializedTimestampParseUdf;
-import edu.snu.mist.common.parameters.SerializedWatermarkPredicateUdf;
+import edu.snu.mist.common.parameters.*;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This class represents the watermark source that parse the input and emits punctuated watermark.
@@ -51,9 +51,13 @@ public final class PunctuatedEventGenerator<I, V> extends EventGeneratorImpl<I, 
   private PunctuatedEventGenerator(
       @Parameter(SerializedTimestampParseUdf.class) final String timestampParseObj,
       @Parameter(SerializedWatermarkPredicateUdf.class) final String isWatermarkObj,
-      final ClassLoader classLoader) throws IOException, ClassNotFoundException {
+      final ClassLoader classLoader,
+      @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod,
+      final TimeUnit timeUnit,
+      final ScheduledExecutorService scheduler) throws IOException, ClassNotFoundException {
     this(SerializeUtils.deserializeFromString(isWatermarkObj, classLoader),
-        SerializeUtils.deserializeFromString(timestampParseObj, classLoader));
+        SerializeUtils.deserializeFromString(timestampParseObj, classLoader),
+        checkpointPeriod, timeUnit, scheduler);
   }
 
   @Inject
@@ -61,44 +65,45 @@ public final class PunctuatedEventGenerator<I, V> extends EventGeneratorImpl<I, 
       @Parameter(SerializedTimestampExtractUdf.class) final String timestampExtractObj,
       @Parameter(SerializedTimestampParseUdf.class) final String timestampParseObj,
       @Parameter(SerializedWatermarkPredicateUdf.class) final String isWatermarkObj,
-      final ClassLoader classLoader) throws IOException, ClassNotFoundException {
+      final ClassLoader classLoader,
+      @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod,
+      final TimeUnit timeUnit,
+      final ScheduledExecutorService scheduler) throws IOException, ClassNotFoundException {
     this((MISTFunction)SerializeUtils.deserializeFromString(timestampExtractObj, classLoader),
         (MISTPredicate)SerializeUtils.deserializeFromString(timestampParseObj, classLoader),
-        (WatermarkTimestampFunction)SerializeUtils.deserializeFromString(isWatermarkObj, classLoader));
+        (WatermarkTimestampFunction)SerializeUtils.deserializeFromString(isWatermarkObj, classLoader),
+        checkpointPeriod, timeUnit, scheduler);
   }
 
   @Inject
   public PunctuatedEventGenerator(
       final MISTPredicate<I> isWatermark,
-      final WatermarkTimestampFunction<I> parseTimestamp) {
-    this(null, isWatermark, parseTimestamp);
+      final WatermarkTimestampFunction<I> parseTimestamp,
+      @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod,
+      final TimeUnit timeUnit,
+      final ScheduledExecutorService scheduler) {
+    this(null, isWatermark, parseTimestamp,
+        checkpointPeriod, timeUnit, scheduler);
   }
 
   @Inject
   public PunctuatedEventGenerator(
       final MISTFunction<I, Tuple<V, Long>> extractTimestampFunc,
       final MISTPredicate<I> isWatermark,
-      final WatermarkTimestampFunction<I> parseTimestamp) {
-    super(extractTimestampFunc);
+      final WatermarkTimestampFunction<I> parseTimestamp,
+      @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod,
+      final TimeUnit timeUnit,
+      final ScheduledExecutorService scheduler) {
+    super(extractTimestampFunc, checkpointPeriod, timeUnit, scheduler);
     this.isWatermark = isWatermark;
     this.parseTimestamp = parseTimestamp;
-  }
-
-  @Override
-  protected void startRemain() {
-    // do nothing
-  }
-
-  @Override
-  public void close() {
-    // do nothing
   }
 
   @Override
   public void emitData(final I input) {
     if (isWatermark.test(input)) {
       latestWatermarkTimestamp = parseTimestamp.apply(input);
-      outputEmitter.emitWatermark(new MistWatermarkEvent(latestWatermarkTimestamp, false));
+      outputEmitter.emitWatermark(new MistWatermarkEvent(latestWatermarkTimestamp));
     } else {
       MistDataEvent newInputEvent = generateEvent(input);
       if (newInputEvent != null) {

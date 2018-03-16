@@ -17,6 +17,8 @@ package edu.snu.mist.core.task;
 
 import edu.snu.mist.common.sinks.Sink;
 
+import java.util.Map;
+
 /**
  * This is an implementation of PhysicalSink.
  */
@@ -25,7 +27,7 @@ public final class PhysicalSinkImpl<I> extends BasePhysicalVertex implements Phy
   private final Sink<I> sink;
 
   public PhysicalSinkImpl(final String sinkId,
-                          final String configuration,
+                          final Map<String, String> configuration,
                           final Sink<I> sink) {
     super(sinkId, configuration);
     this.sink = sink;

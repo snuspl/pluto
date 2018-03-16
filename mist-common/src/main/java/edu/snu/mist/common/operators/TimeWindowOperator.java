@@ -39,15 +39,23 @@ public final class TimeWindowOperator<T> extends FixedSizeWindowOperator<T> {
 
   @Override
   public void processLeftData(final MistDataEvent input) {
+    if (isEarlierThanRecoveredTimestamp(input)) {
+      return;
+    }
     emitElapsedWindow(input.getTimestamp());
     createWindow(input.getTimestamp());
     putData(input);
+    updateLatestEventTimestamp(input.getTimestamp());
   }
 
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
+    if (isEarlierThanRecoveredTimestamp(input)) {
+      return;
+    }
     emitElapsedWindow(input.getTimestamp());
     createWindow(input.getTimestamp());
     putWatermark(input);
+    updateLatestEventTimestamp(input.getTimestamp());
   }
 }

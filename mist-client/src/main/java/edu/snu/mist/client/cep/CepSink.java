@@ -41,7 +41,7 @@ public final class CepSink {
   }
 
   private CepSink(final CepSinkType cepSinkType, final Map<String, Object> sinkConfigs) {
-      this(cepSinkType, sinkConfigs, DEFAULT_SEPARATOR);
+    this(cepSinkType, sinkConfigs, DEFAULT_SEPARATOR);
   }
 
   /**
@@ -62,7 +62,7 @@ public final class CepSink {
    * @return Sink separator
    */
   public String getSeparator() {
-      return separator;
+    return separator;
   }
 
   @Override
@@ -72,8 +72,8 @@ public final class CepSink {
     }
     final CepSink sink = (CepSink) o;
     return this.cepSinkType == sink.cepSinkType
-            && this.sinkConfigs.equals(sink.sinkConfigs)
-            && this.separator.equals(sink.separator);
+        && this.sinkConfigs.equals(sink.sinkConfigs)
+        && this.separator.equals(sink.separator);
   }
 
   @Override
@@ -108,8 +108,8 @@ public final class CepSink {
     }
 
     private InnerBuilder setSeparator(final String separator) {
-        this.separator = separator;
-        return this;
+      this.separator = separator;
+      return this;
     }
 
     /**
@@ -170,8 +170,8 @@ public final class CepSink {
      * @return builder
      */
     public TextSocketBuilder setSeparator(final String separatorParam) {
-        this.builder.setSeparator(separatorParam);
-        return this;
+      this.builder.setSeparator(separatorParam);
+      return this;
     }
 
     /**
@@ -183,56 +183,56 @@ public final class CepSink {
     }
   }
 
-    /**
-     * A builder for CepSink which uses MQTT as its output.
-     */
-    public static final class MqttBuilder {
+  /**
+   * A builder for CepSink which uses MQTT as its output.
+   */
+  public static final class MqttBuilder {
 
-        private final String mqttSinkBrokerURI = "MQTT_SINK_BROKER_URI";
-        private final String mqttSinkTopic = "MQTT_SINK_TOPIC";
-        private InnerBuilder builder;
+    private final String mqttSinkBrokerURI = "MQTT_SINK_BROKER_URI";
+    private final String mqttSinkTopic = "MQTT_SINK_TOPIC";
+    private InnerBuilder builder;
 
-        public MqttBuilder() {
-            this.builder = new InnerBuilder()
-                    .setCepSinkType(CepSinkType.MQTT_OUTPUT);
-        }
-
-        /**
-         * Sets mqtt broker URI.
-         * @param mqttBrokerURI mqtt broker URI
-         * @return builder
-         */
-        public MqttBuilder setMqttBrokerURI(final String mqttBrokerURI) {
-            this.builder.addSinkConfigValue(mqttSinkBrokerURI, mqttBrokerURI);
-            return this;
-        }
-
-        /**
-         * Sets mqtt topic.
-         * @param mqttTopic mqtt topic
-         * @return builder
-         */
-        public MqttBuilder setMqttTopic(final String mqttTopic) {
-            this.builder.addSinkConfigValue(mqttSinkTopic, mqttTopic);
-            return this;
-        }
-
-        /**
-         * Sets the separator.
-         * @param separatorParam separator parameter
-         * @return builder
-         */
-        public MqttBuilder setSeparator(final String separatorParam) {
-            this.builder.setSeparator(separatorParam);
-            return this;
-        }
-
-        /**
-         * Creates an immutable CepSink.
-         * @return a new CepSink
-         */
-        public CepSink build() {
-            return builder.build();
-        }
+    public MqttBuilder() {
+      this.builder = new InnerBuilder()
+          .setCepSinkType(CepSinkType.MQTT_OUTPUT);
     }
+
+    /**
+     * Sets mqtt broker URI.
+     * @param mqttBrokerURI mqtt broker URI
+     * @return builder
+     */
+    public MqttBuilder setMqttBrokerURI(final String mqttBrokerURI) {
+      this.builder.addSinkConfigValue(mqttSinkBrokerURI, mqttBrokerURI);
+      return this;
+    }
+
+    /**
+     * Sets mqtt topic.
+     * @param mqttTopic mqtt topic
+     * @return builder
+     */
+    public MqttBuilder setMqttTopic(final String mqttTopic) {
+      this.builder.addSinkConfigValue(mqttSinkTopic, mqttTopic);
+      return this;
+    }
+
+    /**
+     * Sets the separator.
+     * @param separatorParam separator parameter
+     * @return builder
+     */
+    public MqttBuilder setSeparator(final String separatorParam) {
+      this.builder.setSeparator(separatorParam);
+      return this;
+    }
+
+    /**
+     * Creates an immutable CepSink.
+     * @return a new CepSink
+     */
+    public CepSink build() {
+      return builder.build();
+    }
+  }
 }

@@ -13,19 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.client.utils;
+package edu.snu.mist.common.parameters;
 
-import edu.snu.mist.client.cep.CepQualifier;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
-import java.util.List;
-import java.util.Map;
-
-public final class CepExampleQualifier<T> implements CepQualifier<T> {
-  @Override
-  public boolean test(final Map<String, List<T>> stringCepClassTypeMap) {
-    return true;
-  }
-
-  public CepExampleQualifier() {
-  }
+@NamedParameter(doc = "Periodic checkpoint watermarks are generated every this period. 0 means no checkpointing.",
+    short_name = "cp_period", default_value = "0")
+public final class PeriodicCheckpointPeriod implements Name<Long> {
+  // empty
 }

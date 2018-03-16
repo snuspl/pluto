@@ -43,7 +43,7 @@ public final class ApplyStatefulOperatorTest {
     final MistDataEvent data20 = new MistDataEvent(20, 1L);
     final MistDataEvent data15 = new MistDataEvent(15, 2L);
     final MistDataEvent data30 = new MistDataEvent(30, 3L);
-    final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(4L, false);
+    final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(4L);
 
     // the state managing function finding maximum integer value among received inputs
     final ApplyStatefulFunction applyStatefulFunction = new FindMaxIntFunction();
@@ -96,7 +96,7 @@ public final class ApplyStatefulOperatorTest {
     final int expectedApplyStatefulOperatorState = 20;
 
     // Get the current ApplyStatefulOperator's state.
-    final Map<String, Object> operatorState = applyStatefulOperator.getOperatorState();
+    final Map<String, Object> operatorState = applyStatefulOperator.getStateSnapshot();
     final int applyStatefulOperatorState = (int)operatorState.get("applyStatefulFunctionState");
 
     // Compare the expected and original operator's state.
@@ -118,7 +118,7 @@ public final class ApplyStatefulOperatorTest {
     applyStatefulOperator.setState(loadStateMap);
 
     // Get the current ApplyStatefulOperator's state.
-    final Map<String, Object> operatorState = applyStatefulOperator.getOperatorState();
+    final Map<String, Object> operatorState = applyStatefulOperator.getStateSnapshot();
     final int applyStatefulFunctionState = (Integer)operatorState.get("applyStatefulFunctionState");
 
     // Compare the original and the set operator.

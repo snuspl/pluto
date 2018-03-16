@@ -85,14 +85,16 @@ public class MISTRuleBasedQuerySubmissionTest {
   @Test
   public void testRuleBasedSocketInputBuilder() {
     Assert.assertEquals(RuleBasedInputType.TEXT_SOCKET_SOURCE, exampleSocketInput.getInputType());
-    final Map<String, Object> expectedSocketInputConf = new HashMap<String, Object>() { {
-      put("SOCKET_INPUT_ADDRESS", socketInputAddress);
-      put("SOCKET_INPUT_PORT", socketInputPort);
-    } };
+    final Map<String, Object> expectedSocketInputConf = new HashMap<String, Object>() {
+      {
+        put("SOCKET_INPUT_ADDRESS", socketInputAddress);
+        put("SOCKET_INPUT_PORT", socketInputPort);
+      }
+    };
     Assert.assertEquals(expectedSocketInputConf, exampleSocketInput.getSourceConfiguration());
     final List<Tuple2<String, RuleBasedValueType>> expectedSocketInputFields
         = Arrays.asList(new Tuple2<>(firstFieldName, firstFieldType),
-            new Tuple2<>(secondFieldName, secondFieldType));
+        new Tuple2<>(secondFieldName, secondFieldType));
     Assert.assertEquals(expectedSocketInputFields, exampleSocketInput.getFields());
   }
 
@@ -102,14 +104,16 @@ public class MISTRuleBasedQuerySubmissionTest {
   @Test
   public void testRuleBasedMqttInputBuilder() {
     Assert.assertEquals(RuleBasedInputType.MQTT_SOURCE, exampleMqttInput.getInputType());
-    final Map<String, Object> expectedMqttInputConf = new HashMap<String, Object>() { {
-      put("MQTT_INPUT_BROKER_URI", mqttInputURI);
-      put("MQTT_INPUT_TOPIC", mqttInputTopic);
-    } };
+    final Map<String, Object> expectedMqttInputConf = new HashMap<String, Object>() {
+      {
+        put("MQTT_INPUT_BROKER_URI", mqttInputURI);
+        put("MQTT_INPUT_TOPIC", mqttInputTopic);
+      }
+    };
     Assert.assertEquals(expectedMqttInputConf, exampleMqttInput.getSourceConfiguration());
     final List<Tuple2<String, RuleBasedValueType>> expectedMqttInputFields
-            = Arrays.asList(new Tuple2<>(firstFieldName, firstFieldType),
-            new Tuple2<>(secondFieldName, secondFieldType));
+        = Arrays.asList(new Tuple2<>(firstFieldName, firstFieldType),
+        new Tuple2<>(secondFieldName, secondFieldType));
     Assert.assertEquals(expectedMqttInputFields, exampleMqttInput.getFields());
   }
 
@@ -119,10 +123,12 @@ public class MISTRuleBasedQuerySubmissionTest {
   @Test
   public void testRuleBasedSocketSinkBuilder() {
     Assert.assertEquals(RuleBasedSinkType.TEXT_SOCKET_OUTPUT, exampleSocketSink.getSinkType());
-    final Map<String, Object> expectedSocketOutputConf = new HashMap<String, Object>() { {
-      put("SOCKET_SINK_ADDRESS", socketOutputAddress);
-      put("SOCKET_SINK_PORT", socketOutputPort);
-    } };
+    final Map<String, Object> expectedSocketOutputConf = new HashMap<String, Object>() {
+      {
+        put("SOCKET_SINK_ADDRESS", socketOutputAddress);
+        put("SOCKET_SINK_PORT", socketOutputPort);
+      }
+    };
     Assert.assertEquals(expectedSocketOutputConf, exampleSocketSink.getSinkConfigs());
   }
 
@@ -132,10 +138,12 @@ public class MISTRuleBasedQuerySubmissionTest {
   @Test
   public void testRuleBasedqttSinkBuilder() {
     Assert.assertEquals(RuleBasedSinkType.MQTT_OUTPUT, exampleMqttSink.getSinkType());
-    final Map<String, Object> expectedMqttOutputConf = new HashMap<String, Object>() { {
-      put("MQTT_SINK_BROKER_URI", mqttOutputURI);
-      put("MQTT_SINK_TOPIC", mqttOutputTopic);
-    } };
+    final Map<String, Object> expectedMqttOutputConf = new HashMap<String, Object>() {
+      {
+        put("MQTT_SINK_BROKER_URI", mqttOutputURI);
+        put("MQTT_SINK_TOPIC", mqttOutputTopic);
+      }
+    };
     Assert.assertEquals(expectedMqttOutputConf, exampleMqttSink.getSinkConfigs());
   }
 
@@ -190,43 +198,43 @@ public class MISTRuleBasedQuerySubmissionTest {
   @Test
   public void testMqttStatelessQuery() {
     final MISTStatelessQuery exampleQuery = new MISTStatelessQuery.Builder("test-group", "user1")
-            .input(exampleMqttInput)
-            .addStatelessRule(new StatelessRule.Builder()
-                    .setCondition(ComparisonCondition.gt("Temperature", 25))
-                    .setAction(new RuleBasedAction.Builder()
-                            .setActionType(RuleBasedActionType.TEXT_WRITE)
-                            .setSink(exampleMqttSink)
-                            .setParams("Hot")
-                            .build())
-                    .build()
-            )
-            .addStatelessRule(new StatelessRule.Builder()
-                    .setCondition(ComparisonCondition.lt("Temperature", 10))
-                    .setAction(new RuleBasedAction.Builder()
-                            .setActionType(RuleBasedActionType.TEXT_WRITE)
-                            .setSink(exampleMqttSink)
-                            .setParams("Cold")
-                            .build())
-                    .build()
-            )
-            .build();
+        .input(exampleMqttInput)
+        .addStatelessRule(new StatelessRule.Builder()
+            .setCondition(ComparisonCondition.gt("Temperature", 25))
+            .setAction(new RuleBasedAction.Builder()
+                .setActionType(RuleBasedActionType.TEXT_WRITE)
+                .setSink(exampleMqttSink)
+                .setParams("Hot")
+                .build())
+            .build()
+        )
+        .addStatelessRule(new StatelessRule.Builder()
+            .setCondition(ComparisonCondition.lt("Temperature", 10))
+            .setAction(new RuleBasedAction.Builder()
+                .setActionType(RuleBasedActionType.TEXT_WRITE)
+                .setSink(exampleMqttSink)
+                .setParams("Cold")
+                .build())
+            .build()
+        )
+        .build();
     Assert.assertEquals(exampleMqttInput, exampleQuery.getInput());
     final List<StatelessRule> statelessRules = exampleQuery.getStatelessRules();
     Assert.assertEquals(statelessRules.size(), 2);
     final StatelessRule rule0 = statelessRules.get(0);
     Assert.assertEquals(rule0.getCondition(), ComparisonCondition.gt("Temperature", 25));
     Assert.assertEquals(rule0.getAction(), new RuleBasedAction.Builder()
-            .setActionType(RuleBasedActionType.TEXT_WRITE)
-            .setSink(exampleMqttSink)
-            .setParams("Hot")
-            .build());
+        .setActionType(RuleBasedActionType.TEXT_WRITE)
+        .setSink(exampleMqttSink)
+        .setParams("Hot")
+        .build());
     final StatelessRule rule1 = statelessRules.get(1);
     Assert.assertEquals(rule1.getCondition(), ComparisonCondition.lt("Temperature", 10));
     Assert.assertEquals(rule1.getAction(), new RuleBasedAction.Builder()
-            .setActionType(RuleBasedActionType.TEXT_WRITE)
-            .setSink(exampleMqttSink)
-            .setParams("Cold")
-            .build());
+        .setActionType(RuleBasedActionType.TEXT_WRITE)
+        .setSink(exampleMqttSink)
+        .setParams("Cold")
+        .build());
   }
 
   /**
@@ -247,15 +255,15 @@ public class MISTRuleBasedQuerySubmissionTest {
             .addTransition(ComparisonCondition.lt("Temperature", 10), "INSIDE_COLD")
             .build())
         .addFinalState("INSIDE_HOT", new RuleBasedAction.Builder()
-                .setActionType(RuleBasedActionType.TEXT_WRITE)
-                .setSink(exampleSocketSink)
-                .setParams("Hot")
-                .build())
+            .setActionType(RuleBasedActionType.TEXT_WRITE)
+            .setSink(exampleSocketSink)
+            .setParams("Hot")
+            .build())
         .addFinalState("INSIDE_COLD", new RuleBasedAction.Builder()
-                .setActionType(RuleBasedActionType.TEXT_WRITE)
-                .setSink(exampleSocketSink)
-                .setParams("Cold")
-                .build())
+            .setActionType(RuleBasedActionType.TEXT_WRITE)
+            .setSink(exampleSocketSink)
+            .setParams("Cold")
+            .build())
         .build();
 
     Assert.assertEquals("OUTSIDE", exampleQuery.getInitialState());
@@ -269,27 +277,27 @@ public class MISTRuleBasedQuerySubmissionTest {
     final StatefulRule rule0 = statefulRules.get(0);
     Assert.assertEquals(rule0.getCurrentState(), "OUTSIDE");
     Assert.assertEquals(rule0.getTransitionMap().get("INSIDE"),
-            ComparisonCondition.eq("Location", 4.89));
+        ComparisonCondition.eq("Location", 4.89));
 
     final StatefulRule rule1 = statefulRules.get(1);
     Assert.assertEquals(rule1.getCurrentState(), "INSIDE");
     Assert.assertEquals(rule1.getTransitionMap().get("INSIDE_HOT"),
-            ComparisonCondition.gt("Temperature", 25));
+        ComparisonCondition.gt("Temperature", 25));
     Assert.assertEquals(rule1.getTransitionMap().get("INSIDE_COLD"),
-            ComparisonCondition.lt("Temperature", 10));
+        ComparisonCondition.lt("Temperature", 10));
 
     final RuleBasedAction action0 = finalState.get("INSIDE_HOT");
     Assert.assertEquals(action0, new RuleBasedAction.Builder()
-            .setActionType(RuleBasedActionType.TEXT_WRITE)
-            .setSink(exampleSocketSink)
-            .setParams("Hot")
-            .build());
+        .setActionType(RuleBasedActionType.TEXT_WRITE)
+        .setSink(exampleSocketSink)
+        .setParams("Hot")
+        .build());
 
     final RuleBasedAction action1 = finalState.get("INSIDE_COLD");
     Assert.assertEquals(action1, new RuleBasedAction.Builder()
-            .setActionType(RuleBasedActionType.TEXT_WRITE)
-            .setSink(exampleSocketSink)
-            .setParams("Cold")
-            .build());
+        .setActionType(RuleBasedActionType.TEXT_WRITE)
+        .setSink(exampleSocketSink)
+        .setParams("Cold")
+        .build());
   }
 }

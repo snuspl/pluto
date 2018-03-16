@@ -13,19 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.client.utils;
-
-import edu.snu.mist.client.cep.CepQualifier;
-
-import java.util.List;
-import java.util.Map;
-
-public final class CepExampleQualifier<T> implements CepQualifier<T> {
-  @Override
-  public boolean test(final Map<String, List<T>> stringCepClassTypeMap) {
-    return true;
-  }
-
-  public CepExampleQualifier() {
-  }
-}
+/**
+ * A package for configurations.
+ */
+package edu.snu.mist.common.configurations;

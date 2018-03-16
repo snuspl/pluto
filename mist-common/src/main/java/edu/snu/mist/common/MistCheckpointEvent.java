@@ -13,19 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.client.utils;
+package edu.snu.mist.common;
 
-import edu.snu.mist.client.cep.CepQualifier;
+public final class MistCheckpointEvent implements MistEvent {
 
-import java.util.List;
-import java.util.Map;
-
-public final class CepExampleQualifier<T> implements CepQualifier<T> {
   @Override
-  public boolean test(final Map<String, List<T>> stringCepClassTypeMap) {
+  public boolean isData() {
+    return false;
+  }
+
+  @Override
+  public boolean isCheckpoint() {
     return true;
   }
 
-  public CepExampleQualifier() {
+  @Override
+  public long getTimestamp() {
+    // This should not be called for MistCheckpointEvent, as this timestamp is meaningless.
+    return -1;
   }
 }

@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.common.operators;
 
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 
@@ -37,5 +38,11 @@ public abstract class OneStreamOperator extends BaseOperator {
   public void processRightWatermark(final MistWatermarkEvent watermark) {
     throw new RuntimeException("Invalid Input Type: " + this.getClass()
         + " should have processLeft watermark event type");
+  }
+
+  @Override
+  public void processRightCheckpoint(final MistCheckpointEvent checkpoint) {
+    throw new RuntimeException("Invalid Input Type: " + this.getClass()
+        + " should have processLeft checkpoint event type");
   }
 }

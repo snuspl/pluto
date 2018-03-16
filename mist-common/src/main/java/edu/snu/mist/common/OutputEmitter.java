@@ -39,4 +39,10 @@ public interface OutputEmitter {
    * @param watermark watermark
    */
   void emitWatermark(MistWatermarkEvent watermark);
+
+  /**
+   * Emits an output as an input of next operators.
+   * @param checkpoint checkpoint
+   */
+  void emitCheckpoint(MistCheckpointEvent checkpoint);
 }

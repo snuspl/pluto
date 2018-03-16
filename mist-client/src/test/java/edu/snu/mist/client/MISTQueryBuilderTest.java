@@ -19,16 +19,12 @@ import edu.snu.mist.client.datastreams.ContinuousStream;
 import edu.snu.mist.client.datastreams.configurations.KafkaSourceConfiguration;
 import edu.snu.mist.client.datastreams.configurations.MQTTSourceConfiguration;
 import edu.snu.mist.client.datastreams.configurations.TextSocketSourceConfiguration;
-import edu.snu.mist.client.utils.UDFTestUtils;
 import edu.snu.mist.client.utils.TestParameters;
 import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.configurations.ConfKeys;
 import edu.snu.mist.common.functions.MISTFunction;
-import edu.snu.mist.common.parameters.*;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.tang.Configuration;
-import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.junit.Assert;
@@ -47,7 +43,7 @@ public class MISTQueryBuilderTest {
    * Test whether the serialization of the netty text source is correct.
    */
   @Test
-  public void testNettyTextSourceSerializationWithoutUdf() throws InjectionException {
+  public void testNettyTextSourceSerializationWithoutUdf() {
     final MISTQueryBuilder queryBuilder =
         new MISTQueryBuilder();
     queryBuilder.setApplicationId(TestParameters.SUPER_GROUP_ID);
@@ -55,19 +51,17 @@ public class MISTQueryBuilderTest {
     final ContinuousStream<String> stream =
         queryBuilder.socketTextStream(TestParameters.LOCAL_TEXT_SOCKET_SOURCE_CONF);
     // check
-    final Injector injector = Tang.Factory.getTang().newInjector(stream.getConfiguration());
-    final String deHost = injector.getNamedInstance(SocketServerIp.class);
-    final int dePort = injector.getNamedInstance(SocketServerPort.class);
-    Assert.assertEquals(TestParameters.HOST, deHost);
-    Assert.assertEquals(TestParameters.SERVER_PORT, dePort);
+    final Map<String, String> conf = stream.getConfiguration();
+    Assert.assertEquals(TestParameters.HOST, conf.get(ConfKeys.NettySourceConf.SOURCE_ADDR.name()));
+    Assert.assertEquals(String.valueOf(TestParameters.SERVER_PORT),
+        conf.get(ConfKeys.NettySourceConf.SOURCE_PORT.name()));
   }
 
   /**
    * Test whether the serialization of the netty text source with udf is correct.
    */
   @Test
-  public void testNettyTextSourceSerializationWithUdf()
-      throws InjectionException, IOException, ClassNotFoundException {
+  public void testNettyTextSourceSerializationWithUdf() throws IOException {
     final MISTFunction<String, Tuple<String, Long>> timestampExtFunc = s -> new Tuple<>(s, 1L);
     final MISTQueryBuilder queryBuilder =
         new MISTQueryBuilder();
@@ -80,41 +74,12 @@ public class MISTQueryBuilderTest {
             .setTimestampExtractionFunction(timestampExtFunc)
             .build());
     // check
-    final Injector injector = Tang.Factory.getTang().newInjector(stream.getConfiguration());
-    final String deHost = injector.getNamedInstance(SocketServerIp.class);
-    final int dePort = injector.getNamedInstance(SocketServerPort.class);
-    final String seTimeFunc = injector.getNamedInstance(SerializedTimestampExtractUdf.class);
-    Assert.assertEquals(TestParameters.HOST, deHost);
-    Assert.assertEquals(TestParameters.SERVER_PORT, dePort);
-    Assert.assertEquals(SerializeUtils.serializeToString(timestampExtFunc), seTimeFunc);
-  }
-
-  /**
-   * Test whether the serialization of the netty text source with binding the udf class is correct.
-   */
-  @Test
-  public void testNettyTextSourceSerializationWithUdfClassBinding()
-      throws InjectionException, IOException, ClassNotFoundException {
-    final Configuration funcConf = Tang.Factory.getTang().newConfigurationBuilder().build();
-    final MISTFunction<String, Tuple<String, Long>> timestampExtFunc = s -> new Tuple<>(s, 1L);
-    final MISTQueryBuilder queryBuilder =
-        new MISTQueryBuilder();
-    queryBuilder.setApplicationId(TestParameters.SUPER_GROUP_ID);
-
-    final ContinuousStream<String> stream =
-        queryBuilder.socketTextStream(TextSocketSourceConfiguration.newBuilder()
-            .setHostAddress(TestParameters.HOST)
-            .setHostPort(TestParameters.SERVER_PORT)
-            .setTimestampExtractionFunction(UDFTestUtils.TestNettyTimestampExtractFunc.class, funcConf)
-            .build());
-    // check
-    final Injector injector = Tang.Factory.getTang().newInjector(stream.getConfiguration());
-    final String deHost = injector.getNamedInstance(SocketServerIp.class);
-    final int dePort = injector.getNamedInstance(SocketServerPort.class);
-    final MISTFunction func = injector.getInstance(MISTFunction.class);
-    Assert.assertEquals(TestParameters.HOST, deHost);
-    Assert.assertEquals(TestParameters.SERVER_PORT, dePort);
-    Assert.assertTrue(func instanceof UDFTestUtils.TestNettyTimestampExtractFunc);
+    final Map<String, String> conf = stream.getConfiguration();
+    Assert.assertEquals(TestParameters.HOST, conf.get(ConfKeys.NettySourceConf.SOURCE_ADDR.name()));
+    Assert.assertEquals(String.valueOf(TestParameters.SERVER_PORT),
+        conf.get(ConfKeys.NettySourceConf.SOURCE_PORT.name()));
+    Assert.assertEquals(SerializeUtils.serializeToString(timestampExtFunc),
+        conf.get(ConfKeys.SourceConf.TIMESTAMP_EXTRACT_FUNC.name()));
   }
 
   /**
@@ -146,18 +111,14 @@ public class MISTQueryBuilderTest {
             .build());
 
     // Check about source configuration
-    final Injector injector = Tang.Factory.getTang().newInjector(kafkaSourceStream.getConfiguration());
-    final String desTopic = injector.getNamedInstance(KafkaTopic.class);
-    final String seConsumerConfig = injector.getNamedInstance(SerializedKafkaConfig.class);
-    final Map<String, Object> deConsumerConfig = SerializeUtils.deserializeFromString(seConsumerConfig);
-    Assert.assertEquals(topic, desTopic);
-    Assert.assertEquals(consumerConfig, deConsumerConfig);
+    final Map<String, String> conf = kafkaSourceStream.getConfiguration();
+    Assert.assertEquals(topic, conf.get(ConfKeys.KafkaSourceConf.KAFKA_TOPIC.name()));
+    Assert.assertEquals(consumerConfig, SerializeUtils.deserializeFromString(
+        conf.get(ConfKeys.KafkaSourceConf.KAFKA_CONSUMER_CONFIG.name())));
 
     // Check about watermark configuration
-    final long period = injector.getNamedInstance(PeriodicWatermarkPeriod.class);
-    final long delay = injector.getNamedInstance(PeriodicWatermarkDelay.class);
-    Assert.assertEquals(1000, period);
-    Assert.assertEquals(0, delay);
+    Assert.assertEquals("1000", conf.get(ConfKeys.Watermark.PERIODIC_WATERMARK_PERIOD.name()));
+    Assert.assertEquals("0", conf.get(ConfKeys.Watermark.PERIODIC_WATERMARK_DELAY.name()));
   }
 
   @Test
@@ -177,16 +138,12 @@ public class MISTQueryBuilderTest {
             .build());
 
     // Check source configuration
-    final Injector injector = Tang.Factory.getTang().newInjector(mqttSourceStream.getConfiguration());
-    final String resultBrokerAddress = injector.getNamedInstance(MQTTBrokerURI.class);
-    final String resultTopic = injector.getNamedInstance(MQTTTopic.class);
-    Assert.assertEquals(expectedBrokerURI, resultBrokerAddress);
-    Assert.assertEquals(expectedTopic, resultTopic);
+    final Map<String, String> conf = mqttSourceStream.getConfiguration();
+    Assert.assertEquals(expectedBrokerURI, conf.get(ConfKeys.MQTTSourceConf.MQTT_SRC_BROKER_URI.name()));
+    Assert.assertEquals(expectedTopic, conf.get(ConfKeys.MQTTSourceConf.MQTT_SRC_TOPIC.name()));
 
     // Check watermark configuration
-    final long period = injector.getNamedInstance(PeriodicWatermarkPeriod.class);
-    final long delay = injector.getNamedInstance(PeriodicWatermarkDelay.class);
-    Assert.assertEquals(1000, period);
-    Assert.assertEquals(0, delay);
+    Assert.assertEquals("1000", conf.get(ConfKeys.Watermark.PERIODIC_WATERMARK_PERIOD.name()));
+    Assert.assertEquals("0", conf.get(ConfKeys.Watermark.PERIODIC_WATERMARK_DELAY.name()));
   }
 }

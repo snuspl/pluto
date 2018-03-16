@@ -17,28 +17,23 @@
 package edu.snu.mist.client.datastreams;
 
 
-import edu.snu.mist.client.datastreams.configurations.*;
 import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.configurations.ConfKeys;
+import edu.snu.mist.common.configurations.ConfValues;
 import edu.snu.mist.common.functions.*;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.common.operators.*;
+import edu.snu.mist.common.operators.CepEventPattern;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.CountWindowInformation;
 import edu.snu.mist.common.windows.TimeWindowInformation;
 import edu.snu.mist.common.windows.WindowInformation;
 import edu.snu.mist.formats.avro.Direction;
-import org.apache.reef.tang.Configuration;
-import org.apache.reef.tang.Configurations;
-import org.apache.reef.tang.formats.ConfigurationModule;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * This class implements ContinuousStream by configuring operations using Tang.
@@ -58,12 +53,12 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
   private final int branchIndex;
 
   public ContinuousStreamImpl(final DAG<MISTStream, MISTEdge> dag,
-                              final Configuration conf) {
+                              final Map<String, String> conf) {
     this(dag, conf, 0);
   }
 
   private ContinuousStreamImpl(final DAG<MISTStream, MISTEdge> dag,
-                               final Configuration conf,
+                               final Map<String, String> conf,
                                final int branchIndex) {
     super(dag, conf);
     this.condBranchCount = 0;
@@ -89,7 +84,7 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
    * @return windowed stream
    */
   private <OUT> WindowedStream<OUT> transformToWindowedStream(
-      final Configuration conf,
+      final Map<String, String> conf,
       final MISTStream upStream) {
     final WindowedStream<OUT> downStream = new WindowedStreamImpl<>(dag, conf);
     dag.addVertex(downStream);
@@ -107,7 +102,7 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
    * @return continuous stream
    */
   private <OUT> ContinuousStream<OUT> transformToDoubleInputContinuousStream(
-      final Configuration conf,
+      final Map<String, String> conf,
       final MISTStream leftStream,
       final MISTStream rightStream) {
     final ContinuousStream<OUT> downStream = new ContinuousStreamImpl<>(dag, conf);
@@ -121,99 +116,46 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
    * Create a new continuous stream that is processed by the operator using a single udf
    * (ex. map, filter, flatMap, applyStateful).
    * @param udf a user-defined function
-   * @param clazz a class representing the operator
+   * @param operatorType a class representing the operator
    * @param <OUT> the result type of the operation
    * @return a new transformed continuous stream
    */
   private <OUT> ContinuousStream<OUT> transformWithSingleUdfOperator(
       final Serializable udf,
-      final Class<? extends Operator> clazz) {
+      final ConfValues.OperatorType operatorType) {
+
+    final Map<String, String> confMap = new HashMap<>();
+
     try {
-      final Configuration opConf = OperatorUDFConfiguration.CONF
-          .set(OperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(udf))
-          .set(OperatorUDFConfiguration.OPERATOR, clazz)
-          .build();
-      return transformToSingleInputContinuousStream(opConf, this);
+      confMap.put(ConfKeys.OperatorConf.UDF_STRING.name(),
+          SerializeUtils.serializeToString(udf));
+      confMap.put(ConfKeys.OperatorConf.OP_TYPE.name(), operatorType.name());
+      return transformToSingleInputContinuousStream(confMap, this);
     } catch (final IOException e) {
       e.printStackTrace();
       throw new RuntimeException(e);
     }
   }
 
-  /**
-   * Check the udf function and return the continuous stream that is transformed by the udf operator.
-   * @param clazz class of the udf function
-   * @param conf configuration of the udf function
-   * @param upStream upstream of the transformation
-   * @param <C> class type
-   * @param <OUT> output type
-   * @return continuous stream that is transformed by the udf operator
-   */
-  private <C, OUT> ContinuousStream<OUT> checkUdfAndTransform(final Class<? extends C> clazz,
-                                                              final Configuration conf,
-                                                              final MISTStream upStream) {
-    checkUdf(clazz, conf);
-    return transformToSingleInputContinuousStream(conf, upStream);
-  }
-
   @Override
   public <OUT> ContinuousStream<OUT> map(final MISTFunction<T, OUT> mapFunc) {
-    return transformWithSingleUdfOperator(mapFunc, MapOperator.class);
-  }
-
-  @Override
-  public <OUT> ContinuousStream<OUT> map(final Class<? extends MISTFunction<T, OUT>> clazz,
-                                         final Configuration funcConf) {
-    final Configuration conf = Configurations.merge(MISTFuncOperatorConfiguration.CONF
-        .set(MISTFuncOperatorConfiguration.OPERATOR, MapOperator.class)
-        .set(MISTFuncOperatorConfiguration.UDF, clazz)
-        .build(), funcConf);
-    return checkUdfAndTransform(clazz, conf, this);
+    return transformWithSingleUdfOperator(mapFunc, ConfValues.OperatorType.MAP);
   }
 
   @Override
   public <OUT> ContinuousStream<OUT> flatMap(final MISTFunction<T, List<OUT>> flatMapFunc) {
-    return transformWithSingleUdfOperator(flatMapFunc, FlatMapOperator.class);
-  }
-
-  @Override
-  public <OUT> ContinuousStream<OUT> flatMap(final Class<? extends MISTFunction<T, List<OUT>>> clazz,
-                                             final Configuration funcConf) {
-    final Configuration conf = Configurations.merge(MISTFuncOperatorConfiguration.CONF
-        .set(MISTFuncOperatorConfiguration.OPERATOR, FlatMapOperator.class)
-        .set(MISTFuncOperatorConfiguration.UDF, clazz)
-        .build(), funcConf);
-    return checkUdfAndTransform(clazz, conf, this);
+    return transformWithSingleUdfOperator(flatMapFunc, ConfValues.OperatorType.FLAT_MAP);
   }
 
   @Override
   public ContinuousStream<T> filter(final MISTPredicate<T> filterFunc) {
-    return transformWithSingleUdfOperator(filterFunc, FilterOperator.class);
-  }
-
-  @Override
-  public ContinuousStream<T> filter(final Class<? extends MISTPredicate<T>> clazz,
-                                    final Configuration funcConf) {
-    final Configuration conf = Configurations.merge(FilterOperatorConfiguration.CONF
-        .set(FilterOperatorConfiguration.MIST_PREDICATE, clazz)
-        .build(), funcConf);
-    return checkUdfAndTransform(clazz, conf, this);
+    return transformWithSingleUdfOperator(filterFunc, ConfValues.OperatorType.FILTER);
   }
 
   @Override
   public <OUT> ContinuousStream<OUT> applyStateful(
       final ApplyStatefulFunction<T, OUT> applyStatefulFunction) {
-    return transformWithSingleUdfOperator(applyStatefulFunction, ApplyStatefulOperator.class);
-  }
-
-  @Override
-  public <OUT> ContinuousStream<OUT> applyStateful(final Class<? extends ApplyStatefulFunction<T, OUT>> clazz,
-                                                   final Configuration funcConf) {
-    final Configuration conf = Configurations.merge(ApplyStatefulOperatorConfiguration.CONF
-        .set(ApplyStatefulOperatorConfiguration.UDF, clazz)
-        .set(ApplyStatefulOperatorConfiguration.OPERATOR, ApplyStatefulOperator.class)
-        .build(), funcConf);
-    return checkUdfAndTransform(clazz, conf, this);
+    return transformWithSingleUdfOperator(applyStatefulFunction, ConfValues.OperatorType.APPLY_STATEFUL);
   }
 
   @Override
@@ -221,46 +163,41 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
           final String initialState,
           final Set<String> finalState,
           final Map<String, Collection<Tuple2<MISTPredicate, String>>> stateTable) throws IOException {
-    ConfigurationModule opConfModule = StateTransitionOperatorConfiguration.CONF
-        .set(StateTransitionOperatorConfiguration.INITIAL_STATE, initialState)
-        .set(StateTransitionOperatorConfiguration.STATE_TABLE,
-                SerializeUtils.serializeToString((Serializable) stateTable))
-        .set(StateTransitionOperatorConfiguration.OPERATOR, StateTransitionOperator.class);
+    final Map<String, String> confMap = new HashMap<>();
+    confMap.put(ConfKeys.OperatorConf.OP_TYPE.name(), ConfValues.OperatorType.STATE_TRANSITION.name());
+    confMap.put(ConfKeys.StateTransitionOperator.INITIAL_STATE.name(), initialState);
+    confMap.put(ConfKeys.StateTransitionOperator.STATE_TABLE.name(),
+        SerializeUtils.serializeToString((Serializable) stateTable));
+    confMap.put(ConfKeys.StateTransitionOperator.FINAL_STATE.name(),
+        SerializeUtils.serializeToString((Serializable)finalState));
 
-    for (final String iterState : finalState) {
-      opConfModule = opConfModule.set(StateTransitionOperatorConfiguration.FINAL_STATE, iterState);
-    }
-    final Configuration opConf = opConfModule.build();
-    return transformToSingleInputContinuousStream(opConf, this);
+    return transformToSingleInputContinuousStream(confMap, this);
   }
 
   @Override
   public ContinuousStream<Map<String, List<T>>> cepOperator(final List<CepEventPattern<T>> cepEventPatterns,
                                                             final long windowTime) throws IOException {
-    try {
-      final Configuration opConf = CepOperatorConfiguration.CONF
-              .set(CepOperatorConfiguration.CEP_EVENTS,
-                      SerializeUtils.serializeToString((Serializable) cepEventPatterns))
-              .set(CepOperatorConfiguration.WINDOW_TIME, windowTime)
-              .set(CepOperatorConfiguration.OPERATOR, CepOperator.class)
-              .build();
-      return transformToSingleInputContinuousStream(opConf, this);
-    } catch (final IOException e) {
-      e.printStackTrace();
-      throw new RuntimeException(e);
-    }
+    final Map<String, String> confMap = new HashMap<>();
+    confMap.put(ConfKeys.OperatorConf.OP_TYPE.name(), ConfValues.OperatorType.CEP.name());
+    confMap.put(ConfKeys.CepOperator.CEP_EVENT.name(),
+        SerializeUtils.serializeToString((Serializable) cepEventPatterns));
+    confMap.put(ConfKeys.CepOperator.WINDOW_TIME.name(), String.valueOf(windowTime));
+
+    return transformToSingleInputContinuousStream(confMap, this);
   }
 
   @Override
   public <K, V> ContinuousStream<Map<K, V>> reduceByKey(final int keyFieldNum,
                                                         final Class<K> keyType,
                                                         final MISTBiFunction<V, V, V> reduceFunc) {
+    final Map<String, String> confMap = new HashMap<>();
+    confMap.put(ConfKeys.OperatorConf.OP_TYPE.name(), ConfValues.OperatorType.REDUCE_BY_KEY.name());
+
     try {
-      final Configuration opConf = ReduceByKeyOperatorUDFConfiguration.CONF
-          .set(ReduceByKeyOperatorUDFConfiguration.KEY_INDEX, keyFieldNum)
-          .set(ReduceByKeyOperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(reduceFunc))
-          .build();
-      return transformToSingleInputContinuousStream(opConf, this);
+      confMap.put(ConfKeys.ReduceByKeyOperator.KEY_INDEX.name(), String.valueOf(keyFieldNum));
+      confMap.put(ConfKeys.ReduceByKeyOperator.MIST_BI_FUNC.name(),
+          SerializeUtils.serializeToString(reduceFunc));
+      return transformToSingleInputContinuousStream(confMap, this);
     } catch (final IOException e) {
       e.printStackTrace();
       throw new RuntimeException(e);
@@ -268,46 +205,27 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
   }
 
   @Override
-  public <K, V> ContinuousStream<Map<K, V>> reduceByKey(
-      final int keyFieldNum,
-      final Class<K> keyType,
-      final Class<? extends MISTBiFunction<V, V, V>> clazz,
-      final Configuration funcConf) {
-    final Configuration conf = Configurations.merge(ReduceByKeyOperatorConfiguration.CONF
-        .set(ReduceByKeyOperatorConfiguration.KEY_INDEX, keyFieldNum)
-        .set(ReduceByKeyOperatorConfiguration.MIST_BI_FUNC, clazz)
-        .build(), funcConf);
-    return checkUdfAndTransform(clazz, conf, this);
-  }
-
-  @Override
   public ContinuousStream<T> union(final ContinuousStream<T> inputStream) {
     // TODO[MIST-245]: Improve type checking.
-    final Configuration opConf = UnionOperatorConfiguration.CONF.build();
-    return transformToDoubleInputContinuousStream(opConf, this, inputStream);
+    final Map<String, String> confMap = new HashMap<>();
+    confMap.put(ConfKeys.OperatorConf.OP_TYPE.name(), ConfValues.OperatorType.UNION.name());
+    return transformToDoubleInputContinuousStream(confMap, this, inputStream);
   }
 
   @Override
   public WindowedStream<T> window(final WindowInformation windowInfo) {
-    final ConfigurationModule confModule = WindowOperatorConfiguration.CONF
-        .set(WindowOperatorConfiguration.WINDOW_SIZE, windowInfo.getWindowSize())
-        .set(WindowOperatorConfiguration.WINDOW_INTERVAL, windowInfo.getWindowInterval());
+    final Map<String, String> confMap = new HashMap<>();
+    confMap.put(ConfKeys.WindowOperator.WINDOW_SIZE.name(), String.valueOf(windowInfo.getWindowSize()));
+    confMap.put(ConfKeys.WindowOperator.WINDOW_INTERVAL.name(), String.valueOf(windowInfo.getWindowInterval()));
 
-    final Configuration opConf;
     if (windowInfo instanceof TimeWindowInformation) {
-      opConf = confModule
-          .set(WindowOperatorConfiguration.OPERATOR, TimeWindowOperator.class)
-          .build();
+      confMap.put(ConfKeys.OperatorConf.OP_TYPE.name(), ConfValues.OperatorType.TIME_WINDOW.name());
     } else if (windowInfo instanceof CountWindowInformation) {
-      opConf = confModule
-          .set(WindowOperatorConfiguration.OPERATOR, CountWindowOperator.class)
-          .build();
+      confMap.put(ConfKeys.OperatorConf.OP_TYPE.name(), ConfValues.OperatorType.COUNT_WINDOW.name());
     } else {
-      opConf = confModule
-          .set(WindowOperatorConfiguration.OPERATOR, SessionWindowOperator.class)
-          .build();
+      confMap.put(ConfKeys.OperatorConf.OP_TYPE.name(), ConfValues.OperatorType.SESSION_WINDOW.name());
     }
-    return transformToWindowedStream(opConf, this);
+    return transformToWindowedStream(confMap, this);
   }
 
   /**
@@ -325,12 +243,14 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
         .map(firstMapFunc)
         .union(inputStream.map(secondMapFunc))
         .window(windowInfo);
+
+    final Map<String, String> confMap = new HashMap<>();
+    confMap.put(ConfKeys.OperatorConf.OP_TYPE.name(), ConfValues.OperatorType.JOIN.name());
+
     try {
-      final Configuration opConf = OperatorUDFConfiguration.CONF
-          .set(OperatorUDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(joinBiPredicate))
-          .set(OperatorUDFConfiguration.OPERATOR, JoinOperator.class)
-          .build();
-      return transformToWindowedStream(opConf, windowedStream);
+      confMap.put(ConfKeys.OperatorConf.UDF_STRING.name(),
+           SerializeUtils.serializeToString(joinBiPredicate));
+      return transformToWindowedStream(confMap, windowedStream);
     } catch (final IOException e) {
       e.printStackTrace();
       throw new RuntimeException(e);
@@ -338,33 +258,14 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
   }
 
   @Override
-  public <U> WindowedStream<Tuple2<T, U>> join(final ContinuousStream<U> inputStream,
-                                               final Class<? extends MISTBiPredicate<T, U>> clazz,
-                                               final Configuration funcConf,
-                                               final WindowInformation windowInfo) {
-    final MISTFunction<T, Tuple2<T, U>> firstMapFunc = input -> new Tuple2<>(input, null);
-    final MISTFunction<U, Tuple2<T, U>> secondMapFunc = input -> new Tuple2<>(null, input);
-    final WindowedStream<Tuple2<T, U>> windowedStream = this
-        .map(firstMapFunc)
-        .union(inputStream.map(secondMapFunc))
-        .window(windowInfo);
-    final Configuration opConf = Configurations.merge(JoinOperatorConfiguration.CONF
-        .set(JoinOperatorConfiguration.MIST_BI_PREDICATE, clazz)
-        .build(), funcConf);
-    // Check the udf function
-    checkUdf(clazz, opConf);
-    return transformToWindowedStream(opConf, windowedStream);
-  }
-
-  @Override
   public ContinuousStream<T> routeIf(final MISTPredicate<T> condition) {
     condBranchCount++;
     try {
-      final Configuration opConf = UDFConfiguration.CONF
-          .set(UDFConfiguration.UDF_STRING, SerializeUtils.serializeToString(condition))
-          .build();
+      final Map<String, String> confMap = new HashMap<>();
+      confMap.put(ConfKeys.OperatorConf.UDF_STRING.name(),
+          SerializeUtils.serializeToString(condition));
 
-      final ContinuousStream<T> downStream = new ContinuousStreamImpl<>(dag, opConf, condBranchCount);
+      final ContinuousStream<T> downStream = new ContinuousStreamImpl<>(dag, confMap, condBranchCount);
       dag.addVertex(downStream);
       dag.addEdge(this, downStream, new MISTEdge(Direction.LEFT));
       return downStream;
@@ -375,20 +276,14 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
   }
 
   @Override
-  public ContinuousStream<T> routeIf(final Class<? extends MISTPredicate<T>> clazz,
-                                     final Configuration funcConf) {
-    // TODO: [MIST-436] Support predicate list generation through tang in branch operator API
-    throw new RuntimeException("Branch operator setting through Tang is not supported yet.");
-  }
-
-  @Override
   public MISTStream<String> textSocketOutput(final String serverAddress,
                                              final int serverPort) {
-    final Configuration opConf = TextSocketSinkConfiguration.CONF
-        .set(TextSocketSinkConfiguration.SOCKET_HOST_ADDRESS, serverAddress)
-        .set(TextSocketSinkConfiguration.SOCKET_HOST_PORT, serverPort)
-        .build();
-    final MISTStream<String> sink = new MISTStreamImpl<>(dag, opConf);
+    final Map<String, String> confMap = new HashMap<>();
+    confMap.put(ConfKeys.SinkConf.SINK_TYPE.name(), ConfValues.SinkType.NETTY.name());
+    confMap.put(ConfKeys.NettySink.SINK_ADDRESS.name(), serverAddress);
+    confMap.put(ConfKeys.NettySink.SINK_PORT.name(), String.valueOf(serverPort));
+
+    final MISTStream<String> sink = new MISTStreamImpl<>(dag, confMap);
     dag.addVertex(sink);
     dag.addEdge(this, sink, new MISTEdge(Direction.LEFT));
     return sink;
@@ -396,11 +291,13 @@ public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements Contin
 
   @Override
   public MISTStream<MqttMessage> mqttOutput(final String brokerURI, final String topic) {
-    final Configuration opConf = MqttSinkConfiguration.CONF
-        .set(MqttSinkConfiguration.MQTT_BROKER_URI, brokerURI)
-        .set(MqttSinkConfiguration.MQTT_TOPIC, topic)
-        .build();
-    final MISTStream<MqttMessage> sink = new MISTStreamImpl<>(dag, opConf);
+
+    final Map<String, String> confMap = new HashMap<>();
+    confMap.put(ConfKeys.SinkConf.SINK_TYPE.name(), ConfValues.SinkType.MQTT.name());
+    confMap.put(ConfKeys.MqttSink.MQTT_SINK_BROKER_URI.name(), brokerURI);
+    confMap.put(ConfKeys.MqttSink.MQTT_SINK_TOPIC.name(), topic);
+
+    final MISTStream<MqttMessage> sink = new MISTStreamImpl<>(dag, confMap);
     dag.addVertex(sink);
     dag.addEdge(this, sink, new MISTEdge(Direction.LEFT));
     return sink;

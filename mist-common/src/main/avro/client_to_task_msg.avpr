@@ -59,8 +59,12 @@
                   }
                 },
                 {
-                  "name": "Configuration", /* Configuration that is serialized using Tang */
-                  "type": "string"
+                  "name": "Configuration",
+                  "type":
+                  {
+                    "type": "map",
+                    "values": "string"
+                  }
                 }
               ]
             }

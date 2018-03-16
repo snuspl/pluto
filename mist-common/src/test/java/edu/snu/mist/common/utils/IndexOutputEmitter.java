@@ -42,4 +42,8 @@ public final class IndexOutputEmitter implements OutputEmitter {
   public void emitWatermark(final MistWatermarkEvent watermark) {
     list.add(new Tuple<>(watermark, 0));
   }
+  @Override
+  public void emitCheckpoint(final MistCheckpointEvent checkpoint) {
+    // do nothing
+  }
 }

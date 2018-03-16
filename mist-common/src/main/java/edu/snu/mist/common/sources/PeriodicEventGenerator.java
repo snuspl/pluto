@@ -19,6 +19,7 @@ import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.common.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.common.parameters.PeriodicWatermarkDelay;
 import edu.snu.mist.common.parameters.PeriodicWatermarkPeriod;
 import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
@@ -30,11 +31,14 @@ import java.io.IOException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 /**
  * This class represents the watermark source that emits watermark periodically.
  */
 public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V> {
+
+  private static final Logger LOG = Logger.getLogger(PeriodicEventGenerator.class.getName());
 
   /**
    * The period of watermark emission.
@@ -47,16 +51,6 @@ public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V>
   private final long expectedDelay;
 
   /**
-   * The unit of time for period and expectedDelay.
-   */
-  private final TimeUnit timeUnit;
-
-  /**
-   * The scheduler for periodic watermark emission.
-   */
-  private final ScheduledExecutorService scheduler;
-
-  /**
    * The result of service execution.
    */
   private ScheduledFuture result;
@@ -65,37 +59,39 @@ public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V>
   private PeriodicEventGenerator(
       @Parameter(SerializedTimestampExtractUdf.class) final String extractFuncObj,
       @Parameter(PeriodicWatermarkPeriod.class) final long period,
+      @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod,
       @Parameter(PeriodicWatermarkDelay.class) final long delay,
       final ClassLoader classLoader,
       final TimeUnit timeUnit,
       final ScheduledExecutorService scheduler) throws IOException, ClassNotFoundException {
     this(SerializeUtils.deserializeFromString(extractFuncObj, classLoader),
-        period, delay, timeUnit, scheduler);
+        period, checkpointPeriod, delay, timeUnit, scheduler);
   }
 
   @Inject
   public PeriodicEventGenerator(@Parameter(PeriodicWatermarkPeriod.class) final long period,
+                                @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod,
                                 @Parameter(PeriodicWatermarkDelay.class) final long expectedDelay,
                                 final TimeUnit timeUnit,
                                 final ScheduledExecutorService scheduler) {
-    this(null, period, expectedDelay, timeUnit, scheduler);
+    this(null, period, checkpointPeriod, expectedDelay, timeUnit, scheduler);
   }
 
   @Inject
   public PeriodicEventGenerator(final MISTFunction<I, Tuple<V, Long>> extractTimestampFunc,
                                 @Parameter(PeriodicWatermarkPeriod.class) final long period,
+                                @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod,
                                 @Parameter(PeriodicWatermarkDelay.class) final long expectedDelay,
                                 final TimeUnit timeUnit,
                                 final ScheduledExecutorService scheduler) {
-    super(extractTimestampFunc);
-    if (period <= 0L || expectedDelay < 0L) {
+    super(extractTimestampFunc, checkpointPeriod, timeUnit, scheduler);
+    if (period <= 0L || checkpointPeriod < 0L || expectedDelay < 0L) {
       throw new RuntimeException("The period " + period + " should be larger than 0," +
+          " the checkpoint period " + checkpointPeriod + " should be larger than or equal to 0," +
           " and expected delay " + expectedDelay + " should be equal or larger than 0");
     }
     this.period = period;
     this.expectedDelay = expectedDelay;
-    this.timeUnit = timeUnit;
-    this.scheduler = scheduler;
   }
 
   @Override
@@ -103,14 +99,16 @@ public final class PeriodicEventGenerator<I, V> extends EventGeneratorImpl<I, V>
     result = scheduler.scheduleAtFixedRate(new Runnable() {
       public void run() {
         latestWatermarkTimestamp = getCurrentTimestamp() - expectedDelay;
-        outputEmitter.emitWatermark(new MistWatermarkEvent(latestWatermarkTimestamp, false));
+        outputEmitter.emitWatermark(new MistWatermarkEvent(latestWatermarkTimestamp));
       }
     }, period, period, timeUnit);
+    super.startRemain();
   }
 
   @Override
   public void close() {
     result.cancel(true);
+    super.close();
   }
 
   @Override

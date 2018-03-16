@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.common.operators;
 
+import com.rits.cloning.Cloner;
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.SerializeUtils;
@@ -35,7 +37,7 @@ import java.util.logging.Logger;
  * @param <OUT> the type of output data
  */
 public final class ApplyStatefulOperator<IN, OUT>
-    extends OneStreamOperator implements StateHandler {
+    extends OneStreamStateHandlerOperator {
 
   private static final Logger LOG = Logger.getLogger(ApplyStatefulOperator.class.getName());
 
@@ -43,11 +45,6 @@ public final class ApplyStatefulOperator<IN, OUT>
    * The user-defined ApplyStatefulFunction.
    */
   private final ApplyStatefulFunction<IN, OUT> applyStatefulFunction;
-
-  /**
-   * The latest Checkpoint Timestamp.
-   */
-  private long latestCheckpointTimestamp;
 
   @Inject
   private ApplyStatefulOperator(
@@ -61,13 +58,16 @@ public final class ApplyStatefulOperator<IN, OUT>
    */
   @Inject
   public ApplyStatefulOperator(final ApplyStatefulFunction<IN, OUT> applyStatefulFunction) {
+    super();
     this.applyStatefulFunction = applyStatefulFunction;
     this.applyStatefulFunction.initialize();
-    this.latestCheckpointTimestamp = 0L;
   }
 
   @Override
   public void processLeftData(final MistDataEvent input) {
+    if (isEarlierThanRecoveredTimestamp(input)) {
+      return;
+    }
     applyStatefulFunction.update((IN)input.getValue());
     final OUT output = applyStatefulFunction.produceResult();
 
@@ -78,21 +78,23 @@ public final class ApplyStatefulOperator<IN, OUT>
     }
 
     input.setValue(output);
+    updateLatestEventTimestamp(input.getTimestamp());
     outputEmitter.emitData(input);
   }
 
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
-    outputEmitter.emitWatermark(input);
-    if (input.isCheckpoint()) {
-      latestCheckpointTimestamp = input.getTimestamp();
+    if (isEarlierThanRecoveredTimestamp(input)) {
+      return;
     }
+    updateLatestEventTimestamp(input.getTimestamp());
+    outputEmitter.emitWatermark(input);
   }
 
   @Override
-  public Map<String, Object> getOperatorState() {
+  public Map<String, Object> getStateSnapshot() {
     final Map<String, Object> stateMap = new HashMap<>();
-    stateMap.put("applyStatefulFunctionState", applyStatefulFunction.getCurrentState());
+    stateMap.put("applyStatefulFunctionState", new Cloner().deepClone(applyStatefulFunction.getCurrentState()));
     return stateMap;
   }
 
@@ -102,7 +104,8 @@ public final class ApplyStatefulOperator<IN, OUT>
   }
 
   @Override
-  public long getLatestCheckpointTimestamp() {
-    return latestCheckpointTimestamp;
+  public void processLeftCheckpoint(final MistCheckpointEvent input) {
+    checkpointMap.put(latestTimestampBeforeCheckpoint, getStateSnapshot());
+    outputEmitter.emitCheckpoint(input);
   }
 }

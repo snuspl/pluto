@@ -18,7 +18,7 @@ package edu.snu.mist.common.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "Periodic watermark's delay that delays the watermark's timestamps")
+@NamedParameter(doc = "Periodic watermark's delay that delays the watermark's timestamps", default_value = "0")
 public final class PeriodicWatermarkDelay implements Name<Long> {
   // empty
 }

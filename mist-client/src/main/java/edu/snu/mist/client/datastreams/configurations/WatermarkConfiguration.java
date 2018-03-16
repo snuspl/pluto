@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.client.datastreams.configurations;
 
-import org.apache.reef.tang.Configuration;
+import java.util.Map;
 
 /**
  * The class represents watermark configuration.
@@ -23,8 +23,8 @@ import org.apache.reef.tang.Configuration;
  */
 public final class WatermarkConfiguration {
 
-  private final Configuration conf;
-  WatermarkConfiguration(final Configuration conf) {
+  private final Map<String, String> conf;
+  WatermarkConfiguration(final Map<String, String> conf) {
     this.conf = conf;
   }
 
@@ -32,7 +32,7 @@ public final class WatermarkConfiguration {
    * Get the configuration.
    * @return configuration
    */
-  public Configuration getConfiguration() {
+  public Map<String, String> getConfiguration() {
     return conf;
   }
 }

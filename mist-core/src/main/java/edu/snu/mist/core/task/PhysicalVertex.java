@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.core.task;
 
+import java.util.Map;
+
 /**
  * This interface represents physical vertices of the query.
  * The physical vertex is one of the source, operator, or sink.
@@ -32,5 +34,5 @@ interface PhysicalVertex {
    * Get the configuration of the vertex.
    * @return serialized configuration
    */
-  String getConfiguration();
+  Map<String, String> getConfiguration();
 }

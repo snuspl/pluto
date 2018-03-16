@@ -48,7 +48,7 @@ public final class JoinOperatorTest {
     window.putData(new MistDataEvent(new Tuple2<>(null, new Tuple2<>(1, 4000L)), 50));
     window.putData(new MistDataEvent(new Tuple2<>(null, new Tuple2<>(2, 5000L)), 60));
     final MistDataEvent dataEvent = new MistDataEvent(window, 60L);
-    final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(101L, false);
+    final MistWatermarkEvent watermarkEvent = new MistWatermarkEvent(101L);
 
     // predicate that tests whether two input data have same key or not
     final MISTBiPredicate<Tuple2<String, Integer>, Tuple2<Integer, Long>> joinPredicate =

@@ -28,27 +28,27 @@ import org.apache.reef.tang.formats.RequiredParameter;
  */
 public final class CepOperatorConfiguration extends ConfigurationModuleBuilder {
 
-    /**
-     * Required event list.
-     */
-    public static final RequiredParameter<String> CEP_EVENTS = new RequiredParameter<>();
+  /**
+   * Required event list.
+   */
+  public static final RequiredParameter<String> CEP_EVENTS = new RequiredParameter<>();
 
-    /**
-     * Required window time.
-     */
-    public static final RequiredParameter<Long> WINDOW_TIME = new RequiredParameter<>();
+  /**
+   * Required window time.
+   */
+  public static final RequiredParameter<Long> WINDOW_TIME = new RequiredParameter<>();
 
-    /**
-     * Required operator class.
-     */
-    public static final RequiredImpl<Operator> OPERATOR = new RequiredImpl<>();
+  /**
+   * Required operator class.
+   */
+  public static final RequiredImpl<Operator> OPERATOR = new RequiredImpl<>();
 
-    /**
-     * A configuration for binding the class of the user-defined function.
-     */
-    public static final ConfigurationModule CONF = new CepOperatorConfiguration()
-            .bindNamedParameter(CepEventPatterns.class, CEP_EVENTS)
-            .bindNamedParameter(WindowTime.class, WINDOW_TIME)
-            .bindImplementation(Operator.class, OPERATOR)
-            .build();
+  /**
+   * A configuration for binding the class of the user-defined function.
+   */
+  public static final ConfigurationModule CONF = new CepOperatorConfiguration()
+      .bindNamedParameter(CepEventPatterns.class, CEP_EVENTS)
+      .bindNamedParameter(WindowTime.class, WINDOW_TIME)
+      .bindImplementation(Operator.class, OPERATOR)
+      .build();
 }

@@ -13,19 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.client.utils;
+package edu.snu.mist.common.configurations;
 
-import edu.snu.mist.client.cep.CepQualifier;
+public final class ConfValues {
 
-import java.util.List;
-import java.util.Map;
+  private ConfValues() {
 
-public final class CepExampleQualifier<T> implements CepQualifier<T> {
-  @Override
-  public boolean test(final Map<String, List<T>> stringCepClassTypeMap) {
-    return true;
   }
 
-  public CepExampleQualifier() {
+  public enum SourceType {
+    KAFKA,
+    NETTY,
+    MQTT
+  }
+
+  public enum OperatorType {
+    MAP,
+    FLAT_MAP,
+    FILTER,
+    APPLY_STATEFUL,
+    STATE_TRANSITION,
+    CEP,
+    REDUCE_BY_KEY,
+    UNION,
+    TIME_WINDOW,
+    COUNT_WINDOW,
+    SESSION_WINDOW,
+    JOIN,
+    AGGREGATE_WINDOW,
+    APPLY_STATEFUL_WINDOW
+  }
+
+  public enum SinkType {
+    NETTY,
+    MQTT
+  }
+
+  public enum EventGeneratorType {
+    PERIODIC_EVENT_GEN,
+    PUNCTUATED_EVENT_GEN
   }
 }

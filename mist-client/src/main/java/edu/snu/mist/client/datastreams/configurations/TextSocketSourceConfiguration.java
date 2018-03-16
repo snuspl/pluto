@@ -16,6 +16,8 @@
 package edu.snu.mist.client.datastreams.configurations;
 
 import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.configurations.ConfKeys;
+import edu.snu.mist.common.configurations.ConfValues;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
 import edu.snu.mist.common.parameters.SocketServerIp;
@@ -23,11 +25,11 @@ import edu.snu.mist.common.parameters.SocketServerPort;
 import edu.snu.mist.common.sources.DataGenerator;
 import edu.snu.mist.common.sources.NettyTextDataGenerator;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.tang.Configuration;
-import org.apache.reef.tang.Configurations;
 import org.apache.reef.tang.formats.*;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The class represents the text socket source configuration.
@@ -78,43 +80,32 @@ public final class TextSocketSourceConfiguration extends ConfigurationModuleBuil
     private String socketServerAddr;
     private int socketServerPort;
     private MISTFunction<String, Tuple<String, Long>> extractFunc;
-    private Class<? extends MISTFunction<String, Tuple<String, Long>>> extractFuncClass;
-    private Configuration extractFuncConf;
 
     /**
      * Tests that required parameters are set and builds the TextSocketSourceConfiguration.
      * @return the configuration
      */
     public SourceConfiguration build() {
-      if (extractFunc != null && extractFuncClass != null) {
-        throw new IllegalArgumentException("Cannot bind both extractFunc and extractFuncClass");
-      }
+      final Map<String, String> confMap = new HashMap<>();
+      confMap.put(ConfKeys.SourceConf.SOURCE_TYPE.name(), ConfValues.SourceType.NETTY.name());
 
-      if (extractFunc == null && extractFuncClass == null) {
+      if (extractFunc == null) {
         // No udf
-        return new SourceConfiguration(CONF
-            .set(SOCKET_HOST_ADDR, socketServerAddr)
-            .set(SOCKET_HOST_PORT, socketServerPort)
-            .build(), SourceConfiguration.SourceType.SOCKET);
-      } else if (extractFunc != null) {
+        confMap.put(ConfKeys.NettySourceConf.SOURCE_ADDR.name(), socketServerAddr);
+        confMap.put(ConfKeys.NettySourceConf.SOURCE_PORT.name(), String.valueOf(socketServerPort));
+        return new SourceConfiguration(confMap);
+      } else {
         // Lambda object is set
         try {
-          return new SourceConfiguration(CONF
-              .set(SOCKET_HOST_ADDR, socketServerAddr)
-              .set(SOCKET_HOST_PORT, socketServerPort)
-              .set(TIMESTAMP_EXTRACT_OBJECT, SerializeUtils.serializeToString(extractFunc))
-              .build(), SourceConfiguration.SourceType.SOCKET);
+          confMap.put(ConfKeys.NettySourceConf.SOURCE_ADDR.name(), socketServerAddr);
+          confMap.put(ConfKeys.NettySourceConf.SOURCE_PORT.name(), String.valueOf(socketServerPort));
+          confMap.put(ConfKeys.SourceConf.TIMESTAMP_EXTRACT_FUNC.name(),
+              SerializeUtils.serializeToString(extractFunc));
+          return new SourceConfiguration(confMap);
         } catch (final IOException e) {
           e.printStackTrace();
           throw new RuntimeException(e);
         }
-      } else {
-        // Class binding
-        return new SourceConfiguration(Configurations.merge(CONF
-            .set(SOCKET_HOST_ADDR, socketServerAddr)
-            .set(SOCKET_HOST_PORT, socketServerPort)
-            .set(TIMESTAMP_EXTRACT_FUNC, extractFuncClass)
-            .build(), extractFuncConf), SourceConfiguration.SourceType.SOCKET);
       }
     }
 
@@ -147,21 +138,6 @@ public final class TextSocketSourceConfiguration extends ConfigurationModuleBuil
     public TextSocketSourceConfigurationBuilder setTimestampExtractionFunction(
         final MISTFunction<String, Tuple<String, Long>> function) {
       extractFunc = function;
-      return this;
-    }
-
-    /**
-     * Sets the timestamp extract function with its class and configuration.
-     * This is an optional setting for event-time processing.
-     * @param functionClass the class of the timestamp extract function
-     * @param functionConf the configuration of the extract function
-     * @return the configured SourceBuilder
-     */
-    public TextSocketSourceConfigurationBuilder setTimestampExtractionFunction(
-        final Class<? extends MISTFunction<String, Tuple<String, Long>>> functionClass,
-        final Configuration functionConf) {
-      extractFuncClass = functionClass;
-      extractFuncConf = functionConf;
       return this;
     }
   }

@@ -24,6 +24,8 @@ import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 
+import java.util.Map;
+
 /**
  * The basic implementation class for MISTStream.
  */
@@ -34,33 +36,14 @@ class MISTStreamImpl<OUT> implements MISTStream<OUT> {
    */
   protected final DAG<MISTStream, MISTEdge> dag;
 
-    @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        final MISTStreamImpl<?> that = (MISTStreamImpl<?>) o;
-
-        return conf != null ? conf.equals(that.conf) : that.conf == null;
-    }
-
-    @Override
-    public int hashCode() {
-        return conf != null ? conf.hashCode() : 0;
-    }
-
     /**
    * Configuration of the stream.
 
    */
-  protected final Configuration conf;
+  protected final Map<String, String> conf;
 
   public MISTStreamImpl(final DAG<MISTStream, MISTEdge> dag,
-                        final Configuration conf) {
+                        final Map<String, String> conf) {
     this.dag = dag;
     this.conf = conf;
   }
@@ -93,7 +76,7 @@ class MISTStreamImpl<OUT> implements MISTStream<OUT> {
    * @return continuous stream
    */
   protected <OUT> ContinuousStream<OUT> transformToSingleInputContinuousStream(
-      final Configuration opConf,
+      final Map<String, String> opConf,
       final MISTStream upStream) {
     final ContinuousStream<OUT> downStream = new ContinuousStreamImpl<>(dag, opConf);
     dag.addVertex(downStream);
@@ -102,7 +85,7 @@ class MISTStreamImpl<OUT> implements MISTStream<OUT> {
   }
 
   @Override
-  public Configuration getConfiguration() {
+  public Map<String, String> getConfiguration() {
     return conf;
   }
 }

@@ -123,9 +123,9 @@ public final class QueryManagerTest {
     // Create source
     final TestDataGenerator dataGenerator = new TestDataGenerator(inputs);
     final EventGenerator eventGenerator =
-        new PunctuatedEventGenerator(null, input -> false, null);
+        new PunctuatedEventGenerator(null, input -> false, null, 0, null, null);
     final PhysicalSource src = new PhysicalSourceImpl("testSource",
-        "conf", dataGenerator, eventGenerator);
+        new HashMap<>(), dataGenerator, eventGenerator);
 
     final Injector injector = Tang.Factory.getTang().newInjector(conf);
 

@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.operators.OneStreamOperator;
@@ -162,6 +163,11 @@ public final class OperatorChainTest {
     public void processLeftWatermark(final MistWatermarkEvent watermark) {
       outputEmitter.emitWatermark(watermark);
     }
+
+    @Override
+    public void processLeftCheckpoint(final MistCheckpointEvent input) {
+      outputEmitter.emitCheckpoint(input);
+    }
   }
 
   /**
@@ -180,6 +186,11 @@ public final class OperatorChainTest {
     public void processLeftWatermark(final MistWatermarkEvent watermark) {
       outputEmitter.emitWatermark(watermark);
     }
+
+    @Override
+    public void processLeftCheckpoint(final MistCheckpointEvent input) {
+      outputEmitter.emitCheckpoint(input);
+    }
   }
 
   /**
@@ -197,6 +208,11 @@ public final class OperatorChainTest {
     @Override
     public void processLeftWatermark(final MistWatermarkEvent watermark) {
       outputEmitter.emitWatermark(watermark);
+    }
+
+    @Override
+    public void processLeftCheckpoint(final MistCheckpointEvent input) {
+      outputEmitter.emitCheckpoint(input);
     }
   }
 }

@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.common.operators;
 
+import com.rits.cloning.Cloner;
+import edu.snu.mist.common.MistCheckpointEvent;
 import edu.snu.mist.common.MistDataEvent;
 import edu.snu.mist.common.MistWatermarkEvent;
 import edu.snu.mist.common.parameters.WindowInterval;
@@ -35,7 +37,7 @@ import java.util.logging.Logger;
  * After that, a new session is created.
  * @param <T> the type of data
  */
-public final class SessionWindowOperator<T> extends OneStreamOperator implements StateHandler {
+public final class SessionWindowOperator<T> extends OneStreamStateHandlerOperator {
   private static final Logger LOG = Logger.getLogger(SessionWindowOperator.class.getName());
 
   /**
@@ -58,16 +60,11 @@ public final class SessionWindowOperator<T> extends OneStreamOperator implements
    */
   private boolean startedNewWindow = false;
 
-  /**
-   * The latest Checkpoint Timestamp.
-   */
-  private long latestCheckpointTimestamp;
-
   @Inject
   public SessionWindowOperator(@Parameter(WindowInterval.class) final int sessionInterval) {
+    super();
     this.sessionInterval = sessionInterval;
     currentWindow = null;
-    this.latestCheckpointTimestamp = 0L;
   }
 
   /**
@@ -98,6 +95,9 @@ public final class SessionWindowOperator<T> extends OneStreamOperator implements
 
   @Override
   public void processLeftData(final MistDataEvent input) {
+    if (isEarlierThanRecoveredTimestamp(input)) {
+      return;
+    }
     if (LOG.isLoggable(Level.FINE)) {
       LOG.log(Level.FINE, "{0} puts input data {1} into current window {2}",
           new Object[]{this.getClass().getName(), input, currentWindow});
@@ -107,21 +107,23 @@ public final class SessionWindowOperator<T> extends OneStreamOperator implements
     currentWindow.putData(input);
     startedNewWindow = true;
     latestDataTimestamp = input.getTimestamp();
+    updateLatestEventTimestamp(latestDataTimestamp);
   }
 
   @Override
   public void processLeftWatermark(final MistWatermarkEvent input) {
+    if (isEarlierThanRecoveredTimestamp(input)) {
+      return;
+    }
     emitAndCreateWindow(input.getTimestamp());
     currentWindow.putWatermark(input);
-    if (input.isCheckpoint()) {
-      latestCheckpointTimestamp = input.getTimestamp();
-    }
+    updateLatestEventTimestamp(input.getTimestamp());
   }
 
   @Override
-  public Map<String, Object> getOperatorState() {
+  public Map<String, Object> getStateSnapshot() {
     final Map<String, Object> stateMap = new HashMap<>();
-    stateMap.put("currentWindow", currentWindow);
+    stateMap.put("currentWindow", new Cloner().deepClone(currentWindow));
     stateMap.put("latestDataTimestamp", latestDataTimestamp);
     stateMap.put("startedNewWindow", startedNewWindow);
     return stateMap;
@@ -136,7 +138,7 @@ public final class SessionWindowOperator<T> extends OneStreamOperator implements
   }
 
   @Override
-  public long getLatestCheckpointTimestamp() {
-    return latestCheckpointTimestamp;
+  public void processLeftCheckpoint(final MistCheckpointEvent input) {
+    checkpointMap.put(latestTimestampBeforeCheckpoint, getStateSnapshot());
   }
 }
