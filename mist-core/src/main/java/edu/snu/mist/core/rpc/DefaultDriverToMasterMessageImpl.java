@@ -15,13 +15,13 @@
  */
 package edu.snu.mist.core.rpc;
 
-import edu.snu.mist.core.master.MasterRecoveryManager;
 import edu.snu.mist.core.master.ProxyToTaskMap;
 import edu.snu.mist.core.master.QueryAllocationManager;
+import edu.snu.mist.core.master.RecoveryScheduler;
 import edu.snu.mist.core.master.TaskStatsUpdater;
+import edu.snu.mist.core.parameters.MasterToTaskPort;
 import edu.snu.mist.core.parameters.TaskInfoGatherPeriod;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
-import edu.snu.mist.formats.avro.IPAddress;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
 import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.avro.ipc.NettyTransceiver;
@@ -50,7 +50,7 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   /**
    * The master-side failure recovery manager.
    */
-  private final MasterRecoveryManager recoveryManager;
+  private final RecoveryScheduler recoveryManager;
 
   /**
    * The task-proxyClient map.
@@ -67,26 +67,33 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
    */
   private final long taskInfoGatherTerm;
 
+  /**
+   * The port used for master-to-task avro ipc.
+   */
+  private final int masterToTaskPort;
+
   @Inject
   private DefaultDriverToMasterMessageImpl(final QueryAllocationManager queryAllocationManager,
-                                           final MasterRecoveryManager recoveryManager,
+                                           final RecoveryScheduler recoveryManager,
                                            final ProxyToTaskMap proxyToTaskMap,
-                                           @Parameter(TaskInfoGatherPeriod.class) final long taskInfoGatherTerm) {
+                                           @Parameter(TaskInfoGatherPeriod.class) final long taskInfoGatherTerm,
+                                           @Parameter(MasterToTaskPort.class) final int masterToTaskPort) {
     this.queryAllocationManager = queryAllocationManager;
     this.recoveryManager = recoveryManager;
     this.proxyToTaskMap = proxyToTaskMap;
     this.taskInfoGatherTerm = taskInfoGatherTerm;
     this.taskInfoGatherer = Executors.newSingleThreadScheduledExecutor();
+    this.masterToTaskPort = masterToTaskPort;
   }
 
   @Override
-  public boolean addTask(final IPAddress taskAddress) {
-    queryAllocationManager.addTask(taskAddress);
+  public boolean addTask(final String taskHostname) {
+    queryAllocationManager.addTask(taskHostname);
     return true;
   }
 
   @Override
-  public boolean setupMasterToTaskConn(final IPAddress taskAddress) {
+  public boolean setupMasterToTaskConn(final String taskHostname) {
     // All the codes here are executed in synchronized way.
     // However, to avoid netty deadlock detector bug we need to make a separate thread for making a new avro connection.
     final ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -95,9 +102,9 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
         () -> {
           try {
             final NettyTransceiver taskServer =
-                new NettyTransceiver(new InetSocketAddress(taskAddress.getHostAddress(), taskAddress.getPort()));
+                new NettyTransceiver(new InetSocketAddress(taskHostname, masterToTaskPort));
             final MasterToTaskMessage proxyToTask = SpecificRequestor.getClient(MasterToTaskMessage.class, taskServer);
-            proxyToTaskMap.addNewProxy(taskAddress, proxyToTask);
+            proxyToTaskMap.addNewProxy(taskHostname, proxyToTask);
             return true;
           } catch (final IOException e) {
             LOG.log(Level.SEVERE, "The master-to-task connection setup has failed! " + e.toString());
@@ -125,8 +132,8 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   }
 
   @Override
-  public boolean notifyFailedTask(final IPAddress taskAddress) {
-    final TaskStats taskStats = queryAllocationManager.removeTask(taskAddress);
+  public boolean notifyFailedTask(final String taskHostname) {
+    final TaskStats taskStats = queryAllocationManager.removeTask(taskHostname);
     recoveryManager.addFailedGroups(taskStats.getGroupStatsMap());
     return true;
   }

@@ -15,10 +15,9 @@
  */
 package edu.snu.mist.core.rpc;
 
-import edu.snu.mist.core.master.MasterRecoveryManager;
+import edu.snu.mist.core.master.RecoveryScheduler;
 import edu.snu.mist.core.master.QueryAllocationManager;
 import edu.snu.mist.formats.avro.GroupStats;
-import edu.snu.mist.formats.avro.IPAddress;
 import edu.snu.mist.formats.avro.RecoveryInfo;
 import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import org.apache.avro.AvroRemoteException;
@@ -39,14 +38,14 @@ public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage
   /**
    * The shared recovery manager.
    */
-  private final MasterRecoveryManager masterRecoveryManager;
+  private final RecoveryScheduler recoveryScheduler;
 
   @Inject
   private DefaultTaskToMasterMessageImpl(
       final QueryAllocationManager queryAllocationManager,
-      final MasterRecoveryManager masterRecoveryManager) {
+      final RecoveryScheduler recoveryScheduler) {
     this.queryAllocationManager = queryAllocationManager;
-    this.masterRecoveryManager = masterRecoveryManager;
+    this.recoveryScheduler = recoveryScheduler;
   }
 
   @Override
@@ -58,7 +57,7 @@ public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage
 
   @Override
   public RecoveryInfo getRecoveringGroups(final String taskHostname) throws AvroRemoteException {
-    final List<String> recoveringGroups = masterRecoveryManager.getRecoveringGroups(taskHostname);
+    final List<String> recoveringGroups = recoveryScheduler.getRecoveringGroups(taskHostname);
     return RecoveryInfo.newBuilder()
         .setRecoveryGroupList(recoveringGroups)
         .build();

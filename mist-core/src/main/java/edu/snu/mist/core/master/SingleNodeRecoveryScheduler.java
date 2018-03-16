@@ -32,9 +32,9 @@ import java.util.logging.Logger;
 /**
  * The recovery manager which leverages only a single node in recovery process.
  */
-public final class SingleNodeMasterRecoveryManager implements MasterRecoveryManager {
+public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
 
-  private static final Logger LOG = Logger.getLogger(MasterRecoveryManager.class.getName());
+  private static final Logger LOG = Logger.getLogger(RecoveryScheduler.class.getName());
 
   /**
    * The map which contains all the failed groups.
@@ -77,7 +77,7 @@ public final class SingleNodeMasterRecoveryManager implements MasterRecoveryMana
   private boolean isRecovering;
 
   @Inject
-  private SingleNodeMasterRecoveryManager(
+  private SingleNodeRecoveryScheduler(
       final QueryAllocationManager queryAllocationManager,
       final ProxyToTaskMap proxyToTaskMap) {
     this.allFailedGroups = new ConcurrentHashMap<>();

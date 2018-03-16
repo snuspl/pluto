@@ -16,7 +16,6 @@
 package edu.snu.mist.core.master;
 
 import edu.snu.mist.formats.avro.GroupStats;
-import edu.snu.mist.formats.avro.IPAddress;
 import org.apache.commons.lang.NotImplementedException;
 
 import javax.inject.Inject;
@@ -27,10 +26,10 @@ import java.util.Map;
  * The recovery manager which leverages multiple nodes in fault recovery process.
  * TODO: [MIST-986] Implement distributed recovery.
  */
-public final class DistributedMasterRecoveryManager implements MasterRecoveryManager {
+public final class DistributedRecoveryScheduler implements RecoveryScheduler {
 
   @Inject
-  private DistributedMasterRecoveryManager() {
+  private DistributedRecoveryScheduler() {
   }
 
   @Override
@@ -44,7 +43,8 @@ public final class DistributedMasterRecoveryManager implements MasterRecoveryMan
   }
 
   @Override
-  public List<String> getRecoveringGroups(final IPAddress ipAddress) {
+  public List<String> getRecoveringGroups(final String taskHostname) {
     throw new NotImplementedException();
   }
+
 }

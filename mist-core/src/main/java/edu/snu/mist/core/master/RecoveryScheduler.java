@@ -21,9 +21,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The interface for fault recovery managers.
+ * The interface for fault master-side recovery scheduler.
  */
-public interface MasterRecoveryManager {
+public interface RecoveryScheduler {
 
   /**
    * Add the failed groups to the recovery manager.

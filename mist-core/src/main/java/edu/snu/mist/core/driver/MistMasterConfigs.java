@@ -15,9 +15,9 @@
  */
 package edu.snu.mist.core.driver;
 
-import edu.snu.mist.core.master.DistributedMasterRecoveryManager;
-import edu.snu.mist.core.master.MasterRecoveryManager;
-import edu.snu.mist.core.master.SingleNodeMasterRecoveryManager;
+import edu.snu.mist.core.master.DistributedRecoveryScheduler;
+import edu.snu.mist.core.master.RecoveryScheduler;
+import edu.snu.mist.core.master.SingleNodeRecoveryScheduler;
 import edu.snu.mist.core.parameters.DistributedRecoveryOn;
 import edu.snu.mist.core.parameters.OverloadedTaskThreshold;
 import edu.snu.mist.core.parameters.TaskInfoGatherPeriod;
@@ -64,9 +64,9 @@ public final class MistMasterConfigs {
     jcb.bindNamedParameter(TaskInfoGatherPeriod.class, String.valueOf(taskInfoGatherPeriod));
     jcb.bindNamedParameter(OverloadedTaskThreshold.class, String.valueOf(overloadedTaskThreshold));
     if (distributedRecoveryOn) {
-      jcb.bindImplementation(MasterRecoveryManager.class, DistributedMasterRecoveryManager.class);
+      jcb.bindImplementation(RecoveryScheduler.class, DistributedRecoveryScheduler.class);
     } else {
-      jcb.bindImplementation(MasterRecoveryManager.class, SingleNodeMasterRecoveryManager.class);
+      jcb.bindImplementation(RecoveryScheduler.class, SingleNodeRecoveryScheduler.class);
     }
     return jcb.build();
   }
