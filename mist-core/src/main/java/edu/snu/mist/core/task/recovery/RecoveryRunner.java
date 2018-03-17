@@ -15,19 +15,39 @@
  */
 package edu.snu.mist.core.task.recovery;
 
+import edu.snu.mist.core.task.checkpointing.CheckpointManager;
+
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * The runner which actually recovers the groups given from mist master.
  */
 public class RecoveryRunner implements Runnable {
 
+  private static final Logger LOG = Logger.getLogger(RecoveryRunner.class.getName());
+
   private String recoveryGroupName;
 
-  public RecoveryRunner(final String recoveryGroupName) {
+  /**
+   * The checkpoint manager for loading checkpoints.
+   */
+  private CheckpointManager checkpointManager;
+
+  public RecoveryRunner(final String recoveryGroupName, final CheckpointManager checkpointManager) {
     this.recoveryGroupName = recoveryGroupName;
+    this.checkpointManager = checkpointManager;
   }
 
   @Override
   public void run() {
     // TODO: Implement group recovery here.
+    try {
+      checkpointManager.recoverApplication(recoveryGroupName);
+    } catch (final IOException e) {
+      LOG.log(Level.WARNING, "There is no such app {0}.",
+        new Object[] {recoveryGroupName});
+    }
   }
 }

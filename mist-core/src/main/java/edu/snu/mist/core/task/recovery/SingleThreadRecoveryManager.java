@@ -18,6 +18,7 @@ package edu.snu.mist.core.task.recovery;
 import edu.snu.mist.core.parameters.MasterHostAddress;
 import edu.snu.mist.core.parameters.TaskToMasterPort;
 import edu.snu.mist.core.rpc.AvroUtils;
+import edu.snu.mist.core.task.checkpointing.CheckpointManager;
 import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -41,6 +42,11 @@ public final class SingleThreadRecoveryManager implements RecoveryManager {
    */
   private TaskToMasterMessage proxyToMaster;
 
+  /**
+   * The checkpoint manager for loading checkpoints.
+   */
+  private CheckpointManager checkpointManager;
+
   @Inject
   private SingleThreadRecoveryManager(
       @Parameter(MasterHostAddress.class) final String masterHostAddress,
@@ -56,7 +62,8 @@ public final class SingleThreadRecoveryManager implements RecoveryManager {
     // Is another recovery already running?
     if (isRecoveryRunning.compareAndSet(false, true)) {
       // If not, start single-threaded recovery.
-      final Thread thread = new Thread(new SingleThreadRecoveryRunner(isRecoveryRunning, proxyToMaster));
+      final Thread thread = new Thread(
+          new SingleThreadRecoveryRunner(isRecoveryRunning, proxyToMaster, checkpointManager));
       thread.start();
       return true;
     } else {

@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.task.recovery;
 
+import edu.snu.mist.core.task.checkpointing.CheckpointManager;
 import edu.snu.mist.formats.avro.RecoveryInfo;
 import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import org.apache.avro.AvroRemoteException;
@@ -49,11 +50,18 @@ public class SingleThreadRecoveryRunner implements Runnable {
    */
   private ExecutorService singleThreadedExecutorService;
 
+  /**
+   * The checkpoint manager for loading checkpoints.
+   */
+  private CheckpointManager checkpointManager;
+
   public SingleThreadRecoveryRunner(final AtomicBoolean isRecoveryRunning,
-                                    final TaskToMasterMessage proxyToMaster) {
+                                    final TaskToMasterMessage proxyToMaster,
+                                    final CheckpointManager checkpointManager) {
     this.isRecoveryRunning = isRecoveryRunning;
     this.proxyToMaster = proxyToMaster;
     this.singleThreadedExecutorService = Executors.newSingleThreadExecutor();
+    this.checkpointManager = checkpointManager;
   }
 
   public void run() {
@@ -69,7 +77,7 @@ public class SingleThreadRecoveryRunner implements Runnable {
         } else {
           final List<Future> futureList = new ArrayList<>();
           for (final String recoveryGroup : recoveryInfo.getRecoveryGroupList()) {
-            futureList.add(singleThreadedExecutorService.submit(new RecoveryRunner(recoveryGroup)));
+            futureList.add(singleThreadedExecutorService.submit(new RecoveryRunner(recoveryGroup, checkpointManager)));
           }
           // Wait for the last group recovery finishes.
           futureList.get(futureList.size() - 1).get();
