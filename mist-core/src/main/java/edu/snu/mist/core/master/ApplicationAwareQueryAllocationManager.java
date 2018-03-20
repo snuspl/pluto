@@ -30,11 +30,15 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The app-allocation manager which allocates queries in application-aware way.
  */
 public final class ApplicationAwareQueryAllocationManager implements QueryAllocationManager {
+
+  private static final Logger LOG = Logger.getLogger(ApplicationAwareQueryAllocationManager.class.toString());
 
   /**
    * The map which maintains the app-task list information.
@@ -134,6 +138,7 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
 
   @Override
   public String createGroup(final String taskHostname, final GroupStats groupStats) {
+    LOG.log(Level.INFO, "Creating new group from {0}" + taskHostname);
     final String appId = groupStats.getAppId();
     if (!appGroupCounterMap.containsKey(appId)) {
       appGroupCounterMap.putIfAbsent(appId, new AtomicInteger(0));
@@ -141,6 +146,7 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
     final AtomicInteger groupCounter = appGroupCounterMap.get(appId);
     // Return group name.
     final String groupName = String.format("%s_%d", appId, groupCounter.getAndIncrement());
+    LOG.log(Level.INFO, "Create new group : {0}", groupName);
     // Update the group status.
     taskStatsMap.get(taskHostname).getGroupStatsMap().put(groupName, groupStats);
     return groupName;

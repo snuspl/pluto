@@ -15,7 +15,8 @@
  */
 package edu.snu.mist.core.task.groupaware;
 
-import edu.snu.mist.core.parameters.MasterHostAddress;
+import edu.snu.mist.core.parameters.MasterHostname;
+import edu.snu.mist.core.parameters.TaskHostname;
 import edu.snu.mist.core.parameters.TaskToMasterPort;
 import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.MockTaskToMasterMessage;
@@ -73,7 +74,8 @@ public class EventProcessorManagerTest {
     jcb.bindNamedParameter(EventProcessorUpperBound.class, Integer.toString(MAX_NUM_THREADS));
     jcb.bindNamedParameter(EventProcessorLowerBound.class, Integer.toString(MIN_NUM_THREADS));
     jcb.bindNamedParameter(GracePeriod.class, Integer.toString(0));
-    jcb.bindNamedParameter(MasterHostAddress.class, "localhost");
+    jcb.bindNamedParameter(MasterHostname.class, "localhost");
+    jcb.bindNamedParameter(TaskHostname.class, "localhost");
     jcb.bindImplementation(EventProcessorFactory.class, TestEventProcessorFactory.class);
     groupRebalancer = mock(GroupRebalancer.class);
     groupBalancer = new TestGroupAssigner();
@@ -170,7 +172,8 @@ public class EventProcessorManagerTest {
     jcb.bindNamedParameter(EventProcessorLowerBound.class, Integer.toString(MIN_NUM_THREADS));
     jcb.bindNamedParameter(GracePeriod.class, Integer.toString(gracePeriod));
     jcb.bindImplementation(EventProcessorFactory.class, TestEventProcessorFactory.class);
-    jcb.bindNamedParameter(MasterHostAddress.class, "localhost");
+    jcb.bindNamedParameter(MasterHostname.class, "localhost");
+    jcb.bindNamedParameter(TaskHostname.class, "localhost");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
 
     long prevAdjustTime = System.nanoTime();

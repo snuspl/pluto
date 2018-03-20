@@ -22,7 +22,8 @@ import edu.snu.mist.common.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.common.shared.KafkaSharedResource;
 import edu.snu.mist.common.shared.MQTTResource;
 import edu.snu.mist.common.shared.NettySharedResource;
-import edu.snu.mist.core.parameters.MasterHostAddress;
+import edu.snu.mist.core.parameters.MasterHostname;
+import edu.snu.mist.core.parameters.TaskHostname;
 import edu.snu.mist.core.parameters.TaskToMasterPort;
 import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.*;
@@ -43,9 +44,7 @@ import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
@@ -122,6 +121,11 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
   private final TaskToMasterMessage proxyToMaster;
 
   /**
+   * The hostname of this task seen from MistMaster.
+   */
+  private final String taskHostname;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -136,8 +140,9 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
                                      final GroupAllocationTableModifier groupAllocationTableModifier,
                                      final ApplicationMap applicationMap,
                                      @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod,
-                                     @Parameter(MasterHostAddress.class) final String masterHostAddress,
-                                     @Parameter(TaskToMasterPort.class) final int taskToMasterPort) throws IOException {
+                                     @Parameter(MasterHostname.class) final String masterHostAddress,
+                                     @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
+                                     @Parameter(TaskHostname.class) final String taskHostname) throws IOException {
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.eventProcessorManager = eventProcessorManager;
@@ -151,6 +156,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     this.checkpointPeriod = checkpointPeriod;
     this.proxyToMaster = AvroUtils.createAvroProxy(TaskToMasterMessage.class,
         new InetSocketAddress(masterHostAddress, taskToMasterPort));
+    this.taskHostname = taskHostname;
   }
 
   /**
@@ -230,14 +236,14 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     jcb.bindNamedParameter(JarFilePath.class, paths.get(0));
     // Get a unique group id from the MistMaster
     try {
-      final String groupId = proxyToMaster.createGroup(InetAddress.getLocalHost().getHostName(),
+      final String groupId = proxyToMaster.createGroup(taskHostname,
           GroupStats.newBuilder()
               .setGroupCpuLoad(0.0)
               .setGroupQueryNum(1)
               .setAppId(appId)
               .build());
       jcb.bindNamedParameter(GroupId.class, groupId);
-    } catch (final UnknownHostException | AvroRemoteException e) {
+    } catch (final AvroRemoteException e) {
       e.printStackTrace();
     }
     jcb.bindNamedParameter(PeriodicCheckpointPeriod.class, String.valueOf(checkpointPeriod));

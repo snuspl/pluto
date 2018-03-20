@@ -15,7 +15,8 @@
  */
 package edu.snu.mist.core.task.recovery;
 
-import edu.snu.mist.core.parameters.MasterHostAddress;
+import edu.snu.mist.core.parameters.MasterHostname;
+import edu.snu.mist.core.parameters.TaskHostname;
 import edu.snu.mist.core.parameters.TaskToMasterPort;
 import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.checkpointing.CheckpointManager;
@@ -47,14 +48,23 @@ public final class SingleThreadRecoveryManager implements RecoveryManager {
    */
   private CheckpointManager checkpointManager;
 
+  /**
+   * The hostname of this task which is seen from the MistMaster.
+   */
+  private String taskHostname;
+
   @Inject
   private SingleThreadRecoveryManager(
-      @Parameter(MasterHostAddress.class) final String masterHostAddress,
-      @Parameter(TaskToMasterPort.class) final int taskToMasterPort) throws IOException {
+      @Parameter(MasterHostname.class) final String masterHostAddress,
+      @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
+      final CheckpointManager checkpointManager,
+      @Parameter(TaskHostname.class) final String taskHostname) throws IOException {
     isRecoveryRunning = new AtomicBoolean(false);
     // Setup task-to-master connection.
     this.proxyToMaster = AvroUtils.createAvroProxy(TaskToMasterMessage.class,
         new InetSocketAddress(masterHostAddress, taskToMasterPort));
+    this.checkpointManager = checkpointManager;
+    this.taskHostname = taskHostname;
   }
 
   @Override
@@ -63,7 +73,7 @@ public final class SingleThreadRecoveryManager implements RecoveryManager {
     if (isRecoveryRunning.compareAndSet(false, true)) {
       // If not, start single-threaded recovery.
       final Thread thread = new Thread(
-          new SingleThreadRecoveryRunner(isRecoveryRunning, proxyToMaster, checkpointManager));
+          new SingleThreadRecoveryRunner(isRecoveryRunning, proxyToMaster, checkpointManager, taskHostname));
       thread.start();
       return true;
     } else {

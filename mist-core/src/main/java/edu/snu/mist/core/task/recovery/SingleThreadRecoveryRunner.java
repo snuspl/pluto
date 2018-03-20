@@ -20,8 +20,6 @@ import edu.snu.mist.formats.avro.RecoveryInfo;
 import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import org.apache.avro.AvroRemoteException;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -55,19 +53,26 @@ public class SingleThreadRecoveryRunner implements Runnable {
    */
   private CheckpointManager checkpointManager;
 
+  /**
+   * The task hostname which can be seen from MistMaster.
+   */
+  private String taskHostname;
+
   public SingleThreadRecoveryRunner(final AtomicBoolean isRecoveryRunning,
                                     final TaskToMasterMessage proxyToMaster,
-                                    final CheckpointManager checkpointManager) {
+                                    final CheckpointManager checkpointManager,
+                                    final String taskHostname) {
     this.isRecoveryRunning = isRecoveryRunning;
     this.proxyToMaster = proxyToMaster;
     this.singleThreadedExecutorService = Executors.newSingleThreadExecutor();
     this.checkpointManager = checkpointManager;
+    this.taskHostname = taskHostname;
   }
 
   public void run() {
     // Get the recovery info from the MistMaster.
     try {
-      final RecoveryInfo recoveryInfo = proxyToMaster.getRecoveringGroups(InetAddress.getLocalHost().getHostName());
+      final RecoveryInfo recoveryInfo = proxyToMaster.getRecoveringGroups(taskHostname);
       while (true) {
         if (recoveryInfo.getRecoveryGroupList().isEmpty()) {
           // Notify that recovery is done!
@@ -83,7 +88,7 @@ public class SingleThreadRecoveryRunner implements Runnable {
           futureList.get(futureList.size() - 1).get();
         }
       }
-    } catch (final UnknownHostException | AvroRemoteException | InterruptedException | ExecutionException e) {
+    } catch (final AvroRemoteException | InterruptedException | ExecutionException e) {
       e.printStackTrace();
     }
   }

@@ -16,7 +16,8 @@
 package edu.snu.mist.core.task.groupaware.rebalancer;
 
 import edu.snu.mist.common.parameters.GroupId;
-import edu.snu.mist.core.parameters.MasterHostAddress;
+import edu.snu.mist.core.parameters.MasterHostname;
+import edu.snu.mist.core.parameters.TaskHostname;
 import edu.snu.mist.core.parameters.TaskToMasterPort;
 import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.Query;
@@ -37,9 +38,7 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -83,7 +82,15 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
 
   private final double epsilon = 0.00000001;
 
+  /**
+   * The proxy to master.
+   */
   private TaskToMasterMessage proxyToMaster;
+
+  /**
+   * The taskname of this host seen from MistMaster.
+   */
+  private String taskHostname;
 
   @Inject
   private DefaultGroupSplitterImpl(final GroupAllocationTable groupAllocationTable,
@@ -91,8 +98,9 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
                                    @Parameter(DefaultGroupLoad.class) final double defaultGroupLoad,
                                    @Parameter(OverloadedThreshold.class) final double beta,
                                    @Parameter(UnderloadedThreshold.class) final double alpha,
-                                   @Parameter(MasterHostAddress.class) final String masterHostAddress,
-                                   @Parameter(TaskToMasterPort.class) final int taskToMasterPort)
+                                   @Parameter(MasterHostname.class) final String masterHostAddress,
+                                   @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
+                                   @Parameter(TaskHostname.class) final String taskHostname)
   throws IOException {
     this.groupAllocationTable = groupAllocationTable;
     this.rebalancingPeriod = rebalancingPeriod;
@@ -101,6 +109,7 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
     this.beta = beta;
     this.proxyToMaster = AvroUtils.createAvroProxy(TaskToMasterMessage.class,
         new InetSocketAddress(masterHostAddress, taskToMasterPort));
+    this.taskHostname = taskHostname;
   }
 
   /**
@@ -247,14 +256,14 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
                 try {
                   // Here, we pass the fake information on group load and query number right now.
                   // This information would be updated lazily in the next TaskStats collecting interval.
-                  final String groupId = proxyToMaster.createGroup(InetAddress.getLocalHost().getHostName(),
+                  final String groupId = proxyToMaster.createGroup(taskHostname,
                       GroupStats.newBuilder()
                           .setGroupCpuLoad(0.0)
                           .setGroupQueryNum(0)
                           .setAppId(highLoadGroup.getApplicationInfo().getApplicationId())
                           .build());
                   jcb.bindNamedParameter(GroupId.class, groupId);
-                } catch (final UnknownHostException | AvroRemoteException e) {
+                } catch (final AvroRemoteException e) {
                   e.printStackTrace();
                 }
                 final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());

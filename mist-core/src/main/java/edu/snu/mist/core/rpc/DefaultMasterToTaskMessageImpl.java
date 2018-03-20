@@ -18,6 +18,7 @@ package edu.snu.mist.core.rpc;
 import edu.snu.mist.core.task.groupaware.Group;
 import edu.snu.mist.core.task.groupaware.GroupAllocationTable;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
+import edu.snu.mist.core.task.recovery.RecoveryManager;
 import edu.snu.mist.formats.avro.GroupStats;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
 import edu.snu.mist.formats.avro.TaskStats;
@@ -28,8 +29,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * The default master-to-task message implementation.
@@ -41,14 +40,13 @@ public final class DefaultMasterToTaskMessageImpl implements MasterToTaskMessage
    */
   private final GroupAllocationTable groupAllocationTable;
 
-  /**
-   * The single thread executor service which triggers load balancing.
-   */
-  private final ExecutorService singleThreadExecutorService = Executors.newSingleThreadExecutor();
+  private final RecoveryManager recoveryManager;
 
   @Inject
-  private DefaultMasterToTaskMessageImpl(final GroupAllocationTable groupAllocationTable) {
+  private DefaultMasterToTaskMessageImpl(final GroupAllocationTable groupAllocationTable,
+                                         final RecoveryManager recoveryManager) {
     this.groupAllocationTable = groupAllocationTable;
+    this.recoveryManager = recoveryManager;
   }
 
   @Override
@@ -82,7 +80,7 @@ public final class DefaultMasterToTaskMessageImpl implements MasterToTaskMessage
 
   @Override
   public boolean startRecovery() throws AvroRemoteException {
-    return true;
+    return recoveryManager.startRecovery();
   }
 
 

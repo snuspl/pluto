@@ -299,7 +299,8 @@ public final class MistDriver {
   private Configuration getTaskConfiguration(
       final ActiveContext taskContext,
       final Configuration nameResolverConf,
-      final String masterHostAddress) {
+      final String masterHostname,
+      final String taskHostname) {
     // Task configuration
     final Configuration taskConfiguration = TaskConfiguration.CONF
         .set(TaskConfiguration.IDENTIFIER, taskContext.getId())
@@ -309,7 +310,8 @@ public final class MistDriver {
     final JavaConfigurationBuilder taskConfBuilder = tang.newConfigurationBuilder();
     taskConfBuilder.bindNamedParameter(ClientToTaskPort.class, String.valueOf(mistDriverConfigs.getClientToTaskPort()));
     taskConfBuilder.bindNamedParameter(MasterToTaskPort.class, String.valueOf(mistDriverConfigs.getMasterToTaskPort()));
-    taskConfBuilder.bindNamedParameter(MasterHostAddress.class, masterHostAddress);
+    taskConfBuilder.bindNamedParameter(MasterHostname.class, masterHostname);
+    taskConfBuilder.bindNamedParameter(TaskHostname.class, taskHostname);
     taskConfBuilder.bindNamedParameter(TaskToMasterPort.class, String.valueOf(mistDriverConfigs.getTaskToMasterPort()));
     taskConfBuilder.bindImplementation(MasterToTaskMessage.class, DefaultMasterToTaskMessageImpl.class);
     taskConfBuilder.bindNamedParameter(SharedStorePath.class, String.valueOf(mistDriverConfigs
@@ -343,10 +345,12 @@ public final class MistDriver {
         if (!isMasterRunning.get()) {
           throw new IllegalStateException("Node failure occurred before the master started!");
         }
-        final String masterHostAddress =
+        final String masterHostname =
             masterContext.getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress().getHostName();
+        final String taskHostname =
+            activeContext.getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress().getHostName();
         // Launch recovery task.
-        activeContext.submitTask(getTaskConfiguration(activeContext, nameResolverConf, masterHostAddress));
+        activeContext.submitTask(getTaskConfiguration(activeContext, nameResolverConf, masterHostname, taskHostname));
       } else {
         LOG.log(Level.SEVERE, "Invalid contextId: {0}", taskId);
         throw new RuntimeException("Internal error: Invalid contextId!");
@@ -354,13 +358,15 @@ public final class MistDriver {
       // All the active contexts are now submitted
       if (activeContextCounter.incrementAndGet() == 1 + mistDriverConfigs.getNumTasks()) {
         // Get Master host address
-        final String masterHostAddress =
+        final String masterHostname =
             masterContext.getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress().getHostName();
-        LOG.info("Set master host address: " + masterHostAddress);
+        LOG.info("Set master host address: " + masterHostname);
 
         final JavaConfigurationBuilder masterConfBuilder = tang.newConfigurationBuilder();
         for (final ActiveContext taskContext: mistTaskContextQueue) {
-          mistTaskConfQueue.add(getTaskConfiguration(taskContext, nameResolverConf, masterHostAddress));
+          final String taskHostname =
+              taskContext.getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress().getHostName();
+          mistTaskConfQueue.add(getTaskConfiguration(taskContext, nameResolverConf, masterHostname, taskHostname));
         }
         // Master configuration
         masterConfBuilder.bindNamedParameter(SharedStorePath.class, String.valueOf(mistDriverConfigs

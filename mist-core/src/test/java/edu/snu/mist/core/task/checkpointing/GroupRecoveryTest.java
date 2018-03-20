@@ -31,7 +31,8 @@ import edu.snu.mist.common.stream.NettyChannelHandler;
 import edu.snu.mist.common.stream.textmessage.NettyTextMessageOutputReceiver;
 import edu.snu.mist.common.stream.textmessage.NettyTextMessageStreamGenerator;
 import edu.snu.mist.common.types.Tuple2;
-import edu.snu.mist.core.parameters.MasterHostAddress;
+import edu.snu.mist.core.parameters.MasterHostname;
+import edu.snu.mist.core.parameters.TaskHostname;
 import edu.snu.mist.core.parameters.TaskToMasterPort;
 import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.*;
@@ -168,7 +169,8 @@ public class GroupRecoveryTest {
     jcb.bindNamedParameter(PeriodicCheckpointPeriod.class, "1000");
     jcb.bindImplementation(QueryManager.class, GroupAwareQueryManagerImpl.class);
     jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
-    jcb.bindNamedParameter(MasterHostAddress.class, "localhost");
+    jcb.bindNamedParameter(MasterHostname.class, "localhost");
+    jcb.bindNamedParameter(TaskHostname.class, "localhost");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
 
     final CheckpointManager checkpointManager = injector.getInstance(CheckpointManager.class);

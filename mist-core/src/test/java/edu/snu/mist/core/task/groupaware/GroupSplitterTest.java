@@ -16,7 +16,8 @@
 package edu.snu.mist.core.task.groupaware;
 
 import edu.snu.mist.common.parameters.GroupId;
-import edu.snu.mist.core.parameters.MasterHostAddress;
+import edu.snu.mist.core.parameters.MasterHostname;
+import edu.snu.mist.core.parameters.TaskHostname;
 import edu.snu.mist.core.parameters.TaskToMasterPort;
 import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.*;
@@ -126,7 +127,8 @@ public final class GroupSplitterTest {
     jcb.bindImplementation(LoadUpdater.class, TestLoadUpdater.class);
     jcb.bindNamedParameter(OverloadedThreshold.class, "0.8");
     jcb.bindNamedParameter(UnderloadedThreshold.class, "0.6");
-    jcb.bindNamedParameter(MasterHostAddress.class, "localhost");
+    jcb.bindNamedParameter(MasterHostname.class, "localhost");
+    jcb.bindNamedParameter(TaskHostname.class, "localhost");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final GroupAllocationTable groupAllocationTable = injector.getInstance(GroupAllocationTable.class);
     final GroupSplitter groupSplitter = injector.getInstance(GroupSplitter.class);
