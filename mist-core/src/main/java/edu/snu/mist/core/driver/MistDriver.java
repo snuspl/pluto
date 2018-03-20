@@ -207,11 +207,7 @@ public final class MistDriver {
   public final class StartHandler implements EventHandler<StartTime> {
     @Override
     public void onNext(final StartTime startTime) {
-      requestor.submit(EvaluatorRequest.newBuilder()
-          .setNumber(mistDriverConfigs.getNumTasks())
-          .setMemory(mistDriverConfigs.getTaskMemSize())
-          .setNumberOfCores(mistDriverConfigs.getNumTaskCores())
-          .build());
+      // Submit master evaluator request firstly.
       requestor.submit(EvaluatorRequest.newBuilder()
           .setNumber(1)
           .setMemory(mistDriverConfigs.getMasterMemSize())
@@ -225,11 +221,16 @@ public final class MistDriver {
     @Override
     public void onNext(final AllocatedEvaluator allocatedEvaluator) {
       final EvaluatorDescriptor descriptor = allocatedEvaluator.getEvaluatorDescriptor();
-      if (descriptor.getMemory() == mistDriverConfigs.getMasterMemSize()
-          && isMasterEvaluatorAllocated.compareAndSet(false, true)) {
+      if (isMasterEvaluatorAllocated.compareAndSet(false, true)) {
         LOG.log(Level.INFO, "A MistMaster allocated to {0}", descriptor.getNodeDescriptor().getName());
         allocatedEvaluator.submitContext(ContextConfiguration.CONF
             .set(ContextConfiguration.IDENTIFIER, MIST_MASTER_ID)
+            .build());
+        // Submit task evaluator requests.
+        requestor.submit(EvaluatorRequest.newBuilder()
+            .setNumber(mistDriverConfigs.getNumTasks())
+            .setMemory(mistDriverConfigs.getTaskMemSize())
+            .setNumberOfCores(mistDriverConfigs.getNumTaskCores())
             .build());
       } else if (
           descriptor.getMemory() == mistDriverConfigs.getTaskMemSize()) {
@@ -244,7 +245,7 @@ public final class MistDriver {
             .set(ContextConfiguration.IDENTIFIER, taskId)
             .build());
       } else {
-        LOG.log(Level.SEVERE, "Invalid runtime name!");
+        LOG.log(Level.SEVERE, "Invalid runtime configuration!");
       }
     }
   }
