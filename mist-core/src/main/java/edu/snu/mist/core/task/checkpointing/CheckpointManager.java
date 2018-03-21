@@ -16,6 +16,7 @@
 package edu.snu.mist.core.task.checkpointing;
 
 import edu.snu.mist.core.task.groupaware.ApplicationInfo;
+import edu.snu.mist.core.task.groupaware.Group;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.io.IOException;
@@ -28,24 +29,30 @@ import java.io.IOException;
 @DefaultImplementation(DefaultCheckpointManagerImpl.class)
 public interface CheckpointManager {
   /**
-   * Recover a stored app in this MIST Task.
-   * @param appId
+   * Recover a stored group in this MIST Task.
+   * @param groupId
    * @return
    */
-  void recoverApplication(String appId) throws IOException;
+  void recoverGroup(String groupId) throws IOException;
 
   /**
-   * Checkpoint a single app.
-   * @param appId
+   * Checkpoint a single group.
+   * @param groupId
    */
-  boolean checkpointApplication(String appId);
+  boolean checkpointGroup(String groupId);
 
-  // TODO: Change all methods within this class to checkpoint Groups, not Applications.
   /**
    * Delete a single group.
    * @param groupId
    */
   void deleteGroup(String groupId);
+
+  /**
+   * Get the corresponding group.
+   * @param groupId group id
+   * @return the group
+   */
+  Group getGroup(String groupId);
 
   /**
    * Get the corresponding application.
