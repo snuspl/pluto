@@ -15,7 +15,10 @@
  */
 package edu.snu.mist.core.task.groupaware;
 
+import edu.snu.mist.core.task.ExecutionDags;
 import edu.snu.mist.core.task.Query;
+import edu.snu.mist.core.task.QueryRemover;
+import edu.snu.mist.core.task.QueryStarter;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
@@ -149,4 +152,19 @@ public interface Group extends AutoCloseable {
    * The number of active queries.
    */
   int size();
+
+  /**
+   * Get the query starter for this group.
+   */
+  QueryStarter getQueryStarter();
+
+  /**
+   * Get the query remover for this group.
+   */
+  QueryRemover getQueryRemover();
+
+  /**
+   * Get the ExecutionDags of this group.
+   */
+  ExecutionDags getExecutionDags();
 }

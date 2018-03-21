@@ -155,7 +155,7 @@ public class GroupRecoveryTest {
     // Wait until all sources connect to stream generator
     sourceCountDownLatch1.await();
 
-    final ExecutionDags executionDags = checkpointManager.getApplication(groupId).getExecutionDags();
+    final ExecutionDags executionDags = checkpointManager.getApplication(groupId).getGroups().get(0).getExecutionDags();
     Assert.assertEquals(executionDags.values().size(), 1);
     final ExecutionDag executionDag = executionDags.values().iterator().next();
 
@@ -170,7 +170,7 @@ public class GroupRecoveryTest {
 
     // Checkpoint the entire MISTTask, delete it, and restore it to see if it works.
     checkpointManager.checkpointApplication("testGroup");
-    checkpointManager.deleteApplication("testGroup");
+    checkpointManager.deleteGroup("testGroup");
 
     // Close the generator.
     textMessageStreamGenerator1.close();
@@ -191,7 +191,8 @@ public class GroupRecoveryTest {
     // Wait until all sources connect to stream generator
     sourceCountDownLatch2.await();
 
-    final ExecutionDags executionDags2 = checkpointManager.getApplication(groupId).getExecutionDags();
+    final ExecutionDags executionDags2 =
+        checkpointManager.getApplication(groupId).getGroups().get(0).getExecutionDags();
     Assert.assertEquals(executionDags2.values().size(), 1);
     final ExecutionDag executionDag2 = executionDags2.values().iterator().next();
 

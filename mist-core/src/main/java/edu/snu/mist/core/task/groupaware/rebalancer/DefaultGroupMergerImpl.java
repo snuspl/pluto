@@ -17,12 +17,13 @@ package edu.snu.mist.core.task.groupaware.rebalancer;
 
 import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.groupaware.Group;
-import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GroupRebalancingPeriod;
-import edu.snu.mist.core.task.groupaware.parameters.DefaultGroupLoad;
 import edu.snu.mist.core.task.groupaware.GroupAllocationTable;
+import edu.snu.mist.core.task.groupaware.GroupMap;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
+import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GroupRebalancingPeriod;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.OverloadedThreshold;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.UnderloadedThreshold;
+import edu.snu.mist.core.task.groupaware.parameters.DefaultGroupLoad;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -48,6 +49,11 @@ public final class DefaultGroupMergerImpl implements GroupMerger {
   private final GroupAllocationTable groupAllocationTable;
 
   /**
+   * The task's group map.
+   */
+  private final GroupMap groupMap;
+
+  /**
    * Rebalancing period.
    */
   private final long rebalancingPeriod;
@@ -69,11 +75,13 @@ public final class DefaultGroupMergerImpl implements GroupMerger {
 
   @Inject
   private DefaultGroupMergerImpl(final GroupAllocationTable groupAllocationTable,
+                                 final GroupMap groupMap,
                                  @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
                                  @Parameter(DefaultGroupLoad.class) final double defaultGroupLoad,
                                  @Parameter(OverloadedThreshold.class) final double beta,
                                  @Parameter(UnderloadedThreshold.class) final double alpha) {
     this.groupAllocationTable = groupAllocationTable;
+    this.groupMap = groupMap;
     this.rebalancingPeriod = rebalancingPeriod;
     this.defaultGroupLoad = defaultGroupLoad;
     this.alpha = alpha;
@@ -141,6 +149,8 @@ public final class DefaultGroupMergerImpl implements GroupMerger {
       highLoadGroup.getApplicationInfo().getGroups().remove(highLoadGroup);
       highLoadGroup.getApplicationInfo().numGroups().decrementAndGet();
     }
+
+    groupMap.remove(highLoadGroup.getGroupId());
 
     // Update overloaded thread load
     highLoadThread.setLoad(highLoadThread.getLoad() - incLoad);

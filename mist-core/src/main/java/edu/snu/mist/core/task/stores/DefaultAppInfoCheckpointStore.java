@@ -17,11 +17,12 @@ package edu.snu.mist.core.task.stores;
 
 import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.common.operators.StateHandler;
+import edu.snu.mist.core.parameters.SharedStorePath;
 import edu.snu.mist.core.task.DefaultPhysicalOperatorImpl;
 import edu.snu.mist.core.task.ExecutionDag;
 import edu.snu.mist.core.task.ExecutionVertex;
 import edu.snu.mist.core.task.groupaware.ApplicationInfo;
-import edu.snu.mist.core.parameters.SharedStorePath;
+import edu.snu.mist.core.task.groupaware.Group;
 import edu.snu.mist.formats.avro.ApplicationInfoCheckpoint;
 import edu.snu.mist.formats.avro.CheckpointResult;
 import org.apache.avro.file.DataFileReader;
@@ -109,13 +110,15 @@ public final class DefaultAppInfoCheckpointStore implements AppInfoCheckpointSto
           .build();
     }
     // Delete all the unnecessary states within the stateMaps of stateful operators.
-    for (final ExecutionDag ed : appInfo.getExecutionDags().values()) {
-      for (final ExecutionVertex ev : ed.getDag().getVertices()) {
-        if (ev.getType() == ExecutionVertex.Type.OPERATOR) {
-          final Operator op = ((DefaultPhysicalOperatorImpl) ev).getOperator();
-          if (op instanceof StateHandler) {
-            final StateHandler stateHandler = (StateHandler) op;
-            stateHandler.removeOldStates(gmc.getMinimumLatestCheckpointTimestamp());
+    for (final Group group : appInfo.getGroups()) {
+      for (final ExecutionDag ed : group.getExecutionDags().values()) {
+        for (final ExecutionVertex ev : ed.getDag().getVertices()) {
+          if (ev.getType() == ExecutionVertex.Type.OPERATOR) {
+            final Operator op = ((DefaultPhysicalOperatorImpl) ev).getOperator();
+            if (op instanceof StateHandler) {
+              final StateHandler stateHandler = (StateHandler) op;
+              stateHandler.removeOldStates(gmc.getMinimumLatestCheckpointTimestamp());
+            }
           }
         }
       }

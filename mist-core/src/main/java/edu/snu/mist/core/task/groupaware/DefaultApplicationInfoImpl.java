@@ -37,9 +37,6 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
 
   private static final Logger LOG = Logger.getLogger(DefaultApplicationInfoImpl.class.getName());
 
-  private final QueryStarter queryStarter;
-  private final QueryRemover queryRemover;
-  private final ExecutionDags executionDags;
   private final List<Group> groups;
   private final QueryIdConfigDagMap queryIdConfigDagMap;
   private final ConfigExecutionVertexMap configExecutionVertexMap;
@@ -57,16 +54,10 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
   private final String appId;
 
   @Inject
-  private DefaultApplicationInfoImpl(final QueryStarter queryStarter,
-                                     final QueryRemover queryRemover,
-                                     final ExecutionDags executionDags,
-                                     final QueryIdConfigDagMap queryIdConfigDagMap,
+  private DefaultApplicationInfoImpl(final QueryIdConfigDagMap queryIdConfigDagMap,
                                      @Parameter(ApplicationIdentifier.class) final String appId,
                                      @Parameter(JarFilePath.class) final String jarFilePath,
                                      final ConfigExecutionVertexMap configExecutionVertexMap) {
-    this.queryStarter = queryStarter;
-    this.queryRemover = queryRemover;
-    this.executionDags = executionDags;
     this.groups = new LinkedList<>();
     this.queryIdConfigDagMap = queryIdConfigDagMap;
     this.configExecutionVertexMap = configExecutionVertexMap;
@@ -75,23 +66,14 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
   }
 
   @Override
-  public QueryStarter getQueryStarter() {
-    return queryStarter;
-  }
-
-  @Override
-  public QueryRemover getQueryRemover() {
-    return queryRemover;
-  }
-
-  @Override
-  public ExecutionDags getExecutionDags() {
-    return executionDags;
-  }
-
-  @Override
   public List<Group> getGroups() {
     return groups;
+  }
+
+  @Override
+  public Group getRandomGroup() {
+    final Random random = new Random();
+    return groups.get(random.nextInt(groups.size()));
   }
 
   @Override

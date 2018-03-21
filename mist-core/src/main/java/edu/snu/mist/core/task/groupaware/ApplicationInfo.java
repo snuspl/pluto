@@ -15,9 +15,6 @@
  */
 package edu.snu.mist.core.task.groupaware;
 
-import edu.snu.mist.core.task.ExecutionDags;
-import edu.snu.mist.core.task.QueryRemover;
-import edu.snu.mist.core.task.QueryStarter;
 import edu.snu.mist.formats.avro.ApplicationInfoCheckpoint;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
@@ -33,25 +30,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 public interface ApplicationInfo {
 
   /**
-   * Get query starter.
-   */
-  QueryStarter getQueryStarter();
-
-  /**
-   * Get query remover.
-   */
-  QueryRemover getQueryRemover();
-
-  /**
-   * Get execution dags.
-   * @return
-   */
-  ExecutionDags getExecutionDags();
-
-  /**
    * Get groups of the application.
    */
   List<Group> getGroups();
+
+  /**
+   * Get a random group for this application.
+   */
+  Group getRandomGroup();
 
   /**
    * Add a group.

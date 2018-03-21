@@ -40,11 +40,12 @@ public interface CheckpointManager {
    */
   boolean checkpointApplication(String appId);
 
+  // TODO: Change all methods within this class to checkpoint Groups, not Applications.
   /**
-   * Delete a single app.
-   * @param appId
+   * Delete a single group.
+   * @param groupId
    */
-  void deleteApplication(String appId);
+  void deleteGroup(String groupId);
 
   /**
    * Get the corresponding application.

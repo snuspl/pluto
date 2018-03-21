@@ -21,10 +21,7 @@ import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.ConfigVertex;
 import edu.snu.mist.core.task.ExecutionVertex;
 import edu.snu.mist.core.task.QueryManager;
-import edu.snu.mist.core.task.groupaware.GroupAllocationTableModifier;
-import edu.snu.mist.core.task.groupaware.ApplicationMap;
-import edu.snu.mist.core.task.groupaware.ApplicationInfo;
-import edu.snu.mist.core.task.groupaware.WritingEvent;
+import edu.snu.mist.core.task.groupaware.*;
 import edu.snu.mist.core.task.stores.AppInfoCheckpointStore;
 import edu.snu.mist.formats.avro.*;
 import org.apache.reef.io.Tuple;
@@ -47,6 +44,11 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
   private final ApplicationMap applicationMap;
 
   /**
+   * A map containing information about each group.
+   */
+  private final GroupMap groupMap;
+
+  /**
    * A group checkpoint store.
    */
   private final AppInfoCheckpointStore checkpointStore;
@@ -63,10 +65,12 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
 
   @Inject
   private DefaultCheckpointManagerImpl(final ApplicationMap applicationMap,
+                                       final GroupMap groupMap,
                                        final AppInfoCheckpointStore appInfoCheckpointStore,
                                        final GroupAllocationTableModifier groupAllocationTableModifier,
                                        final QueryManager queryManager) {
     this.applicationMap = applicationMap;
+    this.groupMap = groupMap;
     this.checkpointStore = appInfoCheckpointStore;
     this.groupAllocationTableModifier = groupAllocationTableModifier;
     this.queryManager = queryManager;
@@ -117,6 +121,10 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
         // Add the query info to the queryManager.
         final List<String> jarFilePaths = checkpoint.getJarFilePaths();
         final ApplicationInfo applicationInfo = queryManager.createApplication(appId, jarFilePaths);
+        // Waiting for group information being added
+        while (applicationInfo.getGroups().isEmpty()) {
+          Thread.sleep(100);
+        }
         // Start the submitted dag
         queryManager.createAndStartQuery(queryId, applicationInfo, configDag);
       } catch (final Exception e) {
@@ -156,15 +164,15 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
   }
 
   @Override
-  public void deleteApplication(final String appId) {
-    final ApplicationInfo applicationInfo = applicationMap.get(appId);
-    if (applicationInfo == null) {
-      LOG.log(Level.WARNING, "There is no such app {0}.",
-          new Object[] {appId});
+  public void deleteGroup(final String groupId) {
+    final Group group = groupMap.get(groupId);
+    if (group == null) {
+      LOG.log(Level.WARNING, "There is no such group {0}.",
+          new Object[] {groupId});
       return;
     }
-    applicationInfo.getQueryRemover().deleteAllQueries();
-    applicationMap.remove(appId);
+    group.getQueryRemover().deleteAllQueries();
+    applicationMap.remove(groupId);
     groupAllocationTableModifier.addEvent(
         new WritingEvent(WritingEvent.EventType.GROUP_REMOVE_ALL, null));
   }
