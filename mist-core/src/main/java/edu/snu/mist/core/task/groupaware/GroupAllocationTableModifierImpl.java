@@ -97,6 +97,11 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
    */
   private final Random random = new Random();
 
+  /**
+   * The task's group map.
+   */
+  private final GroupMap groupMap;
+
   @Inject
   private GroupAllocationTableModifierImpl(final GroupAllocationTable groupAllocationTable,
                                            final GroupAssigner groupAssigner,
@@ -104,7 +109,8 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
                                            final LoadUpdater loadUpdater,
                                            final GroupIsolator groupIsolator,
                                            final GroupMerger groupMerger,
-                                           final GroupSplitter groupSplitter) {
+                                           final GroupSplitter groupSplitter,
+                                           final GroupMap groupMap) {
     this.groupAllocationTable = groupAllocationTable;
     this.groupAssigner = groupAssigner;
     this.groupRebalancer = groupRebalancer;
@@ -114,6 +120,7 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
     this.groupIsolator = groupIsolator;
     this.groupMerger = groupMerger;
     this.groupSplitter = groupSplitter;
+    this.groupMap = groupMap;
     // Create a writer thread
     singleWriter.submit(new SingleWriterThread());
   }
@@ -174,6 +181,7 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
             case GROUP_REMOVE: {
               final Group group = (Group) event.getValue();
               removeGroupInWriterThread(group);
+              groupMap.remove(group.getGroupId());
               break;
             }
             case GROUP_REMOVE_ALL: {

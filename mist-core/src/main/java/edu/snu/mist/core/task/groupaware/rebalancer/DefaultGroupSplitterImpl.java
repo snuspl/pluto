@@ -19,11 +19,12 @@ import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.groupaware.Group;
 import edu.snu.mist.core.task.groupaware.GroupAllocationTable;
-import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GroupRebalancingPeriod;
-import edu.snu.mist.core.task.groupaware.parameters.DefaultGroupLoad;
+import edu.snu.mist.core.task.groupaware.GroupMap;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
+import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GroupRebalancingPeriod;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.OverloadedThreshold;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.UnderloadedThreshold;
+import edu.snu.mist.core.task.groupaware.parameters.DefaultGroupLoad;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -73,17 +74,21 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
 
   private final double epsilon = 0.00000001;
 
+  private final GroupMap groupMap;
+
   @Inject
   private DefaultGroupSplitterImpl(final GroupAllocationTable groupAllocationTable,
                                    @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
                                    @Parameter(DefaultGroupLoad.class) final double defaultGroupLoad,
                                    @Parameter(OverloadedThreshold.class) final double beta,
-                                   @Parameter(UnderloadedThreshold.class) final double alpha) {
+                                   @Parameter(UnderloadedThreshold.class) final double alpha,
+                                   final GroupMap groupMap) {
     this.groupAllocationTable = groupAllocationTable;
     this.rebalancingPeriod = rebalancingPeriod;
     this.defaultGroupLoad = defaultGroupLoad;
     this.alpha = alpha;
     this.beta = beta;
+    this.groupMap = groupMap;
   }
 
   /**
@@ -233,6 +238,7 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
                 sameGroup.setEventProcessor(lowLoadThread);
                 highLoadGroup.getApplicationInfo().addGroup(sameGroup);
                 groupAllocationTable.getValue(lowLoadThread).add(sameGroup);
+                groupMap.putIfAbsent(sameGroup.getGroupId(), sameGroup);
               }
 
               for (final Query movingQuery : sortedQueries) {
