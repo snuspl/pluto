@@ -17,13 +17,13 @@ package edu.snu.mist.core.task.stores;
 
 import edu.snu.mist.common.operators.Operator;
 import edu.snu.mist.common.operators.StateHandler;
+import edu.snu.mist.core.parameters.SharedStorePath;
 import edu.snu.mist.core.task.DefaultPhysicalOperatorImpl;
 import edu.snu.mist.core.task.ExecutionDag;
 import edu.snu.mist.core.task.ExecutionVertex;
-import edu.snu.mist.core.task.groupaware.ApplicationInfo;
-import edu.snu.mist.core.parameters.SharedStorePath;
-import edu.snu.mist.formats.avro.ApplicationInfoCheckpoint;
+import edu.snu.mist.core.task.groupaware.Group;
 import edu.snu.mist.formats.avro.CheckpointResult;
+import edu.snu.mist.formats.avro.GroupCheckpoint;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.DatumReader;
@@ -39,27 +39,27 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public final class DefaultAppInfoCheckpointStore implements AppInfoCheckpointStore {
+public final class DefaultGroupCheckpointStore implements GroupCheckpointStore {
 
-  private static final Logger LOG = Logger.getLogger(DefaultAppInfoCheckpointStore.class.getName());
+  private static final Logger LOG = Logger.getLogger(DefaultGroupCheckpointStore.class.getName());
 
   private final String tmpFolderPath;
 
   /**
    * A writer that stores ApplicationInfoCheckpoint.
    */
-  private final DatumWriter<ApplicationInfoCheckpoint> datumWriter;
+  private final DatumWriter<GroupCheckpoint> datumWriter;
 
   /**
    * A reader that reads stored ApplicationInfoCheckpoint.
    */
-  private final DatumReader<ApplicationInfoCheckpoint> datumReader;
+  private final DatumReader<GroupCheckpoint> datumReader;
 
   @Inject
-  private DefaultAppInfoCheckpointStore(@Parameter(SharedStorePath.class) final String tmpFolderpath) {
+  private DefaultGroupCheckpointStore(@Parameter(SharedStorePath.class) final String tmpFolderpath) {
     this.tmpFolderPath = tmpFolderpath;
-    this.datumWriter = new SpecificDatumWriter<>(ApplicationInfoCheckpoint.class);
-    this.datumReader = new SpecificDatumReader<>(ApplicationInfoCheckpoint.class);
+    this.datumWriter = new SpecificDatumWriter<>(GroupCheckpoint.class);
+    this.datumReader = new SpecificDatumReader<>(GroupCheckpoint.class);
     // Create a folder that stores the dags and jar files
     final File folder = new File(tmpFolderPath);
     if (!folder.exists()) {
@@ -73,7 +73,7 @@ public final class DefaultAppInfoCheckpointStore implements AppInfoCheckpointSto
     }
   }
 
-  private File getAppInfoCheckpointFile(final String groupId) {
+  private File getGroupCheckpointFile(final String groupId) {
     final StringBuilder sb = new StringBuilder(groupId);
     sb.append(".groupcp");
     return new File(tmpFolderPath, sb.toString());
@@ -81,22 +81,22 @@ public final class DefaultAppInfoCheckpointStore implements AppInfoCheckpointSto
 
 
   @Override
-  public CheckpointResult saveAppInfoCheckpoint(final Tuple<String, ApplicationInfo> tuple) {
+  public CheckpointResult saveGroupCheckpoint(final Tuple<String, Group> tuple) {
     final String groupId = tuple.getKey();
-    final ApplicationInfo appInfo = tuple.getValue();
-    final ApplicationInfoCheckpoint gmc = appInfo.checkpoint();
+    final Group group = tuple.getValue();
+    final GroupCheckpoint checkpoint = group.checkpoint();
     try {
       // Write the file.
-      final File storedFile = getAppInfoCheckpointFile(groupId);
+      final File storedFile = getGroupCheckpointFile(groupId);
       if (storedFile.exists()) {
         storedFile.delete();
         LOG.log(Level.INFO, "Checkpoint deleted for groupId: {0}", groupId);
       }
       if (!storedFile.exists()) {
         storedFile.getParentFile().mkdirs();
-        final DataFileWriter<ApplicationInfoCheckpoint> dataFileWriter = new DataFileWriter<>(datumWriter);
-        dataFileWriter.create(gmc.getSchema(), storedFile);
-        dataFileWriter.append(gmc);
+        final DataFileWriter<GroupCheckpoint> dataFileWriter = new DataFileWriter<>(datumWriter);
+        dataFileWriter.create(checkpoint.getSchema(), storedFile);
+        dataFileWriter.append(checkpoint);
         dataFileWriter.close();
         LOG.log(Level.INFO, "Checkpoint completed for groupId: {0}", groupId);
       }
@@ -109,13 +109,13 @@ public final class DefaultAppInfoCheckpointStore implements AppInfoCheckpointSto
           .build();
     }
     // Delete all the unnecessary states within the stateMaps of stateful operators.
-    for (final ExecutionDag ed : appInfo.getExecutionDags().values()) {
+    for (final ExecutionDag ed : group.getExecutionDags().values()) {
       for (final ExecutionVertex ev : ed.getDag().getVertices()) {
         if (ev.getType() == ExecutionVertex.Type.OPERATOR) {
           final Operator op = ((DefaultPhysicalOperatorImpl) ev).getOperator();
           if (op instanceof StateHandler) {
             final StateHandler stateHandler = (StateHandler) op;
-            stateHandler.removeOldStates(gmc.getMinimumLatestCheckpointTimestamp());
+            stateHandler.removeOldStates(checkpoint.getMinimumLatestCheckpointTimestamp());
           }
         }
       }
@@ -129,12 +129,12 @@ public final class DefaultAppInfoCheckpointStore implements AppInfoCheckpointSto
   }
 
   @Override
-  public ApplicationInfoCheckpoint loadAppInfoCheckpoint(final String groupId) throws IOException {
+  public GroupCheckpoint loadGroupCheckpoint(final String groupId) throws IOException {
     // Load the file.
-    final File storedFile = getAppInfoCheckpointFile(groupId);
-    final DataFileReader<ApplicationInfoCheckpoint> dataFileReader =
-        new DataFileReader<ApplicationInfoCheckpoint>(storedFile, datumReader);
-    ApplicationInfoCheckpoint mgc = null;
+    final File storedFile = getGroupCheckpointFile(groupId);
+    final DataFileReader<GroupCheckpoint> dataFileReader =
+        new DataFileReader<GroupCheckpoint>(storedFile, datumReader);
+    GroupCheckpoint mgc = null;
     mgc = dataFileReader.next(mgc);
     if (mgc != null) {
       LOG.log(Level.INFO, "Checkpoint file found. groupId is " + groupId);

@@ -155,10 +155,10 @@ public class GroupRecoveryTest {
     // Generate avro chained dag : needed parts from MISTExamplesUtils.submitQuery()
     final Tuple<List<AvroVertex>, List<Edge>> initialAvroOpChainDag = query.getAvroOperatorDag();
 
-    final String groupId = "testGroup";
+    final String appId = "testApp";
     final AvroDag.Builder avroDagBuilder = AvroDag.newBuilder();
     final AvroDag avroDag = avroDagBuilder
-        .setAppId(groupId)
+        .setAppId(appId)
         .setJarPaths(new ArrayList<>())
         .setAvroVertices(initialAvroOpChainDag.getKey())
         .setEdges(initialAvroOpChainDag.getValue())
@@ -179,13 +179,13 @@ public class GroupRecoveryTest {
     final QueryManager queryManager = injector.getInstance(QueryManager.class);
 
     final Tuple<String, AvroDag> tuple = new Tuple<>("testQuery", avroDag);
-    queryManager.createApplication(groupId, Arrays.asList(""));
+    queryManager.createApplication(appId, Arrays.asList(""));
     queryManager.create(tuple);
 
     // Wait until all sources connect to stream generator
     sourceCountDownLatch1.await();
 
-    final ExecutionDags executionDags = checkpointManager.getApplication(groupId).getExecutionDags();
+    final ExecutionDags executionDags = checkpointManager.getApplication(appId).getGroups().get(0).getExecutionDags();
     Assert.assertEquals(executionDags.values().size(), 1);
     final ExecutionDag executionDag = executionDags.values().iterator().next();
 
@@ -199,8 +199,9 @@ public class GroupRecoveryTest {
     sleep(2000);
 
     // Checkpoint the entire MISTTask, delete it, and restore it to see if it works.
-    checkpointManager.checkpointApplication("testGroup");
-    checkpointManager.deleteApplication("testGroup");
+    final String groupId = checkpointManager.getApplication(appId).getGroups().get(0).getGroupId();
+    checkpointManager.checkpointGroup(groupId);
+    checkpointManager.deleteGroup(groupId);
 
     // Close the generator.
     textMessageStreamGenerator1.close();
@@ -216,12 +217,13 @@ public class GroupRecoveryTest {
 
 
     // Recover the group.
-    checkpointManager.recoverApplication("testGroup");
+    checkpointManager.recoverGroup(groupId);
 
     // Wait until all sources connect to stream generator
     sourceCountDownLatch2.await();
 
-    final ExecutionDags executionDags2 = checkpointManager.getApplication(groupId).getExecutionDags();
+    final ExecutionDags executionDags2 =
+        checkpointManager.getApplication(appId).getGroups().get(0).getExecutionDags();
     Assert.assertEquals(executionDags2.values().size(), 1);
     final ExecutionDag executionDag2 = executionDags2.values().iterator().next();
 

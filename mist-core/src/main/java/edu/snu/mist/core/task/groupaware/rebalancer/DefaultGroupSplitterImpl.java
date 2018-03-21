@@ -23,6 +23,7 @@ import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.groupaware.Group;
 import edu.snu.mist.core.task.groupaware.GroupAllocationTable;
+import edu.snu.mist.core.task.groupaware.GroupMap;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GroupRebalancingPeriod;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.OverloadedThreshold;
@@ -92,6 +93,11 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
    */
   private String taskHostname;
 
+  /**
+   * The group map.
+   */
+  private final GroupMap groupMap;
+
   @Inject
   private DefaultGroupSplitterImpl(final GroupAllocationTable groupAllocationTable,
                                    @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
@@ -100,8 +106,8 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
                                    @Parameter(UnderloadedThreshold.class) final double alpha,
                                    @Parameter(MasterHostname.class) final String masterHostAddress,
                                    @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
-                                   @Parameter(TaskHostname.class) final String taskHostname)
-  throws IOException {
+                                   @Parameter(TaskHostname.class) final String taskHostname,
+                                   final GroupMap groupMap) throws IOException {
     this.groupAllocationTable = groupAllocationTable;
     this.rebalancingPeriod = rebalancingPeriod;
     this.defaultGroupLoad = defaultGroupLoad;
@@ -110,6 +116,7 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
     this.proxyToMaster = AvroUtils.createAvroProxy(TaskToMasterMessage.class,
         new InetSocketAddress(masterHostAddress, taskToMasterPort));
     this.taskHostname = taskHostname;
+    this.groupMap = groupMap;
   }
 
   /**
@@ -271,6 +278,7 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
                 sameGroup.setEventProcessor(lowLoadThread);
                 highLoadGroup.getApplicationInfo().addGroup(sameGroup);
                 groupAllocationTable.getValue(lowLoadThread).add(sameGroup);
+                groupMap.putIfAbsent(sameGroup.getGroupId(), sameGroup);
               }
 
               for (final Query movingQuery : sortedQueries) {

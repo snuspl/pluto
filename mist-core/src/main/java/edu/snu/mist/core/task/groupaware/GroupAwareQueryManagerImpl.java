@@ -77,6 +77,11 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
   private final ApplicationMap applicationMap;
 
   /**
+   * Group map.
+   */
+  private final GroupMap groupMap;
+
+  /**
    * Event processor manager.
    */
   private final EventProcessorManager eventProcessorManager;
@@ -142,7 +147,8 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
                                      @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod,
                                      @Parameter(MasterHostname.class) final String masterHostAddress,
                                      @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
-                                     @Parameter(TaskHostname.class) final String taskHostname) throws IOException {
+                                     @Parameter(TaskHostname.class) final String taskHostname,
+                                     final GroupMap groupMap) throws IOException {
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.eventProcessorManager = eventProcessorManager;
@@ -153,6 +159,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     this.dagGenerator = dagGenerator;
     this.groupAllocationTableModifier = groupAllocationTableModifier;
     this.applicationMap = applicationMap;
+    this.groupMap = groupMap;
     this.checkpointPeriod = checkpointPeriod;
     this.proxyToMaster = AvroUtils.createAvroProxy(TaskToMasterMessage.class,
         new InetSocketAddress(masterHostAddress, taskToMasterPort));
@@ -223,7 +230,9 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     groupAllocationTableModifier.addEvent(new WritingEvent(WritingEvent.EventType.QUERY_ADD,
         new Tuple<>(applicationInfo, query)));
     // Start the submitted dag
-    applicationInfo.getQueryStarter().start(queryId, query, configDag, applicationInfo.getJarFilePath());
+    // TODO : [MIST-1016] get the appropriate Group for this applicationInfo.
+    final Group group = applicationInfo.getRandomGroup();
+    group.getQueryStarter().start(queryId, query, configDag, applicationInfo.getJarFilePath());
     return query;
   }
 
@@ -276,8 +285,8 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
    * Deletes queries from MIST.
    */
   @Override
-  public QueryControlResult delete(final String appId, final String queryId) {
-    applicationMap.get(appId).getQueryRemover().deleteQuery(queryId);
+  public QueryControlResult delete(final String groupId, final String queryId) {
+    groupMap.get(groupId).getQueryRemover().deleteQuery(queryId);
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(queryId);
     queryControlResult.setIsSuccess(true);

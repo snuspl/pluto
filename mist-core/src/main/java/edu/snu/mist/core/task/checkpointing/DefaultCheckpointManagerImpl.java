@@ -21,11 +21,8 @@ import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.ConfigVertex;
 import edu.snu.mist.core.task.ExecutionVertex;
 import edu.snu.mist.core.task.QueryManager;
-import edu.snu.mist.core.task.groupaware.GroupAllocationTableModifier;
-import edu.snu.mist.core.task.groupaware.ApplicationMap;
-import edu.snu.mist.core.task.groupaware.ApplicationInfo;
-import edu.snu.mist.core.task.groupaware.WritingEvent;
-import edu.snu.mist.core.task.stores.AppInfoCheckpointStore;
+import edu.snu.mist.core.task.groupaware.*;
+import edu.snu.mist.core.task.stores.GroupCheckpointStore;
 import edu.snu.mist.formats.avro.*;
 import org.apache.reef.io.Tuple;
 
@@ -47,9 +44,14 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
   private final ApplicationMap applicationMap;
 
   /**
+   * A map containing information about each group.
+   */
+  private final GroupMap groupMap;
+
+  /**
    * A group checkpoint store.
    */
-  private final AppInfoCheckpointStore checkpointStore;
+  private final GroupCheckpointStore checkpointStore;
 
   /**
    * A modifier for the group allocation table.
@@ -63,23 +65,25 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
 
   @Inject
   private DefaultCheckpointManagerImpl(final ApplicationMap applicationMap,
-                                       final AppInfoCheckpointStore appInfoCheckpointStore,
+                                       final GroupMap groupMap,
+                                       final GroupCheckpointStore groupCheckpointStore,
                                        final GroupAllocationTableModifier groupAllocationTableModifier,
                                        final QueryManager queryManager) {
     this.applicationMap = applicationMap;
-    this.checkpointStore = appInfoCheckpointStore;
+    this.groupMap = groupMap;
+    this.checkpointStore = groupCheckpointStore;
     this.groupAllocationTableModifier = groupAllocationTableModifier;
     this.queryManager = queryManager;
   }
 
   @Override
-  public void recoverApplication(final String appId) throws IOException {
-    final ApplicationInfoCheckpoint checkpoint;
+  public void recoverGroup(final String groupId) throws IOException {
+    final GroupCheckpoint checkpoint;
     try {
-      checkpoint = checkpointStore.loadAppInfoCheckpoint(appId);
+      checkpoint = checkpointStore.loadGroupCheckpoint(groupId);
     } catch (final FileNotFoundException ie) {
       LOG.log(Level.WARNING, "Failed in loading app {0}, this app may not exist in the checkpoint store.",
-          new Object[]{appId});
+          new Object[]{groupId});
       return;
     }
 
@@ -87,8 +91,8 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
     // The submission process is almost the same to create(), except that it uses a ConfigDag instead of an AvroDag.
     for (final Map.Entry<String, AvroConfigDag> entry : checkpoint.getAvroConfigDags().entrySet()) {
       final String queryId = entry.getKey();
-      LOG.log(Level.INFO, "Query with id {0} is being submitted during recovery of app id {1}",
-          new Object[]{queryId, appId});
+      LOG.log(Level.INFO, "Query with id {0} is being submitted during recovery of group id {1}",
+          new Object[]{queryId, groupId});
       final AvroConfigDag dag = entry.getValue();
       final List<AvroConfigVertex> vertexList = dag.getAvroConfigVertices();
       final List<AvroConfigMISTEdge> edgeList = dag.getAvroConfigMISTEdges();
@@ -110,20 +114,31 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
       // Submit the query with the ConfigDag. This is almost the same to create().
       try {
         if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "Recover Query [appId: {0}, qid: {1}]",
-              new Object[]{appId, queryId});
+          LOG.log(Level.FINE, "Recover Query [groupId: {0}, qid: {1}]",
+              new Object[]{groupId, queryId});
         }
 
         // Add the query info to the queryManager.
         final List<String> jarFilePaths = checkpoint.getJarFilePaths();
-        final ApplicationInfo applicationInfo = queryManager.createApplication(appId, jarFilePaths);
+        final String appId = checkpoint.getApplicationId();
+        final ApplicationInfo applicationInfo;
+        if (applicationMap.containsKey(appId)) {
+          applicationInfo = applicationMap.get(appId);
+        } else {
+          applicationInfo =
+              queryManager.createApplication(checkpoint.getApplicationId(), jarFilePaths);
+        }
+        // Waiting for group information being added
+        while (applicationInfo.getGroups().isEmpty()) {
+          Thread.sleep(100);
+        }
         // Start the submitted dag
         queryManager.createAndStartQuery(queryId, applicationInfo, configDag);
       } catch (final Exception e) {
         e.printStackTrace();
         // [MIST-345] We need to release all of the information that is required for the query when it fails.
         LOG.log(Level.SEVERE, "An exception occurred while recovering {0} query: {1}",
-            new Object[] {appId, e.toString()});
+            new Object[] {groupId, e.toString()});
       }
     }
   }
@@ -142,31 +157,36 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
   }
 
   @Override
-  public boolean checkpointApplication(final String appId) {
-    LOG.log(Level.INFO, "Checkpoint started for appId : {0}", appId);
-    final ApplicationInfo applicationInfo = applicationMap.get(appId);
-    if (applicationInfo == null) {
-      LOG.log(Level.WARNING, "There is no such app {0}.",
-          new Object[] {appId});
+  public boolean checkpointGroup(final String groupId) {
+    LOG.log(Level.INFO, "Checkpoint started for groupId : {0}", groupId);
+    final Group group = groupMap.get(groupId);
+    if (group == null) {
+      LOG.log(Level.WARNING, "There is no such group {0}.",
+          new Object[] {groupId});
       return false;
     }
     final CheckpointResult result =
-        checkpointStore.saveAppInfoCheckpoint(new Tuple<>(appId, applicationInfo));
+        checkpointStore.saveGroupCheckpoint(new Tuple<>(groupId, group));
     return result.getIsSuccess();
   }
 
   @Override
-  public void deleteApplication(final String appId) {
-    final ApplicationInfo applicationInfo = applicationMap.get(appId);
-    if (applicationInfo == null) {
-      LOG.log(Level.WARNING, "There is no such app {0}.",
-          new Object[] {appId});
+  public void deleteGroup(final String groupId) {
+    final Group group = groupMap.get(groupId);
+    if (group == null) {
+      LOG.log(Level.WARNING, "There is no such group {0}.",
+          new Object[] {groupId});
       return;
     }
-    applicationInfo.getQueryRemover().deleteAllQueries();
-    applicationMap.remove(appId);
+    group.getQueryRemover().deleteAllQueries();
+    applicationMap.remove(groupId);
     groupAllocationTableModifier.addEvent(
         new WritingEvent(WritingEvent.EventType.GROUP_REMOVE_ALL, null));
+  }
+
+  @Override
+  public Group getGroup(final String groupId) {
+    return groupMap.get(groupId);
   }
 
   @Override

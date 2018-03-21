@@ -44,7 +44,7 @@ public class RecoveryRunner implements Runnable {
   public void run() {
     // TODO: Implement group recovery here.
     try {
-      checkpointManager.recoverApplication(recoveryGroupName);
+      checkpointManager.recoverGroup(recoveryGroupName);
     } catch (final IOException e) {
       LOG.log(Level.WARNING, "There is no such app {0}.",
         new Object[] {recoveryGroupName});
