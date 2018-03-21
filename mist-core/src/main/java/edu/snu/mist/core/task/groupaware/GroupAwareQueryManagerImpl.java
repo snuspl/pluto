@@ -238,8 +238,6 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     groupAllocationTableModifier.addEvent(
             new WritingEvent(WritingEvent.EventType.GROUP_ADD, new Tuple<>(applicationInfo, group)));
 
-    groupMap.putIfAbsent(groupId, group);
-
     return applicationInfo;
   }
 

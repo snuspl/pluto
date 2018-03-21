@@ -162,6 +162,7 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
               final Group group = tuple.getValue();
               applicationInfo.addGroup(group);
               groupAssigner.assignGroup(group);
+              groupMap.putIfAbsent(group.getGroupId(), group);
               break;
             }
             case QUERY_ADD: {

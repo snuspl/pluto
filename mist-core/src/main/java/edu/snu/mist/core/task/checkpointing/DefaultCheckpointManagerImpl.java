@@ -121,6 +121,10 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
         // Add the query info to the queryManager.
         final List<String> jarFilePaths = checkpoint.getJarFilePaths();
         final ApplicationInfo applicationInfo = queryManager.createApplication(appId, jarFilePaths);
+        // Waiting for group information being added
+        while (applicationInfo.getGroups().isEmpty()) {
+          Thread.sleep(100);
+        }
         // Start the submitted dag
         queryManager.createAndStartQuery(queryId, applicationInfo, configDag);
       } catch (final Exception e) {
