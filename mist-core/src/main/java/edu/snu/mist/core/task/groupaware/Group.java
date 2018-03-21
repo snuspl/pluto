@@ -20,6 +20,7 @@ import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.QueryRemover;
 import edu.snu.mist.core.task.QueryStarter;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
+import edu.snu.mist.formats.avro.GroupCheckpoint;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.List;
@@ -167,4 +168,9 @@ public interface Group extends AutoCloseable {
    * Get the ExecutionDags of this group.
    */
   ExecutionDags getExecutionDags();
+
+  /**
+   * Get a checkpoint of this group.
+   */
+  GroupCheckpoint checkpoint();
 }

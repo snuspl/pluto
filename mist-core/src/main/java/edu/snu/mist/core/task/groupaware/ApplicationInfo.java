@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task.groupaware;
 
-import edu.snu.mist.formats.avro.ApplicationInfoCheckpoint;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.List;
@@ -61,9 +60,4 @@ public interface ApplicationInfo {
    * @return
    */
   List<String> getJarFilePath();
-
-  /**
-   * Return a checkpoint of this app.
-   */
-  ApplicationInfoCheckpoint checkpoint();
 }
