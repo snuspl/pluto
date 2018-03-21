@@ -61,9 +61,9 @@ public interface QueryManager extends AutoCloseable {
 
   /**
    * Deletes the query corresponding to the queryId submitted by client.
-   * @param appId app id
+   * @param groupId group id
    * @param queryId query id
    * @return Returns the result message of deletion.
    */
-  QueryControlResult delete(String appId, String queryId);
+  QueryControlResult delete(String groupId, String queryId);
 }

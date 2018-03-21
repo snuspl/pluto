@@ -69,6 +69,11 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
   private final ApplicationMap applicationMap;
 
   /**
+   * Group map.
+   */
+  private final GroupMap groupMap;
+
+  /**
    * Event processor manager.
    */
   private final EventProcessorManager eventProcessorManager;
@@ -121,6 +126,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
                                      final DagGenerator dagGenerator,
                                      final GroupAllocationTableModifier groupAllocationTableModifier,
                                      final ApplicationMap applicationMap,
+                                     final GroupMap groupMap,
                                      @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod) {
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
@@ -132,6 +138,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     this.dagGenerator = dagGenerator;
     this.groupAllocationTableModifier = groupAllocationTableModifier;
     this.applicationMap = applicationMap;
+    this.groupMap = groupMap;
     this.checkpointPeriod = checkpointPeriod;
   }
 
@@ -199,7 +206,9 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     groupAllocationTableModifier.addEvent(new WritingEvent(WritingEvent.EventType.QUERY_ADD,
         new Tuple<>(applicationInfo, query)));
     // Start the submitted dag
-    applicationInfo.getQueryStarter().start(queryId, query, configDag, applicationInfo.getJarFilePath());
+    // TODO : [MIST-1016] get the appropriate Group for this applicationInfo.
+    final Group group = applicationInfo.getGroups().get(0);
+    group.getQueryStarter().start(queryId, query, configDag, applicationInfo.getJarFilePath());
     return query;
   }
 
@@ -210,7 +219,9 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     jcb.bindNamedParameter(ApplicationIdentifier.class, appId);
     // TODO: Submit a single jar instead of list of jars
     jcb.bindNamedParameter(JarFilePath.class, paths.get(0));
-    jcb.bindNamedParameter(GroupId.class, appId);
+    // TODO: [MIST-1016] Get the group ID from the master and put it in here.
+    final String groupId = "";
+    jcb.bindNamedParameter(GroupId.class, groupId);
     jcb.bindNamedParameter(PeriodicCheckpointPeriod.class, String.valueOf(checkpointPeriod));
 
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
@@ -227,6 +238,8 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     groupAllocationTableModifier.addEvent(
             new WritingEvent(WritingEvent.EventType.GROUP_ADD, new Tuple<>(applicationInfo, group)));
 
+    groupMap.putIfAbsent(groupId, group);
+
     return applicationInfo;
   }
 
@@ -241,8 +254,8 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
    * Deletes queries from MIST.
    */
   @Override
-  public QueryControlResult delete(final String appId, final String queryId) {
-    applicationMap.get(appId).getQueryRemover().deleteQuery(queryId);
+  public QueryControlResult delete(final String groupId, final String queryId) {
+    groupMap.get(groupId).getQueryRemover().deleteQuery(queryId);
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(queryId);
     queryControlResult.setIsSuccess(true);

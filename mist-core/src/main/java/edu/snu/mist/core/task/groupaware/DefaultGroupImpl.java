@@ -16,7 +16,10 @@
 package edu.snu.mist.core.task.groupaware;
 
 import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.core.task.ExecutionDags;
 import edu.snu.mist.core.task.Query;
+import edu.snu.mist.core.task.QueryRemover;
+import edu.snu.mist.core.task.QueryStarter;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -71,13 +74,34 @@ final class DefaultGroupImpl implements Group {
    */
   private long latestMovedTime;
 
+  /**
+   * The query starter.
+   */
+  private final QueryStarter queryStarter;
+
+  /**
+   * The query remover.
+   */
+  private final QueryRemover queryRemover;
+
+  /**
+   * The ExecutionDags for this group.
+   */
+  private final ExecutionDags executionDags;
+
   @Inject
-  private DefaultGroupImpl(@Parameter(GroupId.class) final String groupId) {
+  private DefaultGroupImpl(@Parameter(GroupId.class) final String groupId,
+                           final QueryStarter queryStarter,
+                           final QueryRemover queryRemover,
+                           final ExecutionDags executionDags) {
     this.groupId = groupId;
     this.activeQueryQueue = new ConcurrentLinkedQueue<>();
     this.eventProcessor = new AtomicReference<>(null);
     this.latestMovedTime = System.currentTimeMillis();
     this.totalProcessingEvent = new AtomicLong(0);
+    this.queryStarter = queryStarter;
+    this.queryRemover = queryRemover;
+    this.executionDags = executionDags;
   }
 
   @Override
@@ -277,5 +301,20 @@ final class DefaultGroupImpl implements Group {
     sb.append(queryList.size());
     sb.append("}");
     return sb.toString();
+  }
+
+  @Override
+  public QueryStarter getQueryStarter() {
+    return queryStarter;
+  }
+
+  @Override
+  public QueryRemover getQueryRemover() {
+    return queryRemover;
+  }
+
+  @Override
+  public ExecutionDags getExecutionDags() {
+    return executionDags;
   }
 }
