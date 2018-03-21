@@ -207,7 +207,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
         new Tuple<>(applicationInfo, query)));
     // Start the submitted dag
     // TODO : [MIST-1016] get the appropriate Group for this applicationInfo.
-    final Group group = applicationInfo.getGroups().get(0);
+    final Group group = applicationInfo.getRandomGroup();
     group.getQueryStarter().start(queryId, query, configDag, applicationInfo.getJarFilePath());
     return query;
   }

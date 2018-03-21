@@ -153,9 +153,18 @@ public interface Group extends AutoCloseable {
    */
   int size();
 
+  /**
+   * Get the query starter for this group.
+   */
   QueryStarter getQueryStarter();
 
+  /**
+   * Get the query remover for this group.
+   */
   QueryRemover getQueryRemover();
 
+  /**
+   * Get the ExecutionDags of this group.
+   */
   ExecutionDags getExecutionDags();
 }

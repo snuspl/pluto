@@ -71,6 +71,12 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
   }
 
   @Override
+  public Group getRandomGroup() {
+    final Random random = new Random();
+    return groups.get(random.nextInt(groups.size()));
+  }
+
+  @Override
   public boolean addGroup(final Group group) {
     group.setApplicationInfo(this);
     numGroups.incrementAndGet();

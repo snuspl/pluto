@@ -35,6 +35,11 @@ public interface ApplicationInfo {
   List<Group> getGroups();
 
   /**
+   * Get a random group for this application.
+   */
+  Group getRandomGroup();
+
+  /**
    * Add a group.
    * @param group group
    */
