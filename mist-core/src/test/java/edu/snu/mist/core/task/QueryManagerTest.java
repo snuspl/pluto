@@ -246,13 +246,13 @@ public final class QueryManagerTest {
    * QueryManager Builder.
    * It receives inputs tuple, physicalPlanGenerator, injector then makes query manager.
    */
-  private QueryManager queryManagerBuild(final Tuple<String, AvroDag> tuple,
+  private QueryManager queryManagerBuild(final AvroDag avroDag,
                                          final ConfigDagGenerator configDagGenerator,
                                          final DagGenerator dagGenerator,
                                          final Injector injector) throws Exception {
     // Create mock PlanStore. It returns true and the above logical plan
     final QueryInfoStore planStore = mock(QueryInfoStore.class);
-    when(planStore.load(tuple.getKey())).thenReturn(tuple.getValue());
+    //when(planStore.load(avroDag.getQueryId()).thenReturn(avroDag);
 
     // Create QueryManager
     injector.bindVolatileInstance(ConfigDagGenerator.class, configDagGenerator);

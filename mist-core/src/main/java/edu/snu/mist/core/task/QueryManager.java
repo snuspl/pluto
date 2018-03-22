@@ -20,8 +20,8 @@ import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.groupaware.ApplicationInfo;
 import edu.snu.mist.core.task.groupaware.GroupAwareQueryManagerImpl;
 import edu.snu.mist.formats.avro.AvroDag;
+import edu.snu.mist.formats.avro.QueryCheckpoint;
 import edu.snu.mist.formats.avro.QueryControlResult;
-import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.tang.exceptions.InjectionException;
 
@@ -36,9 +36,16 @@ import java.util.List;
 public interface QueryManager extends AutoCloseable {
   /**
    * Start to the query.
-   * @param tuple the query id and the avro dag
+   * @param avroDag the query id and the avro dag
    */
-  QueryControlResult create(Tuple<String, AvroDag> tuple);
+  QueryControlResult create(AvroDag avroDag);
+
+  /**
+   * Start to the query with the checkpointed states.
+   * @param avroDag the query id and the avro dag
+   * @param checkpointedStates the checkpointed states
+   */
+  QueryControlResult createWithCheckpointedStates(AvroDag avroDag, QueryCheckpoint checkpointedStates);
 
   /**
    * Create a query (this is for checkpointing).
