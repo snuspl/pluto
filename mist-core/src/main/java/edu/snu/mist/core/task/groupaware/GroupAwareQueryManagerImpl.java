@@ -27,11 +27,13 @@ import edu.snu.mist.core.parameters.TaskHostname;
 import edu.snu.mist.core.parameters.TaskToMasterPort;
 import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.checkpointing.CheckpointManager;
 import edu.snu.mist.core.task.groupaware.parameters.ApplicationIdentifier;
 import edu.snu.mist.core.task.groupaware.parameters.JarFilePath;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.GroupStats;
+import edu.snu.mist.formats.avro.QueryCheckpoint;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import org.apache.avro.AvroRemoteException;
@@ -131,6 +133,11 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
   private final String taskHostname;
 
   /**
+   * The checkpoint manager.
+   */
+  private final CheckpointManager checkpointManager;
+
+  /**
    * Default query manager in MistTask.
    */
   @Inject
@@ -148,7 +155,9 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
                                      @Parameter(MasterHostname.class) final String masterHostAddress,
                                      @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
                                      @Parameter(TaskHostname.class) final String taskHostname,
-                                     final GroupMap groupMap) throws IOException {
+                                     final GroupMap groupMap,
+                                     final CheckpointManager checkpointManager) throws IOException {
+
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.eventProcessorManager = eventProcessorManager;
@@ -164,6 +173,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     this.proxyToMaster = AvroUtils.createAvroProxy(TaskToMasterMessage.class,
         new InetSocketAddress(masterHostAddress, taskToMasterPort));
     this.taskHostname = taskHostname;
+    this.checkpointManager = checkpointManager;
   }
 
   /**
@@ -172,22 +182,32 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
    * and executes the sources in order to receives data streams.
    * Before the queries are executed, it stores the avro  dag into disk.
    * We can regenerate the queries from the stored avro dag.
-   * @param tuple a pair of the query id and the avro dag
+   * @param avroDag the avro dag
    * @return submission result
    */
   @Override
-  public QueryControlResult create(final Tuple<String, AvroDag> tuple) {
+  public QueryControlResult create(final AvroDag avroDag) {
+    return createWithCheckpointedStates(avroDag, null);
+  }
+
+  /**
+   * Start a submitted query with the checkpointed states.
+   * @param avroDag the avro dag
+   * @param checkpointedStates the checkpointed states
+   * @return
+   */
+  @Override
+  public QueryControlResult createWithCheckpointedStates(final AvroDag avroDag,
+                                                         final QueryCheckpoint checkpointedStates) {
     final QueryControlResult queryControlResult = new QueryControlResult();
-    queryControlResult.setQueryId(tuple.getKey());
+    final String queryId = avroDag.getQueryId();
+    queryControlResult.setQueryId(queryId);
     try {
       // Create the submitted query
-      // 1) Saves the avr dag to the PlanStore and
-      // converts the avro dag to the logical and execution dag
-      planStore.saveAvroDag(tuple);
-      final String queryId = tuple.getKey();
-
+      // 1) Saves the avr dag and converts the avro dag to the logical and execution dag
+      checkpointManager.storeQuery(avroDag);
       // Update app information
-      final String appId = tuple.getValue().getAppId();
+      final String appId = avroDag.getAppId();
 
       if (LOG.isLoggable(Level.FINE)) {
         LOG.log(Level.FINE, "Create Query [aid: {0}, qid: {2}]",
@@ -195,11 +215,16 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
       }
 
       if (!applicationMap.containsKey(appId)) {
-        createApplication(appId, tuple.getValue().getJarPaths());
+        createApplication(appId, avroDag.getJarPaths());
       }
 
       final ApplicationInfo applicationInfo = applicationMap.get(appId);
-      final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
+      final DAG<ConfigVertex, MISTEdge> configDag;
+      if (checkpointedStates == null) {
+        configDag = configDagGenerator.generate(avroDag);
+      } else {
+        configDag = configDagGenerator.generateWithCheckpointedStates(avroDag, checkpointedStates);
+      }
       // Waiting for group information being added
       while (applicationInfo.getGroups().isEmpty()) {
         Thread.sleep(100);
@@ -207,13 +232,13 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
       final Query query = createAndStartQuery(queryId, applicationInfo, configDag);
 
       queryControlResult.setIsSuccess(true);
-      queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
+      queryControlResult.setMsg(ResultMessage.submitSuccess(queryId));
       return queryControlResult;
     } catch (final Exception e) {
       e.printStackTrace();
       // [MIST-345] We need to release all of the information that is required for the query when it fails.
       LOG.log(Level.SEVERE, "An exception occurred while starting {0} query: {1}",
-          new Object[] {tuple.getKey(), e.toString()});
+          new Object[] {queryId, e.toString()});
 
       queryControlResult.setIsSuccess(false);
       queryControlResult.setMsg(e.getMessage());

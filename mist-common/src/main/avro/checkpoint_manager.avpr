@@ -23,28 +23,42 @@
   "types":
   [
     {
-      "name": "AvroConfigDag",
       "type": "record",
+      "name": "AvroDag",
       "fields":
       [
         {
-          "name": "AvroConfigVertices",
-          "type": {
+          "name": "AppId",
+          "type": "string"
+        },
+        {
+          "name": "QueryId",
+          "type": "string"
+        },
+        {
+          "name": "JarPaths",
+          "type":
+          {
+            "type": "array",
+            "items": "string"
+          }
+        },
+        {
+          "name": "AvroVertices",
+          "type":
+          {
             "type": "array",
             "items":
             {
-              "name": "AvroConfigVertex",
+              "name": "AvroVertex",
               "type": "record",
               "fields":
               [
                 {
-                  "name": "Id",
-                  "type": "string"
-                },
-                {
-                  "name": "Type",
-                  "type": {
-                    "name": "AvroConfigVertexType",
+                  "name": "AvroVertexType",
+                  "type":
+                  {
+                    "name": "AvroVertexTypeEnum",
                     "type": "enum",
                     "symbols": ["SOURCE", "OPERATOR", "SINK"]
                   }
@@ -56,37 +70,30 @@
                     "type": "map",
                     "values": "string"
                   }
-                },
-                {
-                  "name": "State",
-                  "type":
-                  {
-                    "type": "map",
-                    "values":
-                    [
-                      "boolean", "int", "long", "float", "double", "string", "bytes"
-                    ]
-                  }
-                },
-                {
-                  "name": "LatestCheckpointTimestamp",
-                  "type": "long",
-                  "default": 0
                 }
               ]
             }
           }
         },
         {
-          "name": "AvroConfigMISTEdges",
-          "type": {
+          "name": "Edges",
+          "type":
+          {
             "type": "array",
             "items":
             {
-              "name": "AvroConfigMISTEdge",
+              "name": "Edge",
               "type": "record",
               "fields":
               [
+                {
+                  "name": "From",
+                  "type": "int"
+                },
+                {
+                  "name": "To",
+                  "type": "int"
+                },
                 {
                   "name": "Direction",
                   "type": {
@@ -96,19 +103,50 @@
                   }
                 },
                 {
-                  "name": "Index",
+                  "name": "BranchIndex",
                   "type": "int"
-                },
-                {
-                  "name": "FromVertexIndex",
-                  "type": "int"
-                },
-                {
-                 "name": "ToVertexIndex",
-                 "type": "int"
                 }
               ]
             }
+          }
+        }
+      ]
+    },
+    {
+      "name": "StateWithTimestamp",
+      "type": "record",
+      "fields":
+      [
+        {
+          "name": "VertexState",
+          "type":
+          [
+            {
+              "type": "map",
+              "values": [
+                "boolean", "int", "long", "float", "double", "string", "bytes"
+              ]
+            },
+            "null"
+          ]
+        },
+        {
+          "name": "LatestCheckpointTimestamp",
+          "type": "long",
+          "default": 0
+        }
+      ]
+    },
+    {
+      "name": "QueryCheckpoint",
+      "type": "record",
+      "fields":
+      [
+        {
+          "name": "QueryState",
+          "type": {
+            "type": "array",
+            "items": "StateWithTimestamp"
           }
         }
       ]
@@ -119,33 +157,19 @@
       "fields":
       [
         {
-          "name": "AvroConfigDags",
-          "type":
-          {
-            "type": "map",
-            "values": "AvroConfigDag"
-          }
-        },
-        {
-          "name": "MinimumLatestCheckpointTimestamp",
-          "type": "long",
-          "default": 0
-        },
-        {
-          "name": "JarFilePaths",
-          "type":
-          {
-            "type": "array",
-            "items": "string"
-          }
-        },
-        {
           "name": "GroupId",
           "type": "string"
         },
         {
-          "name": "ApplicationId",
-          "type": "string"
+          "name": "QueryCheckpointMap",
+          "type": {
+            "type": "map",
+            "values": "QueryCheckpoint"
+          }
+        },
+        {
+          "name": "MinimumLatestCheckpointTimestamp",
+          "type": "long"
         }
       ]
     },
@@ -169,18 +193,6 @@
       ]
     }
   ],
-  "messages":
-  {
-    "checkpointGroup":
-    {
-      "request":
-      [
-        {
-          "name": "groupInfoCheckpoint",
-          "type": "GroupCheckpoint"
-        }
-      ],
-      "response": "CheckpointResult"
-    }
+  "messages": {
   }
 }

@@ -156,9 +156,11 @@ public class GroupRecoveryTest {
     final Tuple<List<AvroVertex>, List<Edge>> initialAvroOpChainDag = query.getAvroOperatorDag();
 
     final String appId = "testApp";
+    final String queryId = "testQuery";
     final AvroDag.Builder avroDagBuilder = AvroDag.newBuilder();
     final AvroDag avroDag = avroDagBuilder
         .setAppId(appId)
+        .setQueryId(queryId)
         .setJarPaths(new ArrayList<>())
         .setAvroVertices(initialAvroOpChainDag.getKey())
         .setEdges(initialAvroOpChainDag.getValue())
@@ -178,9 +180,9 @@ public class GroupRecoveryTest {
 
     final QueryManager queryManager = injector.getInstance(QueryManager.class);
 
-    final Tuple<String, AvroDag> tuple = new Tuple<>("testQuery", avroDag);
+    //final Tuple<String, AvroDag> tuple = new Tuple<>("testQuery", avroDag);
     queryManager.createApplication(appId, Arrays.asList(""));
-    queryManager.create(tuple);
+    queryManager.create(avroDag);
 
     // Wait until all sources connect to stream generator
     sourceCountDownLatch1.await();

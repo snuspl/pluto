@@ -18,9 +18,7 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.graph.AdjacentListDAG;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.formats.avro.AvroDag;
-import edu.snu.mist.formats.avro.AvroVertex;
-import edu.snu.mist.formats.avro.Edge;
+import edu.snu.mist.formats.avro.*;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -60,25 +58,50 @@ public final class DefaultConfigDagGeneratorImpl implements ConfigDagGenerator {
     }
   }
 
-  /**
-   * Generate a dag that holds the configuration of vertices from avro vertex dag.
-   * @param avroDag avro vertex dag
-   * @return configuration vertex dag
-   */
   @Override
   public DAG<ConfigVertex, MISTEdge> generate(final AvroDag avroDag) {
+    return generateWithCheckpointedStates(avroDag, null);
+  }
+
+  @Override
+  public DAG<ConfigVertex, MISTEdge> generateWithCheckpointedStates(final AvroDag avroDag,
+                                                                    final QueryCheckpoint checkpointedStates) {
     final List<ConfigVertex> deserializedVertices = new ArrayList<>(avroDag.getAvroVertices().size());
     final DAG<ConfigVertex, MISTEdge> configDag = new AdjacentListDAG<>();
+    final List<AvroVertex> avroVertices = avroDag.getAvroVertices();
 
-    // Fetch configurations from avro vertex dag
-    for (final AvroVertex avroVertex : avroDag.getAvroVertices()) {
-      final ExecutionVertex.Type type = getVertexType(avroVertex);
+    if (checkpointedStates == null) {
+      // No checkpointed states discovered -> generate vertices without states
+      // Fetch configurations from avro vertex dag
+      for (final AvroVertex avroVertex : avroVertices) {
+        final ExecutionVertex.Type type = getVertexType(avroVertex);
 
-      // Create a config vertex
-      final ConfigVertex configVertex =
-          new ConfigVertex(Long.toString(configVertexId.getAndIncrement()), type, avroVertex.getConfiguration());
-      deserializedVertices.add(configVertex);
-      configDag.addVertex(configVertex);
+        // Create a config vertex
+        final ConfigVertex configVertex =
+            new ConfigVertex(Long.toString(configVertexId.getAndIncrement()), type, avroVertex.getConfiguration());
+        deserializedVertices.add(configVertex);
+        configDag.addVertex(configVertex);
+      }
+    } else {
+      // There are checkpointed states -> generate vertices with internal states.
+      final int numVertices = avroVertices.size();
+      final List<StateWithTimestamp> queryState = checkpointedStates.getQueryState();
+      // Here, we assume that avroDags and checkpointedStates are inserted in the same order.
+      // This can be guaranteed because Java List semantic always guarantees the order among elements.
+      for (int i = 0; i < numVertices; i++) {
+        final AvroVertex avroVertex = avroVertices.get(i);
+        final StateWithTimestamp vertexStateWithTimestamp = queryState.get(i);
+        final ExecutionVertex.Type type = getVertexType(avroVertex);
+        // Create a config vertex with
+        final ConfigVertex configVertex = new ConfigVertex(
+            Long.toString(configVertexId.getAndIncrement()),
+            type,
+            avroVertex.getConfiguration(),
+            vertexStateWithTimestamp.getVertexState(),
+            vertexStateWithTimestamp.getLatestCheckpointTimestamp());
+        deserializedVertices.add(configVertex);
+        configDag.addVertex(configVertex);
+      }
     }
 
     // Add edge info to the config dag
