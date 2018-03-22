@@ -103,7 +103,7 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
 
     for (final AvroDag avroDag : dagList) {
       final QueryCheckpoint queryCheckpoint = queryCheckpointMap.get(avroDag.getQueryId());
-      // Recover the query groups.
+      // Recover each query in the group.
       queryManager.createWithCheckpointedStates(avroDag, queryCheckpoint);
     }
   }
