@@ -15,7 +15,12 @@
  */
 package edu.snu.mist.core.driver;
 
+import edu.snu.mist.core.master.allocation.ApplicationAwareQueryAllocationManager;
+import edu.snu.mist.core.master.allocation.PowerOfTwoQueryAllocationManager;
+import edu.snu.mist.core.master.allocation.QueryAllocationManager;
+import edu.snu.mist.core.master.allocation.RoundRobinQueryAllocationManager;
 import edu.snu.mist.core.parameters.OverloadedTaskThreshold;
+import edu.snu.mist.core.parameters.QueryAllocationOption;
 import edu.snu.mist.core.parameters.TaskInfoGatherPeriod;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -40,25 +45,42 @@ public final class MistMasterConfigs {
    */
   private final double overloadedTaskThreshold;
 
+  /**
+   * The query allocation manager implementation option.
+   */
+  private final String queryAllocationOption;
+
   @Inject
   private MistMasterConfigs(
       @Parameter(TaskInfoGatherPeriod.class) final long taskInfoGatherPeriod,
-      @Parameter(OverloadedTaskThreshold.class) final double overloadedTaskThreshold) {
+      @Parameter(OverloadedTaskThreshold.class) final double overloadedTaskThreshold,
+      @Parameter(QueryAllocationOption.class) final String queryAllocationOption) {
     this.taskInfoGatherPeriod = taskInfoGatherPeriod;
     this.overloadedTaskThreshold = overloadedTaskThreshold;
+    this.queryAllocationOption = queryAllocationOption;
   }
 
   public Configuration getConfiguration() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(TaskInfoGatherPeriod.class, String.valueOf(taskInfoGatherPeriod));
     jcb.bindNamedParameter(OverloadedTaskThreshold.class, String.valueOf(overloadedTaskThreshold));
+    if (queryAllocationOption.equals("rr")) {
+      jcb.bindImplementation(QueryAllocationManager.class, RoundRobinQueryAllocationManager.class);
+    } else if (queryAllocationOption.equals("pot")) {
+      jcb.bindImplementation(QueryAllocationManager.class, PowerOfTwoQueryAllocationManager.class);
+    } else if (queryAllocationOption.equals("aa")) {
+      jcb.bindImplementation(QueryAllocationManager.class, ApplicationAwareQueryAllocationManager.class);
+    } else {
+      throw new IllegalArgumentException("Invalid query allocation option!");
+    }
     return jcb.build();
   }
 
   public static CommandLine addCommandLineConf(final CommandLine commandLine) {
     final CommandLine cmd = commandLine
         .registerShortNameOfClass(TaskInfoGatherPeriod.class)
-        .registerShortNameOfClass(OverloadedTaskThreshold.class);
+        .registerShortNameOfClass(OverloadedTaskThreshold.class)
+        .registerShortNameOfClass(QueryAllocationOption.class);
     return cmd;
   }
 }

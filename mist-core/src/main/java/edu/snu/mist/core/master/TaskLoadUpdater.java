@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.master;
 
+import edu.snu.mist.core.master.allocation.QueryAllocationManager;
 import edu.snu.mist.formats.avro.IPAddress;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
 import org.apache.avro.AvroRemoteException;
@@ -55,6 +56,7 @@ public class TaskLoadUpdater implements Runnable {
         final double updatedCpuLoad = (Double) proxyToTask.getTaskLoad();
         final TaskInfo taskInfo = queryAllocationManager.getTaskInfo(entry.getKey());
         taskInfo.setCpuLoad(updatedCpuLoad);
+        LOG.log(Level.INFO, "Task {0} updated its load: {1}", new Object[]{entry.getValue(), updatedCpuLoad});
       } catch (final AvroRemoteException e) {
         LOG.log(Level.INFO, "Remote error occured during connecting to task " + entry.getKey().toString());
       }

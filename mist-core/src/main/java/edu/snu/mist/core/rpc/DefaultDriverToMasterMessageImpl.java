@@ -16,7 +16,7 @@
 package edu.snu.mist.core.rpc;
 
 import edu.snu.mist.core.master.ProxyToTaskMap;
-import edu.snu.mist.core.master.QueryAllocationManager;
+import edu.snu.mist.core.master.allocation.QueryAllocationManager;
 import edu.snu.mist.core.master.TaskInfo;
 import edu.snu.mist.core.master.TaskLoadUpdater;
 import edu.snu.mist.core.parameters.TaskInfoGatherPeriod;
