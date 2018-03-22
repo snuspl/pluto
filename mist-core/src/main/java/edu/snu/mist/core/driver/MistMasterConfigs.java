@@ -19,7 +19,12 @@ import edu.snu.mist.core.master.DistributedRecoveryScheduler;
 import edu.snu.mist.core.master.RecoveryScheduler;
 import edu.snu.mist.core.master.SingleNodeRecoveryScheduler;
 import edu.snu.mist.core.parameters.DistributedRecoveryOn;
+import edu.snu.mist.core.master.allocation.ApplicationAwareQueryAllocationManager;
+import edu.snu.mist.core.master.allocation.PowerOfTwoQueryAllocationManager;
+import edu.snu.mist.core.master.allocation.QueryAllocationManager;
+import edu.snu.mist.core.master.allocation.RoundRobinQueryAllocationManager;
 import edu.snu.mist.core.parameters.OverloadedTaskThreshold;
+import edu.snu.mist.core.parameters.QueryAllocationOption;
 import edu.snu.mist.core.parameters.TaskInfoGatherPeriod;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -49,24 +54,41 @@ public final class MistMasterConfigs {
    */
   private final boolean distributedRecoveryOn;
 
+  /**
+   * The query allocation manager implementation option.
+   */
+  private final String queryAllocationOption;
+
   @Inject
   private MistMasterConfigs(
       @Parameter(TaskInfoGatherPeriod.class) final long taskInfoGatherPeriod,
       @Parameter(OverloadedTaskThreshold.class) final double overloadedTaskThreshold,
-      @Parameter(DistributedRecoveryOn.class) final boolean distributedRecoveryOn) {
+      @Parameter(DistributedRecoveryOn.class) final boolean distributedRecoveryOn,
+      @Parameter(QueryAllocationOption.class) final String queryAllocationOption) {
     this.taskInfoGatherPeriod = taskInfoGatherPeriod;
     this.overloadedTaskThreshold = overloadedTaskThreshold;
     this.distributedRecoveryOn = distributedRecoveryOn;
+    this.queryAllocationOption = queryAllocationOption;
   }
 
   public Configuration getConfiguration() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(TaskInfoGatherPeriod.class, String.valueOf(taskInfoGatherPeriod));
     jcb.bindNamedParameter(OverloadedTaskThreshold.class, String.valueOf(overloadedTaskThreshold));
+
     if (distributedRecoveryOn) {
       jcb.bindImplementation(RecoveryScheduler.class, DistributedRecoveryScheduler.class);
     } else {
       jcb.bindImplementation(RecoveryScheduler.class, SingleNodeRecoveryScheduler.class);
+    }
+    if (queryAllocationOption.equals("rr")) {
+      jcb.bindImplementation(QueryAllocationManager.class, RoundRobinQueryAllocationManager.class);
+    } else if (queryAllocationOption.equals("pot")) {
+      jcb.bindImplementation(QueryAllocationManager.class, PowerOfTwoQueryAllocationManager.class);
+    } else if (queryAllocationOption.equals("aa")) {
+      jcb.bindImplementation(QueryAllocationManager.class, ApplicationAwareQueryAllocationManager.class);
+    } else {
+      throw new IllegalArgumentException("Invalid query allocation option!");
     }
     return jcb.build();
   }
@@ -75,7 +97,8 @@ public final class MistMasterConfigs {
     final CommandLine cmd = commandLine
         .registerShortNameOfClass(TaskInfoGatherPeriod.class)
         .registerShortNameOfClass(OverloadedTaskThreshold.class)
-        .registerShortNameOfClass(DistributedRecoveryOn.class);
+        .registerShortNameOfClass(DistributedRecoveryOn.class)
+        .registerShortNameOfClass(QueryAllocationOption.class);
     return cmd;
   }
 }

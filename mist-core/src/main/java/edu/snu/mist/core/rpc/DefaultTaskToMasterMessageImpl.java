@@ -16,7 +16,8 @@
 package edu.snu.mist.core.rpc;
 
 import edu.snu.mist.core.master.RecoveryScheduler;
-import edu.snu.mist.core.master.QueryAllocationManager;
+import edu.snu.mist.core.master.TaskStatsMap;
+import edu.snu.mist.core.master.allocation.QueryAllocationManager;
 import edu.snu.mist.formats.avro.GroupStats;
 import edu.snu.mist.formats.avro.RecoveryInfo;
 import edu.snu.mist.formats.avro.TaskToMasterMessage;
@@ -24,11 +25,18 @@ import org.apache.avro.AvroRemoteException;
 
 import javax.inject.Inject;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The default implementation for task-to-master avro rpc.
  */
 public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage {
+
+  private static final Logger LOG = Logger.getLogger(DefaultTaskToMasterMessageImpl.class.getName());
 
   /**
    * The shared query allocation manager.
@@ -40,19 +48,43 @@ public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage
    */
   private final RecoveryScheduler recoveryScheduler;
 
+  /**
+   * The map for generating group names.
+   */
+  private final ConcurrentMap<String, AtomicInteger> appGroupCounterMap;
+
+  /**
+   * The shared task stats map.
+   */
+  private final TaskStatsMap taskStatsMap;
+
   @Inject
   private DefaultTaskToMasterMessageImpl(
       final QueryAllocationManager queryAllocationManager,
-      final RecoveryScheduler recoveryScheduler) {
+      final RecoveryScheduler recoveryScheduler,
+      final TaskStatsMap taskStatsMap) {
     this.queryAllocationManager = queryAllocationManager;
     this.recoveryScheduler = recoveryScheduler;
+    this.appGroupCounterMap = new ConcurrentHashMap<>();
+    this.taskStatsMap = taskStatsMap;
   }
 
   @Override
   public String createGroup(
       final String taskHostname,
       final GroupStats groupStats) throws AvroRemoteException {
-    return queryAllocationManager.createGroup(taskHostname, groupStats);
+    LOG.log(Level.INFO, "Creating new group from {0}" + taskHostname);
+    final String appId = groupStats.getAppId();
+    if (!appGroupCounterMap.containsKey(appId)) {
+      appGroupCounterMap.putIfAbsent(appId, new AtomicInteger(0));
+    }
+    final AtomicInteger groupCounter = appGroupCounterMap.get(appId);
+    // Return group name.
+    final String groupName = String.format("%s_%d", appId, groupCounter.getAndIncrement());
+    LOG.log(Level.INFO, "Create new group : {0}", groupName);
+    // Update the group status.
+    taskStatsMap.get(taskHostname).getGroupStatsMap().put(groupName, groupStats);
+    return groupName;
   }
 
   @Override

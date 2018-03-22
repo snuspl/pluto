@@ -13,24 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.master;
+package edu.snu.mist.core.master.allocation;
 
+import java.util.List;
+import java.util.concurrent.ConcurrentMap;
+import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.parameters.ClientToTaskPort;
+
 import edu.snu.mist.core.parameters.OverloadedTaskThreshold;
-import edu.snu.mist.formats.avro.GroupStats;
 import edu.snu.mist.formats.avro.IPAddress;
 import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -46,14 +44,9 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
   private final ConcurrentMap<String, List<String>> appTaskListMap;
 
   /**
-   * The map which maintains task stats.
+   * The shared task stats map.
    */
-  private final ConcurrentMap<String, TaskStats> taskStatsMap;
-
-  /**
-   * The map for generating group names.
-   */
-  private final ConcurrentMap<String, AtomicInteger> appGroupCounterMap;
+  private final TaskStatsMap taskStatsMap;
 
   /**
    * The threshold for determining overloaded task.
@@ -68,12 +61,12 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
   @Inject
   private ApplicationAwareQueryAllocationManager(
       @Parameter(OverloadedTaskThreshold.class) final double overloadedTaskThreshold,
-      @Parameter(ClientToTaskPort.class) final int clientToTaskPort) {
+      @Parameter(ClientToTaskPort.class) final int clientToTaskPort,
+      final TaskStatsMap taskStatsMap) {
     this.appTaskListMap = new ConcurrentHashMap<>();
-    this.taskStatsMap = new ConcurrentHashMap<>();
-    this.appGroupCounterMap = new ConcurrentHashMap<>();
     this.overloadedTaskThreshold = overloadedTaskThreshold;
     this.clientToTaskPort = clientToTaskPort;
+    this.taskStatsMap = taskStatsMap;
   }
 
   // TODO: [MIST-519] Consider query reallocation.
@@ -116,44 +109,5 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
       }
     }
     return new IPAddress(minLoadTaskHostname, clientToTaskPort);
-  }
-
-  @Override
-  public TaskStats getTaskStats(final String taskHostname) {
-    return taskStatsMap.get(taskHostname);
-  }
-
-  @Override
-  public TaskStats addTask(final String taskHostname) {
-    return taskStatsMap.putIfAbsent(taskHostname, TaskStats.newBuilder()
-        .setTaskLoad(0.0)
-        .setGroupStatsMap(new HashMap<>())
-        .build());
-  }
-
-  @Override
-  public TaskStats removeTask(final String taskHostname) {
-    return taskStatsMap.remove(taskHostname);
-  }
-
-  @Override
-  public String createGroup(final String taskHostname, final GroupStats groupStats) {
-    LOG.log(Level.INFO, "Creating new group from {0}" + taskHostname);
-    final String appId = groupStats.getAppId();
-    if (!appGroupCounterMap.containsKey(appId)) {
-      appGroupCounterMap.putIfAbsent(appId, new AtomicInteger(0));
-    }
-    final AtomicInteger groupCounter = appGroupCounterMap.get(appId);
-    // Return group name.
-    final String groupName = String.format("%s_%d", appId, groupCounter.getAndIncrement());
-    LOG.log(Level.INFO, "Create new group : {0}", groupName);
-    // Update the group status.
-    taskStatsMap.get(taskHostname).getGroupStatsMap().put(groupName, groupStats);
-    return groupName;
-  }
-
-  @Override
-  public void updateTaskStats(final String taskHostname, final TaskStats updatedTaskStats) {
-    taskStatsMap.replace(taskHostname, updatedTaskStats);
   }
 }

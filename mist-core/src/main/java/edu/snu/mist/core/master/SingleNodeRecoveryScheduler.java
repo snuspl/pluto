@@ -47,9 +47,9 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
   private ConcurrentMap<String, GroupStats> recoveryGroups;
 
   /**
-   * Query allocation manager.
+   * The shared taskStatsMap.
    */
-  private QueryAllocationManager queryAllocationManager;
+  private TaskStatsMap taskStatsMap;
 
   /**
    * The shared map which contains Avro proxies to task.
@@ -78,11 +78,11 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
 
   @Inject
   private SingleNodeRecoveryScheduler(
-      final QueryAllocationManager queryAllocationManager,
+      final TaskStatsMap taskStatsMap,
       final ProxyToTaskMap proxyToTaskMap) {
     this.allFailedGroups = new ConcurrentHashMap<>();
     this.recoveryGroups = null;
-    this.queryAllocationManager = queryAllocationManager;
+    this.taskStatsMap = taskStatsMap;
     this.proxyToTaskMap = proxyToTaskMap;
     this.lock = new ReentrantLock();
     this.notInRecoveryProcess = this.lock.newCondition();
@@ -109,7 +109,7 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
       proxyToRecoveryTask = null;
       for (final Map.Entry<String, MasterToTaskMessage> entry : proxyToTaskMap.entrySet()) {
         final String taskHostname = entry.getKey();
-        final double taskLoad = queryAllocationManager.getTaskStats(taskHostname).getTaskLoad();
+        final double taskLoad = taskStatsMap.get(taskHostname).getTaskLoad();
         if (taskLoad < minLoad) {
           minLoad = taskLoad;
           proxyToRecoveryTask = entry.getValue();

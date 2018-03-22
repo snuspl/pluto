@@ -16,8 +16,8 @@
 package edu.snu.mist.core.rpc;
 
 import edu.snu.mist.core.master.ProxyToTaskMap;
-import edu.snu.mist.core.master.QueryAllocationManager;
 import edu.snu.mist.core.master.RecoveryScheduler;
+import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.master.TaskStatsUpdater;
 import edu.snu.mist.core.parameters.MasterToTaskPort;
 import edu.snu.mist.core.parameters.TaskInfoGatherPeriod;
@@ -43,11 +43,6 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   private static final Logger LOG = Logger.getLogger(DefaultDriverToMasterMessageImpl.class.getName());
 
   /**
-   * The query allocation manager.
-   */
-  private final QueryAllocationManager queryAllocationManager;
-
-  /**
    * The master-side failure recovery manager.
    */
   private final RecoveryScheduler recoveryManager;
@@ -56,6 +51,11 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
    * The task-proxyClient map.
    */
   private final ProxyToTaskMap proxyToTaskMap;
+
+  /**
+   * The shared task stats map.
+   */
+  private final TaskStatsMap taskStatsMap;
 
   /**
    * The thread which gets task load information regularly.
@@ -73,14 +73,14 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   private final int masterToTaskPort;
 
   @Inject
-  private DefaultDriverToMasterMessageImpl(final QueryAllocationManager queryAllocationManager,
-                                           final RecoveryScheduler recoveryManager,
+  private DefaultDriverToMasterMessageImpl(final RecoveryScheduler recoveryManager,
                                            final ProxyToTaskMap proxyToTaskMap,
+                                           final TaskStatsMap taskStatsMap,
                                            @Parameter(TaskInfoGatherPeriod.class) final long taskInfoGatherTerm,
                                            @Parameter(MasterToTaskPort.class) final int masterToTaskPort) {
-    this.queryAllocationManager = queryAllocationManager;
     this.recoveryManager = recoveryManager;
     this.proxyToTaskMap = proxyToTaskMap;
+    this.taskStatsMap = taskStatsMap;
     this.taskInfoGatherTerm = taskInfoGatherTerm;
     this.taskInfoGatherer = Executors.newSingleThreadScheduledExecutor();
     this.masterToTaskPort = masterToTaskPort;
@@ -88,7 +88,7 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
 
   @Override
   public boolean addTask(final String taskHostname) {
-    queryAllocationManager.addTask(taskHostname);
+    taskStatsMap.addTask(taskHostname);
     return true;
   }
 
@@ -124,7 +124,7 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   public Void taskSetupFinished() {
     // All task setups are over, so start log collection.
     taskInfoGatherer.scheduleAtFixedRate(
-        new TaskStatsUpdater(proxyToTaskMap, queryAllocationManager),
+        new TaskStatsUpdater(proxyToTaskMap, taskStatsMap),
         0,
         taskInfoGatherTerm,
         TimeUnit.MILLISECONDS);
@@ -133,7 +133,7 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
 
   @Override
   public boolean notifyFailedTask(final String taskHostname) {
-    final TaskStats taskStats = queryAllocationManager.removeTask(taskHostname);
+    final TaskStats taskStats = taskStatsMap.removeTask(taskHostname);
     recoveryManager.addFailedGroups(taskStats.getGroupStatsMap());
     return true;
   }

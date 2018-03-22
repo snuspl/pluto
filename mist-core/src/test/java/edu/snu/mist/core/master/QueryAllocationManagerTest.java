@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.core.master;
 
+import edu.snu.mist.core.master.allocation.ApplicationAwareQueryAllocationManager;
+import edu.snu.mist.core.master.allocation.QueryAllocationManager;
 import edu.snu.mist.core.parameters.OverloadedTaskThreshold;
 import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.reef.tang.Injector;
@@ -32,14 +34,15 @@ public final class QueryAllocationManagerTest {
   public void testApplicationAwareQueryAllocationManager() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     final QueryAllocationManager manager = injector.getInstance(ApplicationAwareQueryAllocationManager.class);
+    final TaskStatsMap taskStatsMap = injector.getInstance(TaskStatsMap.class);
     final double overloadedTaskThreshold = injector.getNamedInstance(OverloadedTaskThreshold.class);
     final String task1Hostname = "task1";
     final String task2Hostname = "task2";
 
-    manager.addTask(task1Hostname);
-    manager.addTask(task2Hostname);
-    final TaskStats task1Stats = manager.getTaskStats(task1Hostname);
-    final TaskStats task2Stats = manager.getTaskStats(task2Hostname);
+    taskStatsMap.addTask(task1Hostname);
+    taskStatsMap.addTask(task2Hostname);
+    final TaskStats task1Stats = taskStatsMap.get(task1Hostname);
+    final TaskStats task2Stats = taskStatsMap.get(task2Hostname);
     task2Stats.setTaskLoad(0.5);
     final String appId = "app_1";
     // task1 load = 0.0, task2 load = 0.5. task1 should be selected.

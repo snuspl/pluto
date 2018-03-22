@@ -36,14 +36,14 @@ public class TaskStatsUpdater implements Runnable {
   private final ProxyToTaskMap proxyToTaskMap;
 
   /**
-   * The task-to-info map.
+   * The task stats map.
    */
-  private final QueryAllocationManager queryAllocationManager;
+  private final TaskStatsMap taskStatsMap;
 
   public TaskStatsUpdater(final ProxyToTaskMap proxyToTaskMap,
-                          final QueryAllocationManager queryAllocationManager) {
+                          final TaskStatsMap taskStatsMap) {
     this.proxyToTaskMap = proxyToTaskMap;
-    this.queryAllocationManager = queryAllocationManager;
+    this.taskStatsMap = taskStatsMap;
   }
 
   @Override
@@ -54,7 +54,7 @@ public class TaskStatsUpdater implements Runnable {
         final String taskHostname = entry.getKey();
         final MasterToTaskMessage proxyToTask = entry.getValue();
         final TaskStats updatedTaskStats = proxyToTask.getTaskStats();
-        queryAllocationManager.updateTaskStats(taskHostname, updatedTaskStats);
+        taskStatsMap.updateTaskStats(taskHostname, updatedTaskStats);
       } catch (final AvroRemoteException e) {
         LOG.log(Level.INFO, "Remote error occured during connecting to task " + entry.getKey());
         LOG.log(Level.INFO, "This happens because of either network configuration error or task failure. " +
