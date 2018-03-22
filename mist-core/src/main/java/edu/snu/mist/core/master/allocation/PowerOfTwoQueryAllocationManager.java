@@ -19,9 +19,8 @@ import edu.snu.mist.core.master.TaskInfo;
 import edu.snu.mist.formats.avro.IPAddress;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -34,18 +33,28 @@ public final class PowerOfTwoQueryAllocationManager extends AbstractQueryAllocat
    */
   private final List<IPAddress> taskList;
 
+  /**
+   * The random object.
+   */
+  private final Random random;
+
   @Inject
   private PowerOfTwoQueryAllocationManager() {
     super();
     this.taskList = new CopyOnWriteArrayList<>();
+    this.random = new Random();
   }
 
   @Override
   public IPAddress getAllocatedTask(final String appId) {
-    final List<IPAddress> copiedList = new ArrayList<>(taskList);
-    Collections.shuffle(copiedList);
-    final IPAddress task0 = copiedList.get(0);
-    final IPAddress task1 = copiedList.get(1);
+    int index0, index1;
+    index0 = random.nextInt(taskList.size());
+    index1 = random.nextInt(taskList.size());
+    while (index1 == index0) {
+      index1 = random.nextInt(taskList.size());
+    }
+    final IPAddress task0 = taskList.get(index0);
+    final IPAddress task1 = taskList.get(index1);
     if (this.taskInfoMap.get(task0).getCpuLoad() < this.taskInfoMap.get(task1).getCpuLoad()) {
       return task0;
     } else {
