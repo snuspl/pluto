@@ -27,11 +27,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The runnable class for recovering queries leveraging a single thread.
  */
 public class SingleThreadRecoveryRunner implements Runnable {
+
+  private static final Logger LOG = Logger.getLogger(SingleThreadRecoveryRunner.class.getName());
 
   /**
    * Indicates whether the recovery is running or not.
@@ -73,6 +77,7 @@ public class SingleThreadRecoveryRunner implements Runnable {
     // Get the recovery info from the MistMaster.
     try {
       final RecoveryInfo recoveryInfo = proxyToMaster.getRecoveringGroups(taskHostname);
+      LOG.log(Level.INFO, "Recovering groups: {0}", recoveryInfo.getRecoveryGroupList().toString());
       while (true) {
         if (recoveryInfo.getRecoveryGroupList().isEmpty()) {
           // Notify that recovery is done!
