@@ -119,12 +119,16 @@
       [
         {
           "name": "VertexState",
-          "type": {
-            "type": "map",
-            "values": [
-              "boolean", "int", "long", "float", "double", "string", "bytes"
-            ]
-          }
+          "type":
+          [
+            {
+              "type": "map",
+              "values": [
+                "boolean", "int", "long", "float", "double", "string", "bytes"
+              ]
+            },
+            "null"
+          ]
         },
         {
           "name": "LatestCheckpointTimestamp",

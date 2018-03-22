@@ -51,6 +51,7 @@ public class MockMasterServer implements ClientToMasterMessage {
   @Override
   public QuerySubmitInfo getQuerySubmitInfo(final String appId) throws AvroRemoteException {
     return QuerySubmitInfo.newBuilder()
+        .setQueryId("query_0")
         .setJarPaths(new ArrayList())
         .setTask(new IPAddress(taskHost, taskPortNum))
         .build();
