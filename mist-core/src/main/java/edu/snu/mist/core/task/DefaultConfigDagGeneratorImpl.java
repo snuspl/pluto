@@ -92,7 +92,7 @@ public final class DefaultConfigDagGeneratorImpl implements ConfigDagGenerator {
         final AvroVertex avroVertex = avroVertices.get(i);
         final StateWithTimestamp vertexStateWithTimestamp = queryState.get(i);
         final ExecutionVertex.Type type = getVertexType(avroVertex);
-        // Create a config vertex with
+        // Create a config vertex with checkpointed states.
         final ConfigVertex configVertex = new ConfigVertex(
             Long.toString(configVertexId.getAndIncrement()),
             type,

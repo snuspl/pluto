@@ -106,7 +106,8 @@ public final class DefaultGroupCheckpointStore implements GroupCheckpointStore {
     try {
       final File storedFile = getQueryStoreFile(queryId);
       if (storedFile.exists()) {
-        throw new IllegalStateException("A query with the same ID already exists! Query ID should be unique");
+        storedFile.delete();
+        LOG.log(Level.INFO, "Deleting a duplicate query file");
       } else {
         storedFile.getParentFile().mkdirs();
         final DataFileWriter<AvroDag> dataFileWriter = new DataFileWriter<>(avroDagDatumWriter);

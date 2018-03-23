@@ -36,13 +36,13 @@ import java.util.List;
 public interface QueryManager extends AutoCloseable {
   /**
    * Start to the query.
-   * @param avroDag the query id and the avro dag
+   * @param avroDag the avro dag
    */
   QueryControlResult create(AvroDag avroDag);
 
   /**
    * Start to the query with the checkpointed states.
-   * @param avroDag the query id and the avro dag
+   * @param avroDag the avro dag
    * @param checkpointedStates the checkpointed states
    */
   QueryControlResult createWithCheckpointedStates(AvroDag avroDag, QueryCheckpoint checkpointedStates);
@@ -64,7 +64,7 @@ public interface QueryManager extends AutoCloseable {
    * @return
    */
   ApplicationInfo createApplication(String appId,
-                                        List<String> jarFilePath) throws InjectionException;
+                                    List<String> jarFilePath) throws InjectionException;
 
   /**
    * Deletes the query corresponding to the queryId submitted by client.
