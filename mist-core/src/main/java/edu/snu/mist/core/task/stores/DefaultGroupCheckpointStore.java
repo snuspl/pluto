@@ -15,8 +15,8 @@
  */
 package edu.snu.mist.core.task.stores;
 
-import edu.snu.mist.common.operators.Operator;
-import edu.snu.mist.common.operators.StateHandler;
+import edu.snu.mist.core.operators.Operator;
+import edu.snu.mist.core.operators.StateHandler;
 import edu.snu.mist.core.parameters.SharedStorePath;
 import edu.snu.mist.core.task.DefaultPhysicalOperatorImpl;
 import edu.snu.mist.core.task.ExecutionDag;

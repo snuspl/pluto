@@ -21,7 +21,7 @@ import edu.snu.mist.client.datastreams.configurations.MQTTSourceConfiguration;
 import edu.snu.mist.client.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.client.datastreams.configurations.TextSocketSourceConfiguration;
 import edu.snu.mist.common.functions.MISTFunction;
-import edu.snu.mist.common.operators.CepEventPattern;
+import edu.snu.mist.common.cep.CepEventPattern;
 import org.apache.commons.lang.NotImplementedException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 

@@ -15,16 +15,16 @@
  */
 package edu.snu.mist.core.task.merging;
 
-import edu.snu.mist.common.MistDataEvent;
-import edu.snu.mist.common.OutputEmitter;
+import edu.snu.mist.core.MistDataEvent;
+import edu.snu.mist.core.OutputEmitter;
 import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.common.graph.AdjacentListDAG;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.common.operators.FilterOperator;
-import edu.snu.mist.common.sinks.Sink;
-import edu.snu.mist.common.sources.EventGenerator;
+import edu.snu.mist.core.operators.FilterOperator;
+import edu.snu.mist.core.sinks.Sink;
+import edu.snu.mist.core.sources.EventGenerator;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.utils.IdAndConfGenerator;
 import edu.snu.mist.formats.avro.Direction;

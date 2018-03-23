@@ -19,7 +19,7 @@ import edu.snu.mist.client.rulebased.conditions.AbstractCondition;
 import edu.snu.mist.client.rulebased.conditions.ComparisonCondition;
 import edu.snu.mist.client.rulebased.conditions.UnionCondition;
 import edu.snu.mist.common.functions.MISTPredicate;
-import edu.snu.mist.common.operators.predicates.*;
+import edu.snu.mist.common.predicates.*;
 
 import java.util.ArrayList;
 import java.util.List;

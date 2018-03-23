@@ -15,9 +15,9 @@
  */
 package edu.snu.mist.core.driver;
 
-import edu.snu.mist.common.parameters.PeriodicCheckpointPeriod;
-import edu.snu.mist.common.shared.parameters.MqttSinkKeepAliveSec;
-import edu.snu.mist.common.shared.parameters.MqttSourceKeepAliveSec;
+import edu.snu.mist.core.sources.parameters.PeriodicCheckpointPeriod;
+import edu.snu.mist.core.shared.parameters.MqttSinkKeepAliveSec;
+import edu.snu.mist.core.shared.parameters.MqttSourceKeepAliveSec;
 import edu.snu.mist.core.rpc.DefaultClientToTaskMessageImpl;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GroupRebalancingPeriod;

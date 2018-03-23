@@ -15,8 +15,8 @@
  */
 package edu.snu.mist.core.task.utils;
 
-import edu.snu.mist.common.sources.DataGenerator;
-import edu.snu.mist.common.sources.EventGenerator;
+import edu.snu.mist.core.sources.DataGenerator;
+import edu.snu.mist.core.sources.EventGenerator;
 
 import java.io.IOException;
 import java.util.Iterator;

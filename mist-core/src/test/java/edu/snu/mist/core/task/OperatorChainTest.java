@@ -15,10 +15,10 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.MistCheckpointEvent;
-import edu.snu.mist.common.MistDataEvent;
-import edu.snu.mist.common.MistWatermarkEvent;
-import edu.snu.mist.common.operators.OneStreamOperator;
+import edu.snu.mist.core.MistCheckpointEvent;
+import edu.snu.mist.core.MistDataEvent;
+import edu.snu.mist.core.MistWatermarkEvent;
+import edu.snu.mist.core.operators.OneStreamOperator;
 
 public final class OperatorChainTest {
   // TODO[MIST-70]: Consider concurrency issue in execution of OperatorChain

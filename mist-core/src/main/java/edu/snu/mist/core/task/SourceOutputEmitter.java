@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.OutputEmitter;
+import edu.snu.mist.core.OutputEmitter;
 
 /**
  * This interface forwards the emitted output as a input of next operators.

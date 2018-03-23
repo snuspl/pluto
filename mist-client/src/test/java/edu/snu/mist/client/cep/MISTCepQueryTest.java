@@ -20,8 +20,8 @@ import edu.snu.mist.client.utils.CepExampleClassGenFunc;
 import edu.snu.mist.client.utils.CepExampleQualifier;
 import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
-import edu.snu.mist.common.operators.CepEventContiguity;
-import edu.snu.mist.common.operators.CepEventPattern;
+import edu.snu.mist.common.cep.CepEventContiguity;
+import edu.snu.mist.common.cep.CepEventPattern;
 import org.junit.Assert;
 import org.junit.Test;
 

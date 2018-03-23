@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.groupaware;
 
-import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.core.parameters.GroupId;
 import edu.snu.mist.core.task.DefaultQueryImpl;
 import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.SourceOutputEmitter;
