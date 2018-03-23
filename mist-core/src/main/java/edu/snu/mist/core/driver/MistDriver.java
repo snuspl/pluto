@@ -302,6 +302,7 @@ public final class MistDriver {
           taskConfBuilder.bindImplementation(MasterToTaskMessage.class, DefaultMasterToTaskMessageImpl.class);
           taskConfBuilder.bindNamedParameter(SharedStorePath.class, String.valueOf(mistDriverConfigs
               .getSharedStorePath()));
+          taskConfBuilder.bindNamedParameter(TaskHostAddress.class, taskHostAddress);
           // Store task configuration.
           mistTaskConfQueue.add(Configurations.merge(
               nameResolverConf,
