@@ -367,6 +367,7 @@ public final class MistDriver {
             .getInetSocketAddress().getHostName();
         try {
           proxyToMaster.addTask(new IPAddress(taskHostAddress, mistDriverConfigs.getClientToTaskPort()));
+          proxyToMaster.setupMasterToTaskConn(new IPAddress(taskHostAddress, mistDriverConfigs.getMasterToTaskPort()));
           if (runningTaskNum.incrementAndGet() == mistDriverConfigs.getNumTasks()) {
             // Notify that all the tasks are running now... Start gathering task information from master.
             proxyToMaster.taskSetupFinished();

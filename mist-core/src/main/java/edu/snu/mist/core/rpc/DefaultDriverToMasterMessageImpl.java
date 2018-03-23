@@ -19,6 +19,7 @@ import edu.snu.mist.core.master.ProxyToTaskMap;
 import edu.snu.mist.core.master.allocation.QueryAllocationManager;
 import edu.snu.mist.core.master.TaskInfo;
 import edu.snu.mist.core.master.TaskLoadUpdater;
+import edu.snu.mist.core.parameters.ClientToTaskPort;
 import edu.snu.mist.core.parameters.TaskInfoGatherPeriod;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
 import edu.snu.mist.formats.avro.IPAddress;
@@ -63,14 +64,21 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
    */
   private final long taskInfoGatherTerm;
 
+  /**
+   * The client-to-task port used for avro rpc.
+   */
+  private final int clientToTaskPort;
+
   @Inject
   private DefaultDriverToMasterMessageImpl(final QueryAllocationManager queryAllocationManager,
                                            final ProxyToTaskMap proxyToTaskMap,
-                                           @Parameter(TaskInfoGatherPeriod.class) final long taskInfoGatherTerm) {
+                                           @Parameter(TaskInfoGatherPeriod.class) final long taskInfoGatherTerm,
+                                           @Parameter(ClientToTaskPort.class) final int clientToTaskPort) {
     this.queryAllocationManager = queryAllocationManager;
     this.proxyToTaskMap = proxyToTaskMap;
     this.taskInfoGatherTerm = taskInfoGatherTerm;
     this.taskInfoGatherer = Executors.newSingleThreadScheduledExecutor();
+    this.clientToTaskPort = clientToTaskPort;
   }
 
   @Override
@@ -82,14 +90,13 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
 
   @Override
   public boolean setupMasterToTaskConn(final IPAddress taskAddress) {
+    final Thread thread = new Thread(new ProxyToTaskConnectionSetup(taskAddress));
+    thread.start();
     try {
-      final NettyTransceiver taskServer =
-          new NettyTransceiver(new InetSocketAddress(taskAddress.getHostAddress(), taskAddress.getPort()));
-      final MasterToTaskMessage proxyToTask = SpecificRequestor.getClient(MasterToTaskMessage.class, taskServer);
-      proxyToTaskMap.addNewProxy(taskAddress, proxyToTask);
+      thread.join();
       return true;
-    } catch (final IOException e) {
-      LOG.log(Level.SEVERE, "The master-to-task connection setup has failed! " + e.toString());
+    } catch (final InterruptedException e) {
+      e.printStackTrace();
       return false;
     }
   }
@@ -98,7 +105,7 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   public Void taskSetupFinished() {
     // All task setups are over, so start log collection.
     taskInfoGatherer.scheduleAtFixedRate(
-        new TaskLoadUpdater(proxyToTaskMap, queryAllocationManager),
+        new TaskLoadUpdater(proxyToTaskMap, queryAllocationManager, clientToTaskPort),
         0,
         taskInfoGatherTerm,
         TimeUnit.MILLISECONDS);
@@ -109,5 +116,26 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   public boolean notifyFailedTask(final IPAddress taskAddress) {
     // TODO: Handle failed task in MistMaster.
     return false;
+  }
+
+  private class ProxyToTaskConnectionSetup implements Runnable {
+
+    private final IPAddress taskAddress;
+
+    public ProxyToTaskConnectionSetup(final IPAddress taskAddress) {
+      this.taskAddress = taskAddress;
+    }
+
+    @Override
+    public void run() {
+      try {
+        final NettyTransceiver taskServer =
+            new NettyTransceiver(new InetSocketAddress(taskAddress.getHostAddress(), taskAddress.getPort()));
+        final MasterToTaskMessage proxyToTask = SpecificRequestor.getClient(MasterToTaskMessage.class, taskServer);
+        proxyToTaskMap.addNewProxy(taskAddress, proxyToTask);
+      } catch (final IOException e) {
+        LOG.log(Level.SEVERE, "The master-to-task connection setup has failed! " + e.toString());
+      }
+    }
   }
 }

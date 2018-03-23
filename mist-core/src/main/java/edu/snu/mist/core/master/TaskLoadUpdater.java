@@ -41,10 +41,14 @@ public class TaskLoadUpdater implements Runnable {
    */
   private final QueryAllocationManager queryAllocationManager;
 
+  private final int clientToTaskPort;
+
   public TaskLoadUpdater(final ProxyToTaskMap proxyToTaskMap,
-                         final QueryAllocationManager queryAllocationManager) {
+                         final QueryAllocationManager queryAllocationManager,
+                         final int clientToTaskPort) {
     this.proxyToTaskMap = proxyToTaskMap;
     this.queryAllocationManager = queryAllocationManager;
+    this.clientToTaskPort = clientToTaskPort;
   }
 
   @Override
@@ -54,9 +58,10 @@ public class TaskLoadUpdater implements Runnable {
       try {
         final MasterToTaskMessage proxyToTask = entry.getValue();
         final double updatedCpuLoad = (Double) proxyToTask.getTaskLoad();
-        final TaskInfo taskInfo = queryAllocationManager.getTaskInfo(entry.getKey());
+        final TaskInfo taskInfo = queryAllocationManager.getTaskInfo(
+            new IPAddress(entry.getKey().getHostAddress(), clientToTaskPort));
         taskInfo.setCpuLoad(updatedCpuLoad);
-        LOG.log(Level.INFO, "Task {0} updated its load: {1}", new Object[]{entry.getValue(), updatedCpuLoad});
+        LOG.log(Level.INFO, "Task {0} updated its load: {1}", new Object[]{entry.getKey().toString(), updatedCpuLoad});
       } catch (final AvroRemoteException e) {
         LOG.log(Level.INFO, "Remote error occured during connecting to task " + entry.getKey().toString());
       }
