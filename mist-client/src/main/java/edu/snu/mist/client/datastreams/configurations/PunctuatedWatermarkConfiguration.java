@@ -20,14 +20,6 @@ import edu.snu.mist.common.configurations.ConfKeys;
 import edu.snu.mist.common.configurations.ConfValues;
 import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.common.functions.WatermarkTimestampFunction;
-import edu.snu.mist.common.parameters.SerializedTimestampParseUdf;
-import edu.snu.mist.common.parameters.SerializedWatermarkPredicateUdf;
-import edu.snu.mist.common.sources.EventGenerator;
-import edu.snu.mist.common.sources.PunctuatedEventGenerator;
-import org.apache.reef.tang.Configuration;
-import org.apache.reef.tang.formats.ConfigurationModule;
-import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
-import org.apache.reef.tang.formats.RequiredParameter;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -36,16 +28,11 @@ import java.util.Map;
 /**
  * The class represents punctuated watermark configuration.
  */
-public final class PunctuatedWatermarkConfiguration extends ConfigurationModuleBuilder {
+public final class PunctuatedWatermarkConfiguration {
 
-  public static final RequiredParameter<String> TIMESTAMP_PARSE_OBJECT = new RequiredParameter<>();
-  public static final RequiredParameter<String> WATERMARK_PREDICATE = new RequiredParameter<>();
-
-  private static final ConfigurationModule CONF = new PunctuatedWatermarkConfiguration()
-      .bindNamedParameter(SerializedTimestampParseUdf.class, TIMESTAMP_PARSE_OBJECT)
-      .bindNamedParameter(SerializedWatermarkPredicateUdf.class, WATERMARK_PREDICATE)
-      .bindImplementation(EventGenerator.class, PunctuatedEventGenerator.class)
-      .build();
+  private PunctuatedWatermarkConfiguration() {
+    // do nothing
+  }
 
   /**
    * Gets the builder for Configuration construction.
@@ -64,10 +51,6 @@ public final class PunctuatedWatermarkConfiguration extends ConfigurationModuleB
 
     private MISTPredicate<V> watermarkPredicate;
     private WatermarkTimestampFunction<V> timestampParseObject;
-    private Class<? extends MISTPredicate<V>> watermarkPredicateClass;
-    private Configuration watermarkPredicateConf;
-    private Class<? extends WatermarkTimestampFunction<V>> extractFuncClass;
-    private Configuration extractFuncConf;
 
     /**
      * Builds the PunctuatedWatermarkConfiguration.

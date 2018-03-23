@@ -19,7 +19,7 @@ import java.util.Map;
 
 /**
  * The class represents watermark configuration.
- * This is just a wrapper class that holds the configuration of Tang.
+ * This is just a wrapper class that holds the configuration.
  */
 public final class WatermarkConfiguration {
 

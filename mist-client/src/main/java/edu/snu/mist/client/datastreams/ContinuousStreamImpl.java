@@ -36,7 +36,7 @@ import java.io.Serializable;
 import java.util.*;
 
 /**
- * This class implements ContinuousStream by configuring operations using Tang.
+ * This class implements ContinuousStream by configuring operations.
  * <T> data type of the stream.
  */
 public class ContinuousStreamImpl<T> extends MISTStreamImpl<T> implements ContinuousStream<T> {

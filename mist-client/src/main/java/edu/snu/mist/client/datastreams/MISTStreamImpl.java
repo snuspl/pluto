@@ -16,13 +16,8 @@
 package edu.snu.mist.client.datastreams;
 
 import edu.snu.mist.common.graph.DAG;
-import edu.snu.mist.common.exceptions.IllegalUdfConfigurationException;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.formats.avro.Direction;
-import org.apache.reef.tang.Configuration;
-import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.Tang;
-import org.apache.reef.tang.exceptions.InjectionException;
 
 import java.util.Map;
 
@@ -46,25 +41,6 @@ class MISTStreamImpl<OUT> implements MISTStream<OUT> {
                         final Map<String, String> conf) {
     this.dag = dag;
     this.conf = conf;
-  }
-
-  /**
-   * This function creates the instance of the udf function
-   * in order to check whether the configuration is correct or not.
-   * @param clazz class of the udf function
-   * @param udfConf configuration of the udf function
-   * @param <C> class type
-   */
-  protected <C> void checkUdf(final Class<? extends C> clazz,
-                              final Configuration udfConf) {
-    final Injector injector = Tang.Factory.getTang().newInjector(udfConf);
-    try {
-      final C instance = injector.getInstance(clazz);
-    } catch (final InjectionException e) {
-      // It will throw an InjectionException if the configuration is wrong.
-      e.printStackTrace();
-      throw new IllegalUdfConfigurationException(e);
-    }
   }
 
   /**
