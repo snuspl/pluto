@@ -143,28 +143,4 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
     recoveryManager.startRecovery();
     return null;
   }
-
-  private class MasterToTaskConnector implements Runnable {
-
-    /***
-     * The taskAddress.
-     */
-    private final IPAddress taskAddress;
-
-    public MasterToTaskConnector(final IPAddress taskAddress) {
-      this.taskAddress = taskAddress;
-    }
-
-    @Override
-    public void run() {
-      try {
-        final NettyTransceiver taskServer =
-            new NettyTransceiver(new InetSocketAddress(taskAddress.getHostAddress(), taskAddress.getPort()));
-        final MasterToTaskMessage proxyToTask = SpecificRequestor.getClient(MasterToTaskMessage.class, taskServer);
-        proxyToTaskMap.addNewProxy(taskAddress, proxyToTask);
-      } catch (final IOException e) {
-        LOG.log(Level.SEVERE, "The master-to-task connection setup has failed! " + e.toString());
-      }
-    }
-  }
 }
