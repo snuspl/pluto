@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.sinks.Sink;
+import edu.snu.mist.core.sinks.Sink;
 
 /**
  * This is a physical sink interface that is used in MistTask.

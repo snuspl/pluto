@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.utils;
 
-import edu.snu.mist.common.sinks.Sink;
+import edu.snu.mist.core.sinks.Sink;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;

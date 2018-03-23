@@ -23,7 +23,7 @@ import edu.snu.mist.common.configurations.ConfValues;
 import edu.snu.mist.common.functions.*;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.common.operators.CepEventPattern;
+import edu.snu.mist.common.cep.CepEventPattern;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.common.windows.CountWindowInformation;
 import edu.snu.mist.common.windows.TimeWindowInformation;

@@ -20,7 +20,7 @@ import edu.snu.mist.client.rulebased.conditions.AbstractCondition;
 import edu.snu.mist.client.rulebased.conditions.ComparisonCondition;
 import edu.snu.mist.client.rulebased.conditions.ConditionType;
 import edu.snu.mist.client.rulebased.conditions.UnionCondition;
-import edu.snu.mist.common.operators.predicates.*;
+import edu.snu.mist.common.predicates.*;
 import edu.snu.mist.client.datastreams.ContinuousStream;
 import edu.snu.mist.client.datastreams.configurations.MQTTSourceConfiguration;
 import edu.snu.mist.client.datastreams.configurations.SourceConfiguration;
