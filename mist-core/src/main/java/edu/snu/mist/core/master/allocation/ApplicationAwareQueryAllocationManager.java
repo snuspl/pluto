@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.master;
+package edu.snu.mist.core.master.allocation;
 
+import edu.snu.mist.core.master.TaskInfo;
 import edu.snu.mist.core.parameters.OverloadedTaskThreshold;
 import edu.snu.mist.formats.avro.IPAddress;
 import org.apache.reef.tang.annotations.Parameter;
@@ -29,17 +30,12 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * The app-allocation manager which allocates queries in application-aware way.
  */
-public final class ApplicationAwareQueryAllocationManager implements QueryAllocationManager {
+public final class ApplicationAwareQueryAllocationManager extends AbstractQueryAllocationManager {
 
   /**
    * The map which maintains the app-task list information.
    */
   private final ConcurrentMap<String, List<IPAddress>> appTaskListMap;
-
-  /**
-   * The map which maintains task info.
-   */
-  private final ConcurrentMap<IPAddress, TaskInfo> taskInfoMap;
 
   /**
    * The threshold for determining overloaded task.
@@ -49,8 +45,8 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
   @Inject
   private ApplicationAwareQueryAllocationManager(
       @Parameter(OverloadedTaskThreshold.class) final double overloadedTaskThreshold) {
+    super();
     this.appTaskListMap = new ConcurrentHashMap<>();
-    this.taskInfoMap = new ConcurrentHashMap<>();
     this.overloadedTaskThreshold = overloadedTaskThreshold;
   }
 
@@ -94,15 +90,5 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
       }
     }
     return minLoadTask;
-  }
-
-  @Override
-  public TaskInfo getTaskInfo(final IPAddress taskAddress) {
-    return taskInfoMap.get(taskAddress);
-  }
-
-  @Override
-  public TaskInfo addTaskInfo(final IPAddress taskAddress, final TaskInfo taskInfo) {
-    return taskInfoMap.putIfAbsent(taskAddress, taskInfo);
   }
 }

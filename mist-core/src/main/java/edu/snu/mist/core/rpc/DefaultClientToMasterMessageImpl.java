@@ -16,7 +16,7 @@
 package edu.snu.mist.core.rpc;
 
 import edu.snu.mist.core.master.ApplicationCodeManager;
-import edu.snu.mist.core.master.QueryAllocationManager;
+import edu.snu.mist.core.master.allocation.QueryAllocationManager;
 import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import edu.snu.mist.formats.avro.JarUploadResult;
 import edu.snu.mist.formats.avro.QuerySubmitInfo;

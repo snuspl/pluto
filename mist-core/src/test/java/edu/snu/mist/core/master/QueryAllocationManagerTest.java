@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.core.master;
 
+import edu.snu.mist.core.master.allocation.ApplicationAwareQueryAllocationManager;
+import edu.snu.mist.core.master.allocation.QueryAllocationManager;
 import edu.snu.mist.core.parameters.OverloadedTaskThreshold;
 import edu.snu.mist.formats.avro.IPAddress;
 import org.apache.reef.tang.Injector;

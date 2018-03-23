@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.master;
+package edu.snu.mist.core.master.allocation;
 
+import edu.snu.mist.core.master.TaskInfo;
 import edu.snu.mist.formats.avro.IPAddress;
-import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
  * This is the interface for classes which is in charge of application-aware query allocation.
  */
-@DefaultImplementation(ApplicationAwareQueryAllocationManager.class)
 public interface QueryAllocationManager {
 
   /**
