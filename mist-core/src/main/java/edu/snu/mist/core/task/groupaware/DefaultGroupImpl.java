@@ -340,7 +340,7 @@ final class DefaultGroupImpl implements Group {
 
   @Override
   public GroupCheckpoint checkpoint() {
-    final Map<String, AvroConfigDag> avroConfigDagMap = new HashMap<>();
+    final Map<String, QueryCheckpoint> queryCheckpointMap = new HashMap<>();
     final GroupMinimumLatestWatermarkTimeStamp groupTimestamp = new GroupMinimumLatestWatermarkTimeStamp();
 
     if (queryList.size() == 0) {
@@ -349,23 +349,21 @@ final class DefaultGroupImpl implements Group {
     for (final Query query : queryList) {
       final String queryId = query.getId();
       LOG.log(Level.INFO, "query with id {0} is being checkpointed", new Object[]{queryId});
-      avroConfigDagMap.put(queryId, convertToAvroConfigDag(queryIdConfigDagMap.get(queryId), groupTimestamp));
+      queryCheckpointMap.put(queryId, getQueryCheckpoint(queryIdConfigDagMap.get(queryId), groupTimestamp));
     }
 
     return GroupCheckpoint.newBuilder()
-        .setAvroConfigDags(avroConfigDagMap)
+        .setGroupId(this.groupId)
+        .setQueryCheckpointMap(queryCheckpointMap)
         .setMinimumLatestCheckpointTimestamp(groupTimestamp.getValue())
-        .setJarFilePaths(applicationInfo.getJarFilePath())
-        .setGroupId(groupId)
-        .setApplicationId(applicationInfo.getApplicationId())
         .build();
   }
 
   /**
    * Convert a ConfigDag to an AvroConfigDag.
    */
-  private AvroConfigDag convertToAvroConfigDag(final DAG<ConfigVertex, MISTEdge> configDag,
-                                               final GroupMinimumLatestWatermarkTimeStamp groupTimestamp) {
+  private QueryCheckpoint getQueryCheckpoint(final DAG<ConfigVertex, MISTEdge> configDag,
+                                             final GroupMinimumLatestWatermarkTimeStamp groupTimestamp) {
 
     // Find the minimum of the available checkpoint timestamps for the group.
     // Replaying will start from this timestamp, if this ConfigDag is used for recovery.
@@ -384,14 +382,11 @@ final class DefaultGroupImpl implements Group {
       }
     }
 
-    // Do the checkpointing according to the retrieved group timestamp.
-    final Map<ConfigVertex, Integer> indexMap = new HashMap<>();
-    final List<AvroConfigVertex> avroConfigVertexList = new ArrayList<>();
-    final List<AvroConfigMISTEdge> avroConfigMISTEdgeList = new ArrayList<>();
-
+    final List<StateWithTimestamp> stateWithTimestampList = new ArrayList<>();
+    // Getting query checkpoint with the given group time stamp.
     for (final ConfigVertex cv : configDag.getVertices()) {
       final ExecutionVertex ev = configExecutionVertexMap.get(cv);
-      Map<String, Object> state = new HashMap<>();
+      Map<String, Object> state = null;
       long checkpointTimestamp = 0L;
       if (ev.getType() == ExecutionVertex.Type.OPERATOR) {
         final Operator op = ((DefaultPhysicalOperatorImpl) ev).getOperator();
@@ -401,41 +396,14 @@ final class DefaultGroupImpl implements Group {
           state = StateSerializer.serializeStateMap(stateHandler.getOperatorState(checkpointTimestamp));
         }
       }
-      final AvroConfigVertexType type;
-      if (cv.getType() == ExecutionVertex.Type.SOURCE) {
-        type = AvroConfigVertexType.SOURCE;
-      } else if (cv.getType() == ExecutionVertex.Type.OPERATOR) {
-        type = AvroConfigVertexType.OPERATOR;
-      } else {
-        type = AvroConfigVertexType.SINK;
-      }
-      final AvroConfigVertex acv = AvroConfigVertex.newBuilder()
-          .setId(cv.getId())
-          .setType(type)
-          .setConfiguration(cv.getConfiguration())
-          .setState(state)
+      stateWithTimestampList.add(StateWithTimestamp.newBuilder()
+          .setVertexState(state)
           .setLatestCheckpointTimestamp(checkpointTimestamp)
-          .build();
-      avroConfigVertexList.add(acv);
-      indexMap.put(cv, avroConfigVertexList.size() - 1);
+          .build());
     }
 
-    for (final ConfigVertex cv : configDag.getVertices()) {
-      for (final Map.Entry<ConfigVertex, MISTEdge> entry : configDag.getEdges(cv).entrySet()) {
-        final MISTEdge mEdge = entry.getValue();
-        final AvroConfigMISTEdge edge = AvroConfigMISTEdge.newBuilder()
-            .setIndex(mEdge.getIndex())
-            .setDirection(mEdge.getDirection())
-            .setFromVertexIndex(indexMap.get(cv))
-            .setToVertexIndex(indexMap.get(entry.getKey()))
-            .build();
-        avroConfigMISTEdgeList.add(edge);
-      }
-    }
-
-    return AvroConfigDag.newBuilder()
-        .setAvroConfigVertices(avroConfigVertexList)
-        .setAvroConfigMISTEdges(avroConfigMISTEdgeList)
+    return QueryCheckpoint.newBuilder()
+        .setQueryState(stateWithTimestampList)
         .build();
   }
 

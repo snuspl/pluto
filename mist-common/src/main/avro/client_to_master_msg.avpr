@@ -66,6 +66,10 @@
             "type": "array",
             "items": "string"
           }
+        },
+        {
+          "name": "queryId",
+          "type": "string"
         }
       ]
     },
