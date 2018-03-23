@@ -19,11 +19,7 @@ import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.configurations.ConfKeys;
 import edu.snu.mist.common.configurations.ConfValues;
 import edu.snu.mist.common.functions.MISTFunction;
-import edu.snu.mist.common.parameters.MQTTBrokerURI;
-import edu.snu.mist.common.parameters.MQTTTopic;
-import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.tang.formats.*;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.IOException;
@@ -34,34 +30,11 @@ import java.util.Map;
  * Configuration class for setting up MQTT sources.
  * This class is agnostic to which broker implementation the source uses.
  */
-public final class MQTTSourceConfiguration extends ConfigurationModuleBuilder {
+public final class MQTTSourceConfiguration {
 
-  /**
-   * The parameter for MQTT broker URI.
-   */
-  public static final RequiredParameter<String> MQTT_BROKER_URI = new RequiredParameter<>();
-
-  /**
-   * The parameter for MQTT topic name.
-   */
-  public static final RequiredParameter<String> MQTT_TOPIC = new RequiredParameter<>();
-
-  /**
-   * The parameter for timestamp extract object.
-   */
-  public static final OptionalParameter<String> TIMESTAMP_EXTRACT_OBJECT = new OptionalParameter<>();
-
-  /**
-   * The parameter for timestamp extract function.
-   */
-  public static final OptionalImpl<MISTFunction> TIMESTAMP_EXTRACT_FUNC = new OptionalImpl<>();
-
-  private static final ConfigurationModule CONF = new MQTTSourceConfiguration()
-      .bindNamedParameter(MQTTBrokerURI.class, MQTT_BROKER_URI)
-      .bindNamedParameter(MQTTTopic.class, MQTT_TOPIC)
-      .bindNamedParameter(SerializedTimestampExtractUdf.class, TIMESTAMP_EXTRACT_OBJECT)
-      .bindImplementation(MISTFunction.class, TIMESTAMP_EXTRACT_FUNC)
-      .build();
+  private MQTTSourceConfiguration() {
+    // do nothing
+  }
 
   /**
    * Gets teh builder for Configuration construction.

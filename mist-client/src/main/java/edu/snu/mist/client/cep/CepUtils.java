@@ -73,7 +73,7 @@ public final class CepUtils {
         final String sourceHostname = cepInput.getSourceConfiguration().get("SOCKET_INPUT_ADDRESS").toString();
         final int sourcePort = (int) cepInput.getSourceConfiguration().get("SOCKET_INPUT_PORT");
         final SourceConfiguration sourceConf =
-            new TextSocketSourceConfiguration().newBuilder()
+            TextSocketSourceConfiguration.newBuilder()
                 .setHostAddress(sourceHostname)
                 .setHostPort(sourcePort)
                 .build();
@@ -84,7 +84,7 @@ public final class CepUtils {
         final String topic = cepInput.getSourceConfiguration().get("MQTT_INPUT_TOPIC").toString();
         final String brokerURI = cepInput.getSourceConfiguration().get("MQTT_INPUT_BROKER_URI").toString();
         final SourceConfiguration sourceConf =
-            new MQTTSourceConfiguration().newBuilder()
+            MQTTSourceConfiguration.newBuilder()
                 .setTopic(topic)
                 .setBrokerURI(brokerURI)
                 .build();

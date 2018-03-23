@@ -19,15 +19,9 @@ import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.configurations.ConfKeys;
 import edu.snu.mist.common.configurations.ConfValues;
 import edu.snu.mist.common.functions.MISTFunction;
-import edu.snu.mist.common.parameters.KafkaTopic;
-import edu.snu.mist.common.parameters.SerializedKafkaConfig;
-import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
-import edu.snu.mist.common.sources.DataGenerator;
-import edu.snu.mist.common.sources.KafkaDataGenerator;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.tang.formats.*;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -37,35 +31,11 @@ import java.util.Set;
 /**
  * This class represents the kafka source configuration.
  */
-public final class KafkaSourceConfiguration extends ConfigurationModuleBuilder {
+public final class KafkaSourceConfiguration {
 
-  /**
-   * The kafka topic.
-   */
-  public static final RequiredParameter<String> KAFKA_TOPIC = new RequiredParameter<>();
-
-  /**
-   * The configuration of the kafka consumer.
-   */
-  public static final RequiredParameter<String> KAFKA_CONSUMER_CONFIG = new RequiredParameter<>();
-
-  /**
-   * The parameter for timestamp extract object.
-   */
-  public static final OptionalParameter<String> TIMESTAMP_EXTRACT_OBJECT = new OptionalParameter<>();
-
-  /**
-   * The parameter for timestamp extract function.
-   */
-  public static final OptionalImpl<MISTFunction> TIMESTAMP_EXTRACT_FUNC = new OptionalImpl<>();
-
-  private static final ConfigurationModule CONF = new KafkaSourceConfiguration()
-      .bindNamedParameter(KafkaTopic.class, KAFKA_TOPIC)
-      .bindNamedParameter(SerializedKafkaConfig.class, KAFKA_CONSUMER_CONFIG)
-      .bindNamedParameter(SerializedTimestampExtractUdf.class, TIMESTAMP_EXTRACT_OBJECT)
-      .bindImplementation(MISTFunction.class, TIMESTAMP_EXTRACT_FUNC)
-      .bindImplementation(DataGenerator.class, KafkaDataGenerator.class)
-      .build();
+  private KafkaSourceConfiguration() {
+    // do nothing
+  }
 
   /**
    * Gets the builder for Configuration construction.

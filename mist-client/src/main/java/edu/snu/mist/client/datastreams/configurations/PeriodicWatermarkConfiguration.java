@@ -17,14 +17,6 @@ package edu.snu.mist.client.datastreams.configurations;
 
 import edu.snu.mist.common.configurations.ConfKeys;
 import edu.snu.mist.common.configurations.ConfValues;
-import edu.snu.mist.common.parameters.PeriodicWatermarkDelay;
-import edu.snu.mist.common.parameters.PeriodicWatermarkPeriod;
-import edu.snu.mist.common.sources.EventGenerator;
-import edu.snu.mist.common.sources.PeriodicEventGenerator;
-import org.apache.reef.tang.formats.ConfigurationModule;
-import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
-import org.apache.reef.tang.formats.OptionalParameter;
-import org.apache.reef.tang.formats.RequiredParameter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,16 +24,11 @@ import java.util.Map;
 /**
  * The class represents periodic watermark configuration.
  */
-public final class PeriodicWatermarkConfiguration extends ConfigurationModuleBuilder {
+public final class PeriodicWatermarkConfiguration {
 
-  public static final RequiredParameter<Long> PERIOD = new RequiredParameter<>();
-  public static final OptionalParameter<Long> EXPECTED_DELAY = new OptionalParameter<>();
-
-  public static final ConfigurationModule CONF = new PeriodicWatermarkConfiguration()
-      .bindNamedParameter(PeriodicWatermarkPeriod.class, PERIOD)
-      .bindNamedParameter(PeriodicWatermarkDelay.class, EXPECTED_DELAY)
-      .bindImplementation(EventGenerator.class, PeriodicEventGenerator.class)
-      .build();
+  private PeriodicWatermarkConfiguration() {
+    //do nothing
+  }
 
   /**
    * Gets the builder for Configuration construction.

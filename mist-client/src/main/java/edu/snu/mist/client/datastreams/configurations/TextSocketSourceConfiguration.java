@@ -19,13 +19,7 @@ import edu.snu.mist.common.SerializeUtils;
 import edu.snu.mist.common.configurations.ConfKeys;
 import edu.snu.mist.common.configurations.ConfValues;
 import edu.snu.mist.common.functions.MISTFunction;
-import edu.snu.mist.common.parameters.SerializedTimestampExtractUdf;
-import edu.snu.mist.common.parameters.SocketServerIp;
-import edu.snu.mist.common.parameters.SocketServerPort;
-import edu.snu.mist.common.sources.DataGenerator;
-import edu.snu.mist.common.sources.NettyTextDataGenerator;
 import org.apache.reef.io.Tuple;
-import org.apache.reef.tang.formats.*;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -34,35 +28,11 @@ import java.util.Map;
 /**
  * The class represents the text socket source configuration.
  */
-public final class TextSocketSourceConfiguration extends ConfigurationModuleBuilder {
+public final class TextSocketSourceConfiguration {
 
-  /**
-   * The address of the socket source.
-   */
-  public static final RequiredParameter<String> SOCKET_HOST_ADDR = new RequiredParameter<>();
-
-  /**
-   * The port number of the socket source.
-   */
-  public static final RequiredParameter<Integer> SOCKET_HOST_PORT = new RequiredParameter<>();
-
-  /**
-   * The parameter for timestamp extract object.
-   */
-  public static final OptionalParameter<String> TIMESTAMP_EXTRACT_OBJECT = new OptionalParameter<>();
-
-  /**
-   * The parameter for timestamp extract function.
-   */
-  public static final OptionalImpl<MISTFunction> TIMESTAMP_EXTRACT_FUNC = new OptionalImpl<>();
-
-  private static final ConfigurationModule CONF = new TextSocketSourceConfiguration()
-      .bindNamedParameter(SocketServerIp.class, SOCKET_HOST_ADDR)
-      .bindNamedParameter(SocketServerPort.class, SOCKET_HOST_PORT)
-      .bindNamedParameter(SerializedTimestampExtractUdf.class, TIMESTAMP_EXTRACT_OBJECT)
-      .bindImplementation(MISTFunction.class, TIMESTAMP_EXTRACT_FUNC)
-      .bindImplementation(DataGenerator.class, NettyTextDataGenerator.class)
-      .build();
+  private TextSocketSourceConfiguration() {
+    // do nothing
+  }
 
   /**
    * Gets the builder for Configuration construction.
