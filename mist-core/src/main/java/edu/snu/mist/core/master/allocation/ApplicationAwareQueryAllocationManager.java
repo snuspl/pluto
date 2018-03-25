@@ -61,31 +61,43 @@ public final class ApplicationAwareQueryAllocationManager extends AbstractQueryA
     IPAddress minLoadTask = null;
 
     synchronized (taskList) {
-      for (final IPAddress task : taskList) {
-        final double currentTaskLoad = taskInfoMap.get(task).getCpuLoad();
-        if (minTaskLoad > currentTaskLoad) {
-          minLoadTask = task;
-          minTaskLoad = currentTaskLoad;
-        }
-      }
-      // All the tasks are overloaded. Allocate to a new task.
-      boolean isThereNotOverloadedTask = false;
-      if (minTaskLoad > overloadedTaskThreshold) {
+      if (taskList.isEmpty()) {
         for (final Map.Entry<IPAddress, TaskInfo> entry : taskInfoMap.entrySet()) {
           final IPAddress task = entry.getKey();
           final double currentTaskLoad = entry.getValue().getCpuLoad();
-          if (!taskList.contains(task) && minTaskLoad > currentTaskLoad) {
-            isThereNotOverloadedTask = true;
+          if (minTaskLoad > currentTaskLoad) {
             minLoadTask = task;
             minTaskLoad = currentTaskLoad;
           }
         }
-        if (isThereNotOverloadedTask) {
-          // Add the new task.
-          taskList.add(minLoadTask);
-        } else {
-          // Return the overloaded but minimal loaded task right now.
-          // TODO: [MIST-1010] Automatic scale out when all the tasks are overloaded.
+        taskList.add(minLoadTask);
+      } else {
+        for (final IPAddress task : taskList) {
+          final double currentTaskLoad = taskInfoMap.get(task).getCpuLoad();
+          if (minTaskLoad > currentTaskLoad) {
+            minLoadTask = task;
+            minTaskLoad = currentTaskLoad;
+          }
+        }
+        // All the tasks are overloaded. Allocate to a new task.
+        boolean isThereNotOverloadedTask = false;
+        if (minTaskLoad > overloadedTaskThreshold) {
+          for (final Map.Entry<IPAddress, TaskInfo> entry : taskInfoMap.entrySet()) {
+            final IPAddress task = entry.getKey();
+            final double currentTaskLoad = entry.getValue().getCpuLoad();
+            if (!taskList.contains(task) && minTaskLoad > currentTaskLoad) {
+              isThereNotOverloadedTask = true;
+              minLoadTask = task;
+              minTaskLoad = currentTaskLoad;
+            }
+          }
+          if (isThereNotOverloadedTask) {
+            // Add the new task.
+            taskList.add(minLoadTask);
+          } else {
+            // Return the overloaded but minimal loaded task right now.
+            // TODO: [MIST-1010] Automatic scale out when all the tasks are overloaded.
+          }
         }
       }
     }
