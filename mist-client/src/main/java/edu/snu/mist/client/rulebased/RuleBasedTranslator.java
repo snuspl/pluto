@@ -20,7 +20,7 @@ import edu.snu.mist.client.rulebased.conditions.AbstractCondition;
 import edu.snu.mist.client.rulebased.conditions.ComparisonCondition;
 import edu.snu.mist.client.rulebased.conditions.ConditionType;
 import edu.snu.mist.client.rulebased.conditions.UnionCondition;
-import edu.snu.mist.common.operators.predicates.*;
+import edu.snu.mist.common.predicates.*;
 import edu.snu.mist.client.datastreams.ContinuousStream;
 import edu.snu.mist.client.datastreams.configurations.MQTTSourceConfiguration;
 import edu.snu.mist.client.datastreams.configurations.SourceConfiguration;
@@ -90,7 +90,7 @@ public final class RuleBasedTranslator {
         final String sourceHostname = input.getSourceConfiguration().get("SOCKET_INPUT_ADDRESS").toString();
         final int sourcePort = (int) input.getSourceConfiguration().get("SOCKET_INPUT_PORT");
         final SourceConfiguration sourceConf =
-            new TextSocketSourceConfiguration().newBuilder()
+            TextSocketSourceConfiguration.newBuilder()
                 .setHostAddress(sourceHostname)
                 .setHostPort(sourcePort)
                 .build();
@@ -103,7 +103,7 @@ public final class RuleBasedTranslator {
         final String topic = input.getSourceConfiguration().get("MQTT_INPUT_TOPIC").toString();
         final String brokerURI = input.getSourceConfiguration().get("MQTT_INPUT_BROKER_URI").toString();
         final SourceConfiguration sourceConf =
-            new MQTTSourceConfiguration().newBuilder()
+            MQTTSourceConfiguration.newBuilder()
                 .setTopic(topic)
                 .setBrokerURI(brokerURI)
                 .build();

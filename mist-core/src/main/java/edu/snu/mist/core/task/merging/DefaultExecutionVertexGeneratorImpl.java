@@ -15,9 +15,9 @@
  */
 package edu.snu.mist.core.task.merging;
 
-import edu.snu.mist.common.operators.StateHandler;
-import edu.snu.mist.common.sources.DataGenerator;
-import edu.snu.mist.common.sources.EventGenerator;
+import edu.snu.mist.core.operators.StateHandler;
+import edu.snu.mist.core.sources.DataGenerator;
+import edu.snu.mist.core.sources.EventGenerator;
 import edu.snu.mist.core.task.*;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
 

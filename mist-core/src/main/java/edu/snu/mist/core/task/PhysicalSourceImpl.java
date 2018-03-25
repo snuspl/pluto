@@ -15,9 +15,9 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.OutputEmitter;
-import edu.snu.mist.common.sources.DataGenerator;
-import edu.snu.mist.common.sources.EventGenerator;
+import edu.snu.mist.core.OutputEmitter;
+import edu.snu.mist.core.sources.DataGenerator;
+import edu.snu.mist.core.sources.EventGenerator;
 
 import java.util.Map;
 

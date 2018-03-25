@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.client.cep;
 
-import edu.snu.mist.common.operators.CepEventPattern;
+import edu.snu.mist.common.cep.CepEventPattern;
 
 import java.util.Arrays;
 import java.util.HashSet;

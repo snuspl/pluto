@@ -15,9 +15,9 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.MistWatermarkEvent;
-import edu.snu.mist.common.windows.Window;
-import edu.snu.mist.common.windows.WindowImpl;
+import edu.snu.mist.core.MistWatermarkEvent;
+import edu.snu.mist.core.operators.window.Window;
+import edu.snu.mist.core.operators.window.WindowImpl;
 import org.junit.Assert;
 import org.junit.Test;
 

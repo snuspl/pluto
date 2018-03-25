@@ -143,10 +143,6 @@
       "fields":
       [
         {
-          "name": "QueryId",
-          "type": "string"
-        },
-        {
           "name": "QueryState",
           "type": {
             "type": "array",

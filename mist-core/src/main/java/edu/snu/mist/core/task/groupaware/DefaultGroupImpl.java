@@ -17,9 +17,9 @@ package edu.snu.mist.core.task.groupaware;
 
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.common.operators.Operator;
-import edu.snu.mist.common.operators.StateHandler;
-import edu.snu.mist.common.parameters.GroupId;
+import edu.snu.mist.core.operators.Operator;
+import edu.snu.mist.core.operators.StateHandler;
+import edu.snu.mist.core.parameters.GroupId;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
 import edu.snu.mist.core.task.merging.ConfigExecutionVertexMap;

@@ -15,8 +15,8 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.OutputEmittable;
-import edu.snu.mist.common.sources.EventGenerator;
+import edu.snu.mist.core.OutputEmittable;
+import edu.snu.mist.core.sources.EventGenerator;
 
 /**
  * Source receives input stream.

@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.utils;
 
-import edu.snu.mist.common.sinks.Sink;
+import edu.snu.mist.core.sinks.Sink;
 import org.apache.reef.tang.formats.ConfigurationModule;
 import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
 import org.apache.reef.tang.formats.RequiredImpl;

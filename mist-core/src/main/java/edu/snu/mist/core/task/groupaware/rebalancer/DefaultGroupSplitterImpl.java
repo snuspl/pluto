@@ -15,11 +15,11 @@
  */
 package edu.snu.mist.core.task.groupaware.rebalancer;
 
-import edu.snu.mist.common.parameters.GroupId;
 import edu.snu.mist.core.parameters.MasterHostname;
 import edu.snu.mist.core.parameters.TaskHostname;
 import edu.snu.mist.core.parameters.TaskToMasterPort;
 import edu.snu.mist.core.rpc.AvroUtils;
+import edu.snu.mist.core.parameters.GroupId;
 import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.groupaware.Group;
 import edu.snu.mist.core.task.groupaware.GroupAllocationTable;

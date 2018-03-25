@@ -21,7 +21,7 @@ import edu.snu.mist.client.datastreams.configurations.MQTTSourceConfiguration;
 import edu.snu.mist.client.datastreams.configurations.SourceConfiguration;
 import edu.snu.mist.client.datastreams.configurations.TextSocketSourceConfiguration;
 import edu.snu.mist.common.functions.MISTFunction;
-import edu.snu.mist.common.operators.CepEventPattern;
+import edu.snu.mist.common.cep.CepEventPattern;
 import org.apache.commons.lang.NotImplementedException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
@@ -73,7 +73,7 @@ public final class CepUtils {
         final String sourceHostname = cepInput.getSourceConfiguration().get("SOCKET_INPUT_ADDRESS").toString();
         final int sourcePort = (int) cepInput.getSourceConfiguration().get("SOCKET_INPUT_PORT");
         final SourceConfiguration sourceConf =
-            new TextSocketSourceConfiguration().newBuilder()
+            TextSocketSourceConfiguration.newBuilder()
                 .setHostAddress(sourceHostname)
                 .setHostPort(sourcePort)
                 .build();
@@ -84,7 +84,7 @@ public final class CepUtils {
         final String topic = cepInput.getSourceConfiguration().get("MQTT_INPUT_TOPIC").toString();
         final String brokerURI = cepInput.getSourceConfiguration().get("MQTT_INPUT_BROKER_URI").toString();
         final SourceConfiguration sourceConf =
-            new MQTTSourceConfiguration().newBuilder()
+            MQTTSourceConfiguration.newBuilder()
                 .setTopic(topic)
                 .setBrokerURI(brokerURI)
                 .build();

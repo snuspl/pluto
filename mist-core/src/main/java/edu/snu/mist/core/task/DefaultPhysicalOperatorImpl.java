@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.common.operators.Operator;
+import edu.snu.mist.core.operators.Operator;
 
 import java.util.Map;
 
