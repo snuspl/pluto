@@ -60,6 +60,7 @@ public final class TaskStatsMap {
   }
 
   public TaskStats removeTask(final String taskHostname) {
+    innerList.remove(taskHostname);
     return innerMap.remove(taskHostname);
   }
 

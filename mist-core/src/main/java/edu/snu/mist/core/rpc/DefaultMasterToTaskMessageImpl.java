@@ -45,11 +45,12 @@ public final class DefaultMasterToTaskMessageImpl implements MasterToTaskMessage
 
   @Override
   public TaskStats getTaskStats() {
+    final List<EventProcessor> epList = new ArrayList<>(groupAllocationTable.getKeys());
+    final int numEventProcessors = epList.size();
     final List<Group> groupList = new ArrayList<>();
-    final int numEventProcessors = groupAllocationTable.getKeys().size();
 
     // Get the whole group list.
-    for (final EventProcessor ep : groupAllocationTable.getKeys()) {
+    for (final EventProcessor ep : epList) {
       groupList.addAll(groupAllocationTable.getValue(ep));
     }
     double totalLoad = 0.0;
