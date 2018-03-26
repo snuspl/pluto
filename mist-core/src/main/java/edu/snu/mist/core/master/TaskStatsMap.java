@@ -25,11 +25,15 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The shared map which contains information about MistTask stats.
  */
 public final class TaskStatsMap {
+
+  private static final Logger LOG = Logger.getLogger(TaskStatsMap.class.getName());
 
   /**
    * The map which contains task info for each task.
@@ -65,6 +69,8 @@ public final class TaskStatsMap {
   }
 
   public void updateTaskStats(final String taskHostname, final TaskStats updatedTaskStats) {
+    LOG.log(Level.INFO, "Updated task stats: Task {0}, Load {1}",
+        new Object[]{taskHostname, updatedTaskStats.getTaskLoad()});
     innerMap.replace(taskHostname, updatedTaskStats);
   }
 

@@ -19,7 +19,7 @@ import edu.snu.mist.core.master.ProxyToTaskMap;
 import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.master.TaskStatsUpdater;
 import edu.snu.mist.core.master.allocation.QueryAllocationManager;
-import edu.snu.mist.core.parameters.ClientToTaskPort;
+import edu.snu.mist.core.parameters.MasterToTaskPort;
 import edu.snu.mist.core.parameters.TaskInfoGatherPeriod;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
 import edu.snu.mist.formats.avro.IPAddress;
@@ -78,7 +78,7 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
                                            final ProxyToTaskMap proxyToTaskMap,
                                            final TaskStatsMap taskStatsMap,
                                            @Parameter(TaskInfoGatherPeriod.class) final long taskInfoGatherTerm,
-                                           @Parameter(ClientToTaskPort.class) final int masterToTaskPort) {
+                                           @Parameter(MasterToTaskPort.class) final int masterToTaskPort) {
     this.queryAllocationManager = queryAllocationManager;
     this.proxyToTaskMap = proxyToTaskMap;
     this.taskStatsMap = taskStatsMap;
