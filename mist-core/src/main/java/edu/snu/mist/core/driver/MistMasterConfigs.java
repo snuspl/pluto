@@ -15,10 +15,7 @@
  */
 package edu.snu.mist.core.driver;
 
-import edu.snu.mist.core.master.allocation.ApplicationAwareQueryAllocationManager;
-import edu.snu.mist.core.master.allocation.PowerOfTwoQueryAllocationManager;
-import edu.snu.mist.core.master.allocation.QueryAllocationManager;
-import edu.snu.mist.core.master.allocation.RoundRobinQueryAllocationManager;
+import edu.snu.mist.core.master.allocation.*;
 import edu.snu.mist.core.parameters.OverloadedTaskThreshold;
 import edu.snu.mist.core.parameters.QueryAllocationOption;
 import edu.snu.mist.core.parameters.TaskInfoGatherPeriod;
@@ -70,6 +67,8 @@ public final class MistMasterConfigs {
       jcb.bindImplementation(QueryAllocationManager.class, PowerOfTwoQueryAllocationManager.class);
     } else if (queryAllocationOption.equals("aa")) {
       jcb.bindImplementation(QueryAllocationManager.class, ApplicationAwareQueryAllocationManager.class);
+    } else if (queryAllocationOption.equals("min")) {
+      jcb.bindImplementation(QueryAllocationManager.class, MinLoadQueryAllocationManager.class);
     } else {
       throw new IllegalArgumentException("Invalid query allocation option!");
     }
