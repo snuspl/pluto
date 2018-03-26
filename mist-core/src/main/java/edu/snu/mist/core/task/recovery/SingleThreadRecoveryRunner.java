@@ -76,9 +76,9 @@ public class SingleThreadRecoveryRunner implements Runnable {
   public void run() {
     // Get the recovery info from the MistMaster.
     try {
-      final RecoveryInfo recoveryInfo = proxyToMaster.getRecoveringGroups(taskHostname);
-      LOG.log(Level.INFO, "Recovering groups: {0}", recoveryInfo.getRecoveryGroupList().toString());
       while (true) {
+        final RecoveryInfo recoveryInfo = proxyToMaster.getRecoveringGroups(taskHostname);
+        LOG.log(Level.INFO, "Recovering groups: {0}", recoveryInfo.getRecoveryGroupList().toString());
         if (recoveryInfo.getRecoveryGroupList().isEmpty()) {
           // Notify that recovery is done!
           isRecoveryRunning.set(false);

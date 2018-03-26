@@ -174,6 +174,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
         new InetSocketAddress(masterHostAddress, taskToMasterPort));
     this.taskHostname = taskHostname;
     this.checkpointManager = checkpointManager;
+    this.checkpointManager.startCheckpointing();
   }
 
   /**

@@ -46,7 +46,7 @@ public final class DefaultClientToMasterMessageImpl implements ClientToMasterMes
   private final ApplicationCodeManager appCodeManager;
 
   /**
-   *
+   * The query Id generator.
    */
   private final AtomicLong queryIdGenerator;
 

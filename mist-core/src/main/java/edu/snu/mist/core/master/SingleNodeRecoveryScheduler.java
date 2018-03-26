@@ -101,7 +101,7 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
       while (isRecovering) {
         notInRecoveryProcess.await();
       }
-      isRecovering = false;
+      isRecovering = true;
       this.recoveryGroups = allFailedGroups;
       this.allFailedGroups = new ConcurrentHashMap<>();
       // Select the newly allocated task with the least load for recovery
@@ -131,6 +131,7 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
     if (recoveryGroups.isEmpty()) {
       lock.lock();
       // Notify to the possibly existing waiting thread.
+      isRecovering = false;
       notInRecoveryProcess.signal();
       lock.unlock();
       return new ArrayList<>();

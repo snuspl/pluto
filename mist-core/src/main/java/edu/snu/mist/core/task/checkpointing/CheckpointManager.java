@@ -69,4 +69,9 @@ public interface CheckpointManager {
    * @return ApplicationMetaInfo
    */
   ApplicationInfo getApplication(String appId);
+
+  /**
+   * Start periodic checkpointing.
+   */
+  void startCheckpointing();
 }

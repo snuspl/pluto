@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.task.checkpointing;
 
-import edu.snu.mist.core.task.Query;
+import edu.snu.mist.core.sources.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.core.task.QueryManager;
 import edu.snu.mist.core.task.groupaware.*;
 import edu.snu.mist.core.task.stores.GroupCheckpointStore;
@@ -24,6 +24,7 @@ import edu.snu.mist.formats.avro.CheckpointResult;
 import edu.snu.mist.formats.avro.QueryCheckpoint;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.InjectionFuture;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.FileNotFoundException;
@@ -31,6 +32,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -63,17 +67,30 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
    **/
   private final InjectionFuture<QueryManager> queryManagerFuture;
 
+  /**
+   * The single-threaded scheduled executor service for checkpointing.
+   */
+  private final ScheduledExecutorService checkpointExecutor;
+
+  /**
+   * The checkpoint period designated by users.
+   */
+  private final long checkpointPeriod;
+
   @Inject
   private DefaultCheckpointManagerImpl(final ApplicationMap applicationMap,
                                        final GroupMap groupMap,
                                        final GroupCheckpointStore groupCheckpointStore,
                                        final GroupAllocationTableModifier groupAllocationTableModifier,
-                                       final InjectionFuture<QueryManager> queryManagerFuture) {
+                                       final InjectionFuture<QueryManager> queryManagerFuture,
+                                       @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod) {
     this.applicationMap = applicationMap;
     this.groupMap = groupMap;
     this.checkpointStore = groupCheckpointStore;
     this.groupAllocationTableModifier = groupAllocationTableModifier;
     this.queryManagerFuture = queryManagerFuture;
+    this.checkpointPeriod = checkpointPeriod;
+    this.checkpointExecutor = Executors.newSingleThreadScheduledExecutor();
   }
 
   @Override
@@ -88,13 +105,13 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
     final QueryManager queryManager = queryManagerFuture.get();
     try {
       // Load the queries.
+      queryCheckpointMap = checkpointStore.loadSavedGroupState(groupId).getQueryCheckpointMap();
       final List<String> queryIdListInGroup = new ArrayList<>();
-      for (final Query query : groupMap.get(groupId).getQueries()) {
-        queryIdListInGroup.add(query.getId());
+      for (final String queryId : queryCheckpointMap.keySet()) {
+        queryIdListInGroup.add(queryId);
       }
       dagList = checkpointStore.loadSavedQueries(queryIdListInGroup);
       // Load the states.
-      queryCheckpointMap = checkpointStore.loadSavedGroupState(groupId).getQueryCheckpointMap();
     } catch (final FileNotFoundException ie) {
       LOG.log(Level.WARNING, "Failed in loading app {0}, this app may not exist in the checkpoint store.",
           new Object[]{groupId});
@@ -144,5 +161,15 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
   @Override
   public ApplicationInfo getApplication(final String appId) {
     return applicationMap.get(appId);
+  }
+
+  @Override
+  public void startCheckpointing() {
+    LOG.log(Level.INFO, "Start checkpointing thread. Period = {0}", checkpointPeriod);
+    if (checkpointPeriod != 0) {
+      // Start checkpointing.
+      checkpointExecutor.scheduleAtFixedRate(new CheckpointRunner(groupMap, this), checkpointPeriod,
+          checkpointPeriod, TimeUnit.MILLISECONDS);
+    }
   }
 }

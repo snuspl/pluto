@@ -79,12 +79,6 @@ public final class DefaultGroupCheckpointStore implements GroupCheckpointStore {
     final File folder = new File(tmpFolderPath);
     if (!folder.exists()) {
       folder.mkdir();
-    } else {
-      // TODO : Should not delete other checkpoints.
-      final File[] destroy = folder.listFiles();
-      for (final File des : destroy) {
-        des.delete();
-      }
     }
   }
 
@@ -108,14 +102,13 @@ public final class DefaultGroupCheckpointStore implements GroupCheckpointStore {
       if (storedFile.exists()) {
         storedFile.delete();
         LOG.log(Level.INFO, "Deleting a duplicate query file");
-      } else {
-        storedFile.getParentFile().mkdirs();
-        final DataFileWriter<AvroDag> dataFileWriter = new DataFileWriter<>(avroDagDatumWriter);
-        dataFileWriter.create(avroDag.getSchema(), storedFile);
-        dataFileWriter.append(avroDag);
-        dataFileWriter.close();
-        LOG.log(Level.INFO, "Query {0} has been stored to disk.", queryId);
       }
+      storedFile.getParentFile().mkdirs();
+      final DataFileWriter<AvroDag> dataFileWriter = new DataFileWriter<>(avroDagDatumWriter);
+      dataFileWriter.create(avroDag.getSchema(), storedFile);
+      dataFileWriter.append(avroDag);
+      dataFileWriter.close();
+      LOG.log(Level.INFO, "Query {0} has been stored to disk.", queryId);
       return true;
     } catch (final Exception e) {
       e.printStackTrace();
@@ -135,14 +128,12 @@ public final class DefaultGroupCheckpointStore implements GroupCheckpointStore {
         storedFile.delete();
         LOG.log(Level.INFO, "Checkpoint deleted for groupId: {0}", groupId);
       }
-      if (!storedFile.exists()) {
-        storedFile.getParentFile().mkdirs();
-        final DataFileWriter<GroupCheckpoint> dataFileWriter = new DataFileWriter<>(groupCheckpointDatumWriter);
-        dataFileWriter.create(checkpoint.getSchema(), storedFile);
-        dataFileWriter.append(checkpoint);
-        dataFileWriter.close();
-        LOG.log(Level.INFO, "Checkpoint completed for groupId: {0}", groupId);
-      }
+      storedFile.getParentFile().mkdirs();
+      final DataFileWriter<GroupCheckpoint> dataFileWriter = new DataFileWriter<>(groupCheckpointDatumWriter);
+      dataFileWriter.create(checkpoint.getSchema(), storedFile);
+      dataFileWriter.append(checkpoint);
+      dataFileWriter.close();
+      LOG.log(Level.INFO, "Checkpoint completed for groupId: {0}", groupId);
     } catch (final Exception e) {
       e.printStackTrace();
       return CheckpointResult.newBuilder()

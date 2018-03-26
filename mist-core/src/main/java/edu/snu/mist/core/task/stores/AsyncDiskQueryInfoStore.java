@@ -107,11 +107,6 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
     final File folder = new File(tmpFolderPath);
     if (!folder.exists()) {
       folder.mkdir();
-    } else {
-      final File[] destroy = folder.listFiles();
-      for (final File des : destroy) {
-        des.delete();
-      }
     }
 
     this.planQueue = new LinkedBlockingQueue<>();
