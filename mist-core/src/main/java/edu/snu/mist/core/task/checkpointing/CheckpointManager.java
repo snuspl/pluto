@@ -35,7 +35,7 @@ public interface CheckpointManager {
    * @param avroDag
    * @return
    */
-  boolean storeQuery(final AvroDag avroDag);
+  boolean storeQuery(AvroDag avroDag);
 
   /**
    * Recover a stored group in this MIST Task.
