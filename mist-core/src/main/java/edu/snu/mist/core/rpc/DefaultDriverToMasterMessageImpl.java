@@ -80,17 +80,18 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   }
 
   @Override
-  public boolean addTask(final IPAddress taskAddress) {
+  public boolean addTask(final String taskHostname) {
     final TaskInfo oldTaskInfo;
-    oldTaskInfo = queryAllocationManager.addTaskInfo(taskAddress, new TaskInfo());
+    oldTaskInfo = queryAllocationManager.addTaskInfo(taskHostname, new TaskInfo());
     return oldTaskInfo == null;
   }
 
   @Override
-  public boolean setupMasterToTaskConn(final IPAddress taskAddress) {
+  public boolean setupMasterToTaskConn(final String taskHostname) {
     try {
       final ExecutorService executorService = Executors.newSingleThreadExecutor();
-      final Future<Boolean> isSuccessFuture = executorService.submit(new ProxyToTaskConnectionSetup(taskAddress));
+      final Future<Boolean> isSuccessFuture = executorService.submit(new ProxyToTaskConnectionSetup(
+          new IPAddress(taskHostname, clientToTaskPort)));
       return isSuccessFuture.get();
     } catch (final InterruptedException | ExecutionException e) {
       return false;
@@ -101,7 +102,7 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   public Void taskSetupFinished() {
     // All task setups are over, so start log collection.
     taskInfoGatherer.scheduleAtFixedRate(
-        new TaskLoadUpdater(proxyToTaskMap, queryAllocationManager, clientToTaskPort),
+        new TaskLoadUpdater(proxyToTaskMap, queryAllocationManager),
         0,
         taskInfoGatherTerm,
         TimeUnit.MILLISECONDS);
@@ -109,7 +110,7 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   }
 
   @Override
-  public boolean notifyFailedTask(final IPAddress taskAddress) {
+  public boolean notifyFailedTask(final String taskHostname) {
     // TODO: Handle failed task in MistMaster.
     return false;
   }
@@ -128,7 +129,7 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
         final NettyTransceiver taskServer =
             new NettyTransceiver(new InetSocketAddress(taskAddress.getHostAddress(), taskAddress.getPort()));
         final MasterToTaskMessage proxyToTask = SpecificRequestor.getClient(MasterToTaskMessage.class, taskServer);
-        proxyToTaskMap.addNewProxy(taskAddress, proxyToTask);
+        proxyToTaskMap.addNewProxy(taskAddress.getHostAddress(), proxyToTask);
         return true;
       } catch (final IOException e) {
         LOG.log(Level.SEVERE, "The master-to-task connection setup has failed! " + e.toString());

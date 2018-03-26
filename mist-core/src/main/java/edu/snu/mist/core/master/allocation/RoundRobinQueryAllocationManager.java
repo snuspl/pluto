@@ -16,7 +16,9 @@
 package edu.snu.mist.core.master.allocation;
 
 import edu.snu.mist.core.master.TaskInfo;
+import edu.snu.mist.core.parameters.ClientToTaskPort;
 import edu.snu.mist.formats.avro.IPAddress;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -31,28 +33,34 @@ public final class RoundRobinQueryAllocationManager extends AbstractQueryAllocat
   /**
    * The list of MistTasks which would be used for Round-Robin scheduling algorithm.
    */
-  private final List<IPAddress> taskList;
+  private final List<String> taskList;
 
   /**
    * The AtomicInteger used for round-robin scheduling.
    */
   private final AtomicInteger currentIndex;
 
+  /**
+   * The client-to-task avro rpc port.
+   */
+  private final int clientToTaskPort;
+
   @Inject
-  private RoundRobinQueryAllocationManager() {
+  private RoundRobinQueryAllocationManager(@Parameter(ClientToTaskPort.class) final int clientToTaskPort) {
     super();
     this.taskList = new CopyOnWriteArrayList<>();
     this.currentIndex = new AtomicInteger();
+    this.clientToTaskPort = clientToTaskPort;
   }
 
   @Override
   public IPAddress getAllocatedTask(final String appId) {
     final int myIndex = currentIndex.getAndIncrement() % taskList.size();
-    return taskList.get(myIndex);
+    return new IPAddress(taskList.get(myIndex), clientToTaskPort);
   }
 
   @Override
-  public TaskInfo addTaskInfo(final IPAddress taskAddress, final TaskInfo taskInfo) {
+  public TaskInfo addTaskInfo(final String taskAddress, final TaskInfo taskInfo) {
     final TaskInfo t = super.addTaskInfo(taskAddress, taskInfo);
     taskList.add(taskAddress);
     return t;

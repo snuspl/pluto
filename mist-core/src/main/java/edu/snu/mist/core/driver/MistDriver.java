@@ -272,7 +272,7 @@ public final class MistDriver {
       // All the active contexts are now submitted
       if (activeContextCounter.incrementAndGet() == 1 + mistDriverConfigs.getNumTasks()) {
         // Get Master host address
-        final String masterHostAddress =
+        final String masterHostname =
             masterContext.getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress().getHostName();
         final int clientToMasterPort = mistDriverConfigs.getClientToMasterPort();
         final int taskToMasterPort = mistDriverConfigs.getTaskToMasterPort();
@@ -283,7 +283,7 @@ public final class MistDriver {
         final JavaConfigurationBuilder masterConfBuilder = tang.newConfigurationBuilder();
         for (final ActiveContext taskContext: mistTaskContextQueue) {
           // Task configurations
-          final String taskHostAddress =
+          final String taskHostname =
               taskContext.getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress().getHostName();
           // Task configuration
           final Configuration taskConfiguration = TaskConfiguration.CONF
@@ -294,15 +294,15 @@ public final class MistDriver {
           final JavaConfigurationBuilder taskConfBuilder = tang.newConfigurationBuilder();
           taskConfBuilder.bindNamedParameter(ClientToTaskPort.class, String.valueOf(clientToTaskPort));
           masterConfBuilder.bindSetEntry(TaskHostSet.class,
-              taskHostAddress);
+              taskHostname);
           taskConfBuilder.bindNamedParameter(MasterToTaskPort.class, String.valueOf(masterToTaskPort));
-          taskConfBuilder.bindNamedParameter(MasterHostAddress.class, masterHostAddress);
-          LOG.info("Set master host address: " + masterHostAddress);
+          taskConfBuilder.bindNamedParameter(MasterHostname.class, masterHostname);
+          LOG.info("Set master host address: " + masterHostname);
           taskConfBuilder.bindNamedParameter(TaskToMasterPort.class, String.valueOf(taskToMasterPort));
           taskConfBuilder.bindImplementation(MasterToTaskMessage.class, DefaultMasterToTaskMessageImpl.class);
           taskConfBuilder.bindNamedParameter(SharedStorePath.class, String.valueOf(mistDriverConfigs
               .getSharedStorePath()));
-          taskConfBuilder.bindNamedParameter(TaskHostAddress.class, taskHostAddress);
+          taskConfBuilder.bindNamedParameter(TaskHostname.class, taskHostname);
           // Store task configuration.
           mistTaskConfQueue.add(Configurations.merge(
               nameResolverConf,
@@ -314,6 +314,7 @@ public final class MistDriver {
         masterConfBuilder.bindNamedParameter(SharedStorePath.class, String.valueOf(mistDriverConfigs
             .getSharedStorePath()));
         masterConfBuilder.bindNamedParameter(MasterToTaskPort.class, String.valueOf(masterToTaskPort));
+        masterConfBuilder.bindNamedParameter(ClientToTaskPort.class, String.valueOf(clientToTaskPort));
         masterConfBuilder.bindNamedParameter(ClientToMasterPort.class, String.valueOf(clientToMasterPort));
         masterConfBuilder.bindNamedParameter(TaskToMasterPort.class, String.valueOf(taskToMasterPort));
         masterConfBuilder.bindNamedParameter(DriverToMasterPort.class, String.valueOf(driverToMasterPort));
@@ -350,12 +351,12 @@ public final class MistDriver {
           taskCount += 1;
         }
         // Establish driver-to-master connection.
-        final String masterHostAddress = runningTask.getActiveContext().getEvaluatorDescriptor().getNodeDescriptor()
+        final String masterHostname = runningTask.getActiveContext().getEvaluatorDescriptor().getNodeDescriptor()
             .getInetSocketAddress().getHostName();
         final int driverToMasterPort = mistDriverConfigs.getDriverToMasterPort();
         // Master is running. Setup avro connection between driver and master.
         try {
-          final NettyTransceiver driverToMaster = new NettyTransceiver(new InetSocketAddress(masterHostAddress,
+          final NettyTransceiver driverToMaster = new NettyTransceiver(new InetSocketAddress(masterHostname,
               driverToMasterPort));
           proxyToMaster = SpecificRequestor.getClient(DriverToMasterMessage.class, driverToMaster);
         } catch (final IOException e) {
@@ -364,11 +365,11 @@ public final class MistDriver {
         }
       } else {
         // The running task is MistTask.
-        final String taskHostAddress = runningTask.getActiveContext().getEvaluatorDescriptor().getNodeDescriptor()
+        final String taskHostname = runningTask.getActiveContext().getEvaluatorDescriptor().getNodeDescriptor()
             .getInetSocketAddress().getHostName();
         try {
-          proxyToMaster.addTask(new IPAddress(taskHostAddress, mistDriverConfigs.getClientToTaskPort()));
-          proxyToMaster.setupMasterToTaskConn(new IPAddress(taskHostAddress, mistDriverConfigs.getMasterToTaskPort()));
+          proxyToMaster.addTask(taskHostname);
+          proxyToMaster.setupMasterToTaskConn(taskHostname);
           if (runningTaskNum.incrementAndGet() == mistDriverConfigs.getNumTasks()) {
             // Notify that all the tasks are running now... Start gathering task information from master.
             proxyToMaster.taskSetupFinished();

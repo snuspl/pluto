@@ -16,7 +16,7 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.core.parameters.ClientToTaskPort;
-import edu.snu.mist.core.parameters.MasterHostAddress;
+import edu.snu.mist.core.parameters.MasterHostname;
 import edu.snu.mist.core.parameters.MasterToTaskPort;
 import edu.snu.mist.core.parameters.TaskToMasterPort;
 import edu.snu.mist.core.rpc.AvroUtils;
@@ -81,7 +81,7 @@ public final class MistTask implements Task {
                    final CheckpointManager checkpointManager,
                    @Parameter(MasterToTaskPort.class) final int masterToTaskPort,
                    @Parameter(ClientToTaskPort.class) final int clientToTaskPort,
-                   @Parameter(MasterHostAddress.class) final String masterHostAddress,
+                   @Parameter(MasterHostname.class) final String masterHostAddress,
                    @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
                    final MasterToTaskMessage masterToTaskMessage,
                    final ClientToTaskMessage clientToTaskMessage) throws InjectionException, IOException {

@@ -36,12 +36,12 @@ public interface QueryAllocationManager {
    * @param taskInfo
    * @return
    */
-  TaskInfo addTaskInfo(final IPAddress taskAddress, final TaskInfo taskInfo);
+  TaskInfo addTaskInfo(final String taskAddress, final TaskInfo taskInfo);
 
   /**
    * Returns task info for the given address.
    * @param taskAddress
    * @return
    */
-  TaskInfo getTaskInfo(final IPAddress taskAddress);
+  TaskInfo getTaskInfo(final String taskAddress);
 }
