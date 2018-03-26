@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.core.driver;
 
+import edu.snu.mist.core.shared.parameters.MqttSinkClientNumPerBroker;
+import edu.snu.mist.core.shared.parameters.MqttSourceClientNumPerBroker;
 import edu.snu.mist.core.sources.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.core.shared.parameters.MqttSinkKeepAliveSec;
 import edu.snu.mist.core.shared.parameters.MqttSourceKeepAliveSec;
@@ -55,6 +57,16 @@ public final class MistTaskConfigs {
   private final int mqttSinkKeepAliveSec;
 
   /**
+   * The number of mqtt source clients per broker.
+   */
+  private final int mqttSourceClientNumPerBroker;
+
+  /**
+   * The number of mqtt sink clients per broker.
+   */
+  private final int mqttSinkClientNumPerBroker;
+
+  /**
    * Group rebalancing period.
    */
   private final long rebalancingPeriod;
@@ -78,6 +90,8 @@ public final class MistTaskConfigs {
   private MistTaskConfigs(@Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
                           @Parameter(MqttSourceKeepAliveSec.class) final int mqttSourceKeepAliveSec,
                           @Parameter(MqttSinkKeepAliveSec.class) final int mqttSinkKeepAliveSec,
+                          @Parameter(MqttSourceClientNumPerBroker.class) final int mqttSourceClientNumPerBroker,
+                          @Parameter(MqttSinkClientNumPerBroker.class) final int mqttSinkClientNumPerBroker,
                           @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
                           @Parameter(ProcessingTimeout.class) final long processingTimeout,
                           @Parameter(GroupPinningTime.class) final long groupPinningTime,
@@ -86,6 +100,8 @@ public final class MistTaskConfigs {
     this.rebalancingPeriod = rebalancingPeriod;
     this.mqttSourceKeepAliveSec = mqttSourceKeepAliveSec;
     this.mqttSinkKeepAliveSec = mqttSinkKeepAliveSec;
+    this.mqttSourceClientNumPerBroker = mqttSourceClientNumPerBroker;
+    this.mqttSinkClientNumPerBroker = mqttSinkClientNumPerBroker;
     this.groupPinningTime = groupPinningTime;
     this.processingTimeout = processingTimeout;
     this.checkpointPeriod = checkpointPeriod;
@@ -102,6 +118,8 @@ public final class MistTaskConfigs {
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, Integer.toString(numEventProcessors));
     jcb.bindNamedParameter(MqttSourceKeepAliveSec.class, Integer.toString(mqttSourceKeepAliveSec));
     jcb.bindNamedParameter(MqttSinkKeepAliveSec.class, Integer.toString(mqttSinkKeepAliveSec));
+    jcb.bindNamedParameter(MqttSourceClientNumPerBroker.class, Integer.toString(mqttSourceClientNumPerBroker));
+    jcb.bindNamedParameter(MqttSinkClientNumPerBroker.class, Integer.toString(mqttSinkClientNumPerBroker));
     jcb.bindNamedParameter(GroupRebalancingPeriod.class, Long.toString(rebalancingPeriod));
     jcb.bindNamedParameter(PeriodicCheckpointPeriod.class, Long.toString(checkpointPeriod));
 
@@ -121,6 +139,8 @@ public final class MistTaskConfigs {
         .registerShortNameOfClass(DefaultNumEventProcessors.class)
         .registerShortNameOfClass(MqttSourceKeepAliveSec.class)
         .registerShortNameOfClass(MqttSinkKeepAliveSec.class)
+        .registerShortNameOfClass(MqttSourceClientNumPerBroker.class)
+        .registerShortNameOfClass(MqttSinkClientNumPerBroker.class)
         .registerShortNameOfClass(ProcessingTimeout.class)
         .registerShortNameOfClass(GroupPinningTime.class)
         .registerShortNameOfClass(GroupRebalancingPeriod.class)

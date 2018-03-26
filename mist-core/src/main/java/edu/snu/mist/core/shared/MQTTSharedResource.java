@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.shared;
 
+import edu.snu.mist.core.parameters.TaskHostname;
 import edu.snu.mist.core.shared.parameters.*;
 import edu.snu.mist.core.sources.MQTTDataGenerator;
 import edu.snu.mist.core.sources.MQTTSubscribeClient;
@@ -115,13 +116,19 @@ public final class MQTTSharedResource implements MQTTResource {
    */
   private final int mqttSinkKeepAliveSec;
 
+  /**
+   * The hostname of this MistTask.
+   */
+  private String taskHostname;
+
   @Inject
   private MQTTSharedResource(
       @Parameter(MqttSourceClientNumPerBroker.class) final int mqttSourceClientNumPerBrokerParam,
       @Parameter(MqttSinkClientNumPerBroker.class) final int mqttSinkClientNumPerBrokerParam,
       @Parameter(MaxInflightMqttEventNum.class) final int maxInflightMqttEventNumParam,
       @Parameter(MqttSourceKeepAliveSec.class) final int mqttSourceKeepAliveSec,
-      @Parameter(MqttSinkKeepAliveSec.class) final int mqttSinkKeepAliveSec) {
+      @Parameter(MqttSinkKeepAliveSec.class) final int mqttSinkKeepAliveSec,
+      @Parameter(TaskHostname.class) final String taskHostname) {
     this.brokerSubscriberMap = new HashMap<>();
     this.subscriberSourceNumMap = new HashMap<>();
     this.brokerPublisherMap = new HashMap<>();
@@ -135,6 +142,7 @@ public final class MQTTSharedResource implements MQTTResource {
     this.maxInflightMqttEventNum = maxInflightMqttEventNumParam;
     this.mqttSourceKeepAliveSec = mqttSourceKeepAliveSec;
     this.mqttSinkKeepAliveSec = mqttSinkKeepAliveSec;
+    this.taskHostname = taskHostname;
   }
 
   /**
@@ -198,8 +206,8 @@ public final class MQTTSharedResource implements MQTTResource {
    */
   private void createSinkClient(final String brokerURI, final List<IMqttAsyncClient> mqttAsyncClientList)
       throws MqttException, IOException {
-    final IMqttAsyncClient client = new MqttAsyncClient(brokerURI, MQTT_PUBLISHER_ID_PREFIX + brokerURI +
-        mqttAsyncClientList.size());
+    final IMqttAsyncClient client = new MqttAsyncClient(brokerURI, MQTT_PUBLISHER_ID_PREFIX + taskHostname
+        + brokerURI + mqttAsyncClientList.size());
     final MqttConnectOptions connectOptions = new MqttConnectOptions();
     connectOptions.setMaxInflight(maxInflightMqttEventNum);
     connectOptions.setKeepAliveInterval(mqttSinkKeepAliveSec);
@@ -234,7 +242,7 @@ public final class MQTTSharedResource implements MQTTResource {
       final List<MQTTSubscribeClient> newSubscribeClientList = new ArrayList<>();
       for (int i = 0; i < this.mqttSourceClientNumPerBroker; i++) {
         final MQTTSubscribeClient subscribeClient = new MQTTSubscribeClient(brokerURI, MQTT_SUBSCRIBER_ID_PREFIX +
-            brokerURI + "_" + i, mqttSourceKeepAliveSec);
+            taskHostname + brokerURI + "_" + i, mqttSourceKeepAliveSec);
         subscriberSourceNumMap.put(subscribeClient, 0);
         newSubscribeClientList.add(subscribeClient);
       }
