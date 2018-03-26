@@ -16,7 +16,6 @@
 package edu.snu.mist.core.master.allocation;
 
 import edu.snu.mist.core.master.TaskInfo;
-import edu.snu.mist.formats.avro.IPAddress;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -29,19 +28,19 @@ public abstract class AbstractQueryAllocationManager implements QueryAllocationM
   /**
    * The map which contains task info for each task.
    */
-  protected final ConcurrentMap<IPAddress, TaskInfo> taskInfoMap;
+  protected final ConcurrentMap<String, TaskInfo> taskInfoMap;
 
   protected AbstractQueryAllocationManager() {
     this.taskInfoMap = new ConcurrentHashMap<>();
   }
 
   @Override
-  public TaskInfo getTaskInfo(final IPAddress taskAddress) {
+  public TaskInfo getTaskInfo(final String taskAddress) {
     return taskInfoMap.get(taskAddress);
   }
 
   @Override
-  public TaskInfo addTaskInfo(final IPAddress taskAddress, final TaskInfo taskInfo) {
+  public TaskInfo addTaskInfo(final String taskAddress, final TaskInfo taskInfo) {
     return taskInfoMap.putIfAbsent(taskAddress, taskInfo);
   }
 }

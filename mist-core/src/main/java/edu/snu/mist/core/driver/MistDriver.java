@@ -314,6 +314,7 @@ public final class MistDriver {
         masterConfBuilder.bindNamedParameter(SharedStorePath.class, String.valueOf(mistDriverConfigs
             .getSharedStorePath()));
         masterConfBuilder.bindNamedParameter(MasterToTaskPort.class, String.valueOf(masterToTaskPort));
+        masterConfBuilder.bindNamedParameter(ClientToTaskPort.class, String.valueOf(clientToTaskPort));
         masterConfBuilder.bindNamedParameter(ClientToMasterPort.class, String.valueOf(clientToMasterPort));
         masterConfBuilder.bindNamedParameter(TaskToMasterPort.class, String.valueOf(taskToMasterPort));
         masterConfBuilder.bindNamedParameter(DriverToMasterPort.class, String.valueOf(driverToMasterPort));
@@ -367,8 +368,8 @@ public final class MistDriver {
         final String taskHostAddress = runningTask.getActiveContext().getEvaluatorDescriptor().getNodeDescriptor()
             .getInetSocketAddress().getHostName();
         try {
-          proxyToMaster.addTask(new IPAddress(taskHostAddress, mistDriverConfigs.getClientToTaskPort()));
-          proxyToMaster.setupMasterToTaskConn(new IPAddress(taskHostAddress, mistDriverConfigs.getMasterToTaskPort()));
+          proxyToMaster.addTask(taskHostAddress);
+          proxyToMaster.setupMasterToTaskConn(taskHostAddress);
           if (runningTaskNum.incrementAndGet() == mistDriverConfigs.getNumTasks()) {
             // Notify that all the tasks are running now... Start gathering task information from master.
             proxyToMaster.taskSetupFinished();

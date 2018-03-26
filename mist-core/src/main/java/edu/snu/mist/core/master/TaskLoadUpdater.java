@@ -16,7 +16,6 @@
 package edu.snu.mist.core.master;
 
 import edu.snu.mist.core.master.allocation.QueryAllocationManager;
-import edu.snu.mist.formats.avro.IPAddress;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
 import org.apache.avro.AvroRemoteException;
 
@@ -41,29 +40,24 @@ public class TaskLoadUpdater implements Runnable {
    */
   private final QueryAllocationManager queryAllocationManager;
 
-  private final int clientToTaskPort;
-
   public TaskLoadUpdater(final ProxyToTaskMap proxyToTaskMap,
-                         final QueryAllocationManager queryAllocationManager,
-                         final int clientToTaskPort) {
+                         final QueryAllocationManager queryAllocationManager) {
     this.proxyToTaskMap = proxyToTaskMap;
     this.queryAllocationManager = queryAllocationManager;
-    this.clientToTaskPort = clientToTaskPort;
   }
 
   @Override
   public synchronized void run() {
     // TODO: Parallelize task-load update process.
-    for (final Map.Entry<IPAddress, MasterToTaskMessage> entry : proxyToTaskMap.entrySet()) {
+    for (final Map.Entry<String, MasterToTaskMessage> entry : proxyToTaskMap.entrySet()) {
       try {
         final MasterToTaskMessage proxyToTask = entry.getValue();
         final double updatedCpuLoad = (Double) proxyToTask.getTaskLoad();
-        final TaskInfo taskInfo = queryAllocationManager.getTaskInfo(
-            new IPAddress(entry.getKey().getHostAddress(), clientToTaskPort));
+        final TaskInfo taskInfo = queryAllocationManager.getTaskInfo(entry.getKey());
         taskInfo.setCpuLoad(updatedCpuLoad);
-        LOG.log(Level.INFO, "Task {0} updated its load: {1}", new Object[]{entry.getKey().toString(), updatedCpuLoad});
+        LOG.log(Level.INFO, "Task {0} updated its load: {1}", new Object[]{entry.getKey(), updatedCpuLoad});
       } catch (final AvroRemoteException e) {
-        LOG.log(Level.INFO, "Remote error occured during connecting to task " + entry.getKey().toString());
+        LOG.log(Level.INFO, "Remote error occured during connecting to task " + entry.getKey());
       }
     }
   }

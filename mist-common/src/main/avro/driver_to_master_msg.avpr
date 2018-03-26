@@ -21,21 +21,6 @@
   "namespace": "edu.snu.mist.formats.avro",
   "protocol": "DriverToMasterMessage",
   "types":[
-    {
-      "name": "IPAddress",
-      "type": "record",
-      "fields":
-      [
-        {
-          "name": "hostAddress",
-          "type": "string"
-        },
-        {
-          "name": "port",
-          "type": "int"
-        }
-      ]
-    }
   ],
   "messages":
   {
@@ -44,8 +29,8 @@
       "request":
       [
         {
-          "name": "taskAddress",
-          "type": "IPAddress"
+          "name": "taskHostname",
+          "type": "string"
         }
       ],
       "response": "boolean"
@@ -55,8 +40,8 @@
       "request":
       [
         {
-          "name": "taskAddress",
-          "type": "IPAddress"
+          "name": "taskHostname",
+          "type": "string"
         }
       ],
       "response": "boolean"
@@ -71,8 +56,8 @@
       "request":
       [
         {
-          "name": "taskAddress",
-          "type": "IPAddress"
+          "name": "taskHostname",
+          "type": "string"
         }
       ],
       "response": "boolean"

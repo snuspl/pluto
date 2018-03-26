@@ -16,7 +16,9 @@
 package edu.snu.mist.core.master.allocation;
 
 import edu.snu.mist.core.master.TaskInfo;
+import edu.snu.mist.core.parameters.ClientToTaskPort;
 import edu.snu.mist.formats.avro.IPAddress;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -31,18 +33,24 @@ public final class PowerOfTwoQueryAllocationManager extends AbstractQueryAllocat
   /**
    * The list of MistTasks which is necessary for query scheduling.
    */
-  private final List<IPAddress> taskList;
+  private final List<String> taskList;
 
   /**
    * The random object.
    */
   private final Random random;
 
+  /**
+   * The client-to-task avro rpc port.
+   */
+  private final int clientToTaskPort;
+
   @Inject
-  private PowerOfTwoQueryAllocationManager() {
+  private PowerOfTwoQueryAllocationManager(@Parameter(ClientToTaskPort.class) final int clientToTaskPort) {
     super();
     this.taskList = new CopyOnWriteArrayList<>();
     this.random = new Random();
+    this.clientToTaskPort = clientToTaskPort;
   }
 
   @Override
@@ -53,17 +61,17 @@ public final class PowerOfTwoQueryAllocationManager extends AbstractQueryAllocat
     while (index1 == index0) {
       index1 = random.nextInt(taskList.size());
     }
-    final IPAddress task0 = taskList.get(index0);
-    final IPAddress task1 = taskList.get(index1);
+    final String task0 = taskList.get(index0);
+    final String task1 = taskList.get(index1);
     if (this.taskInfoMap.get(task0).getCpuLoad() < this.taskInfoMap.get(task1).getCpuLoad()) {
-      return task0;
+      return new IPAddress(task0, clientToTaskPort);
     } else {
-      return task1;
+      return new IPAddress(task1, clientToTaskPort);
     }
   }
 
   @Override
-  public TaskInfo addTaskInfo(final IPAddress taskAddress, final TaskInfo taskInfo) {
+  public TaskInfo addTaskInfo(final String taskAddress, final TaskInfo taskInfo) {
     this.taskList.add(taskAddress);
     return super.addTaskInfo(taskAddress, taskInfo);
   }

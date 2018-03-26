@@ -62,7 +62,7 @@ public final class MISTQueryControl {
     ClientToTaskMessage proxyToTask = TASK_PROXY_MAP.get(taskAddress);
     if (proxyToTask == null) {
       final NettyTransceiver clientToTask = new NettyTransceiver(
-          new InetSocketAddress(taskAddress.getHostAddress().toString(), taskAddress.getPort()));
+          new InetSocketAddress(taskAddress.getHostAddress(), taskAddress.getPort()));
       final ClientToTaskMessage proxy = SpecificRequestor.getClient(ClientToTaskMessage.class, clientToTask);
       TASK_PROXY_MAP.putIfAbsent(taskAddress, proxy);
       proxyToTask = TASK_PROXY_MAP.get(taskAddress);
