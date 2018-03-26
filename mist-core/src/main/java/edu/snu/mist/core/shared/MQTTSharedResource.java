@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.shared;
 
-import edu.snu.mist.core.parameters.TaskHostAddress;
+import edu.snu.mist.core.parameters.TaskHostname;
 import edu.snu.mist.core.shared.parameters.*;
 import edu.snu.mist.core.sources.MQTTDataGenerator;
 import edu.snu.mist.core.sources.MQTTSubscribeClient;
@@ -128,7 +128,7 @@ public final class MQTTSharedResource implements MQTTResource {
       @Parameter(MaxInflightMqttEventNum.class) final int maxInflightMqttEventNumParam,
       @Parameter(MqttSourceKeepAliveSec.class) final int mqttSourceKeepAliveSec,
       @Parameter(MqttSinkKeepAliveSec.class) final int mqttSinkKeepAliveSec,
-      @Parameter(TaskHostAddress.class) final String taskHostname) {
+      @Parameter(TaskHostname.class) final String taskHostname) {
     this.brokerSubscriberMap = new HashMap<>();
     this.subscriberSourceNumMap = new HashMap<>();
     this.brokerPublisherMap = new HashMap<>();
