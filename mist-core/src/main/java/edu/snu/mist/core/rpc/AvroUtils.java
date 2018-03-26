@@ -16,9 +16,12 @@
 package edu.snu.mist.core.rpc;
 
 import org.apache.avro.ipc.NettyServer;
+import org.apache.avro.ipc.NettyTransceiver;
 import org.apache.avro.ipc.Server;
+import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.avro.ipc.specific.SpecificResponder;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 
 /**
@@ -44,5 +47,20 @@ public final class AvroUtils {
       final InetSocketAddress serverAddress) {
     final SpecificResponder responder = new SpecificResponder(messageClass, messageInstance);
     return new NettyServer(responder, serverAddress);
+  }
+
+  /**
+   * A helper method for making avro proxies.
+   * @param messageClass
+   * @param serverAddress
+   * @param <T>
+   * @return
+   * @throws IOException
+   */
+  public static <T> T createAvroProxy(
+      final Class<T> messageClass,
+      final InetSocketAddress serverAddress) throws IOException {
+    final NettyTransceiver nettyTransceiver = new NettyTransceiver(serverAddress);
+    return SpecificRequestor.getClient(messageClass, nettyTransceiver);
   }
 }

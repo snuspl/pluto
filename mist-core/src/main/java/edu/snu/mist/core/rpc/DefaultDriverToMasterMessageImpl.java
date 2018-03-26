@@ -16,14 +16,15 @@
 package edu.snu.mist.core.rpc;
 
 import edu.snu.mist.core.master.ProxyToTaskMap;
-import edu.snu.mist.core.master.TaskInfo;
-import edu.snu.mist.core.master.TaskLoadUpdater;
+import edu.snu.mist.core.master.TaskStatsMap;
+import edu.snu.mist.core.master.TaskStatsUpdater;
 import edu.snu.mist.core.master.allocation.QueryAllocationManager;
 import edu.snu.mist.core.parameters.ClientToTaskPort;
 import edu.snu.mist.core.parameters.TaskInfoGatherPeriod;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
 import edu.snu.mist.formats.avro.IPAddress;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
+import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.avro.ipc.NettyTransceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.reef.tang.annotations.Parameter;
@@ -63,26 +64,33 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   private final long taskInfoGatherTerm;
 
   /**
-   * The client-to-task port used for avro rpc.
+   * The master-to-task port used for avro rpc.
    */
-  private final int clientToTaskPort;
+  private final int masterToTaskPort;
+
+  /**
+   * The task-stats map.
+   */
+  private final TaskStatsMap taskStatsMap;
 
   @Inject
   private DefaultDriverToMasterMessageImpl(final QueryAllocationManager queryAllocationManager,
                                            final ProxyToTaskMap proxyToTaskMap,
+                                           final TaskStatsMap taskStatsMap,
                                            @Parameter(TaskInfoGatherPeriod.class) final long taskInfoGatherTerm,
-                                           @Parameter(ClientToTaskPort.class) final int clientToTaskPort) {
+                                           @Parameter(ClientToTaskPort.class) final int masterToTaskPort) {
     this.queryAllocationManager = queryAllocationManager;
     this.proxyToTaskMap = proxyToTaskMap;
+    this.taskStatsMap = taskStatsMap;
     this.taskInfoGatherTerm = taskInfoGatherTerm;
     this.taskInfoGatherer = Executors.newSingleThreadScheduledExecutor();
-    this.clientToTaskPort = clientToTaskPort;
+    this.masterToTaskPort = masterToTaskPort;
   }
 
   @Override
   public boolean addTask(final String taskHostname) {
-    final TaskInfo oldTaskInfo;
-    oldTaskInfo = queryAllocationManager.addTaskInfo(taskHostname, new TaskInfo());
+    final TaskStats oldTaskInfo;
+    oldTaskInfo = taskStatsMap.addTask(taskHostname);
     return oldTaskInfo == null;
   }
 
@@ -91,7 +99,7 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
     try {
       final ExecutorService executorService = Executors.newSingleThreadExecutor();
       final Future<Boolean> isSuccessFuture = executorService.submit(new ProxyToTaskConnectionSetup(
-          new IPAddress(taskHostname, clientToTaskPort)));
+          new IPAddress(taskHostname, masterToTaskPort)));
       return isSuccessFuture.get();
     } catch (final InterruptedException | ExecutionException e) {
       return false;
@@ -102,7 +110,7 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   public Void taskSetupFinished() {
     // All task setups are over, so start log collection.
     taskInfoGatherer.scheduleAtFixedRate(
-        new TaskLoadUpdater(proxyToTaskMap, queryAllocationManager),
+        new TaskStatsUpdater(proxyToTaskMap, taskStatsMap),
         0,
         taskInfoGatherTerm,
         TimeUnit.MILLISECONDS);

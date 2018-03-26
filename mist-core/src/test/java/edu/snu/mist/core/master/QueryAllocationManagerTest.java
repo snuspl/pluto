@@ -18,6 +18,7 @@ package edu.snu.mist.core.master;
 import edu.snu.mist.core.master.allocation.ApplicationAwareQueryAllocationManager;
 import edu.snu.mist.core.master.allocation.QueryAllocationManager;
 import edu.snu.mist.core.parameters.OverloadedTaskThreshold;
+import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -32,25 +33,27 @@ public final class QueryAllocationManagerTest {
   @Test
   public void testApplicationAwareQueryAllocationManager() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
+    final TaskStatsMap taskStatsMap = injector.getInstance(TaskStatsMap.class);
     final QueryAllocationManager manager = injector.getInstance(ApplicationAwareQueryAllocationManager.class);
     final double overloadedTaskThreshold = injector.getNamedInstance(OverloadedTaskThreshold.class);
     final String task1 = "task1";
     final String task2 = "task2";
-    final TaskInfo task1Info = new TaskInfo();
-    final TaskInfo task2Info = new TaskInfo();
 
-    manager.addTaskInfo(task1, task1Info);
-    manager.addTaskInfo(task2, task2Info);
-    task2Info.setCpuLoad(0.5);
+    taskStatsMap.addTask(task1);
+    taskStatsMap.addTask(task2);
+    final TaskStats task1Stats = taskStatsMap.get(task1);
+    final TaskStats task2Stats = taskStatsMap.get(task2);
+    task1Stats.setTaskLoad(0.0);
+    task2Stats.setTaskLoad(0.5);
     final String appId = "app_1";
     // task1 load = 0.0, task2 load = 0.5. task1 should be selected.
     Assert.assertEquals(task1, manager.getAllocatedTask(appId).getHostAddress());
 
-    task1Info.setCpuLoad(0.7);
+    task1Stats.setTaskLoad(0.7);
     // app_1 is already allocated to task1 and task1 is not overloaded. So, task1 should be selected.
     Assert.assertEquals(task1, manager.getAllocatedTask(appId).getHostAddress());
 
-    task1Info.setCpuLoad(overloadedTaskThreshold + 0.01);
+    task1Stats.setTaskLoad(overloadedTaskThreshold + 0.01);
     // task1 is overloaded now. task2 should be selected.
     Assert.assertEquals(task2, manager.getAllocatedTask(appId).getHostAddress());
   }

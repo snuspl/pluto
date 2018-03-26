@@ -15,10 +15,11 @@
  */
 package edu.snu.mist.core.master.allocation;
 
-import edu.snu.mist.core.master.TaskInfo;
+import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.parameters.ClientToTaskPort;
 import edu.snu.mist.core.parameters.OverloadedTaskThreshold;
 import edu.snu.mist.formats.avro.IPAddress;
+import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -27,11 +28,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Logger;
 
 /**
  * The app-allocation manager which allocates queries in application-aware way.
  */
-public final class ApplicationAwareQueryAllocationManager extends AbstractQueryAllocationManager {
+public final class ApplicationAwareQueryAllocationManager implements QueryAllocationManager {
+
+  private static final Logger LOG = Logger.getLogger(ApplicationAwareQueryAllocationManager.class.toString());
 
   /**
    * The map which maintains the app-task list information.
@@ -39,23 +43,29 @@ public final class ApplicationAwareQueryAllocationManager extends AbstractQueryA
   private final ConcurrentMap<String, List<String>> appTaskListMap;
 
   /**
+   * The shared task stats map.
+   */
+  private final TaskStatsMap taskStatsMap;
+
+  /**
    * The threshold for determining overloaded task.
    */
   private final double overloadedTaskThreshold;
 
   /**
-   * The port used for client-to-task rpc.
+   * The port used for client-to-task RPC.
    */
   private final int clientToTaskPort;
 
   @Inject
   private ApplicationAwareQueryAllocationManager(
       @Parameter(OverloadedTaskThreshold.class) final double overloadedTaskThreshold,
-      @Parameter(ClientToTaskPort.class) final int clientToTaskPort) {
-    super();
+      @Parameter(ClientToTaskPort.class) final int clientToTaskPort,
+      final TaskStatsMap taskStatsMap) {
     this.appTaskListMap = new ConcurrentHashMap<>();
     this.overloadedTaskThreshold = overloadedTaskThreshold;
     this.clientToTaskPort = clientToTaskPort;
+    this.taskStatsMap = taskStatsMap;
   }
 
   // TODO: [MIST-519] Consider query reallocation.
@@ -66,42 +76,42 @@ public final class ApplicationAwareQueryAllocationManager extends AbstractQueryA
     }
     final List<String> taskList = appTaskListMap.get(appId);
     double minTaskLoad = Double.MAX_VALUE;
-    String minLoadTaskHostname = null;
+    String minLoadTask = null;
 
     synchronized (taskList) {
       if (taskList.isEmpty()) {
-        for (final Map.Entry<String, TaskInfo> entry : taskInfoMap.entrySet()) {
-          final String taskHostname = entry.getKey();
-          final double currentTaskLoad = entry.getValue().getCpuLoad();
+        for (final Map.Entry<String, TaskStats> entry : taskStatsMap.entrySet()) {
+          final String task = entry.getKey();
+          final double currentTaskLoad = entry.getValue().getTaskLoad();
           if (minTaskLoad > currentTaskLoad) {
-            minLoadTaskHostname = taskHostname;
+            minLoadTask = task;
             minTaskLoad = currentTaskLoad;
           }
         }
-        taskList.add(minLoadTaskHostname);
+        taskList.add(minLoadTask);
       } else {
-        for (final String taskHostname : taskList) {
-          final double currentTaskLoad = taskInfoMap.get(taskHostname).getCpuLoad();
+        for (final String task : taskList) {
+          final double currentTaskLoad = taskStatsMap.get(task).getTaskLoad();
           if (minTaskLoad > currentTaskLoad) {
-            minLoadTaskHostname = taskHostname;
+            minLoadTask = task;
             minTaskLoad = currentTaskLoad;
           }
         }
         // All the tasks are overloaded. Allocate to a new task.
         boolean isThereNotOverloadedTask = false;
         if (minTaskLoad > overloadedTaskThreshold) {
-          for (final Map.Entry<String, TaskInfo> entry : taskInfoMap.entrySet()) {
-            final String taskHostname = entry.getKey();
-            final double currentTaskLoad = entry.getValue().getCpuLoad();
-            if (!taskList.contains(taskHostname) && minTaskLoad > currentTaskLoad) {
+          for (final Map.Entry<String, TaskStats> entry : taskStatsMap.entrySet()) {
+            final String task = entry.getKey();
+            final double currentTaskLoad = entry.getValue().getTaskLoad();
+            if (!taskList.contains(task) && minTaskLoad > currentTaskLoad) {
               isThereNotOverloadedTask = true;
-              minLoadTaskHostname = taskHostname;
+              minLoadTask = task;
               minTaskLoad = currentTaskLoad;
             }
           }
           if (isThereNotOverloadedTask) {
             // Add the new task.
-            taskList.add(minLoadTaskHostname);
+            taskList.add(minLoadTask);
           } else {
             // Return the overloaded but minimal loaded task right now.
             // TODO: [MIST-1010] Automatic scale out when all the tasks are overloaded.
@@ -109,6 +119,6 @@ public final class ApplicationAwareQueryAllocationManager extends AbstractQueryA
         }
       }
     }
-    return new IPAddress(minLoadTaskHostname, clientToTaskPort);
+    return new IPAddress(minLoadTask, clientToTaskPort);
   }
 }

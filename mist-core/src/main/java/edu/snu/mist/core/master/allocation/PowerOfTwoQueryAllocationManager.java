@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.master.allocation;
 
-import edu.snu.mist.core.master.TaskInfo;
+import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.parameters.ClientToTaskPort;
 import edu.snu.mist.formats.avro.IPAddress;
 import org.apache.reef.tang.annotations.Parameter;
@@ -23,17 +23,11 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * The group-unaware QAM which adopts Power-Of-Two allocation algorithm.
  */
-public final class PowerOfTwoQueryAllocationManager extends AbstractQueryAllocationManager {
-
-  /**
-   * The list of MistTasks which is necessary for query scheduling.
-   */
-  private final List<String> taskList;
+public final class PowerOfTwoQueryAllocationManager implements QueryAllocationManager {
 
   /**
    * The random object.
@@ -45,17 +39,26 @@ public final class PowerOfTwoQueryAllocationManager extends AbstractQueryAllocat
    */
   private final int clientToTaskPort;
 
+  /**
+   * The task stats map.
+   */
+  private final TaskStatsMap taskStatsMap;
+
   @Inject
-  private PowerOfTwoQueryAllocationManager(@Parameter(ClientToTaskPort.class) final int clientToTaskPort) {
+  private PowerOfTwoQueryAllocationManager(
+      @Parameter(ClientToTaskPort.class) final int clientToTaskPort,
+      final TaskStatsMap taskStatsMap) {
     super();
-    this.taskList = new CopyOnWriteArrayList<>();
     this.random = new Random();
     this.clientToTaskPort = clientToTaskPort;
+    this.taskStatsMap = taskStatsMap;
   }
 
   @Override
   public IPAddress getAllocatedTask(final String appId) {
+    final List<String> taskList = taskStatsMap.getTaskList();
     int index0, index1;
+
     index0 = random.nextInt(taskList.size());
     index1 = random.nextInt(taskList.size());
     while (index1 == index0) {
@@ -63,16 +66,10 @@ public final class PowerOfTwoQueryAllocationManager extends AbstractQueryAllocat
     }
     final String task0 = taskList.get(index0);
     final String task1 = taskList.get(index1);
-    if (this.taskInfoMap.get(task0).getCpuLoad() < this.taskInfoMap.get(task1).getCpuLoad()) {
+    if (this.taskStatsMap.get(task0).getTaskLoad() < this.taskStatsMap.get(task1).getTaskLoad()) {
       return new IPAddress(task0, clientToTaskPort);
     } else {
       return new IPAddress(task1, clientToTaskPort);
     }
-  }
-
-  @Override
-  public TaskInfo addTaskInfo(final String taskAddress, final TaskInfo taskInfo) {
-    this.taskList.add(taskAddress);
-    return super.addTaskInfo(taskAddress, taskInfo);
   }
 }
