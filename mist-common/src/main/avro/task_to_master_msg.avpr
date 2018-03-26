@@ -22,23 +22,7 @@
   "namespace": "edu.snu.mist.formats.avro",
   "protocol": "TaskToMasterMessage",
   "types":[
-    {
-      "name": "IPAddress",
-      "type": "record",
-      "fields":
-      [
-        {
-          "name": "hostAddress",
-          "type": "string"
-        },
-        {
-          "name": "port",
-          "type": "int"
-        }
-      ]
-    }
   ],
   "messages": {
-
   }
 }

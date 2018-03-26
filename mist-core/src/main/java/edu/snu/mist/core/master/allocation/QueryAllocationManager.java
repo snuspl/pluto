@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.master.allocation;
 
-import edu.snu.mist.core.master.TaskInfo;
 import edu.snu.mist.formats.avro.IPAddress;
 
 /**
@@ -29,19 +28,4 @@ public interface QueryAllocationManager {
    * @return MIST task ip address where the query is allocated.
    */
   IPAddress getAllocatedTask(final String appId);
-
-  /**
-   * This method adds new task info to the manager.
-   * @param taskAddress
-   * @param taskInfo
-   * @return
-   */
-  TaskInfo addTaskInfo(final String taskAddress, final TaskInfo taskInfo);
-
-  /**
-   * Returns task info for the given address.
-   * @param taskAddress
-   * @return
-   */
-  TaskInfo getTaskInfo(final String taskAddress);
 }
