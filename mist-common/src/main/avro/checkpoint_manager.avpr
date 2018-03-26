@@ -23,92 +23,40 @@
   "types":
   [
     {
-      "name": "AvroConfigDag",
+      "name": "StateWithTimestamp",
       "type": "record",
       "fields":
       [
         {
-          "name": "AvroConfigVertices",
-          "type": {
-            "type": "array",
-            "items":
+          "name": "VertexState",
+          "type":
+          [
             {
-              "name": "AvroConfigVertex",
-              "type": "record",
-              "fields":
-              [
-                {
-                  "name": "Id",
-                  "type": "string"
-                },
-                {
-                  "name": "Type",
-                  "type": {
-                    "name": "AvroConfigVertexType",
-                    "type": "enum",
-                    "symbols": ["SOURCE", "OPERATOR", "SINK"]
-                  }
-                },
-                {
-                  "name": "Configuration",
-                  "type":
-                  {
-                    "type": "map",
-                    "values": "string"
-                  }
-                },
-                {
-                  "name": "State",
-                  "type":
-                  {
-                    "type": "map",
-                    "values":
-                    [
-                      "boolean", "int", "long", "float", "double", "string", "bytes"
-                    ]
-                  }
-                },
-                {
-                  "name": "LatestCheckpointTimestamp",
-                  "type": "long",
-                  "default": 0
-                }
+              "type": "map",
+              "values": [
+                "boolean", "int", "long", "float", "double", "string", "bytes"
               ]
-            }
-          }
+            },
+            "null"
+          ]
         },
         {
-          "name": "AvroConfigMISTEdges",
+          "name": "LatestCheckpointTimestamp",
+          "type": "long",
+          "default": 0
+        }
+      ]
+    },
+    {
+      "name": "QueryCheckpoint",
+      "type": "record",
+      "fields":
+      [
+        {
+          "name": "QueryState",
           "type": {
             "type": "array",
-            "items":
-            {
-              "name": "AvroConfigMISTEdge",
-              "type": "record",
-              "fields":
-              [
-                {
-                  "name": "Direction",
-                  "type": {
-                    "name": "Direction",
-                    "type": "enum",
-                    "symbols": ["LEFT", "RIGHT"]
-                  }
-                },
-                {
-                  "name": "Index",
-                  "type": "int"
-                },
-                {
-                  "name": "FromVertexIndex",
-                  "type": "int"
-                },
-                {
-                 "name": "ToVertexIndex",
-                 "type": "int"
-                }
-              ]
-            }
+            "items": "StateWithTimestamp"
           }
         }
       ]
@@ -119,33 +67,19 @@
       "fields":
       [
         {
-          "name": "AvroConfigDags",
-          "type":
-          {
-            "type": "map",
-            "values": "AvroConfigDag"
-          }
-        },
-        {
-          "name": "MinimumLatestCheckpointTimestamp",
-          "type": "long",
-          "default": 0
-        },
-        {
-          "name": "JarFilePaths",
-          "type":
-          {
-            "type": "array",
-            "items": "string"
-          }
-        },
-        {
           "name": "GroupId",
           "type": "string"
         },
         {
-          "name": "ApplicationId",
-          "type": "string"
+          "name": "QueryCheckpointMap",
+          "type": {
+            "type": "map",
+            "values": "QueryCheckpoint"
+          }
+        },
+        {
+          "name": "MinimumLatestCheckpointTimestamp",
+          "type": "long"
         }
       ]
     },
@@ -169,18 +103,6 @@
       ]
     }
   ],
-  "messages":
-  {
-    "checkpointGroup":
-    {
-      "request":
-      [
-        {
-          "name": "groupInfoCheckpoint",
-          "type": "GroupCheckpoint"
-        }
-      ],
-      "response": "CheckpointResult"
-    }
+  "messages": {
   }
 }

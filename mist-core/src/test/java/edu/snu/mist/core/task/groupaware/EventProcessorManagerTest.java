@@ -15,15 +15,22 @@
  */
 package edu.snu.mist.core.task.groupaware;
 
+import edu.snu.mist.core.parameters.MasterHostname;
+import edu.snu.mist.core.parameters.TaskHostname;
+import edu.snu.mist.core.parameters.TaskToMasterPort;
+import edu.snu.mist.core.rpc.AvroUtils;
+import edu.snu.mist.core.task.MockTaskToMasterMessage;
+import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessorFactory;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.EventProcessorLowerBound;
-import edu.snu.mist.core.task.groupaware.groupassigner.GroupAssigner;
-import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.EventProcessorUpperBound;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GracePeriod;
+import edu.snu.mist.core.task.groupaware.groupassigner.GroupAssigner;
 import edu.snu.mist.core.task.groupaware.rebalancer.GroupRebalancer;
+import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import junit.framework.Assert;
+import org.apache.avro.ipc.Server;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -33,6 +40,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.inject.Inject;
+import java.net.InetSocketAddress;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -41,6 +49,7 @@ import static org.mockito.Mockito.*;
 
 public class EventProcessorManagerTest {
 
+  private final Tang tang = Tang.Factory.getTang();
   private EventProcessorManager eventProcessorManager;
   private static final int DEFAULT_NUM_THREADS = 5;
   private static final int MAX_NUM_THREADS = 10;
@@ -48,14 +57,25 @@ public class EventProcessorManagerTest {
   private GroupRebalancer groupRebalancer;
   private TestGroupAssigner groupBalancer;
   private GroupAllocationTableModifier groupAllocationTableModifier;
+  private Server mockMasterServer;
+
 
   @Before
   public void setUp() throws InjectionException {
-    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    final int taskToMasterPort = tang.newInjector().getNamedInstance(TaskToMasterPort.class);
+    // Setup mock master server.
+    mockMasterServer = AvroUtils.createAvroServer(
+        TaskToMasterMessage.class,
+        new MockTaskToMasterMessage(),
+        new InetSocketAddress("localhost", taskToMasterPort));
+
+    final JavaConfigurationBuilder jcb = tang.newConfigurationBuilder();
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, Integer.toString(DEFAULT_NUM_THREADS));
     jcb.bindNamedParameter(EventProcessorUpperBound.class, Integer.toString(MAX_NUM_THREADS));
     jcb.bindNamedParameter(EventProcessorLowerBound.class, Integer.toString(MIN_NUM_THREADS));
     jcb.bindNamedParameter(GracePeriod.class, Integer.toString(0));
+    jcb.bindNamedParameter(MasterHostname.class, "localhost");
+    jcb.bindNamedParameter(TaskHostname.class, "localhost");
     jcb.bindImplementation(EventProcessorFactory.class, TestEventProcessorFactory.class);
     groupRebalancer = mock(GroupRebalancer.class);
     groupBalancer = new TestGroupAssigner();
@@ -69,6 +89,7 @@ public class EventProcessorManagerTest {
   @After
   public void tearDown() throws Exception {
     eventProcessorManager.close();
+    mockMasterServer.close();
   }
 
   /*
@@ -151,6 +172,8 @@ public class EventProcessorManagerTest {
     jcb.bindNamedParameter(EventProcessorLowerBound.class, Integer.toString(MIN_NUM_THREADS));
     jcb.bindNamedParameter(GracePeriod.class, Integer.toString(gracePeriod));
     jcb.bindImplementation(EventProcessorFactory.class, TestEventProcessorFactory.class);
+    jcb.bindNamedParameter(MasterHostname.class, "localhost");
+    jcb.bindNamedParameter(TaskHostname.class, "localhost");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
 
     long prevAdjustTime = System.nanoTime();

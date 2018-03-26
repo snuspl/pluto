@@ -25,6 +25,7 @@ import org.apache.avro.AvroRemoteException;
 import javax.inject.Inject;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 /**
@@ -44,13 +45,17 @@ public final class DefaultClientToMasterMessageImpl implements ClientToMasterMes
    */
   private final ApplicationCodeManager appCodeManager;
 
-
+  /**
+   * The query Id generator.
+   */
+  private final AtomicLong queryIdGenerator;
 
   @Inject
   private DefaultClientToMasterMessageImpl(final QueryAllocationManager queryAllocationManager,
                                            final ApplicationCodeManager appCodeManager) {
     this.queryAllocationManager = queryAllocationManager;
     this.appCodeManager = appCodeManager;
+    this.queryIdGenerator = new AtomicLong();
   }
 
   @Override
@@ -64,6 +69,7 @@ public final class DefaultClientToMasterMessageImpl implements ClientToMasterMes
     return QuerySubmitInfo.newBuilder()
         .setJarPaths(appCodeManager.getJarPaths(appId))
         .setTask(queryAllocationManager.getAllocatedTask(appId))
+        .setQueryId(String.valueOf(queryIdGenerator.getAndIncrement()))
         .build();
   }
 }

@@ -13,14 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.parameters;
+package edu.snu.mist.core.task.recovery;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * The host address of mist task.
+ * The interface for recovery managers.
  */
-@NamedParameter(doc = "The host address of mist task.", default_value = "127.0.0.1")
-public class TaskHostAddress implements Name<String> {
+@DefaultImplementation(SingleThreadRecoveryManager.class)
+public interface RecoveryManager {
+
+  /**
+   * Start the recovery process.
+   * @return true if success. false if fail.
+   */
+  boolean startRecovery();
 }

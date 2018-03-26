@@ -17,6 +17,7 @@ package edu.snu.mist.core.task.checkpointing;
 
 import edu.snu.mist.core.task.groupaware.ApplicationInfo;
 import edu.snu.mist.core.task.groupaware.Group;
+import edu.snu.mist.formats.avro.AvroDag;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.io.IOException;
@@ -28,6 +29,14 @@ import java.io.IOException;
  */
 @DefaultImplementation(DefaultCheckpointManagerImpl.class)
 public interface CheckpointManager {
+
+  /**
+   * Store the given query to the disk.
+   * @param avroDag
+   * @return
+   */
+  boolean storeQuery(AvroDag avroDag);
+
   /**
    * Recover a stored group in this MIST Task.
    * @param groupId
@@ -60,4 +69,9 @@ public interface CheckpointManager {
    * @return ApplicationMetaInfo
    */
   ApplicationInfo getApplication(String appId);
+
+  /**
+   * Start periodic checkpointing.
+   */
+  void startCheckpointing();
 }

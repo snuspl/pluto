@@ -22,7 +22,10 @@ import edu.snu.mist.core.rpc.DefaultDriverToMasterMessageImpl;
 import edu.snu.mist.core.rpc.DefaultMasterToTaskMessageImpl;
 import edu.snu.mist.core.rpc.DefaultTaskToMasterMessageImpl;
 import edu.snu.mist.core.task.MistTask;
-import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.formats.avro.ClientToMasterMessage;
+import edu.snu.mist.formats.avro.DriverToMasterMessage;
+import edu.snu.mist.formats.avro.MasterToTaskMessage;
+import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import org.apache.avro.AvroRemoteException;
 import org.apache.avro.ipc.NettyTransceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
@@ -49,6 +52,8 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -92,6 +97,11 @@ public final class MistDriver {
    * The ID prefix of ActiveContexts for MistTask.
    */
   private static final String MIST_TASK_ID_PREFIX = "MIST_TASK_";
+
+  /**
+   * The ID prefix of ActiveContexts for recovery task.
+   */
+  private static final String MIST_RECOVERY_TASK_ID_PREFIX = "MIST_RECOVERY_";
 
   /**
    * Static Tang object.
@@ -159,6 +169,21 @@ public final class MistDriver {
   private final AtomicInteger runningTaskNum;
 
   /**
+   * The index number for recovery tasks.
+   */
+  private final AtomicInteger recoveryTaskIndex;
+
+  /**
+   * The number of recovery task requests which should be recovered.
+   */
+  private final AtomicInteger currentRecoveryRequestNum;
+
+  /**
+   * The number of currently failed tasks.
+   */
+  private final AtomicInteger currentFailedTaskNum;
+
+  /**
    * The active context of master.
    */
   private ActiveContext masterContext;
@@ -178,6 +203,11 @@ public final class MistDriver {
    */
   private DriverToMasterMessage proxyToMaster;
 
+  /**
+   * The lock for critical section of failure recovery context.
+   */
+  private final Lock failureRecoveryContextLock;
+
   @Inject
   private MistDriver(final EvaluatorRequestor requestor,
                      final JVMProcessFactory jvmProcessFactory,
@@ -192,6 +222,9 @@ public final class MistDriver {
     this.jvmProcessFactory = jvmProcessFactory;
     this.taskIndex = new AtomicInteger(0);
     this.runningTaskNum = new AtomicInteger(0);
+    this.recoveryTaskIndex = new AtomicInteger(0);
+    this.currentRecoveryRequestNum = new AtomicInteger(0);
+    this.currentFailedTaskNum = new AtomicInteger(0);
     this.mistDriverConfigs = mistDriverConfigs;
     this.mistTaskConfigs = mistTaskConfigs;
     this.mistMasterConfigs = mistMasterConfigs;
@@ -202,6 +235,7 @@ public final class MistDriver {
     this.mistTaskConfQueue = new ConcurrentLinkedQueue<>();
     this.mistTaskContextQueue = new ConcurrentLinkedQueue<>();
     this.proxyToMaster = null;
+    this.failureRecoveryContextLock = new ReentrantLock();
   }
 
   public final class StartHandler implements EventHandler<StartTime> {
@@ -221,33 +255,78 @@ public final class MistDriver {
     @Override
     public void onNext(final AllocatedEvaluator allocatedEvaluator) {
       final EvaluatorDescriptor descriptor = allocatedEvaluator.getEvaluatorDescriptor();
-      if (isMasterEvaluatorAllocated.compareAndSet(false, true)) {
-        LOG.log(Level.INFO, "A MistMaster allocated to {0}", descriptor.getNodeDescriptor().getName());
-        allocatedEvaluator.submitContext(ContextConfiguration.CONF
-            .set(ContextConfiguration.IDENTIFIER, MIST_MASTER_ID)
-            .build());
-        // Submit task evaluator requests.
-        requestor.submit(EvaluatorRequest.newBuilder()
-            .setNumber(mistDriverConfigs.getNumTasks())
-            .setMemory(mistDriverConfigs.getTaskMemSize())
-            .setNumberOfCores(mistDriverConfigs.getNumTaskCores())
-            .build());
-      } else if (
-          descriptor.getMemory() == mistDriverConfigs.getTaskMemSize()) {
-        final String taskId = MIST_TASK_ID_PREFIX + taskIndex.getAndIncrement();
-        final JVMProcess jvmProcess = jvmProcessFactory.newEvaluatorProcess()
-            .setMemory(mistDriverConfigs.getTaskMemSize())
-            .addOption("-XX:NewRatio=" + mistDriverConfigs.getNewRatio())
-            .addOption("-XX:ReservedCodeCacheSize=" + mistDriverConfigs.getReservedCodeCacheSize() + "m");
-        LOG.log(Level.INFO, "A MistTask allocated to {0}", descriptor.getNodeDescriptor().getName());
-        allocatedEvaluator.setProcess(jvmProcess);
-        allocatedEvaluator.submitContext(ContextConfiguration.CONF
-            .set(ContextConfiguration.IDENTIFIER, taskId)
-            .build());
+      // Use TTS (Test-Test & Set) method to avoid lock contention.
+      if (currentRecoveryRequestNum.get() > 0) {
+        // If there is a failed task, then launch a recovery task.
+        failureRecoveryContextLock.lock();
+        if (currentRecoveryRequestNum.get() > 0) {
+          LOG.log(Level.INFO, "A recovery task allocated to {0}", descriptor.getNodeDescriptor().getName());
+          final String recoveryTaskId = MIST_RECOVERY_TASK_ID_PREFIX + recoveryTaskIndex.getAndIncrement();
+          allocatedEvaluator.submitContext(ContextConfiguration.CONF
+              .set(ContextConfiguration.IDENTIFIER, recoveryTaskId)
+              .build());
+          currentRecoveryRequestNum.getAndDecrement();
+        }
+        failureRecoveryContextLock.unlock();
       } else {
-        LOG.log(Level.SEVERE, "Invalid runtime configuration!");
+        if (isMasterEvaluatorAllocated.compareAndSet(false, true)) {
+          LOG.log(Level.INFO, "A MistMaster allocated to {0}", descriptor.getNodeDescriptor().getName());
+          allocatedEvaluator.submitContext(ContextConfiguration.CONF
+              .set(ContextConfiguration.IDENTIFIER, MIST_MASTER_ID)
+              .build());
+          // Submit task evaluator requests.
+          requestor.submit(EvaluatorRequest.newBuilder()
+              .setNumber(mistDriverConfigs.getNumTasks())
+              .setMemory(mistDriverConfigs.getTaskMemSize())
+              .setNumberOfCores(mistDriverConfigs.getNumTaskCores())
+              .build());
+        } else if (
+            descriptor.getMemory() == mistDriverConfigs.getTaskMemSize()) {
+          final String taskId = MIST_TASK_ID_PREFIX + taskIndex.getAndIncrement();
+          final JVMProcess jvmProcess = jvmProcessFactory.newEvaluatorProcess()
+              .setMemory(mistDriverConfigs.getTaskMemSize())
+              .addOption("-XX:NewRatio=" + mistDriverConfigs.getNewRatio())
+              .addOption("-XX:ReservedCodeCacheSize=" + mistDriverConfigs.getReservedCodeCacheSize() + "m");
+          LOG.log(Level.INFO, "A MistTask allocated to {0}", descriptor.getNodeDescriptor().getName());
+          allocatedEvaluator.setProcess(jvmProcess);
+          allocatedEvaluator.submitContext(ContextConfiguration.CONF
+              .set(ContextConfiguration.IDENTIFIER, taskId)
+              .build());
+        } else {
+          LOG.log(Level.SEVERE, "Invalid runtime configuration!");
+        }
       }
     }
+  }
+
+
+  private Configuration getTaskConfiguration(
+      final ActiveContext taskContext,
+      final Configuration nameResolverConf,
+      final String masterHostname,
+      final String taskHostname) {
+    // Task configuration
+    final Configuration taskConfiguration = TaskConfiguration.CONF
+        .set(TaskConfiguration.IDENTIFIER, taskContext.getId())
+        .set(TaskConfiguration.TASK, MistTask.class)
+        .set(TaskConfiguration.ON_CLOSE, MistTask.TaskCloseHandler.class)
+        .build();
+    final JavaConfigurationBuilder taskConfBuilder = tang.newConfigurationBuilder();
+    taskConfBuilder.bindNamedParameter(ClientToTaskPort.class, String.valueOf(mistDriverConfigs.getClientToTaskPort()));
+    taskConfBuilder.bindNamedParameter(MasterToTaskPort.class, String.valueOf(mistDriverConfigs.getMasterToTaskPort()));
+    taskConfBuilder.bindNamedParameter(MasterHostname.class, masterHostname);
+    taskConfBuilder.bindNamedParameter(TaskHostname.class, taskHostname);
+    taskConfBuilder.bindNamedParameter(TaskToMasterPort.class, String.valueOf(mistDriverConfigs.getTaskToMasterPort()));
+    taskConfBuilder.bindImplementation(MasterToTaskMessage.class, DefaultMasterToTaskMessageImpl.class);
+    taskConfBuilder.bindNamedParameter(SharedStorePath.class, String.valueOf(mistDriverConfigs
+        .getSharedStorePath()));
+
+    // Store task configuration.
+    return Configurations.merge(
+        nameResolverConf,
+        taskConfiguration,
+        mistTaskConfigs.getConfiguration(),
+        taskConfBuilder.build());
   }
 
   public final class ActiveContextHandler implements EventHandler<ActiveContext> {
@@ -260,11 +339,22 @@ public final class MistDriver {
           .set(NameResolverConfiguration.NAME_SERVICE_PORT, nameServer.getPort())
           .set(NameResolverConfiguration.NAME_SERVER_HOSTNAME, localAddressProvider.getLocalAddress())
           .build();
-      // Configuration for NCS of mist task.
       if (taskId.equals(MIST_MASTER_ID)) {
         masterContext = activeContext;
       } else if (taskId.startsWith(MIST_TASK_ID_PREFIX)) {
         mistTaskContextQueue.add(activeContext);
+      } else if (taskId.startsWith(MIST_RECOVERY_TASK_ID_PREFIX)) {
+        // In this case, recovery task should be submitted.
+        // We don't support failure recovery occurred before master running.
+        if (!isMasterRunning.get()) {
+          throw new IllegalStateException("Node failure occurred before the master started!");
+        }
+        final String masterHostname =
+            masterContext.getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress().getHostName();
+        final String taskHostname =
+            activeContext.getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress().getHostName();
+        // Launch recovery task.
+        activeContext.submitTask(getTaskConfiguration(activeContext, nameResolverConf, masterHostname, taskHostname));
       } else {
         LOG.log(Level.SEVERE, "Invalid contextId: {0}", taskId);
         throw new RuntimeException("Internal error: Invalid contextId!");
@@ -272,51 +362,29 @@ public final class MistDriver {
       // All the active contexts are now submitted
       if (activeContextCounter.incrementAndGet() == 1 + mistDriverConfigs.getNumTasks()) {
         // Get Master host address
-        final String masterHostAddress =
+        final String masterHostname =
             masterContext.getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress().getHostName();
-        final int clientToMasterPort = mistDriverConfigs.getClientToMasterPort();
-        final int taskToMasterPort = mistDriverConfigs.getTaskToMasterPort();
-        final int masterToTaskPort = mistDriverConfigs.getMasterToTaskPort();
-        final int clientToTaskPort = mistDriverConfigs.getClientToTaskPort();
-        final int driverToMasterPort = mistDriverConfigs.getDriverToMasterPort();
+        LOG.info("Set master host address: " + masterHostname);
 
         final JavaConfigurationBuilder masterConfBuilder = tang.newConfigurationBuilder();
         for (final ActiveContext taskContext: mistTaskContextQueue) {
-          // Task configurations
-          final String taskHostAddress =
+          final String taskHostname =
               taskContext.getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress().getHostName();
-          // Task configuration
-          final Configuration taskConfiguration = TaskConfiguration.CONF
-              .set(TaskConfiguration.IDENTIFIER, taskContext.getId())
-              .set(TaskConfiguration.TASK, MistTask.class)
-              .set(TaskConfiguration.ON_CLOSE, MistTask.TaskCloseHandler.class)
-              .build();
-          final JavaConfigurationBuilder taskConfBuilder = tang.newConfigurationBuilder();
-          taskConfBuilder.bindNamedParameter(ClientToTaskPort.class, String.valueOf(clientToTaskPort));
-          masterConfBuilder.bindSetEntry(TaskHostSet.class,
-              taskHostAddress);
-          taskConfBuilder.bindNamedParameter(MasterToTaskPort.class, String.valueOf(masterToTaskPort));
-          taskConfBuilder.bindNamedParameter(MasterHostAddress.class, masterHostAddress);
-          LOG.info("Set master host address: " + masterHostAddress);
-          taskConfBuilder.bindNamedParameter(TaskToMasterPort.class, String.valueOf(taskToMasterPort));
-          taskConfBuilder.bindImplementation(MasterToTaskMessage.class, DefaultMasterToTaskMessageImpl.class);
-          taskConfBuilder.bindNamedParameter(SharedStorePath.class, String.valueOf(mistDriverConfigs
-              .getSharedStorePath()));
-          taskConfBuilder.bindNamedParameter(TaskHostAddress.class, taskHostAddress);
-          // Store task configuration.
-          mistTaskConfQueue.add(Configurations.merge(
-              nameResolverConf,
-              taskConfiguration,
-              mistTaskConfigs.getConfiguration(),
-              taskConfBuilder.build()));
+          mistTaskConfQueue.add(getTaskConfiguration(taskContext, nameResolverConf, masterHostname, taskHostname));
         }
         // Master configuration
         masterConfBuilder.bindNamedParameter(SharedStorePath.class, String.valueOf(mistDriverConfigs
             .getSharedStorePath()));
-        masterConfBuilder.bindNamedParameter(MasterToTaskPort.class, String.valueOf(masterToTaskPort));
-        masterConfBuilder.bindNamedParameter(ClientToMasterPort.class, String.valueOf(clientToMasterPort));
-        masterConfBuilder.bindNamedParameter(TaskToMasterPort.class, String.valueOf(taskToMasterPort));
-        masterConfBuilder.bindNamedParameter(DriverToMasterPort.class, String.valueOf(driverToMasterPort));
+        masterConfBuilder.bindNamedParameter(MasterToTaskPort.class,
+            String.valueOf(mistDriverConfigs.getMasterToTaskPort()));
+        masterConfBuilder.bindNamedParameter(ClientToMasterPort.class,
+            String.valueOf(mistDriverConfigs.getClientToMasterPort()));
+        masterConfBuilder.bindNamedParameter(TaskToMasterPort.class,
+            String.valueOf(mistDriverConfigs.getTaskToMasterPort()));
+        masterConfBuilder.bindNamedParameter(DriverToMasterPort.class,
+            String.valueOf(mistDriverConfigs.getDriverToMasterPort()));
+        masterConfBuilder.bindNamedParameter(ClientToTaskPort.class,
+            String.valueOf(mistDriverConfigs.getClientToTaskPort()));
         masterConfBuilder.bindImplementation(DriverToMasterMessage.class, DefaultDriverToMasterMessageImpl.class);
         masterConfBuilder.bindImplementation(ClientToMasterMessage.class, DefaultClientToMasterMessageImpl.class);
         masterConfBuilder.bindImplementation(TaskToMasterMessage.class, DefaultTaskToMasterMessageImpl.class);
@@ -335,47 +403,87 @@ public final class MistDriver {
     }
   }
 
+  public final class FailedEvaluatorHandler implements EventHandler<FailedEvaluator> {
+    @Override
+    public void onNext(final FailedEvaluator failedEvaluator) {
+      LOG.log(Level.INFO, "Evaluator {0} has failed!", failedEvaluator.getId());
+      final InetSocketAddress failedNodeInetSocketAddress =
+          failedEvaluator.getFailedContextList().get(0)
+              .getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress();
+      try {
+        proxyToMaster.notifyFailedTask(failedNodeInetSocketAddress.getHostName());
+      } catch (final AvroRemoteException e) {
+        LOG.log(Level.SEVERE, "Cannot connect to MistMaster for notifying failure! " + e.toString());
+        throw new IllegalStateException("Cannot connect to MistMaster while failure recovery");
+      }
+      currentRecoveryRequestNum.getAndIncrement();
+      currentFailedTaskNum.getAndIncrement();
+      // Request the MistTask evaluator for recovery.
+      requestor.submit(EvaluatorRequest.newBuilder()
+          .setNumber(1)
+          .setMemory(mistDriverConfigs.getTaskMemSize())
+          .setNumberOfCores(mistDriverConfigs.getNumTaskCores())
+          .build());
+    }
+  }
+
   public final class RunningTaskHandler implements EventHandler<RunningTask> {
     @Override
     public void onNext(final RunningTask runningTask) {
       LOG.log(Level.INFO, "Task {0} is running", runningTask.getId());
-      if (isMasterRunning.compareAndSet(false, true)) {
-        // The running task is master. Time to submit MistTasks.
-        int taskCount = 0;
-        // Submit Task tasks after making sure that master is running.
-        while (taskCount < mistDriverConfigs.getNumTasks()) {
-          final ActiveContext taskContext = mistTaskContextQueue.remove();
-          final Configuration taskConf = mistTaskConfQueue.remove();
-          taskContext.submitTask(taskConf);
-          taskCount += 1;
-        }
-        // Establish driver-to-master connection.
-        final String masterHostAddress = runningTask.getActiveContext().getEvaluatorDescriptor().getNodeDescriptor()
-            .getInetSocketAddress().getHostName();
-        final int driverToMasterPort = mistDriverConfigs.getDriverToMasterPort();
-        // Master is running. Setup avro connection between driver and master.
-        try {
-          final NettyTransceiver driverToMaster = new NettyTransceiver(new InetSocketAddress(masterHostAddress,
-              driverToMasterPort));
-          proxyToMaster = SpecificRequestor.getClient(DriverToMasterMessage.class, driverToMaster);
-        } catch (final IOException e) {
-          LOG.log(Level.SEVERE, "IOException occurred during setting up driver-to-master avro connection!");
-          throw new RuntimeException("driver-to-master avro connection failed");
-        }
-      } else {
-        // The running task is MistTask.
+      if (runningTask.getId().startsWith(MIST_RECOVERY_TASK_ID_PREFIX)) {
         final String taskHostAddress = runningTask.getActiveContext().getEvaluatorDescriptor().getNodeDescriptor()
             .getInetSocketAddress().getHostName();
         try {
-          proxyToMaster.addTask(new IPAddress(taskHostAddress, mistDriverConfigs.getClientToTaskPort()));
-          proxyToMaster.setupMasterToTaskConn(new IPAddress(taskHostAddress, mistDriverConfigs.getMasterToTaskPort()));
-          if (runningTaskNum.incrementAndGet() == mistDriverConfigs.getNumTasks()) {
-            // Notify that all the tasks are running now... Start gathering task information from master.
-            proxyToMaster.taskSetupFinished();
+          proxyToMaster.addTask(taskHostAddress);
+          proxyToMaster.setupMasterToTaskConn(taskHostAddress);
+          // All the failed tasks are recovered. Start recovery from master.
+          if (currentFailedTaskNum.decrementAndGet() == 0) {
+            proxyToMaster.startRecovery();
           }
         } catch (final AvroRemoteException e) {
-          LOG.log(Level.SEVERE, "AvroRemoteException occurred during adding a task to master!");
-          throw new RuntimeException("Avro addTask failed!");
+          LOG.log(Level.SEVERE, "AvroRemoteException occurred during recovery process! " + e.toString());
+          throw new RuntimeException("Task recovery failed during setting up avro connection!");
+        }
+      } else {
+        if (isMasterRunning.compareAndSet(false, true)) {
+          // Establish driver-to-master connection.
+          final String masterHostAddress = runningTask.getActiveContext().getEvaluatorDescriptor().getNodeDescriptor()
+              .getInetSocketAddress().getHostName();
+          final int driverToMasterPort = mistDriverConfigs.getDriverToMasterPort();
+          // Master is running. Setup avro connection between driver and master.
+          try {
+            final NettyTransceiver driverToMaster = new NettyTransceiver(new InetSocketAddress(masterHostAddress,
+                driverToMasterPort));
+            proxyToMaster = SpecificRequestor.getClient(DriverToMasterMessage.class, driverToMaster);
+          } catch (final IOException e) {
+            LOG.log(Level.SEVERE, "IOException occurred during setting up driver-to-master avro connection!");
+            throw new RuntimeException("driver-to-master avro connection failed");
+          }
+          // The master is running. Time to submit MistTasks.
+          int taskCount = 0;
+          // Submit Task tasks after making sure that master is running.
+          while (taskCount < mistDriverConfigs.getNumTasks()) {
+            final ActiveContext taskContext = mistTaskContextQueue.remove();
+            final Configuration taskConf = mistTaskConfQueue.remove();
+            taskContext.submitTask(taskConf);
+            taskCount += 1;
+          }
+        } else {
+          // The running task is MistTask.
+          final String taskHostAddress = runningTask.getActiveContext().getEvaluatorDescriptor().getNodeDescriptor()
+              .getInetSocketAddress().getHostName();
+          try {
+            proxyToMaster.addTask(taskHostAddress);
+            proxyToMaster.setupMasterToTaskConn(taskHostAddress);
+            if (runningTaskNum.incrementAndGet() == mistDriverConfigs.getNumTasks()) {
+              // Notify that all the tasks are running now... Start gathering task information from master.
+              proxyToMaster.taskSetupFinished();
+            }
+          } catch (final AvroRemoteException e) {
+            LOG.log(Level.SEVERE, "AvroRemoteException occurred during adding a task to master!");
+            throw new RuntimeException("Avro addTask failed!");
+          }
         }
       }
     }

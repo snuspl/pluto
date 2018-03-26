@@ -21,7 +21,7 @@ import org.apache.reef.tang.annotations.NamedParameter;
 /**
  * The path for the shared distributed storage.
  */
-@NamedParameter(doc = "The path for the shared storage", short_name = "shared_storage", default_value = "/tmp/")
+@NamedParameter(doc = "The path for the shared storage", short_name = "shared_storage", default_value = "/tmp")
 public final class SharedStorePath implements Name<String> {
   // empty
 }

@@ -16,6 +16,8 @@
 package edu.snu.mist.core.task.groupaware;
 
 import javax.inject.Inject;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -51,5 +53,9 @@ public final class GroupMap {
 
   public int size() {
     return map.size();
+  }
+
+  public Set<Map.Entry<String, Group>> entrySet() {
+    return map.entrySet();
   }
 }

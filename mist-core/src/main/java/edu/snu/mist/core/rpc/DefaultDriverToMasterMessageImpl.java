@@ -16,14 +16,14 @@
 package edu.snu.mist.core.rpc;
 
 import edu.snu.mist.core.master.ProxyToTaskMap;
-import edu.snu.mist.core.master.TaskInfo;
-import edu.snu.mist.core.master.TaskLoadUpdater;
-import edu.snu.mist.core.master.allocation.QueryAllocationManager;
-import edu.snu.mist.core.parameters.ClientToTaskPort;
+import edu.snu.mist.core.master.RecoveryScheduler;
+import edu.snu.mist.core.master.TaskStatsMap;
+import edu.snu.mist.core.master.TaskStatsUpdater;
+import edu.snu.mist.core.parameters.MasterToTaskPort;
 import edu.snu.mist.core.parameters.TaskInfoGatherPeriod;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
-import edu.snu.mist.formats.avro.IPAddress;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
+import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.avro.ipc.NettyTransceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.reef.tang.annotations.Parameter;
@@ -43,14 +43,19 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   private static final Logger LOG = Logger.getLogger(DefaultDriverToMasterMessageImpl.class.getName());
 
   /**
-   * The query allocation manager.
+   * The master-side failure recovery manager.
    */
-  private final QueryAllocationManager queryAllocationManager;
+  private final RecoveryScheduler recoveryManager;
 
   /**
    * The task-proxyClient map.
    */
   private final ProxyToTaskMap proxyToTaskMap;
+
+  /**
+   * The shared task stats map.
+   */
+  private final TaskStatsMap taskStatsMap;
 
   /**
    * The thread which gets task load information regularly.
@@ -63,36 +68,54 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   private final long taskInfoGatherTerm;
 
   /**
-   * The client-to-task port used for avro rpc.
+   * The port used for master-to-task avro ipc.
    */
-  private final int clientToTaskPort;
+  private final int masterToTaskPort;
 
   @Inject
-  private DefaultDriverToMasterMessageImpl(final QueryAllocationManager queryAllocationManager,
+  private DefaultDriverToMasterMessageImpl(final RecoveryScheduler recoveryManager,
                                            final ProxyToTaskMap proxyToTaskMap,
+                                           final TaskStatsMap taskStatsMap,
                                            @Parameter(TaskInfoGatherPeriod.class) final long taskInfoGatherTerm,
-                                           @Parameter(ClientToTaskPort.class) final int clientToTaskPort) {
-    this.queryAllocationManager = queryAllocationManager;
+                                           @Parameter(MasterToTaskPort.class) final int masterToTaskPort) {
+    this.recoveryManager = recoveryManager;
     this.proxyToTaskMap = proxyToTaskMap;
+    this.taskStatsMap = taskStatsMap;
     this.taskInfoGatherTerm = taskInfoGatherTerm;
     this.taskInfoGatherer = Executors.newSingleThreadScheduledExecutor();
-    this.clientToTaskPort = clientToTaskPort;
+    this.masterToTaskPort = masterToTaskPort;
   }
 
   @Override
-  public boolean addTask(final IPAddress taskAddress) {
-    final TaskInfo oldTaskInfo;
-    oldTaskInfo = queryAllocationManager.addTaskInfo(taskAddress, new TaskInfo());
-    return oldTaskInfo == null;
+  public boolean addTask(final String taskHostname) {
+    taskStatsMap.addTask(taskHostname);
+    return true;
   }
 
   @Override
-  public boolean setupMasterToTaskConn(final IPAddress taskAddress) {
+  public boolean setupMasterToTaskConn(final String taskHostname) {
+    // All the codes here are executed in synchronized way.
+    // However, to avoid netty deadlock detector bug we need to make a separate thread for making a new avro connection.
+    final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    // Job is done in another thread.
+    final Future<Boolean> isSuccess = executorService.submit(
+        () -> {
+          try {
+            final NettyTransceiver taskServer =
+                new NettyTransceiver(new InetSocketAddress(taskHostname, masterToTaskPort));
+            final MasterToTaskMessage proxyToTask = SpecificRequestor.getClient(MasterToTaskMessage.class, taskServer);
+            proxyToTaskMap.addNewProxy(taskHostname, proxyToTask);
+            return true;
+          } catch (final IOException e) {
+            LOG.log(Level.SEVERE, "The master-to-task connection setup has failed! " + e.toString());
+            return false;
+          }
+        });
     try {
-      final ExecutorService executorService = Executors.newSingleThreadExecutor();
-      final Future<Boolean> isSuccessFuture = executorService.submit(new ProxyToTaskConnectionSetup(taskAddress));
-      return isSuccessFuture.get();
+      // Waiting for the thread to be finished.
+      return isSuccess.get();
     } catch (final InterruptedException | ExecutionException e) {
+      LOG.log(Level.SEVERE, "The master-to-task connection setup has failed! " + e.toString());
       return false;
     }
   }
@@ -101,7 +124,7 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   public Void taskSetupFinished() {
     // All task setups are over, so start log collection.
     taskInfoGatherer.scheduleAtFixedRate(
-        new TaskLoadUpdater(proxyToTaskMap, queryAllocationManager, clientToTaskPort),
+        new TaskStatsUpdater(proxyToTaskMap, taskStatsMap),
         0,
         taskInfoGatherTerm,
         TimeUnit.MILLISECONDS);
@@ -109,31 +132,15 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   }
 
   @Override
-  public boolean notifyFailedTask(final IPAddress taskAddress) {
-    // TODO: Handle failed task in MistMaster.
-    return false;
+  public boolean notifyFailedTask(final String taskHostname) {
+    final TaskStats taskStats = taskStatsMap.removeTask(taskHostname);
+    recoveryManager.addFailedGroups(taskStats.getGroupStatsMap());
+    return true;
   }
 
-  private class ProxyToTaskConnectionSetup implements Callable<Boolean> {
-
-    private final IPAddress taskAddress;
-
-    public ProxyToTaskConnectionSetup(final IPAddress taskAddress) {
-      this.taskAddress = taskAddress;
-    }
-
-    @Override
-    public Boolean call() {
-      try {
-        final NettyTransceiver taskServer =
-            new NettyTransceiver(new InetSocketAddress(taskAddress.getHostAddress(), taskAddress.getPort()));
-        final MasterToTaskMessage proxyToTask = SpecificRequestor.getClient(MasterToTaskMessage.class, taskServer);
-        proxyToTaskMap.addNewProxy(taskAddress, proxyToTask);
-        return true;
-      } catch (final IOException e) {
-        LOG.log(Level.SEVERE, "The master-to-task connection setup has failed! " + e.toString());
-        return false;
-      }
-    }
+  @Override
+  public Void startRecovery() {
+    recoveryManager.startRecovery();
+    return null;
   }
 }

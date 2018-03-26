@@ -16,17 +16,13 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.core.parameters.ClientToTaskPort;
-import edu.snu.mist.core.parameters.MasterHostAddress;
 import edu.snu.mist.core.parameters.MasterToTaskPort;
-import edu.snu.mist.core.parameters.TaskToMasterPort;
 import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.checkpointing.CheckpointManager;
+import edu.snu.mist.core.task.recovery.RecoveryManager;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
-import edu.snu.mist.formats.avro.TaskToMasterMessage;
-import org.apache.avro.ipc.NettyTransceiver;
 import org.apache.avro.ipc.Server;
-import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.annotations.Unit;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -68,9 +64,9 @@ public final class MistTask implements Task {
   private final Server clientToTaskServer;
 
   /**
-   * Task-to-master message proxy.
+   * The task-side recovery manager.
    */
-  private final TaskToMasterMessage proxyToMaster;
+  private final RecoveryManager recoveryManager;
 
   /**
    * Default constructor of MistTask.
@@ -81,21 +77,17 @@ public final class MistTask implements Task {
                    final CheckpointManager checkpointManager,
                    @Parameter(MasterToTaskPort.class) final int masterToTaskPort,
                    @Parameter(ClientToTaskPort.class) final int clientToTaskPort,
-                   @Parameter(MasterHostAddress.class) final String masterHostAddress,
-                   @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
                    final MasterToTaskMessage masterToTaskMessage,
-                   final ClientToTaskMessage clientToTaskMessage) throws InjectionException, IOException {
+                   final ClientToTaskMessage clientToTaskMessage,
+                   final RecoveryManager recoveryManager) throws InjectionException, IOException {
     this.countDownLatch = new CountDownLatch(1);
     this.queryManager = queryManager;
     this.masterToTaskServer = AvroUtils.createAvroServer(MasterToTaskMessage.class, masterToTaskMessage,
         new InetSocketAddress(masterToTaskPort));
     this.clientToTaskServer = AvroUtils.createAvroServer(ClientToTaskMessage.class, clientToTaskMessage,
         new InetSocketAddress(clientToTaskPort));
-    // Setup task-to-master connection.
-    final NettyTransceiver nettyTransceiver = new NettyTransceiver(
-        new InetSocketAddress(masterHostAddress, taskToMasterPort));
-    this.proxyToMaster = SpecificRequestor.getClient(TaskToMasterMessage.class, nettyTransceiver);
     this.checkpointManager = checkpointManager;
+    this.recoveryManager = recoveryManager;
   }
 
   @Override

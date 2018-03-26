@@ -15,6 +15,10 @@
  */
 package edu.snu.mist.core.task.groupaware.rebalancer;
 
+import edu.snu.mist.core.parameters.MasterHostname;
+import edu.snu.mist.core.parameters.TaskHostname;
+import edu.snu.mist.core.parameters.TaskToMasterPort;
+import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.parameters.GroupId;
 import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.groupaware.Group;
@@ -25,12 +29,17 @@ import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GroupRebalanc
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.OverloadedThreshold;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.UnderloadedThreshold;
 import edu.snu.mist.core.task.groupaware.parameters.DefaultGroupLoad;
+import edu.snu.mist.formats.avro.GroupStats;
+import edu.snu.mist.formats.avro.TaskToMasterMessage;
+import org.apache.avro.AvroRemoteException;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -74,6 +83,19 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
 
   private final double epsilon = 0.00000001;
 
+  /**
+   * The proxy to master.
+   */
+  private TaskToMasterMessage proxyToMaster;
+
+  /**
+   * The taskname of this host seen from MistMaster.
+   */
+  private String taskHostname;
+
+  /**
+   * The group map.
+   */
   private final GroupMap groupMap;
 
   @Inject
@@ -82,12 +104,18 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
                                    @Parameter(DefaultGroupLoad.class) final double defaultGroupLoad,
                                    @Parameter(OverloadedThreshold.class) final double beta,
                                    @Parameter(UnderloadedThreshold.class) final double alpha,
-                                   final GroupMap groupMap) {
+                                   @Parameter(MasterHostname.class) final String masterHostAddress,
+                                   @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
+                                   @Parameter(TaskHostname.class) final String taskHostname,
+                                   final GroupMap groupMap) throws IOException {
     this.groupAllocationTable = groupAllocationTable;
     this.rebalancingPeriod = rebalancingPeriod;
     this.defaultGroupLoad = defaultGroupLoad;
     this.alpha = alpha;
     this.beta = beta;
+    this.proxyToMaster = AvroUtils.createAvroProxy(TaskToMasterMessage.class,
+        new InetSocketAddress(masterHostAddress, taskToMasterPort));
+    this.taskHostname = taskHostname;
     this.groupMap = groupMap;
   }
 
@@ -232,7 +260,19 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
               if (sameGroup == null) {
                 // Split! Create a new group!
                 final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-                jcb.bindNamedParameter(GroupId.class, highLoadGroup.getGroupId());
+                try {
+                  // Here, we pass the fake information on group load and query number right now.
+                  // This information would be updated lazily in the next TaskStats collecting interval.
+                  final String groupId = proxyToMaster.createGroup(taskHostname,
+                      GroupStats.newBuilder()
+                          .setGroupCpuLoad(0.0)
+                          .setGroupQueryNum(0)
+                          .setAppId(highLoadGroup.getApplicationInfo().getApplicationId())
+                          .build());
+                  jcb.bindNamedParameter(GroupId.class, groupId);
+                } catch (final AvroRemoteException e) {
+                  e.printStackTrace();
+                }
                 final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
                 sameGroup = injector.getInstance(Group.class);
                 sameGroup.setEventProcessor(lowLoadThread);

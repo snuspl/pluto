@@ -22,6 +22,7 @@ import edu.snu.mist.core.task.DefaultPhysicalOperatorImpl;
 import edu.snu.mist.core.task.ExecutionDag;
 import edu.snu.mist.core.task.ExecutionVertex;
 import edu.snu.mist.core.task.groupaware.Group;
+import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.CheckpointResult;
 import edu.snu.mist.formats.avro.GroupCheckpoint;
 import org.apache.avro.file.DataFileReader;
@@ -36,6 +37,8 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,42 +49,75 @@ public final class DefaultGroupCheckpointStore implements GroupCheckpointStore {
   private final String tmpFolderPath;
 
   /**
+   * A writer that stores avro dag datum writer.
+   */
+  private final DatumWriter<AvroDag> avroDagDatumWriter;
+
+  /**
+   * A reader that reads stored avro dags.
+   */
+  private final DatumReader<AvroDag> avroDagDatumReader;
+
+  /**
    * A writer that stores ApplicationInfoCheckpoint.
    */
-  private final DatumWriter<GroupCheckpoint> datumWriter;
+  private final DatumWriter<GroupCheckpoint> groupCheckpointDatumWriter;
 
   /**
    * A reader that reads stored ApplicationInfoCheckpoint.
    */
-  private final DatumReader<GroupCheckpoint> datumReader;
+  private final DatumReader<GroupCheckpoint> groupCheckpointDatumReader;
 
   @Inject
   private DefaultGroupCheckpointStore(@Parameter(SharedStorePath.class) final String tmpFolderpath) {
     this.tmpFolderPath = tmpFolderpath;
-    this.datumWriter = new SpecificDatumWriter<>(GroupCheckpoint.class);
-    this.datumReader = new SpecificDatumReader<>(GroupCheckpoint.class);
+    this.avroDagDatumWriter = new SpecificDatumWriter<>(AvroDag.class);
+    this.avroDagDatumReader = new SpecificDatumReader<>(AvroDag.class);
+    this.groupCheckpointDatumWriter = new SpecificDatumWriter<>(GroupCheckpoint.class);
+    this.groupCheckpointDatumReader = new SpecificDatumReader<>(GroupCheckpoint.class);
     // Create a folder that stores the dags and jar files
     final File folder = new File(tmpFolderPath);
     if (!folder.exists()) {
       folder.mkdir();
-    } else {
-      // TODO : Should not delete other checkpoints.
-      final File[] destroy = folder.listFiles();
-      for (final File des : destroy) {
-        des.delete();
-      }
     }
   }
 
   private File getGroupCheckpointFile(final String groupId) {
     final StringBuilder sb = new StringBuilder(groupId);
-    sb.append(".groupcp");
+    sb.append(".checkpoint");
     return new File(tmpFolderPath, sb.toString());
   }
 
+  private File getQueryStoreFile(final String queryId) {
+    final StringBuilder sb = new StringBuilder(queryId);
+    sb.append(".query");
+    return new File(tmpFolderPath, sb.toString());
+  }
 
   @Override
-  public CheckpointResult saveGroupCheckpoint(final Tuple<String, Group> tuple) {
+  public boolean saveQuery(final AvroDag avroDag) {
+    final String queryId = avroDag.getQueryId();
+    try {
+      final File storedFile = getQueryStoreFile(queryId);
+      if (storedFile.exists()) {
+        storedFile.delete();
+        LOG.log(Level.INFO, "Deleting a duplicate query file");
+      }
+      storedFile.getParentFile().mkdirs();
+      final DataFileWriter<AvroDag> dataFileWriter = new DataFileWriter<>(avroDagDatumWriter);
+      dataFileWriter.create(avroDag.getSchema(), storedFile);
+      dataFileWriter.append(avroDag);
+      dataFileWriter.close();
+      LOG.log(Level.INFO, "Query {0} has been stored to disk.", queryId);
+      return true;
+    } catch (final Exception e) {
+      e.printStackTrace();
+      return false;
+    }
+  }
+
+  @Override
+  public CheckpointResult checkpointGroupStates(final Tuple<String, Group> tuple) {
     final String groupId = tuple.getKey();
     final Group group = tuple.getValue();
     final GroupCheckpoint checkpoint = group.checkpoint();
@@ -92,14 +128,12 @@ public final class DefaultGroupCheckpointStore implements GroupCheckpointStore {
         storedFile.delete();
         LOG.log(Level.INFO, "Checkpoint deleted for groupId: {0}", groupId);
       }
-      if (!storedFile.exists()) {
-        storedFile.getParentFile().mkdirs();
-        final DataFileWriter<GroupCheckpoint> dataFileWriter = new DataFileWriter<>(datumWriter);
-        dataFileWriter.create(checkpoint.getSchema(), storedFile);
-        dataFileWriter.append(checkpoint);
-        dataFileWriter.close();
-        LOG.log(Level.INFO, "Checkpoint completed for groupId: {0}", groupId);
-      }
+      storedFile.getParentFile().mkdirs();
+      final DataFileWriter<GroupCheckpoint> dataFileWriter = new DataFileWriter<>(groupCheckpointDatumWriter);
+      dataFileWriter.create(checkpoint.getSchema(), storedFile);
+      dataFileWriter.append(checkpoint);
+      dataFileWriter.close();
+      LOG.log(Level.INFO, "Checkpoint completed for groupId: {0}", groupId);
     } catch (final Exception e) {
       e.printStackTrace();
       return CheckpointResult.newBuilder()
@@ -124,16 +158,15 @@ public final class DefaultGroupCheckpointStore implements GroupCheckpointStore {
     return CheckpointResult.newBuilder()
         .setIsSuccess(true)
         .setMsg("Successfully checkpointed group " + tuple.getKey())
-        .setPathToCheckpoint(tmpFolderPath + "/" + tuple.getKey() + ".groupcp")
+        .setPathToCheckpoint(getGroupCheckpointFile(groupId).toString())
         .build();
   }
 
   @Override
-  public GroupCheckpoint loadGroupCheckpoint(final String groupId) throws IOException {
+  public GroupCheckpoint loadSavedGroupState(final String groupId) throws IOException {
     // Load the file.
     final File storedFile = getGroupCheckpointFile(groupId);
-    final DataFileReader<GroupCheckpoint> dataFileReader =
-        new DataFileReader<GroupCheckpoint>(storedFile, datumReader);
+    final DataFileReader<GroupCheckpoint> dataFileReader = new DataFileReader<>(storedFile, groupCheckpointDatumReader);
     GroupCheckpoint mgc = null;
     mgc = dataFileReader.next(mgc);
     if (mgc != null) {
@@ -142,5 +175,18 @@ public final class DefaultGroupCheckpointStore implements GroupCheckpointStore {
       LOG.log(Level.WARNING, "Checkpoint file not found or error during loading. groupId is " + groupId);
     }
     return mgc;
+  }
+
+  @Override
+  public List<AvroDag> loadSavedQueries(final List<String> queryIdList) throws IOException {
+    final List<AvroDag> savedQueries = new ArrayList<>();
+    for (final String queryId : queryIdList) {
+      final File storedFile = getQueryStoreFile(queryId);
+      final DataFileReader<AvroDag> dataFileReader = new DataFileReader<>(storedFile, avroDagDatumReader);
+      AvroDag avroDag = null;
+      avroDag = dataFileReader.next(avroDag);
+      savedQueries.add(avroDag);
+    }
+    return savedQueries;
   }
 }

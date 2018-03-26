@@ -23,22 +23,64 @@
   "protocol": "TaskToMasterMessage",
   "types":[
     {
-      "name": "IPAddress",
+      "name": "RecoveryInfo",
       "type": "record",
       "fields":
       [
         {
-          "name": "hostAddress",
+          "name": "RecoveryGroupList",
+          "type": {
+            "type": "array",
+            "items": "string"
+          }
+        }
+      ]
+    },
+    {
+      "name": "GroupStats",
+      "type": "record",
+      "fields": [
+        {
+          "name": "AppId",
           "type": "string"
         },
         {
-          "name": "port",
+          "name": "GroupCpuLoad",
+          "type": "double"
+        },
+        {
+          "name": "GroupQueryNum",
           "type": "int"
         }
       ]
     }
   ],
-  "messages": {
-
+  "messages":
+  {
+    "createGroup":
+    {
+      "request":
+      [
+        {
+          "name": "taskHostname",
+          "type": "string"
+        },
+        {
+          "name": "groupStats",
+          "type": "GroupStats"
+        }
+      ],
+      "response": "string"
+    },
+    "getRecoveringGroups":
+    {
+      "request": [
+        {
+          "name": "taskHostname",
+          "type": "string"
+        }
+      ],
+      "response": "RecoveryInfo"
+    }
   }
 }

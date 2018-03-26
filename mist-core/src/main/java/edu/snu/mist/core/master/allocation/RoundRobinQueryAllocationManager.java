@@ -15,23 +15,29 @@
  */
 package edu.snu.mist.core.master.allocation;
 
-import edu.snu.mist.core.master.TaskInfo;
+import edu.snu.mist.core.master.TaskStatsMap;
+import edu.snu.mist.core.parameters.ClientToTaskPort;
 import edu.snu.mist.formats.avro.IPAddress;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * The group-unaware round-robin query allocation scheduler.
  */
-public final class RoundRobinQueryAllocationManager extends AbstractQueryAllocationManager {
+public final class RoundRobinQueryAllocationManager implements QueryAllocationManager {
 
   /**
-   * The list of MistTasks which would be used for Round-Robin scheduling algorithm.
+   * The shared task stats map.
    */
-  private final List<IPAddress> taskList;
+  private final TaskStatsMap taskStatsMap;
+
+  /**
+   * The client-to-task port used for avro rpc.
+   */
+  private final int clientToTaskPort;
 
   /**
    * The AtomicInteger used for round-robin scheduling.
@@ -39,22 +45,17 @@ public final class RoundRobinQueryAllocationManager extends AbstractQueryAllocat
   private final AtomicInteger currentIndex;
 
   @Inject
-  private RoundRobinQueryAllocationManager() {
-    super();
-    this.taskList = new CopyOnWriteArrayList<>();
+  private RoundRobinQueryAllocationManager(final TaskStatsMap taskStatsMap,
+                                           @Parameter(ClientToTaskPort.class) final int clientToTaskPort) {
+    this.taskStatsMap = taskStatsMap;
+    this.clientToTaskPort = clientToTaskPort;
     this.currentIndex = new AtomicInteger();
   }
 
   @Override
   public IPAddress getAllocatedTask(final String appId) {
+    final List<String> taskList = taskStatsMap.getTaskList();
     final int myIndex = currentIndex.getAndIncrement() % taskList.size();
-    return taskList.get(myIndex);
-  }
-
-  @Override
-  public TaskInfo addTaskInfo(final IPAddress taskAddress, final TaskInfo taskInfo) {
-    final TaskInfo t = super.addTaskInfo(taskAddress, taskInfo);
-    taskList.add(taskAddress);
-    return t;
+    return new IPAddress(taskList.get(myIndex), clientToTaskPort);
   }
 }

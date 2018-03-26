@@ -13,19 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.master.allocation;
+package edu.snu.mist.core.parameters;
 
-import edu.snu.mist.formats.avro.IPAddress;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * This is the interface for classes which is in charge of application-aware query allocation.
+ * The host address of mist task.
  */
-public interface QueryAllocationManager {
-
-  /**
-   * This method returns the mist Task where the given query is allocated.
-   * @param appId the application id of the given query.
-   * @return MIST task ip address where the query is allocated.
-   */
-  IPAddress getAllocatedTask(final String appId);
+@NamedParameter(doc = "The host name of mist task.", default_value = "127.0.0.1")
+public class TaskHostname implements Name<String> {
 }

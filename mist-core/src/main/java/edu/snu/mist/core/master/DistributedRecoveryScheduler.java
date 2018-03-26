@@ -15,31 +15,36 @@
  */
 package edu.snu.mist.core.master;
 
-import edu.snu.mist.formats.avro.MasterToTaskMessage;
+import edu.snu.mist.formats.avro.GroupStats;
+import org.apache.commons.lang.NotImplementedException;
 
 import javax.inject.Inject;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
- * The wrapper class which contains proxies to managed tasks.
+ * The recovery manager which leverages multiple nodes in fault recovery process.
+ * TODO: [MIST-986] Implement distributed recovery.
  */
-public final class ProxyToTaskMap {
-
-  private ConcurrentMap<String, MasterToTaskMessage> innerMap;
+public final class DistributedRecoveryScheduler implements RecoveryScheduler {
 
   @Inject
-  private ProxyToTaskMap() {
-    this.innerMap = new ConcurrentHashMap<>();
+  private DistributedRecoveryScheduler() {
   }
 
-  public void addNewProxy(final String taskHost, final MasterToTaskMessage proxyToTask) {
-    innerMap.put(taskHost, proxyToTask);
+  @Override
+  public void addFailedGroups(final Map<String, GroupStats> failedGroups) {
+    throw new NotImplementedException();
   }
 
-  public Set<Map.Entry<String, MasterToTaskMessage>> entrySet() {
-    return innerMap.entrySet();
+  @Override
+  public void startRecovery() {
+    throw new NotImplementedException();
   }
+
+  @Override
+  public List<String> getRecoveringGroups(final String taskHostname) {
+    throw new NotImplementedException();
+  }
+
 }
