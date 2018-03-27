@@ -39,6 +39,11 @@ public class MockMasterServer implements ClientToMasterMessage {
   }
 
   @Override
+  public boolean isReady() throws AvroRemoteException {
+    return true;
+  }
+
+  @Override
   public JarUploadResult uploadJarFiles(final List<ByteBuffer> jarFiles) {
     return JarUploadResult.newBuilder()
         .setIsSuccess(true)

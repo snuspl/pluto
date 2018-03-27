@@ -16,6 +16,7 @@
 package edu.snu.mist.core.rpc;
 
 import edu.snu.mist.core.master.ApplicationCodeManager;
+import edu.snu.mist.core.master.MasterSetupFinished;
 import edu.snu.mist.core.master.allocation.QueryAllocationManager;
 import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import edu.snu.mist.formats.avro.JarUploadResult;
@@ -44,13 +45,23 @@ public final class DefaultClientToMasterMessageImpl implements ClientToMasterMes
    */
   private final ApplicationCodeManager appCodeManager;
 
-
+  /**
+   * A variable that represents master setup is finished or not.
+   */
+  private final MasterSetupFinished masterSetupFinished;
 
   @Inject
   private DefaultClientToMasterMessageImpl(final QueryAllocationManager queryAllocationManager,
-                                           final ApplicationCodeManager appCodeManager) {
+                                           final ApplicationCodeManager appCodeManager,
+                                           final MasterSetupFinished masterSetupFinished) {
     this.queryAllocationManager = queryAllocationManager;
     this.appCodeManager = appCodeManager;
+    this.masterSetupFinished = masterSetupFinished;
+  }
+
+  @Override
+  public boolean isReady() throws AvroRemoteException {
+    return masterSetupFinished.isFinished();
   }
 
   @Override

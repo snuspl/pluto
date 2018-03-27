@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.rpc;
 
+import edu.snu.mist.core.master.MasterSetupFinished;
 import edu.snu.mist.core.master.ProxyToTaskMap;
 import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.master.TaskStatsUpdater;
@@ -73,18 +74,25 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
    */
   private final TaskStatsMap taskStatsMap;
 
+  /**
+   * A variable that represents master setup is finished or not.
+   */
+  private final MasterSetupFinished masterSetupFinished;
+
   @Inject
   private DefaultDriverToMasterMessageImpl(final QueryAllocationManager queryAllocationManager,
                                            final ProxyToTaskMap proxyToTaskMap,
                                            final TaskStatsMap taskStatsMap,
                                            @Parameter(TaskInfoGatherPeriod.class) final long taskInfoGatherTerm,
-                                           @Parameter(MasterToTaskPort.class) final int masterToTaskPort) {
+                                           @Parameter(MasterToTaskPort.class) final int masterToTaskPort,
+                                           final MasterSetupFinished masterSetupFinished) {
     this.queryAllocationManager = queryAllocationManager;
     this.proxyToTaskMap = proxyToTaskMap;
     this.taskStatsMap = taskStatsMap;
     this.taskInfoGatherTerm = taskInfoGatherTerm;
     this.taskInfoGatherer = Executors.newSingleThreadScheduledExecutor();
     this.masterToTaskPort = masterToTaskPort;
+    this.masterSetupFinished = masterSetupFinished;
   }
 
   @Override
@@ -114,6 +122,7 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
         0,
         taskInfoGatherTerm,
         TimeUnit.MILLISECONDS);
+    masterSetupFinished.setFinished();
     return null;
   }
 

@@ -99,6 +99,11 @@
   ],
   "messages":
   {
+    "isReady": /* Check whether MistMaster is ready to receive query submission */
+    {
+      "request": [],
+      "response": "boolean"
+    },
     "uploadJarFiles":
     {
       "request":
