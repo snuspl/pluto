@@ -60,6 +60,7 @@ public final class DefaultMasterToTaskMessageImpl implements MasterToTaskMessage
           group.getGroupId(),
           GroupStats.newBuilder()
               .setGroupLoad(group.getLoad())
+              .setGroupId(group.getGroupId())
               .setAppId(group.getApplicationInfo().getApplicationId())
               .setGroupQueryNum(group.getQueries().size())
               .build());
