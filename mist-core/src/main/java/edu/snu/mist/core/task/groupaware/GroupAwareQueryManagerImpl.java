@@ -206,8 +206,6 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     groupAllocationTableModifier.addEvent(new WritingEvent(WritingEvent.EventType.QUERY_ADD,
         new Tuple<>(applicationInfo, query)));
     // Start the submitted dag
-    // TODO : [MIST-1016] get the appropriate Group for this applicationInfo.
-    final Group group = applicationInfo.getRandomGroup();
     applicationInfo.getQueryStarter().start(queryId, query, configDag, applicationInfo.getJarFilePath());
     return query;
   }
