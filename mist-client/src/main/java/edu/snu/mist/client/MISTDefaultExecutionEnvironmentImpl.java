@@ -16,7 +16,6 @@
 package edu.snu.mist.client;
 
 import edu.snu.mist.formats.avro.*;
-import org.apache.avro.AvroRemoteException;
 import org.apache.avro.ipc.NettyTransceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.reef.io.Tuple;
@@ -28,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The default implementation class for MISTExecutionEnvironment.
@@ -53,6 +53,8 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
    */
   private final Map<String, Tuple<NettyTransceiver, ClientToTaskMessage>> taskConnectionMap;
 
+  private final AtomicBoolean isMasterReady;
+
   /**
    * Default constructor for MISTDefaultExecutionEnvironmentImpl.
    * @param masterAddr MIST Master server address.
@@ -64,6 +66,7 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
     this.masterNettyTransceiver = new NettyTransceiver(new InetSocketAddress(masterAddr, masterPort));
     this.proxyToMaster = SpecificRequestor.getClient(ClientToMasterMessage.class, masterNettyTransceiver);
     this.taskConnectionMap = new HashMap<>();
+    this.isMasterReady = new AtomicBoolean(false);
   }
 
   /**
@@ -73,7 +76,17 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
    * @return the result of the submitted query.
    */
   @Override
-  public APIQueryControlResult submitQuery(final MISTQuery queryToSubmit) throws AvroRemoteException, IOException {
+  public APIQueryControlResult submitQuery(final MISTQuery queryToSubmit) throws IOException {
+
+    // Ready master
+    while (!isMasterReady.get()) {
+      isMasterReady.set(proxyToMaster.isReady());
+      try {
+        Thread.sleep(1000);
+      } catch (final InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
 
     // Step 1: Get a task to submit the query and JAR file paths from MistMaster
     final QuerySubmitInfo querySubmitInfo = proxyToMaster.getQuerySubmitInfo(queryToSubmit.getApplicationId());

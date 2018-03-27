@@ -16,7 +16,6 @@
 package edu.snu.mist.client;
 
 import edu.snu.mist.formats.avro.JarUploadResult;
-import org.apache.avro.AvroRemoteException;
 
 import java.io.IOException;
 import java.util.List;
@@ -32,7 +31,7 @@ public interface MISTExecutionEnvironment extends AutoCloseable {
    * @return the result of the query submission.
    * @throws IOException an exception occurs when connecting with MIST and serializing the jar files.
    */
-  APIQueryControlResult submitQuery(MISTQuery queryToSubmit)  throws AvroRemoteException, IOException;
+  APIQueryControlResult submitQuery(MISTQuery queryToSubmit)  throws IOException;
 
   /**
    * Submit jar files for the application.
