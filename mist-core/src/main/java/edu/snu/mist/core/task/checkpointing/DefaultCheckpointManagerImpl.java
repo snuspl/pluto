@@ -178,7 +178,7 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
           new Object[] {groupId});
       return;
     }
-    group.getQueryRemover().deleteAllQueries();
+    group.getApplicationInfo().getQueryRemover().deleteAllQueries();
     applicationMap.remove(groupId);
     groupAllocationTableModifier.addEvent(
         new WritingEvent(WritingEvent.EventType.GROUP_REMOVE_ALL, null));

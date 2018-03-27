@@ -208,7 +208,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     // Start the submitted dag
     // TODO : [MIST-1016] get the appropriate Group for this applicationInfo.
     final Group group = applicationInfo.getRandomGroup();
-    group.getQueryStarter().start(queryId, query, configDag, applicationInfo.getJarFilePath());
+    applicationInfo.getQueryStarter().start(queryId, query, configDag, applicationInfo.getJarFilePath());
     return query;
   }
 
@@ -253,7 +253,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
    */
   @Override
   public QueryControlResult delete(final String groupId, final String queryId) {
-    groupMap.get(groupId).getQueryRemover().deleteQuery(queryId);
+    groupMap.get(groupId).getApplicationInfo().getQueryRemover().deleteQuery(queryId);
     final QueryControlResult queryControlResult = new QueryControlResult();
     queryControlResult.setQueryId(queryId);
     queryControlResult.setIsSuccess(true);
