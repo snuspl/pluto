@@ -341,15 +341,6 @@ public final class MistDriver {
     public void onNext(final RunningTask runningTask) {
       LOG.log(Level.INFO, "Task {0} is running", runningTask.getId());
       if (isMasterRunning.compareAndSet(false, true)) {
-        // The running task is master. Time to submit MistTasks.
-        int taskCount = 0;
-        // Submit Task tasks after making sure that master is running.
-        while (taskCount < mistDriverConfigs.getNumTasks()) {
-          final ActiveContext taskContext = mistTaskContextQueue.remove();
-          final Configuration taskConf = mistTaskConfQueue.remove();
-          taskContext.submitTask(taskConf);
-          taskCount += 1;
-        }
         // Establish driver-to-master connection.
         final String masterHostname = runningTask.getActiveContext().getEvaluatorDescriptor().getNodeDescriptor()
             .getInetSocketAddress().getHostName();
@@ -362,6 +353,15 @@ public final class MistDriver {
         } catch (final IOException e) {
           LOG.log(Level.SEVERE, "IOException occurred during setting up driver-to-master avro connection!");
           throw new RuntimeException("driver-to-master avro connection failed");
+        }
+        // The running task is master. Time to submit MistTasks.
+        int taskCount = 0;
+        // Submit Task tasks after making sure that master is running.
+        while (taskCount < mistDriverConfigs.getNumTasks()) {
+          final ActiveContext taskContext = mistTaskContextQueue.remove();
+          final Configuration taskConf = mistTaskConfQueue.remove();
+          taskContext.submitTask(taskConf);
+          taskCount += 1;
         }
       } else {
         // The running task is MistTask.
