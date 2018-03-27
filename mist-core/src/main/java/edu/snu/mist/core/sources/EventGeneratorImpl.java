@@ -125,8 +125,6 @@ public abstract class EventGeneratorImpl<I, V> implements EventGenerator<I> {
           outputEmitter.emitCheckpoint(new MistCheckpointEvent());
         }
       }, checkpointPeriod, checkpointPeriod, timeUnit);
-    } else {
-      LOG.log(Level.INFO, "checkpointing is not turned on");
     }
   }
 
