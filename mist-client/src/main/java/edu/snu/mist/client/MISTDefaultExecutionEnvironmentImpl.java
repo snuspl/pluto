@@ -53,6 +53,9 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
    */
   private final Map<String, Tuple<NettyTransceiver, ClientToTaskMessage>> taskConnectionMap;
 
+  /**
+   * Checks whether master is ready or not.
+   */
   private final AtomicBoolean isMasterReady;
 
   /**
