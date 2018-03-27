@@ -112,10 +112,10 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
   public synchronized void start(final String queryId,
                                  final Query query,
                                  final DAG<ConfigVertex, MISTEdge> submittedDag,
-                                 final List<String> jarFilePaths)
-      throws IOException, ClassNotFoundException {
+                                 final List<String> jarFilePaths) throws IOException, ClassNotFoundException {
 
     queryIdConfigDagMap.put(queryId, submittedDag);
+
     // Get a class loader
     final URL[] urls = SerializeUtils.getJarFileURLs(jarFilePaths);
     final ClassLoader classLoader = classLoaderProvider.newInstance(urls);
@@ -134,7 +134,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
 
       // Exit the merging process if there is no mergeable dag
       if (mergeableDags.size() == 0) {
-        final ExecutionDag executionDag = generate(submittedDag, jarFilePaths);
+        final ExecutionDag executionDag = generate(submittedDag, urls, classLoader);
         // Set up the output emitters of the submitted DAG
         QueryStarterUtils.setUpOutputEmitters(executionDag, query);
 
@@ -249,14 +249,10 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
    * This generates a new execution dag from the configuration dag.
    */
   private ExecutionDag generate(final DAG<ConfigVertex, MISTEdge> configDag,
-                                                  final List<String> jarFilePaths)
-      throws IOException, ClassNotFoundException {
+                                final URL[] urls,
+                                final ClassLoader classLoader) throws IOException, ClassNotFoundException {
     // For execution dag
     final ExecutionDag executionDag = new ExecutionDag(new AdjacentListConcurrentMapDAG<>());
-
-    // Get a class loader
-    final URL[] urls = SerializeUtils.getJarFileURLs(jarFilePaths);
-    final ClassLoader classLoader = classLoaderProvider.newInstance(urls);
 
     final Map<ConfigVertex, ExecutionVertex> created = new HashMap<>(configDag.numberOfVertices());
     for (final ConfigVertex source : configDag.getRootVertices()) {
