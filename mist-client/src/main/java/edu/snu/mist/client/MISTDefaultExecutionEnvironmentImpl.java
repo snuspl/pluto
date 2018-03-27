@@ -78,7 +78,7 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
   @Override
   public APIQueryControlResult submitQuery(final MISTQuery queryToSubmit) throws IOException {
 
-    // Ready master
+    // Wait until the master is ready
     while (!isMasterReady.get()) {
       isMasterReady.set(proxyToMaster.isReady());
       try {
