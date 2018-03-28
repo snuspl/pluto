@@ -88,7 +88,7 @@ public final class DefaultApplicationCodeManager implements ApplicationCodeManag
       wChannel.close();
 
       try {
-        Thread.sleep(2000);
+        Thread.sleep(1000);
       } catch (final InterruptedException e) {
         e.printStackTrace();
       }

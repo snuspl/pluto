@@ -52,7 +52,7 @@ public class QueryInfoStoreTest {
    * @throws InjectionException
    * @throws IOException
    */
-  @Test(timeout = 1000)
+  @Test(timeout = 4000)
   public void diskStoreTest() throws InjectionException, IOException {
     // Generate a query
     final MISTQueryBuilder queryBuilder =
