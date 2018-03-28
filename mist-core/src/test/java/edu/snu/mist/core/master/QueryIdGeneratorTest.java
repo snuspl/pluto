@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.master;
 
 import edu.snu.mist.core.parameters.QueryIdPrefix;
 import edu.snu.mist.formats.avro.AvroDag;
-import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
+import org.junit.Assert;
 import org.junit.Test;
 
 public final class QueryIdGeneratorTest {
@@ -38,7 +38,7 @@ public final class QueryIdGeneratorTest {
     final AvroDag avroDag = new AvroDag();
     long submittedQueryNum = 0;
     while (submittedQueryNum < 10000) {
-      final String queryId = queryIdGenerator.generate(avroDag);
+      final String queryId = queryIdGenerator.generate();
       Assert.assertEquals(prefix + submittedQueryNum, queryId);
       submittedQueryNum++;
     }
