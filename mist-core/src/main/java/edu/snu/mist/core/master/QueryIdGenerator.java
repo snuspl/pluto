@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.master;
 
-import edu.snu.mist.formats.avro.AvroDag;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
@@ -25,8 +24,7 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
 public interface QueryIdGenerator {
   /**
    * Generates the query id.
-   * @param avroDag the submitted query that is represented as an avro dag.
    * @return query id
    */
-  String generate(AvroDag avroDag);
+  String generate();
 }

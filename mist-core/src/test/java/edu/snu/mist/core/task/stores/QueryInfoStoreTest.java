@@ -103,12 +103,14 @@ public class QueryInfoStoreTest {
     final AvroDag.Builder avroDagBuilder = AvroDag.newBuilder();
     final AvroDag avroDag1 = avroDagBuilder
         .setAppId(TestParameters.SUPER_GROUP_ID)
+        .setQueryId(TestParameters.QUERY_ID)
         .setJarPaths(paths)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
         .build();
     final AvroDag avroDag2 = avroDagBuilder
         .setAppId(TestParameters.SUPER_GROUP_ID)
+        .setQueryId(TestParameters.QUERY_ID)
         .setJarPaths(paths)
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())

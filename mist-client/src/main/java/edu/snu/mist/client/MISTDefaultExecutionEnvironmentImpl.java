@@ -114,6 +114,7 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
     final AvroDag.Builder avroDagBuilder = AvroDag.newBuilder();
     final AvroDag avroDag = avroDagBuilder
         .setAppId(queryToSubmit.getApplicationId())
+        .setQueryId(querySubmitInfo.getQueryId())
         .setJarPaths(querySubmitInfo.getJarPaths())
         .setAvroVertices(serializedDag.getKey())
         .setEdges(serializedDag.getValue())
