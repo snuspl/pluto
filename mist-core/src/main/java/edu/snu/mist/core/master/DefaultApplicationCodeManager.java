@@ -58,6 +58,11 @@ public final class DefaultApplicationCodeManager implements ApplicationCodeManag
    */
   private final String jarStoringPath;
 
+  /**
+   * Jar prefix.
+   */
+  private static final String JAR_PREFIX = "submitted-";
+
   @Inject
   private DefaultApplicationCodeManager(
       @Parameter(SharedStorePath.class) final String jarStoringPath
@@ -65,6 +70,20 @@ public final class DefaultApplicationCodeManager implements ApplicationCodeManag
     this.appJarMap = new ConcurrentHashMap<>();
     this.appIdentifierNum = new AtomicInteger(0);
     this.jarStoringPath = jarStoringPath;
+
+    // Create a folder that stores the dags and jar files
+    final File folder = new File(jarStoringPath);
+    if (!folder.exists()) {
+      folder.mkdir();
+    } else {
+      final File[] destroy = folder.listFiles();
+      final String prefix = Paths.get(jarStoringPath, JAR_PREFIX).toAbsolutePath().toString();
+      for (final File des : destroy) {
+        if (des.getAbsolutePath().startsWith(prefix)) {
+          des.delete();
+        }
+      }
+    }
   }
 
   /**
@@ -77,11 +96,12 @@ public final class DefaultApplicationCodeManager implements ApplicationCodeManag
   private void createJarFile(final ByteBuffer jarFileBytes,
                              final Path jarFilePath,
                              final List<String> paths) throws IOException {
+    LOG.log(Level.INFO, "Storing {0}...", new Object[] {jarFilePath.toAbsolutePath()});
     final File jarFile = jarFilePath.toFile();
     final FileChannel wChannel = new FileOutputStream(jarFile, false).getChannel();
     wChannel.write(jarFileBytes);
     wChannel.close();
-    paths.add(jarFile.getAbsolutePath());
+    paths.add(jarFilePath.toAbsolutePath().toString());
   }
 
   /**
@@ -94,7 +114,7 @@ public final class DefaultApplicationCodeManager implements ApplicationCodeManag
   private List<String> saveJar(final List<ByteBuffer> jarFiles, final String appId) throws IOException {
     final List<String> paths = new LinkedList<>();
     for (final ByteBuffer jarFileBytes : jarFiles) {
-      final String path = String.format("submitted-%s.jar", appId);
+      final String path = String.format("%s-%s.jar", JAR_PREFIX, appId);
       final Path jarFilePath = Paths.get(jarStoringPath, path);
       createJarFile(jarFileBytes, jarFilePath, paths);
     }

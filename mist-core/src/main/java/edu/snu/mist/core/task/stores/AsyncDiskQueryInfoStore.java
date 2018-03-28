@@ -103,17 +103,6 @@ final class AsyncDiskQueryInfoStore implements QueryInfoStore {
     this.datumReader = new SpecificDatumReader<>(AvroDag.class);
     this.hashInfoMap = new ConcurrentHashMap<>();
     this.metaApplicationMap = metaApplicationMap;
-    // Create a folder that stores the dags and jar files
-    final File folder = new File(tmpFolderPath);
-    if (!folder.exists()) {
-      folder.mkdir();
-    } else {
-      final File[] destroy = folder.listFiles();
-      for (final File des : destroy) {
-        des.delete();
-      }
-    }
-
     this.planQueue = new LinkedBlockingQueue<>();
     this.planStoreExecutorService = Executors.newSingleThreadExecutor();
     this.storedQuerySet = new ConcurrentSet<>();
