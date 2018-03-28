@@ -176,6 +176,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
 
       final ApplicationInfo applicationInfo = applicationMap.get(appId);
       final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(avroDag);
+
       // Waiting for group information being added
       while (applicationInfo.getGroups().isEmpty()) {
         Thread.sleep(100);
@@ -230,13 +231,13 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
 
     final ApplicationInfo applicationInfo = injector.getInstance(ApplicationInfo.class);
 
-    applicationMap.putIfAbsent(appId, applicationInfo);
+    if (applicationMap.putIfAbsent(appId, applicationInfo) == null) {
+      final Group group = injector.getInstance(Group.class);
+      groupAllocationTableModifier.addEvent(
+          new WritingEvent(WritingEvent.EventType.GROUP_ADD, new Tuple<>(applicationInfo, group)));
+    }
 
-    final Group group = injector.getInstance(Group.class);
-    groupAllocationTableModifier.addEvent(
-            new WritingEvent(WritingEvent.EventType.GROUP_ADD, new Tuple<>(applicationInfo, group)));
-
-    return applicationInfo;
+    return applicationMap.get(appId);
   }
 
   @Override
