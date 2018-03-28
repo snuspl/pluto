@@ -62,12 +62,12 @@ public class EventProcessorManagerTest {
     groupRebalancer = mock(GroupRebalancer.class);
     groupBalancer = new TestGroupAssigner();
     groupIdRequestor = mock(GroupIdRequestor.class);
-    final Injector injector2 = Tang.Factory.getTang().newInjector(jcb.build());
-    injector2.bindVolatileInstance(GroupRebalancer.class, groupRebalancer);
-    injector2.bindVolatileInstance(GroupAssigner.class, groupBalancer);
-    injector2.bindVolatileInstance(GroupIdRequestor.class, groupIdRequestor);
-    eventProcessorManager = injector2.getInstance(DefaultEventProcessorManager.class);
-    groupAllocationTableModifier = injector2.getInstance(GroupAllocationTableModifier.class);
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    injector.bindVolatileInstance(GroupRebalancer.class, groupRebalancer);
+    injector.bindVolatileInstance(GroupAssigner.class, groupBalancer);
+    injector.bindVolatileInstance(GroupIdRequestor.class, groupIdRequestor);
+    eventProcessorManager = injector.getInstance(DefaultEventProcessorManager.class);
+    groupAllocationTableModifier = injector.getInstance(GroupAllocationTableModifier.class);
   }
 
   @After
