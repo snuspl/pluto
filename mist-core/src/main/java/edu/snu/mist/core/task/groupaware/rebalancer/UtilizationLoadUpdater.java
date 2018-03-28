@@ -113,7 +113,8 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
         // processed event, incoming event
         final double inputRate = (incomingEvent * 1000) / (double) elapsedTime;
         final double processingRate = (processingEvent * 1000000000) / (double) processingEventTime;
-        final double groupLoad = inputRate / processingRate;
+
+        final double groupLoad = Math.min(1.5, inputRate / processingRate);
         load = groupLoad;
 
         if (LOG.isLoggable(Level.FINE)) {
