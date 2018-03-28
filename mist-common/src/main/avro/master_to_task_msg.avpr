@@ -21,52 +21,8 @@
   "namespace": "edu.snu.mist.formats.avro",
   "protocol": "MasterToTaskMessage",
   "types": [
-    {
-      "name": "GroupStats",
-      "type": "record",
-      "fields": [
-        {
-          "name": "AppId",
-          "type": "string"
-        },
-        {
-          "name": "GroupId",
-          "type": "string"
-        },
-        {
-          "name": "GroupLoad",
-          "type": "double"
-        },
-        {
-          "name": "GroupQueryNum",
-          "type": "int"
-        }
-      ]
-    },
-    {
-      "name": "TaskStats",
-      "type": "record",
-      "fields": [
-        {
-          "name": "TaskLoad",
-          "type": "double"
-        },
-        {
-          "name": "GroupStatsMap",
-          "type": {
-            "type": "map",
-            "values": "GroupStats"
-          }
-        }
-      ]
-    }
   ],
   "messages":
   {
-    "getTaskStats":
-    {
-      "request": [],
-      "response": "TaskStats"
-    }
   }
 }

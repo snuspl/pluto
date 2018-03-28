@@ -15,61 +15,18 @@
  */
 package edu.snu.mist.core.rpc;
 
-import edu.snu.mist.core.task.groupaware.Group;
 import edu.snu.mist.core.task.groupaware.GroupAllocationTable;
-import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
-import edu.snu.mist.formats.avro.GroupStats;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
-import edu.snu.mist.formats.avro.TaskStats;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * The default master-to-task message implementation.
+ * TODO: Implement necessary protocols here.
  */
 public final class DefaultMasterToTaskMessageImpl implements MasterToTaskMessage {
 
-  /**
-   * The group allocation table maintained by MistTask.
-   */
-  private final GroupAllocationTable groupAllocationTable;
-
   @Inject
   private DefaultMasterToTaskMessageImpl(final GroupAllocationTable groupAllocationTable) {
-    this.groupAllocationTable = groupAllocationTable;
-  }
-
-  @Override
-  public TaskStats getTaskStats() {
-    final List<EventProcessor> epList = new ArrayList<>(groupAllocationTable.getKeys());
-    final int numEventProcessors = epList.size();
-    final List<Group> groupList = new ArrayList<>();
-
-    // Get the whole group list.
-    for (final EventProcessor ep : epList) {
-      groupList.addAll(groupAllocationTable.getValue(ep));
-    }
-    double totalLoad = 0.0;
-    final Map<String, GroupStats> groupStatsMap = new HashMap<>();
-    for (final Group group : groupList) {
-      groupStatsMap.put(
-          group.getGroupId(),
-          GroupStats.newBuilder()
-              .setGroupLoad(group.getLoad())
-              .setGroupId(group.getGroupId())
-              .setAppId(group.getApplicationInfo().getApplicationId())
-              .setGroupQueryNum(group.getQueries().size())
-              .build());
-      totalLoad += group.getLoad();
-    }
-    final double taskCpuLoad = totalLoad / numEventProcessors;
-    return TaskStats.newBuilder()
-        .setTaskLoad(taskCpuLoad)
-        .setGroupStatsMap(groupStatsMap)
-        .build();
   }
 }

@@ -102,6 +102,11 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
    */
   private final GroupMap groupMap;
 
+  /**
+   * The remote task stats updater.
+   */
+  private final TaskStatsUpdater taskStatsUpdater;
+
   @Inject
   private GroupAllocationTableModifierImpl(final GroupAllocationTable groupAllocationTable,
                                            final GroupAssigner groupAssigner,
@@ -110,7 +115,8 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
                                            final GroupIsolator groupIsolator,
                                            final GroupMerger groupMerger,
                                            final GroupSplitter groupSplitter,
-                                           final GroupMap groupMap) {
+                                           final GroupMap groupMap,
+                                           final TaskStatsUpdater taskStatsUpdater) {
     this.groupAllocationTable = groupAllocationTable;
     this.groupAssigner = groupAssigner;
     this.groupRebalancer = groupRebalancer;
@@ -121,6 +127,7 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
     this.groupMerger = groupMerger;
     this.groupSplitter = groupSplitter;
     this.groupMap = groupMap;
+    this.taskStatsUpdater = taskStatsUpdater;
     // Create a writer thread
     singleWriter.submit(new SingleWriterThread());
   }
@@ -207,6 +214,9 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
 
               // 3. split groups
               groupSplitter.splitGroup();
+
+              // 4. update the task stats to master
+              taskStatsUpdater.updateTaskStatsToMaster(groupAllocationTable);
               break;
             case ISOLATION:
               groupIsolator.triggerIsolation();

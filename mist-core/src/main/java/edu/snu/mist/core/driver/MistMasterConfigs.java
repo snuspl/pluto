@@ -18,7 +18,6 @@ package edu.snu.mist.core.driver;
 import edu.snu.mist.core.master.allocation.*;
 import edu.snu.mist.core.parameters.OverloadedTaskThreshold;
 import edu.snu.mist.core.parameters.QueryAllocationOption;
-import edu.snu.mist.core.parameters.TaskInfoGatherPeriod;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -33,11 +32,6 @@ import javax.inject.Inject;
 public final class MistMasterConfigs {
 
   /**
-   * Task information gathering period of MistMaster.
-   */
-  private final long taskInfoGatherPeriod;
-
-  /**
    * The threshold for determining overloaded task.
    */
   private final double overloadedTaskThreshold;
@@ -49,17 +43,14 @@ public final class MistMasterConfigs {
 
   @Inject
   private MistMasterConfigs(
-      @Parameter(TaskInfoGatherPeriod.class) final long taskInfoGatherPeriod,
       @Parameter(OverloadedTaskThreshold.class) final double overloadedTaskThreshold,
       @Parameter(QueryAllocationOption.class) final String queryAllocationOption) {
-    this.taskInfoGatherPeriod = taskInfoGatherPeriod;
     this.overloadedTaskThreshold = overloadedTaskThreshold;
     this.queryAllocationOption = queryAllocationOption;
   }
 
   public Configuration getConfiguration() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(TaskInfoGatherPeriod.class, String.valueOf(taskInfoGatherPeriod));
     jcb.bindNamedParameter(OverloadedTaskThreshold.class, String.valueOf(overloadedTaskThreshold));
     if (queryAllocationOption.equals("rr")) {
       jcb.bindImplementation(QueryAllocationManager.class, RoundRobinQueryAllocationManager.class);
@@ -77,7 +68,6 @@ public final class MistMasterConfigs {
 
   public static CommandLine addCommandLineConf(final CommandLine commandLine) {
     final CommandLine cmd = commandLine
-        .registerShortNameOfClass(TaskInfoGatherPeriod.class)
         .registerShortNameOfClass(OverloadedTaskThreshold.class)
         .registerShortNameOfClass(QueryAllocationOption.class);
     return cmd;

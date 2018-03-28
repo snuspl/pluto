@@ -22,6 +22,45 @@
   "namespace": "edu.snu.mist.formats.avro",
   "protocol": "TaskToMasterMessage",
   "types":[
+    {
+      "name": "GroupStats",
+      "type": "record",
+      "fields": [
+        {
+          "name": "AppId",
+          "type": "string"
+        },
+        {
+          "name": "GroupId",
+          "type": "string"
+        },
+        {
+          "name": "GroupLoad",
+          "type": "double"
+        },
+        {
+          "name": "GroupQueryNum",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "TaskStats",
+      "type": "record",
+      "fields": [
+        {
+          "name": "TaskLoad",
+          "type": "double"
+        },
+        {
+          "name": "GroupStatsMap",
+          "type": {
+            "type": "map",
+            "values": "GroupStats"
+          }
+        }
+      ]
+    }
   ],
   "messages": {
     "createGroup":
@@ -38,6 +77,20 @@
         }
       ],
       "response": "string"
+    },
+    "updateTaskStats":
+    {
+      "request": [
+        {
+          "name": "taskHostname",
+          "type": "string"
+        },
+        {
+          "name": "updatedTaskStats",
+          "type": "TaskStats"
+        }
+      ],
+      "response": "boolean"
     }
   }
 }

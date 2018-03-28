@@ -17,6 +17,7 @@ package edu.snu.mist.core.rpc;
 
 import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.formats.avro.GroupStats;
+import edu.snu.mist.formats.avro.TaskStats;
 import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import org.apache.avro.AvroRemoteException;
 
@@ -57,7 +58,7 @@ public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage
       appGroupCounterMap.putIfAbsent(appId, new AtomicInteger(0));
     }
     final AtomicInteger groupCounter = appGroupCounterMap.get(appId);
-    final String groupId = String.format("$s_$d", appId, groupCounter.getAndIncrement());
+    final String groupId = String.format("%s_%d", appId, groupCounter.getAndIncrement());
     taskStatsMap.get(taskHostname).getGroupStatsMap().put(groupId, GroupStats.newBuilder()
         .setGroupQueryNum(0)
         .setGroupLoad(0.0)
@@ -66,5 +67,12 @@ public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage
         .build());
     LOG.log(Level.INFO, "Created new group {0}", groupId);
     return groupId;
+  }
+
+  @Override
+  public boolean updateTaskStats(final String taskHostname, final TaskStats updatedTaskStats)
+      throws AvroRemoteException {
+    taskStatsMap.updateTaskStats(taskHostname, updatedTaskStats);
+    return true;
   }
 }

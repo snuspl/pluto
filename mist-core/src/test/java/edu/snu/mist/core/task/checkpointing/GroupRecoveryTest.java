@@ -35,6 +35,7 @@ import edu.snu.mist.core.sources.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.groupaware.GroupAwareQueryManagerImpl;
 import edu.snu.mist.core.task.groupaware.GroupIdRequestor;
+import edu.snu.mist.core.task.groupaware.TaskStatsUpdater;
 import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.AvroVertex;
@@ -55,6 +56,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.logging.Logger;
 
 import static java.lang.Thread.sleep;
+import static org.mockito.Mockito.mock;
 
 public class GroupRecoveryTest {
 
@@ -148,6 +150,7 @@ public class GroupRecoveryTest {
     jcb.bindNamedParameter(TaskHostname.class, "127.0.0.1");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     injector.bindVolatileInstance(GroupIdRequestor.class, new TestGroupIdRequestor());
+    injector.bindVolatileInstance(TaskStatsUpdater.class, mock(TaskStatsUpdater.class));
     final CheckpointManager checkpointManager = injector.getInstance(CheckpointManager.class);
     final QueryManager queryManager = injector.getInstance(QueryManager.class);
 

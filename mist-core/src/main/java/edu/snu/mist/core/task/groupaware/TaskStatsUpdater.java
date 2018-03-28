@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.parameters;
+package edu.snu.mist.core.task.groupaware;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import org.apache.avro.AvroRemoteException;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * The interval of task info gathering from master.
+ * The interface for TaskStatsUpdater.
  */
-@NamedParameter(doc = "The interval of task info gathering from master.", default_value = "5000", short_name =
-    "task_info_gather_term")
-public class TaskInfoGatherPeriod implements Name<Long> {
+@DefaultImplementation(DefaultTaskStatsUpdater.class)
+public interface TaskStatsUpdater {
+  void updateTaskStatsToMaster(GroupAllocationTable groupAllocationTable) throws AvroRemoteException;
 }
