@@ -149,22 +149,22 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
    * and executes the sources in order to receives data streams.
    * Before the queries are executed, it stores the avro  dag into disk.
    * We can regenerate the queries from the stored avro dag.
-   * @param tuple a pair of the query id and the avro dag
+   * @param avroDag the submitted avro dag
    * @return submission result
    */
   @Override
-  public QueryControlResult create(final Tuple<String, AvroDag> tuple) {
+  public QueryControlResult create(final AvroDag avroDag) {
     final QueryControlResult queryControlResult = new QueryControlResult();
-    queryControlResult.setQueryId(tuple.getKey());
+    final String queryId = avroDag.getQueryId();
+    queryControlResult.setQueryId(queryId);
     try {
       // Create the submitted query
       // 1) Saves the avr dag to the PlanStore and
       // converts the avro dag to the logical and execution dag
-      planStore.saveAvroDag(tuple);
-      final String queryId = tuple.getKey();
+      // TODO: [MIST-1034] Save query in checkpoint manager
 
       // Update app information
-      final String appId = tuple.getValue().getAppId();
+      final String appId = avroDag.getAppId();
 
       if (LOG.isLoggable(Level.FINE)) {
         LOG.log(Level.FINE, "Create Query [aid: {0}, qid: {2}]",
@@ -172,11 +172,12 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
       }
 
       if (!applicationMap.containsKey(appId)) {
-        createApplication(appId, tuple.getValue().getJarPaths());
+        createApplication(appId, avroDag.getJarPaths());
       }
 
       final ApplicationInfo applicationInfo = applicationMap.get(appId);
-      final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(tuple.getValue());
+      final DAG<ConfigVertex, MISTEdge> configDag = configDagGenerator.generate(avroDag);
+
       // Waiting for group information being added
       while (applicationInfo.getGroups().isEmpty()) {
         Thread.sleep(100);
@@ -184,13 +185,13 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
       final Query query = createAndStartQuery(queryId, applicationInfo, configDag);
 
       queryControlResult.setIsSuccess(true);
-      queryControlResult.setMsg(ResultMessage.submitSuccess(tuple.getKey()));
+      queryControlResult.setMsg(ResultMessage.submitSuccess(queryId));
       return queryControlResult;
     } catch (final Exception e) {
       e.printStackTrace();
       // [MIST-345] We need to release all of the information that is required for the query when it fails.
       LOG.log(Level.SEVERE, "An exception occurred while starting {0} query: {1}",
-          new Object[] {tuple.getKey(), e.toString()});
+          new Object[] {queryId, e.toString()});
 
       queryControlResult.setIsSuccess(false);
       queryControlResult.setMsg(e.getMessage());
@@ -233,13 +234,13 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
 
     final ApplicationInfo applicationInfo = injector.getInstance(ApplicationInfo.class);
 
-    applicationMap.putIfAbsent(appId, applicationInfo);
+    if (applicationMap.putIfAbsent(appId, applicationInfo) == null) {
+      final Group group = injector.getInstance(Group.class);
+      groupAllocationTableModifier.addEvent(
+          new WritingEvent(WritingEvent.EventType.GROUP_ADD, new Tuple<>(applicationInfo, group)));
+    }
 
-    final Group group = injector.getInstance(Group.class);
-    groupAllocationTableModifier.addEvent(
-            new WritingEvent(WritingEvent.EventType.GROUP_ADD, new Tuple<>(applicationInfo, group)));
-
-    return applicationInfo;
+    return applicationMap.get(appId);
   }
 
   @Override

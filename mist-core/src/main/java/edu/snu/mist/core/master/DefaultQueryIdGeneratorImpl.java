@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
+package edu.snu.mist.core.master;
 
 import edu.snu.mist.core.parameters.QueryIdPrefix;
-import edu.snu.mist.formats.avro.AvroDag;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -45,7 +44,7 @@ final class DefaultQueryIdGeneratorImpl implements QueryIdGenerator {
   }
 
   @Override
-  public String generate(final AvroDag avroDag) {
+  public String generate() {
     final StringBuilder sb = new StringBuilder();
     sb.append(prefix);
     sb.append(numSubmittedQueries.getAndIncrement());
