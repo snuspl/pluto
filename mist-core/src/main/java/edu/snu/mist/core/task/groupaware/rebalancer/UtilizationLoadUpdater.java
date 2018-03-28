@@ -52,6 +52,11 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
    */
   private long previousUpdateTime;
 
+  /**
+   * Time unit (ns).
+   */
+  private static final long NS_UNIT = 1000000000;
+
   @Inject
   private UtilizationLoadUpdater(final GroupAllocationTable groupAllocationTable,
                                  @Parameter(DefaultGroupLoad.class) final double defaultGroupLoad) {
@@ -112,13 +117,13 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
       } else if (incomingEvent == 0) {
         // No incoming event
         load = defaultGroupLoad;
-      }  else {
+      } else {
         // processed event, incoming event
         final double inputRate = (incomingEvent * 1000) / (double) elapsedTime;
-        final double processingRate = (processingEvent * 1000000000) / (double) processingEventTime;
+        final double processingRate = (processingEvent * NS_UNIT) / (double) processingEventTime;
 
         if (processingEvent == 0 || processingRate == 0) {
-          load = (1 * 1000000000) / (double) processingEventTime;
+          load = (1 * NS_UNIT) / (double) processingEventTime;
         } else {
           final double groupLoad = Math.min(1.5, inputRate / processingRate);
           load = groupLoad;
