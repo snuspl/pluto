@@ -18,11 +18,13 @@ package edu.snu.mist.core.task.checkpointing;
 import edu.snu.mist.common.graph.AdjacentListDAG;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.core.sources.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.groupaware.*;
 import edu.snu.mist.core.task.stores.GroupCheckpointStore;
 import edu.snu.mist.formats.avro.*;
 import org.apache.reef.io.Tuple;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.FileNotFoundException;
@@ -61,17 +63,27 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
    */
   private final QueryManager queryManager;
 
+  /**
+   * The checkpoint period.
+   */
+  private final long checkpointPeriod;
+
   @Inject
   private DefaultCheckpointManagerImpl(final ApplicationMap applicationMap,
                                        final GroupMap groupMap,
                                        final GroupCheckpointStore groupCheckpointStore,
                                        final GroupAllocationTableModifier groupAllocationTableModifier,
-                                       final QueryManager queryManager) {
+                                       final QueryManager queryManager,
+                                       @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod) {
     this.applicationMap = applicationMap;
     this.groupMap = groupMap;
     this.checkpointStore = groupCheckpointStore;
     this.groupAllocationTableModifier = groupAllocationTableModifier;
     this.queryManager = queryManager;
+    this.checkpointPeriod = checkpointPeriod;
+    if (checkpointPeriod == 0) {
+      LOG.log(Level.INFO, "checkpointing is not turned on");
+    }
   }
 
   @Override
