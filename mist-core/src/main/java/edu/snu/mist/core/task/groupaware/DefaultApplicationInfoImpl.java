@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.core.task.groupaware;
 
+import edu.snu.mist.core.task.QueryRemover;
+import edu.snu.mist.core.task.QueryStarter;
 import edu.snu.mist.core.task.groupaware.parameters.ApplicationIdentifier;
 import edu.snu.mist.core.task.groupaware.parameters.JarFilePath;
 import org.apache.reef.tang.annotations.Parameter;
@@ -45,12 +47,26 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
    */
   private final String appId;
 
+  /**
+   * A query starter.
+   */
+  private final QueryStarter queryStarter;
+
+  /**
+   * Query remover that deletes queries.
+   */
+  private final QueryRemover queryRemover;
+
   @Inject
   private DefaultApplicationInfoImpl(@Parameter(ApplicationIdentifier.class) final String appId,
-                                     @Parameter(JarFilePath.class) final String jarFilePath) {
+                                     @Parameter(JarFilePath.class) final String jarFilePath,
+                                     final QueryStarter queryStarter,
+                                     final QueryRemover queryRemover) {
     this.groups = new LinkedList<>();
     this.jarFilePath = Arrays.asList(jarFilePath);
     this.appId = appId;
+    this.queryStarter = queryStarter;
+    this.queryRemover = queryRemover;
   }
 
   @Override
@@ -84,5 +100,15 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
   @Override
   public List<String> getJarFilePath() {
     return jarFilePath;
+  }
+
+  @Override
+  public QueryStarter getQueryStarter() {
+    return queryStarter;
+  }
+
+  @Override
+  public QueryRemover getQueryRemover() {
+    return queryRemover;
   }
 }

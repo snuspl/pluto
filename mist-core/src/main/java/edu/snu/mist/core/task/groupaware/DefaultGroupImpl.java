@@ -80,16 +80,6 @@ final class DefaultGroupImpl implements Group {
   private long latestMovedTime;
 
   /**
-   * The query starter.
-   */
-  private final QueryStarter queryStarter;
-
-  /**
-   * The query remover.
-   */
-  private final QueryRemover queryRemover;
-
-  /**
    * The ExecutionDags for this group.
    */
   private final ExecutionDags executionDags;
@@ -107,8 +97,6 @@ final class DefaultGroupImpl implements Group {
 
   @Inject
   private DefaultGroupImpl(@Parameter(GroupId.class) final String groupId,
-                           final QueryStarter queryStarter,
-                           final QueryRemover queryRemover,
                            final ExecutionDags executionDags,
                            final QueryIdConfigDagMap queryIdConfigDagMap,
                            final ConfigExecutionVertexMap configExecutionVertexMap) {
@@ -117,8 +105,6 @@ final class DefaultGroupImpl implements Group {
     this.eventProcessor = new AtomicReference<>(null);
     this.latestMovedTime = System.currentTimeMillis();
     this.totalProcessingEvent = new AtomicLong(0);
-    this.queryStarter = queryStarter;
-    this.queryRemover = queryRemover;
     this.executionDags = executionDags;
     this.queryIdConfigDagMap = queryIdConfigDagMap;
     this.configExecutionVertexMap = configExecutionVertexMap;
@@ -321,16 +307,6 @@ final class DefaultGroupImpl implements Group {
     sb.append(queryList.size());
     sb.append("}");
     return sb.toString();
-  }
-
-  @Override
-  public QueryStarter getQueryStarter() {
-    return queryStarter;
-  }
-
-  @Override
-  public QueryRemover getQueryRemover() {
-    return queryRemover;
   }
 
   @Override
