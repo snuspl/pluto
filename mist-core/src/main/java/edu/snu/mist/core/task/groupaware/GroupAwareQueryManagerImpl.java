@@ -140,9 +140,6 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     this.applicationMap = applicationMap;
     this.groupMap = groupMap;
     this.checkpointPeriod = checkpointPeriod;
-    if (checkpointPeriod == 0) {
-      LOG.log(Level.INFO, "checkpointing is not turned on");
-    }
   }
 
   /**
