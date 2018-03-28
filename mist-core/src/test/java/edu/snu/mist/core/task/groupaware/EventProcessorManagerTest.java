@@ -15,9 +15,6 @@
  */
 package edu.snu.mist.core.task.groupaware;
 
-import edu.snu.mist.core.parameters.MasterHostname;
-import edu.snu.mist.core.parameters.TaskToMasterPort;
-import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessorFactory;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
@@ -26,9 +23,7 @@ import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.EventProcesso
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GracePeriod;
 import edu.snu.mist.core.task.groupaware.groupassigner.GroupAssigner;
 import edu.snu.mist.core.task.groupaware.rebalancer.GroupRebalancer;
-import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import junit.framework.Assert;
-import org.apache.avro.ipc.Server;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -38,7 +33,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.inject.Inject;
-import java.net.InetSocketAddress;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -54,16 +48,10 @@ public class EventProcessorManagerTest {
   private GroupRebalancer groupRebalancer;
   private TestGroupAssigner groupBalancer;
   private GroupAllocationTableModifier groupAllocationTableModifier;
-  private Server mockMasterServer;
+  private GroupIdRequestor groupIdRequestor;
 
   @Before
   public void setUp() throws InjectionException {
-    final Injector injector1 = Tang.Factory.getTang().newInjector();
-    final String masterHostname = injector1.getNamedInstance(MasterHostname.class);
-    final int taskToMasterPort = injector1.getNamedInstance(TaskToMasterPort.class);
-    final TaskToMasterMessage message = new MockTaskToMasterServer();
-    mockMasterServer = AvroUtils.createAvroServer(TaskToMasterMessage.class, message,
-        new InetSocketAddress(masterHostname, taskToMasterPort));
 
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, Integer.toString(DEFAULT_NUM_THREADS));
@@ -73,9 +61,11 @@ public class EventProcessorManagerTest {
     jcb.bindImplementation(EventProcessorFactory.class, TestEventProcessorFactory.class);
     groupRebalancer = mock(GroupRebalancer.class);
     groupBalancer = new TestGroupAssigner();
+    groupIdRequestor = mock(GroupIdRequestor.class);
     final Injector injector2 = Tang.Factory.getTang().newInjector(jcb.build());
     injector2.bindVolatileInstance(GroupRebalancer.class, groupRebalancer);
     injector2.bindVolatileInstance(GroupAssigner.class, groupBalancer);
+    injector2.bindVolatileInstance(GroupIdRequestor.class, groupIdRequestor);
     eventProcessorManager = injector2.getInstance(DefaultEventProcessorManager.class);
     groupAllocationTableModifier = injector2.getInstance(GroupAllocationTableModifier.class);
   }
@@ -83,7 +73,6 @@ public class EventProcessorManagerTest {
   @After
   public void tearDown() throws Exception {
     eventProcessorManager.close();
-    mockMasterServer.close();
   }
 
   /*
@@ -167,6 +156,7 @@ public class EventProcessorManagerTest {
     jcb.bindNamedParameter(GracePeriod.class, Integer.toString(gracePeriod));
     jcb.bindImplementation(EventProcessorFactory.class, TestEventProcessorFactory.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    injector.bindVolatileInstance(GroupIdRequestor.class, mock(GroupIdRequestor.class));
 
     long prevAdjustTime = System.nanoTime();
 

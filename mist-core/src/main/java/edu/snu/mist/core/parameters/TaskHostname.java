@@ -21,6 +21,6 @@ import org.apache.reef.tang.annotations.NamedParameter;
 /**
  * The hostname of mist task.
  */
-@NamedParameter(doc = "The host name of mist task.", default_value = "127.0.0.1")
+@NamedParameter(doc = "The host name of mist task.")
 public class TaskHostname implements Name<String> {
 }

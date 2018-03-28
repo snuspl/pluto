@@ -21,6 +21,6 @@ import org.apache.reef.tang.annotations.NamedParameter;
 /**
  * The Mist master host name.
  */
-@NamedParameter(doc = "The mist master host name", default_value = "127.0.0.1")
+@NamedParameter(doc = "The mist master host name")
 public class MasterHostname implements Name<String> {
 }

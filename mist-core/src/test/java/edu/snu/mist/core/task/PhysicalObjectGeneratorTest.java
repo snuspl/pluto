@@ -24,6 +24,7 @@ import edu.snu.mist.common.functions.MISTFunction;
 import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.core.operators.*;
 import edu.snu.mist.core.operators.window.*;
+import edu.snu.mist.core.parameters.TaskHostname;
 import edu.snu.mist.core.sinks.MqttSink;
 import edu.snu.mist.core.sinks.NettyTextSink;
 import edu.snu.mist.core.sinks.Sink;
@@ -33,6 +34,7 @@ import edu.snu.mist.core.utils.UDFTestUtils;
 import io.moquette.server.Server;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
+import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
@@ -56,7 +58,9 @@ public final class PhysicalObjectGeneratorTest {
 
   @Before
   public void setUp() throws InjectionException {
-    final Injector injector = Tang.Factory.getTang().newInjector();
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(TaskHostname.class, "127.0.0.1");
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     generator = injector.getInstance(PhysicalObjectGenerator.class);
   }
 

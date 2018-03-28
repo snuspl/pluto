@@ -15,11 +15,13 @@
  */
 package edu.snu.mist.core.sinks;
 
+import edu.snu.mist.core.parameters.TaskHostname;
 import edu.snu.mist.core.shared.MQTTSharedResource;
 import edu.snu.mist.core.utils.MqttUtils;
 import io.moquette.server.Server;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
+import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.eclipse.paho.client.mqttv3.*;
@@ -54,7 +56,9 @@ public final class MqttSinkTest {
 
   @Before
   public void setUp() throws IOException, InjectionException, MqttException {
-    final Injector injector = Tang.Factory.getTang().newInjector();
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(TaskHostname.class, "127.0.0.1");
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     mqttSharedResource = injector.getInstance(MQTTSharedResource.class);
     broker = MqttUtils.createMqttBroker();
     subscriber = new MqttClient(MqttUtils.BROKER_URI, "mqttClient");
