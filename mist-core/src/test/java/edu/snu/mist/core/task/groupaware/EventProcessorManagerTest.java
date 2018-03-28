@@ -49,6 +49,7 @@ public class EventProcessorManagerTest {
   private TestGroupAssigner groupBalancer;
   private GroupAllocationTableModifier groupAllocationTableModifier;
   private GroupIdRequestor groupIdRequestor;
+  private TaskStatsUpdater taskStatsUpdater;
 
   @Before
   public void setUp() throws InjectionException {
@@ -62,10 +63,12 @@ public class EventProcessorManagerTest {
     groupRebalancer = mock(GroupRebalancer.class);
     groupBalancer = new TestGroupAssigner();
     groupIdRequestor = mock(GroupIdRequestor.class);
+    taskStatsUpdater = mock(TaskStatsUpdater.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     injector.bindVolatileInstance(GroupRebalancer.class, groupRebalancer);
     injector.bindVolatileInstance(GroupAssigner.class, groupBalancer);
     injector.bindVolatileInstance(GroupIdRequestor.class, groupIdRequestor);
+    injector.bindVolatileInstance(TaskStatsUpdater.class, taskStatsUpdater);
     eventProcessorManager = injector.getInstance(DefaultEventProcessorManager.class);
     groupAllocationTableModifier = injector.getInstance(GroupAllocationTableModifier.class);
   }
@@ -157,7 +160,7 @@ public class EventProcessorManagerTest {
     jcb.bindImplementation(EventProcessorFactory.class, TestEventProcessorFactory.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     injector.bindVolatileInstance(GroupIdRequestor.class, mock(GroupIdRequestor.class));
-
+    injector.bindVolatileInstance(TaskStatsUpdater.class, mock(TaskStatsUpdater.class));
     long prevAdjustTime = System.nanoTime();
 
     eventProcessorManager = injector.getInstance(DefaultEventProcessorManager.class);

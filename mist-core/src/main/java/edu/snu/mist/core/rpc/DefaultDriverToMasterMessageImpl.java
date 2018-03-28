@@ -18,10 +18,8 @@ package edu.snu.mist.core.rpc;
 import edu.snu.mist.core.master.MasterSetupFinished;
 import edu.snu.mist.core.master.ProxyToTaskMap;
 import edu.snu.mist.core.master.TaskStatsMap;
-import edu.snu.mist.core.master.TaskStatsUpdater;
 import edu.snu.mist.core.master.allocation.QueryAllocationManager;
 import edu.snu.mist.core.parameters.MasterToTaskPort;
-import edu.snu.mist.core.parameters.TaskInfoGatherPeriod;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
 import edu.snu.mist.formats.avro.IPAddress;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
@@ -55,16 +53,6 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   private final ProxyToTaskMap proxyToTaskMap;
 
   /**
-   * The thread which gets task load information regularly.
-   */
-  private final ScheduledExecutorService taskInfoGatherer;
-
-  /**
-   * The task info gathering term.
-   */
-  private final long taskInfoGatherTerm;
-
-  /**
    * The master-to-task port used for avro rpc.
    */
   private final int masterToTaskPort;
@@ -83,14 +71,11 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   private DefaultDriverToMasterMessageImpl(final QueryAllocationManager queryAllocationManager,
                                            final ProxyToTaskMap proxyToTaskMap,
                                            final TaskStatsMap taskStatsMap,
-                                           @Parameter(TaskInfoGatherPeriod.class) final long taskInfoGatherTerm,
                                            @Parameter(MasterToTaskPort.class) final int masterToTaskPort,
                                            final MasterSetupFinished masterSetupFinished) {
     this.queryAllocationManager = queryAllocationManager;
     this.proxyToTaskMap = proxyToTaskMap;
     this.taskStatsMap = taskStatsMap;
-    this.taskInfoGatherTerm = taskInfoGatherTerm;
-    this.taskInfoGatherer = Executors.newSingleThreadScheduledExecutor();
     this.masterToTaskPort = masterToTaskPort;
     this.masterSetupFinished = masterSetupFinished;
   }
@@ -116,12 +101,7 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
 
   @Override
   public Void taskSetupFinished() {
-    // All task setups are over, so start log collection.
-    taskInfoGatherer.scheduleAtFixedRate(
-        new TaskStatsUpdater(proxyToTaskMap, taskStatsMap),
-        0,
-        taskInfoGatherTerm,
-        TimeUnit.MILLISECONDS);
+    // Set the master setup as finished.
     masterSetupFinished.setFinished();
     return null;
   }
