@@ -60,17 +60,6 @@ public final class DefaultGroupCheckpointStore implements GroupCheckpointStore {
     this.tmpFolderPath = tmpFolderpath;
     this.datumWriter = new SpecificDatumWriter<>(GroupCheckpoint.class);
     this.datumReader = new SpecificDatumReader<>(GroupCheckpoint.class);
-    // Create a folder that stores the dags and jar files
-    final File folder = new File(tmpFolderPath);
-    if (!folder.exists()) {
-      folder.mkdir();
-    } else {
-      // TODO : Should not delete other checkpoints.
-      final File[] destroy = folder.listFiles();
-      for (final File des : destroy) {
-        des.delete();
-      }
-    }
   }
 
   private File getGroupCheckpointFile(final String groupId) {
