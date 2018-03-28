@@ -16,6 +16,9 @@
 package edu.snu.mist.core.task.groupaware;
 
 import edu.snu.mist.core.parameters.GroupId;
+import edu.snu.mist.core.parameters.MasterHostname;
+import edu.snu.mist.core.parameters.TaskToMasterPort;
+import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.groupaware.eventprocessor.DefaultEventProcessorFactory;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
@@ -27,14 +30,19 @@ import edu.snu.mist.core.task.groupaware.parameters.ApplicationIdentifier;
 import edu.snu.mist.core.task.groupaware.parameters.JarFilePath;
 import edu.snu.mist.core.task.groupaware.rebalancer.GroupSplitter;
 import edu.snu.mist.core.task.groupaware.rebalancer.LoadUpdater;
+import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import junit.framework.Assert;
+import org.apache.avro.ipc.Server;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import javax.inject.Inject;
+import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,6 +50,23 @@ import java.util.List;
 import static org.mockito.Mockito.mock;
 
 public final class GroupSplitterTest {
+
+  private Server mockMasterServer;
+
+  @Before
+  public void setUp() throws InjectionException {
+    final Injector injector = Tang.Factory.getTang().newInjector();
+    final String masterHostname = injector.getNamedInstance(MasterHostname.class);
+    final int taskToMasterPort = injector.getNamedInstance(TaskToMasterPort.class);
+    final TaskToMasterMessage message = new MockTaskToMasterServer();
+    mockMasterServer = AvroUtils.createAvroServer(TaskToMasterMessage.class, message,
+        new InetSocketAddress(masterHostname, taskToMasterPort));
+  }
+
+  @After
+  public void tearDown() {
+    mockMasterServer.close();
+  }
 
   private ApplicationInfo createMetaGroup() throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();

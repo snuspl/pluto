@@ -13,14 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.parameters;
+package edu.snu.mist.core.task.groupaware;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import edu.snu.mist.core.task.DefaultGroupIdRequestorImpl;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * The Mist master host name.
+ * The interface for group id requestors which submit requests for group id.
  */
-@NamedParameter(doc = "The mist master host name", default_value = "127.0.0.1")
-public class MasterHostname implements Name<String> {
+@DefaultImplementation(DefaultGroupIdRequestorImpl.class)
+public interface GroupIdRequestor {
+
+  /**
+   * Request group id.
+   * @param appId application id
+   * @return the allocated group id
+   */
+  String requestGroupId(final String appId);
 }

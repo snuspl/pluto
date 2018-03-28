@@ -13,14 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.parameters;
+package edu.snu.mist.core.task.groupaware;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import edu.snu.mist.formats.avro.TaskToMasterMessage;
+import org.apache.avro.AvroRemoteException;
 
 /**
- * The Mist master host name.
+ * The mock implementation of task-to-master avro server for testing.
  */
-@NamedParameter(doc = "The mist master host name", default_value = "127.0.0.1")
-public class MasterHostname implements Name<String> {
+public class MockTaskToMasterServer implements TaskToMasterMessage {
+  @Override
+  public String createGroup(final String taskHostname,
+                            final String appId) throws AvroRemoteException {
+    return "test-group";
+  }
 }

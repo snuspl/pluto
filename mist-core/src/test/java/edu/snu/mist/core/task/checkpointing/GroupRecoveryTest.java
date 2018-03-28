@@ -25,6 +25,9 @@ import edu.snu.mist.client.datastreams.configurations.WatermarkConfiguration;
 import edu.snu.mist.common.configurations.ConfKeys;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
+import edu.snu.mist.core.parameters.MasterHostname;
+import edu.snu.mist.core.parameters.TaskToMasterPort;
+import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.sources.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.core.sinks.Sink;
 import edu.snu.mist.common.stream.NettyChannelHandler;
@@ -33,20 +36,27 @@ import edu.snu.mist.common.stream.textmessage.NettyTextMessageStreamGenerator;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.groupaware.GroupAwareQueryManagerImpl;
+import edu.snu.mist.core.task.groupaware.MockTaskToMasterServer;
 import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.AvroVertex;
 import edu.snu.mist.formats.avro.Edge;
+import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import io.netty.channel.ChannelHandlerContext;
+import org.apache.avro.ipc.Server;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
+import org.apache.reef.tang.exceptions.InjectionException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -76,6 +86,23 @@ public class GroupRecoveryTest {
       new CountDownLatch(SRC0INPUT1.size());
   private static final CountDownLatch LATCH2 =
       new CountDownLatch(SRC0INPUT2.size());
+
+  private Server mockMasterServer;
+
+  @Before
+  public void setUp() throws InjectionException {
+    final Injector injector = Tang.Factory.getTang().newInjector();
+    final String masterHostname = injector.getNamedInstance(MasterHostname.class);
+    final int taskToMasterPort = injector.getNamedInstance(TaskToMasterPort.class);
+    final TaskToMasterMessage message = new MockTaskToMasterServer();
+    mockMasterServer = AvroUtils.createAvroServer(TaskToMasterMessage.class, message,
+        new InetSocketAddress(masterHostname, taskToMasterPort));
+  }
+
+  @After
+  public void tearDown() {
+    mockMasterServer.close();
+  }
 
   /**
    * Builds the query for this test.
