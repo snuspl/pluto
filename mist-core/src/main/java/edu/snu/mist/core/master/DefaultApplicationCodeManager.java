@@ -77,11 +77,24 @@ public final class DefaultApplicationCodeManager implements ApplicationCodeManag
   private void createJarFile(final ByteBuffer jarFileBytes,
                              final Path jarFilePath,
                              final List<String> paths) throws IOException {
-    final File jarFile = jarFilePath.toFile();
-    final FileChannel wChannel = new FileOutputStream(jarFile, false).getChannel();
-    wChannel.write(jarFileBytes);
-    wChannel.close();
-    paths.add(jarFile.getAbsolutePath());
+
+    final File file = new File(jarFilePath.toString());
+
+    // Check whether the file is stored successfully.
+    while (!file.exists()) {
+      final File jarFile = jarFilePath.toFile();
+      final FileChannel wChannel = new FileOutputStream(jarFile, false).getChannel();
+      wChannel.write(jarFileBytes);
+      wChannel.close();
+
+      try {
+        Thread.sleep(2000);
+      } catch (final InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
+
+    paths.add(jarFilePath.toAbsolutePath().toString());
   }
 
   /**
