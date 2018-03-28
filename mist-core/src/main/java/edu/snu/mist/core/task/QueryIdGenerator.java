@@ -15,7 +15,6 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.formats.avro.AvroDag;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
@@ -25,8 +24,7 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
 public interface QueryIdGenerator {
   /**
    * Generates the query id.
-   * @param avroDag the submitted query that is represented as an avro dag.
    * @return query id
    */
-  String generate(AvroDag avroDag);
+  String generate();
 }

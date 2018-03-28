@@ -21,16 +21,16 @@ import edu.snu.mist.common.functions.MISTPredicate;
 import edu.snu.mist.common.graph.AdjacentListDAG;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.common.types.Tuple2;
+import edu.snu.mist.core.driver.MistTaskConfigs;
 import edu.snu.mist.core.operators.FilterOperator;
 import edu.snu.mist.core.operators.FlatMapOperator;
 import edu.snu.mist.core.operators.MapOperator;
 import edu.snu.mist.core.operators.ReduceByKeyOperator;
-import edu.snu.mist.core.sources.EventGenerator;
-import edu.snu.mist.core.sources.PunctuatedEventGenerator;
-import edu.snu.mist.common.types.Tuple2;
-import edu.snu.mist.core.driver.MistTaskConfigs;
 import edu.snu.mist.core.parameters.ClientToTaskPort;
 import edu.snu.mist.core.parameters.PlanStorePath;
+import edu.snu.mist.core.sources.EventGenerator;
+import edu.snu.mist.core.sources.PunctuatedEventGenerator;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.core.task.utils.TestDataGenerator;
@@ -38,7 +38,6 @@ import edu.snu.mist.core.task.utils.TestWithCountDownSink;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.Direction;
 import junit.framework.Assert;
-import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -139,22 +138,22 @@ public final class QueryManagerTest {
 
     // Fake operator chain dag of QueryManager
     final AvroDag fakeAvroDag = new AvroDag();
+    fakeAvroDag.setQueryId(queryId);
     //fakeAvroDag.setSuperGroupId("testGroup");
-    final Tuple<String, AvroDag> tuple = new Tuple<>(queryId, fakeAvroDag);
 
     // Construct execution dag
-    constructExecutionDag(tuple, executionDag, src, sink1, sink2);
+    constructExecutionDag(executionDag, src, sink1, sink2);
 
     // Create mock DagGenerator. It returns the above  execution dag
     final ConfigDagGenerator configDagGenerator = mock(ConfigDagGenerator.class);
     final DAG<ConfigVertex, MISTEdge> configDag = mock(DAG.class);
-    when(configDagGenerator.generate(tuple.getValue())).thenReturn(configDag);
+    when(configDagGenerator.generate(fakeAvroDag)).thenReturn(configDag);
     final DagGenerator dagGenerator = mock(DagGenerator.class);
     //when(dagGenerator.generate(configDag, tuple.getValue().getJarFilePaths())).thenReturn(executionDag);
 
     // Build QueryManager
-    final QueryManager queryManager = queryManagerBuild(tuple, configDagGenerator, dagGenerator, injector);
-    queryManager.create(tuple);
+    final QueryManager queryManager = queryManagerBuild(fakeAvroDag, configDagGenerator, dagGenerator, injector);
+    queryManager.create(fakeAvroDag);
 
     // Wait until all of the outputs are generated
     countDownAllOutputs.await();
@@ -192,8 +191,7 @@ public final class QueryManagerTest {
    * Construct execution dag.
    * Creates operators and adds source, dag vertices, edges and sinks to dag.
    */
-  private void constructExecutionDag(final Tuple<String, AvroDag> tuple,
-                                     final ExecutionDag executionDag,
+  private void constructExecutionDag(final ExecutionDag executionDag,
                                      final PhysicalSource src,
                                      final PhysicalSink sink1,
                                      final PhysicalSink sink2) {
@@ -246,13 +244,13 @@ public final class QueryManagerTest {
    * QueryManager Builder.
    * It receives inputs tuple, physicalPlanGenerator, injector then makes query manager.
    */
-  private QueryManager queryManagerBuild(final Tuple<String, AvroDag> tuple,
+  private QueryManager queryManagerBuild(final AvroDag avroDag,
                                          final ConfigDagGenerator configDagGenerator,
                                          final DagGenerator dagGenerator,
                                          final Injector injector) throws Exception {
     // Create mock PlanStore. It returns true and the above logical plan
     final QueryInfoStore planStore = mock(QueryInfoStore.class);
-    when(planStore.load(tuple.getKey())).thenReturn(tuple.getValue());
+    when(planStore.load(avroDag.getQueryId())).thenReturn(avroDag);
 
     // Create QueryManager
     injector.bindVolatileInstance(ConfigDagGenerator.class, configDagGenerator);

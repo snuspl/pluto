@@ -21,7 +21,6 @@ import edu.snu.mist.core.task.groupaware.ApplicationInfo;
 import edu.snu.mist.core.task.groupaware.GroupAwareQueryManagerImpl;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.QueryControlResult;
-import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.tang.exceptions.InjectionException;
 
@@ -36,9 +35,9 @@ import java.util.List;
 public interface QueryManager extends AutoCloseable {
   /**
    * Start to the query.
-   * @param tuple the query id and the avro dag
+   * @param avroDag the avro dag
    */
-  QueryControlResult create(Tuple<String, AvroDag> tuple);
+  QueryControlResult create(AvroDag avroDag);
 
   /**
    * Create a query (this is for checkpointing).
@@ -57,7 +56,7 @@ public interface QueryManager extends AutoCloseable {
    * @return
    */
   ApplicationInfo createApplication(String appId,
-                                        List<String> jarFilePath) throws InjectionException;
+                                    List<String> jarFilePath) throws InjectionException;
 
   /**
    * Deletes the query corresponding to the queryId submitted by client.

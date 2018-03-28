@@ -18,6 +18,7 @@ package edu.snu.mist.core.rpc;
 import edu.snu.mist.core.master.ApplicationCodeManager;
 import edu.snu.mist.core.master.MasterSetupFinished;
 import edu.snu.mist.core.master.allocation.QueryAllocationManager;
+import edu.snu.mist.core.task.QueryIdGenerator;
 import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import edu.snu.mist.formats.avro.JarUploadResult;
 import edu.snu.mist.formats.avro.QuerySubmitInfo;
@@ -50,13 +51,20 @@ public final class DefaultClientToMasterMessageImpl implements ClientToMasterMes
    */
   private final MasterSetupFinished masterSetupFinished;
 
+  /**
+   * The query Id generator.
+   */
+  private final QueryIdGenerator queryIdGenerator;
+
   @Inject
   private DefaultClientToMasterMessageImpl(final QueryAllocationManager queryAllocationManager,
                                            final ApplicationCodeManager appCodeManager,
-                                           final MasterSetupFinished masterSetupFinished) {
+                                           final MasterSetupFinished masterSetupFinished,
+                                           final QueryIdGenerator queryIdGenerator) {
     this.queryAllocationManager = queryAllocationManager;
     this.appCodeManager = appCodeManager;
     this.masterSetupFinished = masterSetupFinished;
+    this.queryIdGenerator = queryIdGenerator;
   }
 
   @Override
@@ -71,9 +79,9 @@ public final class DefaultClientToMasterMessageImpl implements ClientToMasterMes
 
   @Override
   public QuerySubmitInfo getQuerySubmitInfo(final String appId) {
-    // TODO: [MIST-997] Support application-aware query allocation.
     return QuerySubmitInfo.newBuilder()
         .setJarPaths(appCodeManager.getJarPaths(appId))
+        .setQueryId(queryIdGenerator.generate())
         .setTask(queryAllocationManager.getAllocatedTask(appId))
         .build();
   }

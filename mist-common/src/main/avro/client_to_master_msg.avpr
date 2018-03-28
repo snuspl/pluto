@@ -57,6 +57,10 @@
       "fields":
       [
         {
+          "name": "QueryId",
+          "type": "string"
+        },
+        {
           "name": "Task",
           "type": "IPAddress"
         },
