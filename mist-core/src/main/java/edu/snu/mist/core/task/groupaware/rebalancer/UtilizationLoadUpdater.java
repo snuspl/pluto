@@ -24,6 +24,7 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -84,6 +85,8 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
     double eventProcessorLoad = 0.0;
     final long elapsedTime = startTime - previousUpdateTime;
 
+    final List<Group> skipGroups = new LinkedList<>();
+
     for (final Group group : groups) {
       double load = 0.0;
 
@@ -109,18 +112,22 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
       } else if (incomingEvent == 0) {
         // No incoming event
         load = defaultGroupLoad;
-      } else {
+      }  else {
         // processed event, incoming event
         final double inputRate = (incomingEvent * 1000) / (double) elapsedTime;
         final double processingRate = (processingEvent * 1000000000) / (double) processingEventTime;
 
-        final double groupLoad = Math.min(1.5, inputRate / processingRate);
-        load = groupLoad;
+        if (processingEvent == 0 || processingRate == 0) {
+          load = (1 * 1000000000) / (double) processingEventTime;
+        } else {
+          final double groupLoad = Math.min(1.5, inputRate / processingRate);
+          load = groupLoad;
+        }
 
         if (LOG.isLoggable(Level.FINE)) {
           LOG.log(Level.FINE,
               "Group {0}, InputRate: {1}, ProcessingRate: {2}, GroupLoad: {3}",
-              new Object[] {group.getGroupId(), inputRate, processingRate, groupLoad});
+              new Object[] {group.getGroupId(), inputRate, processingRate, load});
         }
       }
 
@@ -142,6 +149,11 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
           query.setLoad(load * (queryIncomingEvent / (double) incomingEvent));
         }
       }
+    }
+
+    // Set group load that has zero processing event
+    for (final Group group : skipGroups) {
+
     }
 
     eventProcessor.setLoad(eventProcessorLoad);
