@@ -61,7 +61,7 @@ public final class DefaultApplicationCodeManager implements ApplicationCodeManag
   /**
    * Jar prefix.
    */
-  private static final String JAR_PREFIX = "submitted-";
+  private static final String JAR_PREFIX = "submitted";
 
   @Inject
   private DefaultApplicationCodeManager(
