@@ -18,9 +18,7 @@ package edu.snu.mist.core.task.checkpointing;
 import edu.snu.mist.common.graph.AdjacentListDAG;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.core.task.ConfigVertex;
-import edu.snu.mist.core.task.ExecutionVertex;
-import edu.snu.mist.core.task.QueryManager;
+import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.groupaware.*;
 import edu.snu.mist.core.task.stores.GroupCheckpointStore;
 import edu.snu.mist.formats.avro.*;
@@ -178,7 +176,10 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
           new Object[] {groupId});
       return;
     }
-    group.getApplicationInfo().getQueryRemover().deleteAllQueries();
+    final QueryRemover remover = group.getApplicationInfo().getQueryRemover();
+    for (final Query query : group.getQueries()) {
+      remover.deleteQuery(query.getId());
+    }
     applicationMap.remove(groupId);
     groupAllocationTableModifier.addEvent(
         new WritingEvent(WritingEvent.EventType.GROUP_REMOVE_ALL, null));
