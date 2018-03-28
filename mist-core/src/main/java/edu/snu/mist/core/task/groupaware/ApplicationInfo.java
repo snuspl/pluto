@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.core.task.groupaware;
 
+import edu.snu.mist.core.task.QueryRemover;
+import edu.snu.mist.core.task.QueryStarter;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.List;
@@ -60,4 +62,14 @@ public interface ApplicationInfo {
    * @return
    */
   List<String> getJarFilePath();
+
+  /**
+   * Get the query starter for this group.
+   */
+  QueryStarter getQueryStarter();
+
+  /**
+   * Get the query remover for this group.
+   */
+  QueryRemover getQueryRemover();
 }
