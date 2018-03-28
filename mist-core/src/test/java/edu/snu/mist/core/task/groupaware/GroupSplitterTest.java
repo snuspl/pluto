@@ -100,6 +100,8 @@ public final class GroupSplitterTest {
     jcb.bindNamedParameter(OverloadedThreshold.class, "0.8");
     jcb.bindNamedParameter(UnderloadedThreshold.class, "0.6");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    final GroupIdRequestor requestor = new TestGroupIdRequestor();
+    injector.bindVolatileInstance(GroupIdRequestor.class, requestor);
     final GroupAllocationTable groupAllocationTable = injector.getInstance(GroupAllocationTable.class);
     final GroupSplitter groupSplitter = injector.getInstance(GroupSplitter.class);
     final LoadUpdater loadUpdater = injector.getInstance(LoadUpdater.class);
@@ -269,6 +271,16 @@ public final class GroupSplitterTest {
         }
         eventProcessor.setLoad(load);
       }
+    }
+  }
+
+  /**
+   * A group id requestor for test.
+   */
+  static final class TestGroupIdRequestor implements GroupIdRequestor {
+    @Override
+    public String requestGroupId(final String appId) {
+      return "test-group";
     }
   }
 }

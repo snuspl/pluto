@@ -24,6 +24,7 @@ import edu.snu.mist.core.operators.FilterOperator;
 import edu.snu.mist.core.operators.FlatMapOperator;
 import edu.snu.mist.core.operators.MapOperator;
 import edu.snu.mist.core.operators.ReduceByKeyOperator;
+import edu.snu.mist.core.parameters.TaskHostname;
 import edu.snu.mist.core.sinks.NettyTextSink;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.core.utils.TestParameters;
@@ -32,6 +33,7 @@ import edu.snu.mist.formats.avro.AvroVertex;
 import edu.snu.mist.formats.avro.Edge;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
+import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.After;
@@ -101,7 +103,9 @@ public final class DefaultDagGeneratorImplTest {
         .setEdges(serializedDag.getValue())
         .build();
 
-    final Injector injector = Tang.Factory.getTang().newInjector();
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(TaskHostname.class, "127.0.0.1");
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final ConfigDagGenerator configDagGenerator = injector.getInstance(ConfigDagGenerator.class);
     final DagGenerator dagGenerator = injector.getInstance(DagGenerator.class);
     final Tuple<String, AvroDag> tuple = new Tuple<>("query-test", avroChainedDag);

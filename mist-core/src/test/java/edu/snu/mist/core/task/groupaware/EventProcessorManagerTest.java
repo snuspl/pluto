@@ -15,13 +15,13 @@
  */
 package edu.snu.mist.core.task.groupaware;
 
+import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessorFactory;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.EventProcessorLowerBound;
-import edu.snu.mist.core.task.groupaware.groupassigner.GroupAssigner;
-import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.EventProcessorUpperBound;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GracePeriod;
+import edu.snu.mist.core.task.groupaware.groupassigner.GroupAssigner;
 import edu.snu.mist.core.task.groupaware.rebalancer.GroupRebalancer;
 import junit.framework.Assert;
 import org.apache.reef.tang.Injector;
@@ -48,9 +48,11 @@ public class EventProcessorManagerTest {
   private GroupRebalancer groupRebalancer;
   private TestGroupAssigner groupBalancer;
   private GroupAllocationTableModifier groupAllocationTableModifier;
+  private GroupIdRequestor groupIdRequestor;
 
   @Before
   public void setUp() throws InjectionException {
+
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(DefaultNumEventProcessors.class, Integer.toString(DEFAULT_NUM_THREADS));
     jcb.bindNamedParameter(EventProcessorUpperBound.class, Integer.toString(MAX_NUM_THREADS));
@@ -59,9 +61,11 @@ public class EventProcessorManagerTest {
     jcb.bindImplementation(EventProcessorFactory.class, TestEventProcessorFactory.class);
     groupRebalancer = mock(GroupRebalancer.class);
     groupBalancer = new TestGroupAssigner();
+    groupIdRequestor = mock(GroupIdRequestor.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     injector.bindVolatileInstance(GroupRebalancer.class, groupRebalancer);
     injector.bindVolatileInstance(GroupAssigner.class, groupBalancer);
+    injector.bindVolatileInstance(GroupIdRequestor.class, groupIdRequestor);
     eventProcessorManager = injector.getInstance(DefaultEventProcessorManager.class);
     groupAllocationTableModifier = injector.getInstance(GroupAllocationTableModifier.class);
   }
@@ -152,6 +156,7 @@ public class EventProcessorManagerTest {
     jcb.bindNamedParameter(GracePeriod.class, Integer.toString(gracePeriod));
     jcb.bindImplementation(EventProcessorFactory.class, TestEventProcessorFactory.class);
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    injector.bindVolatileInstance(GroupIdRequestor.class, mock(GroupIdRequestor.class));
 
     long prevAdjustTime = System.nanoTime();
 

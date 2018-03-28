@@ -18,10 +18,10 @@ package edu.snu.mist.core.task.groupaware;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.parameters.GroupId;
-import edu.snu.mist.core.sources.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.core.shared.KafkaSharedResource;
 import edu.snu.mist.core.shared.MQTTResource;
 import edu.snu.mist.core.shared.NettySharedResource;
+import edu.snu.mist.core.sources.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.groupaware.parameters.ApplicationIdentifier;
 import edu.snu.mist.core.task.groupaware.parameters.JarFilePath;
@@ -39,7 +39,6 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -103,9 +102,9 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
   private final GroupAllocationTableModifier groupAllocationTableModifier;
 
   /**
-   * TODO: This should be generate globally unique numbers.
+   * The group id requestor.
    */
-  private final AtomicLong applicationNum = new AtomicLong(0);
+  private final GroupIdRequestor groupIdRequestor;
 
   /**
    * The checkpoint period.
@@ -127,7 +126,8 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
                                      final GroupAllocationTableModifier groupAllocationTableModifier,
                                      final ApplicationMap applicationMap,
                                      final GroupMap groupMap,
-                                     @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod) {
+                                     @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod,
+                                     final GroupIdRequestor groupIdRequestor) {
     this.scheduler = schedulerWrapper.getScheduler();
     this.planStore = planStore;
     this.eventProcessorManager = eventProcessorManager;
@@ -140,6 +140,7 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     this.applicationMap = applicationMap;
     this.groupMap = groupMap;
     this.checkpointPeriod = checkpointPeriod;
+    this.groupIdRequestor = groupIdRequestor;
   }
 
   /**
@@ -218,8 +219,10 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     jcb.bindNamedParameter(ApplicationIdentifier.class, appId);
     // TODO: Submit a single jar instead of list of jars
     jcb.bindNamedParameter(JarFilePath.class, paths.get(0));
-    // TODO: [MIST-1016] Get the group ID from the master and put it in here.
-    final String groupId = "";
+    final String groupId = groupIdRequestor.requestGroupId(appId);
+    if (groupId == null) {
+      throw new RuntimeException("An error occured while getting a groupId!");
+    }
     jcb.bindNamedParameter(GroupId.class, groupId);
     jcb.bindNamedParameter(PeriodicCheckpointPeriod.class, String.valueOf(checkpointPeriod));
 

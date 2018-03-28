@@ -19,6 +19,7 @@ import edu.snu.mist.core.parameters.GroupId;
 import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.groupaware.Group;
 import edu.snu.mist.core.task.groupaware.GroupAllocationTable;
+import edu.snu.mist.core.task.groupaware.GroupIdRequestor;
 import edu.snu.mist.core.task.groupaware.GroupMap;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GroupRebalancingPeriod;
@@ -76,19 +77,26 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
 
   private final GroupMap groupMap;
 
+  /**
+   * The group id requestor.
+   */
+  private final GroupIdRequestor groupIdRequestor;
+
   @Inject
   private DefaultGroupSplitterImpl(final GroupAllocationTable groupAllocationTable,
                                    @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
                                    @Parameter(DefaultGroupLoad.class) final double defaultGroupLoad,
                                    @Parameter(OverloadedThreshold.class) final double beta,
                                    @Parameter(UnderloadedThreshold.class) final double alpha,
-                                   final GroupMap groupMap) {
+                                   final GroupMap groupMap,
+                                   final GroupIdRequestor groupIdRequestor) {
     this.groupAllocationTable = groupAllocationTable;
     this.rebalancingPeriod = rebalancingPeriod;
     this.defaultGroupLoad = defaultGroupLoad;
     this.alpha = alpha;
     this.beta = beta;
     this.groupMap = groupMap;
+    this.groupIdRequestor = groupIdRequestor;
   }
 
   /**
@@ -232,7 +240,8 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
               if (sameGroup == null) {
                 // Split! Create a new group!
                 final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-                jcb.bindNamedParameter(GroupId.class, highLoadGroup.getGroupId());
+                jcb.bindNamedParameter(GroupId.class, groupIdRequestor.requestGroupId(highLoadGroup
+                    .getApplicationInfo().getApplicationId()));
                 final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
                 sameGroup = injector.getInstance(Group.class);
                 sameGroup.setEventProcessor(lowLoadThread);

@@ -25,14 +25,16 @@ import edu.snu.mist.client.datastreams.configurations.WatermarkConfiguration;
 import edu.snu.mist.common.configurations.ConfKeys;
 import edu.snu.mist.common.functions.MISTBiFunction;
 import edu.snu.mist.common.functions.MISTFunction;
-import edu.snu.mist.core.sources.parameters.PeriodicCheckpointPeriod;
-import edu.snu.mist.core.sinks.Sink;
 import edu.snu.mist.common.stream.NettyChannelHandler;
 import edu.snu.mist.common.stream.textmessage.NettyTextMessageOutputReceiver;
 import edu.snu.mist.common.stream.textmessage.NettyTextMessageStreamGenerator;
 import edu.snu.mist.common.types.Tuple2;
+import edu.snu.mist.core.parameters.TaskHostname;
+import edu.snu.mist.core.sinks.Sink;
+import edu.snu.mist.core.sources.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.groupaware.GroupAwareQueryManagerImpl;
+import edu.snu.mist.core.task.groupaware.GroupIdRequestor;
 import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.AvroVertex;
@@ -143,11 +145,10 @@ public class GroupRecoveryTest {
     jcb.bindNamedParameter(PeriodicCheckpointPeriod.class, "1000");
     jcb.bindImplementation(QueryManager.class, GroupAwareQueryManagerImpl.class);
     jcb.bindImplementation(QueryStarter.class, ImmediateQueryMergingStarter.class);
+    jcb.bindNamedParameter(TaskHostname.class, "127.0.0.1");
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
-
+    injector.bindVolatileInstance(GroupIdRequestor.class, new TestGroupIdRequestor());
     final CheckpointManager checkpointManager = injector.getInstance(CheckpointManager.class);
-    injector.bindVolatileInstance(CheckpointManager.class, checkpointManager);
-
     final QueryManager queryManager = injector.getInstance(QueryManager.class);
 
     queryManager.createApplication(appId, Arrays.asList(""));
@@ -316,5 +317,12 @@ public class GroupRecoveryTest {
       }
     }
     throw new RuntimeException("There should be a sink in the dag.");
+  }
+
+  private final class TestGroupIdRequestor implements GroupIdRequestor {
+    @Override
+    public String requestGroupId(final String appId) {
+      return "test-group";
+    }
   }
 }
