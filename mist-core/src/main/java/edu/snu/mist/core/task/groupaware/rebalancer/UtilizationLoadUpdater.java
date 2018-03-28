@@ -151,11 +151,6 @@ public final class UtilizationLoadUpdater implements LoadUpdater {
       }
     }
 
-    // Set group load that has zero processing event
-    for (final Group group : skipGroups) {
-
-    }
-
     eventProcessor.setLoad(eventProcessorLoad);
 
     // Overloaded!
