@@ -82,6 +82,7 @@ public final class DefaultApplicationCodeManager implements ApplicationCodeManag
 
     // Check whether the file is stored successfully.
     while (!file.exists()) {
+      LOG.log(Level.INFO, "Storing {0}...", new Object[] {jarFilePath.toAbsolutePath()});
       final File jarFile = jarFilePath.toFile();
       final FileChannel wChannel = new FileOutputStream(jarFile, false).getChannel();
       wChannel.write(jarFileBytes);
