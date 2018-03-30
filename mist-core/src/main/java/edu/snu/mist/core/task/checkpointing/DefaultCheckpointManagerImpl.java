@@ -34,6 +34,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -86,6 +89,11 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
     this.queryManagerFuture = queryManagerFuture;
     if (checkpointPeriod == 0) {
       LOG.log(Level.INFO, "checkpointing is not turned on");
+    } else {
+      LOG.log(Level.INFO, "Start checkpointing... Period = {0}", checkpointPeriod);
+      final ScheduledExecutorService checkpointScheduler = Executors.newSingleThreadScheduledExecutor();
+      final CheckpointRunner runner = new CheckpointRunner(groupMap, this);
+      checkpointScheduler.scheduleAtFixedRate(runner, checkpointPeriod, checkpointPeriod, TimeUnit.MILLISECONDS);
     }
   }
 
@@ -123,7 +131,6 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
 
   @Override
   public boolean checkpointGroup(final String groupId) {
-    LOG.log(Level.INFO, "Checkpoint started for groupId : {0}", groupId);
     final Group group = groupMap.get(groupId);
     if (group == null) {
       LOG.log(Level.WARNING, "There is no such group {0}.",
@@ -132,6 +139,8 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
     }
     final CheckpointResult result =
         checkpointStore.checkpointGroupStates(new Tuple<>(groupId, group));
+    LOG.log(Level.INFO, "Checkpoint started for groupId : {0}, result : {1}",
+        new Object[]{groupId, result.getIsSuccess()});
     return result.getIsSuccess();
   }
 
@@ -160,5 +169,36 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
   @Override
   public ApplicationInfo getApplication(final String appId) {
     return applicationMap.get(appId);
+  }
+
+  /**
+   * A runnable class for automatic periodic checkpointing.
+   */
+  private final class CheckpointRunner implements Runnable {
+
+    /**
+     * The group map.
+     */
+    private final GroupMap groupMap;
+
+    /**
+     * The checkpoint manager.
+     */
+    private final CheckpointManager checkpointManager;
+
+    public CheckpointRunner(final GroupMap groupMap,
+                            final CheckpointManager checkpointManager) {
+      this.groupMap = groupMap;
+      this.checkpointManager = checkpointManager;
+    }
+
+    @Override
+    public synchronized void run() {
+      // Checkpoint the all registered groups.
+      for (final Map.Entry<String, Group> groupEntry : groupMap.entrySet()) {
+        final String groupId = groupEntry.getKey();
+        checkpointManager.checkpointGroup(groupId);
+      }
+    }
   }
 }
