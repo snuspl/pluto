@@ -54,6 +54,10 @@
               "fields":
               [
                 {
+                  "name": "VertexId",
+                  "type": "string"
+                },
+                {
                   "name": "AvroVertexType",
                   "type":
                   {

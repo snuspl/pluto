@@ -39,11 +39,17 @@ public final class MISTQueryImpl implements MISTQuery {
   private final AvroConfigurationSerializer serializer;
   private final String applicationId;
 
+  /**
+   * The integer for generating vertex id.
+   */
+  private int vertexIdIndex;
+
   public MISTQueryImpl(final DAG<MISTStream, MISTEdge> dag,
                        final String applicationId) {
     this.dag = dag;
     this.serializer = new AvroConfigurationSerializer();
     this.applicationId = applicationId;
+    this.vertexIdIndex = 0;
   }
 
   @Override
@@ -85,6 +91,7 @@ public final class MISTQueryImpl implements MISTQuery {
     for (final MISTStream vertex : vertices) {
       final AvroVertex.Builder vertexBuilder = AvroVertex.newBuilder();
       vertexBuilder.setConfiguration(vertex.getConfiguration());
+      vertexBuilder.setVertexId(String.valueOf(vertexIdIndex));
       // Set vertex type
       if (rootVertices.contains(vertex)) {
         // this is a source
@@ -96,6 +103,7 @@ public final class MISTQueryImpl implements MISTQuery {
         vertexBuilder.setAvroVertexType(AvroVertexTypeEnum.OPERATOR);
       }
       serializedVertices.add(vertexBuilder.build());
+      vertexIdIndex++;
     }
     return new Tuple<>(serializedVertices, edges);
   }
