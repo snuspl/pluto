@@ -61,6 +61,11 @@
         }
       ],
       "response": "boolean"
+    },
+    "notifyRecoveryTaskRunning":
+    {
+      "request": [],
+      "response": "null"
     }
   }
 }

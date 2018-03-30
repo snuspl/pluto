@@ -15,18 +15,30 @@
  */
 package edu.snu.mist.core.rpc;
 
-import edu.snu.mist.core.task.groupaware.GroupAllocationTable;
+import edu.snu.mist.core.task.recovery.RecoveryManager;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
+import org.apache.avro.AvroRemoteException;
 
 import javax.inject.Inject;
 
 /**
  * The default master-to-task message implementation.
- * TODO: Implement necessary protocols here.
  */
 public final class DefaultMasterToTaskMessageImpl implements MasterToTaskMessage {
 
+  /**
+   * The recovery manager.
+   */
+  private final RecoveryManager recoveryManager;
+
   @Inject
-  private DefaultMasterToTaskMessageImpl(final GroupAllocationTable groupAllocationTable) {
+  private DefaultMasterToTaskMessageImpl(final RecoveryManager recoveryManager) {
+    this.recoveryManager = recoveryManager;
+  }
+
+  @Override
+  public Void startRecovery() throws AvroRemoteException {
+    recoveryManager.startRecovery();
+    return null;
   }
 }

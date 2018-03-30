@@ -19,11 +19,13 @@ import edu.snu.mist.core.master.MasterSetupFinished;
 import edu.snu.mist.core.master.ProxyToTaskMap;
 import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.master.allocation.QueryAllocationManager;
+import edu.snu.mist.core.master.recovery.RecoveryScheduler;
 import edu.snu.mist.core.parameters.MasterToTaskPort;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
 import edu.snu.mist.formats.avro.IPAddress;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
 import edu.snu.mist.formats.avro.TaskStats;
+import org.apache.avro.AvroRemoteException;
 import org.apache.avro.ipc.NettyTransceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.reef.tang.annotations.Parameter;
@@ -67,17 +69,24 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
    */
   private final MasterSetupFinished masterSetupFinished;
 
+  /**
+   * The recovery scheduler.
+   */
+  private final RecoveryScheduler recoveryScheduler;
+
   @Inject
   private DefaultDriverToMasterMessageImpl(final QueryAllocationManager queryAllocationManager,
                                            final ProxyToTaskMap proxyToTaskMap,
                                            final TaskStatsMap taskStatsMap,
                                            @Parameter(MasterToTaskPort.class) final int masterToTaskPort,
-                                           final MasterSetupFinished masterSetupFinished) {
+                                           final MasterSetupFinished masterSetupFinished,
+                                           final RecoveryScheduler recoveryScheduler) {
     this.queryAllocationManager = queryAllocationManager;
     this.proxyToTaskMap = proxyToTaskMap;
     this.taskStatsMap = taskStatsMap;
     this.masterToTaskPort = masterToTaskPort;
     this.masterSetupFinished = masterSetupFinished;
+    this.recoveryScheduler = recoveryScheduler;
   }
 
   @Override
@@ -107,16 +116,23 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   }
 
   @Override
-  public boolean notifyFailedTask(final String taskHostname) {
-    // TODO: Handle failed task in MistMaster.
-    return false;
+  public synchronized boolean notifyFailedTask(final String taskHostname) {
+    final TaskStats taskStats = taskStatsMap.removeTask(taskHostname);
+    recoveryScheduler.addFailedGroups(taskStats.getGroupStatsMap());
+    return true;
+  }
+
+  @Override
+  public Void notifyRecoveryTaskRunning() throws AvroRemoteException {
+    recoveryScheduler.startRecovery();
+    return null;
   }
 
   private class ProxyToTaskConnectionSetup implements Callable<Boolean> {
 
     private final IPAddress taskAddress;
 
-    public ProxyToTaskConnectionSetup(final IPAddress taskAddress) {
+    ProxyToTaskConnectionSetup(final IPAddress taskAddress) {
       this.taskAddress = taskAddress;
     }
 

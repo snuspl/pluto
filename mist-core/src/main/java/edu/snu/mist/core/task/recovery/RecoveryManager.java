@@ -13,21 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.core.task.recovery;
 
- /**
-  * This is a skeleton protocol for RPC communication from MistMaster to MistTask.
-  */
-{
-  "namespace": "edu.snu.mist.formats.avro",
-  "protocol": "MasterToTaskMessage",
-  "types": [
-  ],
-  "messages":
-  {
-    "startRecovery":
-    {
-      "request": [],
-      "response": "null"
-    }
-  }
+import org.apache.reef.tang.annotations.DefaultImplementation;
+
+/**
+ * The interface for recovery managers.
+ */
+@DefaultImplementation(SingleThreadRecoveryManager.class)
+public interface RecoveryManager {
+
+  /**
+   * Start the recovery process.
+   * @return true if success. false if fail.
+   */
+  boolean startRecovery();
 }
