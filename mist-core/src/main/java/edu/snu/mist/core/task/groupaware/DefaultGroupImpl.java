@@ -330,7 +330,7 @@ final class DefaultGroupImpl implements Group {
     }
 
     return GroupCheckpoint.newBuilder()
-        .setMinimumLatestCheckpointTimestamp(groupTimestamp.getValue())
+        .setCheckpointTimestamp(groupTimestamp.getValue())
         .setGroupId(groupId)
         .setQueryCheckpointMap(queryCheckpointMap)
         .build();
@@ -375,7 +375,7 @@ final class DefaultGroupImpl implements Group {
       }
       stateWithTimestampMap.put(cv.getId(), StateWithTimestamp.newBuilder()
           .setVertexState(state)
-          .setLatestCheckpointTimestamp(checkpointTimestamp)
+          .setCheckpointTimestamp(checkpointTimestamp)
           .build());
     }
 

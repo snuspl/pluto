@@ -98,7 +98,7 @@ public final class DefaultConfigDagGeneratorImpl implements ConfigDagGenerator {
             type,
             avroVertex.getConfiguration(),
             vertexStateWithTimestamp.getVertexState(),
-            vertexStateWithTimestamp.getLatestCheckpointTimestamp());
+            vertexStateWithTimestamp.getCheckpointTimestamp());
         deserializedVertices.add(configVertex);
         configDag.addVertex(configVertex);
       }

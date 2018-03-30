@@ -75,11 +75,6 @@ public final class DefaultGroupCheckpointStore implements GroupCheckpointStore {
     this.avroDagDatumReader = new SpecificDatumReader<>(AvroDag.class);
     this.groupCheckpointDatumWriter = new SpecificDatumWriter<>(GroupCheckpoint.class);
     this.groupCheckpointDatumReader = new SpecificDatumReader<>(GroupCheckpoint.class);
-    // Create a folder that stores the dags and jar files
-    final File folder = new File(tmpFolderPath);
-    if (!folder.exists()) {
-      folder.mkdir();
-    }
   }
 
   private File getGroupCheckpointFile(final String groupId) {
@@ -149,7 +144,7 @@ public final class DefaultGroupCheckpointStore implements GroupCheckpointStore {
           final Operator op = ((DefaultPhysicalOperatorImpl) ev).getOperator();
           if (op instanceof StateHandler) {
             final StateHandler stateHandler = (StateHandler) op;
-            stateHandler.removeOldStates(checkpoint.getMinimumLatestCheckpointTimestamp());
+            stateHandler.removeOldStates(checkpoint.getCheckpointTimestamp());
           }
         }
       }
