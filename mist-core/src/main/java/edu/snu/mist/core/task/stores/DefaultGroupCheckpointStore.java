@@ -98,7 +98,6 @@ public final class DefaultGroupCheckpointStore implements GroupCheckpointStore {
         storedFile.delete();
         LOG.log(Level.INFO, "Deleting a duplicate query file");
       }
-      storedFile.getParentFile().mkdirs();
       final DataFileWriter<AvroDag> dataFileWriter = new DataFileWriter<>(avroDagDatumWriter);
       dataFileWriter.create(avroDag.getSchema(), storedFile);
       dataFileWriter.append(avroDag);
@@ -123,7 +122,6 @@ public final class DefaultGroupCheckpointStore implements GroupCheckpointStore {
         storedFile.delete();
         LOG.log(Level.INFO, "Checkpoint deleted for groupId: {0}", groupId);
       }
-      storedFile.getParentFile().mkdirs();
       final DataFileWriter<GroupCheckpoint> dataFileWriter = new DataFileWriter<>(groupCheckpointDatumWriter);
       dataFileWriter.create(checkpoint.getSchema(), storedFile);
       dataFileWriter.append(checkpoint);
