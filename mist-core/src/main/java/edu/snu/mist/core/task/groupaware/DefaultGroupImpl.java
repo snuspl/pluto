@@ -337,7 +337,7 @@ final class DefaultGroupImpl implements Group {
   }
 
   /**
-   * Convert a ConfigDag to an AvroConfigDag.
+   * Get the checkpoint data for the query.
    */
   private QueryCheckpoint getQueryCheckpoint(final DAG<ConfigVertex, MISTEdge> configDag,
                                              final GroupMinimumLatestWatermarkTimeStamp groupTimestamp) {

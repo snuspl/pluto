@@ -59,12 +59,12 @@ public final class DefaultGroupCheckpointStore implements GroupCheckpointStore {
   private final DatumReader<AvroDag> avroDagDatumReader;
 
   /**
-   * A writer that stores ApplicationInfoCheckpoint.
+   * A writer that stores group checkpoint.
    */
   private final DatumWriter<GroupCheckpoint> groupCheckpointDatumWriter;
 
   /**
-   * A reader that reads stored ApplicationInfoCheckpoint.
+   * A reader that reads stored group checkpoint.
    */
   private final DatumReader<GroupCheckpoint> groupCheckpointDatumReader;
 

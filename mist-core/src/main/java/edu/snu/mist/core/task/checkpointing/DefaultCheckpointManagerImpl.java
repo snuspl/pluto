@@ -100,16 +100,16 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
     final List<AvroDag> dagList;
     final QueryManager queryManager = queryManagerFuture.get();
     try {
-      // Load the queries.
+      // Load the checkpointed states and the query lists.
       queryCheckpointMap = checkpointStore.loadSavedGroupState(groupId).getQueryCheckpointMap();
       final List<String> queryIdListInGroup = new ArrayList<>();
       for (final String queryId : queryCheckpointMap.keySet()) {
         queryIdListInGroup.add(queryId);
       }
+      // Load the queries.
       dagList = checkpointStore.loadSavedQueries(queryIdListInGroup);
-      // Load the states.
     } catch (final FileNotFoundException ie) {
-      LOG.log(Level.WARNING, "Failed in loading app {0}, this app may not exist in the checkpoint store.",
+      LOG.log(Level.WARNING, "Failed in loading group {0}, this group may not exist in the checkpoint store.",
           new Object[]{groupId});
       return;
     }
@@ -144,7 +144,7 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
       return;
     }
     final QueryRemover remover = group.getApplicationInfo().getQueryRemover();
-    for (final Query query: group.getQueries()) {
+    for (final Query query : group.getQueries()) {
       remover.deleteQuery(query.getId());
     }
     applicationMap.remove(groupId);

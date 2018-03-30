@@ -42,11 +42,11 @@ public interface QueryManager extends AutoCloseable {
 
   /**
    * Recover a checkpointed query.
-   * @param avroDAg
+   * @param avroDag
    * @param checkpointedState
    * @return
    */
-  QueryControlResult createQueryWithCheckpoint(AvroDag avroDAg,
+  QueryControlResult createQueryWithCheckpoint(AvroDag avroDag,
                                                QueryCheckpoint checkpointedState);
 
   /**
