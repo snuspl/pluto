@@ -23,6 +23,7 @@ import edu.snu.mist.formats.avro.*;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -78,19 +79,18 @@ public final class DefaultConfigDagGeneratorImpl implements ConfigDagGenerator {
 
         // Create a config vertex
         final ConfigVertex configVertex =
-            new ConfigVertex(Long.toString(configVertexId.getAndIncrement()), type, avroVertex.getConfiguration());
+            new ConfigVertex(avroVertex.getVertexId(), type, avroVertex.getConfiguration());
         deserializedVertices.add(configVertex);
         configDag.addVertex(configVertex);
       }
     } else {
       // There are checkpointed states -> generate vertices with internal states.
       final int numVertices = avroVertices.size();
-      final List<StateWithTimestamp> queryState = checkpointedState.getQueryState();
+      final Map<String, StateWithTimestamp> queryState = checkpointedState.getQueryState();
       // Here, we assume that avroDags and checkpointedStates are inserted in the same order.
       // This can be guaranteed because Java List semantic always guarantees the order among elements.
-      for (int i = 0; i < numVertices; i++) {
-        final AvroVertex avroVertex = avroVertices.get(i);
-        final StateWithTimestamp vertexStateWithTimestamp = queryState.get(i);
+      for (final AvroVertex avroVertex : avroVertices) {
+        final StateWithTimestamp vertexStateWithTimestamp = queryState.get(avroVertex.getVertexId());
         final ExecutionVertex.Type type = getVertexType(avroVertex);
         // Create a config vertex with checkpointed states.
         final ConfigVertex configVertex = new ConfigVertex(

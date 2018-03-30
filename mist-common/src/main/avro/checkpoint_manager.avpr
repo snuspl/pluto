@@ -55,8 +55,8 @@
         {
           "name": "QueryState",
           "type": {
-            "type": "array",
-            "items": "StateWithTimestamp"
+            "type": "map",
+            "values": "StateWithTimestamp"
           }
         }
       ]

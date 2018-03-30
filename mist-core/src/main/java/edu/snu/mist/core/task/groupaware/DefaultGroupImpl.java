@@ -359,7 +359,7 @@ final class DefaultGroupImpl implements Group {
       }
     }
 
-    final List<StateWithTimestamp> stateWithTimestampList = new ArrayList<>();
+    final Map<String, StateWithTimestamp> stateWithTimestampMap = new HashMap<>();
 
     for (final ConfigVertex cv : configDag.getVertices()) {
       final ExecutionVertex ev = configExecutionVertexMap.get(cv);
@@ -373,14 +373,14 @@ final class DefaultGroupImpl implements Group {
           state = StateSerializer.serializeStateMap(stateHandler.getOperatorState(checkpointTimestamp));
         }
       }
-      stateWithTimestampList.add(StateWithTimestamp.newBuilder()
+      stateWithTimestampMap.put(cv.getId(), StateWithTimestamp.newBuilder()
           .setVertexState(state)
           .setLatestCheckpointTimestamp(checkpointTimestamp)
           .build());
     }
 
     return QueryCheckpoint.newBuilder()
-        .setQueryState(stateWithTimestampList)
+        .setQueryState(stateWithTimestampMap)
         .build();
   }
 
