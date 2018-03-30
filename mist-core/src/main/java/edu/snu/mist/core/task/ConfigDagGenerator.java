@@ -18,6 +18,7 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.formats.avro.AvroDag;
+import edu.snu.mist.formats.avro.QueryCheckpoint;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
@@ -33,4 +34,7 @@ public interface ConfigDagGenerator {
    * @return configuration dag
    */
   DAG<ConfigVertex, MISTEdge> generate(AvroDag avroDag);
+
+  DAG<ConfigVertex, MISTEdge> generateWithCheckpointedStates(AvroDag avroDag,
+                                                             QueryCheckpoint checkpointedState);
 }

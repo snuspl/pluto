@@ -16,26 +16,45 @@
 package edu.snu.mist.core.task.stores;
 
 import edu.snu.mist.core.task.groupaware.Group;
+import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.CheckpointResult;
 import edu.snu.mist.formats.avro.GroupCheckpoint;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.io.IOException;
+import java.util.List;
 
 @DefaultImplementation(DefaultGroupCheckpointStore.class)
 public interface GroupCheckpointStore {
-
   /**
    * Saves a GroupCheckpoint.
+   *
    * @param tuple the groupId and Group
    */
-  CheckpointResult saveGroupCheckpoint(Tuple<String, Group> tuple);
+  CheckpointResult checkpointGroupStates(Tuple<String, Group> tuple);
 
   /**
    * Loads a GroupCheckpoint with the given groupId.
+   *
    * @param groupId
    * @return
    */
-  GroupCheckpoint loadGroupCheckpoint(String groupId) throws IOException;
+  GroupCheckpoint loadSavedGroupState(String groupId) throws IOException;
+
+  /**
+   * Save the given query to the disk.
+   *
+   * @param avroDag
+   * @return
+   */
+  boolean saveQuery(AvroDag avroDag);
+
+  /**
+   * Load the avro dags from the group.
+   *
+   * @param groupIdList
+   * @return
+   */
+  List<AvroDag> loadSavedQueries(List<String> groupIdList) throws IOException;
 }

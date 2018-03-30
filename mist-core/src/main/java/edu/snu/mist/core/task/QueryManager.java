@@ -20,6 +20,7 @@ import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.groupaware.ApplicationInfo;
 import edu.snu.mist.core.task.groupaware.GroupAwareQueryManagerImpl;
 import edu.snu.mist.formats.avro.AvroDag;
+import edu.snu.mist.formats.avro.QueryCheckpoint;
 import edu.snu.mist.formats.avro.QueryControlResult;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -38,6 +39,15 @@ public interface QueryManager extends AutoCloseable {
    * @param avroDag the avro dag
    */
   QueryControlResult create(AvroDag avroDag);
+
+  /**
+   * Recover a checkpointed query.
+   * @param avroDag
+   * @param checkpointedState
+   * @return
+   */
+  QueryControlResult createQueryWithCheckpoint(AvroDag avroDag,
+                                               QueryCheckpoint checkpointedState);
 
   /**
    * Create a query (this is for checkpointing).

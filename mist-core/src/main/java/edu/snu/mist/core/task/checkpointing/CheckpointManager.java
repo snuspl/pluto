@@ -17,6 +17,7 @@ package edu.snu.mist.core.task.checkpointing;
 
 import edu.snu.mist.core.task.groupaware.ApplicationInfo;
 import edu.snu.mist.core.task.groupaware.Group;
+import edu.snu.mist.formats.avro.AvroDag;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.io.IOException;
@@ -34,6 +35,13 @@ public interface CheckpointManager {
    * @return
    */
   void recoverGroup(String groupId) throws IOException;
+
+  /**
+   * Store the given query to the disk.
+   * @param avroDag
+   * @return
+   */
+  boolean storeQuery(AvroDag avroDag);
 
   /**
    * Checkpoint a single group.
