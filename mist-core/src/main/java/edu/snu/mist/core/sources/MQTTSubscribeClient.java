@@ -17,16 +17,22 @@ package edu.snu.mist.core.sources;
 
 import org.eclipse.paho.client.mqttv3.*;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class represents MQTT clients implemented with eclipse Paho.
  * It will subscribe a MQTT broker and send the received data toward appropriate DataGenerator.
  */
 public final class MQTTSubscribeClient implements MqttCallback {
+  private static final Logger LOG = Logger.getLogger(MQTTSubscribeClient.class.getName());
+
   /**
    * A flag for start.
    */
@@ -58,6 +64,11 @@ public final class MQTTSubscribeClient implements MqttCallback {
   private final int mqttSourceKeepAliveSec;
 
   /**
+   * Topics to subscribe.
+   */
+  private final List<String> topics;
+
+  /**
    * Construct a client connected with target MQTT broker.
    * @param brokerURI the URI of broker to connect
    */
@@ -70,6 +81,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
     this.dataGeneratorListMap = new ConcurrentHashMap<>();
     this.subscribeLock = new Object();
     this.mqttSourceKeepAliveSec = mqttSourceKeepAliveSec;
+    this.topics = new LinkedList<>();
   }
 
   /**
@@ -84,7 +96,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
     Queue<MQTTDataGenerator> dataGeneratorList = dataGeneratorListMap.get(topic);
     if (dataGeneratorList == null) {
       dataGeneratorList = new ConcurrentLinkedQueue<>();
-      dataGeneratorListMap.put(topic, dataGeneratorList);
+      dataGeneratorListMap.putIfAbsent(topic, dataGeneratorList);
     }
     final MQTTDataGenerator dataGenerator = new MQTTDataGenerator(this, topic);
     dataGeneratorListMap.get(topic).add(dataGenerator);
@@ -92,19 +104,82 @@ public final class MQTTSubscribeClient implements MqttCallback {
   }
 
   /**
-   * Start to subscribe a topic.
+   * Connect to client.
    */
-  void subscribe(final String topic) throws MqttException {
-    synchronized (subscribeLock) {
-      if (!started) {
+  private void connect() {
+    while (true) {
+      try {
         client = new MqttAsyncClient(brokerURI, clientId);
         final MqttConnectOptions mqttConnectOptions = new MqttConnectOptions();
         mqttConnectOptions.setKeepAliveInterval(mqttSourceKeepAliveSec);
         client.connect(mqttConnectOptions).waitForCompletion();
         client.setCallback(this);
+        break;
+      } catch (final MqttException e) {
+        try {
+          client.close();
+        } catch (final Exception e1) {
+          // do nothing
+        }
+        // Reconnect mqtt
+        LOG.log(Level.SEVERE, "Connection for broker {0} with id {1} failed ... Retry connection",
+            new Object[] {brokerURI, clientId});
+        try {
+          Thread.sleep(1000);
+        } catch (final InterruptedException e1) {
+          e1.printStackTrace();
+        }
+      }
+    }
+  }
+
+  /**
+   * Start to subscribe a topic.
+   */
+  void subscribe(final String topic) {
+    synchronized (subscribeLock) {
+      if (!started) {
+        connect();
         started = true;
       }
-      client.subscribe(topic, 0);
+
+      try {
+        topics.add(topic);
+        client.subscribe(topic, 0);
+      } catch (final MqttException e) {
+        LOG.log(Level.SEVERE, "MQTT exception for subscribing {0}... {1}",
+            new Object[] {topic, e});
+        try {
+          client.close();
+        } catch (final MqttException e1) {
+          // do nothing
+        }
+
+        // Restart
+        connect();
+        resubscribe();
+      }
+    }
+  }
+
+  /**
+   * Resubscribe topics.
+   */
+  void resubscribe() {
+    LOG.log(Level.SEVERE, "Resubscribe topics...");
+    try {
+      for (final String topic : topics) {
+        client.subscribe(topic, 0);
+      }
+    } catch (final MqttException e) {
+      try {
+        client.close();
+      } catch (final MqttException e1) {
+        // do nothing
+      }
+
+      connect();
+      resubscribe();
     }
   }
 
