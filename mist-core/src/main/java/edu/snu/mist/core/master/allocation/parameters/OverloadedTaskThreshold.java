@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.parameters;
+package edu.snu.mist.core.master.allocation.parameters;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
@@ -21,6 +21,6 @@ import org.apache.reef.tang.annotations.NamedParameter;
 /**
  * The threshold for determining whether a task is overloaded or not.
  */
-@NamedParameter(doc = "The overloaded task threshold.", default_value = "0.95", short_name = "over_thred")
+@NamedParameter(doc = "The overloaded task threshold.", default_value = "0.95", short_name = "over_thd")
 public class OverloadedTaskThreshold implements Name<Double> {
 }

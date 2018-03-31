@@ -16,7 +16,7 @@
 package edu.snu.mist.core.driver;
 
 import edu.snu.mist.core.master.allocation.*;
-import edu.snu.mist.core.parameters.OverloadedTaskThreshold;
+import edu.snu.mist.core.master.allocation.parameters.OverloadedTaskThreshold;
 import edu.snu.mist.core.parameters.QueryAllocationOption;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
