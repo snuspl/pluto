@@ -311,11 +311,13 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
   public void splitGroup() {
     LOG.info("SPLITTING START");
     long rebalanceStart = System.currentTimeMillis();
+
     try {
       // Skip if it is an isolated processor that runs an isolated group
       final List<EventProcessor> eventProcessors = groupAllocationTable.getEventProcessorsNotRunningIsolatedGroup();
       // Overloaded threads
       final List<EventProcessor> overloadedThreads = new LinkedList<>();
+
       // Underloaded threads
       final PriorityQueue<EventProcessor> underloadedThreads =
           new PriorityQueue<>(new Comparator<EventProcessor>() {
@@ -326,6 +328,7 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
               return load1.compareTo(load2);
             }
           });
+
       // Calculate each load and total load
       for (final EventProcessor eventProcessor : eventProcessors) {
         final double load = eventProcessor.getLoad();
@@ -335,10 +338,14 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
           underloadedThreads.add(eventProcessor);
         }
       }
+
       // LOGGING
       //logging(eventProcessors, loadTable);
+
       double targetLoad = (alpha + beta) / 2;
+
       int rebNum = 0;
+
       if (!overloadedThreads.isEmpty() && !underloadedThreads.isEmpty()) {
         for (final EventProcessor highLoadThread : overloadedThreads) {
           // We  need to split because the load of the thread is still high
@@ -365,6 +372,7 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
             if (highLoadGroup.isSplited()) {
               // Consider splitted group first
               final PriorityQueue<Group> lowLoadThreadsGroups = threadsInSplittedGroup(highLoadGroup);
+
               // Merge
               while (!lowLoadThreadsGroups.isEmpty()) {
                 final Group lowLoadGroup = lowLoadThreadsGroups.poll();
@@ -376,6 +384,7 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
                         highLoadThread.getLoad() - subGroup.getLoad() >= targetLoad) {
                       lowLoadGroup.addSubGroup(subGroup);
                       subGroupIterator.remove();
+
                       highLoadThread.setLoad(highLoadThread.getLoad() - subGroup.getLoad());
                       lowLoadGroup.getEventProcessor()
                           .setLoad(lowLoadGroup.getEventProcessor().getLoad() + subGroup.getLoad());
@@ -387,9 +396,11 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
           }
         }
       }
+      
       long rebalanceEnd = System.currentTimeMillis();
       LOG.log(Level.INFO, "Split merge number: {0}, elapsed time: {1}",
           new Object[]{rebNum, rebalanceEnd - rebalanceStart});
+
       //LOG.log(Level.INFO, "-------------TABLE-------------\n{0}",
       //new Object[]{groupAllocationTable.toString()});
     } catch (final Exception e) {
