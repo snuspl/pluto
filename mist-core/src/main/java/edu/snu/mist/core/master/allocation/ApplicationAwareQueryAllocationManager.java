@@ -118,16 +118,15 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
           // All the tasks are overloaded. Allocate to a new task.
           final List<String> remainingList = taskStatsMap.getTaskList();
           remainingList.removeAll(taskList);
-          final String taskCandidate = getRandomTask(remainingList);
-          if (taskStatsMap.get(taskCandidate).getTaskLoad() < overloadedTaskThreshold) {
-            taskList.add(taskCandidate);
-            return new IPAddress(taskCandidate, clientToTaskPort);
-          } else {
-            return new IPAddress(selectedTask, clientToTaskPort);
+          if (!remainingList.isEmpty()) {
+            final String taskCandidate = getRandomTask(remainingList);
+            if (taskStatsMap.get(taskCandidate).getTaskLoad() < overloadedTaskThreshold) {
+              taskList.add(taskCandidate);
+              return new IPAddress(taskCandidate, clientToTaskPort);
+            }
           }
-        } else {
-          return new IPAddress(selectedTask, clientToTaskPort);
         }
+        return new IPAddress(selectedTask, clientToTaskPort);
       }
     }
   }
