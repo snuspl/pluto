@@ -17,8 +17,8 @@ package edu.snu.mist.core.master;
 
 import edu.snu.mist.core.master.allocation.ApplicationAwareQueryAllocationManager;
 import edu.snu.mist.core.master.allocation.QueryAllocationManager;
-import edu.snu.mist.core.parameters.OverloadedTaskThreshold;
-import edu.snu.mist.core.parameters.UnderloadedTaskThreshold;
+import edu.snu.mist.core.master.allocation.parameters.OverloadedTaskThreshold;
+import edu.snu.mist.core.master.allocation.parameters.UnderloadedTaskThreshold;
 import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;

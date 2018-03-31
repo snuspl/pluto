@@ -17,8 +17,8 @@ package edu.snu.mist.core.master.allocation;
 
 import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.parameters.ClientToTaskPort;
-import edu.snu.mist.core.parameters.OverloadedTaskThreshold;
-import edu.snu.mist.core.parameters.UnderloadedTaskThreshold;
+import edu.snu.mist.core.master.allocation.parameters.OverloadedTaskThreshold;
+import edu.snu.mist.core.master.allocation.parameters.UnderloadedTaskThreshold;
 import edu.snu.mist.formats.avro.IPAddress;
 import org.apache.reef.tang.annotations.Parameter;
 
