@@ -132,9 +132,10 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
     LOG.info(sb.toString());
   }
 
-  private Group hasSameGroup(final Group group, final EventProcessor eventProcessor) {
+  private Group hasGroupOfSameApp(final Group group, final EventProcessor eventProcessor) {
     for (final Group g : groupAllocationTable.getValue(eventProcessor)) {
-      if (g.getGroupId().equals(group.getGroupId())) {
+      if (g.getApplicationInfo().getApplicationId().equals(
+          group.getApplicationInfo().getApplicationId())) {
         return g;
       }
     }
@@ -235,7 +236,7 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
               });
 
               final EventProcessor lowLoadThread = underloadedThreads.poll();
-              Group sameGroup = hasSameGroup(highLoadGroup, lowLoadThread);
+              Group sameGroup = hasGroupOfSameApp(highLoadGroup, lowLoadThread);
 
               if (sameGroup == null) {
                 // Split! Create a new group!
@@ -243,6 +244,9 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
                 jcb.bindNamedParameter(GroupId.class, groupIdRequestor.requestGroupId(highLoadGroup
                     .getApplicationInfo().getApplicationId()));
                 final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+
+                // TODO[MIST-1096]: We should inject executionDags, configVertexMap ... for creating a new group.
+
                 sameGroup = injector.getInstance(Group.class);
                 sameGroup.setEventProcessor(lowLoadThread);
                 highLoadGroup.getApplicationInfo().addGroup(sameGroup);
@@ -347,7 +351,6 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
           // We  need to split because the load of the thread is still high
           final Collection<Group> highLoadGroups = groupAllocationTable.getValue(highLoadThread);
           final List<Group> sortedHighLoadGroups = new LinkedList<>(highLoadGroups);
-
           Collections.sort(sortedHighLoadGroups, new Comparator<Group>() {
             @Override
             public int compare(final Group o1, final Group o2) {
@@ -364,10 +367,8 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
               }
             }
           });
-
           for (final Group highLoadGroup : sortedHighLoadGroups) {
             // Split group!
-
             if (highLoadGroup.isSplited()) {
               // Consider splitted group first
               final PriorityQueue<Group> lowLoadThreadsGroups = threadsInSplittedGroup(highLoadGroup);
@@ -395,7 +396,7 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
           }
         }
       }
-
+      
       long rebalanceEnd = System.currentTimeMillis();
       LOG.log(Level.INFO, "Split merge number: {0}, elapsed time: {1}",
           new Object[]{rebNum, rebalanceEnd - rebalanceStart});

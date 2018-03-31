@@ -147,7 +147,7 @@ public final class DefaultGroupRebalancerImpl implements GroupRebalancer {
     lowLoadThread.setLoad(lowLoadThread.getLoad() + groupLoad);
     underloadedThreads.add(lowLoadThread);
 
-    highLoadGroup.setReady();
+    //highLoadGroup.setReady();
     lowLoadThread.addActiveGroup(highLoadGroup);
   }
 
