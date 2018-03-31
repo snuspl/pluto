@@ -220,7 +220,7 @@ final class DefaultGroupImpl implements Group {
   }
 
   private long elapsedTime(final long startTime) {
-    return TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime);
+    return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
   }
 
   @Override
