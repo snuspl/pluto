@@ -253,15 +253,17 @@ public final class MQTTSharedResource implements MQTTResource {
       final MQTTSubscribeClient client = newSubscribeClientList.get(0);
       myTopicSubscriberMap.put(topic, client);
       subscriberSourceNumMap.replace(client, subscriberSourceNumMap.get(client) + 1);
+      final MQTTDataGenerator gen = client.connectToTopic(topic);
       this.subscriberLock.unlock();
-      return client.connectToTopic(topic);
+      return gen;
     } else {
       final Map<String, MQTTSubscribeClient> myTopicSubscriberMap = topicSubscriberMap.get(brokerURI);
       if (myTopicSubscriberMap.containsKey(topic)) {
         // This is for group-sharing.
         final MQTTSubscribeClient client = myTopicSubscriberMap.get(topic);
+        final MQTTDataGenerator gen = client.connectToTopic(topic);
         this.subscriberLock.unlock();
-        return client.connectToTopic(topic);
+        return gen;
       } else {
         // This is a new group.
         int minSourceNum = Integer.MAX_VALUE;
@@ -274,8 +276,9 @@ public final class MQTTSharedResource implements MQTTResource {
         }
         subscriberSourceNumMap.replace(client, subscriberSourceNumMap.get(client) + 1);
         myTopicSubscriberMap.put(topic, client);
+        final MQTTDataGenerator gen = client.connectToTopic(topic);
         this.subscriberLock.unlock();
-        return client.connectToTopic(topic);
+        return gen;
       }
     }
   }
