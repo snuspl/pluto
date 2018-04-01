@@ -18,7 +18,6 @@ package edu.snu.mist.core.task.groupaware.rebalancer;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 @DefaultImplementation(DefaultGroupSplitterImpl.class)
-
 public interface GroupSplitter {
 
   /**
