@@ -248,7 +248,6 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
                     .getApplicationInfo().getApplicationId()));
                 final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
 
-                // TODO[MIST-1096]: We should inject executionDags, configVertexMap ... for creating a new group.
                 injector.bindVolatileInstance(ExecutionDags.class, highLoadGroup.getExecutionDags());
                 injector.bindVolatileInstance(QueryIdConfigDagMap.class, highLoadGroup.getQueryIdConfigDagMap());
                 injector.bindVolatileInstance(ConfigExecutionVertexMap.class,
