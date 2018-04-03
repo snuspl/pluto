@@ -18,6 +18,8 @@ package edu.snu.mist.core.task.groupaware;
 import edu.snu.mist.core.task.ExecutionDags;
 import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
+import edu.snu.mist.core.task.merging.ConfigExecutionVertexMap;
+import edu.snu.mist.core.task.merging.QueryIdConfigDagMap;
 import edu.snu.mist.formats.avro.GroupCheckpoint;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
@@ -156,6 +158,16 @@ public interface Group extends AutoCloseable {
    * Get the ExecutionDags of this group.
    */
   ExecutionDags getExecutionDags();
+
+  /**
+   * Get the QueryIdConfigDagMap of this group.
+   */
+  QueryIdConfigDagMap getQueryIdConfigDagMap();
+
+  /**
+   * Get the ConfigExecutionVertexMap of this group.
+   */
+  ConfigExecutionVertexMap getConfigExecutionVertexMap();
 
   /**
    * Get a checkpoint of this group.
