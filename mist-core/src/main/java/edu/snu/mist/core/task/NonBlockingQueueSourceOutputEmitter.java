@@ -88,7 +88,6 @@ public final class NonBlockingQueueSourceOutputEmitter<I> implements SourceOutpu
         } else {
           operator.getOperator().processRightData((MistDataEvent) event);
         }
-        operator.setLatestDataTimestamp(event.getTimestamp());
       } else if (event.isCheckpoint()) {
         if (direction == Direction.LEFT) {
           operator.getOperator().processLeftCheckpoint((MistCheckpointEvent) event);
@@ -101,7 +100,6 @@ public final class NonBlockingQueueSourceOutputEmitter<I> implements SourceOutpu
         } else {
           operator.getOperator().processRightWatermark((MistWatermarkEvent) event);
         }
-        operator.setLatestWatermarkTimestamp(event.getTimestamp());
       }
     } catch (final NullPointerException e) {
       throw new RuntimeException(e);
