@@ -26,6 +26,8 @@ import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.checkpointing.CheckpointManager;
 import edu.snu.mist.core.task.groupaware.parameters.ApplicationIdentifier;
 import edu.snu.mist.core.task.groupaware.parameters.JarFilePath;
+import edu.snu.mist.core.task.merging.ConfigExecutionVertexMap;
+import edu.snu.mist.core.task.merging.QueryIdConfigDagMap;
 import edu.snu.mist.core.task.stores.QueryInfoStore;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.QueryCheckpoint;
@@ -191,6 +193,10 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
       }
 
       final ApplicationInfo applicationInfo = applicationMap.get(appId);
+      if (applicationInfo.getGroups().size() == 0) {
+        createGroup(applicationInfo);
+      }
+
       final DAG<ConfigVertex, MISTEdge> configDag;
       if (checkpointedState == null) {
         configDag = configDagGenerator.generate(avroDag);
@@ -239,11 +245,6 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     jcb.bindNamedParameter(ApplicationIdentifier.class, appId);
     // TODO: Submit a single jar instead of list of jars
     jcb.bindNamedParameter(JarFilePath.class, paths.get(0));
-    final String groupId = groupIdRequestor.requestGroupId(appId);
-    if (groupId == null) {
-      throw new RuntimeException("An error occured while getting a groupId!");
-    }
-    jcb.bindNamedParameter(GroupId.class, groupId);
     jcb.bindNamedParameter(PeriodicCheckpointPeriod.class, String.valueOf(checkpointPeriod));
 
     final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
@@ -254,13 +255,28 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
 
     final ApplicationInfo applicationInfo = injector.getInstance(ApplicationInfo.class);
 
-    if (applicationMap.putIfAbsent(appId, applicationInfo) == null) {
-      final Group group = injector.getInstance(Group.class);
-      groupAllocationTableModifier.addEvent(
-          new WritingEvent(WritingEvent.EventType.GROUP_ADD, new Tuple<>(applicationInfo, group)));
-    }
-
+    applicationMap.putIfAbsent(appId, applicationInfo);
     return applicationMap.get(appId);
+  }
+
+  @Override
+  public Group createGroup(final ApplicationInfo applicationInfo) throws InjectionException {
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+
+    final String groupId = groupIdRequestor.requestGroupId(applicationInfo.getApplicationId());
+    if (groupId == null) {
+      throw new RuntimeException("An error occured while getting a groupId!");
+    }
+    jcb.bindNamedParameter(GroupId.class, groupId);
+
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
+    injector.bindVolatileInstance(ExecutionDags.class, applicationInfo.getExecutionDags());
+    injector.bindVolatileInstance(QueryIdConfigDagMap.class, applicationInfo.getQueryIdConfigDagMap());
+    injector.bindVolatileInstance(ConfigExecutionVertexMap.class, applicationInfo.getConfigExecutionVertexMap());
+    final Group group = injector.getInstance(Group.class);
+    groupAllocationTableModifier.addEvent(
+        new WritingEvent(WritingEvent.EventType.GROUP_ADD, new Tuple<>(applicationInfo, group)));
+    return group;
   }
 
   @Override

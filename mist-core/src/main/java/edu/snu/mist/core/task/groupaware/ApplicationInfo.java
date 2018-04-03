@@ -15,8 +15,11 @@
  */
 package edu.snu.mist.core.task.groupaware;
 
+import edu.snu.mist.core.task.ExecutionDags;
 import edu.snu.mist.core.task.QueryRemover;
 import edu.snu.mist.core.task.QueryStarter;
+import edu.snu.mist.core.task.merging.ConfigExecutionVertexMap;
+import edu.snu.mist.core.task.merging.QueryIdConfigDagMap;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.List;
@@ -72,4 +75,19 @@ public interface ApplicationInfo {
    * Get the query remover for this group.
    */
   QueryRemover getQueryRemover();
+
+  /**
+   * Get the execution dags for this group.
+   */
+  ExecutionDags getExecutionDags();
+
+  /**
+   * Get the map for query Ids and ConfigDags.
+   */
+  QueryIdConfigDagMap getQueryIdConfigDagMap();
+
+  /**
+   * Get the map for Config Vertices and their corresponding Execution Vertices.
+   */
+  ConfigExecutionVertexMap getConfigExecutionVertexMap();
 }
