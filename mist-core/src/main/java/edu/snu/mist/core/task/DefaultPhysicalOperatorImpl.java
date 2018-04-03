@@ -29,16 +29,6 @@ public final class DefaultPhysicalOperatorImpl extends BasePhysicalVertex implem
    */
   private final Operator operator;
 
-  /**
-   * The timestamp of the data that is recently processed.
-   */
-  private long latestDataTimestamp;
-
-  /**
-   * The timestamp of the watermark that is recently processed.
-   */
-  private long latestWatermarkTimestamp;
-
   public DefaultPhysicalOperatorImpl(final String id,
                                      final Map<String, String> configuration,
                                      final Operator operator) {
@@ -49,26 +39,6 @@ public final class DefaultPhysicalOperatorImpl extends BasePhysicalVertex implem
   @Override
   public Operator getOperator() {
     return operator;
-  }
-
-  @Override
-  public long getLatestDataTimestamp() {
-    return latestDataTimestamp;
-  }
-
-  @Override
-  public void setLatestDataTimestamp(final long timestamp) {
-    latestDataTimestamp = timestamp;
-  }
-
-  @Override
-  public long getLatestWatermarkTimestamp() {
-    return latestWatermarkTimestamp;
-  }
-
-  @Override
-  public void setLatestWatermarkTimestamp(final long timestamp) {
-    latestWatermarkTimestamp = timestamp;
   }
 
   @Override

@@ -28,26 +28,4 @@ public interface PhysicalOperator extends PhysicalVertex, ExecutionVertex {
    * @return operator
    */
   Operator getOperator();
-
-  /**
-   * Get the timestamp of the recently processed data.
-   * @return timestamp
-   */
-  long getLatestDataTimestamp();
-
-  /**
-   * Set the timestamp of the recently processed data.
-   */
-  void setLatestDataTimestamp(long timestamp);
-
-  /**
-   * Get the timestamp of the recently processed watermark.
-   * @return timestamp
-   */
-  long getLatestWatermarkTimestamp();
-
-  /**
-   * Set the timestamp of the recently processed watermark.
-   */
-  void setLatestWatermarkTimestamp(long timestamp);
 }
