@@ -175,8 +175,8 @@ final class DefaultGroupImpl implements Group {
   }
 
   @Override
-  public void setApplicationInfo(final ApplicationInfo mGroup) {
-    applicationInfo = mGroup;
+  public void setApplicationInfo(final ApplicationInfo applicationInfo) {
+    this.applicationInfo = applicationInfo;
   }
 
   @Override
