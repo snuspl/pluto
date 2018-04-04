@@ -13,14 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.driver.parameters;
-
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
-
 /**
- * The ratio of the old area to the new area.
+ * The package for configuration classes.
  */
-@NamedParameter(doc = "The ratio of the old area to the new area", short_name = "new_ratio", default_value = "1")
-public final class NewRatio implements Name<Integer> {
-}
+package edu.snu.mist.core.configs;

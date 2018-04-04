@@ -15,9 +15,7 @@
  */
 package edu.snu.mist.core.master;
 
-import edu.snu.mist.core.parameters.ClientToMasterPort;
-import edu.snu.mist.core.parameters.DriverToMasterPort;
-import edu.snu.mist.core.parameters.TaskToMasterPort;
+import edu.snu.mist.core.parameters.*;
 import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
@@ -65,9 +63,15 @@ public final class MistMaster implements Task {
       @Parameter(DriverToMasterPort.class) final int driverToMasterPort,
       @Parameter(ClientToMasterPort.class) final int clientToMasterPort,
       @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
+      @Parameter(MasterToTaskPort.class) final int masterToTaskPort,
+      @Parameter(NumTasks.class) final int initialTaskNum,
       final DriverToMasterMessage driverToMasterMessage,
       final ClientToMasterMessage clientToMasterMessage,
-      final TaskToMasterMessage taskToMasterMessage) {
+      final TaskToMasterMessage taskToMasterMessage,
+      final TaskRequestor taskRequestor,
+      final TaskStatsMap taskStatsMap,
+      final ProxyToTaskMap proxyToTaskMap,
+      final MasterSetupFinished masterSetupFinished) {
     // Initialize countdown latch
     this.countDownLatch = new CountDownLatch(1);
     // Launch servers for RPC
@@ -77,6 +81,15 @@ public final class MistMaster implements Task {
         new InetSocketAddress(clientToMasterPort));
     this.taskToMasterServer = AvroUtils.createAvroServer(TaskToMasterMessage.class, taskToMasterMessage,
         new InetSocketAddress(taskToMasterPort));
+    // Start task allocation.
+    final Thread thread = new Thread(new TaskSetupRunnable(
+        taskRequestor,
+        taskStatsMap,
+        proxyToTaskMap,
+        initialTaskNum,
+        masterToTaskPort,
+        masterSetupFinished));
+    thread.start();
   }
 
   @Override
@@ -97,5 +110,4 @@ public final class MistMaster implements Task {
       countDownLatch.countDown();
     }
   }
-
 }

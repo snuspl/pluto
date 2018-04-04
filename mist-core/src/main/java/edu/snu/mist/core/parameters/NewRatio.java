@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.driver.parameters;
+package edu.snu.mist.core.parameters;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The type of event processor num assigner",
-    short_name = "event_processor_num_assigner", default_value = "none")
-public final class EventProcessorNumAssignerType implements Name<String> {
-  // empty
+/**
+ * The ratio of the old area to the new area.
+ */
+@NamedParameter(doc = "The ratio of the old area to the new area", short_name = "new_ratio", default_value = "1")
+public final class NewRatio implements Name<Integer> {
 }

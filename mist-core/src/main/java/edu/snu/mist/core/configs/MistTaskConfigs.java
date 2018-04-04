@@ -13,24 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.driver;
+package edu.snu.mist.core.configs;
 
-import edu.snu.mist.core.shared.parameters.MqttSinkClientNumPerBroker;
-import edu.snu.mist.core.shared.parameters.MqttSourceClientNumPerBroker;
-import edu.snu.mist.core.sources.parameters.PeriodicCheckpointPeriod;
-import edu.snu.mist.core.shared.parameters.MqttSinkKeepAliveSec;
-import edu.snu.mist.core.shared.parameters.MqttSourceKeepAliveSec;
 import edu.snu.mist.core.rpc.DefaultClientToTaskMessageImpl;
+import edu.snu.mist.core.rpc.DefaultMasterToTaskMessageImpl;
+import edu.snu.mist.core.shared.parameters.MqttSinkClientNumPerBroker;
+import edu.snu.mist.core.shared.parameters.MqttSinkKeepAliveSec;
+import edu.snu.mist.core.shared.parameters.MqttSourceClientNumPerBroker;
+import edu.snu.mist.core.shared.parameters.MqttSourceKeepAliveSec;
+import edu.snu.mist.core.sources.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GroupRebalancingPeriod;
 import edu.snu.mist.core.task.groupaware.parameters.GroupPinningTime;
 import edu.snu.mist.core.task.groupaware.parameters.ProcessingTimeout;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
+import edu.snu.mist.formats.avro.MasterToTaskMessage;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
-import org.apache.reef.tang.formats.CommandLine;
 
 import javax.inject.Inject;
 
@@ -38,8 +39,6 @@ import javax.inject.Inject;
  * Configuration of the mist task.
  */
 public final class MistTaskConfigs {
-
-  private static final int MAX_PORT_NUM = 65535;
 
   /**
    * The number of event processors of a MistTask.
@@ -121,31 +120,13 @@ public final class MistTaskConfigs {
     jcb.bindNamedParameter(MqttSourceClientNumPerBroker.class, Integer.toString(mqttSourceClientNumPerBroker));
     jcb.bindNamedParameter(MqttSinkClientNumPerBroker.class, Integer.toString(mqttSinkClientNumPerBroker));
     jcb.bindNamedParameter(GroupRebalancingPeriod.class, Long.toString(rebalancingPeriod));
+    jcb.bindNamedParameter(ProcessingTimeout.class, Long.toString(processingTimeout));
+    jcb.bindNamedParameter(GroupPinningTime.class, Long.toString(groupPinningTime));
     jcb.bindNamedParameter(PeriodicCheckpointPeriod.class, Long.toString(checkpointPeriod));
 
     // Implementation
     jcb.bindImplementation(ClientToTaskMessage.class, DefaultClientToTaskMessageImpl.class);
-
+    jcb.bindImplementation(MasterToTaskMessage.class, DefaultMasterToTaskMessageImpl.class);
     return jcb.build();
-  }
-
-  /**
-   * Add parameters to the command line.
-   * @param commandLine command line
-   * @return command line where parameters are added
-   */
-  public static CommandLine addCommandLineConf(final CommandLine commandLine) {
-    final CommandLine cmd = commandLine
-        .registerShortNameOfClass(DefaultNumEventProcessors.class)
-        .registerShortNameOfClass(MqttSourceKeepAliveSec.class)
-        .registerShortNameOfClass(MqttSinkKeepAliveSec.class)
-        .registerShortNameOfClass(MqttSourceClientNumPerBroker.class)
-        .registerShortNameOfClass(MqttSinkClientNumPerBroker.class)
-        .registerShortNameOfClass(ProcessingTimeout.class)
-        .registerShortNameOfClass(GroupPinningTime.class)
-        .registerShortNameOfClass(GroupRebalancingPeriod.class)
-        .registerShortNameOfClass(PeriodicCheckpointPeriod.class);
-
-    return cmd;
   }
 }

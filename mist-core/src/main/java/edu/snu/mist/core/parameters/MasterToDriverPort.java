@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.driver.parameters;
+package edu.snu.mist.core.parameters;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * The reserved code cache size for each MIST JVM process in megabytes.
+ * The master-to-driver avro rpc port.
  */
-@NamedParameter(doc = "The reserved code cache size for JVM", short_name = "rcc_size", default_value = "2048")
-public final class ReservedCodeCacheSize implements Name<Integer> {
+@NamedParameter(doc = "Master-to-driver avro rpc port", short_name = "master_to_driver_port", default_value = "20004")
+public final class MasterToDriverPort implements Name<Integer> {
 }

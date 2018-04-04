@@ -13,7 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.core.parameters;
+
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
+
 /**
- * A package of parameters.
+ * The reserved code cache size for each MIST JVM process in megabytes.
  */
-package edu.snu.mist.core.driver.parameters;
+@NamedParameter(doc = "The reserved code cache size for JVM", short_name = "rcc_size", default_value = "2048")
+public final class ReservedCodeCacheSize implements Name<Integer> {
+}
