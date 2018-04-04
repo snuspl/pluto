@@ -33,12 +33,7 @@ public final class DistributedRecoveryScheduler implements RecoveryScheduler {
   }
 
   @Override
-  public void addFailedGroups(final Map<String, GroupStats> failedGroups) {
-    throw new NotImplementedException();
-  }
-
-  @Override
-  public void startRecovery() {
+  public void recover(final Map<String, GroupStats> failedGroups) {
     throw new NotImplementedException();
   }
 

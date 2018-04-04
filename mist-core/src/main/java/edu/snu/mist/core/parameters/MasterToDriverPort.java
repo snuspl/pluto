@@ -13,29 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.master.recovery;
+package edu.snu.mist.core.parameters;
 
-import edu.snu.mist.formats.avro.GroupStats;
-
-import java.util.List;
-import java.util.Map;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * The interface for fault master-side recovery scheduler.
+ * The master-to-driver avro rpc port.
  */
-public interface RecoveryScheduler {
-
-  /**
-   * Recover the failed groups.
-   * Note: this method blocks the calling thread until the recovery process is done.
-   */
-  void recover(Map<String, GroupStats> failedGroups);
-
-  /**
-   * Get the recovering groups for the designated MistTask.
-   * @param taskHostname
-   * @return The collection of groups to be recovered.
-   */
-  List<String> getRecoveringGroups(String taskHostname);
-
+@NamedParameter(doc = "Master-to-driver avro rpc port", short_name = "master_to_driver_port", default_value = "20004")
+public final class MasterToDriverPort implements Name<Integer> {
 }

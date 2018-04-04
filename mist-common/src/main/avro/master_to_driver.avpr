@@ -15,23 +15,39 @@
  */
 
  /**
-  * This is a skeleton protocol for RPC communication from MistDriver to MistMaster message.
+  * This is a skeleton protocol for RPC communication from MistMaster to MistDriver.
   */
 {
   "namespace": "edu.snu.mist.formats.avro",
-  "protocol": "DriverToMasterMessage",
-  "types":[
+  "protocol": "MasterToDriverMessage",
+  "types": [
     {
-      "name": "AllocatedTask",
+      "name": "TaskRequest",
       "type": "record",
       "fields":
       [
         {
-          "name": "taskId",
-          "type": "string"
+          "name": "taskNum",
+          "type": "int"
         },
         {
-          "name": "taskHostname",
+          "name": "taskCpuNum",
+          "type": "int"
+        },
+        {
+          "name": "taskMemSize",
+          "type": "int"
+        },
+        {
+          "name": "newRatio",
+          "type": "int"
+        },
+        {
+          "name": "reservedCodeCacheSize",
+          "type": "int"
+        },
+        {
+          "name": "serializedTaskConfiguration",
           "type": "string"
         }
       ]
@@ -39,21 +55,11 @@
   ],
   "messages":
   {
-    "notifyTaskAllocated": {
+    "requestNewTask": {
       "request": [
         {
-          "name": "allocatedTask",
-          "type": "AllocatedTask"
-        }
-      ],
-      "response": "null"
-    },
-    "notifyFailedTask":
-    {
-      "request": [
-        {
-          "name": "failedTaskHostname",
-          "type": "string"
+          "name": "taskRequest",
+          "type": "TaskRequest"
         }
       ],
       "response": "null"

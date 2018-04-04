@@ -15,9 +15,7 @@
  */
 package edu.snu.mist.core.master;
 
-import edu.snu.mist.core.parameters.ClientToMasterPort;
-import edu.snu.mist.core.parameters.DriverToMasterPort;
-import edu.snu.mist.core.parameters.TaskToMasterPort;
+import edu.snu.mist.core.parameters.*;
 import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
@@ -33,6 +31,9 @@ import org.apache.reef.wake.EventHandler;
 import javax.inject.Inject;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -60,14 +61,38 @@ public final class MistMaster implements Task {
 
   private final Server taskToMasterServer;
 
+  private final int masterToTaskPort;
+
+  private final int initialTaskNum;
+
+  private final TaskRequestor taskRequestor;
+
+  private final TaskStatsMap taskStatsMap;
+
+  private final ProxyToTaskMap proxyToTaskMap;
+
+  private final MasterSetupFinished masterSetupFinished;
+
   @Inject
   private MistMaster(
       @Parameter(DriverToMasterPort.class) final int driverToMasterPort,
       @Parameter(ClientToMasterPort.class) final int clientToMasterPort,
       @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
+      @Parameter(MasterToTaskPort.class) final int masterToTaskPort,
+      @Parameter(NumTasks.class) final int initialTaskNum,
       final DriverToMasterMessage driverToMasterMessage,
       final ClientToMasterMessage clientToMasterMessage,
-      final TaskToMasterMessage taskToMasterMessage) {
+      final TaskToMasterMessage taskToMasterMessage,
+      final TaskRequestor taskRequestor,
+      final TaskStatsMap taskStatsMap,
+      final ProxyToTaskMap proxyToTaskMap,
+      final MasterSetupFinished masterSetupFinished) {
+    this.masterToTaskPort = masterToTaskPort;
+    this.initialTaskNum = initialTaskNum;
+    this.taskRequestor = taskRequestor;
+    this.taskStatsMap = taskStatsMap;
+    this.proxyToTaskMap = proxyToTaskMap;
+    this.masterSetupFinished = masterSetupFinished;
     // Initialize countdown latch
     this.countDownLatch = new CountDownLatch(1);
     // Launch servers for RPC
@@ -82,12 +107,25 @@ public final class MistMaster implements Task {
   @Override
   public byte[] call(final byte[] memento) throws Exception {
     LOG.log(Level.INFO, "MistMaster is started");
-    this.countDownLatch.await();
-    // MistMaster has been terminated
-    this.driverToMasterServer.close();
-    this.clientToMasterServer.close();
-    this.taskToMasterServer.close();
-    return null;
+    final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    // Start task allocation.
+    final Future<Boolean> isSuccessFuture = executorService.submit(
+        new TaskSetupRequest(
+            taskRequestor,
+            initialTaskNum));
+    if (!isSuccessFuture.get()) {
+      LOG.log(Level.SEVERE, "Mist tasks are not successfully submitted!");
+      return null;
+    } else {
+      // MistMaster is successfully running now...
+      masterSetupFinished.setFinished();
+      this.countDownLatch.await();
+      // MistMaster has been terminated
+      this.driverToMasterServer.close();
+      this.clientToMasterServer.close();
+      this.taskToMasterServer.close();
+      return null;
+    }
   }
 
   public final class MasterCloseHandler implements EventHandler<CloseEvent> {
@@ -97,5 +135,4 @@ public final class MistMaster implements Task {
       countDownLatch.countDown();
     }
   }
-
 }

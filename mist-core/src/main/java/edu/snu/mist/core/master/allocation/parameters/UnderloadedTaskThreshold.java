@@ -13,7 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.core.master.allocation.parameters;
+
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
+
 /**
- * A package of parameters.
+ * The threshold for determining underloaded tasks.
  */
-package edu.snu.mist.core.driver.parameters;
+@NamedParameter(doc = "Underloaded task threshold", default_value = "0.8", short_name = "under_thd")
+public final class UnderloadedTaskThreshold implements Name<Double> {
+}

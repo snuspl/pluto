@@ -22,7 +22,7 @@ import edu.snu.mist.common.graph.AdjacentListDAG;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.common.types.Tuple2;
-import edu.snu.mist.core.driver.MistTaskConfigs;
+import edu.snu.mist.core.configs.MistTaskConfigs;
 import edu.snu.mist.core.operators.FilterOperator;
 import edu.snu.mist.core.operators.FlatMapOperator;
 import edu.snu.mist.core.operators.MapOperator;

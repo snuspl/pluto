@@ -66,12 +66,7 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
   /**
    * The conditional variable which synchronizes the recovery process.
    */
-  private final Condition notInRecoveryProcess;
-
-  /**
-   * The boolean variable which indicates whether now in recovery process or not.
-   */
-  private boolean isRecovering;
+  private final Condition recoveryFinished;
 
   @Inject
   private SingleNodeRecoveryScheduler(
@@ -82,24 +77,16 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
     this.taskStatsMap = taskStatsMap;
     this.proxyToTaskMap = proxyToTaskMap;
     this.lock = new ReentrantLock();
-    this.notInRecoveryProcess = this.lock.newCondition();
-    this.isRecovering = false;
+    this.recoveryFinished = this.lock.newCondition();
   }
 
   @Override
-  public synchronized void addFailedGroups(final Map<String, GroupStats> failedGroups) {
+  public void recover(final Map<String, GroupStats> failedGroups) {
+    LOG.log(Level.INFO, "Start recovery on failed groups: {0}", failedGroups.keySet());
     this.allFailedGroups.putAll(failedGroups);
-  }
-
-  @Override
-  public synchronized void startRecovery() {
     MasterToTaskMessage proxyToRecoveryTask;
     try {
       lock.lock();
-      while (isRecovering) {
-        notInRecoveryProcess.await();
-      }
-      isRecovering = true;
       this.recoveryGroups = allFailedGroups;
       this.allFailedGroups = new ConcurrentHashMap<>();
       // Select the newly allocated task with the least load for recovery
@@ -113,7 +100,12 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
           proxyToRecoveryTask = entry.getValue();
         }
       }
+      if (proxyToRecoveryTask == null) {
+        throw new IllegalStateException("Internal error : ProxyToRecoveryTask shouldn't be null!");
+      }
       proxyToRecoveryTask.startRecovery();
+      // Sleeps until the recovery finished...
+      recoveryFinished.await();
     } catch (final InterruptedException e) {
       LOG.log(Level.SEVERE, "Recovery has been interrupted. " + e.toString());
     } catch (final AvroRemoteException e) {
@@ -132,9 +124,8 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
     // No more groups to be recovered! Recovery is done!
     if (recoveryGroups.isEmpty()) {
       lock.lock();
-      // Notify to the possibly existing waiting thread.
-      isRecovering = false;
-      notInRecoveryProcess.signal();
+      // Notify the waiting thread that the recovery is done.
+      recoveryFinished.signal();
       lock.unlock();
       return new ArrayList<>();
     } else {

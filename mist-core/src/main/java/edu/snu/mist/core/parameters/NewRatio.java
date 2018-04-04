@@ -19,8 +19,8 @@ import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * The threshold for determining whether a task is overloaded or not.
+ * The ratio of the old area to the new area.
  */
-@NamedParameter(doc = "The overloaded task threshold.", default_value = "0.95", short_name = "over_thred")
-public class OverloadedTaskThreshold implements Name<Double> {
+@NamedParameter(doc = "The ratio of the old area to the new area", short_name = "new_ratio", default_value = "1")
+public final class NewRatio implements Name<Integer> {
 }

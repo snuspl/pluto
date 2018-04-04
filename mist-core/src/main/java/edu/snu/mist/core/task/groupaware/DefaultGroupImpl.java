@@ -30,6 +30,7 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -219,7 +220,7 @@ final class DefaultGroupImpl implements Group {
   }
 
   private long elapsedTime(final long startTime) {
-    return System.nanoTime() - startTime;
+    return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
   }
 
   @Override
@@ -312,6 +313,16 @@ final class DefaultGroupImpl implements Group {
   @Override
   public ExecutionDags getExecutionDags() {
     return executionDags;
+  }
+
+  @Override
+  public QueryIdConfigDagMap getQueryIdConfigDagMap() {
+    return queryIdConfigDagMap;
+  }
+
+  @Override
+  public ConfigExecutionVertexMap getConfigExecutionVertexMap() {
+    return configExecutionVertexMap;
   }
 
   @Override

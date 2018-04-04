@@ -13,19 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.task;
-
-import edu.snu.mist.core.operators.Operator;
 
 /**
- * This interface represents a physical operator that contains the actual object of the operator.
- * It also holds the meta data of the operator.
+ * The parameters for query allocation.
  */
-public interface PhysicalOperator extends PhysicalVertex, ExecutionVertex {
-
-  /**
-   * Get the actual operator object.
-   * @return operator
-   */
-  Operator getOperator();
-}
+package edu.snu.mist.core.master.allocation.parameters;

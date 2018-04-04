@@ -13,29 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.master.recovery;
+package edu.snu.mist.core.configs;
 
-import edu.snu.mist.formats.avro.GroupStats;
-
-import java.util.List;
-import java.util.Map;
+import org.apache.reef.tang.Configuration;
 
 /**
- * The interface for fault master-side recovery scheduler.
+ * The interface for configuration classes for Mist.
  */
-public interface RecoveryScheduler {
+public interface MistConfigs {
 
   /**
-   * Recover the failed groups.
-   * Note: this method blocks the calling thread until the recovery process is done.
+   * @return The tang-compiled configuration
    */
-  void recover(Map<String, GroupStats> failedGroups);
-
-  /**
-   * Get the recovering groups for the designated MistTask.
-   * @param taskHostname
-   * @return The collection of groups to be recovered.
-   */
-  List<String> getRecoveringGroups(String taskHostname);
+  Configuration getConfiguration();
 
 }

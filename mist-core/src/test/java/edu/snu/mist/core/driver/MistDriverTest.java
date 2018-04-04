@@ -35,14 +35,14 @@ public final class MistDriverTest {
    */
   @Test
   public void testLaunchDriverMIST() throws InjectionException {
-    launchDriverTestHelper(20331);
+    launchDriverTestHelper();
   }
 
   /**
    * Test whether MistDriver runs MistTaks successfully.
    * @throws InjectionException
    */
-  public void launchDriverTestHelper(final int clientToTaskPort) throws InjectionException {
+  public void launchDriverTestHelper() throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     jcb.bindNamedParameter(DriverRuntimeType.class, "LOCAL");
     jcb.bindNamedParameter(NumTaskCores.class, "1");
@@ -50,13 +50,12 @@ public final class MistDriverTest {
     jcb.bindNamedParameter(TaskMemorySize.class, "256");
     jcb.bindNamedParameter(NumMasterCores.class, "1");
     jcb.bindNamedParameter(MasterMemorySize.class, "256");
-    jcb.bindNamedParameter(ClientToTaskPort.class, Integer.toString(clientToTaskPort));
 
     final Configuration runtimeConf = LocalRuntimeConfiguration.CONF
         .build();
     final Configuration driverConf = MistLauncher.getDriverConfiguration(jcb.build());
 
-    final LauncherStatus state = TestLauncher.run(runtimeConf, driverConf, 5000);
+    final LauncherStatus state = TestLauncher.run(runtimeConf, driverConf, 4000);
     final Optional<Throwable> err = state.getError();
     System.out.println("Job state after execution: " + state);
     System.out.println("Error: " + err.get());

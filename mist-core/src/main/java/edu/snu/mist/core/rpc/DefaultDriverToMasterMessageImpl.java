@@ -15,139 +15,67 @@
  */
 package edu.snu.mist.core.rpc;
 
-import edu.snu.mist.core.master.MasterSetupFinished;
-import edu.snu.mist.core.master.ProxyToTaskMap;
+import edu.snu.mist.core.master.TaskRequestor;
 import edu.snu.mist.core.master.TaskStatsMap;
-import edu.snu.mist.core.master.allocation.QueryAllocationManager;
 import edu.snu.mist.core.master.recovery.RecoveryScheduler;
-import edu.snu.mist.core.parameters.MasterToTaskPort;
+import edu.snu.mist.core.master.recovery.RecoveryStarter;
+import edu.snu.mist.formats.avro.AllocatedTask;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
-import edu.snu.mist.formats.avro.IPAddress;
-import edu.snu.mist.formats.avro.MasterToTaskMessage;
 import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.avro.AvroRemoteException;
-import org.apache.avro.ipc.NettyTransceiver;
-import org.apache.avro.ipc.specific.SpecificRequestor;
-import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.concurrent.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * The default driver-to-message implementation.
  */
 public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMessage {
 
-  private static final Logger LOG = Logger.getLogger(DefaultDriverToMasterMessageImpl.class.getName());
+  /**
+   * The task stats map.
+   */
+  private TaskStatsMap taskStatsMap;
 
   /**
-   * The query allocation manager.
+   * The task requestor for MistMaster.
    */
-  private final QueryAllocationManager queryAllocationManager;
-
-  /**
-   * The task-proxyClient map.
-   */
-  private final ProxyToTaskMap proxyToTaskMap;
-
-  /**
-   * The master-to-task port used for avro rpc.
-   */
-  private final int masterToTaskPort;
-
-  /**
-   * The task-stats map.
-   */
-  private final TaskStatsMap taskStatsMap;
-
-  /**
-   * A variable that represents master setup is finished or not.
-   */
-  private final MasterSetupFinished masterSetupFinished;
+  private TaskRequestor taskRequestor;
 
   /**
    * The recovery scheduler.
    */
   private final RecoveryScheduler recoveryScheduler;
 
+  /**
+   * The single threaded executor service for recovery synchronization.
+   */
+  private final ExecutorService singleThreadedExecutor;
+
   @Inject
-  private DefaultDriverToMasterMessageImpl(final QueryAllocationManager queryAllocationManager,
-                                           final ProxyToTaskMap proxyToTaskMap,
-                                           final TaskStatsMap taskStatsMap,
-                                           @Parameter(MasterToTaskPort.class) final int masterToTaskPort,
-                                           final MasterSetupFinished masterSetupFinished,
-                                           final RecoveryScheduler recoveryScheduler) {
-    this.queryAllocationManager = queryAllocationManager;
-    this.proxyToTaskMap = proxyToTaskMap;
+  private DefaultDriverToMasterMessageImpl(
+      final TaskStatsMap taskStatsMap,
+      final RecoveryScheduler recoveryScheduler,
+      final TaskRequestor taskRequestor) {
     this.taskStatsMap = taskStatsMap;
-    this.masterToTaskPort = masterToTaskPort;
-    this.masterSetupFinished = masterSetupFinished;
     this.recoveryScheduler = recoveryScheduler;
+    this.taskRequestor = taskRequestor;
+    this.singleThreadedExecutor = Executors.newSingleThreadExecutor();
   }
 
   @Override
-  public boolean addTask(final String taskHostname) {
-    final TaskStats oldTaskInfo;
-    oldTaskInfo = taskStatsMap.addTask(taskHostname);
-    return oldTaskInfo == null;
-  }
-
-  @Override
-  public boolean setupMasterToTaskConn(final String taskHostname) {
-    try {
-      final ExecutorService executorService = Executors.newSingleThreadExecutor();
-      final Future<Boolean> isSuccessFuture = executorService.submit(new ProxyToTaskConnectionSetup(
-          new IPAddress(taskHostname, masterToTaskPort)));
-      return isSuccessFuture.get();
-    } catch (final InterruptedException | ExecutionException e) {
-      return false;
-    }
-  }
-
-  @Override
-  public Void taskSetupFinished() {
-    // Set the master setup as finished.
-    masterSetupFinished.setFinished();
+  public Void notifyTaskAllocated(final AllocatedTask allocatedTask) throws AvroRemoteException {
+    taskRequestor.notifyAllocatedTask(allocatedTask);
     return null;
   }
 
   @Override
-  public synchronized boolean notifyFailedTask(final String taskHostname) {
+  public synchronized Void notifyFailedTask(final String taskHostname) {
+    // Remove the allocated queries firstly...
     final TaskStats taskStats = taskStatsMap.removeTask(taskHostname);
-    recoveryScheduler.addFailedGroups(taskStats.getGroupStatsMap());
-    return true;
-  }
-
-  @Override
-  public Void notifyRecoveryTaskRunning() throws AvroRemoteException {
-    recoveryScheduler.startRecovery();
+    singleThreadedExecutor.submit(new RecoveryStarter(taskStats.getGroupStatsMap(), taskRequestor, recoveryScheduler));
     return null;
   }
 
-  private class ProxyToTaskConnectionSetup implements Callable<Boolean> {
-
-    private final IPAddress taskAddress;
-
-    ProxyToTaskConnectionSetup(final IPAddress taskAddress) {
-      this.taskAddress = taskAddress;
-    }
-
-    @Override
-    public Boolean call() {
-      try {
-        final NettyTransceiver taskServer =
-            new NettyTransceiver(new InetSocketAddress(taskAddress.getHostAddress(), taskAddress.getPort()));
-        final MasterToTaskMessage proxyToTask = SpecificRequestor.getClient(MasterToTaskMessage.class, taskServer);
-        proxyToTaskMap.addNewProxy(taskAddress.getHostAddress(), proxyToTask);
-        return true;
-      } catch (final IOException e) {
-        LOG.log(Level.SEVERE, "The master-to-task connection setup has failed! " + e.toString());
-        return false;
-      }
-    }
-  }
 }
