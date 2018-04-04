@@ -22,7 +22,7 @@ import javax.inject.Inject;
 /**
  * The shared store for MistTask Tang configuration.
  */
-public final class MistTaskSubmitInfoStore {
+public final class MistTaskSubmitInfo {
 
   /**
    * The stored task configuration.
@@ -40,7 +40,7 @@ public final class MistTaskSubmitInfoStore {
   private int reservedCodeCacheSize;
 
   @Inject
-  private MistTaskSubmitInfoStore() {
+  private MistTaskSubmitInfo() {
     this.taskConfiguration = null;
     this.newRatio = -1;
     this.reservedCodeCacheSize = -1;

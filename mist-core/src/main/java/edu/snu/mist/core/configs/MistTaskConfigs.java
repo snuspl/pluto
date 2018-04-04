@@ -38,7 +38,7 @@ import javax.inject.Inject;
 /**
  * Configuration of the mist task.
  */
-public final class MistTaskConfigs {
+public final class MistTaskConfigs implements MistConfigs {
 
   /**
    * The number of event processors of a MistTask.

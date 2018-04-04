@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.rpc;
 
-import edu.snu.mist.core.driver.MistTaskSubmitInfoStore;
+import edu.snu.mist.core.driver.MistTaskSubmitInfo;
 import edu.snu.mist.formats.avro.MasterToDriverMessage;
 import edu.snu.mist.formats.avro.TaskRequest;
 import org.apache.avro.AvroRemoteException;
@@ -40,7 +40,7 @@ public final class DefaultMasterToDriverMessageImpl implements MasterToDriverMes
   /**
    * The shared store for mist task configuration.
    */
-  private final MistTaskSubmitInfoStore taskSubmitInfoStore;
+  private final MistTaskSubmitInfo taskSubmitInfoStore;
 
   /**
    * The serializer for Tang configuration.
@@ -49,7 +49,7 @@ public final class DefaultMasterToDriverMessageImpl implements MasterToDriverMes
 
   @Inject
   private DefaultMasterToDriverMessageImpl(
-      final MistTaskSubmitInfoStore taskSubmitInfoStore,
+      final MistTaskSubmitInfo taskSubmitInfoStore,
       final EvaluatorRequestor requestor) {
     this.taskSubmitInfoStore = taskSubmitInfoStore;
     this.requestor = requestor;

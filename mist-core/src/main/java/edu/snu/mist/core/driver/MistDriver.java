@@ -159,7 +159,7 @@ public final class MistDriver {
   /**
    * The shared store for necessary informations for launching MistTask.
    */
-  private MistTaskSubmitInfoStore mistTaskSubmitInfoStore;
+  private MistTaskSubmitInfo mistTaskSubmitInfo;
 
   /**
    * The avro master-to-driver server.
@@ -182,7 +182,7 @@ public final class MistDriver {
                      final MistCommonConfigs mistCommonConfigs,
                      final MistTaskConfigs mistTaskConfigs,
                      final MistMasterConfigs mistMasterConfigs,
-                     final MistTaskSubmitInfoStore mistTaskSubmitInfoStore,
+                     final MistTaskSubmitInfo mistTaskSubmitInfo,
                      final MasterToDriverMessage masterToDriverMessage,
                      @Parameter(MasterToDriverPort.class) final int masterToDriverPort) {
     this.nameServer = nameServer;
@@ -198,7 +198,7 @@ public final class MistDriver {
     this.mistMasterConfigs = mistMasterConfigs;
     this.isMasterRunning = new AtomicBoolean(false);
     this.proxyToMaster = null;
-    this.mistTaskSubmitInfoStore = mistTaskSubmitInfoStore;
+    this.mistTaskSubmitInfo = mistTaskSubmitInfo;
     this.masterToDriverServer = AvroUtils.createAvroServer(MasterToDriverMessage.class,
         masterToDriverMessage, new InetSocketAddress(masterToDriverPort));
   }
@@ -230,8 +230,8 @@ public final class MistDriver {
         // This is for MistTask.
         final String taskId = MIST_TASK_ID_PREFIX + taskIndex.getAndIncrement();
         final JVMProcess jvmProcess = jvmProcessFactory.newEvaluatorProcess()
-            .addOption("-XX:NewRatio=" + mistTaskSubmitInfoStore.getNewRatio())
-            .addOption("-XX:ReservedCodeCacheSize=" + mistTaskSubmitInfoStore.getReservedCodeCacheSize() + "m");
+            .addOption("-XX:NewRatio=" + mistTaskSubmitInfo.getNewRatio())
+            .addOption("-XX:ReservedCodeCacheSize=" + mistTaskSubmitInfo.getReservedCodeCacheSize() + "m");
         LOG.log(Level.INFO, "A MistTask allocated to {0}", descriptor.getNodeDescriptor().getName());
         allocatedEvaluator.setProcess(jvmProcess);
         allocatedEvaluator.submitContext(ContextConfiguration.CONF
@@ -287,7 +287,7 @@ public final class MistDriver {
             Configurations.merge(
                 basicTaskConf,
                 hostnameConf,
-                mistTaskSubmitInfoStore.getTaskConfiguration()));
+                mistTaskSubmitInfo.getTaskConfiguration()));
       } else {
         LOG.log(Level.SEVERE, "Invalid contextId: {0}", taskId);
         throw new RuntimeException("Internal error: Invalid contextId!");

@@ -22,11 +22,12 @@ import edu.snu.mist.formats.avro.MasterToTaskMessage;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
+import java.util.concurrent.Callable;
 
 /**
  * The runnable for initial task setup.
  */
-public final class TaskSetupRunnable implements Runnable {
+public final class TaskSetupRequest implements Callable<Boolean> {
 
   /**
    * The task requestor.
@@ -53,28 +54,21 @@ public final class TaskSetupRunnable implements Runnable {
    */
   private final int masterToTaskPort;
 
-  /**
-   * The variable which indicates whether the master setup is finished or not.
-   */
-  private final MasterSetupFinished masterSetupFinished;
-
-  public TaskSetupRunnable(
+  public TaskSetupRequest(
       final TaskRequestor taskRequestor,
       final TaskStatsMap taskStatsMap,
       final ProxyToTaskMap proxyToTaskMap,
       final int initialTaskNum,
-      final int masterToTaskPort,
-      final MasterSetupFinished masterSetupFinished) {
+      final int masterToTaskPort) {
     this.taskRequestor = taskRequestor;
     this.taskStatsMap = taskStatsMap;
     this.proxyToTaskMap = proxyToTaskMap;
     this.initialTaskNum = initialTaskNum;
     this.masterToTaskPort = masterToTaskPort;
-    this.masterSetupFinished = masterSetupFinished;
   }
 
   @Override
-  public void run() {
+  public Boolean call() {
     // This thread is blocked until the all requested tasks are running...
     final Collection<AllocatedTask> allocatedTasks = taskRequestor.requestTasks(initialTaskNum);
     for (final AllocatedTask task : allocatedTasks) {
@@ -86,9 +80,9 @@ public final class TaskSetupRunnable implements Runnable {
         proxyToTaskMap.addNewProxy(taskHostname, proxyToTask);
       } catch (final IOException e) {
         e.printStackTrace();
-        return;
+        return false;
       }
     }
-    masterSetupFinished.setFinished();
+    return true;
   }
 }
