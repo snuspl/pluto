@@ -17,7 +17,9 @@ package edu.snu.mist.core;
 
 import edu.snu.mist.core.driver.MistDriver;
 import edu.snu.mist.core.parameters.*;
+import edu.snu.mist.core.rpc.DefaultMasterToDriverMessageImpl;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEventProcessors;
+import edu.snu.mist.formats.avro.MasterToDriverMessage;
 import org.apache.reef.client.DriverConfiguration;
 import org.apache.reef.client.DriverLauncher;
 import org.apache.reef.client.LauncherStatus;
@@ -93,6 +95,7 @@ public final class MistLauncher {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder(conf);
     jcb.bindImplementation(NameResolver.class, LocalNameResolverImpl.class);
     jcb.bindImplementation(IdentifierFactory.class, StringIdentifierFactory.class);
+    jcb.bindImplementation(MasterToDriverMessage.class, DefaultMasterToDriverMessageImpl.class);
 
     final Configuration driverConf = DriverConfiguration.CONF
         .set(DriverConfiguration.GLOBAL_LIBRARIES, EnvironmentUtils.getClassLocation(MistDriver.class))
@@ -101,6 +104,7 @@ public final class MistLauncher {
         .set(DriverConfiguration.ON_EVALUATOR_ALLOCATED, MistDriver.EvaluatorAllocatedHandler.class)
         .set(DriverConfiguration.ON_CONTEXT_ACTIVE, MistDriver.ActiveContextHandler.class)
         .set(DriverConfiguration.ON_TASK_RUNNING, MistDriver.RunningTaskHandler.class)
+        .set(DriverConfiguration.ON_DRIVER_STOP, MistDriver.DriverStopHandler.class)
         .build();
 
     return Configurations.merge(driverConf, jcb.build());
