@@ -88,7 +88,6 @@ public final class MergeAwareQueryRemover implements QueryRemover {
     // TODO:[MIST-590] We need to improve this code for concurrent modification
     synchronized (srcAndDagMap) {
       // Delete the query plan from queryIdConfigDagMap
-      System.out.println(queryIdConfigDagMap.getKeys().size());
       final DAG<ConfigVertex, MISTEdge> configDag = queryIdConfigDagMap.remove(queryId);
       // Delete vertices
       final Collection<ConfigVertex> vertices = configDag.getVertices();
