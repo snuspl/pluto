@@ -50,6 +50,12 @@ public interface ApplicationInfo {
   boolean addGroup(Group group);
 
   /**
+   * Remove a group.
+   * @param group group
+   */
+  void removeGroup(Group group);
+
+  /**
    * The number of groups.
    */
   AtomicInteger numGroups();
