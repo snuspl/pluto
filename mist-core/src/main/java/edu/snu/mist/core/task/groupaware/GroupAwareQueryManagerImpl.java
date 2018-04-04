@@ -194,7 +194,15 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
 
       final ApplicationInfo applicationInfo = applicationMap.get(appId);
       if (applicationInfo.getGroups().size() == 0) {
-        createGroup(applicationInfo);
+        synchronized (applicationInfo) {
+          if (applicationInfo.getGroups().size() == 0) {
+            createGroup(applicationInfo);
+            // Waiting for group information being added
+            while (applicationInfo.getGroups().isEmpty()) {
+              Thread.sleep(100);
+            }
+          }
+        }
       }
 
       final DAG<ConfigVertex, MISTEdge> configDag;
@@ -204,10 +212,6 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
         configDag = configDagGenerator.generateWithCheckpointedStates(avroDag, checkpointedState);
       }
 
-      // Waiting for group information being added
-      while (applicationInfo.getGroups().isEmpty()) {
-        Thread.sleep(100);
-      }
       final Query query = createAndStartQuery(queryId, applicationInfo, configDag);
 
       queryControlResult.setIsSuccess(true);

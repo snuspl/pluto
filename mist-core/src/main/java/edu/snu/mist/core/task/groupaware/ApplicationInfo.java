@@ -67,17 +67,17 @@ public interface ApplicationInfo {
   List<String> getJarFilePath();
 
   /**
-   * Get the query starter for this group.
+   * Get the query starter for this application.
    */
   QueryStarter getQueryStarter();
 
   /**
-   * Get the query remover for this group.
+   * Get the query remover for this application.
    */
   QueryRemover getQueryRemover();
 
   /**
-   * Get the execution dags for this group.
+   * Get the execution dags for this application.
    */
   ExecutionDags getExecutionDags();
 
