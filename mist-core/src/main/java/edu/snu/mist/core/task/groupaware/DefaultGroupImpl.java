@@ -316,6 +316,16 @@ final class DefaultGroupImpl implements Group {
   }
 
   @Override
+  public QueryIdConfigDagMap getQueryIdConfigDagMap() {
+    return queryIdConfigDagMap;
+  }
+
+  @Override
+  public ConfigExecutionVertexMap getConfigExecutionVertexMap() {
+    return configExecutionVertexMap;
+  }
+
+  @Override
   public GroupCheckpoint checkpoint() {
     final Map<String, QueryCheckpoint> queryCheckpointMap = new HashMap<>();
     final GroupMinimumLatestWatermarkTimeStamp groupTimestamp = new GroupMinimumLatestWatermarkTimeStamp();

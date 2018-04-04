@@ -16,6 +16,7 @@
 package edu.snu.mist.core.task.groupaware.rebalancer;
 
 import edu.snu.mist.core.parameters.GroupId;
+import edu.snu.mist.core.task.ExecutionDags;
 import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.groupaware.Group;
 import edu.snu.mist.core.task.groupaware.GroupAllocationTable;
@@ -26,6 +27,8 @@ import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GroupRebalanc
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.OverloadedThreshold;
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.UnderloadedThreshold;
 import edu.snu.mist.core.task.groupaware.parameters.DefaultGroupLoad;
+import edu.snu.mist.core.task.merging.ConfigExecutionVertexMap;
+import edu.snu.mist.core.task.merging.QueryIdConfigDagMap;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
@@ -245,7 +248,10 @@ public final class DefaultGroupSplitterImpl implements GroupSplitter {
                     .getApplicationInfo().getApplicationId()));
                 final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
 
-                // TODO[MIST-1096]: We should inject executionDags, configVertexMap ... for creating a new group.
+                injector.bindVolatileInstance(ExecutionDags.class, highLoadGroup.getExecutionDags());
+                injector.bindVolatileInstance(QueryIdConfigDagMap.class, highLoadGroup.getQueryIdConfigDagMap());
+                injector.bindVolatileInstance(ConfigExecutionVertexMap.class,
+                    highLoadGroup.getConfigExecutionVertexMap());
 
                 sameGroup = injector.getInstance(Group.class);
                 sameGroup.setEventProcessor(lowLoadThread);
