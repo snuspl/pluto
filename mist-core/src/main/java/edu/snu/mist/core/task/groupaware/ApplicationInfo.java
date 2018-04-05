@@ -45,12 +45,14 @@ public interface ApplicationInfo {
 
   /**
    * Add a group.
+   * This method must be called by SingleWriterThread of GroupAllocationTableModifier.
    * @param group group
    */
   boolean addGroup(Group group);
 
   /**
    * Remove a group.
+   * This method must be called by SingleWriterThread of GroupAllocationTableModifier.
    * @param group group
    */
   void removeGroup(Group group);
