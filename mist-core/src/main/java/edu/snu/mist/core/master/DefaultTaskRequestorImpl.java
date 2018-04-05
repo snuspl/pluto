@@ -142,7 +142,7 @@ public final class DefaultTaskRequestorImpl implements TaskRequestor {
   }
 
   @Override
-  public synchronized Collection<AllocatedTask> requestTasks(final int taskNum) {
+  public synchronized Collection<AllocatedTask> setupTaskAndConn(final int taskNum) {
     final TaskRequest.Builder builder = TaskRequest.newBuilder()
         .setTaskNum(taskNum)
         .setTaskCpuNum(numTaskCores)

@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -32,16 +33,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The recovery manager which leverages only a single node in recovery process.
+ * The recovery manager which assigns recovery of all the failed queries to a single node.
  */
 public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
 
   private static final Logger LOG = Logger.getLogger(RecoveryScheduler.class.getName());
-
-  /**
-   * The map which contains all the failed groups.
-   */
-  private ConcurrentMap<String, GroupStats> allFailedGroups;
 
   /**
    * The map which contains the groups to be recovered.
@@ -68,27 +64,33 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
    */
   private final Condition recoveryFinished;
 
+  /**
+   * The atomic variable which indicates the recovery is ongoing or not.
+   */
+  private final AtomicBoolean isRecoveryOngoing;
+
   @Inject
   private SingleNodeRecoveryScheduler(
       final TaskStatsMap taskStatsMap,
       final ProxyToTaskMap proxyToTaskMap) {
-    this.allFailedGroups = new ConcurrentHashMap<>();
-    this.recoveryGroups = null;
+    this.recoveryGroups = new ConcurrentHashMap<>();
     this.taskStatsMap = taskStatsMap;
     this.proxyToTaskMap = proxyToTaskMap;
     this.lock = new ReentrantLock();
     this.recoveryFinished = this.lock.newCondition();
+    this.isRecoveryOngoing = new AtomicBoolean(false);
   }
 
   @Override
-  public void recover(final Map<String, GroupStats> failedGroups) {
+  public synchronized void startRecovery(final Map<String, GroupStats> failedGroups) {
+    if (!isRecoveryOngoing.compareAndSet(false, true)) {
+      throw new IllegalStateException("Internal Error : startRecovery() is called while other recovery process is " +
+          "already running!");
+    }
     LOG.log(Level.INFO, "Start recovery on failed groups: {0}", failedGroups.keySet());
-    this.allFailedGroups.putAll(failedGroups);
+    recoveryGroups.putAll(failedGroups);
     MasterToTaskMessage proxyToRecoveryTask;
     try {
-      lock.lock();
-      this.recoveryGroups = allFailedGroups;
-      this.allFailedGroups = new ConcurrentHashMap<>();
       // Select the newly allocated task with the least load for recovery
       double minLoad = Double.MAX_VALUE;
       proxyToRecoveryTask = null;
@@ -104,32 +106,38 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
         throw new IllegalStateException("Internal error : ProxyToRecoveryTask shouldn't be null!");
       }
       proxyToRecoveryTask.startRecovery();
-      // Sleeps until the recovery finished...
-      recoveryFinished.await();
-    } catch (final InterruptedException e) {
-      LOG.log(Level.SEVERE, "Recovery has been interrupted. " + e.toString());
     } catch (final AvroRemoteException e) {
       LOG.log(Level.SEVERE, "Start recovery through avro server has failed! " + e.toString());
-    } finally {
-      lock.unlock();
     }
   }
 
   @Override
-  public List<String> getRecoveringGroups(final String taskHostname) {
-    if (recoveryGroups == null) {
-      throw new IllegalStateException("Internal Error: RecoveryGroup cannot be null when " +
-          "starting recovery process");
+  public void awaitUntilRecoveryFinish() {
+    try {
+      lock.lock();
+      while (isRecoveryOngoing.get()) {
+        recoveryFinished.await();
+      }
+      lock.unlock();
+    } catch (final InterruptedException e) {
+      LOG.log(Level.SEVERE, "Recovery has been interrupted while awaiting..." + e.toString());
     }
+  }
+
+  @Override
+  public List<String> allocateRecoveringGroups(final String taskHostname) {
     // No more groups to be recovered! Recovery is done!
     if (recoveryGroups.isEmpty()) {
-      lock.lock();
-      // Notify the waiting thread that the recovery is done.
-      recoveryFinished.signal();
-      lock.unlock();
+      // Set the recovery ongoing to false.
+      if (isRecoveryOngoing.compareAndSet(true, false)) {
+        lock.lock();
+        // Notify the awaiting threads that the recovery is done.
+        recoveryFinished.signalAll();
+        lock.unlock();
+      }
       return new ArrayList<>();
     } else {
-      // Allocate all the recovery groups in a single node. No need to check taskHostname.
+      // Allocate all the recovery groups in a single node. No need to check taskHostname here.
       final Set<String> allocatedGroups = new HashSet<>();
       for (final Map.Entry<String, GroupStats> entry : recoveryGroups.entrySet()) {
         recoveryGroups.remove(entry.getKey());

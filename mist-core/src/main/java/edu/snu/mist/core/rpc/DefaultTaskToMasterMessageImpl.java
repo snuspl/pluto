@@ -88,7 +88,7 @@ public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage
 
   @Override
   public RecoveryInfo getRecoveringGroups(final String taskHostname) throws AvroRemoteException {
-    final List<String> recoveringGroups = recoveryScheduler.getRecoveringGroups(taskHostname);
+    final List<String> recoveringGroups = recoveryScheduler.allocateRecoveringGroups(taskHostname);
     return RecoveryInfo.newBuilder()
         .setRecoveryGroupList(recoveringGroups)
         .build();

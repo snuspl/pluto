@@ -51,8 +51,10 @@ public final class RecoveryStarter implements Runnable {
   @Override
   public void run() {
     // Request an evaluator for recovery task...
-    taskRequestor.requestTasks(1);
-    // Recover the queries...
-    recoveryScheduler.recover(failedGroupMap);
+    taskRequestor.setupTaskAndConn(1);
+    // Start recovering of the queries...
+    recoveryScheduler.startRecovery(failedGroupMap);
+    // Blocks the thread until the recovery has been finished...
+    recoveryScheduler.awaitUntilRecoveryFinish();
   }
 }

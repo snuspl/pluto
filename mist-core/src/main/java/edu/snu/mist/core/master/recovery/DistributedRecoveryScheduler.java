@@ -33,12 +33,17 @@ public final class DistributedRecoveryScheduler implements RecoveryScheduler {
   }
 
   @Override
-  public void recover(final Map<String, GroupStats> failedGroups) {
+  public void startRecovery(final Map<String, GroupStats> failedGroups) {
     throw new NotImplementedException();
   }
 
   @Override
-  public List<String> getRecoveringGroups(final String taskHostname) {
+  public void awaitUntilRecoveryFinish() {
+    throw new NotImplementedException();
+  }
+
+  @Override
+  public List<String> allocateRecoveringGroups(final String taskHostname) {
     throw new NotImplementedException();
   }
 

@@ -26,16 +26,24 @@ import java.util.Map;
 public interface RecoveryScheduler {
 
   /**
-   * Recover the failed groups.
-   * Note: this method blocks the calling thread until the recovery process is done.
+   * Start recovery process of the failed groups.
+   * This thread does not await until the recovery finishes
+   * and returns immediately after starting the recovery process in MistMaster.
+   * Note that no new recoveries can be started until the current recovery process has been done.
    */
-  void recover(Map<String, GroupStats> failedGroups);
+  void startRecovery(Map<String, GroupStats> failedGroups);
 
   /**
-   * Get the recovering groups for the designated MistTask.
+   * Blocks the calling thread until the recovery is done, and returns when
+   * it is done.
+   */
+  void awaitUntilRecoveryFinish();
+
+  /**
+   * Allocate the recovering groups to the designated MistTask when task requests the list of groups to recover.
    * @param taskHostname
    * @return The collection of groups to be recovered.
    */
-  List<String> getRecoveringGroups(String taskHostname);
+  List<String> allocateRecoveringGroups(String taskHostname);
 
 }
