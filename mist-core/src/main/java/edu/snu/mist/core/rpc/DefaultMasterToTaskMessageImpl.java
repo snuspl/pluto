@@ -37,7 +37,7 @@ public final class DefaultMasterToTaskMessageImpl implements MasterToTaskMessage
   }
 
   @Override
-  public Void startRecovery() throws AvroRemoteException {
+  public Void startTaskSideRecovery() throws AvroRemoteException {
     recoveryManager.startRecovery();
     return null;
   }

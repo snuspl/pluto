@@ -106,7 +106,7 @@
       ],
       "response": "boolean"
     },
-    "getRecoveringGroups":
+    "pullRecoveringGroups":
     {
       "request": [
         {

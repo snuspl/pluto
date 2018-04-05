@@ -26,6 +26,7 @@ import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.DefaultNumEve
 import edu.snu.mist.core.task.groupaware.eventprocessor.parameters.GroupRebalancingPeriod;
 import edu.snu.mist.core.task.groupaware.parameters.GroupPinningTime;
 import edu.snu.mist.core.task.groupaware.parameters.ProcessingTimeout;
+import edu.snu.mist.core.task.recovery.parameters.RecoveryThreadsNum;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
 import org.apache.reef.tang.Configuration;
@@ -85,6 +86,11 @@ public final class MistTaskConfigs implements MistConfigs {
    */
   private final long checkpointPeriod;
 
+  /**
+   * The number of threads used for task-side recovery.
+   */
+  private final int recoveryThreadsNum;
+
   @Inject
   private MistTaskConfigs(@Parameter(DefaultNumEventProcessors.class) final int numEventProcessors,
                           @Parameter(MqttSourceKeepAliveSec.class) final int mqttSourceKeepAliveSec,
@@ -94,7 +100,8 @@ public final class MistTaskConfigs implements MistConfigs {
                           @Parameter(GroupRebalancingPeriod.class) final long rebalancingPeriod,
                           @Parameter(ProcessingTimeout.class) final long processingTimeout,
                           @Parameter(GroupPinningTime.class) final long groupPinningTime,
-                          @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod) {
+                          @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod,
+                          @Parameter(RecoveryThreadsNum.class) final int recoveryThreadsNum) {
     this.numEventProcessors = numEventProcessors;
     this.rebalancingPeriod = rebalancingPeriod;
     this.mqttSourceKeepAliveSec = mqttSourceKeepAliveSec;
@@ -104,6 +111,7 @@ public final class MistTaskConfigs implements MistConfigs {
     this.groupPinningTime = groupPinningTime;
     this.processingTimeout = processingTimeout;
     this.checkpointPeriod = checkpointPeriod;
+    this.recoveryThreadsNum = recoveryThreadsNum;
   }
 
   /**
@@ -123,6 +131,7 @@ public final class MistTaskConfigs implements MistConfigs {
     jcb.bindNamedParameter(ProcessingTimeout.class, Long.toString(processingTimeout));
     jcb.bindNamedParameter(GroupPinningTime.class, Long.toString(groupPinningTime));
     jcb.bindNamedParameter(PeriodicCheckpointPeriod.class, Long.toString(checkpointPeriod));
+    jcb.bindNamedParameter(RecoveryThreadsNum.class, Integer.toString(recoveryThreadsNum));
 
     // Implementation
     jcb.bindImplementation(ClientToTaskMessage.class, DefaultClientToTaskMessageImpl.class);

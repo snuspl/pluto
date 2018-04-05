@@ -20,7 +20,7 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
 /**
  * The interface for recovery managers.
  */
-@DefaultImplementation(SingleThreadRecoveryManager.class)
+@DefaultImplementation(DefaultRecoveryManagerImpl.class)
 public interface RecoveryManager {
 
   /**

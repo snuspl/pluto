@@ -20,6 +20,7 @@ import edu.snu.mist.core.parameters.TaskHostname;
 import edu.snu.mist.core.parameters.TaskToMasterPort;
 import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.checkpointing.CheckpointManager;
+import edu.snu.mist.core.task.recovery.parameters.RecoveryThreadsNum;
 import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -29,9 +30,9 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * The recovery manager which uses a single thread for recovery.
+ * The default recovery manager implementation.
  */
-public final class SingleThreadRecoveryManager implements RecoveryManager {
+public final class DefaultRecoveryManagerImpl implements RecoveryManager {
 
   /**
    * The atomic boolean variable which indicates whether the recovery process is running or not.
@@ -53,18 +54,25 @@ public final class SingleThreadRecoveryManager implements RecoveryManager {
    */
   private String taskHostname;
 
+  /**
+   * The number of threads used for task-side recovery.
+   */
+  private int recoveryThreadsNum;
+
   @Inject
-  private SingleThreadRecoveryManager(
+  private DefaultRecoveryManagerImpl(
       @Parameter(MasterHostname.class) final String masterHostAddress,
       @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
       final CheckpointManager checkpointManager,
-      @Parameter(TaskHostname.class) final String taskHostname) throws IOException {
-    isRecoveryRunning = new AtomicBoolean(false);
+      @Parameter(TaskHostname.class) final String taskHostname,
+      @Parameter(RecoveryThreadsNum.class) final int recoveryThreadsNum) throws IOException {
+      isRecoveryRunning = new AtomicBoolean(false);
     // Setup task-to-master connection.
     this.proxyToMaster = AvroUtils.createAvroProxy(TaskToMasterMessage.class,
         new InetSocketAddress(masterHostAddress, taskToMasterPort));
     this.checkpointManager = checkpointManager;
     this.taskHostname = taskHostname;
+    this.recoveryThreadsNum = recoveryThreadsNum;
   }
 
   @Override
@@ -72,8 +80,8 @@ public final class SingleThreadRecoveryManager implements RecoveryManager {
     // Is another recovery already running?
     if (isRecoveryRunning.compareAndSet(false, true)) {
       // If not, start single-threaded recovery.
-      final Thread thread = new Thread(
-          new SingleThreadRecoveryRunner(isRecoveryRunning, proxyToMaster, checkpointManager, taskHostname));
+      final Thread thread = new Thread(new TaskSideRecoveryStarter(
+          isRecoveryRunning, proxyToMaster, checkpointManager, taskHostname, recoveryThreadsNum));
       thread.start();
       return true;
     } else {

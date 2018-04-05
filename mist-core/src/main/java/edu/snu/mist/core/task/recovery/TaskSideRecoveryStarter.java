@@ -33,9 +33,9 @@ import java.util.logging.Logger;
 /**
  * The runnable class for recovering queries leveraging a single thread.
  */
-public class SingleThreadRecoveryRunner implements Runnable {
+public class TaskSideRecoveryStarter implements Runnable {
 
-  private static final Logger LOG = Logger.getLogger(SingleThreadRecoveryRunner.class.getName());
+  private static final Logger LOG = Logger.getLogger(TaskSideRecoveryStarter.class.getName());
 
   /**
    * Indicates whether the recovery is running or not.
@@ -48,9 +48,9 @@ public class SingleThreadRecoveryRunner implements Runnable {
   private TaskToMasterMessage proxyToMaster;
 
   /**
-   * The single threaded executor service used for group recovery.
+   * The executor service used for group recovery.
    */
-  private ExecutorService singleThreadedExecutorService;
+  private ExecutorService executorService;
 
   /**
    * The checkpoint manager for loading checkpoints.
@@ -62,22 +62,23 @@ public class SingleThreadRecoveryRunner implements Runnable {
    */
   private String taskHostname;
 
-  public SingleThreadRecoveryRunner(final AtomicBoolean isRecoveryRunning,
-                                    final TaskToMasterMessage proxyToMaster,
-                                    final CheckpointManager checkpointManager,
-                                    final String taskHostname) {
+  public TaskSideRecoveryStarter(final AtomicBoolean isRecoveryRunning,
+                                 final TaskToMasterMessage proxyToMaster,
+                                 final CheckpointManager checkpointManager,
+                                 final String taskHostname,
+                                 final int numTheads) {
     this.isRecoveryRunning = isRecoveryRunning;
     this.proxyToMaster = proxyToMaster;
-    this.singleThreadedExecutorService = Executors.newSingleThreadExecutor();
     this.checkpointManager = checkpointManager;
     this.taskHostname = taskHostname;
+    this.executorService = Executors.newFixedThreadPool(numTheads);
   }
 
   public void run() {
     // Get the recovery info from the MistMaster.
     try {
       while (true) {
-        final RecoveryInfo recoveryInfo = proxyToMaster.getRecoveringGroups(taskHostname);
+        final RecoveryInfo recoveryInfo = proxyToMaster.pullRecoveringGroups(taskHostname);
         LOG.log(Level.INFO, "Recovering groups: {0}", recoveryInfo.getRecoveryGroupList().toString());
         if (recoveryInfo.getRecoveryGroupList().isEmpty()) {
           // Notify that recovery is done!
@@ -87,7 +88,7 @@ public class SingleThreadRecoveryRunner implements Runnable {
         } else {
           final List<Future> futureList = new ArrayList<>();
           for (final String recoveryGroup : recoveryInfo.getRecoveryGroupList()) {
-            futureList.add(singleThreadedExecutorService.submit(new RecoveryRunner(recoveryGroup, checkpointManager)));
+            futureList.add(executorService.submit(new RecoveryRunner(recoveryGroup, checkpointManager)));
           }
           // Wait for the all group recovery finishes.
           for (final Future future : futureList) {

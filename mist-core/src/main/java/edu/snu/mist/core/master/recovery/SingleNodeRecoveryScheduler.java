@@ -105,7 +105,7 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
       if (proxyToRecoveryTask == null) {
         throw new IllegalStateException("Internal error : ProxyToRecoveryTask shouldn't be null!");
       }
-      proxyToRecoveryTask.startRecovery();
+      proxyToRecoveryTask.startTaskSideRecovery();
     } catch (final AvroRemoteException e) {
       LOG.log(Level.SEVERE, "Start recovery through avro server has failed! " + e.toString());
     }
