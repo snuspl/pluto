@@ -158,7 +158,7 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
     }
     applicationMap.remove(groupId);
     groupAllocationTableModifier.addEvent(
-        new WritingEvent(WritingEvent.EventType.GROUP_REMOVE_ALL, null));
+        new WritingEvent(WritingEvent.EventType.GROUP_REMOVE, group));
   }
 
   @Override

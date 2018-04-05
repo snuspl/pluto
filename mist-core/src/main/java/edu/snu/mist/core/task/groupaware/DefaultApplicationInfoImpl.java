@@ -112,6 +112,12 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
   }
 
   @Override
+  public void removeGroup(final Group group) {
+    groups.remove(group);
+    numGroups.decrementAndGet();
+  }
+
+  @Override
   public AtomicInteger numGroups() {
     return numGroups;
   }
