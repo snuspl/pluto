@@ -43,7 +43,7 @@ public final class DistributedRecoveryScheduler implements RecoveryScheduler {
   }
 
   @Override
-  public List<String> allocateRecoveringGroups(final String taskHostname) {
+  public List<String> pullRecoverableGroups(final String taskHostname) {
     throw new NotImplementedException();
   }
 

@@ -74,6 +74,7 @@ public class TaskSideRecoveryStarter implements Runnable {
     this.executorService = Executors.newFixedThreadPool(numTheads);
   }
 
+  @Override
   public void run() {
     // Get the recovery info from the MistMaster.
     try {
@@ -88,7 +89,7 @@ public class TaskSideRecoveryStarter implements Runnable {
         } else {
           final List<Future> futureList = new ArrayList<>();
           for (final String recoveryGroup : recoveryInfo.getRecoveryGroupList()) {
-            futureList.add(executorService.submit(new RecoveryRunner(recoveryGroup, checkpointManager)));
+            futureList.add(executorService.submit(new SingleGroupRecoveryRunner(recoveryGroup, checkpointManager)));
           }
           // Wait for the all group recovery finishes.
           for (final Future future : futureList) {

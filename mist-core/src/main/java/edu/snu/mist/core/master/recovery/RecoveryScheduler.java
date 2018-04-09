@@ -44,6 +44,6 @@ public interface RecoveryScheduler {
    * @param taskHostname
    * @return The collection of groups to be recovered.
    */
-  List<String> allocateRecoveringGroups(String taskHostname);
+  List<String> pullRecoverableGroups(String taskHostname);
 
 }

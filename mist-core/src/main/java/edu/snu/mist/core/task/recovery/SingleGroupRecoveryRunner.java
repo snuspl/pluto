@@ -24,18 +24,21 @@ import java.util.logging.Logger;
 /**
  * The runner which actually recovers the groups given from mist master.
  */
-public class RecoveryRunner implements Runnable {
+public class SingleGroupRecoveryRunner implements Runnable {
 
-  private static final Logger LOG = Logger.getLogger(RecoveryRunner.class.getName());
+  private static final Logger LOG = Logger.getLogger(SingleGroupRecoveryRunner.class.getName());
 
-  private String recoveryGroupName;
+  /**
+   * The recovered group name.
+   */
+  private final String recoveryGroupName;
 
   /**
    * The checkpoint manager for loading checkpoints.
    */
   private CheckpointManager checkpointManager;
 
-  public RecoveryRunner(final String recoveryGroupName, final CheckpointManager checkpointManager) {
+  public SingleGroupRecoveryRunner(final String recoveryGroupName, final CheckpointManager checkpointManager) {
     this.recoveryGroupName = recoveryGroupName;
     this.checkpointManager = checkpointManager;
   }

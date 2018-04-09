@@ -125,7 +125,7 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
   }
 
   @Override
-  public List<String> allocateRecoveringGroups(final String taskHostname) {
+  public List<String> pullRecoverableGroups(final String taskHostname) {
     // No more groups to be recovered! Recovery is done!
     if (recoveryGroups.isEmpty()) {
       // Set the recovery ongoing to false.
