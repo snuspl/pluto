@@ -18,10 +18,14 @@ package edu.snu.mist.core.configs;
 import edu.snu.mist.core.parameters.NewRatio;
 import edu.snu.mist.core.parameters.ReservedCodeCacheSize;
 import edu.snu.mist.core.master.allocation.*;
+import edu.snu.mist.core.master.recovery.DistributedRecoveryScheduler;
+import edu.snu.mist.core.master.recovery.RecoveryScheduler;
+import edu.snu.mist.core.master.recovery.SingleNodeRecoveryScheduler;
 import edu.snu.mist.core.master.allocation.parameters.OverloadedTaskThreshold;
+import edu.snu.mist.core.parameters.QueryAllocationOption;
+import edu.snu.mist.core.parameters.RecoverySchedulerOption;
 import edu.snu.mist.core.parameters.NumTaskCores;
 import edu.snu.mist.core.parameters.NumTasks;
-import edu.snu.mist.core.parameters.QueryAllocationOption;
 import edu.snu.mist.core.parameters.TaskMemorySize;
 import edu.snu.mist.core.rpc.DefaultClientToMasterMessageImpl;
 import edu.snu.mist.core.rpc.DefaultDriverToMasterMessageImpl;
@@ -76,6 +80,11 @@ public final class MistMasterConfigs implements MistConfigs {
    */
   private final String queryAllocationOption;
 
+  /**
+   * The recovery scheduler implementation option.
+   */
+  private final String recoverySchedulerOption;
+
   @Inject
   private MistMasterConfigs(
       @Parameter(NumTasks.class) final int numTasks,
@@ -84,7 +93,8 @@ public final class MistMasterConfigs implements MistConfigs {
       @Parameter(NewRatio.class) final int newRatio,
       @Parameter(ReservedCodeCacheSize.class) final int reservedCodeCacheSize,
       @Parameter(OverloadedTaskThreshold.class) final double overloadedTaskThreshold,
-      @Parameter(QueryAllocationOption.class) final String queryAllocationOption) {
+      @Parameter(QueryAllocationOption.class) final String queryAllocationOption,
+      @Parameter(RecoverySchedulerOption.class) final String recoverySchedulerOption) {
     this.numTasks = numTasks;
     this.taskMemSize = taskMemSize;
     this.numTaskCores = numTaskCores;
@@ -92,31 +102,50 @@ public final class MistMasterConfigs implements MistConfigs {
     this.reservedCodeCacheSize = reservedCodeCacheSize;
     this.overloadedTaskThreshold = overloadedTaskThreshold;
     this.queryAllocationOption = queryAllocationOption;
+    this.recoverySchedulerOption = recoverySchedulerOption;
+  }
+
+  private Class<? extends QueryAllocationManager> getQueryAllocationImplClass() {
+    if (queryAllocationOption.equals("rr")) {
+      return RoundRobinQueryAllocationManager.class;
+    } else if (queryAllocationOption.equals("pot")) {
+      return PowerOfTwoQueryAllocationManager.class;
+    } else if (queryAllocationOption.equals("aa")) {
+      return ApplicationAwareQueryAllocationManager.class;
+    } else if (queryAllocationOption.equals("min")) {
+      return MinLoadQueryAllocationManager.class;
+    } else {
+      throw new IllegalArgumentException("Invalid query allocation option!");
+    }
   }
 
   @Override
   public Configuration getConfiguration() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    // Named parameters.
     jcb.bindNamedParameter(NumTasks.class, String.valueOf(numTasks));
     jcb.bindNamedParameter(TaskMemorySize.class, String.valueOf(taskMemSize));
     jcb.bindNamedParameter(NumTaskCores.class, String.valueOf(numTaskCores));
     jcb.bindNamedParameter(NewRatio.class, String.valueOf(newRatio));
     jcb.bindNamedParameter(ReservedCodeCacheSize.class, String.valueOf(reservedCodeCacheSize));
     jcb.bindNamedParameter(OverloadedTaskThreshold.class, String.valueOf(overloadedTaskThreshold));
-    if (queryAllocationOption.equals("rr")) {
-      jcb.bindImplementation(QueryAllocationManager.class, RoundRobinQueryAllocationManager.class);
-    } else if (queryAllocationOption.equals("pot")) {
-      jcb.bindImplementation(QueryAllocationManager.class, PowerOfTwoQueryAllocationManager.class);
-    } else if (queryAllocationOption.equals("aa")) {
-      jcb.bindImplementation(QueryAllocationManager.class, ApplicationAwareQueryAllocationManager.class);
-    } else if (queryAllocationOption.equals("min")) {
-      jcb.bindImplementation(QueryAllocationManager.class, MinLoadQueryAllocationManager.class);
-    } else {
-      throw new IllegalArgumentException("Invalid query allocation option!");
-    }
-    jcb.bindImplementation(DriverToMasterMessage.class, DefaultDriverToMasterMessageImpl.class);
+
+    // Implementations.
+    jcb.bindImplementation(QueryAllocationManager.class, getQueryAllocationImplClass());
+    jcb.bindImplementation(RecoveryScheduler.class, getRecoverySchedulerImplClass());
     jcb.bindImplementation(ClientToMasterMessage.class, DefaultClientToMasterMessageImpl.class);
+    jcb.bindImplementation(DriverToMasterMessage.class, DefaultDriverToMasterMessageImpl.class);
     jcb.bindImplementation(TaskToMasterMessage.class, DefaultTaskToMasterMessageImpl.class);
     return jcb.build();
+  }
+
+  private Class<? extends RecoveryScheduler> getRecoverySchedulerImplClass() {
+    if (recoverySchedulerOption.equals("single")) {
+      return SingleNodeRecoveryScheduler.class;
+    } else if (recoverySchedulerOption.equals("distributed")) {
+      return DistributedRecoveryScheduler.class;
+    } else {
+      throw new IllegalArgumentException("Invalid recovery scheduler option!");
+    }
   }
 }

@@ -13,21 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.core.task.recovery.parameters;
 
- /**
-  * This is a skeleton protocol for RPC communication from MistMaster to MistTask.
-  */
-{
-  "namespace": "edu.snu.mist.formats.avro",
-  "protocol": "MasterToTaskMessage",
-  "types": [
-  ],
-  "messages":
-  {
-    "startTaskSideRecovery":
-    {
-      "request": [],
-      "response": "null"
-    }
-  }
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
+
+/**
+ * The number of threads used for recovery process.
+ */
+@NamedParameter(doc = "The number of threads used for recovery process",
+default_value = "1", short_name = "recovery_thread_num")
+public final class RecoveryThreadsNum implements Name<Integer> {
 }

@@ -60,6 +60,20 @@
           }
         }
       ]
+    },
+    {
+      "name": "RecoveryInfo",
+      "type": "record",
+      "fields":
+      [
+        {
+          "name": "RecoveryGroupList",
+          "type": {
+            "type": "array",
+            "items": "string"
+          }
+        }
+      ]
     }
   ],
   "messages": {
@@ -91,6 +105,16 @@
         }
       ],
       "response": "boolean"
+    },
+    "pullRecoveringGroups":
+    {
+      "request": [
+        {
+          "name": "taskHostname",
+          "type": "string"
+        }
+      ],
+      "response": "RecoveryInfo"
     }
   }
 }

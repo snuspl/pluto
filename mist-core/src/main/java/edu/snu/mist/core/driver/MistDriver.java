@@ -87,6 +87,11 @@ public final class MistDriver {
   private static final String MIST_TASK_ID_PREFIX = "MIST_TASK_";
 
   /**
+   * The ID prefix of ActiveContexts for recovery task.
+   */
+  private static final String MIST_RECOVERY_TASK_ID_PREFIX = "MIST_RECOVERY_";
+
+  /**
    * Static Tang object.
    */
   private final Tang tang = Tang.Factory.getTang();
@@ -251,7 +256,6 @@ public final class MistDriver {
           .set(NameResolverConfiguration.NAME_SERVICE_PORT, nameServer.getPort())
           .set(NameResolverConfiguration.NAME_SERVER_HOSTNAME, localAddressProvider.getLocalAddress())
           .build();
-      // Configuration for NCS of mist task.
       if (taskId.equals(MIST_MASTER_ID)) {
         // This is for master.
         masterHostname = activeContext.getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress()
@@ -291,6 +295,21 @@ public final class MistDriver {
       } else {
         LOG.log(Level.SEVERE, "Invalid contextId: {0}", taskId);
         throw new RuntimeException("Internal error: Invalid contextId!");
+      }
+    }
+  }
+
+  public final class FailedEvaluatorHandler implements EventHandler<FailedEvaluator> {
+    @Override
+    public void onNext(final FailedEvaluator failedEvaluator) {
+      LOG.log(Level.INFO, "Evaluator {0} has failed!", failedEvaluator.getId());
+      final InetSocketAddress failedNodeInetSocketAddress = failedEvaluator.getFailedContextList().get(0)
+          .getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress();
+      try {
+        proxyToMaster.notifyFailedTask(failedNodeInetSocketAddress.getHostName());
+      } catch (final AvroRemoteException e) {
+        LOG.log(Level.SEVERE, "Cannot connect to MistMaster for notifying failure! " + e.toString());
+        throw new IllegalStateException("Cannot connect to MistMaster while failure recovery");
       }
     }
   }

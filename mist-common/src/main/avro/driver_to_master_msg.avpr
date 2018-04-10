@@ -47,6 +47,16 @@
         }
       ],
       "response": "null"
+    },
+    "notifyFailedTask":
+    {
+      "request": [
+        {
+          "name": "failedTaskHostname",
+          "type": "string"
+        }
+      ],
+      "response": "null"
     }
   }
 }

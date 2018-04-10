@@ -13,21 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
- /**
-  * This is a skeleton protocol for RPC communication from MistMaster to MistTask.
-  */
-{
-  "namespace": "edu.snu.mist.formats.avro",
-  "protocol": "MasterToTaskMessage",
-  "types": [
-  ],
-  "messages":
-  {
-    "startTaskSideRecovery":
-    {
-      "request": [],
-      "response": "null"
-    }
-  }
-}
+/**
+ * The package for master-side recovery classes.
+ */
+package edu.snu.mist.core.master.recovery;

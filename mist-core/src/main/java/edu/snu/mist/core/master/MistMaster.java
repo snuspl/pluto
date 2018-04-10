@@ -17,6 +17,7 @@ package edu.snu.mist.core.master;
 
 import edu.snu.mist.core.parameters.*;
 import edu.snu.mist.core.rpc.AvroUtils;
+import edu.snu.mist.formats.avro.AllocatedTask;
 import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
 import edu.snu.mist.formats.avro.TaskToMasterMessage;
@@ -30,10 +31,8 @@ import org.apache.reef.wake.EventHandler;
 
 import javax.inject.Inject;
 import java.net.InetSocketAddress;
+import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -107,18 +106,11 @@ public final class MistMaster implements Task {
   @Override
   public byte[] call(final byte[] memento) throws Exception {
     LOG.log(Level.INFO, "MistMaster is started");
-    final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    // Start task allocation.
-    final Future<Boolean> isSuccessFuture = executorService.submit(
-        new TaskSetupRequest(
-            taskRequestor,
-            taskStatsMap,
-            proxyToTaskMap,
-            initialTaskNum,
-            masterToTaskPort));
-    if (!isSuccessFuture.get()) {
+    // Request the tasks to be allocated firstly.
+    final Collection<AllocatedTask> allocatedTasks = taskRequestor.setupTaskAndConn(initialTaskNum);
+    if (allocatedTasks == null) {
       LOG.log(Level.SEVERE, "Mist tasks are not successfully submitted!");
-      return null;
+      throw new IllegalStateException("Internal Error : No tasks are allocated!");
     } else {
       // MistMaster is successfully running now...
       masterSetupFinished.setFinished();

@@ -16,12 +16,15 @@
 package edu.snu.mist.core.rpc;
 
 import edu.snu.mist.core.master.TaskStatsMap;
+import edu.snu.mist.core.master.recovery.RecoveryScheduler;
 import edu.snu.mist.formats.avro.GroupStats;
+import edu.snu.mist.formats.avro.RecoveryInfo;
 import edu.snu.mist.formats.avro.TaskStats;
 import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import org.apache.avro.AvroRemoteException;
 
 import javax.inject.Inject;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -45,10 +48,17 @@ public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage
    */
   private final ConcurrentMap<String, AtomicInteger> appGroupCounterMap;
 
+  /**
+   * The recovery scheduler.
+   */
+  private final RecoveryScheduler recoveryScheduler;
+
   @Inject
-  private DefaultTaskToMasterMessageImpl(final TaskStatsMap taskStatsMap) {
+  private DefaultTaskToMasterMessageImpl(final TaskStatsMap taskStatsMap,
+                                         final RecoveryScheduler recoveryScheduler) {
     this.taskStatsMap = taskStatsMap;
     this.appGroupCounterMap = new ConcurrentHashMap<>();
+    this.recoveryScheduler = recoveryScheduler;
   }
 
 
@@ -74,5 +84,13 @@ public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage
       throws AvroRemoteException {
     taskStatsMap.updateTaskStats(taskHostname, updatedTaskStats);
     return true;
+  }
+
+  @Override
+  public RecoveryInfo pullRecoveringGroups(final String taskHostname) throws AvroRemoteException {
+    final List<String> recoveringGroups = recoveryScheduler.pullRecoverableGroups(taskHostname);
+    return RecoveryInfo.newBuilder()
+        .setRecoveryGroupList(recoveringGroups)
+        .build();
   }
 }
