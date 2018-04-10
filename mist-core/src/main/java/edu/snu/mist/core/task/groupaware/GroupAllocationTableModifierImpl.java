@@ -188,8 +188,10 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
             }
             case GROUP_REMOVE: {
               final Group group = (Group) event.getValue();
-              removeGroupInWriterThread(group);
+              final ApplicationInfo applicationInfo = group.getApplicationInfo();
               groupMap.remove(group.getGroupId());
+              applicationInfo.removeGroup(group);
+              removeGroupInWriterThread(group);
               break;
             }
             case GROUP_REMOVE_ALL: {

@@ -33,6 +33,7 @@ import edu.snu.mist.core.parameters.TaskHostname;
 import edu.snu.mist.core.sinks.Sink;
 import edu.snu.mist.core.sources.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.core.task.*;
+import edu.snu.mist.core.task.groupaware.ApplicationInfo;
 import edu.snu.mist.core.task.groupaware.GroupAwareQueryManagerImpl;
 import edu.snu.mist.core.task.groupaware.GroupIdRequestor;
 import edu.snu.mist.core.task.groupaware.TaskStatsUpdater;
@@ -154,7 +155,8 @@ public class GroupRecoveryTest {
     final CheckpointManager checkpointManager = injector.getInstance(CheckpointManager.class);
     final QueryManager queryManager = injector.getInstance(QueryManager.class);
 
-    queryManager.createApplication(appId, Arrays.asList(""));
+    final ApplicationInfo appInfo = queryManager.createApplication(appId, Arrays.asList(""));
+    queryManager.createGroup(appInfo);
     queryManager.create(avroDag);
 
     // Wait until all sources connect to stream generator
@@ -162,7 +164,6 @@ public class GroupRecoveryTest {
 
     final ExecutionDags executionDags = checkpointManager.getApplication(appId).getGroups().get(0).getExecutionDags();
     Assert.assertEquals(executionDags.values().size(), 1);
-    final ExecutionDag executionDag = executionDags.values().iterator().next();
 
     // 1st stage. Push inputs to all sources and see if the results are proper.
     SRC0INPUT1.forEach(textMessageStreamGenerator1::write);

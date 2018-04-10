@@ -18,6 +18,7 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.groupaware.ApplicationInfo;
+import edu.snu.mist.core.task.groupaware.Group;
 import edu.snu.mist.core.task.groupaware.GroupAwareQueryManagerImpl;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.QueryCheckpoint;
@@ -67,6 +68,12 @@ public interface QueryManager extends AutoCloseable {
    */
   ApplicationInfo createApplication(String appId,
                                     List<String> jarFilePath) throws InjectionException;
+
+  /**
+   * Create a new group for the given application.
+   * @return
+   */
+  Group createGroup(ApplicationInfo applicationInfo) throws InjectionException;
 
   /**
    * Deletes the query corresponding to the queryId submitted by client.

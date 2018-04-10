@@ -15,10 +15,13 @@
  */
 package edu.snu.mist.core.task.groupaware;
 
+import edu.snu.mist.core.task.ExecutionDags;
 import edu.snu.mist.core.task.QueryRemover;
 import edu.snu.mist.core.task.QueryStarter;
 import edu.snu.mist.core.task.groupaware.parameters.ApplicationIdentifier;
 import edu.snu.mist.core.task.groupaware.parameters.JarFilePath;
+import edu.snu.mist.core.task.merging.ConfigExecutionVertexMap;
+import edu.snu.mist.core.task.merging.QueryIdConfigDagMap;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -48,6 +51,11 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
   private final String appId;
 
   /**
+   * The execution dags for this application.
+   */
+  private final ExecutionDags executionDags;
+
+  /**
    * A query starter.
    */
   private final QueryStarter queryStarter;
@@ -57,16 +65,32 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
    */
   private final QueryRemover queryRemover;
 
+  /**
+   * The map for query Ids and ConfigDags.
+   */
+  private final QueryIdConfigDagMap queryIdConfigDagMap;
+
+  /**
+   * The map for Config Vertices and their corresponding Execution Vertices.
+   */
+  private final ConfigExecutionVertexMap configExecutionVertexMap;
+
   @Inject
   private DefaultApplicationInfoImpl(@Parameter(ApplicationIdentifier.class) final String appId,
                                      @Parameter(JarFilePath.class) final String jarFilePath,
+                                     final ExecutionDags executionDags,
                                      final QueryStarter queryStarter,
-                                     final QueryRemover queryRemover) {
+                                     final QueryRemover queryRemover,
+                                     final QueryIdConfigDagMap queryIdConfigDagMap,
+                                     final ConfigExecutionVertexMap configExecutionVertexMap) {
     this.groups = new LinkedList<>();
     this.jarFilePath = Arrays.asList(jarFilePath);
     this.appId = appId;
+    this.executionDags = executionDags;
     this.queryStarter = queryStarter;
     this.queryRemover = queryRemover;
+    this.queryIdConfigDagMap = queryIdConfigDagMap;
+    this.configExecutionVertexMap = configExecutionVertexMap;
   }
 
   @Override
@@ -88,6 +112,12 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
   }
 
   @Override
+  public void removeGroup(final Group group) {
+    groups.remove(group);
+    numGroups.decrementAndGet();
+  }
+
+  @Override
   public AtomicInteger numGroups() {
     return numGroups;
   }
@@ -103,6 +133,11 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
   }
 
   @Override
+  public ExecutionDags getExecutionDags() {
+    return executionDags;
+  }
+
+  @Override
   public QueryStarter getQueryStarter() {
     return queryStarter;
   }
@@ -110,5 +145,15 @@ public final class DefaultApplicationInfoImpl implements ApplicationInfo {
   @Override
   public QueryRemover getQueryRemover() {
     return queryRemover;
+  }
+
+  @Override
+  public QueryIdConfigDagMap getQueryIdConfigDagMap() {
+    return queryIdConfigDagMap;
+  }
+
+  @Override
+  public ConfigExecutionVertexMap getConfigExecutionVertexMap() {
+    return configExecutionVertexMap;
   }
 }
