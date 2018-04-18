@@ -16,6 +16,7 @@
 package edu.snu.mist.core.configs;
 
 import edu.snu.mist.core.master.allocation.parameters.OverloadedTaskThreshold;
+import edu.snu.mist.core.master.recovery.parameters.RecoveryUnitSize;
 import edu.snu.mist.core.parameters.*;
 import edu.snu.mist.core.shared.parameters.MqttSinkClientNumPerBroker;
 import edu.snu.mist.core.shared.parameters.MqttSinkKeepAliveSec;
@@ -69,6 +70,8 @@ public final class MistCommandLineOptions {
         .registerShortNameOfClass(PeriodicCheckpointPeriod.class)
         .registerShortNameOfClass(OverloadedTaskThreshold.class)
         .registerShortNameOfClass(QueryAllocationOption.class)
-        .registerShortNameOfClass(RecoveryThreadsNum.class);
+        .registerShortNameOfClass(RecoveryThreadsNum.class)
+        .registerShortNameOfClass(RecoverySchedulerOption.class)
+        .registerShortNameOfClass(RecoveryUnitSize.class);
   }
 }

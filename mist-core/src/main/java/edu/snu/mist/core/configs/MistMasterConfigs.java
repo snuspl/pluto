@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.configs;
 
+import edu.snu.mist.core.master.recovery.parameters.RecoveryUnitSize;
 import edu.snu.mist.core.parameters.NewRatio;
 import edu.snu.mist.core.parameters.ReservedCodeCacheSize;
 import edu.snu.mist.core.master.allocation.*;
@@ -85,6 +86,11 @@ public final class MistMasterConfigs implements MistConfigs {
    */
   private final String recoverySchedulerOption;
 
+  /**
+   * The granularity of recovery.
+   */
+  private final int recoveryUnitSize;
+
   @Inject
   private MistMasterConfigs(
       @Parameter(NumTasks.class) final int numTasks,
@@ -94,7 +100,8 @@ public final class MistMasterConfigs implements MistConfigs {
       @Parameter(ReservedCodeCacheSize.class) final int reservedCodeCacheSize,
       @Parameter(OverloadedTaskThreshold.class) final double overloadedTaskThreshold,
       @Parameter(QueryAllocationOption.class) final String queryAllocationOption,
-      @Parameter(RecoverySchedulerOption.class) final String recoverySchedulerOption) {
+      @Parameter(RecoverySchedulerOption.class) final String recoverySchedulerOption,
+      @Parameter(RecoveryUnitSize.class) final int recoveryUnitSize) {
     this.numTasks = numTasks;
     this.taskMemSize = taskMemSize;
     this.numTaskCores = numTaskCores;
@@ -103,6 +110,7 @@ public final class MistMasterConfigs implements MistConfigs {
     this.overloadedTaskThreshold = overloadedTaskThreshold;
     this.queryAllocationOption = queryAllocationOption;
     this.recoverySchedulerOption = recoverySchedulerOption;
+    this.recoveryUnitSize = recoveryUnitSize;
   }
 
   private Class<? extends QueryAllocationManager> getQueryAllocationImplClass() {
@@ -129,6 +137,7 @@ public final class MistMasterConfigs implements MistConfigs {
     jcb.bindNamedParameter(NewRatio.class, String.valueOf(newRatio));
     jcb.bindNamedParameter(ReservedCodeCacheSize.class, String.valueOf(reservedCodeCacheSize));
     jcb.bindNamedParameter(OverloadedTaskThreshold.class, String.valueOf(overloadedTaskThreshold));
+    jcb.bindNamedParameter(RecoveryUnitSize.class, String.valueOf(recoveryUnitSize));
 
     // Implementations.
     jcb.bindImplementation(QueryAllocationManager.class, getQueryAllocationImplClass());

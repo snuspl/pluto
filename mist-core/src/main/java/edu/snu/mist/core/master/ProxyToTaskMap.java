@@ -42,4 +42,8 @@ public final class ProxyToTaskMap {
   public Set<Map.Entry<String, MasterToTaskMessage>> entrySet() {
     return innerMap.entrySet();
   }
+
+  public MasterToTaskMessage get(final String taskHostname) {
+    return innerMap.get(taskHostname);
+  }
 }
