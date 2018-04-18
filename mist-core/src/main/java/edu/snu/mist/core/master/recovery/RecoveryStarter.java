@@ -19,11 +19,15 @@ import edu.snu.mist.core.master.TaskRequestor;
 import edu.snu.mist.formats.avro.GroupStats;
 
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The runnable class for asynchronous task reallocation & query recovery.
  */
 public final class RecoveryStarter implements Runnable {
+
+  private static final Logger LOG = Logger.getLogger(RecoveryStarter.class.getName());
 
   /**
    * The failed group map.
@@ -54,7 +58,9 @@ public final class RecoveryStarter implements Runnable {
     taskRequestor.setupTaskAndConn(1);
     // Start recovering of the queries...
     recoveryScheduler.startRecovery(failedGroupMap);
+    final long startTime = System.currentTimeMillis();
     // Blocks the thread until the recovery has been finished...
     recoveryScheduler.awaitUntilRecoveryFinish();
+    LOG.log(Level.INFO, "Recovery is finished in {0} ms...", System.currentTimeMillis() - startTime);
   }
 }
