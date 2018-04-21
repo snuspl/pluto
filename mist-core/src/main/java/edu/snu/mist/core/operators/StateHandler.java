@@ -36,7 +36,7 @@ public interface StateHandler {
    * Get the state timestamp that is the maximum state timestamp among the state timestamps
    * less than or equal to the given checkpointTimestamp.
    */
-  long getMaxAvailableTimestamp(long checkpointTimestamp);
+  Long getMaxAvailableTimestamp(long checkpointTimestamp);
 
   /**
    * Remove the states with timestamps less than or equal to the given timestamp.

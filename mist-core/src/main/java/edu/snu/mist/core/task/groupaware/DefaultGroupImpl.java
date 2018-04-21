@@ -375,13 +375,18 @@ final class DefaultGroupImpl implements Group {
     for (final ConfigVertex cv : configDag.getVertices()) {
       final ExecutionVertex ev = configExecutionVertexMap.get(cv);
       Map<String, Object> state = null;
-      long checkpointTimestamp = 0L;
+      Long checkpointTimestamp = 0L;
       if (ev.getType() == ExecutionVertex.Type.OPERATOR) {
         final Operator op = ((DefaultPhysicalOperatorImpl) ev).getOperator();
         if (op instanceof StateHandler) {
           final StateHandler stateHandler = (StateHandler) op;
           checkpointTimestamp = stateHandler.getMaxAvailableTimestamp(groupTimestamp.getValue());
-          state = StateSerializer.serializeStateMap(stateHandler.getOperatorState(checkpointTimestamp));
+          if (checkpointTimestamp == null) {
+            state = new HashMap<>();
+            checkpointTimestamp = 0L;
+          } else {
+            state = StateSerializer.serializeStateMap(stateHandler.getOperatorState(checkpointTimestamp));
+          }
         }
       }
       stateWithTimestampMap.put(cv.getId(), StateWithTimestamp.newBuilder()
