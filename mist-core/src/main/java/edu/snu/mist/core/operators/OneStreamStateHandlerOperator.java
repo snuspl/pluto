@@ -68,7 +68,7 @@ public abstract class OneStreamStateHandlerOperator extends OneStreamOperator im
   }
 
   @Override
-  public long getMaxAvailableTimestamp(final long checkpointTimestamp) {
+  public Long getMaxAvailableTimestamp(final long checkpointTimestamp) {
     if (checkpointMap.containsKey(checkpointTimestamp)) {
       return checkpointTimestamp;
     } else {
