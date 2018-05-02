@@ -72,6 +72,8 @@ public final class MistMaster implements Task {
 
   private final MasterSetupFinished masterSetupFinished;
 
+  private boolean hasMasterFailed;
+
   @Inject
   private MistMaster(
       @Parameter(DriverToMasterPort.class) final int driverToMasterPort,
@@ -85,14 +87,16 @@ public final class MistMaster implements Task {
       final TaskRequestor taskRequestor,
       final TaskStatsMap taskStatsMap,
       final ProxyToTaskMap proxyToTaskMap,
-      final MasterSetupFinished masterSetupFinished) {
+      final MasterSetupFinished masterSetupFinished,
+      @Parameter(HasMasterFailed.class) final boolean hasMasterFailed) {
     this.masterToTaskPort = masterToTaskPort;
     this.initialTaskNum = initialTaskNum;
     this.taskRequestor = taskRequestor;
     this.taskStatsMap = taskStatsMap;
     this.proxyToTaskMap = proxyToTaskMap;
     this.masterSetupFinished = masterSetupFinished;
-    // Initialize countdown latch
+    this.hasMasterFailed = hasMasterFailed;
+        // Initialize countdown latch
     this.countDownLatch = new CountDownLatch(1);
     // Launch servers for RPC
     this.driverToMasterServer = AvroUtils.createAvroServer(DriverToMasterMessage.class, driverToMasterMessage,
@@ -107,20 +111,25 @@ public final class MistMaster implements Task {
   public byte[] call(final byte[] memento) throws Exception {
     LOG.log(Level.INFO, "MistMaster is started");
     // Request the tasks to be allocated firstly.
-    final Collection<AllocatedTask> allocatedTasks = taskRequestor.setupTaskAndConn(initialTaskNum);
-    if (allocatedTasks == null) {
-      LOG.log(Level.SEVERE, "Mist tasks are not successfully submitted!");
-      throw new IllegalStateException("Internal Error : No tasks are allocated!");
+    if (!hasMasterFailed) {
+      final Collection<AllocatedTask> allocatedTasks = taskRequestor.setupTaskAndConn(initialTaskNum);
+      if (allocatedTasks == null) {
+        LOG.log(Level.SEVERE, "Mist tasks are not successfully submitted!");
+        throw new IllegalStateException("Internal Error : No tasks are allocated!");
+      } else {
+        // MistMaster is successfully running now...
+        masterSetupFinished.setFinished();
+      }
     } else {
-      // MistMaster is successfully running now...
+      taskRequestor.setupConn(initialTaskNum);
       masterSetupFinished.setFinished();
-      this.countDownLatch.await();
-      // MistMaster has been terminated
-      this.driverToMasterServer.close();
-      this.clientToMasterServer.close();
-      this.taskToMasterServer.close();
-      return null;
     }
+    this.countDownLatch.await();
+    // MistMaster has been terminated
+    this.driverToMasterServer.close();
+    this.clientToMasterServer.close();
+    this.taskToMasterServer.close();
+    return null;
   }
 
   public final class MasterCloseHandler implements EventHandler<CloseEvent> {

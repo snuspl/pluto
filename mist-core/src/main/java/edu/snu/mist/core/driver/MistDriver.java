@@ -50,6 +50,8 @@ import org.apache.reef.wake.time.event.StopTime;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -79,7 +81,7 @@ public final class MistDriver {
   /**
    * The ID of ActiveContexts for MistMaster.
    */
-  private static final String MIST_MASTER_ID = "MIST_MASTER";
+  private static final String MIST_MASTER_ID_PREFIX = "MIST_MASTER_";
 
   /**
    * The ID prefix of ActiveContexts for MistTask.
@@ -122,6 +124,11 @@ public final class MistDriver {
   private final AtomicInteger taskIndex;
 
   /**
+   * Index of MistMasters.
+   */
+  private final AtomicInteger masterIndex;
+
+  /**
    * A name server.
    */
   private final NameServer nameServer;
@@ -155,6 +162,16 @@ public final class MistDriver {
    * Indicates whether the master task is running or not.
    */
   private final AtomicBoolean isMasterRunning;
+
+  /**
+   * Indicates whether the master has failed before or not.
+   */
+  private final AtomicBoolean hasMasterFailed;
+
+  /**
+   * The list of running task host names.
+   */
+  private final List<RunningTask> runningTaskList;
 
   /**
    * The Avro RPC proxy for master.
@@ -198,14 +215,17 @@ public final class MistDriver {
     this.masterMemSize = masterMemsize;
     this.driverToMasterPort = driverToMasterPort;
     this.taskIndex = new AtomicInteger(0);
+    this.masterIndex = new AtomicInteger(0);
     this.mistCommonConfigs = mistCommonConfigs;
     this.mistTaskConfigs = mistTaskConfigs;
     this.mistMasterConfigs = mistMasterConfigs;
     this.isMasterRunning = new AtomicBoolean(false);
+    this.hasMasterFailed = new AtomicBoolean(false);
     this.proxyToMaster = null;
     this.mistTaskSubmitInfo = mistTaskSubmitInfo;
     this.masterToDriverServer = AvroUtils.createAvroServer(MasterToDriverMessage.class,
         masterToDriverMessage, new InetSocketAddress(masterToDriverPort));
+    this.runningTaskList = new CopyOnWriteArrayList<>();
   }
 
   public final class StartHandler implements EventHandler<StartTime> {
@@ -229,7 +249,7 @@ public final class MistDriver {
         // This is for MistMaster.
         LOG.log(Level.INFO, "A MistMaster allocated to {0}", descriptor.getNodeDescriptor().getName());
         allocatedEvaluator.submitContext(ContextConfiguration.CONF
-            .set(ContextConfiguration.IDENTIFIER, MIST_MASTER_ID)
+            .set(ContextConfiguration.IDENTIFIER, MIST_MASTER_ID_PREFIX + masterIndex.getAndIncrement())
             .build());
       } else {
         // This is for MistTask.
@@ -256,7 +276,7 @@ public final class MistDriver {
           .set(NameResolverConfiguration.NAME_SERVICE_PORT, nameServer.getPort())
           .set(NameResolverConfiguration.NAME_SERVER_HOSTNAME, localAddressProvider.getLocalAddress())
           .build();
-      if (taskId.equals(MIST_MASTER_ID)) {
+      if (taskId.startsWith(MIST_MASTER_ID_PREFIX)) {
         // This is for master.
         masterHostname = activeContext.getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress()
             .getHostName();
@@ -268,10 +288,14 @@ public final class MistDriver {
         final JavaConfigurationBuilder jcb = tang.newConfigurationBuilder();
         jcb.bindNamedParameter(DriverHostname.class, localAddressProvider.getLocalAddress());
         final Configuration driverHostnameConf = jcb.build();
+        final JavaConfigurationBuilder jcb2 = tang.newConfigurationBuilder();
+        jcb2.bindNamedParameter(HasMasterFailed.class, String.valueOf(hasMasterFailed.get()));
+        final Configuration additionalMasterConf = jcb2.build();
         activeContext.submitTask(
             Configurations.merge(
                 basicMasterConf,
                 driverHostnameConf,
+                additionalMasterConf,
                 mistCommonConfigs.getConfiguration(),
                 mistTaskConfigs.getConfiguration(),
                 mistMasterConfigs.getConfiguration()));
@@ -305,11 +329,25 @@ public final class MistDriver {
       LOG.log(Level.INFO, "Evaluator {0} has failed!", failedEvaluator.getId());
       final InetSocketAddress failedNodeInetSocketAddress = failedEvaluator.getFailedContextList().get(0)
           .getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress();
-      try {
-        proxyToMaster.notifyFailedTask(failedNodeInetSocketAddress.getHostName());
-      } catch (final AvroRemoteException e) {
-        LOG.log(Level.SEVERE, "Cannot connect to MistMaster for notifying failure! " + e.toString());
-        throw new IllegalStateException("Cannot connect to MistMaster while failure recovery");
+      if (failedEvaluator.getFailedContextList().get(0).getId().startsWith(MIST_MASTER_ID_PREFIX)) {
+        // Master has failed. We need to recovery master.
+        isMasterRunning.set(false);
+        hasMasterFailed.set(true);
+        // Submit master evaluator request firstly.
+        requestor.submit(EvaluatorRequest.newBuilder()
+            .setNumber(1)
+            .setNumberOfCores(masterCpuCores)
+            .setMemory(masterMemSize)
+            .build());
+        LOG.log(Level.INFO, "Requested Evaluator.");
+      } else {
+        // Worker has failed. we need to recovery worker.
+        try {
+          proxyToMaster.notifyFailedTask(failedNodeInetSocketAddress.getHostName());
+        } catch (final AvroRemoteException e) {
+          LOG.log(Level.SEVERE, "Cannot connect to MistMaster for notifying failure! " + e.toString());
+          throw new IllegalStateException("Cannot connect to MistMaster while failure recovery");
+        }
       }
     }
   }
@@ -324,11 +362,24 @@ public final class MistDriver {
           final NettyTransceiver driverToMaster = new NettyTransceiver(new InetSocketAddress(masterHostname,
               driverToMasterPort));
           proxyToMaster = SpecificRequestor.getClient(DriverToMasterMessage.class, driverToMaster);
+          // If master has failed before, notify task lists to master.
+          /**
+          if (hasMasterFailed.get()) {
+            for (final RunningTask taskRunning: runningTaskList) {
+              final String taskHostname = taskRunning.getActiveContext().getEvaluatorDescriptor().getNodeDescriptor()
+                  .getInetSocketAddress().getHostName();
+              proxyToMaster.notifyTaskAllocated(AllocatedTask.newBuilder()
+                  .setTaskId(taskRunning.getId())
+                  .setTaskHostname(taskHostname)
+                  .build());
+            }
+          }**/
         } catch (final IOException e) {
           LOG.log(Level.SEVERE, "IOException occurred during setting up driver-to-master avro connection!");
           throw new RuntimeException("driver-to-master avro connection failed");
         }
       } else {
+        runningTaskList.add(runningTask);
         // The running task is MistTask.
         final String taskHostname = runningTask.getActiveContext().getEvaluatorDescriptor().getNodeDescriptor()
             .getInetSocketAddress().getHostName();

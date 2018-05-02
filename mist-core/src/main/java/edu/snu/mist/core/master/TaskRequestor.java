@@ -34,6 +34,14 @@ public interface TaskRequestor {
   Collection<AllocatedTask> setupTaskAndConn(int taskNum);
 
   /**
+   * Setup the connection to existing tasks. Used in master recovery process
+   * Note: This method is blocking.
+   * @param taskNum the number of all running tasks.
+   * @return The allocated tasks info
+   */
+  Collection<AllocatedTask> setupConn(int taskNum);
+
+  /**
    * Notify the allocated task evaluator.
    * @param allocatedTask
    */

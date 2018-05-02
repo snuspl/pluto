@@ -188,6 +188,36 @@ public final class DefaultTaskRequestorImpl implements TaskRequestor {
   }
 
   @Override
+  public synchronized Collection<AllocatedTask> setupConn(final int taskNum) {
+    countDownLatch = new CountDownLatch(taskNum);
+    try {
+      // Waiting for all the requested tasks are running.
+      countDownLatch.await();
+    } catch (final InterruptedException e) {
+      e.printStackTrace();
+      return null;
+    }
+    final List<AllocatedTask> allocatedTaskList = new ArrayList<>();
+    IntStream.range(0, taskNum)
+        .forEach(i -> allocatedTaskList.add(allocatedTaskQueue.remove()));
+    assert allocatedTaskQueue.isEmpty();
+
+    for (final AllocatedTask task : allocatedTaskList) {
+      final String taskHostname = task.getTaskHostname();
+      taskStatsMap.addTask(taskHostname);
+      try {
+        final MasterToTaskMessage proxyToTask = AvroUtils.createAvroProxy(MasterToTaskMessage.class,
+            new InetSocketAddress(taskHostname, masterToTaskPort));
+        proxyToTaskMap.addNewProxy(taskHostname, proxyToTask);
+      } catch (final IOException e) {
+        e.printStackTrace();
+        return null;
+      }
+    }
+    return allocatedTaskList;
+  }
+
+  @Override
   public void notifyAllocatedTask(final AllocatedTask allocatedTask) {
     allocatedTaskQueue.add(allocatedTask);
     countDownLatch.countDown();
