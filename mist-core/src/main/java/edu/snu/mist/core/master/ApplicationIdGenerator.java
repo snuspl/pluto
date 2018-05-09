@@ -13,14 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.parameters;
+package edu.snu.mist.core.master;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * The index of the master.
+ * The interface for application id generator class.
  */
-@NamedParameter(doc = "The index of the master.", default_value = "0")
-public class MasterIndex implements Name<Integer> {
+@DefaultImplementation(DefaultApplicationIdGenerator.class)
+public interface ApplicationIdGenerator {
+
+  /**
+   * Generate a new unique application id.
+   * @return
+   */
+  String generate();
 }

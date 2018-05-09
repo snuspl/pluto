@@ -17,10 +17,7 @@ package edu.snu.mist.core.master;
 
 import edu.snu.mist.core.parameters.*;
 import edu.snu.mist.core.rpc.AvroUtils;
-import edu.snu.mist.formats.avro.AllocatedTask;
-import edu.snu.mist.formats.avro.ClientToMasterMessage;
-import edu.snu.mist.formats.avro.DriverToMasterMessage;
-import edu.snu.mist.formats.avro.TaskToMasterMessage;
+import edu.snu.mist.formats.avro.*;
 import org.apache.avro.ipc.Server;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
@@ -30,6 +27,7 @@ import org.apache.reef.task.events.CloseEvent;
 import org.apache.reef.wake.EventHandler;
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
@@ -68,11 +66,18 @@ public final class MistMaster implements Task {
 
   private final TaskStatsMap taskStatsMap;
 
+  private final MasterToDriverMessage proxyToDriver;
+
   private final ProxyToTaskMap proxyToTaskMap;
 
   private final MasterSetupFinished masterSetupFinished;
 
   private boolean hasMasterFailed;
+
+  /**
+   * The shared application code manager.
+   */
+  private final ApplicationCodeManager applicationCodeManager;
 
   @Inject
   private MistMaster(
@@ -86,16 +91,22 @@ public final class MistMaster implements Task {
       final TaskToMasterMessage taskToMasterMessage,
       final TaskRequestor taskRequestor,
       final TaskStatsMap taskStatsMap,
+      @Parameter(DriverHostname.class) final String driverHostname,
+      @Parameter(MasterToDriverPort.class) final int masterToDriverPort,
       final ProxyToTaskMap proxyToTaskMap,
       final MasterSetupFinished masterSetupFinished,
-      @Parameter(HasMasterFailed.class) final boolean hasMasterFailed) {
+      @Parameter(HasMasterFailed.class) final boolean hasMasterFailed,
+      final ApplicationCodeManager applicationCodeManager) throws IOException {
     this.masterToTaskPort = masterToTaskPort;
     this.initialTaskNum = initialTaskNum;
     this.taskRequestor = taskRequestor;
     this.taskStatsMap = taskStatsMap;
+    this.proxyToDriver = AvroUtils.createAvroProxy(MasterToDriverMessage.class,
+        new InetSocketAddress(driverHostname, masterToDriverPort));
     this.proxyToTaskMap = proxyToTaskMap;
     this.masterSetupFinished = masterSetupFinished;
     this.hasMasterFailed = hasMasterFailed;
+    this.applicationCodeManager = applicationCodeManager;
         // Initialize countdown latch
     this.countDownLatch = new CountDownLatch(1);
     // Launch servers for RPC
@@ -121,6 +132,7 @@ public final class MistMaster implements Task {
         masterSetupFinished.setFinished();
       }
     } else {
+      applicationCodeManager.recoverAppJarInfo(proxyToDriver.retrieveJarInfo());
       taskRequestor.setupConn(initialTaskNum);
       masterSetupFinished.setFinished();
     }

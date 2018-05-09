@@ -63,6 +63,33 @@
         }
       ],
       "response": "null"
+    },
+    "saveJarInfo": {
+      "request": [
+        {
+          "name": "appId",
+          "type": "string"
+        },
+        {
+          "name": "jarPaths",
+          "type":
+          {
+            "type": "array",
+            "items": "string"
+          }
+        }
+      ],
+      "response": "boolean"
+    },
+    "retrieveJarInfo": {
+      "request": [],
+      "response": {
+        "type": "map",
+        "values": {
+          "type": "array",
+          "items": "string"
+        }
+      }
     }
   }
 }

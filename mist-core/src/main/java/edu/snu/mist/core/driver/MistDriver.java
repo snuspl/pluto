@@ -290,6 +290,7 @@ public final class MistDriver {
         final Configuration driverHostnameConf = jcb.build();
         final JavaConfigurationBuilder jcb2 = tang.newConfigurationBuilder();
         jcb2.bindNamedParameter(HasMasterFailed.class, String.valueOf(hasMasterFailed.get()));
+        jcb2.bindNamedParameter(MasterIndex.class, String.valueOf(masterIndex.get() - 1));
         final Configuration additionalMasterConf = jcb2.build();
         activeContext.submitTask(
             Configurations.merge(
@@ -363,7 +364,6 @@ public final class MistDriver {
               driverToMasterPort));
           proxyToMaster = SpecificRequestor.getClient(DriverToMasterMessage.class, driverToMaster);
           // If master has failed before, notify task lists to master.
-          /**
           if (hasMasterFailed.get()) {
             for (final RunningTask taskRunning: runningTaskList) {
               final String taskHostname = taskRunning.getActiveContext().getEvaluatorDescriptor().getNodeDescriptor()
@@ -373,7 +373,7 @@ public final class MistDriver {
                   .setTaskHostname(taskHostname)
                   .build());
             }
-          }**/
+          }
         } catch (final IOException e) {
           LOG.log(Level.SEVERE, "IOException occurred during setting up driver-to-master avro connection!");
           throw new RuntimeException("driver-to-master avro connection failed");
