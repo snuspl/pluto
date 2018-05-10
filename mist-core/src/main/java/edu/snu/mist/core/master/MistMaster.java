@@ -58,17 +58,9 @@ public final class MistMaster implements Task {
 
   private final Server taskToMasterServer;
 
-  private final int masterToTaskPort;
-
   private final int initialTaskNum;
 
   private final TaskRequestor taskRequestor;
-
-  private final TaskStatsMap taskStatsMap;
-
-  private final MasterToDriverMessage proxyToDriver;
-
-  private final ProxyToTaskMap proxyToTaskMap;
 
   private final MasterSetupFinished masterSetupFinished;
 
@@ -84,26 +76,16 @@ public final class MistMaster implements Task {
       @Parameter(DriverToMasterPort.class) final int driverToMasterPort,
       @Parameter(ClientToMasterPort.class) final int clientToMasterPort,
       @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
-      @Parameter(MasterToTaskPort.class) final int masterToTaskPort,
       @Parameter(NumTasks.class) final int initialTaskNum,
       final DriverToMasterMessage driverToMasterMessage,
       final ClientToMasterMessage clientToMasterMessage,
       final TaskToMasterMessage taskToMasterMessage,
       final TaskRequestor taskRequestor,
-      final TaskStatsMap taskStatsMap,
-      @Parameter(DriverHostname.class) final String driverHostname,
-      @Parameter(MasterToDriverPort.class) final int masterToDriverPort,
-      final ProxyToTaskMap proxyToTaskMap,
       final MasterSetupFinished masterSetupFinished,
-      @Parameter(HasMasterFailed.class) final boolean hasMasterFailed,
+      @Parameter(IsMasterFailed.class) final boolean hasMasterFailed,
       final ApplicationCodeManager applicationCodeManager) throws IOException {
-    this.masterToTaskPort = masterToTaskPort;
     this.initialTaskNum = initialTaskNum;
     this.taskRequestor = taskRequestor;
-    this.taskStatsMap = taskStatsMap;
-    this.proxyToDriver = AvroUtils.createAvroProxy(MasterToDriverMessage.class,
-        new InetSocketAddress(driverHostname, masterToDriverPort));
-    this.proxyToTaskMap = proxyToTaskMap;
     this.masterSetupFinished = masterSetupFinished;
     this.hasMasterFailed = hasMasterFailed;
     this.applicationCodeManager = applicationCodeManager;
@@ -132,8 +114,8 @@ public final class MistMaster implements Task {
         masterSetupFinished.setFinished();
       }
     } else {
-      applicationCodeManager.recoverAppJarInfo(proxyToDriver.retrieveJarInfo());
-      taskRequestor.setupConn(initialTaskNum);
+      applicationCodeManager.recoverAppJarInfo();
+      taskRequestor.recoverTaskConn();
       masterSetupFinished.setFinished();
     }
     this.countDownLatch.await();

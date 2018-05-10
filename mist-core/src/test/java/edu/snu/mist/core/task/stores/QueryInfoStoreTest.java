@@ -20,23 +20,33 @@ import edu.snu.mist.client.MISTQuery;
 import edu.snu.mist.client.MISTQueryBuilder;
 import edu.snu.mist.common.types.Tuple2;
 import edu.snu.mist.core.master.ApplicationCodeManager;
+import edu.snu.mist.core.parameters.DriverHostname;
+import edu.snu.mist.core.parameters.MasterToDriverPort;
 import edu.snu.mist.core.parameters.SharedStorePath;
+import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.groupaware.ApplicationInfo;
 import edu.snu.mist.core.task.groupaware.ApplicationMap;
+import edu.snu.mist.core.task.utils.MockMasterToDriverMessage;
 import edu.snu.mist.core.utils.TestParameters;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.AvroVertex;
 import edu.snu.mist.formats.avro.Edge;
+import edu.snu.mist.formats.avro.MasterToDriverMessage;
+import org.apache.avro.ipc.Server;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.Injector;
+import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
@@ -47,6 +57,24 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class QueryInfoStoreTest {
+
+  private static final String DRIVER_HOSTNAME = "127.0.0.1";
+
+  private static final int DRIVER_PORT = 33333;
+
+  private Server mockMasterToDriverServer;
+
+  @Before
+  public void startUp() {
+    mockMasterToDriverServer = AvroUtils.createAvroServer(MasterToDriverMessage.class,
+        new MockMasterToDriverMessage(), new InetSocketAddress(DRIVER_HOSTNAME, DRIVER_PORT));
+  }
+
+  @After
+  public void tearOff() {
+    mockMasterToDriverServer.close();
+  }
+
   /**
    * Tests whether the PlanStore correctly saves, deletes and loads the operator chain dag.
    * @throws InjectionException
@@ -71,7 +99,10 @@ public class QueryInfoStoreTest {
     final ByteBuffer byteBuffer1 = ByteBuffer.wrap(new byte[]{0, 1, 0, 1, 1, 1});
     jarFiles.add(byteBuffer1);
 
-    final Injector injector = Tang.Factory.getTang().newInjector();
+    final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+    jcb.bindNamedParameter(DriverHostname.class, DRIVER_HOSTNAME);
+    jcb.bindNamedParameter(MasterToDriverPort.class, String.valueOf(DRIVER_PORT));
+    final Injector injector = Tang.Factory.getTang().newInjector(jcb.build());
     final QueryInfoStore store = injector.getInstance(QueryInfoStore.class);
     final ApplicationCodeManager applicationCodeManager = injector.getInstance(ApplicationCodeManager.class);
     final ApplicationMap applicationMap = injector.getInstance(ApplicationMap.class);

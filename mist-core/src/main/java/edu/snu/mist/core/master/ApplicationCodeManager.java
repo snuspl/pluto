@@ -20,7 +20,6 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The interface for classes which manage submitted application codes.
@@ -42,8 +41,7 @@ public interface ApplicationCodeManager {
   List<String> getJarPaths(String appId);
 
   /**
-   * Recover the app jar information.
-   * @param appJarMap
+   * Recover the app jar information from MistDriver.
    */
-  void recoverAppJarInfo(final Map<String, List<String>> appJarMap);
+  void recoverAppJarInfo();
 }

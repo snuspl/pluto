@@ -37,9 +37,7 @@ public final class DefaultApplicationIdGenerator implements ApplicationIdGenerat
   private int masterIndex;
 
   @Inject
-  private DefaultApplicationIdGenerator(
-      @Parameter(MasterIndex.class) final int masterIndex
-  ) {
+  private DefaultApplicationIdGenerator(@Parameter(MasterIndex.class) final int masterIndex) {
     this.appIndex = new AtomicInteger(0);
     this.masterIndex = masterIndex;
   }

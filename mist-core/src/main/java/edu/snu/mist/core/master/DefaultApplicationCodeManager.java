@@ -184,9 +184,14 @@ public final class DefaultApplicationCodeManager implements ApplicationCodeManag
   }
 
   @Override
-  public void recoverAppJarInfo(final Map<String, List<String>> storedAppJarMap) {
-    for (final Map.Entry<String, List<String>> entry : storedAppJarMap.entrySet()) {
-      appJarMap.put(entry.getKey(), entry.getValue());
+  public void recoverAppJarInfo() {
+    try {
+      final Map<String, List<String>> storedAppJarMap = proxyToDriver.retrieveJarInfo();
+      for (final Map.Entry<String, List<String>> entry : storedAppJarMap.entrySet()) {
+        appJarMap.put(entry.getKey(), entry.getValue());
+      }
+    } catch (final AvroRemoteException e) {
+      e.printStackTrace();
     }
   }
 

@@ -90,6 +90,13 @@
           "items": "string"
         }
       }
+    },
+    "retrieveRunningTaskInfo": {
+      "request": [],
+      "response": {
+        "type": "array",
+        "items": "string"
+      }
     }
   }
 }

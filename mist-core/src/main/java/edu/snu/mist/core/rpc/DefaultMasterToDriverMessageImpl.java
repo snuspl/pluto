@@ -16,6 +16,7 @@
 package edu.snu.mist.core.rpc;
 
 import edu.snu.mist.core.driver.ApplicationJarInfo;
+import edu.snu.mist.core.driver.MistRunningTaskInfo;
 import edu.snu.mist.core.driver.MistTaskSubmitInfo;
 import edu.snu.mist.formats.avro.MasterToDriverMessage;
 import edu.snu.mist.formats.avro.TaskRequest;
@@ -47,6 +48,11 @@ public final class DefaultMasterToDriverMessageImpl implements MasterToDriverMes
   private final MistTaskSubmitInfo taskSubmitInfoStore;
 
   /**
+   * The shared running task info for recovery.
+   */
+  private final MistRunningTaskInfo runningTaskInfo;
+
+  /**
    * The serializer for Tang configuration.
    */
   private final ConfigurationSerializer configurationSerializer;
@@ -59,9 +65,11 @@ public final class DefaultMasterToDriverMessageImpl implements MasterToDriverMes
   @Inject
   private DefaultMasterToDriverMessageImpl(
       final MistTaskSubmitInfo taskSubmitInfoStore,
+      final MistRunningTaskInfo runningTaskInfo,
       final EvaluatorRequestor requestor,
       final ApplicationJarInfo applicationJarInfo) {
     this.taskSubmitInfoStore = taskSubmitInfoStore;
+    this.runningTaskInfo = runningTaskInfo;
     this.requestor = requestor;
     this.configurationSerializer = new AvroConfigurationSerializer();
     this.applicationJarInfo = applicationJarInfo;
@@ -102,5 +110,10 @@ public final class DefaultMasterToDriverMessageImpl implements MasterToDriverMes
       result.put(entry.getKey(), entry.getValue());
     }
     return result;
+  }
+
+  @Override
+  public List<String> retrieveRunningTaskInfo() throws AvroRemoteException {
+    return runningTaskInfo.retrieveRunningTaskList();
   }
 }
