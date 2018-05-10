@@ -15,33 +15,17 @@
  */
 package edu.snu.mist.core.master;
 
-import edu.snu.mist.formats.avro.JarUploadResult;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
-import java.nio.ByteBuffer;
-import java.util.List;
-
 /**
- * The interface for classes which manage submitted application codes.
+ * The interface for application id generator class.
  */
-@DefaultImplementation(DefaultApplicationCodeManager.class)
-public interface ApplicationCodeManager {
+@DefaultImplementation(DefaultApplicationIdGenerator.class)
+public interface ApplicationIdGenerator {
 
   /**
-   * Registers the new query code with a given Jar file.
-   * @return The path for the saved
+   * Generate a new unique application id.
+   * @return
    */
-  JarUploadResult registerNewAppCode(List<ByteBuffer> jarFiles);
-
-  /**
-   * Returns the jar paths for a given application id.
-   * @param appId
-   * @return the list of jar paths
-   */
-  List<String> getJarPaths(String appId);
-
-  /**
-   * Recover the app jar information from MistDriver.
-   */
-  void recoverAppJarInfo();
+  String generate();
 }

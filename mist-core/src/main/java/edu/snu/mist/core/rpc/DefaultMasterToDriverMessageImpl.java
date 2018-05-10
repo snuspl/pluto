@@ -15,6 +15,8 @@
  */
 package edu.snu.mist.core.rpc;
 
+import edu.snu.mist.core.driver.ApplicationJarInfo;
+import edu.snu.mist.core.driver.MistRunningTaskInfo;
 import edu.snu.mist.core.driver.MistTaskSubmitInfo;
 import edu.snu.mist.formats.avro.MasterToDriverMessage;
 import edu.snu.mist.formats.avro.TaskRequest;
@@ -26,6 +28,9 @@ import org.apache.reef.tang.formats.ConfigurationSerializer;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The default master to driver message server implementation.
@@ -43,17 +48,31 @@ public final class DefaultMasterToDriverMessageImpl implements MasterToDriverMes
   private final MistTaskSubmitInfo taskSubmitInfoStore;
 
   /**
+   * The shared running task info for recovery.
+   */
+  private final MistRunningTaskInfo runningTaskInfo;
+
+  /**
    * The serializer for Tang configuration.
    */
   private final ConfigurationSerializer configurationSerializer;
 
+  /**
+   * The shared store for application jar info.
+   */
+  private final ApplicationJarInfo applicationJarInfo;
+
   @Inject
   private DefaultMasterToDriverMessageImpl(
       final MistTaskSubmitInfo taskSubmitInfoStore,
-      final EvaluatorRequestor requestor) {
+      final MistRunningTaskInfo runningTaskInfo,
+      final EvaluatorRequestor requestor,
+      final ApplicationJarInfo applicationJarInfo) {
     this.taskSubmitInfoStore = taskSubmitInfoStore;
+    this.runningTaskInfo = runningTaskInfo;
     this.requestor = requestor;
     this.configurationSerializer = new AvroConfigurationSerializer();
+    this.applicationJarInfo = applicationJarInfo;
   }
 
   @Override
@@ -76,5 +95,25 @@ public final class DefaultMasterToDriverMessageImpl implements MasterToDriverMes
       throw new AvroRemoteException("Cannot deserialize the task configuration!");
     }
     return null;
+  }
+
+  @Override
+  public boolean saveJarInfo(final String appId,
+                             final List<String> jarPaths) throws AvroRemoteException {
+    return this.applicationJarInfo.put(appId, jarPaths);
+  }
+
+  @Override
+  public Map<String, List<String>> retrieveJarInfo() throws AvroRemoteException {
+    final Map<String, List<String>> result = new HashMap<>();
+    for (final Map.Entry<String, List<String>> entry : this.applicationJarInfo.entrySet()) {
+      result.put(entry.getKey(), entry.getValue());
+    }
+    return result;
+  }
+
+  @Override
+  public List<String> retrieveRunningTaskInfo() throws AvroRemoteException {
+    return runningTaskInfo.retrieveRunningTaskList();
   }
 }

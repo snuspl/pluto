@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.master;
 
+import edu.snu.mist.core.parameters.MasterIndex;
 import edu.snu.mist.core.parameters.QueryIdPrefix;
 import edu.snu.mist.formats.avro.AvroDag;
 import org.apache.reef.tang.Injector;
@@ -35,11 +36,12 @@ public final class QueryIdGeneratorTest {
     final Injector injector = Tang.Factory.getTang().newInjector();
     final QueryIdGenerator queryIdGenerator = injector.getInstance(QueryIdGenerator.class);
     final String prefix = injector.getNamedInstance(QueryIdPrefix.class);
+    final int masterIndex = injector.getNamedInstance(MasterIndex.class);
     final AvroDag avroDag = new AvroDag();
     long submittedQueryNum = 0;
     while (submittedQueryNum < 10000) {
       final String queryId = queryIdGenerator.generate();
-      Assert.assertEquals(prefix + submittedQueryNum, queryId);
+      Assert.assertEquals(prefix + masterIndex + "-" + submittedQueryNum, queryId);
       submittedQueryNum++;
     }
   }

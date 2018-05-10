@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.master;
 
+import edu.snu.mist.core.parameters.MasterIndex;
 import edu.snu.mist.core.parameters.QueryIdPrefix;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -37,16 +38,25 @@ final class DefaultQueryIdGeneratorImpl implements QueryIdGenerator {
    */
   private final String prefix;
 
+  /**
+   * The index of this master.
+   */
+  private final Integer masterIndex;
+
   @Inject
-  private DefaultQueryIdGeneratorImpl(@Parameter(QueryIdPrefix.class) final String prefix) {
+  private DefaultQueryIdGeneratorImpl(@Parameter(QueryIdPrefix.class) final String prefix,
+                                      @Parameter(MasterIndex.class) final int masterIndex) {
     this.prefix = prefix;
     this.numSubmittedQueries = new AtomicLong();
+    this.masterIndex = masterIndex;
   }
 
   @Override
   public String generate() {
     final StringBuilder sb = new StringBuilder();
     sb.append(prefix);
+    sb.append(masterIndex);
+    sb.append("-");
     sb.append(numSubmittedQueries.getAndIncrement());
     return sb.toString();
   }

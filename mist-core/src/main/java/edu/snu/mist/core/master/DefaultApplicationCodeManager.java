@@ -15,14 +15,20 @@
  */
 package edu.snu.mist.core.master;
 
+import edu.snu.mist.core.parameters.DriverHostname;
+import edu.snu.mist.core.parameters.MasterToDriverPort;
 import edu.snu.mist.core.parameters.SharedStorePath;
+import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.formats.avro.JarUploadResult;
+import edu.snu.mist.formats.avro.MasterToDriverMessage;
+import org.apache.avro.AvroRemoteException;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
@@ -30,9 +36,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,11 +55,6 @@ public final class DefaultApplicationCodeManager implements ApplicationCodeManag
   private final ConcurrentMap<String, List<String>> appJarMap;
 
   /**
-   * The atomic integer for generating application identifier.
-   */
-  private final AtomicInteger appIdentifierNum;
-
-  /**
    * The path to the directory where the application JAR files would be stored.
    */
   private final String jarStoringPath;
@@ -63,13 +64,27 @@ public final class DefaultApplicationCodeManager implements ApplicationCodeManag
    */
   private static final String JAR_PREFIX = "submitted";
 
+  /**
+   * The application id generator.
+   */
+  private final ApplicationIdGenerator applicationIdGenerator;
+
+  /**
+   * The proxy to driver.
+   */
+  private final MasterToDriverMessage proxyToDriver;
+
   @Inject
   private DefaultApplicationCodeManager(
-      @Parameter(SharedStorePath.class) final String jarStoringPath
-  ) {
+      @Parameter(SharedStorePath.class) final String jarStoringPath,
+      final ApplicationIdGenerator applicationIdGenerator,
+      @Parameter(DriverHostname.class) final String driverHostname,
+      @Parameter(MasterToDriverPort.class) final int masterToDriverPort) throws IOException {
     this.appJarMap = new ConcurrentHashMap<>();
-    this.appIdentifierNum = new AtomicInteger(0);
+    this.applicationIdGenerator = applicationIdGenerator;
     this.jarStoringPath = jarStoringPath;
+    this.proxyToDriver = AvroUtils.createAvroProxy(MasterToDriverMessage.class,
+        new InetSocketAddress(driverHostname, masterToDriverPort));
 
     // Create a folder that stores the dags and jar files
     final File folder = new File(jarStoringPath);
@@ -125,9 +140,25 @@ public final class DefaultApplicationCodeManager implements ApplicationCodeManag
   public JarUploadResult registerNewAppCode(final List<ByteBuffer> jarFiles) {
     try {
       // TODO: Compare code hash values to prevent duplicate app registration.
-      final String appId = String.valueOf(appIdentifierNum.getAndIncrement());
+      final String appId = applicationIdGenerator.generate();
       final List<String> jarPaths = saveJar(jarFiles, appId);
-      // App ID is always unique, so putIfAbsent() isn't necessary.
+      // Save the information to the driver firstly for recovery.
+      // To evade deadlock detection, this is done on a separate thread.
+      final Thread thread = new Thread(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            proxyToDriver.saveJarInfo(appId, jarPaths);
+          } catch (final AvroRemoteException e) {
+            e.printStackTrace();
+          }
+        }
+      });
+      thread.start();
+      // Wait until the thread is finished.
+      thread.join();
+      // App ID is always unique, so putIfAbsent() isn't necessary
+      // Save the newly added app code to the mistdriver
       appJarMap.put(appId, jarPaths);
       return JarUploadResult.newBuilder()
           .setIdentifier(appId)
@@ -135,12 +166,12 @@ public final class DefaultApplicationCodeManager implements ApplicationCodeManag
           .setMsg("")
           .setJarPaths(jarPaths)
           .build();
-    } catch (final IOException e) {
-      LOG.log(Level.SEVERE, "I/O exception occurred during saving jar files. " + e.toString());
+    } catch (final IOException | InterruptedException e) {
+      LOG.log(Level.SEVERE, "An exception occurred during saving jar files. " + e.toString());
       return JarUploadResult.newBuilder()
           .setIdentifier("FAILED")
           .setIsSuccess(false)
-          .setMsg("I/O Exception occured while saving jar files")
+          .setMsg("An Exception occured while saving jar files")
           .setJarPaths(new ArrayList<>())
           .build();
     }
@@ -149,6 +180,18 @@ public final class DefaultApplicationCodeManager implements ApplicationCodeManag
   @Override
   public List<String> getJarPaths(final String appId) {
     return appJarMap.get(appId);
+  }
+
+  @Override
+  public void recoverAppJarInfo() {
+    try {
+      final Map<String, List<String>> storedAppJarMap = proxyToDriver.retrieveJarInfo();
+      for (final Map.Entry<String, List<String>> entry : storedAppJarMap.entrySet()) {
+        appJarMap.put(entry.getKey(), entry.getValue());
+      }
+    } catch (final AvroRemoteException e) {
+      e.printStackTrace();
+    }
   }
 
 }

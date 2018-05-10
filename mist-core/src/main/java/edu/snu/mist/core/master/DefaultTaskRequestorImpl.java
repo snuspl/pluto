@@ -66,7 +66,7 @@ public final class DefaultTaskRequestorImpl implements TaskRequestor {
   /**
    * The avro proxy to MistDriver.
    */
-  private final MasterToDriverMessage proxyToMaster;
+  private final MasterToDriverMessage proxyToDriver;
 
   /**
    * The number of task cores.
@@ -129,7 +129,7 @@ public final class DefaultTaskRequestorImpl implements TaskRequestor {
     this.taskStatsMap = taskStatsMap;
     this.proxyToTaskMap = proxyToTaskMap;
     this.masterToTaskPort = masterToTaskPort;
-    this.proxyToMaster = AvroUtils.createAvroProxy(MasterToDriverMessage.class,
+    this.proxyToDriver = AvroUtils.createAvroProxy(MasterToDriverMessage.class,
         new InetSocketAddress(driverHostname, masterToDriverPort));
     this.numTaskCores = numTaskCores;
     this.taskMemSize = taskMemSize;
@@ -152,7 +152,7 @@ public final class DefaultTaskRequestorImpl implements TaskRequestor {
     final String serializedTaskConfiguration = confSerializer
         .toString(Configurations.merge(commonConfigs.getConfiguration(), taskConfigs.getConfiguration()));
     try {
-      proxyToMaster.requestNewTask(builder
+      proxyToDriver.requestNewTask(builder
           .setSerializedTaskConfiguration(serializedTaskConfiguration)
           .build());
     } catch (final AvroRemoteException e) {
@@ -185,6 +185,30 @@ public final class DefaultTaskRequestorImpl implements TaskRequestor {
       }
     }
     return allocatedTaskList;
+  }
+
+  @Override
+  public synchronized void recoverTaskConn() {
+
+    final List<String> runningTaskHostnameList;
+    try {
+      runningTaskHostnameList = proxyToDriver.retrieveRunningTaskInfo();
+    } catch (final AvroRemoteException e) {
+      e.printStackTrace();
+      return;
+    }
+
+    for (final String taskHostname : runningTaskHostnameList) {
+      taskStatsMap.addTask(taskHostname);
+      try {
+        final MasterToTaskMessage proxyToTask = AvroUtils.createAvroProxy(MasterToTaskMessage.class,
+            new InetSocketAddress(taskHostname, masterToTaskPort));
+        proxyToTaskMap.addNewProxy(taskHostname, proxyToTask);
+      } catch (final IOException e) {
+        e.printStackTrace();
+        return;
+      }
+    }
   }
 
   @Override
