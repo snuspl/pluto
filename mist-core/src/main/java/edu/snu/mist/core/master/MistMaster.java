@@ -64,7 +64,7 @@ public final class MistMaster implements Task {
 
   private final MasterSetupFinished masterSetupFinished;
 
-  private boolean hasMasterFailed;
+  private boolean masterRecovery;
 
   /**
    * The shared application code manager.
@@ -82,12 +82,12 @@ public final class MistMaster implements Task {
       final TaskToMasterMessage taskToMasterMessage,
       final TaskRequestor taskRequestor,
       final MasterSetupFinished masterSetupFinished,
-      @Parameter(IsMasterFailed.class) final boolean hasMasterFailed,
+      @Parameter(MasterRecovery.class) final boolean masterRecovery,
       final ApplicationCodeManager applicationCodeManager) throws IOException {
     this.initialTaskNum = initialTaskNum;
     this.taskRequestor = taskRequestor;
     this.masterSetupFinished = masterSetupFinished;
-    this.hasMasterFailed = hasMasterFailed;
+    this.masterRecovery = masterRecovery;
     this.applicationCodeManager = applicationCodeManager;
         // Initialize countdown latch
     this.countDownLatch = new CountDownLatch(1);
@@ -104,7 +104,7 @@ public final class MistMaster implements Task {
   public byte[] call(final byte[] memento) throws Exception {
     LOG.log(Level.INFO, "MistMaster is started");
     // Request the tasks to be allocated firstly.
-    if (!hasMasterFailed) {
+    if (!masterRecovery) {
       final Collection<AllocatedTask> allocatedTasks = taskRequestor.setupTaskAndConn(initialTaskNum);
       if (allocatedTasks == null) {
         LOG.log(Level.SEVERE, "Mist tasks are not successfully submitted!");

@@ -22,5 +22,5 @@ import org.apache.reef.tang.annotations.NamedParameter;
  * Indicates whether the master has failed before or not.
  */
 @NamedParameter(doc = "Indicates whether the master is failed or not.", default_value = "false")
-public final class IsMasterFailed implements Name<Boolean> {
+public final class MasterRecovery implements Name<Boolean> {
 }

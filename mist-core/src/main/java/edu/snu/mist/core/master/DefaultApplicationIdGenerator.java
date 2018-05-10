@@ -29,12 +29,12 @@ public final class DefaultApplicationIdGenerator implements ApplicationIdGenerat
   /**
    * The atomic integer used for generating a unique app id.
    */
-  private AtomicInteger appIndex;
+  private final AtomicInteger appIndex;
 
   /**
    * The index for the mist master.
    */
-  private int masterIndex;
+  private final int masterIndex;
 
   @Inject
   private DefaultApplicationIdGenerator(@Parameter(MasterIndex.class) final int masterIndex) {

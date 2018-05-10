@@ -288,7 +288,7 @@ public final class MistDriver {
         jcb.bindNamedParameter(DriverHostname.class, localAddressProvider.getLocalAddress());
         final Configuration driverHostnameConf = jcb.build();
         final JavaConfigurationBuilder jcb2 = tang.newConfigurationBuilder();
-        jcb2.bindNamedParameter(IsMasterFailed.class, String.valueOf(isMasterFailed.get()));
+        jcb2.bindNamedParameter(MasterRecovery.class, String.valueOf(isMasterFailed.get()));
         jcb2.bindNamedParameter(MasterIndex.class, String.valueOf(masterIndex.get() - 1));
         final Configuration additionalMasterConf = jcb2.build();
         activeContext.submitTask(

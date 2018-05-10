@@ -79,8 +79,7 @@ public final class DefaultApplicationCodeManager implements ApplicationCodeManag
       @Parameter(SharedStorePath.class) final String jarStoringPath,
       final ApplicationIdGenerator applicationIdGenerator,
       @Parameter(DriverHostname.class) final String driverHostname,
-      @Parameter(MasterToDriverPort.class) final int masterToDriverPort
-  ) throws IOException {
+      @Parameter(MasterToDriverPort.class) final int masterToDriverPort) throws IOException {
     this.appJarMap = new ConcurrentHashMap<>();
     this.applicationIdGenerator = applicationIdGenerator;
     this.jarStoringPath = jarStoringPath;
