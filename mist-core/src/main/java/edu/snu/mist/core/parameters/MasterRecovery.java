@@ -19,7 +19,7 @@ import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * Indicates whether the master has failed before or not.
+ * Indicates whether the master is in recovery process or not.
  */
 @NamedParameter(doc = "Indicates whether the master is failed or not.", default_value = "false")
 public final class MasterRecovery implements Name<Boolean> {
