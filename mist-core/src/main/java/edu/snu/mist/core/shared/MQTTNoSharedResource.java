@@ -87,6 +87,11 @@ public final class MQTTNoSharedResource implements MQTTResource {
   }
 
   @Override
+  public void deleteMqttSinkClient(final String brokerURI, final String topic, final IMqttAsyncClient client) {
+    // do nothing
+  }
+
+  @Override
   public void close() throws Exception {
 
   }
