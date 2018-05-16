@@ -25,17 +25,28 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * This class publishes MQTT messages to MQTT broker.
  */
 public final class MqttSink implements Sink<MqttMessage> {
-
+  private static final Logger LOG = Logger.getLogger(MqttSink.class.getName());
   /**
    * MQTT publisher client.
    */
-  private final IMqttAsyncClient mqttClient;
+  private IMqttAsyncClient mqttClient;
 
+  /**
+   * MQTT shared resource.
+   */
+  private final MQTTResource resource;
+
+  /**
+   * MQTT broker uri.
+   */
+  private final String brokerURI;
   /**
    * MQTT topic.
    */
@@ -46,8 +57,10 @@ public final class MqttSink implements Sink<MqttMessage> {
       @Parameter(MQTTBrokerURI.class) final String brokerURI,
       @Parameter(MQTTTopic.class) final String topic,
       final MQTTResource sharedResource) throws IOException, MqttException {
+    this.brokerURI = brokerURI;
     this.topic = topic;
     this.mqttClient = sharedResource.getMqttSinkClient(brokerURI, topic);
+    this.resource = sharedResource;
   }
 
   @Override
@@ -55,12 +68,37 @@ public final class MqttSink implements Sink<MqttMessage> {
     // TODO:[MIST-494] Safely close MQTT publisher client.
   }
 
+
   @Override
   public void handle(final MqttMessage input) {
     try {
       mqttClient.publish(topic, input);
+    } catch (final MqttException e) {
+      // Reconnect!
+      e.printStackTrace();
+      LOG.log(Level.SEVERE, "Reconnecting sink client of topic " + topic + ", uri: " + brokerURI);
+      resource.deleteMqttSinkClient(brokerURI, topic, mqttClient);
+      reconnect();
+      handle(input);
+    }
+  }
+
+  /**
+   * Reconnect mqtt sink client.
+   */
+  private void reconnect() {
+    try {
+      mqttClient = resource.getMqttSinkClient(brokerURI, topic);
     } catch (MqttException e) {
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e1) {
+        e1.printStackTrace();
+      }
+      reconnect();
+    } catch (IOException e) {
       e.printStackTrace();
     }
   }
 }
+

@@ -32,4 +32,6 @@ public interface MQTTResource extends AutoCloseable {
       throws MqttException, IOException;
 
   MQTTDataGenerator getDataGenerator(String brokerURI, String topic);
+
+  void deleteMqttSinkClient(String brokerURI, String topic, IMqttAsyncClient client);
 }
