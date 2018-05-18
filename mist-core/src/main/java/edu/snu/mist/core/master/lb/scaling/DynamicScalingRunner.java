@@ -30,11 +30,6 @@ public final class DynamicScalingRunner implements Runnable {
 
   @Override
   public void run() {
-    final ScalingAction scalingAction = dynamicScalingPolicy.getScalingAction();
-    if (scalingAction == ScalingAction.SCALE_OUT) {
-      // Perform scale-out
-    } else if (scalingAction == ScalingAction.SCALE_IN) {
-      // Perform scale-in
-    }
+    dynamicScalingPolicy.autoScale();
   }
 }

@@ -144,7 +144,7 @@ public final class DefaultDynamicScalingPolicy implements DynamicScalingPolicy {
   }
 
   @Override
-  public ScalingAction getScalingAction() {
+  public void autoScale() {
     final long oldTimeStamp;
     if (lastMeasuredTimestamp == 0L) {
       oldTimeStamp = System.currentTimeMillis();
@@ -171,11 +171,9 @@ public final class DefaultDynamicScalingPolicy implements DynamicScalingPolicy {
     }
 
     if (overloadedTimeElapsed > scaleOutGracePeriod && taskStatsMap.getTaskList().size() < maxTaskNum) {
-      return ScalingAction.SCALE_OUT;
+      // TODO: [MIST-1130] Perform automatic scale-out.
     } else if (idleTimeElapsed > scaleInGracePeriod && taskStatsMap.getTaskList().size() > minTaskNum) {
-      return ScalingAction.SCALE_IN;
-    } else {
-      return ScalingAction.NONE;
+      // TODO: [MIST-1131] Perform automatic scale-in.
     }
   }
 }
