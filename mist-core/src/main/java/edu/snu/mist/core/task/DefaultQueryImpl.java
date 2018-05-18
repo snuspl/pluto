@@ -56,7 +56,7 @@ public final class DefaultQueryImpl implements Query {
   /**
    * Group where the query is included.
    */
-  private Group group;
+  private final AtomicReference<Group> group;
 
   /**
    * The load of the query. This is used for group split.
@@ -79,11 +79,12 @@ public final class DefaultQueryImpl implements Query {
     this.activeSourceQueue = new ConcurrentLinkedQueue<>();
     this.queryLoad = 0;
     this.numActiveSources = new AtomicInteger();
+    this.group = new AtomicReference<>();
   }
 
   @Override
   public void setGroup(final Group g) {
-    group = g;
+    group.set(g);
   }
 
   /**
@@ -94,7 +95,7 @@ public final class DefaultQueryImpl implements Query {
     activeSourceQueue.add(sourceOutputEmitter);
     final int n = numActiveSources.getAndIncrement();
     if (n == 0) {
-      group.insert(this);
+      group.get().insert(this);
     }
   }
 
@@ -105,7 +106,7 @@ public final class DefaultQueryImpl implements Query {
   public void delete(final SourceOutputEmitter sourceOutputEmitter) {
     if (activeSourceQueue.remove(sourceOutputEmitter)) {
       numActiveSources.decrementAndGet();
-      group.delete(this);
+      group.get().delete(this);
     }
   }
 
@@ -168,6 +169,6 @@ public final class DefaultQueryImpl implements Query {
 
   @Override
   public Group getGroup() {
-    return group;
+    return group.get();
   }
 }
