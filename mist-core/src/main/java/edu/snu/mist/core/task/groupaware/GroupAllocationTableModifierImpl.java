@@ -207,17 +207,15 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
             case REBALANCE:
               loadUpdater.update();
               //isolatedGroupReassigner.reassignIsolatedGroups();
+              //groupMerger.groupMerging();
 
-              // 1. merging first
-              groupMerger.groupMerging();
-
-              // 2. reassignment
+              // 1. reassignment and merging
               groupRebalancer.triggerRebalancing();
 
-              // 3. split groups
+              // 2. split groups
               groupSplitter.splitGroup();
 
-              // 4. update the task stats to master
+              // 3. update the task stats to master
               taskStatsUpdater.updateTaskStatsToMaster(groupAllocationTable);
               break;
             case ISOLATION:
