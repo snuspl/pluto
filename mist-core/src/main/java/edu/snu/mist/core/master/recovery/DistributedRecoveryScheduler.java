@@ -17,7 +17,7 @@ package edu.snu.mist.core.master.recovery;
 
 import edu.snu.mist.core.master.ProxyToTaskMap;
 import edu.snu.mist.core.master.TaskStatsMap;
-import edu.snu.mist.core.master.allocation.parameters.OverloadedTaskThreshold;
+import edu.snu.mist.core.master.lb.parameters.OverloadedTaskLoadThreshold;
 import edu.snu.mist.core.master.recovery.parameters.RecoveryUnitSize;
 import edu.snu.mist.formats.avro.GroupStats;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
@@ -85,7 +85,7 @@ public final class DistributedRecoveryScheduler implements RecoveryScheduler {
   private DistributedRecoveryScheduler(
       final TaskStatsMap taskStatsMap,
       final ProxyToTaskMap proxyToTaskMap,
-      @Parameter(OverloadedTaskThreshold.class) final double overloadedTaskThreshold,
+      @Parameter(OverloadedTaskLoadThreshold.class) final double overloadedTaskThreshold,
       @Parameter(RecoveryUnitSize.class) final int recoveryUnitSize) {
     this.taskStatsMap = taskStatsMap;
     this.proxyToTaskMap = proxyToTaskMap;

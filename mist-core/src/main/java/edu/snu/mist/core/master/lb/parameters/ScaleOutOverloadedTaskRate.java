@@ -13,7 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.core.master.lb.parameters;
+
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
+
 /**
- * The package for interface and implementation of QueryAllocationManager.
+ * The rate of overloaded nodes.
  */
-package edu.snu.mist.core.master.allocation;
+@NamedParameter(doc = "The overloaded cluster rate for scaling-out.", default_value = "0.8",
+short_name = "scale_out_task_rate")
+public class ScaleOutOverloadedTaskRate implements Name<Double> {
+}

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.master.allocation;
+package edu.snu.mist.core.master.lb.allocation;
 
 import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.parameters.ClientToTaskPort;

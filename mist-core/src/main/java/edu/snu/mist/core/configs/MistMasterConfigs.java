@@ -18,11 +18,11 @@ package edu.snu.mist.core.configs;
 import edu.snu.mist.core.master.recovery.parameters.RecoveryUnitSize;
 import edu.snu.mist.core.parameters.NewRatio;
 import edu.snu.mist.core.parameters.ReservedCodeCacheSize;
-import edu.snu.mist.core.master.allocation.*;
+import edu.snu.mist.core.master.lb.allocation.*;
 import edu.snu.mist.core.master.recovery.DistributedRecoveryScheduler;
 import edu.snu.mist.core.master.recovery.RecoveryScheduler;
 import edu.snu.mist.core.master.recovery.SingleNodeRecoveryScheduler;
-import edu.snu.mist.core.master.allocation.parameters.OverloadedTaskThreshold;
+import edu.snu.mist.core.master.lb.parameters.OverloadedTaskLoadThreshold;
 import edu.snu.mist.core.parameters.QueryAllocationOption;
 import edu.snu.mist.core.parameters.RecoverySchedulerOption;
 import edu.snu.mist.core.parameters.NumTaskCores;
@@ -98,7 +98,7 @@ public final class MistMasterConfigs implements MistConfigs {
       @Parameter(NumTaskCores.class) final int numTaskCores,
       @Parameter(NewRatio.class) final int newRatio,
       @Parameter(ReservedCodeCacheSize.class) final int reservedCodeCacheSize,
-      @Parameter(OverloadedTaskThreshold.class) final double overloadedTaskThreshold,
+      @Parameter(OverloadedTaskLoadThreshold.class) final double overloadedTaskThreshold,
       @Parameter(QueryAllocationOption.class) final String queryAllocationOption,
       @Parameter(RecoverySchedulerOption.class) final String recoverySchedulerOption,
       @Parameter(RecoveryUnitSize.class) final int recoveryUnitSize) {
@@ -136,7 +136,7 @@ public final class MistMasterConfigs implements MistConfigs {
     jcb.bindNamedParameter(NumTaskCores.class, String.valueOf(numTaskCores));
     jcb.bindNamedParameter(NewRatio.class, String.valueOf(newRatio));
     jcb.bindNamedParameter(ReservedCodeCacheSize.class, String.valueOf(reservedCodeCacheSize));
-    jcb.bindNamedParameter(OverloadedTaskThreshold.class, String.valueOf(overloadedTaskThreshold));
+    jcb.bindNamedParameter(OverloadedTaskLoadThreshold.class, String.valueOf(overloadedTaskThreshold));
     jcb.bindNamedParameter(RecoveryUnitSize.class, String.valueOf(recoveryUnitSize));
 
     // Implementations.

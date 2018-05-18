@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.master.allocation.parameters;
+package edu.snu.mist.core.parameters;
 
-import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * The threshold for determining whether a task is overloaded or not.
+ * The monitoring period for dynamic scaling.
  */
-@NamedParameter(doc = "The overloaded task threshold.", default_value = "0.95", short_name = "over_thd")
-public class OverloadedTaskThreshold implements Name<Double> {
+@NamedParameter(doc = "The monitoring period for dynamic scaling.",
+short_name = "dynamic_scale_period", default_value = "300000")
+public class DynamicScalingPeriod {
 }

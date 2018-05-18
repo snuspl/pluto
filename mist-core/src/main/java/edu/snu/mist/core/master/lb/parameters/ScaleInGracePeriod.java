@@ -13,8 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.core.master.lb.parameters;
+
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * The parameters for query allocation.
+ * The grace period for scaling-in.
  */
-package edu.snu.mist.core.master.allocation.parameters;
+@NamedParameter(doc = "The grace period for scaling-in", default_value = "60000",
+short_name = "grace_scale_in")
+public final class ScaleInGracePeriod implements Name<Long> {
+}
