@@ -23,5 +23,5 @@ import org.apache.reef.tang.annotations.NamedParameter;
  */
 @NamedParameter(doc = "The overloaded cluster rate for scaling-out.", default_value = "0.8",
 short_name = "scale_out_task_rate")
-public class ScaleOutOverloadedTaskRate implements Name<Double> {
+public final class ScaleOutOverloadedTaskRate implements Name<Double> {
 }

@@ -22,5 +22,5 @@ import org.apache.reef.tang.annotations.NamedParameter;
  * The threshold for determining whether a task is overloaded or not.
  */
 @NamedParameter(doc = "The overloaded task threshold.", default_value = "0.95", short_name = "over_thd")
-public class OverloadedTaskLoadThreshold implements Name<Double> {
+public final class OverloadedTaskLoadThreshold implements Name<Double> {
 }

@@ -15,21 +15,16 @@
  */
 package edu.snu.mist.core.master.lb.scaling;
 
+import org.apache.reef.tang.annotations.DefaultImplementation;
+
 /**
- * The runner which runs dynamic scaling.
+ * The interface for dynamic scaling in/out manager.
  */
-public final class DynamicScalingRunner implements Runnable {
+@DefaultImplementation(PeriodicDynamicScalingManager.class)
+public interface DynamicScalingManager extends AutoCloseable {
 
-  private final DynamicScalingPolicy dynamicScalingPolicy;
-
-  public DynamicScalingRunner(
-      final DynamicScalingPolicy dynamicScalingPolicy
-  ) {
-    this.dynamicScalingPolicy = dynamicScalingPolicy;
-  }
-
-  @Override
-  public void run() {
-    dynamicScalingPolicy.autoScale();
-  }
+  /**
+   * Start auto scaling.
+   */
+  void startAutoScaling();
 }

@@ -22,6 +22,6 @@ import org.apache.reef.tang.annotations.NamedParameter;
  * The maximum number of tasks when dynamic scaling is enabled.
  */
 @NamedParameter(doc = "The maxinum number of tasks when dynamic scaling is enabled",
-short_name = "max_task_num")
-public class MaxTaskNum implements Name<Integer> {
+short_name = "max_task_num", default_value = "1")
+public final class MaxTaskNum implements Name<Integer> {
 }

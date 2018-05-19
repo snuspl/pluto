@@ -13,19 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.master.lb.scaling;
+package edu.snu.mist.core.master.lb.parameters;
 
-import org.apache.reef.tang.annotations.DefaultImplementation;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * The interface for dynamic scaling in/out manager.
+ * The monitoring period for dynamic scaling.
  */
-@DefaultImplementation(DefaultDynamicScalingPolicy.class)
-public interface DynamicScalingPolicy {
-
-  /**
-   * From the collected metric, it performs the necessary scaling action.
-   * @return ScalingAction.
-   */
-  void autoScale();
+@NamedParameter(doc = "The monitoring period for dynamic scaling.",
+short_name = "dynamic_scale_period", default_value = "300000")
+public final class DynamicScalingPeriod implements Name<Long> {
 }

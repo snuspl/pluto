@@ -23,5 +23,5 @@ import org.apache.reef.tang.annotations.NamedParameter;
  */
 @NamedParameter(doc = "The rate of idle tasks for scaling-in", default_value = "0.5",
 short_name = "scale_in_task_rate")
-public class ScaleInIdleTaskRate implements Name<Double> {
+public final class ScaleInIdleTaskRate implements Name<Double> {
 }

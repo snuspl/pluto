@@ -15,19 +15,16 @@
  */
 package edu.snu.mist.core.configs;
 
+import edu.snu.mist.core.master.lb.parameters.*;
+import edu.snu.mist.core.master.lb.scaling.DoNothingDynamicScalingManager;
+import edu.snu.mist.core.master.lb.scaling.DynamicScalingManager;
+import edu.snu.mist.core.master.lb.scaling.PeriodicDynamicScalingManager;
 import edu.snu.mist.core.master.recovery.parameters.RecoveryUnitSize;
-import edu.snu.mist.core.parameters.NewRatio;
-import edu.snu.mist.core.parameters.ReservedCodeCacheSize;
+import edu.snu.mist.core.parameters.*;
 import edu.snu.mist.core.master.lb.allocation.*;
 import edu.snu.mist.core.master.recovery.DistributedRecoveryScheduler;
 import edu.snu.mist.core.master.recovery.RecoveryScheduler;
 import edu.snu.mist.core.master.recovery.SingleNodeRecoveryScheduler;
-import edu.snu.mist.core.master.lb.parameters.OverloadedTaskLoadThreshold;
-import edu.snu.mist.core.parameters.QueryAllocationOption;
-import edu.snu.mist.core.parameters.RecoverySchedulerOption;
-import edu.snu.mist.core.parameters.NumTaskCores;
-import edu.snu.mist.core.parameters.NumTasks;
-import edu.snu.mist.core.parameters.TaskMemorySize;
 import edu.snu.mist.core.rpc.DefaultClientToMasterMessageImpl;
 import edu.snu.mist.core.rpc.DefaultDriverToMasterMessageImpl;
 import edu.snu.mist.core.rpc.DefaultTaskToMasterMessageImpl;
@@ -72,6 +69,16 @@ public final class MistMasterConfigs implements MistConfigs {
   private final int reservedCodeCacheSize;
 
   /**
+   * The task load threshold for determining idle task.
+   */
+  private final double idleTaskThreshold;
+
+  /**
+   * The threshold for determining underloaded task.
+   */
+  private final double underloadedTaskThreshold;
+
+  /**
    * The threshold for determining overloaded task.
    */
   private final double overloadedTaskThreshold;
@@ -91,6 +98,51 @@ public final class MistMasterConfigs implements MistConfigs {
    */
   private final int recoveryUnitSize;
 
+  // Start of variables for dynamic scaling in/out
+
+  /**
+   * The dynamic scaling policy.
+   */
+  private final String dynamicScalingOption;
+
+  /**
+   * The dynamic scailng period for periodic load balancing.
+   * This variable has no meaning when other load balancing policy is used.
+   */
+  private final long dynamicScalingPeriod;
+
+  /**
+   * The grace period for scaling in for period load balancing.
+   * This variable is disabled when other load balancing policy is used.
+   */
+  private final long scaleInGracePeriod;
+
+  /**
+   * The grace period for scaling in for period load balancing.
+   * This variable is disabled when other load balancing policy is used.
+   */
+  private final long scaleOutGracePeriod;
+
+  /**
+   * The maximum task number for load balancing.
+   */
+  private final int maxTaskNum;
+
+  /**
+   * The minimum task number for load balancing.
+   */
+  private final int minTaskNum;
+
+  /**
+   * The rate of idle tasks for scaling-in.
+   */
+  private final double scaleInIdleTaskRate;
+
+  /**
+   * The rate of overloaded tasks for scaling-out.
+   */
+  private final double scaleOutOverloadedTaskRate;
+
   @Inject
   private MistMasterConfigs(
       @Parameter(NumTasks.class) final int numTasks,
@@ -98,19 +150,40 @@ public final class MistMasterConfigs implements MistConfigs {
       @Parameter(NumTaskCores.class) final int numTaskCores,
       @Parameter(NewRatio.class) final int newRatio,
       @Parameter(ReservedCodeCacheSize.class) final int reservedCodeCacheSize,
+      @Parameter(IdleTaskLoadThreshold.class) final double idleTaskLoadThreshold,
+      @Parameter(UnderloadedTaskLoadThreshold.class) final double underloadedTaskThreshold,
       @Parameter(OverloadedTaskLoadThreshold.class) final double overloadedTaskThreshold,
       @Parameter(QueryAllocationOption.class) final String queryAllocationOption,
       @Parameter(RecoverySchedulerOption.class) final String recoverySchedulerOption,
-      @Parameter(RecoveryUnitSize.class) final int recoveryUnitSize) {
+      @Parameter(RecoveryUnitSize.class) final int recoveryUnitSize,
+      @Parameter(DynamicScalingOption.class) final String dynamicScalingOption,
+      @Parameter(DynamicScalingPeriod.class) final long dynamicScalingPeriod,
+      @Parameter(MaxTaskNum.class) final int maxTaskNum,
+      @Parameter(MinTaskNum.class) final int minTaskNum,
+      @Parameter(ScaleInGracePeriod.class) final long scaleInGracePeriod,
+      @Parameter(ScaleInIdleTaskRate.class) final double scaleInIdleTaskRate,
+      @Parameter(ScaleOutGracePeriod.class) final long scaleOutGracePeriod,
+      @Parameter(ScaleOutOverloadedTaskRate.class) final double scaleOutOverloadedTaskRate) {
     this.numTasks = numTasks;
     this.taskMemSize = taskMemSize;
     this.numTaskCores = numTaskCores;
     this.newRatio = newRatio;
     this.reservedCodeCacheSize = reservedCodeCacheSize;
+    this.idleTaskThreshold = idleTaskLoadThreshold;
+    this.underloadedTaskThreshold = underloadedTaskThreshold;
     this.overloadedTaskThreshold = overloadedTaskThreshold;
     this.queryAllocationOption = queryAllocationOption;
     this.recoverySchedulerOption = recoverySchedulerOption;
     this.recoveryUnitSize = recoveryUnitSize;
+    // Parameters for dynamic scale-in/out
+    this.dynamicScalingOption = dynamicScalingOption;
+    this.dynamicScalingPeriod = dynamicScalingPeriod;
+    this.maxTaskNum = maxTaskNum;
+    this.minTaskNum = minTaskNum;
+    this.scaleInGracePeriod = scaleInGracePeriod;
+    this.scaleInIdleTaskRate = scaleInIdleTaskRate;
+    this.scaleOutGracePeriod = scaleOutGracePeriod;
+    this.scaleOutOverloadedTaskRate = scaleOutOverloadedTaskRate;
   }
 
   private Class<? extends QueryAllocationManager> getQueryAllocationImplClass() {
@@ -127,6 +200,16 @@ public final class MistMasterConfigs implements MistConfigs {
     }
   }
 
+  private Class<? extends DynamicScalingManager> getDynamicScalingManagerImplClass() {
+    if (dynamicScalingOption.equals("none")) {
+      return DoNothingDynamicScalingManager.class;
+    } else if (dynamicScalingOption.equals("periodic")) {
+      return PeriodicDynamicScalingManager.class;
+    } else {
+      throw new IllegalArgumentException("Invalid dynamic scaling option!");
+    }
+  }
+
   @Override
   public Configuration getConfiguration() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
@@ -136,12 +219,22 @@ public final class MistMasterConfigs implements MistConfigs {
     jcb.bindNamedParameter(NumTaskCores.class, String.valueOf(numTaskCores));
     jcb.bindNamedParameter(NewRatio.class, String.valueOf(newRatio));
     jcb.bindNamedParameter(ReservedCodeCacheSize.class, String.valueOf(reservedCodeCacheSize));
+    jcb.bindNamedParameter(IdleTaskLoadThreshold.class, String.valueOf(idleTaskThreshold));
+    jcb.bindNamedParameter(UnderloadedTaskLoadThreshold.class, String.valueOf(underloadedTaskThreshold));
     jcb.bindNamedParameter(OverloadedTaskLoadThreshold.class, String.valueOf(overloadedTaskThreshold));
     jcb.bindNamedParameter(RecoveryUnitSize.class, String.valueOf(recoveryUnitSize));
+    jcb.bindNamedParameter(DynamicScalingPeriod.class, String.valueOf(dynamicScalingPeriod));
+    jcb.bindNamedParameter(MaxTaskNum.class, String.valueOf(maxTaskNum));
+    jcb.bindNamedParameter(MinTaskNum.class, String.valueOf(minTaskNum));
+    jcb.bindNamedParameter(ScaleInGracePeriod.class, String.valueOf(scaleInGracePeriod));
+    jcb.bindNamedParameter(ScaleInIdleTaskRate.class, String.valueOf(scaleInIdleTaskRate));
+    jcb.bindNamedParameter(ScaleOutGracePeriod.class, String.valueOf(scaleOutGracePeriod));
+    jcb.bindNamedParameter(ScaleOutOverloadedTaskRate.class, String.valueOf(scaleOutOverloadedTaskRate));
 
     // Implementations.
     jcb.bindImplementation(QueryAllocationManager.class, getQueryAllocationImplClass());
     jcb.bindImplementation(RecoveryScheduler.class, getRecoverySchedulerImplClass());
+    jcb.bindImplementation(DynamicScalingManager.class, getDynamicScalingManagerImplClass());
     jcb.bindImplementation(ClientToMasterMessage.class, DefaultClientToMasterMessageImpl.class);
     jcb.bindImplementation(DriverToMasterMessage.class, DefaultDriverToMasterMessageImpl.class);
     jcb.bindImplementation(TaskToMasterMessage.class, DefaultTaskToMasterMessageImpl.class);

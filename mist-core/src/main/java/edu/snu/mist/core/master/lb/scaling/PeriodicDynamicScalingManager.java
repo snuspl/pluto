@@ -24,21 +24,30 @@ import edu.snu.mist.core.master.lb.parameters.ScaleInGracePeriod;
 import edu.snu.mist.core.master.lb.parameters.ScaleInIdleTaskRate;
 import edu.snu.mist.core.master.lb.parameters.ScaleOutGracePeriod;
 import edu.snu.mist.core.master.lb.parameters.ScaleOutOverloadedTaskRate;
+import edu.snu.mist.core.master.lb.parameters.DynamicScalingPeriod;
 import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The default implementation for dynamic scaling policy.
  */
-public final class DefaultDynamicScalingPolicy implements DynamicScalingPolicy {
+public final class PeriodicDynamicScalingManager implements DynamicScalingManager {
 
   /**
    * The shared stats map.
    */
   private final TaskStatsMap taskStatsMap;
+
+  /**
+   * The period of performing dynamic scaling.
+   */
+  private final long dynamicScalingPeriod;
 
   /**
    * The maximum number of allocatable task.
@@ -95,9 +104,15 @@ public final class DefaultDynamicScalingPolicy implements DynamicScalingPolicy {
    */
   private long lastMeasuredTimestamp;
 
+  /**
+   * Scheduled executor service for running periodic dynamic scaling.
+   */
+  private ScheduledExecutorService scheduledExecutorService;
+
   @Inject
-  private DefaultDynamicScalingPolicy(
+  private PeriodicDynamicScalingManager(
       final TaskStatsMap taskStatsMap,
+      @Parameter(DynamicScalingPeriod.class) final long dynamicScalingPeriod,
       @Parameter(MaxTaskNum.class) final int maxTaskNum,
       @Parameter(MinTaskNum.class) final int minTaskNum,
       @Parameter(IdleTaskLoadThreshold.class) final double idleTaskLoadThreshold,
@@ -108,6 +123,7 @@ public final class DefaultDynamicScalingPolicy implements DynamicScalingPolicy {
       @Parameter(ScaleOutOverloadedTaskRate.class) final double scaleOutOverloadedTaskRate
   ) {
     this.taskStatsMap = taskStatsMap;
+    this.dynamicScalingPeriod = dynamicScalingPeriod;
     this.maxTaskNum = maxTaskNum;
     this.minTaskNum = minTaskNum;
     this.idleTaskLoadThreshold = idleTaskLoadThreshold;
@@ -119,6 +135,7 @@ public final class DefaultDynamicScalingPolicy implements DynamicScalingPolicy {
     this.idleTimeElapsed = 0L;
     this.overloadedTimeElapsed = 0L;
     this.lastMeasuredTimestamp = 0L;
+    this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
   }
 
   private boolean isClusterOverloaded() {
@@ -140,40 +157,59 @@ public final class DefaultDynamicScalingPolicy implements DynamicScalingPolicy {
       }
     }
     final double idleTaskRate = idleTaskNum / taskStatsMap.getTaskList().size();
-    return idleTaskRate > scaleOutOverloadedTaskRate;
+    return idleTaskRate > scaleInIdleTaskRate;
+  }
+
+  private final class AutoScaleRunner implements Runnable {
+
+    private AutoScaleRunner() {
+      // Do nothing.
+    }
+
+    @Override
+    public void run() {
+      final long oldTimeStamp;
+      if (lastMeasuredTimestamp == 0L) {
+        oldTimeStamp = System.currentTimeMillis();
+        lastMeasuredTimestamp = oldTimeStamp;
+      } else {
+        oldTimeStamp = lastMeasuredTimestamp;
+        lastMeasuredTimestamp = System.currentTimeMillis();
+      }
+
+      final boolean clusterOverloaded = isClusterOverloaded();
+      final boolean clusterIdle = isClusterIdle();
+
+      // Add to the
+      if (clusterOverloaded) {
+        overloadedTimeElapsed += lastMeasuredTimestamp - oldTimeStamp;
+      } else {
+        overloadedTimeElapsed = 0;
+      }
+
+      if (clusterIdle) {
+        idleTimeElapsed += lastMeasuredTimestamp - oldTimeStamp;
+      } else {
+        idleTimeElapsed = 0;
+      }
+
+      if (overloadedTimeElapsed > scaleOutGracePeriod && taskStatsMap.getTaskList().size() < maxTaskNum) {
+        // TODO: [MIST-1130] Perform automatic scale-out.
+        overloadedTimeElapsed = 0;
+      } else if (idleTimeElapsed > scaleInGracePeriod && taskStatsMap.getTaskList().size() > minTaskNum) {
+        // TODO: [MIST-1131] Perform automatic scale-in.
+        idleTimeElapsed = 0;
+      }
+    }
   }
 
   @Override
-  public void autoScale() {
-    final long oldTimeStamp;
-    if (lastMeasuredTimestamp == 0L) {
-      oldTimeStamp = System.currentTimeMillis();
-      lastMeasuredTimestamp = oldTimeStamp;
-    } else {
-      oldTimeStamp = lastMeasuredTimestamp;
-      lastMeasuredTimestamp = System.currentTimeMillis();
-    }
+  public void startAutoScaling() {
+    scheduledExecutorService.schedule(new AutoScaleRunner(), dynamicScalingPeriod, TimeUnit.MILLISECONDS);
+  }
 
-    final boolean clusterOverloaded = isClusterOverloaded();
-    final boolean clusterIdle = isClusterIdle();
-
-    // Add to the
-    if (clusterOverloaded) {
-      this.overloadedTimeElapsed += lastMeasuredTimestamp - oldTimeStamp;
-    } else {
-      this.overloadedTimeElapsed = 0;
-    }
-
-    if (clusterIdle) {
-      this.idleTimeElapsed += lastMeasuredTimestamp - oldTimeStamp;
-    } else {
-      this.idleTimeElapsed = 0;
-    }
-
-    if (overloadedTimeElapsed > scaleOutGracePeriod && taskStatsMap.getTaskList().size() < maxTaskNum) {
-      // TODO: [MIST-1130] Perform automatic scale-out.
-    } else if (idleTimeElapsed > scaleInGracePeriod && taskStatsMap.getTaskList().size() > minTaskNum) {
-      // TODO: [MIST-1131] Perform automatic scale-in.
-    }
+  @Override
+  public void close() throws Exception {
+    scheduledExecutorService.shutdown();
   }
 }

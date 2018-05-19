@@ -22,6 +22,6 @@ import org.apache.reef.tang.annotations.NamedParameter;
 /**
  * The minimum number of tasks when dynamic scaling is enabled.
  */
-@NamedParameter(doc = "The minimum number of tasks", short_name = "min_task_num")
-public class MinTaskNum implements Name<Integer> {
+@NamedParameter(doc = "The minimum number of tasks", short_name = "min_task_num", default_value = "1")
+public final class MinTaskNum implements Name<Integer> {
 }

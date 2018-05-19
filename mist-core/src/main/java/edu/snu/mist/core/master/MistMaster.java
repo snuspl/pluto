@@ -15,14 +15,11 @@
  */
 package edu.snu.mist.core.master;
 
-import edu.snu.mist.core.master.lb.scaling.DefaultDynamicScalingPolicy;
-import edu.snu.mist.core.master.lb.scaling.DynamicScalingPolicy;
-import edu.snu.mist.core.master.lb.scaling.DynamicScalingRunner;
+import edu.snu.mist.core.master.lb.scaling.DynamicScalingManager;
 import edu.snu.mist.core.parameters.*;
 import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.formats.avro.*;
 import org.apache.avro.ipc.Server;
-import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.annotations.Unit;
@@ -71,14 +68,9 @@ public final class MistMaster implements Task {
   private boolean masterRecovery;
 
   /**
-   * Is dynamic scaling enabled?
+   * The dynamic scaling manager used for dynamic scaling in/out.
    */
-  private boolean dynamicScalingEnabled;
-
-  /**
-   * The dynamic scaling in/out period.
-   */
-  private long dynamicScalingPeriod;
+  private DynamicScalingManager dynamicScalingManager;
 
   /**
    * The shared application code manager.
@@ -98,14 +90,15 @@ public final class MistMaster implements Task {
       final MasterSetupFinished masterSetupFinished,
       @Parameter(MasterRecovery.class) final boolean masterRecovery,
       final ApplicationCodeManager applicationCodeManager,
-      @Parameter(DynamicScalingEnabled.class) final Boolean dynamicScalingEnabled) throws IOException {
+      final DynamicScalingManager dynamicScalingManager) throws IOException {
     this.initialTaskNum = initialTaskNum;
     this.taskRequestor = taskRequestor;
     this.masterSetupFinished = masterSetupFinished;
     this.masterRecovery = masterRecovery;
     this.applicationCodeManager = applicationCodeManager;
-    this.dynamicScalingEnabled = dynamicScalingEnabled;
-        // Initialize countdown latch
+    this.dynamicScalingManager = dynamicScalingManager;
+
+    // Initialize countdown latch
     this.countDownLatch = new CountDownLatch(1);
     // Launch servers for RPC
     this.driverToMasterServer = AvroUtils.createAvroServer(DriverToMasterMessage.class, driverToMasterMessage,
@@ -134,18 +127,14 @@ public final class MistMaster implements Task {
       taskRequestor.recoverTaskConn();
       masterSetupFinished.setFinished();
     }
-    if (dynamicScalingEnabled) {
-      // Start dynamic scaling monitoring.
-      final ScheduledExecutorService dynamicScalingService = Executors.newSingleThreadScheduledExecutor();
-      final Injector injector = tang.newInjector();
-      final DynamicScalingPolicy policy = injector.getInstance(DefaultDynamicScalingPolicy.class);
-      dynamicScalingService.schedule(new DynamicScalingRunner(policy), dynamicScalingPeriod, TimeUnit.MILLISECONDS);
-    }
+    // Start dynamic scheduling manager.
+    this.dynamicScalingManager.startAutoScaling();
     this.countDownLatch.await();
     // MistMaster has been terminated
     this.driverToMasterServer.close();
     this.clientToMasterServer.close();
     this.taskToMasterServer.close();
+    this.dynamicScalingManager.close();
     return null;
   }
 

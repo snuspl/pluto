@@ -13,14 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.parameters;
+package edu.snu.mist.core.master.lb.scaling;
 
-import org.apache.reef.tang.annotations.NamedParameter;
+import javax.inject.Inject;
 
 /**
- * The monitoring period for dynamic scaling.
+ * Using this class, MIST does not implement automatic scale-in / out.
  */
-@NamedParameter(doc = "The monitoring period for dynamic scaling.",
-short_name = "dynamic_scale_period", default_value = "300000")
-public class DynamicScalingPeriod {
+public final class DoNothingDynamicScalingManager implements DynamicScalingManager {
+
+  @Inject
+  private DoNothingDynamicScalingManager() {
+    // Nothing is necessary.
+  }
+
+  @Override
+  public void startAutoScaling() {
+    // Do nothing
+  }
+
+  @Override
+  public void close() throws Exception {
+    // Do nothing
+  }
 }

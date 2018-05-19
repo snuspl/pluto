@@ -19,9 +19,9 @@ import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * Indicates whether dynamic scale in / out is enabled or not.
+ * The option for dynamic scaling policy.
  */
-@NamedParameter(doc = "Enabling scaling in / out", default_value = "false",
-short_name = "dynamic_scale_enabled")
-public class DynamicScalingEnabled implements Name<Boolean> {
+@NamedParameter(doc = "Dynamic scaling policy.", default_value = "none",
+short_name = "dynamic_scale")
+public class DynamicScalingOption implements Name<String> {
 }
