@@ -47,6 +47,7 @@ public final class AffinityEventProcessor implements EventProcessor {
     this.thread = thread;
     this.id = id;
     this.runnable = runnable;
+    runnable.setEventProcessor(this);
   }
 
   public void close() throws Exception {

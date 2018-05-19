@@ -15,7 +15,9 @@
  */
 package edu.snu.mist.core.task.groupaware.eventprocessor;
 
+import edu.snu.mist.core.task.groupaware.parameters.ProcessingTimeout;
 import net.openhft.affinity.AffinityThreadFactory;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,9 +44,15 @@ public final class AffinityEventProcessorFactory implements EventProcessorFactor
    */
   private final AffinityThreadFactory affinityThreadFactory;
 
+  /**
+   * Processing timeout.
+   */
+  private final long timeout;
   @Inject
-  private AffinityEventProcessorFactory(final NextGroupSelectorFactory nextGroupSelectorFactory) {
+  private AffinityEventProcessorFactory(final NextGroupSelectorFactory nextGroupSelectorFactory,
+                                        @Parameter(ProcessingTimeout.class) final long timeout) {
     this.nextGroupSelectorFactory = nextGroupSelectorFactory;
+    this.timeout = timeout;
     this.affinityThreadFactory = new AffinityThreadFactory("Afnty");
     LOG.info("AffinityEventProcessorFactory start");
   }
@@ -52,7 +60,7 @@ public final class AffinityEventProcessorFactory implements EventProcessorFactor
   @Override
   public EventProcessor newEventProcessor() {
     final NextGroupSelector nextGroupSelector = nextGroupSelectorFactory.newInstance();
-    final AffinityRunnable runnable = new AffinityRunnable(nextGroupSelector);
+    final AffinityRunnable runnable = new AffinityRunnable(nextGroupSelector, timeout);
     final Thread thread = affinityThreadFactory.newThread(runnable);
     return new AffinityEventProcessor(id.getAndIncrement(), thread, runnable);
   }

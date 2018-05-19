@@ -18,6 +18,6 @@ package edu.snu.mist.core.task.groupaware.parameters;
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
-@NamedParameter(doc = "The default processing timeout (ms)", short_name = "processing_timeout", default_value = "200")
+@NamedParameter(doc = "The default processing timeout (ms)", short_name = "processing_timeout", default_value = "1000")
 public final class ProcessingTimeout implements Name<Long> {
 }
