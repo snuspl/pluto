@@ -21,7 +21,7 @@ import org.apache.reef.tang.annotations.NamedParameter;
 /**
  * The ratio of idle tasks for scaling-in.
  */
-@NamedParameter(doc = "The ratio of idle tasks for scaling-in (ms)", default_value = "0.5",
+@NamedParameter(doc = "The ratio of idle tasks for scaling-in", default_value = "0.5",
 short_name = "scale_in_task_ratio")
 public final class ScaleInIdleTaskRatio implements Name<Double> {
 }
