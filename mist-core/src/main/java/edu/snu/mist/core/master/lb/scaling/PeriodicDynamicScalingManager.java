@@ -144,8 +144,8 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
         overloadedTaskNum += 1;
       }
     }
-    final double overloadedTaskRate = overloadedTaskNum / taskStatsMap.getTaskList().size();
-    return overloadedTaskRate > scaleOutOverloadedTaskRatio;
+    final double overloadedTaskRatio = overloadedTaskNum / taskStatsMap.getTaskList().size();
+    return overloadedTaskRatio > scaleOutOverloadedTaskRatio;
   }
 
   private boolean isClusterIdle() {
@@ -155,8 +155,8 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
         idleTaskNum += 1;
       }
     }
-    final double idleTaskRate = idleTaskNum / taskStatsMap.getTaskList().size();
-    return idleTaskRate > scaleInIdleTaskRatio;
+    final double idleTaskRatio = idleTaskNum / taskStatsMap.getTaskList().size();
+    return idleTaskRatio > scaleInIdleTaskRatio;
   }
 
   private final class AutoScaleRunner implements Runnable {
