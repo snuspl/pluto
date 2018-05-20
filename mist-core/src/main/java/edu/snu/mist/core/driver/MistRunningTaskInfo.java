@@ -15,11 +15,10 @@
  */
 package edu.snu.mist.core.driver;
 
+import org.apache.reef.driver.task.RunningTask;
+
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * The persistent running task info store in driver.
@@ -29,33 +28,37 @@ public final class MistRunningTaskInfo {
   /**
    * The inner list which contains runing task info.
    */
-  private Set<String> runningTaskSet;
+  private Map<String, RunningTask> innerMap;
 
   @Inject
   private MistRunningTaskInfo() {
-    this.runningTaskSet = new HashSet<>();
+    this.innerMap = new HashMap<>();
   }
 
-  public synchronized boolean add(final String hostname) {
-    if (runningTaskSet.contains(hostname)) {
+  public synchronized boolean put(final String hostname, final RunningTask runningTask) {
+    if (innerMap.containsKey(hostname)) {
       return false;
     } else {
-      runningTaskSet.add(hostname);
+      innerMap.put(hostname, runningTask);
       return true;
     }
   }
 
   public synchronized boolean remove(final String hostname) {
-    if (runningTaskSet.contains(hostname)) {
-      runningTaskSet.remove(hostname);
+    if (innerMap.containsKey(hostname)) {
+      innerMap.remove(hostname);
       return true;
     } else {
       return false;
     }
   }
 
-  public synchronized List<String> retrieveRunningTaskList() {
-    return new ArrayList<>(runningTaskSet);
+  public synchronized List<String> retrieveRunningTaskHostNameList() {
+    return new ArrayList<>(innerMap.keySet());
+  }
+
+  public synchronized RunningTask getRunningTask(final String hostname) {
+    return innerMap.get(hostname);
   }
 
 }

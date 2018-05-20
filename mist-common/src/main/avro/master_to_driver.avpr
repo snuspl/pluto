@@ -64,6 +64,15 @@
       ],
       "response": "null"
     },
+    "stopTask": {
+      "request": [
+        {
+          "name": "taskHostname",
+          "type": "string"
+        }
+      ],
+      "response": "boolean"
+    },
     "saveJarInfo": {
       "request": [
         {

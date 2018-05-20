@@ -74,6 +74,18 @@ public final class TaskStatsMap {
     innerMap.replace(taskHostname, updatedTaskStats);
   }
 
+  public String getMinimumLoadTask() {
+    double minimumLoad = Double.MAX_VALUE;
+    String minimumLoadTask = null;
+    for (final Map.Entry<String, TaskStats> entry : innerMap.entrySet()) {
+      if (entry.getValue().getTaskLoad() < minimumLoad) {
+        minimumLoad = entry.getValue().getTaskLoad();
+        minimumLoadTask = entry.getKey();
+      }
+    }
+    return minimumLoadTask;
+  }
+
   public Set<Map.Entry<String, TaskStats>> entrySet() {
     return innerMap.entrySet();
   }

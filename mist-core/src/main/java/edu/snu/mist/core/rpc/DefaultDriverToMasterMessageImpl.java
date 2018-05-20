@@ -74,7 +74,7 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   public synchronized Void notifyFailedTask(final String taskHostname) {
     // Remove the allocated queries firstly...
     final TaskStats taskStats = taskStatsMap.removeTask(taskHostname);
-    singleThreadedExecutor.submit(new RecoveryStarter(taskStats.getGroupStatsMap(), taskRequestor, recoveryScheduler));
+    singleThreadedExecutor.submit(new RecoveryStarter(taskStats.getGroupStatsMap(), recoveryScheduler, taskRequestor));
     return null;
   }
 

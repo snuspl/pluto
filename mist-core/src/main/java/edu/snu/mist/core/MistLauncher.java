@@ -105,6 +105,7 @@ public final class MistLauncher {
         .set(DriverConfiguration.ON_CONTEXT_ACTIVE, MistDriver.ActiveContextHandler.class)
         .set(DriverConfiguration.ON_EVALUATOR_FAILED, MistDriver.FailedEvaluatorHandler.class)
         .set(DriverConfiguration.ON_TASK_RUNNING, MistDriver.RunningTaskHandler.class)
+        .set(DriverConfiguration.ON_EVALUATOR_COMPLETED, MistDriver.CompletedEvaluatorHandler.class)
         .set(DriverConfiguration.ON_DRIVER_STOP, MistDriver.DriverStopHandler.class)
         .build();
 

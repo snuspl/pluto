@@ -354,6 +354,13 @@ public final class MistDriver {
     }
   }
 
+  public final class CompletedEvaluatorHandler implements EventHandler<CompletedEvaluator> {
+    @Override
+    public void onNext(final CompletedEvaluator completedEvaluator) {
+      // Do nothing.
+    }
+  }
+
   public final class RunningTaskHandler implements EventHandler<RunningTask> {
     @Override
     public void onNext(final RunningTask runningTask) {
@@ -373,7 +380,7 @@ public final class MistDriver {
         // The running task is MistTask.
         final String taskHostname = runningTask.getActiveContext().getEvaluatorDescriptor().getNodeDescriptor()
             .getInetSocketAddress().getHostName();
-        runningTaskInfo.add(taskHostname);
+        runningTaskInfo.put(taskHostname, runningTask);
         try {
           // Notify to the master.
           proxyToMaster.notifyTaskAllocated(AllocatedTask.newBuilder()

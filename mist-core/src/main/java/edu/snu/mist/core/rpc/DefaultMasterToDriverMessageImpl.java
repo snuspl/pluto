@@ -22,6 +22,7 @@ import edu.snu.mist.formats.avro.MasterToDriverMessage;
 import edu.snu.mist.formats.avro.TaskRequest;
 import org.apache.avro.AvroRemoteException;
 import org.apache.reef.driver.evaluator.EvaluatorRequestor;
+import org.apache.reef.driver.task.RunningTask;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
 import org.apache.reef.tang.formats.ConfigurationSerializer;
@@ -98,6 +99,19 @@ public final class DefaultMasterToDriverMessageImpl implements MasterToDriverMes
   }
 
   @Override
+  public boolean stopTask(final String taskHostname) throws AvroRemoteException {
+    final RunningTask runningTask = runningTaskInfo.getRunningTask(taskHostname);
+    if (runningTask != null) {
+      // Remove from the task list and close the task.
+      runningTaskInfo.remove(taskHostname);
+      runningTask.close();
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  @Override
   public boolean saveJarInfo(final String appId,
                              final List<String> jarPaths) throws AvroRemoteException {
     return this.applicationJarInfo.put(appId, jarPaths);
@@ -114,6 +128,6 @@ public final class DefaultMasterToDriverMessageImpl implements MasterToDriverMes
 
   @Override
   public List<String> retrieveRunningTaskInfo() throws AvroRemoteException {
-    return runningTaskInfo.retrieveRunningTaskList();
+    return runningTaskInfo.retrieveRunningTaskHostNameList();
   }
 }

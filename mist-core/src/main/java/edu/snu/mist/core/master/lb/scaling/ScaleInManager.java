@@ -13,15 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.master.lb.parameters;
+package edu.snu.mist.core.master.lb.scaling;
 
-import org.apache.reef.tang.annotations.Name;
-import org.apache.reef.tang.annotations.NamedParameter;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * The ratio of idle tasks for scaling-in.
+ * The interface for scaling-in the MIST cluster.
  */
-@NamedParameter(doc = "The ratio of idle tasks for scaling-in", default_value = "0.5",
-short_name = "scale_in_task_ratio")
-public final class ScaleInIdleTaskRatio implements Name<Double> {
+@DefaultImplementation(RecoveryBasedScaleInManager.class)
+public interface ScaleInManager {
+
+  /**
+   * Perform scale-in by removing the designated task.
+   * @return success or not.
+   */
+  boolean scaleIn(String removedTaskName) throws Exception;
 }
