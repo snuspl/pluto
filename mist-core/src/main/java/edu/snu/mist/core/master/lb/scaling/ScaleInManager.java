@@ -24,8 +24,8 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
 public interface ScaleInManager {
 
   /**
-   * Perform scale-in by removing the designated task.
+   * Perform scale-in by removing a task.
    * @return success or not.
    */
-  boolean scaleIn(String removedTaskName) throws Exception;
+  boolean scaleIn() throws Exception;
 }

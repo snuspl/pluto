@@ -28,6 +28,7 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.net.InetSocketAddress;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -60,9 +61,23 @@ public final class RecoveryBasedScaleInManager implements ScaleInManager {
     this.recoveryScheduler = recoveryScheduler;
   }
 
+  private String getMinimumLoadTask() {
+    double minimumLoad = Double.MAX_VALUE;
+    String minimumLoadTask = null;
+    for (final Map.Entry<String, TaskStats> entry : taskStatsMap.entrySet()) {
+      if (entry.getValue().getTaskLoad() < minimumLoad) {
+        minimumLoad = entry.getValue().getTaskLoad();
+        minimumLoadTask = entry.getKey();
+      }
+    }
+    return minimumLoadTask;
+  }
+
   @Override
-  public boolean scaleIn(final String removedTaskName) throws AvroRemoteException {
+  public boolean scaleIn() throws AvroRemoteException {
+    final String removedTaskName = getMinimumLoadTask();
     final boolean stopTaskSuccess = proxyToDriver.stopTask(removedTaskName);
+
     if (stopTaskSuccess) {
       final ExecutorService singleThreadedExecutor = Executors.newSingleThreadExecutor();
       final TaskStats taskStats = taskStatsMap.removeTask(removedTaskName);

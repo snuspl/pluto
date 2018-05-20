@@ -200,9 +200,8 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
         idleTimeElapsed += lastMeasuredTimestamp - oldTimeStamp;
         if (idleTimeElapsed > scaleInGracePeriod && taskStatsMap.getTaskList().size() > minTaskNum) {
           LOG.log(Level.INFO, "Start scaling-in...");
-          final String minimalLoadedTask = taskStatsMap.getMinimumLoadTask();
           try {
-            final boolean scaleInSuccess = scaleInManager.scaleIn(minimalLoadedTask);
+            final boolean scaleInSuccess = scaleInManager.scaleIn();
             if (!scaleInSuccess) {
               throw new RuntimeException("Automatic scale-in failed! - Task cannot be found");
             }

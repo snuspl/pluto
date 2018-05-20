@@ -60,7 +60,7 @@ public final class RecoveryStarter implements Runnable {
 
   @Override
   public void run() {
-    if (taskRequestor == null) {
+    if (taskRequestor != null) {
       // Request an evaluator for recovery task if recoveryScheduler is not null.
       // If recovery scheduler is null, it does not request a new task.
       taskRequestor.setupTaskAndConn(1);
