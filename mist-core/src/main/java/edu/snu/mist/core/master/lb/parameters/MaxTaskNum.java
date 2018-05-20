@@ -13,8 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.core.master.lb.parameters;
+
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * The parameters for query allocation.
+ * The maximum number of tasks when dynamic scaling out is enabled.
  */
-package edu.snu.mist.core.master.allocation.parameters;
+@NamedParameter(doc = "The maxinum number of tasks when dynamic scaling is enabled",
+short_name = "max_task_num", default_value = "1")
+public final class MaxTaskNum implements Name<Integer> {
+}

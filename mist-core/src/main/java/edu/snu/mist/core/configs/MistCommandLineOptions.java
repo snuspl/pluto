@@ -15,7 +15,7 @@
  */
 package edu.snu.mist.core.configs;
 
-import edu.snu.mist.core.master.allocation.parameters.OverloadedTaskThreshold;
+import edu.snu.mist.core.master.lb.parameters.*;
 import edu.snu.mist.core.master.recovery.parameters.RecoveryUnitSize;
 import edu.snu.mist.core.parameters.*;
 import edu.snu.mist.core.shared.parameters.MqttSinkClientNumPerBroker;
@@ -68,10 +68,21 @@ public final class MistCommandLineOptions {
         .registerShortNameOfClass(GroupPinningTime.class)
         .registerShortNameOfClass(GroupRebalancingPeriod.class)
         .registerShortNameOfClass(PeriodicCheckpointPeriod.class)
-        .registerShortNameOfClass(OverloadedTaskThreshold.class)
+        .registerShortNameOfClass(UnderloadedTaskLoadThreshold.class)
+        .registerShortNameOfClass(OverloadedTaskLoadThreshold.class)
         .registerShortNameOfClass(QueryAllocationOption.class)
         .registerShortNameOfClass(RecoveryThreadsNum.class)
         .registerShortNameOfClass(RecoverySchedulerOption.class)
-        .registerShortNameOfClass(RecoveryUnitSize.class);
+        .registerShortNameOfClass(RecoveryUnitSize.class)
+        .registerShortNameOfClass(DynamicScalingOption.class)
+        .registerShortNameOfClass(DynamicScalingPeriod.class)
+        .registerShortNameOfClass(IdleTaskLoadThreshold.class)
+        .registerShortNameOfClass(MaxTaskNum.class)
+        .registerShortNameOfClass(MinTaskNum.class)
+        .registerShortNameOfClass(OverloadedTaskLoadThreshold.class)
+        .registerShortNameOfClass(ScaleInGracePeriod.class)
+        .registerShortNameOfClass(ScaleInIdleTaskRatio.class)
+        .registerShortNameOfClass(ScaleOutGracePeriod.class)
+        .registerShortNameOfClass(ScaleOutOverloadedTaskRatio.class);
   }
 }

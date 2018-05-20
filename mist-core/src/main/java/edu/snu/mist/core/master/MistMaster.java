@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.master;
 
+import edu.snu.mist.core.master.lb.scaling.DynamicScalingManager;
 import edu.snu.mist.core.parameters.*;
 import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.formats.avro.*;
@@ -30,7 +31,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,6 +68,11 @@ public final class MistMaster implements Task {
   private boolean masterRecovery;
 
   /**
+   * The dynamic scaling manager used for dynamic scaling in/out.
+   */
+  private DynamicScalingManager dynamicScalingManager;
+
+  /**
    * The shared application code manager.
    */
   private final ApplicationCodeManager applicationCodeManager;
@@ -83,13 +89,16 @@ public final class MistMaster implements Task {
       final TaskRequestor taskRequestor,
       final MasterSetupFinished masterSetupFinished,
       @Parameter(MasterRecovery.class) final boolean masterRecovery,
-      final ApplicationCodeManager applicationCodeManager) throws IOException {
+      final ApplicationCodeManager applicationCodeManager,
+      final DynamicScalingManager dynamicScalingManager) throws IOException {
     this.initialTaskNum = initialTaskNum;
     this.taskRequestor = taskRequestor;
     this.masterSetupFinished = masterSetupFinished;
     this.masterRecovery = masterRecovery;
     this.applicationCodeManager = applicationCodeManager;
-        // Initialize countdown latch
+    this.dynamicScalingManager = dynamicScalingManager;
+
+    // Initialize countdown latch
     this.countDownLatch = new CountDownLatch(1);
     // Launch servers for RPC
     this.driverToMasterServer = AvroUtils.createAvroServer(DriverToMasterMessage.class, driverToMasterMessage,
@@ -118,11 +127,14 @@ public final class MistMaster implements Task {
       taskRequestor.recoverTaskConn();
       masterSetupFinished.setFinished();
     }
+    // Start dynamic scheduling manager.
+    this.dynamicScalingManager.startAutoScaling();
     this.countDownLatch.await();
     // MistMaster has been terminated
     this.driverToMasterServer.close();
     this.clientToMasterServer.close();
     this.taskToMasterServer.close();
+    this.dynamicScalingManager.close();
     return null;
   }
 

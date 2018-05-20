@@ -15,10 +15,10 @@
  */
 package edu.snu.mist.core.master;
 
-import edu.snu.mist.core.master.allocation.ApplicationAwareQueryAllocationManager;
-import edu.snu.mist.core.master.allocation.QueryAllocationManager;
-import edu.snu.mist.core.master.allocation.parameters.OverloadedTaskThreshold;
-import edu.snu.mist.core.master.allocation.parameters.UnderloadedTaskThreshold;
+import edu.snu.mist.core.master.lb.allocation.ApplicationAwareQueryAllocationManager;
+import edu.snu.mist.core.master.lb.allocation.QueryAllocationManager;
+import edu.snu.mist.core.master.lb.parameters.OverloadedTaskLoadThreshold;
+import edu.snu.mist.core.master.lb.parameters.UnderloadedTaskLoadThreshold;
 import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -36,8 +36,8 @@ public final class QueryAllocationManagerTest {
     final Injector injector = Tang.Factory.getTang().newInjector();
     final TaskStatsMap taskStatsMap = injector.getInstance(TaskStatsMap.class);
     final QueryAllocationManager manager = injector.getInstance(ApplicationAwareQueryAllocationManager.class);
-    final double overloadedTaskThreshold = injector.getNamedInstance(OverloadedTaskThreshold.class);
-    final double underloadedTaskThreshold = injector.getNamedInstance(UnderloadedTaskThreshold.class);
+    final double overloadedTaskThreshold = injector.getNamedInstance(OverloadedTaskLoadThreshold.class);
+    final double underloadedTaskThreshold = injector.getNamedInstance(UnderloadedTaskLoadThreshold.class);
     final String task1 = "task1";
     final String task2 = "task2";
 

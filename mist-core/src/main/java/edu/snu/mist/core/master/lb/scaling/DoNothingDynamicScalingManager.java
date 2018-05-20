@@ -13,7 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.core.master.lb.scaling;
+
+import javax.inject.Inject;
+
 /**
- * The package for interface and implementation of QueryAllocationManager.
+ * Using this class, MIST does not implement automatic scale-in / out.
  */
-package edu.snu.mist.core.master.allocation;
+public final class DoNothingDynamicScalingManager implements DynamicScalingManager {
+
+  @Inject
+  private DoNothingDynamicScalingManager() {
+    // Nothing is necessary.
+  }
+
+  @Override
+  public void startAutoScaling() {
+    // Do nothing
+  }
+
+  @Override
+  public void close() throws Exception {
+    // Do nothing
+  }
+}

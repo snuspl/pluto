@@ -13,19 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.mist.core.master.allocation;
+package edu.snu.mist.core.master.lb.parameters;
 
-import edu.snu.mist.formats.avro.IPAddress;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * This is the interface for classes which is in charge of application-aware query allocation.
+ * The ratio of overloaded nodes.
  */
-public interface QueryAllocationManager {
-
-  /**
-   * This method returns the mist Task where the given query is allocated.
-   * @param appId the application id of the given query.
-   * @return MIST task ip address where the query is allocated.
-   */
-  IPAddress getAllocatedTask(final String appId);
+@NamedParameter(doc = "The overloaded cluster ratio for scaling-out.", default_value = "0.8",
+short_name = "scale_out_task_ratio")
+public final class ScaleOutOverloadedTaskRatio implements Name<Double> {
 }
