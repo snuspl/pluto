@@ -136,12 +136,12 @@ public final class MistMasterConfigs implements MistConfigs {
   /**
    * The rate of idle tasks for scaling-in.
    */
-  private final double scaleInIdleTaskRate;
+  private final double scaleInIdleTaskRatio;
 
   /**
    * The rate of overloaded tasks for scaling-out.
    */
-  private final double scaleOutOverloadedTaskRate;
+  private final double scaleOutOverloadedTaskRatio;
 
   @Inject
   private MistMasterConfigs(
@@ -161,9 +161,9 @@ public final class MistMasterConfigs implements MistConfigs {
       @Parameter(MaxTaskNum.class) final int maxTaskNum,
       @Parameter(MinTaskNum.class) final int minTaskNum,
       @Parameter(ScaleInGracePeriod.class) final long scaleInGracePeriod,
-      @Parameter(ScaleInIdleTaskRate.class) final double scaleInIdleTaskRate,
+      @Parameter(ScaleInIdleTaskRatio.class) final double scaleInIdleTaskRatio,
       @Parameter(ScaleOutGracePeriod.class) final long scaleOutGracePeriod,
-      @Parameter(ScaleOutOverloadedTaskRate.class) final double scaleOutOverloadedTaskRate) {
+      @Parameter(ScaleOutOverloadedTaskRatio.class) final double scaleOutOverloadedTaskRatio) {
     this.numTasks = numTasks;
     this.taskMemSize = taskMemSize;
     this.numTaskCores = numTaskCores;
@@ -181,9 +181,9 @@ public final class MistMasterConfigs implements MistConfigs {
     this.maxTaskNum = maxTaskNum;
     this.minTaskNum = minTaskNum;
     this.scaleInGracePeriod = scaleInGracePeriod;
-    this.scaleInIdleTaskRate = scaleInIdleTaskRate;
+    this.scaleInIdleTaskRatio = scaleInIdleTaskRatio;
     this.scaleOutGracePeriod = scaleOutGracePeriod;
-    this.scaleOutOverloadedTaskRate = scaleOutOverloadedTaskRate;
+    this.scaleOutOverloadedTaskRatio = scaleOutOverloadedTaskRatio;
   }
 
   private Class<? extends QueryAllocationManager> getQueryAllocationImplClass() {
@@ -227,9 +227,9 @@ public final class MistMasterConfigs implements MistConfigs {
     jcb.bindNamedParameter(MaxTaskNum.class, String.valueOf(maxTaskNum));
     jcb.bindNamedParameter(MinTaskNum.class, String.valueOf(minTaskNum));
     jcb.bindNamedParameter(ScaleInGracePeriod.class, String.valueOf(scaleInGracePeriod));
-    jcb.bindNamedParameter(ScaleInIdleTaskRate.class, String.valueOf(scaleInIdleTaskRate));
+    jcb.bindNamedParameter(ScaleInIdleTaskRatio.class, String.valueOf(scaleInIdleTaskRatio));
     jcb.bindNamedParameter(ScaleOutGracePeriod.class, String.valueOf(scaleOutGracePeriod));
-    jcb.bindNamedParameter(ScaleOutOverloadedTaskRate.class, String.valueOf(scaleOutOverloadedTaskRate));
+    jcb.bindNamedParameter(ScaleOutOverloadedTaskRatio.class, String.valueOf(scaleOutOverloadedTaskRatio));
 
     // Implementations.
     jcb.bindImplementation(QueryAllocationManager.class, getQueryAllocationImplClass());

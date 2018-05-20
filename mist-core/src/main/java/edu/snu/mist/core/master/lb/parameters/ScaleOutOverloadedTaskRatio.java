@@ -19,9 +19,9 @@ import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * The rate of idle tasks for scaling-in.
+ * The ratio of overloaded nodes.
  */
-@NamedParameter(doc = "The rate of idle tasks for scaling-in", default_value = "0.5",
-short_name = "scale_in_task_rate")
-public final class ScaleInIdleTaskRate implements Name<Double> {
+@NamedParameter(doc = "The overloaded cluster ratio for scaling-out.", default_value = "0.8",
+short_name = "scale_out_task_ratio")
+public final class ScaleOutOverloadedTaskRatio implements Name<Double> {
 }

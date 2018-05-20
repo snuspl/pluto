@@ -21,7 +21,7 @@ import org.apache.reef.tang.annotations.NamedParameter;
 /**
  * The monitoring period for dynamic scaling.
  */
-@NamedParameter(doc = "The monitoring period for dynamic scaling.",
+@NamedParameter(doc = "The monitoring period for dynamic scaling. (ms)",
 short_name = "dynamic_scale_period", default_value = "300000")
 public final class DynamicScalingPeriod implements Name<Long> {
 }

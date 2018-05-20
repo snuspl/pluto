@@ -21,7 +21,7 @@ import org.apache.reef.tang.annotations.NamedParameter;
 /**
  * The grace period for scaling out.
  */
-@NamedParameter(doc = "The grace period for scaling out", default_value = "60000",
+@NamedParameter(doc = "The grace period for scaling out (ms)", default_value = "60000",
 short_name = "grace_scale_out")
 public final class ScaleOutGracePeriod implements Name<Long> {
 }

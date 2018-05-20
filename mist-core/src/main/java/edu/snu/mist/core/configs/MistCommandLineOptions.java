@@ -81,8 +81,8 @@ public final class MistCommandLineOptions {
         .registerShortNameOfClass(MinTaskNum.class)
         .registerShortNameOfClass(OverloadedTaskLoadThreshold.class)
         .registerShortNameOfClass(ScaleInGracePeriod.class)
-        .registerShortNameOfClass(ScaleInIdleTaskRate.class)
+        .registerShortNameOfClass(ScaleInIdleTaskRatio.class)
         .registerShortNameOfClass(ScaleOutGracePeriod.class)
-        .registerShortNameOfClass(ScaleOutOverloadedTaskRate.class);
+        .registerShortNameOfClass(ScaleOutOverloadedTaskRatio.class);
   }
 }
