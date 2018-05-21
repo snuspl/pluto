@@ -244,10 +244,10 @@ public final class EventReplayUtils {
    *        "timestamp": (timestamp)
    *        }'
    */
-  public static boolean removeOnCheckpoint(final String replayAddress, final int replayPort,
+  public static boolean removeOnCheckpoint(final String replayServerAddress, final int replayServerPort,
                                            final String brokerURI, final String topic, final long timestamp) {
     try {
-      final URL url = new URL(getReplayServerUrl(replayAddress, replayPort) + "/checkpoint");
+      final URL url = new URL(getReplayServerUrl(replayServerAddress, replayServerPort) + "/checkpoint");
       final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
       conn.setRequestMethod("POST");
       conn.setRequestProperty("Content-Type", "application/json");
