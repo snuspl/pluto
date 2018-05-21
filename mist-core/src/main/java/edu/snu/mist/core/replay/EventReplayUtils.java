@@ -46,7 +46,7 @@ public final class EventReplayUtils {
   /**
    * Sends a POST to make an mqtt connection and subscribe request topic.
    * This method is the equivalent to :
-   * > curl -X POST http://(replayAddress):(replayPort)/subscribe \
+   * > curl -X POST http://(replayServerAddress):(replayServerPort)/subscribe \
    *     -H 'Content-Type: application/json' \
    *     -d '{
    *        "brokerAddress": "(brokerAddress)",
@@ -55,10 +55,10 @@ public final class EventReplayUtils {
    *        }'
    * @return true on success, else false
    */
-  public static boolean subscribe(final String replayAddress, final int replayPort,
+  public static boolean subscribe(final String replayServerAddress, final int replayServerPort,
                                   final String brokerAddress, final int brokerPort, final String topic) {
     try {
-      final URL url = new URL(getReplayServerUrl(replayAddress, replayPort) + "/subscribe");
+      final URL url = new URL(getReplayServerUrl(replayServerAddress, replayServerPort) + "/subscribe");
       final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
       conn.setRequestMethod("POST");
       conn.setRequestProperty("Content-Type", "application/json");
@@ -95,24 +95,24 @@ public final class EventReplayUtils {
   /**
    * Sends a GET to retrieve data within a timestamp period.
    * This method is the equivalent to :
-   * > curl -X GET http://(replayAddress):(replayPort)/replay \
+   * > curl -X GET http://(replayServerAddress):(replayServerPort)/replay \
    *     -H 'Content-Type: application/json' \
    *     -d '{
    *        "brokerURI": "(brokerURI)",
    *        "topic": "(topic)"
    *        }'
    */
-  public static EventReplayResult replay(final String replayAddress,
-                                         final int replayPort,
+  public static EventReplayResult replay(final String replayServerAddress,
+                                         final int replayServerPort,
                                          final String brokerURI,
                                          final String topic) {
-    return replay(replayAddress, replayPort, brokerURI, topic, -1, -1);
+    return replay(replayServerAddress, replayServerPort, brokerURI, topic, -1, -1);
   }
 
   /**
    * Sends a GET to retrieve data within a timestamp period.
    * This method is the equivalent to :
-   * > curl -X GET http://(replayAddress):(replayPort)/replay \
+   * > curl -X GET http://(replayServerAddress):(replayServerPort)/replay \
    *     -H 'Content-Type: application/json' \
    *     -d '{
    *        "brokerURI": "(brokerURI)",
@@ -120,18 +120,18 @@ public final class EventReplayUtils {
    *        "startTimestamp": (startTimestamp)
    *        }'
    */
-  public static EventReplayResult replay(final String replayAddress,
-                                         final int replayPort,
+  public static EventReplayResult replay(final String replayServerAddress,
+                                         final int replayServerPort,
                                          final String brokerURI,
                                          final String topic,
                                          final long startTimestamp) {
-    return replay(replayAddress, replayPort, brokerURI, topic, startTimestamp, -1);
+    return replay(replayServerAddress, replayServerPort, brokerURI, topic, startTimestamp, -1);
   }
 
   /**
    * Sends a GET to retrieve data within a timestamp period.
    * This method is the equivalent to :
-   * > curl -X GET http://(replayAddress):(replayPort)/replay \
+   * > curl -X GET http://(replayServerAddress):(replayServerPort)/replay \
    *     -H 'Content-Type: application/json' \
    *     -d '{
    *        "brokerURI": "(brokerURI)",
@@ -140,14 +140,14 @@ public final class EventReplayUtils {
    *        "endTimestamp": (endTimestamp)
    *        }'
    */
-  public static EventReplayResult replay(final String replayAddress,
-                                         final int replayPort,
+  public static EventReplayResult replay(final String replayServerAddress,
+                                         final int replayServerPort,
                                          final String brokerURI,
                                          final String topic,
                                          final long startTimestamp,
                                          final long endTimestamp) {
     try {
-      final String urlString = getReplayServerUrl(replayAddress, replayPort) + "/replay";
+      final String urlString = getReplayServerUrl(replayServerAddress, replayServerPort) + "/replay";
       final URL url = new URL(urlString);
 
       final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -220,23 +220,23 @@ public final class EventReplayUtils {
   /**
    * Removes the data with timestamps faster than the current time.
    * This method is the equivalent to :
-   * > curl -X GET http://(replayAddress):(replayPort)/checkpoint \
+   * > curl -X GET http://(replayServerAddress):(replayServerPort)/checkpoint \
    *     -H 'Content-Type: application/json' \
    *     -d '{
    *        "brokerURI": "(brokerURI)",
    *        "topic": "(topic)"
    *        }'
    */
-  public static boolean removeOnCheckpoint(final String replayAddress, final int replayPort,
+  public static boolean removeOnCheckpoint(final String replayServerAddress, final int replayServerPort,
                                            final String brokerURI, final String topic) {
-    return removeOnCheckpoint(replayAddress, replayPort, brokerURI, topic, -1);
+    return removeOnCheckpoint(replayServerAddress, replayServerPort, brokerURI, topic, -1);
   }
 
 
   /**
    * Removes the data with timestamps faster than the given timestamp.
    * This method is the equivalent to :
-   * > curl -X GET http://(replayAddress):(replayPort)/checkpoint \
+   * > curl -X GET http://(replayServerAddress):(replayServerPort)/checkpoint \
    *     -H 'Content-Type: application/json' \
    *     -d '{
    *        "brokerURI": "(brokerURI)",
@@ -286,7 +286,7 @@ public final class EventReplayUtils {
     }
   }
 
-  private static String getReplayServerUrl(final String replayAddress, final int replayPort) {
-    return "http://" + replayAddress + ":" + replayPort;
+  private static String getReplayServerUrl(final String replayServerAddress, final int replayServerPort) {
+    return "http://" + replayServerAddress + ":" + replayServerPort;
   }
 }
