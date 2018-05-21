@@ -30,8 +30,11 @@ import java.util.Map;
 
 public final class EventReplayUtilsTest {
 
+  /**
+   * This test tests the subscribe, replay, and removeOnCheckpoint APIs of the EventReplayUtils class.
+   */
   @Test
-  public void testSubscribeAndReplay() throws IOException, MqttException, InterruptedException {
+  public void testUtils() throws IOException, MqttException, InterruptedException {
     try {
       final int replayPortNum = 26523;
       final String localAddress = "127.0.0.1";
