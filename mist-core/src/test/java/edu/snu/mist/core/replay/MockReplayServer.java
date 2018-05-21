@@ -31,10 +31,7 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,9 +50,9 @@ public final class MockReplayServer {
   private ServerSocket serverSocket;
 
   /**
-   * The broker address and stored events.
+   * The map of (broker address)-(topic) as the key, and stored events as the value.
    */
-  private Map<String, List<List<Object>>> brokerEventListMap;
+  private Map<String, List<List<Object>>> brokerTopicAndEventListMap;
 
   /**
    * The Mqtt client to subscribe to the broker.
@@ -64,7 +61,7 @@ public final class MockReplayServer {
 
   public MockReplayServer(final int portNum) {
     this.portNum = portNum;
-    this.brokerEventListMap = new HashMap<>();
+    this.brokerTopicAndEventListMap = new HashMap<>();
   }
 
   /**
@@ -87,14 +84,13 @@ public final class MockReplayServer {
         String request = bufferedReader.readLine(); // The request line, such as "GET /replay HTTP/1.1".
         String[] requestParam = request.split(" ");
         String url = requestParam[1];
-        if (url.startsWith("/replay")) {
-          handleReplay(url, printWriter);
+        if (url.equals("/replay")) {
+          handleReplay(bufferedReader, printWriter);
         } else if (url.equals("/checkpoint")) {
           handleCheckpoint(bufferedReader, printWriter);
         } else if (url.equals("/subscribe")) {
           handleSubscribe(bufferedReader, printWriter);
         }
-        Thread.sleep(1000);
         bufferedReader.close();
         printWriter.close();
       }
@@ -122,49 +118,56 @@ public final class MockReplayServer {
   /**
    * A method to handle replay requests.
    */
-  private void handleReplay(final String url,
-                           final PrintWriter printWriter) throws IOException {
+  private void handleReplay(final BufferedReader bufferedReader,
+                            final PrintWriter printWriter) throws IOException {
     sendHeader(printWriter);
 
-    // Send the mqtt messages according to the url parameters.
-    final String[] urlParams = url.substring(1).split("/");
-    final Map<String, Map<String, List<List<Object>>>> eventMap = new HashMap<>();
-    if (urlParams.length == 1) {
-      // replay all events
-      eventMap.put("result", brokerEventListMap);
-    } else if (urlParams.length >= 2) {
-      // The starting timestamp.
-      final Long startTimestamp = Long.parseLong(urlParams[1]);
-      Long endTimestamp = null;
-      if (urlParams.length == 3) {
-        endTimestamp = Long.parseLong(urlParams[2]);
-      }
-      final Map<String, List<List<Object>>> filteredBrokerEventListMap = new HashMap<>();
-      for (final Map.Entry<String, List<List<Object>>> entry : brokerEventListMap.entrySet()) {
-        final String brokerAddress = entry.getKey();
-        final List<List<Object>> allEvents = entry.getValue();
-        final List<List<Object>> filteredEvents = new ArrayList<>();
-        for (final List<Object> event : allEvents) {
-          final Long timestamp = (Long) event.get(0);
-          if (timestamp >= startTimestamp) {
-            if (endTimestamp == null) {
-              filteredEvents.add(event);
-            } else if (timestamp <= endTimestamp) {
-              filteredEvents.add(event);
-            }
+    String currentLine = bufferedReader.readLine();
+    while (currentLine != null && !currentLine.equals("")) {
+      currentLine = bufferedReader.readLine();
+    }
+    // The line after the empty line is the body.
+    currentLine = bufferedReader.readLine();
+    final ObjectMapper mapper = new ObjectMapper();
+    final Map<String, String> contentMap = mapper.readValue(currentLine,
+        new TypeReference<Map<String, String>>() {
+        });
+    final String brokerURIandTopic = contentMap.get("brokerURI") + "-" + contentMap.get("topic");
+    final String startTimestamp = contentMap.get("startTimestamp");
+    final String endTimestamp = contentMap.get("endTimestamp");
+
+    // Send the mqtt messages according to the start and end timestamps.
+    final Map<String, List<List<Object>>> eventMap = new HashMap<>();
+
+    if (startTimestamp == null) {
+      eventMap.put("result", brokerTopicAndEventListMap.get(brokerURIandTopic));
+    } else {
+      final List<List<Object>> allEvents = brokerTopicAndEventListMap.get(brokerURIandTopic);
+      final List<List<Object>> filteredEvents = new ArrayList<>();
+      for (final List<Object> event : allEvents) {
+        final Long timestamp = (Long) event.get(0);
+        if (timestamp >= Long.parseLong(startTimestamp)) {
+          if (endTimestamp == null) {
+            filteredEvents.add(event);
+          } else if (timestamp <= Long.parseLong(endTimestamp)) {
+            filteredEvents.add(event);
           }
         }
-        filteredBrokerEventListMap.put(brokerAddress, filteredEvents);
       }
-      eventMap.put("result", filteredBrokerEventListMap);
+      // Sort the events in timestamp order.
+      filteredEvents.sort(new MessageComparator());
+
+      // Emit the replay events.
+      eventMap.put("result", filteredEvents);
     }
+
     // Output the finished JSON response.
     JSONObject.writeJSONString(eventMap, printWriter);
     printWriter.flush();
   }
 
   /**
-   * A method to handle checkpoint requests.
+   * A method to handle removeOnCheckpoint requests.
    */
   private void handleCheckpoint(final BufferedReader bufferedReader,
                                 final PrintWriter printWriter) {
@@ -180,20 +183,22 @@ public final class MockReplayServer {
       final Map<String, String> contentMap = mapper.readValue(currentLine,
           new TypeReference<Map<String, String>>() {
           });
-      final Long checkpointTimestamp = Long.parseLong(contentMap.get("timestamp"));
-      for (final Map.Entry<String, List<List<Object>>> me : brokerEventListMap.entrySet()) {
-        final List<List<Object>> newEventList = new ArrayList<>();
-        final List<List<Object>> eventList = me.getValue();
+      final String brokerURIandTopic = contentMap.get("brokerURI") + "-" + contentMap.get("topic");
+      final String checkpointTimestamp = contentMap.get("timestamp");
+
+      final List<List<Object>> eventList = brokerTopicAndEventListMap.get(brokerURIandTopic);
+      if (eventList != null) {
+        final List<List<Object>> remainingEventList = new ArrayList<>();
         for (final List<Object> event : eventList) {
           final Long eventTimestamp = (Long) event.get(0);
-          if (eventTimestamp > checkpointTimestamp) {
-            newEventList.add(event);
+          if (checkpointTimestamp != null && eventTimestamp >= Long.parseLong(checkpointTimestamp)) {
+            remainingEventList.add(event);
           }
         }
-        if (newEventList.size() == 0) {
-          brokerEventListMap.remove(me.getKey());
+        if (remainingEventList.size() == 0) {
+          brokerTopicAndEventListMap.remove(brokerURIandTopic);
         } else {
-          brokerEventListMap.put(me.getKey(), newEventList);
+          brokerTopicAndEventListMap.put(brokerURIandTopic, remainingEventList);
         }
       }
     } catch (final Exception e) {
@@ -202,10 +207,10 @@ public final class MockReplayServer {
   }
 
   /**
-   * A method to handle subscribe reqeusts.
+   * A method to handle subscribe requests.
    */
   private void handleSubscribe(final BufferedReader bufferedReader,
-                              final PrintWriter printWriter) {
+                               final PrintWriter printWriter) {
     try {
       sendHeader(printWriter);
       String currentLine = bufferedReader.readLine();
@@ -236,18 +241,22 @@ public final class MockReplayServer {
                         final String mqttMessage) {
     final List<Object> newEvent = new ArrayList<>();
     newEvent.add(timestamp);
-    newEvent.add(topic);
     final StringBuilder message = new StringBuilder();
-    message.append("{\"text\": ");
+    message.append("{\"message\": ");
     message.append("\"" + mqttMessage + "\", ");
     message.append("\"start_timestamp\": ");
     message.append(timestamp.toString() + "}");
     newEvent.add(message.toString());
-    List<List<Object>> eventList = brokerEventListMap.getOrDefault(MqttUtils.BROKER_URI, new ArrayList<>());
+    final String brokerURIandTopic = MqttUtils.BROKER_URI + "-" + topic;
+    List<List<Object>> eventList =
+        brokerTopicAndEventListMap.getOrDefault(brokerURIandTopic, new ArrayList<>());
     eventList.add(newEvent);
-    brokerEventListMap.put(MqttUtils.BROKER_URI, eventList);
+    brokerTopicAndEventListMap.put(brokerURIandTopic, eventList);
   }
 
+  /**
+   * Returns true if this replay server is closed.
+   */
   public boolean isClosed() {
     return serverSocket.isClosed();
   }
@@ -278,13 +287,25 @@ public final class MockReplayServer {
       final Map<String, String> payloadMap = mapper.readValue(new String(message.getPayload()),
           new TypeReference<Map<String, String>>() { });
       final Long timestamp = Long.parseLong(payloadMap.get("start_timestamp"));
-      final String word = payloadMap.get("word");
-      addEvent(timestamp, topic, word);
+      final String stringMessage = payloadMap.get("message");
+      addEvent(timestamp, topic, stringMessage);
     }
 
     @Override
     public void deliveryComplete(final IMqttDeliveryToken token) {
       // do nothing
+    }
+  }
+
+  /**
+   * Comparator for sorting events in timestamp order.
+   */
+  private final class MessageComparator implements Comparator<List<Object>> {
+    @Override
+    public int compare(final List<Object> a1, final List<Object> a2) {
+      final Long timestamp1 = (Long) a1.get(0);
+      final Long timestamp2 = (Long) a2.get(0);
+      return timestamp1 > timestamp2 ? 1 : (timestamp1 < timestamp2 ? -1 : 0);
     }
   }
 }

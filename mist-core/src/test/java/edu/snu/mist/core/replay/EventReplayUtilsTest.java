@@ -26,7 +26,6 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 public final class EventReplayUtilsTest {
 
@@ -38,18 +37,19 @@ public final class EventReplayUtilsTest {
     try {
       final int replayPortNum = 26523;
       final String localAddress = "127.0.0.1";
+      final String brokerURI = MqttUtils.BROKER_URI;
       final String topic1 = "source/user/gps";
       final String topic2 = "source/user/heartbeat";
       final String topic3 = "source/user/doorClosed";
-      final String payload1 = "{\"word\": \"aaa\", \"start_timestamp\": 1}";
-      final String payload2 = "{\"word\": \"bbb\", \"start_timestamp\": 2}";
-      final String payload3 = "{\"word\": \"ccc\", \"start_timestamp\": 3}";
-      final String payload4 = "{\"word\": \"ddd\", \"start_timestamp\": 4}";
-      final String payload5 = "{\"word\": \"eee\", \"start_timestamp\": 5}";
-      final String payload6 = "{\"word\": \"eee\", \"start_timestamp\": 6}";
+      final String payload1 = "{\"message\": \"aaa\", \"start_timestamp\": 1}";
+      final String payload2 = "{\"message\": \"bbb\", \"start_timestamp\": 2}";
+      final String payload3 = "{\"message\": \"ccc\", \"start_timestamp\": 3}";
+      final String payload4 = "{\"message\": \"ddd\", \"start_timestamp\": 4}";
+      final String payload5 = "{\"message\": \"eee\", \"start_timestamp\": 5}";
+      final String payload6 = "{\"message\": \"eee\", \"start_timestamp\": 6}";
       final MockReplayServer server = new MockReplayServer(replayPortNum);
       final Server mqttBroker = MqttUtils.createMqttBroker();
-      final MqttClient pubClient = new MqttClient(MqttUtils.BROKER_URI, "testPubClient");
+      final MqttClient pubClient = new MqttClient(brokerURI, "testPubClient");
 
       final Thread serverThread = new Thread(new Runnable() {
         @Override
@@ -60,7 +60,7 @@ public final class EventReplayUtilsTest {
       serverThread.start();
 
       // Wait for the socket to open.
-      Thread.sleep(1000);
+      Thread.sleep(500);
       while (server.isClosed()) {
         Thread.sleep(100);
       }
@@ -85,49 +85,77 @@ public final class EventReplayUtilsTest {
       pubClient.publish(topic2, new MqttMessage(payload6.getBytes()));
       Thread.sleep(1000);
 
-      // Fetch all events by using the replay method.
-      final EventReplayResult result1 = EventReplayUtils.replay(localAddress, replayPortNum);
-      final Map<String, Map<String, List<Tuple<Long, MqttMessage>>>> result1Map =
-          result1.getBrokerAndTopicMqttMessageMap();
-      Assert.assertEquals(1, result1Map.size());
+      // Fetch all topic1 events by using the replay method.
+      final EventReplayResult result1 = EventReplayUtils.replay(localAddress, replayPortNum, brokerURI, topic1);
+      final List<Tuple<Long, MqttMessage>> result1Messages = result1.getMqttMessages();
+      Assert.assertEquals(3, result1Messages.size());
 
-      final Map<String, List<Tuple<Long, MqttMessage>>> result1BrokerMap = result1Map.get(MqttUtils.BROKER_URI);
-      Assert.assertEquals(3, result1BrokerMap.size());
-      final List<Tuple<Long, MqttMessage>> topic1Events = result1BrokerMap.get(topic1);
-      Assert.assertEquals(3, topic1Events.size());
-      final List<Tuple<Long, MqttMessage>> topic2Events = result1BrokerMap.get(topic2);
-      Assert.assertEquals(3, topic2Events.size());
-      final List<Tuple<Long, MqttMessage>> topic3Events = result1BrokerMap.get(topic3);
-      Assert.assertEquals(1, topic3Events.size());
+      final Tuple<Long, MqttMessage> result1Message1 = result1Messages.get(0);
+      Assert.assertEquals(1L, (long) result1Message1.getKey());
+      Assert.assertEquals(payload1, result1Message1.getValue().toString());
+      final Tuple<Long, MqttMessage> result1Message2 = result1Messages.get(1);
+      Assert.assertEquals(2L, (long) result1Message2.getKey());
+      Assert.assertEquals(payload2, result1Message2.getValue().toString());
+      final Tuple<Long, MqttMessage> result1Message3 = result1Messages.get(2);
+      Assert.assertEquals(3L, (long) result1Message3.getKey());
+      Assert.assertEquals(payload3, result1Message3.getValue().toString());
 
-      // Fetch events from timestamp 3L ~ 5L using the replay method.
-      final EventReplayResult result2 = EventReplayUtils.replay(localAddress, replayPortNum, 3L, 5L);
-      final Map<String, Map<String, List<Tuple<Long, MqttMessage>>>> result2Map =
-          result2.getBrokerAndTopicMqttMessageMap();
-      Assert.assertEquals(1, result2Map.size());
+      // Fetch all topic2 events by using the replay method.
+      final EventReplayResult result2 = EventReplayUtils.replay(localAddress, replayPortNum,
+          brokerURI, topic2);
+      final List<Tuple<Long, MqttMessage>> result2Messages = result2.getMqttMessages();
+      Assert.assertEquals(3, result2Messages.size());
 
-      final Map<String, List<Tuple<Long, MqttMessage>>> result2BrokerMap = result2Map.get(MqttUtils.BROKER_URI);
-      Assert.assertEquals(3, result2BrokerMap.size());
-      final List<Tuple<Long, MqttMessage>> topic1Events2 = result2BrokerMap.get(topic1);
-      Assert.assertEquals(1, topic1Events2.size());
-      final List<Tuple<Long, MqttMessage>> topic2Events2 = result2BrokerMap.get(topic2);
-      Assert.assertEquals(2, topic2Events2.size());
-      final List<Tuple<Long, MqttMessage>> topic3Events2 = result2BrokerMap.get(topic3);
-      Assert.assertEquals(1, topic3Events2.size());
+      final Tuple<Long, MqttMessage> result2Message1 = result2Messages.get(0);
+      Assert.assertEquals(4L, (long) result2Message1.getKey());
+      Assert.assertEquals(payload4, result2Message1.getValue().toString());
 
-      // Remove events from the server using the checkpoint method,
-      // and check if it has been properly removed by using the replay method.
-      EventReplayUtils.removeOnCheckpoint(localAddress, replayPortNum, 5L);
-      Thread.sleep(500);
-      final EventReplayResult result3 = EventReplayUtils.replay(localAddress, replayPortNum);
-      final Map<String, Map<String, List<Tuple<Long, MqttMessage>>>> result3Map =
-          result3.getBrokerAndTopicMqttMessageMap();
-      System.out.println(result3Map);
-      Assert.assertEquals(1, result3Map.size());
-      final Map<String, List<Tuple<Long, MqttMessage>>> result3BrokerMap = result3Map.get(MqttUtils.BROKER_URI);
-      Assert.assertEquals(1, result3BrokerMap.size());
-      final List<Tuple<Long, MqttMessage>> topic2Events3 = result3BrokerMap.get(topic2);
-      Assert.assertEquals(1, topic2Events3.size());
+      final Tuple<Long, MqttMessage> result2Message2 = result2Messages.get(1);
+      Assert.assertEquals(4L, (long) result2Message2.getKey());
+      Assert.assertEquals(payload4, result2Message2.getValue().toString());
+
+      final Tuple<Long, MqttMessage> result2Message3 = result2Messages.get(2);
+      Assert.assertEquals(6L, (long) result2Message3.getKey());
+      Assert.assertEquals(payload6, result2Message3.getValue().toString());
+
+      // Fetch all topic3 events by using the replay method.
+      final EventReplayResult result3 = EventReplayUtils.replay(localAddress, replayPortNum,
+          brokerURI, topic3);
+      final List<Tuple<Long, MqttMessage>> result3Messages = result3.getMqttMessages();
+      Assert.assertEquals(1, result3Messages.size());
+
+      final Tuple<Long, MqttMessage> result3Message1 = result3Messages.get(0);
+      Assert.assertEquals(5L, (long) result3Message1.getKey());
+      Assert.assertEquals(payload5, result3Message1.getValue().toString());
+
+      // Fetch all topic2 events with timestamp 3L ~ 5L by using the replay method.
+      final EventReplayResult result4 = EventReplayUtils.replay(localAddress, replayPortNum,
+          brokerURI, topic2, 3L, 5L);
+      final List<Tuple<Long, MqttMessage>> result4Messages = result4.getMqttMessages();
+      Assert.assertEquals(2, result4Messages.size());
+
+      final Tuple<Long, MqttMessage> result4Message1 = result4Messages.get(0);
+      Assert.assertEquals(4L, (long) result4Message1.getKey());
+      Assert.assertEquals(payload4, result4Message1.getValue().toString());
+
+      final Tuple<Long, MqttMessage> result4Message2 = result4Messages.get(1);
+      Assert.assertEquals(4L, (long) result4Message2.getKey());
+      Assert.assertEquals(payload4, result4Message2.getValue().toString());
+
+      // Remove all events of topic1 by using the removeOnCheckpoint method.
+      EventReplayUtils.removeOnCheckpoint(localAddress, replayPortNum, brokerURI, topic1);
+      final EventReplayResult result5 = EventReplayUtils.replay(localAddress, replayPortNum, brokerURI, topic1);
+      Assert.assertEquals(0, result5.getMqttMessages().size());
+
+      // Remove events of topic2 with timestamp less than 5 by using the removeOnCheckpoint method.
+      EventReplayUtils.removeOnCheckpoint(localAddress, replayPortNum, brokerURI, topic2, 5L);
+      final EventReplayResult result6 = EventReplayUtils.replay(localAddress, replayPortNum, brokerURI, topic2);
+      final List<Tuple<Long, MqttMessage>> result6Messages = result6.getMqttMessages();
+      Assert.assertEquals(1, result6Messages.size());
+
+      final Tuple<Long, MqttMessage> result6Message1 = result6Messages.get(0);
+      Assert.assertEquals(6L, (long) result6Message1.getKey());
+      Assert.assertEquals(payload6, result6Message1.getValue().toString());
 
       // Disconnect and close all clients and servers.
       pubClient.disconnect();

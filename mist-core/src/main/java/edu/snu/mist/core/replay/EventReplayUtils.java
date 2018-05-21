@@ -49,14 +49,14 @@ public final class EventReplayUtils {
    * > curl -X POST http://(replayAddress):(replayPort)/subscribe \
    *     -H 'Content-Type: application/json' \
    *     -d '{
-   *        "address": "(address)",
-   *        "port": (port),
+   *        "brokerAddress": "(brokerAddress)",
+   *        "brokerPort": (brokerPort),
    *        "topic": "(topic)"
    *        }'
    * @return true on success, else false
    */
   public static boolean subscribe(final String replayAddress, final int replayPort,
-                                  final String address, final int port, final String topic) {
+                                  final String brokerAddress, final int brokerPort, final String topic) {
     try {
       final URL url = new URL(getReplayServerUrl(replayAddress, replayPort) + "/subscribe");
       final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -64,8 +64,14 @@ public final class EventReplayUtils {
       conn.setRequestProperty("Content-Type", "application/json");
       conn.setDoOutput(true);
 
+      final StringBuilder requestBody = new StringBuilder("{");
+      requestBody.append("\"brokerAddress\": \"" + brokerAddress);
+      requestBody.append("\", \"brokerPort\": " +  brokerPort);
+      requestBody.append(", \"topic\": \"" + topic + "\"}\n");
+
       final OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");
-      writer.write(getSubscribeRequestBody(address, port, topic));
+      writer.write(requestBody.toString());
+      writer.flush();
       writer.close();
 
       if (conn.getResponseCode() != 200) {
@@ -90,52 +96,80 @@ public final class EventReplayUtils {
    * Sends a GET to retrieve data within a timestamp period.
    * This method is the equivalent to :
    * > curl -X GET http://(replayAddress):(replayPort)/replay \
-   *     -H 'Content-Type: application/json'
+   *     -H 'Content-Type: application/json' \
+   *     -d '{
+   *        "brokerURI": "(brokerURI)",
+   *        "topic": "(topic)"
+   *        }'
    */
   public static EventReplayResult replay(final String replayAddress,
-                                         final int replayPort) {
-    return replay(replayAddress, replayPort, -1, -1);
+                                         final int replayPort,
+                                         final String brokerURI,
+                                         final String topic) {
+    return replay(replayAddress, replayPort, brokerURI, topic, -1, -1);
   }
 
   /**
    * Sends a GET to retrieve data within a timestamp period.
    * This method is the equivalent to :
-   * > curl -X GET http://(replayAddress):(replayPort)/replay/(startTimestamp) \
-   *     -H 'Content-Type: application/json'
+   * > curl -X GET http://(replayAddress):(replayPort)/replay \
+   *     -H 'Content-Type: application/json' \
+   *     -d '{
+   *        "brokerURI": "(brokerURI)",
+   *        "topic": "(topic)",
+   *        "startTimestamp": (startTimestamp)
+   *        }'
    */
   public static EventReplayResult replay(final String replayAddress,
                                          final int replayPort,
+                                         final String brokerURI,
+                                         final String topic,
                                          final long startTimestamp) {
-    return replay(replayAddress, replayPort, startTimestamp, -1);
+    return replay(replayAddress, replayPort, brokerURI, topic, startTimestamp, -1);
   }
 
   /**
    * Sends a GET to retrieve data within a timestamp period.
    * This method is the equivalent to :
-   * > curl -X GET http://(replayAddress):(replayPort)/replay/(startTimestamp)/(endTimestamp) \
-   *     -H 'Content-Type: application/json'
+   * > curl -X GET http://(replayAddress):(replayPort)/replay \
+   *     -H 'Content-Type: application/json' \
+   *     -d '{
+   *        "brokerURI": "(brokerURI)",
+   *        "topic": "(topic)",
+   *        "startTimestamp": (startTimestamp),
+   *        "endTimestamp": (endTimestamp)
+   *        }'
    */
   public static EventReplayResult replay(final String replayAddress,
                                          final int replayPort,
+                                         final String brokerURI,
+                                         final String topic,
                                          final long startTimestamp,
                                          final long endTimestamp) {
     try {
       final String urlString = getReplayServerUrl(replayAddress, replayPort) + "/replay";
-      final URL url;
-
-      if (startTimestamp == -1) {
-        url = new URL(urlString);
-      } else {
-        if (endTimestamp == -1) {
-          url = new URL(urlString + "/" + startTimestamp);
-        } else {
-          url = new URL(urlString + "/" + startTimestamp + "/" + endTimestamp);
-        }
-      }
+      final URL url = new URL(urlString);
 
       final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
       conn.setRequestMethod("GET");
       conn.setRequestProperty("Content-Type", "application/json");
+      conn.setDoOutput(true);
+
+      final StringBuilder requestBody = new StringBuilder("{");
+      requestBody.append("\"brokerURI\": \"" + brokerURI + "\", ");
+      requestBody.append("\"topic\": \"" + topic + "\"");
+      if (startTimestamp != -1) {
+        requestBody.append(", \"startTimestamp\": " + String.valueOf(startTimestamp));
+        if (endTimestamp != -1) {
+          requestBody.append(", \"endTimestamp\": " + String.valueOf(endTimestamp));
+        }
+      }
+      requestBody.append("}\n");
+
+      final OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");
+      writer.write(requestBody.toString());
+      writer.flush();
+      writer.close();
 
       if (conn.getResponseCode() != 200) {
         LOG.log(Level.WARNING, "Failed : HTTP error code is {0}. Failure Response message : {1}",
@@ -160,40 +194,25 @@ public final class EventReplayUtils {
       final JSONParser parser = new JSONParser();
       final JSONObject resultObject = (JSONObject) parser.parse(concatenatedOutput.toString());
 
-      // The map that has a broker(address:port) as a key, and a list of events as a value.
-      final Map<String, Object> brokerEventMap;
-      Object uncastBrokerEventMap = resultObject.get("result");
-      if (uncastBrokerEventMap instanceof Map) {
-        brokerEventMap = (Map<String, Object>) uncastBrokerEventMap;
-      } else {
-        LOG.log(Level.WARNING, "Backup server does not return the broker and events as expected.");
-        return new EventReplayResult(false, null);
-      }
+      // The replayed events from the replay server.
+      final JSONArray replayEventList = (JSONArray) resultObject.get("result");
 
-      // The map that has a broker(address:port) as a key, and a list of events as a value.
-      final Map<String, Map<String, List<Tuple<Long, MqttMessage>>>> brokerMqttMessageMap = new HashMap<>();
-      for (Map.Entry<String, Object> entry : brokerEventMap.entrySet()) {
-        final JSONArray eventList = (JSONArray) entry.getValue();
-        final Map<String, List<Tuple<Long, MqttMessage>>> mqttMessages = new HashMap<>();
-        for (final Object eventObject : eventList) {
+      final List<Tuple<Long, MqttMessage>> mqttMessages = new ArrayList<>();
+
+      if (replayEventList != null) {
+        for (final Object eventObject : replayEventList) {
           final JSONArray event = (JSONArray) eventObject;
-          final String topic = event.get(1).toString();
-          final MqttMessage mqttMessage = new MqttMessage(event.get(2).toString().getBytes());
-          List<Tuple<Long, MqttMessage>> timestampAndMqttMessageList = mqttMessages.get(topic);
-          if (timestampAndMqttMessageList == null) {
-            timestampAndMqttMessageList = new ArrayList<>();
-            mqttMessages.put(topic, timestampAndMqttMessageList);
-          }
-          timestampAndMqttMessageList.add(new Tuple<>(Long.valueOf(event.get(0).toString()), mqttMessage));
+          final MqttMessage mqttMessage = new MqttMessage(event.get(1).toString().getBytes());
+          mqttMessages.add(new Tuple<>(Long.valueOf(event.get(0).toString()), mqttMessage));
         }
-        brokerMqttMessageMap.put(entry.getKey(), mqttMessages);
       }
 
       // End the connection.
       conn.disconnect();
-      return new EventReplayResult(true, brokerMqttMessageMap);
+      return new EventReplayResult(true, mqttMessages);
     } catch (Exception e) {
       LOG.log(Level.WARNING, "No server was found, or another error has occurred.");
+      e.printStackTrace();
       return new EventReplayResult(false, null);
     }
   }
@@ -202,10 +221,15 @@ public final class EventReplayUtils {
    * Removes the data with timestamps faster than the current time.
    * This method is the equivalent to :
    * > curl -X GET http://(replayAddress):(replayPort)/checkpoint \
-   *     -H 'Content-Type: application/json'
+   *     -H 'Content-Type: application/json' \
+   *     -d '{
+   *        "brokerURI": "(brokerURI)",
+   *        "topic": "(topic)"
+   *        }'
    */
-  public static boolean removeOnCheckpoint(final String replayAddress, final int replayPort) {
-    return removeOnCheckpoint(replayAddress, replayPort, -1);
+  public static boolean removeOnCheckpoint(final String replayAddress, final int replayPort,
+                                           final String brokerURI, final String topic) {
+    return removeOnCheckpoint(replayAddress, replayPort, brokerURI, topic, -1);
   }
 
 
@@ -215,10 +239,13 @@ public final class EventReplayUtils {
    * > curl -X GET http://(replayAddress):(replayPort)/checkpoint \
    *     -H 'Content-Type: application/json' \
    *     -d '{
-   *        "timestamp": "(timestamp)"
+   *        "brokerURI": "(brokerURI)",
+   *        "topic": "(topic)",
+   *        "timestamp": (timestamp)
    *        }'
    */
-  public static boolean removeOnCheckpoint(final String replayAddress, final int replayPort, final long timestamp) {
+  public static boolean removeOnCheckpoint(final String replayAddress, final int replayPort,
+                                           final String brokerURI, final String topic, final long timestamp) {
     try {
       final URL url = new URL(getReplayServerUrl(replayAddress, replayPort) + "/checkpoint");
       final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -226,11 +253,18 @@ public final class EventReplayUtils {
       conn.setRequestProperty("Content-Type", "application/json");
       conn.setDoOutput(true);
 
-      if (timestamp != -1L) {
-        final OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");
-        writer.write("{\"timestamp\": \"" + timestamp + "\"}");
-        writer.close();
+      final StringBuilder requestBody = new StringBuilder("{");
+      requestBody.append("\"brokerURI\": \"" + brokerURI + "\", ");
+      requestBody.append("\"topic\": \"" + topic + "\"");
+      if (timestamp != -1) {
+        requestBody.append(", \"timestamp\": " + String.valueOf(timestamp));
       }
+      requestBody.append("}\n");
+
+      final OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");
+      writer.write(requestBody.toString());
+      writer.flush();
+      writer.close();
 
       if (conn.getResponseCode() != 200) {
         LOG.log(Level.WARNING, "Failed : HTTP error code is {0}. Failure Response message : {1}",
@@ -254,9 +288,5 @@ public final class EventReplayUtils {
 
   private static String getReplayServerUrl(final String replayAddress, final int replayPort) {
     return "http://" + replayAddress + ":" + replayPort;
-  }
-
-  private static String getSubscribeRequestBody(final String address, final int port, final String topic) {
-    return "{\"address\": \"" + address + "\", \"port\": " +  port + ", \"topic\": \"" + topic + "\"}";
   }
 }

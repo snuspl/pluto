@@ -19,28 +19,31 @@ import org.apache.reef.io.Tuple;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.util.List;
-import java.util.Map;
 
 /**
- * A class that contains the success status and the messages of event replay requests.
+ * A class that contains the success status and the messages related to a topic of an event replay request.
  */
 public final class EventReplayResult {
 
   private final boolean success;
 
-  private final Map<String, Map<String, List<Tuple<Long, MqttMessage>>>> brokerAndTopicMqttMsgMap;
+  /**
+   * The returned events for replay.
+   * The tuple is consisted of the timestamp and the MqttMessage.
+   */
+  private final List<Tuple<Long, MqttMessage>> mqttMessages;
 
   public EventReplayResult(final boolean success,
-                           final Map<String, Map<String, List<Tuple<Long, MqttMessage>>>> brokerAndTopicMqttMsgMap) {
+                           final List<Tuple<Long, MqttMessage>> mqttMessages) {
     this.success = success;
-    this.brokerAndTopicMqttMsgMap = brokerAndTopicMqttMsgMap;
+    this.mqttMessages = mqttMessages;
   }
 
   public boolean isSuccess() {
     return success;
   }
 
-  public Map<String, Map<String, List<Tuple<Long, MqttMessage>>>> getBrokerAndTopicMqttMessageMap() {
-    return brokerAndTopicMqttMsgMap;
+  public List<Tuple<Long, MqttMessage>> getMqttMessages() {
+    return mqttMessages;
   }
 }
