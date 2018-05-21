@@ -118,6 +118,11 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
    */
   private final ScaleInManager scaleInManager;
 
+  /**
+   * The scale-out manager.
+   */
+  private final ScaleOutManager scaleOutManager;
+
   @Inject
   private PeriodicDynamicScalingManager(
       final TaskStatsMap taskStatsMap,
@@ -130,7 +135,8 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
       @Parameter(ScaleOutGracePeriod.class) final long scaleOutGracePeriod,
       @Parameter(ScaleInIdleTaskRatio.class) final double scaleInIdleTaskRatio,
       @Parameter(ScaleOutOverloadedTaskRatio.class) final double scaleOutOverloadedTaskRatio,
-      final ScaleInManager scaleInManager) {
+      final ScaleInManager scaleInManager,
+      final ScaleOutManager scaleOutManager) {
     this.taskStatsMap = taskStatsMap;
     this.dynamicScalingPeriod = dynamicScalingPeriod;
     this.maxTaskNum = maxTaskNum;
@@ -146,6 +152,7 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
     this.lastMeasuredTimestamp = System.currentTimeMillis();
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     this.scaleInManager = scaleInManager;
+    this.scaleOutManager = scaleOutManager;
   }
 
   private boolean isClusterOverloaded() {
@@ -188,8 +195,13 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
       if (clusterOverloaded) {
         overloadedTimeElapsed += lastMeasuredTimestamp - oldTimeStamp;
         if (overloadedTimeElapsed > scaleOutGracePeriod && taskStatsMap.getTaskList().size() < maxTaskNum) {
-          // TODO: [MIST-1130] Perform automatic scale-out.
-          overloadedTimeElapsed = 0;
+          try {
+            scaleOutManager.scaleOut();
+            overloadedTimeElapsed = 0;
+          } catch (final Exception e) {
+            LOG.log(Level.SEVERE, "An error occured while scaling-out!");
+            e.printStackTrace();
+          }
           return;
         }
       } else {
@@ -224,6 +236,7 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
   @Override
   public void close() throws Exception {
     scaleInManager.close();
+    scaleOutManager.close();
     scheduledExecutorService.shutdown();
     scheduledExecutorService.awaitTermination(6000, TimeUnit.MILLISECONDS);
   }

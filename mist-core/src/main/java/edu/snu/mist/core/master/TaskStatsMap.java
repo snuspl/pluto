@@ -59,6 +59,7 @@ public final class TaskStatsMap {
     innerList.add(taskHostname);
     return innerMap.putIfAbsent(taskHostname, TaskStats.newBuilder()
         .setTaskLoad(0.0)
+        .setNumEventProcessors(1)
         .setGroupStatsMap(new HashMap<>())
         .build());
   }

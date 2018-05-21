@@ -13,33 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.core.master.lb.scaling;
 
- /**
-  * This is a skeleton protocol for RPC communication from MistMaster to MistTask.
-  */
-{
-  "namespace": "edu.snu.mist.formats.avro",
-  "protocol": "MasterToTaskMessage",
-  "types": [
-  ],
-  "messages":
-  {
-    "startTaskSideRecovery":
-    {
-      "request": [],
-      "response": "null"
-    },
-    "removeGroup": {
-      "request": [
-        {
-          "name": "removedGroupList",
-          "type": {
-            "type": "array",
-            "items": "string"
-          }
-        }
-      ],
-      "response": "null"
-    }
-  }
+import org.apache.reef.tang.annotations.DefaultImplementation;
+
+/**
+ * The interface for scaling out.
+ */
+@DefaultImplementation(RecoveryBasedScaleOutManager.class)
+public interface ScaleOutManager extends AutoCloseable {
+
+  /**
+   * Perform scale-out according to the given implementation.
+   * @throws Exception
+   */
+  void scaleOut() throws Exception;
 }

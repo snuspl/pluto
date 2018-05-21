@@ -15,11 +15,13 @@
  */
 package edu.snu.mist.core.rpc;
 
+import edu.snu.mist.core.task.checkpointing.CheckpointManager;
 import edu.snu.mist.core.task.recovery.RecoveryManager;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
 import org.apache.avro.AvroRemoteException;
 
 import javax.inject.Inject;
+import java.util.List;
 
 /**
  * The default master-to-task message implementation.
@@ -31,14 +33,30 @@ public final class DefaultMasterToTaskMessageImpl implements MasterToTaskMessage
    */
   private final RecoveryManager recoveryManager;
 
+  /**
+   * The checkpoint manager.
+   */
+  private final CheckpointManager checkpointManager;
+
   @Inject
-  private DefaultMasterToTaskMessageImpl(final RecoveryManager recoveryManager) {
+  private DefaultMasterToTaskMessageImpl(
+      final RecoveryManager recoveryManager,
+      final CheckpointManager checkpointManager) {
     this.recoveryManager = recoveryManager;
+    this.checkpointManager = checkpointManager;
   }
 
   @Override
   public Void startTaskSideRecovery() throws AvroRemoteException {
     recoveryManager.startRecovery();
+    return null;
+  }
+
+  @Override
+  public Void removeGroup(final List<String> removedGroupList) throws AvroRemoteException {
+    for (final String removedGroupId : removedGroupList) {
+      checkpointManager.deleteGroup(removedGroupId);
+    }
     return null;
   }
 }
