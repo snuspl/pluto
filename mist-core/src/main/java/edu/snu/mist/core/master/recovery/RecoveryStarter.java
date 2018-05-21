@@ -45,17 +45,26 @@ public final class RecoveryStarter implements Runnable {
   private final RecoveryScheduler recoveryScheduler;
 
   public RecoveryStarter(final Map<String, GroupStats> failedGroupMap,
-                         final TaskRequestor taskRequestor,
-                         final RecoveryScheduler recoveryScheduler) {
+                         final RecoveryScheduler recoveryScheduler,
+                         final TaskRequestor taskRequestor) {
     this.failedGroupMap = failedGroupMap;
     this.taskRequestor = taskRequestor;
     this.recoveryScheduler = recoveryScheduler;
   }
 
+  // This constructor is used when the recovery without task requesting is necessary.
+  public RecoveryStarter(final Map<String, GroupStats> failedGroupMap,
+                         final RecoveryScheduler recoveryScheduler) {
+    this(failedGroupMap, recoveryScheduler, null);
+  }
+
   @Override
   public void run() {
-    // Request an evaluator for recovery task...
-    taskRequestor.setupTaskAndConn(1);
+    if (taskRequestor != null) {
+      // Request an evaluator for recovery task if recoveryScheduler is not null.
+      // If recovery scheduler is null, it does not request a new task.
+      taskRequestor.setupTaskAndConn(1);
+    }
     // Start recovering of the queries...
     recoveryScheduler.startRecovery(failedGroupMap);
     final long startTime = System.currentTimeMillis();

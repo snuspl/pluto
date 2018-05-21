@@ -37,6 +37,11 @@ public final class MockMasterToDriverMessage implements MasterToDriverMessage {
   }
 
   @Override
+  public boolean stopTask(final String taskHostname) throws AvroRemoteException {
+    return true;
+  }
+
+  @Override
   public boolean saveJarInfo(final String appId,
                              final List<String> jarPaths) throws AvroRemoteException {
     return true;

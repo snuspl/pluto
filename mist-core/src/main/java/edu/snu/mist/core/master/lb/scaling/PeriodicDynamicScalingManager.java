@@ -33,11 +33,15 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The default implementation for dynamic scaling policy.
  */
 public final class PeriodicDynamicScalingManager implements DynamicScalingManager {
+
+  private static final Logger LOG = Logger.getLogger(PeriodicDynamicScalingManager.class.getName());
 
   /**
    * The shared stats map.
@@ -109,6 +113,11 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
    */
   private ScheduledExecutorService scheduledExecutorService;
 
+  /**
+   * The scale-in manager.
+   */
+  private final ScaleInManager scaleInManager;
+
   @Inject
   private PeriodicDynamicScalingManager(
       final TaskStatsMap taskStatsMap,
@@ -120,7 +129,8 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
       @Parameter(ScaleInGracePeriod.class) final long scaleInGracePeriod,
       @Parameter(ScaleOutGracePeriod.class) final long scaleOutGracePeriod,
       @Parameter(ScaleInIdleTaskRatio.class) final double scaleInIdleTaskRatio,
-      @Parameter(ScaleOutOverloadedTaskRatio.class) final double scaleOutOverloadedTaskRatio) {
+      @Parameter(ScaleOutOverloadedTaskRatio.class) final double scaleOutOverloadedTaskRatio,
+      final ScaleInManager scaleInManager) {
     this.taskStatsMap = taskStatsMap;
     this.dynamicScalingPeriod = dynamicScalingPeriod;
     this.maxTaskNum = maxTaskNum;
@@ -135,6 +145,7 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
     this.overloadedTimeElapsed = 0L;
     this.lastMeasuredTimestamp = System.currentTimeMillis();
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+    this.scaleInManager = scaleInManager;
   }
 
   private boolean isClusterOverloaded() {
@@ -188,9 +199,16 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
       if (clusterIdle) {
         idleTimeElapsed += lastMeasuredTimestamp - oldTimeStamp;
         if (idleTimeElapsed > scaleInGracePeriod && taskStatsMap.getTaskList().size() > minTaskNum) {
-          // TODO: [MIST-1131] Perform automatic scale-in.
+          LOG.log(Level.INFO, "Start scaling-in...");
+          try {
+            final boolean scaleInSuccess = scaleInManager.scaleIn();
+            if (!scaleInSuccess) {
+              throw new RuntimeException("Automatic scale-in failed! - Task cannot be found");
+            }
+          } catch (final Exception e) {
+            e.printStackTrace();
+          }
           idleTimeElapsed = 0;
-          return;
         }
       } else {
         idleTimeElapsed = 0;
@@ -205,6 +223,7 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
 
   @Override
   public void close() throws Exception {
+    scaleInManager.close();
     scheduledExecutorService.shutdown();
     scheduledExecutorService.awaitTermination(6000, TimeUnit.MILLISECONDS);
   }
