@@ -223,6 +223,7 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
 
   @Override
   public void close() throws Exception {
+    scaleInManager.close();
     scheduledExecutorService.shutdown();
     scheduledExecutorService.awaitTermination(6000, TimeUnit.MILLISECONDS);
   }

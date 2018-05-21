@@ -21,7 +21,7 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
  * The interface for scaling-in the MIST cluster.
  */
 @DefaultImplementation(RecoveryBasedScaleInManager.class)
-public interface ScaleInManager {
+public interface ScaleInManager extends AutoCloseable {
 
   /**
    * Perform scale-in by removing a task.

@@ -31,6 +31,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public final class RecoveryBasedScaleInManager implements ScaleInManager {
 
@@ -49,6 +50,11 @@ public final class RecoveryBasedScaleInManager implements ScaleInManager {
    */
   private final RecoveryScheduler recoveryScheduler;
 
+  /**
+   * The single executor thread for running recovery.
+   */
+  private final ExecutorService singleThreadedExecutor;
+
   @Inject
   private RecoveryBasedScaleInManager(
       @Parameter(DriverHostname.class) final String driverHostname,
@@ -59,6 +65,7 @@ public final class RecoveryBasedScaleInManager implements ScaleInManager {
         driverHostname, masterToDriverPort));
     this.taskStatsMap = taskStatsMap;
     this.recoveryScheduler = recoveryScheduler;
+    this.singleThreadedExecutor = Executors.newSingleThreadExecutor();
   }
 
   private String getMinimumLoadTask() {
@@ -79,7 +86,6 @@ public final class RecoveryBasedScaleInManager implements ScaleInManager {
     final boolean stopTaskSuccess = proxyToDriver.stopTask(removedTaskName);
 
     if (stopTaskSuccess) {
-      final ExecutorService singleThreadedExecutor = Executors.newSingleThreadExecutor();
       final TaskStats taskStats = taskStatsMap.removeTask(removedTaskName);
       singleThreadedExecutor
           .submit(new RecoveryStarter(taskStats.getGroupStatsMap(), recoveryScheduler));
@@ -87,5 +93,11 @@ public final class RecoveryBasedScaleInManager implements ScaleInManager {
     } else {
       return false;
     }
+  }
+
+  @Override
+  public void close() throws Exception {
+    singleThreadedExecutor.shutdown();
+    singleThreadedExecutor.awaitTermination(60000, TimeUnit.MILLISECONDS);
   }
 }
