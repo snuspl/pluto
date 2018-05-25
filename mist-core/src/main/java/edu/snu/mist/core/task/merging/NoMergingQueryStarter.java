@@ -18,8 +18,8 @@ package edu.snu.mist.core.task.merging;
 import edu.snu.mist.common.configurations.ConfKeys;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
-import edu.snu.mist.core.parameters.ReplayAddress;
-import edu.snu.mist.core.parameters.ReplayPort;
+import edu.snu.mist.core.parameters.ReplayServerAddress;
+import edu.snu.mist.core.parameters.ReplayServerPort;
 import edu.snu.mist.core.task.*;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.Parameter;
@@ -67,8 +67,8 @@ public final class NoMergingQueryStarter extends BaseQueryStarter implements Que
   @Inject
   private NoMergingQueryStarter(final ExecutionPlanDagMap executionPlanDagMap,
                                 final DagGenerator dagGenerator,
-                                @Parameter(ReplayAddress.class) final String replayServerAddress,
-                                @Parameter(ReplayPort.class) final int replayServerPort) {
+                                @Parameter(ReplayServerAddress.class) final String replayServerAddress,
+                                @Parameter(ReplayServerPort.class) final int replayServerPort) {
     super(replayServerAddress, replayServerPort);
     this.executionPlanDagMap = executionPlanDagMap;
     this.dagGenerator = dagGenerator;

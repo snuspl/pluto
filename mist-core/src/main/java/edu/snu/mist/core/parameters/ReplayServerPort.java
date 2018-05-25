@@ -19,8 +19,8 @@ import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * The address of the replay server.
+ * The port used for replaying.
  */
-@NamedParameter(doc = "The address of the replay server.", default_value = "noReplay", short_name = "replay_address")
-public class ReplayAddress implements Name<String> {
+@NamedParameter(doc = "The port of the replay server.", default_value = "26523", short_name = "replay_port")
+public class ReplayServerPort implements Name<Integer> {
 }
