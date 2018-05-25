@@ -43,6 +43,7 @@ public final class PhysicalSourceImpl<T> extends BasePhysicalVertex implements P
     super(sourceId, configuration);
     this.dataGenerator = dataGenerator;
     this.eventGenerator = eventGenerator;
+    dataGenerator.setup();
   }
 
   @Override

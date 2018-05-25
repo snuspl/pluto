@@ -78,6 +78,11 @@ public final class NettyTextDataGenerator implements DataGenerator<String> {
   }
 
   @Override
+  public void setup() {
+    // This method is only for MQTTDataGenerator.
+  }
+
+  @Override
   public void start() {
     if (started.compareAndSet(false, true)) {
       if (eventGenerator != null) {

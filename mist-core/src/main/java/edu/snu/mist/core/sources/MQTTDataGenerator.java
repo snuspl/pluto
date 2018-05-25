@@ -17,6 +17,8 @@ package edu.snu.mist.core.sources;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
@@ -25,6 +27,11 @@ import java.util.logging.Logger;
  */
 public final class MQTTDataGenerator implements DataGenerator<MqttMessage> {
   private static final Logger LOG = Logger.getLogger(MQTTDataGenerator.class.getName());
+
+  /**
+   * A flag for setup to subscribe.
+   */
+  private final AtomicBoolean setup;
 
   /**
    * A flag for start.
@@ -51,12 +58,19 @@ public final class MQTTDataGenerator implements DataGenerator<MqttMessage> {
    */
   private EventGenerator<MqttMessage> eventGenerator;
 
+  /**
+   * A queue for events that must be emitted.
+   */
+  private Queue<MqttMessage> receivedMessages;
+
   public MQTTDataGenerator(final MQTTSubscribeClient subClient,
                            final String topic) {
     this.subClient = subClient;
     this.topic = topic;
+    this.setup = new AtomicBoolean(false);
     this.started = new AtomicBoolean(false);
     this.closed = new AtomicBoolean(false);
+    this.receivedMessages = new LinkedBlockingDeque<>();
   }
 
   /**
@@ -65,16 +79,26 @@ public final class MQTTDataGenerator implements DataGenerator<MqttMessage> {
    * @param message the message to emit
    */
   void emitData(final MqttMessage message) {
-    if (!closed.get() && eventGenerator != null) {
+    if (setup.get() && !started.get() && !closed.get()) {
+      receivedMessages.add(message);
+    } else if (!closed.get() && eventGenerator != null) {
       eventGenerator.emitData(message);
     }
   }
 
   @Override
-  public void start() {
-    if (started.compareAndSet(false, true)) {
+  public void setup() {
+    if (setup.compareAndSet(false, true)) {
       subClient.subscribe(topic);
     }
+  }
+
+  @Override
+  public void start() {
+    while (!receivedMessages.isEmpty()) {
+      eventGenerator.emitData(receivedMessages.poll());
+    }
+    started.compareAndSet(false, true);
   }
 
   @Override

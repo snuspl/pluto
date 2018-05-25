@@ -18,10 +18,14 @@ package edu.snu.mist.core.task;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.MISTEdge;
 import edu.snu.mist.core.task.merging.ImmediateQueryMergingStarter;
+import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
+import org.apache.reef.tang.exceptions.InjectionException;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * This interface represents a component that is responsible for starting and executing queries.
@@ -30,11 +34,19 @@ import java.util.List;
 public interface QueryStarter {
 
   /**
-   * Start to execute the submitted query.
+   * Start or setup the submitted query.
+   * @param isStart whether to start the query or just set it up
    * @param queryId query id
    * @param configDag dag that has configuration of vertices
    */
-  void start(String queryId,
-             Query query, DAG<ConfigVertex, MISTEdge> configDag, List<String> jarFilePaths)
+  Set<Tuple<String, String>> startOrSetupForReplay(boolean isStart, String queryId, Query query,
+                                                   DAG<ConfigVertex, MISTEdge> configDag, List<String> jarFilePaths)
       throws IOException, ClassNotFoundException;
+
+  /**
+   * Setup the submitted query but do not start the sources.
+   * @param queryIdAndBrokerTopicMap the map that contains the set of broker and topics per queryId
+   */
+  void replayAndStart(Map<String, Set<Tuple<String, String>>> queryIdAndBrokerTopicMap, long minTimestamp)
+      throws InjectionException, IOException, ClassNotFoundException;
 }

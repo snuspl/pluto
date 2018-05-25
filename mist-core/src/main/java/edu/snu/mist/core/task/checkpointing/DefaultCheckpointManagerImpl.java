@@ -19,10 +19,12 @@ import edu.snu.mist.core.sources.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.QueryManager;
 import edu.snu.mist.core.task.QueryRemover;
+import edu.snu.mist.core.task.QueryStarter;
 import edu.snu.mist.core.task.groupaware.*;
 import edu.snu.mist.core.task.stores.GroupCheckpointStore;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.CheckpointResult;
+import edu.snu.mist.formats.avro.GroupCheckpoint;
 import edu.snu.mist.formats.avro.QueryCheckpoint;
 import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.InjectionFuture;
@@ -31,9 +33,7 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -107,9 +107,14 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
     final Map<String, QueryCheckpoint> queryCheckpointMap;
     final List<AvroDag> dagList;
     final QueryManager queryManager = queryManagerFuture.get();
+    final GroupCheckpoint groupCheckpoint;
+    // The map used for replaying events.
+    final Map<String, Set<Tuple<String, String>>> queryIdAndTopicBrokerURIMap = new HashMap<>();
+
     try {
       // Load the checkpointed states and the query lists.
-      queryCheckpointMap = checkpointStore.loadSavedGroupState(groupId).getQueryCheckpointMap();
+      groupCheckpoint = checkpointStore.loadSavedGroupState(groupId);
+      queryCheckpointMap = groupCheckpoint.getQueryCheckpointMap();
       final List<String> queryIdListInGroup = new ArrayList<>();
       for (final String queryId : queryCheckpointMap.keySet()) {
         queryIdListInGroup.add(queryId);
@@ -123,9 +128,27 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
     }
 
     for (final AvroDag avroDag : dagList) {
-      final QueryCheckpoint queryCheckpoint = queryCheckpointMap.get(avroDag.getQueryId());
-      // Recover each query in the group.
-      queryManager.createQueryWithCheckpoint(avroDag, queryCheckpoint);
+      final String queryId = avroDag.getQueryId();
+      final QueryCheckpoint queryCheckpoint = queryCheckpointMap.get(queryId);
+      // Setup each query in the group, but do not start them.
+      queryIdAndTopicBrokerURIMap.put(queryId, queryManager.setupQueryWithCheckpoint(avroDag, queryCheckpoint));
+    }
+
+    final Group recoveredGroup = groupMap.get(groupId);
+    final QueryStarter queryStarter;
+    if (recoveredGroup != null) {
+      queryStarter = recoveredGroup.getApplicationInfo().getQueryStarter();
+    } else {
+      LOG.log(Level.WARNING, "No Group with id ({0}) exists in groupMap", groupId);
+      return;
+    }
+
+    // Replay missed events and start the queries within the group.
+    try {
+      LOG.log(Level.INFO, "checkpoint min timestamp : " + groupCheckpoint.getCheckpointTimestamp());
+      queryStarter.replayAndStart(queryIdAndTopicBrokerURIMap, groupCheckpoint.getCheckpointTimestamp());
+    } catch (final Exception e) {
+      e.printStackTrace();
     }
   }
 

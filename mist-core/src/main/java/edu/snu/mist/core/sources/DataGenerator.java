@@ -25,6 +25,11 @@ package edu.snu.mist.core.sources;
 public interface DataGenerator<T> extends AutoCloseable {
 
   /**
+   * Starts receiving data.
+   */
+  void setup();
+
+  /**
    * Starts generating data.
    */
   void start();
