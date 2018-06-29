@@ -62,7 +62,7 @@ public final class NettyTextSinkTest {
    * It creates 4 sinks and send outputs to output receiver.
    * @throws Exception
    */
-  @Test(timeout = 4000L)
+  @Test(timeout = 10000L)
   public void testNettyTextSink() throws Exception {
     final int numSinks = 4;
     final List<String> outputStream = Arrays.asList(
