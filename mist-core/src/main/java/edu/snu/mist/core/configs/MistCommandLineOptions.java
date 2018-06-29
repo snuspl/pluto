@@ -79,7 +79,6 @@ public final class MistCommandLineOptions {
         .registerShortNameOfClass(IdleTaskLoadThreshold.class)
         .registerShortNameOfClass(MaxTaskNum.class)
         .registerShortNameOfClass(MinTaskNum.class)
-        .registerShortNameOfClass(OverloadedTaskLoadThreshold.class)
         .registerShortNameOfClass(ScaleInGracePeriod.class)
         .registerShortNameOfClass(ScaleInIdleTaskRatio.class)
         .registerShortNameOfClass(ScaleOutGracePeriod.class)
