@@ -23,5 +23,5 @@ import org.apache.reef.tang.annotations.NamedParameter;
  */
 @NamedParameter(doc = "Driver memory size (mb).", default_value = "1024", short_name =
     "driver_mem_size")
-public class DriverMemorySize implements Name<Integer> {
+public final class DriverMemorySize implements Name<Integer> {
 }
