@@ -16,7 +16,7 @@
 package edu.snu.mist.core.task.recovery;
 
 import edu.snu.mist.core.parameters.MasterHostname;
-import edu.snu.mist.core.parameters.TaskHostname;
+import edu.snu.mist.core.parameters.TaskId;
 import edu.snu.mist.core.parameters.TaskToMasterPort;
 import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.checkpointing.CheckpointManager;
@@ -52,7 +52,7 @@ public final class DefaultRecoveryManagerImpl implements RecoveryManager {
   /**
    * The hostname of this task which is seen from the MistMaster.
    */
-  private String taskHostname;
+  private String taskId;
 
   /**
    * The number of threads used for task-side recovery.
@@ -64,14 +64,14 @@ public final class DefaultRecoveryManagerImpl implements RecoveryManager {
       @Parameter(MasterHostname.class) final String masterHostAddress,
       @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
       final CheckpointManager checkpointManager,
-      @Parameter(TaskHostname.class) final String taskHostname,
+      @Parameter(TaskId.class) final String taskId,
       @Parameter(RecoveryThreadsNum.class) final int recoveryThreadsNum) throws IOException {
       isRecoveryRunning = new AtomicBoolean(false);
     // Setup task-to-master connection.
     this.proxyToMaster = AvroUtils.createAvroProxy(TaskToMasterMessage.class,
         new InetSocketAddress(masterHostAddress, taskToMasterPort));
     this.checkpointManager = checkpointManager;
-    this.taskHostname = taskHostname;
+    this.taskId = taskId;
     this.recoveryThreadsNum = recoveryThreadsNum;
   }
 
@@ -81,7 +81,7 @@ public final class DefaultRecoveryManagerImpl implements RecoveryManager {
     if (isRecoveryRunning.compareAndSet(false, true)) {
       // If not, start single-threaded recovery.
       final Thread thread = new Thread(new TaskSideRecoveryStarter(
-          isRecoveryRunning, proxyToMaster, checkpointManager, taskHostname, recoveryThreadsNum));
+          isRecoveryRunning, proxyToMaster, checkpointManager, taskId, recoveryThreadsNum));
       thread.start();
       return true;
     } else {

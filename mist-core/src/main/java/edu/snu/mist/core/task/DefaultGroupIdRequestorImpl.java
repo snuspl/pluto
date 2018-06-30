@@ -16,7 +16,7 @@
 package edu.snu.mist.core.task;
 
 import edu.snu.mist.core.parameters.MasterHostname;
-import edu.snu.mist.core.parameters.TaskHostname;
+import edu.snu.mist.core.parameters.TaskId;
 import edu.snu.mist.core.parameters.TaskToMasterPort;
 import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.groupaware.GroupIdRequestor;
@@ -34,9 +34,9 @@ import java.net.InetSocketAddress;
 public final class DefaultGroupIdRequestorImpl implements GroupIdRequestor {
 
   /**
-   * The task hostname of the current task.
+   * The task id of the current task.
    */
-  private String taskHostname;
+  private String taskId;
 
   /**
    * The task-to-master avro proxy.
@@ -46,9 +46,9 @@ public final class DefaultGroupIdRequestorImpl implements GroupIdRequestor {
   @Inject
   private DefaultGroupIdRequestorImpl(
       @Parameter(MasterHostname.class) final String masterHostname,
-      @Parameter(TaskHostname.class) final String taskHostname,
+      @Parameter(TaskId.class) final String taskId,
       @Parameter(TaskToMasterPort.class) final int taskToMasterPort) throws IOException {
-    this.taskHostname = taskHostname;
+    this.taskId = taskId;
     this.proxyToMaster = AvroUtils.createAvroProxy(TaskToMasterMessage.class,
         new InetSocketAddress(masterHostname, taskToMasterPort));
   }
@@ -56,7 +56,7 @@ public final class DefaultGroupIdRequestorImpl implements GroupIdRequestor {
   @Override
   public String requestGroupId(final String appId) {
     try {
-      return proxyToMaster.createGroup(taskHostname, appId);
+      return proxyToMaster.createGroup(taskId, appId);
     } catch (final AvroRemoteException e) {
       e.printStackTrace();
       return null;

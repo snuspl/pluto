@@ -15,7 +15,14 @@
  */
 package edu.snu.mist.client;
 
-import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.formats.avro.AvroDag;
+import edu.snu.mist.formats.avro.AvroVertex;
+import edu.snu.mist.formats.avro.ClientToMasterMessage;
+import edu.snu.mist.formats.avro.ClientToTaskMessage;
+import edu.snu.mist.formats.avro.Edge;
+import edu.snu.mist.formats.avro.JarUploadResult;
+import edu.snu.mist.formats.avro.QueryControlResult;
+import edu.snu.mist.formats.avro.QuerySubmitInfo;
 import org.apache.avro.ipc.NettyTransceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.reef.io.Tuple;
@@ -28,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Logger;
 
 /**
  * The default implementation class for MISTExecutionEnvironment.
@@ -38,6 +46,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * If the upload succeeds, it converts the query into AvroLogicalPlan, and submits the logical plan to the task.
  */
 public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionEnvironment {
+
+  private static final Logger LOG = Logger.getLogger(MISTExecutionEnvironment.class.getName());
+
   /**
    * A proxy that communicates with MIST Master.
    */
@@ -90,7 +101,6 @@ public final class MISTDefaultExecutionEnvironmentImpl implements MISTExecutionE
         e.printStackTrace();
       }
     }
-
     // Step 1: Get a task to submit the query and JAR file paths from MistMaster
     final QuerySubmitInfo querySubmitInfo = proxyToMaster.getQuerySubmitInfo(queryToSubmit.getApplicationId());
     // Step 2: Contact to the designated task and submit the query

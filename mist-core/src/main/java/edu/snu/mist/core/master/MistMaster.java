@@ -16,9 +16,15 @@
 package edu.snu.mist.core.master;
 
 import edu.snu.mist.core.master.lb.scaling.DynamicScalingManager;
-import edu.snu.mist.core.parameters.*;
+import edu.snu.mist.core.parameters.ClientToMasterPort;
+import edu.snu.mist.core.parameters.DriverToMasterPort;
+import edu.snu.mist.core.parameters.MasterRecovery;
+import edu.snu.mist.core.parameters.NumTasks;
+import edu.snu.mist.core.parameters.TaskToMasterPort;
 import edu.snu.mist.core.rpc.AvroUtils;
-import edu.snu.mist.formats.avro.*;
+import edu.snu.mist.formats.avro.ClientToMasterMessage;
+import edu.snu.mist.formats.avro.DriverToMasterMessage;
+import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import org.apache.avro.ipc.Server;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
@@ -30,8 +36,7 @@ import org.apache.reef.wake.EventHandler;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Collection;
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -114,14 +119,8 @@ public final class MistMaster implements Task {
     LOG.log(Level.INFO, "MistMaster is started");
     // Request the tasks to be allocated firstly.
     if (!masterRecovery) {
-      final Collection<AllocatedTask> allocatedTasks = taskRequestor.setupTaskAndConn(initialTaskNum);
-      if (allocatedTasks == null) {
-        LOG.log(Level.SEVERE, "Mist tasks are not successfully submitted!");
-        throw new IllegalStateException("Internal Error : No tasks are allocated!");
-      } else {
-        // MistMaster is successfully running now...
-        masterSetupFinished.setFinished();
-      }
+      taskRequestor.setupTaskAndConn(initialTaskNum);
+      masterSetupFinished.setFinished();
     } else {
       applicationCodeManager.recoverAppJarInfo();
       taskRequestor.recoverTaskConn();

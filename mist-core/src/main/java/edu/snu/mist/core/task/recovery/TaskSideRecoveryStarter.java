@@ -58,19 +58,19 @@ public class TaskSideRecoveryStarter implements Runnable {
   private CheckpointManager checkpointManager;
 
   /**
-   * The task hostname which can be seen from MistMaster.
+   * The task id which.
    */
-  private String taskHostname;
+  private String taskId;
 
   public TaskSideRecoveryStarter(final AtomicBoolean isRecoveryRunning,
                                  final TaskToMasterMessage proxyToMaster,
                                  final CheckpointManager checkpointManager,
-                                 final String taskHostname,
+                                 final String taskId,
                                  final int numTheads) {
     this.isRecoveryRunning = isRecoveryRunning;
     this.proxyToMaster = proxyToMaster;
     this.checkpointManager = checkpointManager;
-    this.taskHostname = taskHostname;
+    this.taskId = taskId;
     this.executorService = Executors.newFixedThreadPool(numTheads);
   }
 
@@ -79,7 +79,7 @@ public class TaskSideRecoveryStarter implements Runnable {
     // Get the recovery info from the MistMaster.
     try {
       while (true) {
-        final RecoveryInfo recoveryInfo = proxyToMaster.pullRecoveringGroups(taskHostname);
+        final RecoveryInfo recoveryInfo = proxyToMaster.pullRecoveringGroups(taskId);
         LOG.log(Level.INFO, "Recovering groups: {0}", recoveryInfo.getRecoveryGroupList().toString());
         if (recoveryInfo.getRecoveryGroupList().isEmpty()) {
           // Notify that recovery is done!

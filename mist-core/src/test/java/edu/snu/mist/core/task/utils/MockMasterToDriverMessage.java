@@ -16,6 +16,7 @@
 package edu.snu.mist.core.task.utils;
 
 import edu.snu.mist.formats.avro.MasterToDriverMessage;
+import edu.snu.mist.formats.avro.TaskInfo;
 import edu.snu.mist.formats.avro.TaskRequest;
 import org.apache.avro.AvroRemoteException;
 
@@ -42,6 +43,11 @@ public final class MockMasterToDriverMessage implements MasterToDriverMessage {
   }
 
   @Override
+  public boolean saveTaskInfo(final TaskInfo taskInfo) throws AvroRemoteException {
+    return true;
+  }
+
+  @Override
   public boolean saveJarInfo(final String appId,
                              final List<String> jarPaths) throws AvroRemoteException {
     return true;
@@ -53,7 +59,7 @@ public final class MockMasterToDriverMessage implements MasterToDriverMessage {
   }
 
   @Override
-  public List<String> retrieveRunningTaskInfo() throws AvroRemoteException {
+  public List<TaskInfo> retrieveRunningTaskInfo() throws AvroRemoteException {
     return null;
   }
 }
