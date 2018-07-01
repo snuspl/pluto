@@ -18,6 +18,7 @@ package edu.snu.mist.core.master;
 import edu.snu.mist.formats.avro.TaskStats;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,6 +80,6 @@ public final class TaskStatsMap {
   }
 
   public List<String> getTaskList() {
-    return innerList;
+    return new ArrayList<>(innerMap.keySet());
   }
 }
