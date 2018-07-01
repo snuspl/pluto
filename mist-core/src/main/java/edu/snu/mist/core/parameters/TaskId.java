@@ -21,6 +21,6 @@ import org.apache.reef.tang.annotations.NamedParameter;
 /**
  * The unique task id for each mist task.
  */
-@NamedParameter(doc = "The unique task id for each mist task.")
+@NamedParameter(doc = "The unique task id for each mist task.", default_value = "default_task")
 public final class TaskId implements Name<String> {
 }
