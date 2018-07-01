@@ -34,7 +34,6 @@ import org.apache.reef.task.events.CloseEvent;
 import org.apache.reef.wake.EventHandler;
 
 import javax.inject.Inject;
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
@@ -95,7 +94,7 @@ public final class MistMaster implements Task {
       final MasterSetupFinished masterSetupFinished,
       @Parameter(MasterRecovery.class) final boolean masterRecovery,
       final ApplicationCodeManager applicationCodeManager,
-      final DynamicScalingManager dynamicScalingManager) throws IOException {
+      final DynamicScalingManager dynamicScalingManager) throws Exception {
     this.initialTaskNum = initialTaskNum;
     this.taskRequestor = taskRequestor;
     this.masterSetupFinished = masterSetupFinished;

@@ -196,7 +196,7 @@ public final class MistDriver {
                      final TaskSubmitInfoStore taskSubmitInfoStore,
                      final MasterToDriverMessage masterToDriverMessage,
                      @Parameter(MasterToDriverPort.class) final int masterToDriverPort,
-                     final RunningTaskInfoStore runningTaskInfoStore) {
+                     final RunningTaskInfoStore runningTaskInfoStore) throws Exception {
     this.localAddressProvider = localAddressProvider;
     this.requestor = requestor;
     this.jvmProcessFactory = jvmProcessFactory;

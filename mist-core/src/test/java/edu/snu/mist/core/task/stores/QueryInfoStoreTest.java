@@ -65,7 +65,7 @@ public class QueryInfoStoreTest {
   private Server mockMasterToDriverServer;
 
   @Before
-  public void startUp() {
+  public void startUp() throws Exception {
     mockMasterToDriverServer = AvroUtils.createAvroServer(MasterToDriverMessage.class,
         new MockMasterToDriverMessage(), new InetSocketAddress(DRIVER_HOSTNAME, DRIVER_PORT));
   }

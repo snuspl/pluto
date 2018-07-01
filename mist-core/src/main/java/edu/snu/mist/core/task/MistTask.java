@@ -48,6 +48,7 @@ import java.util.logging.Logger;
  */
 @Unit
 public final class MistTask implements Task {
+
   private static final Logger LOG = Logger.getLogger(MistTask.class.getName());
 
   /**
@@ -87,22 +88,19 @@ public final class MistTask implements Task {
 
     // Find the empty ports for starting servers.
     final Iterator<Integer> portNumIterator = tcpPortProvider.iterator();
-    final int clientToTaskPort = portNumIterator.next();
-    this.clientToTaskServer = AvroUtils.createAvroServer(ClientToTaskMessage.class, clientToTaskMessage,
-        new InetSocketAddress(clientToTaskPort));
-    LOG.log(Level.INFO, "Client to task port = " + clientToTaskPort);
-    final int masterToTaskPort = portNumIterator.next();
-    this.masterToTaskServer = AvroUtils.createAvroServer(MasterToTaskMessage.class, masterToTaskMessage,
-        new InetSocketAddress(masterToTaskPort));
+
+    clientToTaskServer = setupRandomPortAvroServer(ClientToTaskMessage.class, clientToTaskMessage, tcpPortProvider);
+    LOG.log(Level.INFO, "Client to task port = " + clientToTaskServer.getPort());
+    masterToTaskServer = setupRandomPortAvroServer(MasterToTaskMessage.class, masterToTaskMessage, tcpPortProvider);
     // Send the task information to the master
-    LOG.log(Level.INFO, "Master to task port = " + masterToTaskPort);
+    LOG.log(Level.INFO, "Master to task port = " + masterToTaskServer.getPort());
     final TaskToMasterMessage proxyToMaster = AvroUtils.createAvroProxy(TaskToMasterMessage.class,
         new InetSocketAddress(masterHostname, taskToMasterPort));
     final TaskInfo taskInfo = TaskInfo.newBuilder()
         .setTaskId(taskId)
         .setTaskHostname(taskHostname)
-        .setClientToTaskPort(clientToTaskPort)
-        .setMasterToTaskPort(masterToTaskPort)
+        .setClientToTaskPort(clientToTaskServer.getPort())
+        .setMasterToTaskPort(masterToTaskServer.getPort())
         .build();
     // Send the task info asynchronously.
     final Thread t = new Thread(new RegisterTaskInfoRunner(proxyToMaster, taskInfo));
@@ -119,6 +117,24 @@ public final class MistTask implements Task {
     clientToTaskServer.close();
     queryManager.close();
     return new byte[0];
+  }
+
+  private <T> Server setupRandomPortAvroServer(final Class<T> messageClass,
+                                               final T messageInstance,
+                                               final TcpPortProvider tcpPortProvider) {
+    final Iterator<Integer> portIterator = tcpPortProvider.iterator();
+    Server server = null;
+    while (true) {
+      try {
+        int port = portIterator.next();
+        server = AvroUtils.createAvroServer(messageClass, messageInstance, new InetSocketAddress(port));
+        LOG.log(Level.INFO, "Assigned avro server port = {0}", port);
+        break;
+      } catch (final Exception e) {
+        LOG.log(Level.INFO, "Duplicate port is assigned to avro server... try again...");
+      }
+    }
+    return server;
   }
 
   /**

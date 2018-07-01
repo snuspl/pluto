@@ -23,6 +23,7 @@ import edu.snu.mist.formats.avro.MasterToDriverMessage;
 import edu.snu.mist.formats.avro.TaskInfo;
 import edu.snu.mist.formats.avro.TaskRequest;
 import org.apache.avro.AvroRemoteException;
+import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.driver.evaluator.EvaluatorRequestor;
 import org.apache.reef.driver.task.RunningTask;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
@@ -39,6 +40,7 @@ import java.util.logging.Logger;
 /**
  * The default master to driver message server implementation.
  */
+@DriverSide
 public final class DefaultMasterToDriverMessageImpl implements MasterToDriverMessage {
 
   private static final Logger LOG = Logger.getLogger(DefaultMasterToDriverMessageImpl.class.getName());
