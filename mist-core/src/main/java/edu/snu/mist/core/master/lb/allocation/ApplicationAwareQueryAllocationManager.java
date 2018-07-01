@@ -108,7 +108,11 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
     final List<String> taskList = appTaskListMap.get(appId);
     synchronized (taskList) {
       if (taskList.isEmpty()) {
-        final String selectedTask = getRandomTask(taskStatsMap.getTaskList());
+        List<String> allTaskList;
+        do {
+          allTaskList = taskStatsMap.getTaskList();
+        } while (allTaskList.isEmpty());
+        final String selectedTask = getRandomTask(allTaskList);
         taskList.add(selectedTask);
         return new IPAddress(selectedTask, clientToTaskPort);
       } else {
