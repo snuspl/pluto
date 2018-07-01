@@ -33,11 +33,15 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The default master to driver message server implementation.
  */
 public final class DefaultMasterToDriverMessageImpl implements MasterToDriverMessage {
+
+  private static final Logger LOG = Logger.getLogger(DefaultMasterToDriverMessageImpl.class.getName());
 
   /**
    * The MistDriver's evaluator requestor.
@@ -80,6 +84,7 @@ public final class DefaultMasterToDriverMessageImpl implements MasterToDriverMes
   @Override
   public synchronized Void requestNewTask(final TaskRequest taskRequest) throws AvroRemoteException {
     try {
+      LOG.log(Level.INFO, "New task request from master... Task ID = {0}", taskRequest.getTaskId());
       final TaskSubmitInfo taskSubmitInfo = TaskSubmitInfo.newBuilder()
           .setTaskId(taskRequest.getTaskId())
           .setNewRatio(taskRequest.getNewRatio())

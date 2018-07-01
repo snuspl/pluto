@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -169,6 +170,7 @@ public final class DefaultTaskRequestorImpl implements TaskRequestor {
             .setSerializedTaskConfiguration(serializedConf)
             .build();
         taskIdIndex += 1;
+        LOG.log(Level.INFO, "Requesting for a task to the driver... Task ID = {0}", taskId);
         proxyToDriver.requestNewTask(taskRequest);
         countDownLatch = new CountDownLatch(1);
         countDownLatch.await();
