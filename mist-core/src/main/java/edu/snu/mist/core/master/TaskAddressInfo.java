@@ -18,7 +18,7 @@ package edu.snu.mist.core.master;
 /**
  * The class which contains port allocation info for MistTasks.
  */
-public class TaskAddressInfo {
+public final class TaskAddressInfo {
 
   /**
    * The hostname of the task.

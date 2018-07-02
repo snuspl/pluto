@@ -23,7 +23,7 @@ import java.io.IOException;
 /**
  * The runner class for registering task info.
  */
-public class RegisterTaskInfoRunner implements Runnable {
+public final class RegisterTaskInfoRunner implements Runnable {
 
   /**
    * The proxy to master.

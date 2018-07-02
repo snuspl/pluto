@@ -50,7 +50,7 @@ public final class DefaultRecoveryManagerImpl implements RecoveryManager {
   private CheckpointManager checkpointManager;
 
   /**
-   * The hostname of this task which is seen from the MistMaster.
+   * The task id.
    */
   private String taskId;
 

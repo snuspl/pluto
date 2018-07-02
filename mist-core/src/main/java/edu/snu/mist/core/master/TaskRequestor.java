@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.master;
 
+import org.apache.avro.AvroRemoteException;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
@@ -27,7 +28,7 @@ public interface TaskRequestor {
    * requests tasks to the driver and returns the allocated tasks info.
    * Note: This method is blocking, which means that it blocks the thread until all the tasks are allocated.
    */
-  void setupTaskAndConn(int taskNum);
+  void setupTaskAndConn(int taskNum) throws AvroRemoteException, InterruptedException;
 
   /**
    * Recover the connection to running tasks. Used in master recovery process.

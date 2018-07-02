@@ -86,9 +86,6 @@ public final class MistTask implements Task {
     this.countDownLatch = new CountDownLatch(1);
     this.queryManager = queryManager;
 
-    // Find the empty ports for starting servers.
-    final Iterator<Integer> portNumIterator = tcpPortProvider.iterator();
-
     clientToTaskServer = setupRandomPortAvroServer(ClientToTaskMessage.class, clientToTaskMessage, tcpPortProvider);
     LOG.log(Level.INFO, "Client to task port = " + clientToTaskServer.getPort());
     masterToTaskServer = setupRandomPortAvroServer(MasterToTaskMessage.class, masterToTaskMessage, tcpPortProvider);
@@ -123,7 +120,7 @@ public final class MistTask implements Task {
                                                final T messageInstance,
                                                final TcpPortProvider tcpPortProvider) {
     final Iterator<Integer> portIterator = tcpPortProvider.iterator();
-    Server server = null;
+    Server server;
     while (true) {
       try {
         int port = portIterator.next();

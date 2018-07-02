@@ -58,7 +58,7 @@ public class TaskSideRecoveryStarter implements Runnable {
   private CheckpointManager checkpointManager;
 
   /**
-   * The task id which.
+   * The task id.
    */
   private String taskId;
 

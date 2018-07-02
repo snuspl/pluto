@@ -35,11 +35,11 @@ public final class TaskSubmitInfoStore {
     innerQueue.add(taskSubmitInfo);
   }
 
-  public TaskSubmitInfo fetchCurrentSubmitInfo() {
+  public TaskSubmitInfo getCurrentSubmitInfo() {
     return innerQueue.element();
   }
 
-  public void remove() {
+  public void removeCurrentSubmitInfo() {
     innerQueue.remove();
   }
 }

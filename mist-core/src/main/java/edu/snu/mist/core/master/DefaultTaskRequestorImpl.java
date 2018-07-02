@@ -149,34 +149,30 @@ public final class DefaultTaskRequestorImpl implements TaskRequestor {
   }
 
   @Override
-  public synchronized void setupTaskAndConn(final int taskNum) {
+  public synchronized void setupTaskAndConn(final int taskNum) throws AvroRemoteException, InterruptedException {
 
     final Configuration commonConf
         = Configurations.merge(commonConfigs.getConfiguration(), taskConfigs.getConfiguration());
 
-    try {
-      for (int i = 0; i < taskNum; i++) {
-        final String taskId = TASK_ID_PREFIX + taskIdIndex;
-        // Set task id for each task.
-        final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-        jcb.bindNamedParameter(TaskId.class, taskId);
-        final String serializedConf = confSerializer.toString(Configurations.merge(commonConf, jcb.build()));
-        final TaskRequest taskRequest = TaskRequest.newBuilder()
-            .setTaskId(taskId)
-            .setTaskCpuNum(numTaskCores)
-            .setTaskMemSize(taskMemSize)
-            .setNewRatio(newRatio)
-            .setReservedCodeCacheSize(reservedCodeCacheSize)
-            .setSerializedTaskConfiguration(serializedConf)
-            .build();
-        taskIdIndex += 1;
-        LOG.log(Level.INFO, "Requesting for a task to the driver... Task ID = {0}", taskId);
-        proxyToDriver.requestNewTask(taskRequest);
-        countDownLatch = new CountDownLatch(1);
-        countDownLatch.await();
-      }
-    } catch (final AvroRemoteException | InterruptedException e) {
-      e.printStackTrace();
+    for (int i = 0; i < taskNum; i++) {
+      final String taskId = TASK_ID_PREFIX + taskIdIndex;
+      // Set task id for each task.
+      final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+      jcb.bindNamedParameter(TaskId.class, taskId);
+      final String serializedConf = confSerializer.toString(Configurations.merge(commonConf, jcb.build()));
+      final TaskRequest taskRequest = TaskRequest.newBuilder()
+          .setTaskId(taskId)
+          .setTaskCpuNum(numTaskCores)
+          .setTaskMemSize(taskMemSize)
+          .setNewRatio(newRatio)
+          .setReservedCodeCacheSize(reservedCodeCacheSize)
+          .setSerializedTaskConfiguration(serializedConf)
+          .build();
+      taskIdIndex += 1;
+      LOG.log(Level.INFO, "Requesting for a task to the driver... Task ID = {0}", taskId);
+      proxyToDriver.requestNewTask(taskRequest);
+      countDownLatch = new CountDownLatch(1);
+      countDownLatch.await();
     }
   }
 

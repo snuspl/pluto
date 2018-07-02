@@ -241,7 +241,7 @@ public final class MistDriver {
             .build());
       } else {
         // This is for MistTask.
-        final TaskSubmitInfo taskSubmitInfo = taskSubmitInfoStore.fetchCurrentSubmitInfo();
+        final TaskSubmitInfo taskSubmitInfo = taskSubmitInfoStore.getCurrentSubmitInfo();
         final String taskId = taskSubmitInfo.getTaskId();
         final JVMProcess jvmProcess = jvmProcessFactory.newEvaluatorProcess()
             .addOption("-XX:NewRatio=" + taskSubmitInfo.getNewRatio())
@@ -260,7 +260,6 @@ public final class MistDriver {
     public void onNext(final ActiveContext activeContext) {
       LOG.log(Level.INFO, "Submitting Task to Context: {0}", activeContext);
       final String taskId = activeContext.getId();
-      // Configuration for NCS of mist task.
       if (taskId.startsWith(MIST_MASTER_ID_PREFIX)) {
         // This is for master.
         masterHostname = activeContext.getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress()
@@ -298,7 +297,7 @@ public final class MistDriver {
         jcb.bindNamedParameter(MasterHostname.class, masterHostname);
         jcb.bindNamedParameter(TaskHostname.class, taskHostname);
         final Configuration hostnameConf = jcb.build();
-        final TaskSubmitInfo taskSubmitInfo = taskSubmitInfoStore.fetchCurrentSubmitInfo();
+        final TaskSubmitInfo taskSubmitInfo = taskSubmitInfoStore.getCurrentSubmitInfo();
         activeContext.submitTask(
             Configurations.merge(
                 basicTaskConf,
@@ -363,7 +362,7 @@ public final class MistDriver {
         }
       } else {
         // Remove the current task submit info.
-        taskSubmitInfoStore.remove();
+        taskSubmitInfoStore.removeCurrentSubmitInfo();
         // The running task is MistTask.
         final String taskId = runningTask.getId();
         runningTaskInfoStore.updateRunningTask(taskId, runningTask);
