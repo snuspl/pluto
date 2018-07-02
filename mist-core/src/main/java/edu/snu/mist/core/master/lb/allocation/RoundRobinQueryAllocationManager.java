@@ -15,10 +15,9 @@
  */
 package edu.snu.mist.core.master.lb.allocation;
 
+import edu.snu.mist.core.master.TaskAddressInfoMap;
 import edu.snu.mist.core.master.TaskStatsMap;
-import edu.snu.mist.core.parameters.ClientToTaskPort;
 import edu.snu.mist.formats.avro.IPAddress;
-import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -35,29 +34,29 @@ public final class RoundRobinQueryAllocationManager implements QueryAllocationMa
   private final AtomicInteger currentIndex;
 
   /**
-   * The client-to-task avro rpc port.
-   */
-  private final int clientToTaskPort;
-
-  /**
    * The task stats map.
    */
   private final TaskStatsMap taskStatsMap;
 
+  /**
+   * The task address info map.
+   */
+  private final TaskAddressInfoMap taskAddressInfoMap;
+
   @Inject
   private RoundRobinQueryAllocationManager(
-      @Parameter(ClientToTaskPort.class) final int clientToTaskPort,
+      final TaskAddressInfoMap taskAddressInfoMap,
       final TaskStatsMap taskStatsMap) {
     super();
     this.currentIndex = new AtomicInteger();
-    this.clientToTaskPort = clientToTaskPort;
     this.taskStatsMap = taskStatsMap;
+    this.taskAddressInfoMap = taskAddressInfoMap;
   }
 
   @Override
   public IPAddress getAllocatedTask(final String appId) {
     final List<String> taskList = taskStatsMap.getTaskList();
     final int myIndex = currentIndex.getAndIncrement() % taskList.size();
-    return new IPAddress(taskList.get(myIndex), clientToTaskPort);
+    return taskAddressInfoMap.getClientToTaskAddress(taskList.get(myIndex));
   }
 }

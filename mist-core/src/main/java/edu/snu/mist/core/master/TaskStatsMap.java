@@ -52,27 +52,27 @@ public final class TaskStatsMap {
     this.innerList = new CopyOnWriteArrayList<>();
   }
 
-  public TaskStats get(final String taskHostname) {
-    return innerMap.get(taskHostname);
+  public TaskStats get(final String taskId) {
+    return innerMap.get(taskId);
   }
 
-  public TaskStats addTask(final String taskHostname) {
-    innerList.add(taskHostname);
-    return innerMap.putIfAbsent(taskHostname, TaskStats.newBuilder()
+  public TaskStats addTask(final String taskId) {
+    innerList.add(taskId);
+    return innerMap.putIfAbsent(taskId, TaskStats.newBuilder()
         .setTaskLoad(0.0)
         .setGroupStatsMap(new HashMap<>())
         .build());
   }
 
-  public TaskStats removeTask(final String taskHostname) {
-    innerList.remove(taskHostname);
-    return innerMap.remove(taskHostname);
+  public TaskStats removeTask(final String taskId) {
+    innerList.remove(taskId);
+    return innerMap.remove(taskId);
   }
 
-  public void updateTaskStats(final String taskHostname, final TaskStats updatedTaskStats) {
+  public void updateTaskStats(final String taskId, final TaskStats updatedTaskStats) {
     LOG.log(Level.INFO, "Updated task stats: Task {0}, Load {1}",
-        new Object[]{taskHostname, updatedTaskStats.getTaskLoad()});
-    innerMap.replace(taskHostname, updatedTaskStats);
+        new Object[]{taskId, updatedTaskStats.getTaskLoad()});
+    innerMap.replace(taskId, updatedTaskStats);
   }
 
   public Set<Map.Entry<String, TaskStats>> entrySet() {

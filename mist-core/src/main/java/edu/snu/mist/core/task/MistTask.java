@@ -15,12 +15,16 @@
  */
 package edu.snu.mist.core.task;
 
-import edu.snu.mist.core.parameters.ClientToTaskPort;
-import edu.snu.mist.core.parameters.MasterToTaskPort;
+import edu.snu.mist.core.parameters.MasterHostname;
+import edu.snu.mist.core.parameters.TaskHostname;
+import edu.snu.mist.core.parameters.TaskId;
+import edu.snu.mist.core.parameters.TaskToMasterPort;
 import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.checkpointing.CheckpointManager;
 import edu.snu.mist.formats.avro.ClientToTaskMessage;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
+import edu.snu.mist.formats.avro.TaskInfo;
+import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import org.apache.avro.ipc.Server;
 import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.annotations.Unit;
@@ -28,10 +32,12 @@ import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.task.Task;
 import org.apache.reef.task.events.CloseEvent;
 import org.apache.reef.wake.EventHandler;
+import org.apache.reef.wake.remote.ports.TcpPortProvider;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,6 +48,7 @@ import java.util.logging.Logger;
  */
 @Unit
 public final class MistTask implements Task {
+
   private static final Logger LOG = Logger.getLogger(MistTask.class.getName());
 
   /**
@@ -69,16 +76,33 @@ public final class MistTask implements Task {
   @Inject
   private MistTask(final QueryManager queryManager,
                    final CheckpointManager checkpointManager,
-                   @Parameter(MasterToTaskPort.class) final int masterToTaskPort,
-                   @Parameter(ClientToTaskPort.class) final int clientToTaskPort,
+                   @Parameter(TaskId.class) final String taskId,
+                   @Parameter(TaskHostname.class) final String taskHostname,
+                   @Parameter(MasterHostname.class) final String masterHostname,
+                   @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
                    final MasterToTaskMessage masterToTaskMessage,
-                   final ClientToTaskMessage clientToTaskMessage) throws InjectionException, IOException {
+                   final ClientToTaskMessage clientToTaskMessage,
+                   final TcpPortProvider tcpPortProvider) throws InjectionException, IOException, InterruptedException {
     this.countDownLatch = new CountDownLatch(1);
     this.queryManager = queryManager;
-    this.masterToTaskServer = AvroUtils.createAvroServer(MasterToTaskMessage.class, masterToTaskMessage,
-        new InetSocketAddress(masterToTaskPort));
-    this.clientToTaskServer = AvroUtils.createAvroServer(ClientToTaskMessage.class, clientToTaskMessage,
-        new InetSocketAddress(clientToTaskPort));
+
+    clientToTaskServer = setupRandomPortAvroServer(ClientToTaskMessage.class, clientToTaskMessage, tcpPortProvider);
+    LOG.log(Level.INFO, "Client to task port = " + clientToTaskServer.getPort());
+    masterToTaskServer = setupRandomPortAvroServer(MasterToTaskMessage.class, masterToTaskMessage, tcpPortProvider);
+    // Send the task information to the master
+    LOG.log(Level.INFO, "Master to task port = " + masterToTaskServer.getPort());
+    final TaskToMasterMessage proxyToMaster = AvroUtils.createAvroProxy(TaskToMasterMessage.class,
+        new InetSocketAddress(masterHostname, taskToMasterPort));
+    final TaskInfo taskInfo = TaskInfo.newBuilder()
+        .setTaskId(taskId)
+        .setTaskHostname(taskHostname)
+        .setClientToTaskPort(clientToTaskServer.getPort())
+        .setMasterToTaskPort(masterToTaskServer.getPort())
+        .build();
+    // Send the task info asynchronously.
+    final Thread t = new Thread(new RegisterTaskInfoRunner(proxyToMaster, taskInfo));
+    t.start();
+    t.join();
     this.checkpointManager = checkpointManager;
   }
 
@@ -90,6 +114,24 @@ public final class MistTask implements Task {
     clientToTaskServer.close();
     queryManager.close();
     return new byte[0];
+  }
+
+  private <T> Server setupRandomPortAvroServer(final Class<T> messageClass,
+                                               final T messageInstance,
+                                               final TcpPortProvider tcpPortProvider) {
+    final Iterator<Integer> portIterator = tcpPortProvider.iterator();
+    Server server;
+    while (true) {
+      try {
+        int port = portIterator.next();
+        server = AvroUtils.createAvroServer(messageClass, messageInstance, new InetSocketAddress(port));
+        LOG.log(Level.INFO, "Assigned avro server port = {0}", port);
+        break;
+      } catch (final Exception e) {
+        LOG.log(Level.INFO, "Duplicate port is assigned to avro server... try again...");
+      }
+    }
+    return server;
   }
 
   /**

@@ -13,33 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.core.parameters;
 
- /**
-  * This is a skeleton protocol for RPC communication from MistDriver to MistMaster message.
-  */
-{
-  "namespace": "edu.snu.mist.formats.avro",
-  "protocol": "DriverToMasterMessage",
-  "messages":
-  {
-    "notifyTaskAllocated": {
-      "request": [
-        {
-          "name": "runingTaskId",
-          "type": "string"
-        }
-      ],
-      "response": "null"
-    },
-    "notifyFailedTask":
-    {
-      "request": [
-        {
-          "name": "failedTaskId",
-          "type": "string"
-        }
-      ],
-      "response": "null"
-    }
-  }
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
+
+/**
+ * The unique task id for each mist task.
+ */
+@NamedParameter(doc = "The unique task id for each mist task.", default_value = "default_task")
+public final class TaskId implements Name<String> {
 }

@@ -16,14 +16,16 @@
 package edu.snu.mist.core.rpc;
 
 import edu.snu.mist.core.driver.ApplicationJarInfo;
-import edu.snu.mist.core.driver.MistRunningTaskInfo;
-import edu.snu.mist.core.driver.MistTaskSubmitInfo;
+import edu.snu.mist.core.driver.RunningTaskInfoStore;
+import edu.snu.mist.core.driver.TaskSubmitInfo;
+import edu.snu.mist.core.driver.TaskSubmitInfoStore;
 import edu.snu.mist.formats.avro.MasterToDriverMessage;
+import edu.snu.mist.formats.avro.TaskInfo;
 import edu.snu.mist.formats.avro.TaskRequest;
 import org.apache.avro.AvroRemoteException;
+import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.driver.evaluator.EvaluatorRequestor;
 import org.apache.reef.driver.task.RunningTask;
-import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
 import org.apache.reef.tang.formats.ConfigurationSerializer;
 
@@ -32,11 +34,16 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The default master to driver message server implementation.
  */
+@DriverSide
 public final class DefaultMasterToDriverMessageImpl implements MasterToDriverMessage {
+
+  private static final Logger LOG = Logger.getLogger(DefaultMasterToDriverMessageImpl.class.getName());
 
   /**
    * The MistDriver's evaluator requestor.
@@ -46,12 +53,12 @@ public final class DefaultMasterToDriverMessageImpl implements MasterToDriverMes
   /**
    * The shared store for mist task configuration.
    */
-  private final MistTaskSubmitInfo taskSubmitInfoStore;
+  private final TaskSubmitInfoStore taskSubmitInfoStore;
 
   /**
    * The shared running task info for recovery.
    */
-  private final MistRunningTaskInfo runningTaskInfo;
+  private final RunningTaskInfoStore runningTaskInfoStore;
 
   /**
    * The serializer for Tang configuration.
@@ -65,12 +72,12 @@ public final class DefaultMasterToDriverMessageImpl implements MasterToDriverMes
 
   @Inject
   private DefaultMasterToDriverMessageImpl(
-      final MistTaskSubmitInfo taskSubmitInfoStore,
-      final MistRunningTaskInfo runningTaskInfo,
+      final TaskSubmitInfoStore taskSubmitInfoStore,
+      final RunningTaskInfoStore runningTaskInfoStore,
       final EvaluatorRequestor requestor,
       final ApplicationJarInfo applicationJarInfo) {
     this.taskSubmitInfoStore = taskSubmitInfoStore;
-    this.runningTaskInfo = runningTaskInfo;
+    this.runningTaskInfoStore = runningTaskInfoStore;
     this.requestor = requestor;
     this.configurationSerializer = new AvroConfigurationSerializer();
     this.applicationJarInfo = applicationJarInfo;
@@ -79,36 +86,44 @@ public final class DefaultMasterToDriverMessageImpl implements MasterToDriverMes
   @Override
   public synchronized Void requestNewTask(final TaskRequest taskRequest) throws AvroRemoteException {
     try {
-      final Configuration conf =
-          configurationSerializer.fromString(taskRequest.getSerializedTaskConfiguration());
-      // Store task submit info.
-      taskSubmitInfoStore.setTaskConfiguration(conf);
-      taskSubmitInfoStore.setNewRatio(taskRequest.getNewRatio());
-      taskSubmitInfoStore.setReservedCodeCacheSize(taskRequest.getReservedCodeCacheSize());
+      LOG.log(Level.INFO, "New task request from master... Task ID = {0}", taskRequest.getTaskId());
+      final TaskSubmitInfo taskSubmitInfo = TaskSubmitInfo.newBuilder()
+          .setTaskId(taskRequest.getTaskId())
+          .setNewRatio(taskRequest.getNewRatio())
+          .setReservedCodeCacheSize(taskRequest.getReservedCodeCacheSize())
+          .setTaskConfiguration(configurationSerializer.fromString(taskRequest.getSerializedTaskConfiguration()))
+          .build();
+      taskSubmitInfoStore.add(taskSubmitInfo);
       // Submit an evaluator requst for tasks.
       requestor.newRequest()
-          .setNumber(taskRequest.getTaskNum())
+          .setNumber(1)
           .setNumberOfCores(taskRequest.getTaskCpuNum())
           .setMemory(taskRequest.getTaskMemSize())
           .submit();
     } catch (final IOException e) {
       e.printStackTrace();
-      throw new AvroRemoteException("Cannot deserialize the task configuration!");
     }
     return null;
   }
 
   @Override
-  public boolean stopTask(final String taskHostname) throws AvroRemoteException {
-    final RunningTask runningTask = runningTaskInfo.getRunningTask(taskHostname);
+  public boolean stopTask(final String taskId) throws AvroRemoteException {
+    final RunningTask runningTask = runningTaskInfoStore.getRunningTask(taskId);
     if (runningTask != null) {
       // Remove from the task list and close the task.
-      runningTaskInfo.remove(taskHostname);
+      runningTaskInfoStore.remove(taskId);
       runningTask.close();
       return true;
     } else {
       return false;
     }
+  }
+
+  @Override
+  public boolean saveTaskInfo(final TaskInfo taskInfo) throws AvroRemoteException {
+    final String taskId = taskInfo.getTaskId();
+    runningTaskInfoStore.updateTaskInfo(taskId, taskInfo);
+    return true;
   }
 
   @Override
@@ -127,7 +142,7 @@ public final class DefaultMasterToDriverMessageImpl implements MasterToDriverMes
   }
 
   @Override
-  public List<String> retrieveRunningTaskInfo() throws AvroRemoteException {
-    return runningTaskInfo.retrieveRunningTaskHostNameList();
+  public List<TaskInfo> retrieveRunningTaskInfo() throws AvroRemoteException {
+    return runningTaskInfoStore.getTaskInfoList();
   }
 }

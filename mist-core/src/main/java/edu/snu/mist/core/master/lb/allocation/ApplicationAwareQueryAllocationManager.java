@@ -15,8 +15,8 @@
  */
 package edu.snu.mist.core.master.lb.allocation;
 
+import edu.snu.mist.core.master.TaskAddressInfoMap;
 import edu.snu.mist.core.master.TaskStatsMap;
-import edu.snu.mist.core.parameters.ClientToTaskPort;
 import edu.snu.mist.core.master.lb.parameters.OverloadedTaskLoadThreshold;
 import edu.snu.mist.core.master.lb.parameters.UnderloadedTaskLoadThreshold;
 import edu.snu.mist.formats.avro.IPAddress;
@@ -48,6 +48,11 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
   private final TaskStatsMap taskStatsMap;
 
   /**
+   * The shared task address info map.
+   */
+  private final TaskAddressInfoMap taskAddressInfoMap;
+
+  /**
    * The threshold for determining overloaded task.
    */
   private final double overloadedTaskThreshold;
@@ -57,21 +62,16 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
    */
   private final double underloadedTaskThreshold;
 
-  /**
-   * The port used for client-to-task RPC.
-   */
-  private final int clientToTaskPort;
-
   @Inject
   private ApplicationAwareQueryAllocationManager(
       @Parameter(OverloadedTaskLoadThreshold.class) final double overloadedTaskThreshold,
       @Parameter(UnderloadedTaskLoadThreshold.class) final double underloadedTaskThreshold,
-      @Parameter(ClientToTaskPort.class) final int clientToTaskPort,
+      final TaskAddressInfoMap taskAddressInfoMap,
       final TaskStatsMap taskStatsMap) {
     this.appTaskListMap = new ConcurrentHashMap<>();
     this.overloadedTaskThreshold = overloadedTaskThreshold;
     this.underloadedTaskThreshold = underloadedTaskThreshold;
-    this.clientToTaskPort = clientToTaskPort;
+    this.taskAddressInfoMap = taskAddressInfoMap;
     this.taskStatsMap = taskStatsMap;
   }
 
@@ -114,7 +114,7 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
         } while (allTaskList.isEmpty());
         final String selectedTask = getRandomTask(allTaskList);
         taskList.add(selectedTask);
-        return new IPAddress(selectedTask, clientToTaskPort);
+        return taskAddressInfoMap.getClientToTaskAddress(selectedTask);
       } else {
         final String selectedTask = getRandomTask(taskList);
         final double selectedTaskLoad = taskStatsMap.get(selectedTask).getTaskLoad();
@@ -126,11 +126,11 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
             final String taskCandidate = getRandomTask(remainingList);
             if (taskStatsMap.get(taskCandidate).getTaskLoad() < overloadedTaskThreshold) {
               taskList.add(taskCandidate);
-              return new IPAddress(taskCandidate, clientToTaskPort);
+              return taskAddressInfoMap.getClientToTaskAddress(taskCandidate);
             }
           }
         }
-        return new IPAddress(selectedTask, clientToTaskPort);
+        return taskAddressInfoMap.getClientToTaskAddress(selectedTask);
       }
     }
   }

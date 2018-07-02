@@ -90,18 +90,21 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
     LOG.log(Level.INFO, "Start recovery on failed groups: {0}", failedGroups.keySet());
     recoveryGroups.putAll(failedGroups);
     MasterToTaskMessage proxyToRecoveryTask;
+    String recoveryTaskId = "";
     try {
       // Select the newly allocated task with the least load for recovery
       double minLoad = Double.MAX_VALUE;
       proxyToRecoveryTask = null;
       for (final Map.Entry<String, MasterToTaskMessage> entry : proxyToTaskMap.entrySet()) {
-        final String taskHostname = entry.getKey();
-        final double taskLoad = taskStatsMap.get(taskHostname).getTaskLoad();
+        final String taskId = entry.getKey();
+        final double taskLoad = taskStatsMap.get(taskId).getTaskLoad();
         if (taskLoad < minLoad) {
           minLoad = taskLoad;
+          recoveryTaskId = entry.getKey();
           proxyToRecoveryTask = entry.getValue();
         }
       }
+      LOG.log(Level.INFO, "Recovery Task ID = {0}", recoveryTaskId);
       if (proxyToRecoveryTask == null) {
         throw new IllegalStateException("Internal error : ProxyToRecoveryTask shouldn't be null!");
       }

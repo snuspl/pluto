@@ -17,14 +17,23 @@ package edu.snu.mist.core.master;
 
 import edu.snu.mist.core.configs.MistCommonConfigs;
 import edu.snu.mist.core.configs.MistTaskConfigs;
-import edu.snu.mist.core.parameters.*;
+import edu.snu.mist.core.parameters.DriverHostname;
+import edu.snu.mist.core.parameters.MasterToDriverPort;
+import edu.snu.mist.core.parameters.NewRatio;
+import edu.snu.mist.core.parameters.NumTaskCores;
+import edu.snu.mist.core.parameters.ReservedCodeCacheSize;
+import edu.snu.mist.core.parameters.TaskId;
+import edu.snu.mist.core.parameters.TaskMemorySize;
 import edu.snu.mist.core.rpc.AvroUtils;
-import edu.snu.mist.formats.avro.AllocatedTask;
 import edu.snu.mist.formats.avro.MasterToDriverMessage;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
+import edu.snu.mist.formats.avro.TaskInfo;
 import edu.snu.mist.formats.avro.TaskRequest;
 import org.apache.avro.AvroRemoteException;
+import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
+import org.apache.reef.tang.JavaConfigurationBuilder;
+import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.formats.AvroConfigurationSerializer;
 import org.apache.reef.tang.formats.ConfigurationSerializer;
@@ -32,14 +41,10 @@ import org.apache.reef.tang.formats.ConfigurationSerializer;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.IntStream;
 
 /**
  * The default TaskRequestor implementation.
@@ -47,6 +52,13 @@ import java.util.stream.IntStream;
 public final class DefaultTaskRequestorImpl implements TaskRequestor {
 
   private static final Logger LOG = Logger.getLogger(DefaultTaskRequestorImpl.class.getName());
+
+  private static final String TASK_ID_PREFIX = "MIST_STREAM_ENGINE_";
+
+  /**
+   * The integer for generating task ids.
+   */
+  private int taskIdIndex;
 
   /**
    * The taskstats map.
@@ -59,9 +71,9 @@ public final class DefaultTaskRequestorImpl implements TaskRequestor {
   private final ProxyToTaskMap proxyToTaskMap;
 
   /**
-   * The master-to-task avro rpc port.
+   * The task address info map.
    */
-  private final int masterToTaskPort;
+  private final TaskAddressInfoMap taskAddressInfoMap;
 
   /**
    * The avro proxy to MistDriver.
@@ -99,11 +111,6 @@ public final class DefaultTaskRequestorImpl implements TaskRequestor {
   private MistTaskConfigs taskConfigs;
 
   /**
-   * The queue for the allocated tasks.
-   */
-  private Queue<AllocatedTask> allocatedTaskQueue;
-
-  /**
    * The configuration serializer.
    */
   private final ConfigurationSerializer confSerializer;
@@ -117,18 +124,19 @@ public final class DefaultTaskRequestorImpl implements TaskRequestor {
   private DefaultTaskRequestorImpl(
       final TaskStatsMap taskStatsMap,
       final ProxyToTaskMap proxyToTaskMap,
+      final TaskAddressInfoMap taskAddressInfoMap,
       @Parameter(DriverHostname.class) final String driverHostname,
       @Parameter(MasterToDriverPort.class) final int masterToDriverPort,
-      @Parameter(MasterToTaskPort.class) final int masterToTaskPort,
       @Parameter(NumTaskCores.class) final int numTaskCores,
       @Parameter(TaskMemorySize.class) final int taskMemSize,
       @Parameter(NewRatio.class) final int newRatio,
       @Parameter(ReservedCodeCacheSize.class) final int reservedCodeCacheSize,
       final MistCommonConfigs commonConfigs,
       final MistTaskConfigs taskConfigs) throws IOException {
+    this.taskIdIndex = 0;
     this.taskStatsMap = taskStatsMap;
     this.proxyToTaskMap = proxyToTaskMap;
-    this.masterToTaskPort = masterToTaskPort;
+    this.taskAddressInfoMap = taskAddressInfoMap;
     this.proxyToDriver = AvroUtils.createAvroProxy(MasterToDriverMessage.class,
         new InetSocketAddress(driverHostname, masterToDriverPort));
     this.numTaskCores = numTaskCores;
@@ -137,73 +145,58 @@ public final class DefaultTaskRequestorImpl implements TaskRequestor {
     this.reservedCodeCacheSize = reservedCodeCacheSize;
     this.commonConfigs = commonConfigs;
     this.taskConfigs = taskConfigs;
-    this.allocatedTaskQueue = new ConcurrentLinkedQueue<>();
     this.confSerializer = new AvroConfigurationSerializer();
   }
 
   @Override
-  public synchronized Collection<AllocatedTask> setupTaskAndConn(final int taskNum) {
-    final TaskRequest.Builder builder = TaskRequest.newBuilder()
-        .setTaskNum(taskNum)
-        .setTaskCpuNum(numTaskCores)
-        .setTaskMemSize(taskMemSize)
-        .setNewRatio(newRatio)
-        .setReservedCodeCacheSize(reservedCodeCacheSize);
-    final String serializedTaskConfiguration = confSerializer
-        .toString(Configurations.merge(commonConfigs.getConfiguration(), taskConfigs.getConfiguration()));
-    try {
-      proxyToDriver.requestNewTask(builder
-          .setSerializedTaskConfiguration(serializedTaskConfiguration)
-          .build());
-    } catch (final AvroRemoteException e) {
-      e.printStackTrace();
-      return null;
-    }
-    countDownLatch = new CountDownLatch(taskNum);
-    try {
-      // Waiting for all the requested tasks are running.
-      countDownLatch.await();
-    } catch (final InterruptedException e) {
-      e.printStackTrace();
-      return null;
-    }
-    final List<AllocatedTask> allocatedTaskList = new ArrayList<>();
-    IntStream.range(0, taskNum)
-        .forEach(i -> allocatedTaskList.add(allocatedTaskQueue.remove()));
-    assert allocatedTaskQueue.isEmpty();
+  public synchronized void setupTaskAndConn(final int taskNum) throws AvroRemoteException, InterruptedException {
 
-    for (final AllocatedTask task : allocatedTaskList) {
-      final String taskHostname = task.getTaskHostname();
-      taskStatsMap.addTask(taskHostname);
-      try {
-        final MasterToTaskMessage proxyToTask = AvroUtils.createAvroProxy(MasterToTaskMessage.class,
-            new InetSocketAddress(taskHostname, masterToTaskPort));
-        proxyToTaskMap.addNewProxy(taskHostname, proxyToTask);
-      } catch (final IOException e) {
-        e.printStackTrace();
-        return null;
-      }
+    final Configuration commonConf
+        = Configurations.merge(commonConfigs.getConfiguration(), taskConfigs.getConfiguration());
+
+    for (int i = 0; i < taskNum; i++) {
+      final String taskId = TASK_ID_PREFIX + taskIdIndex;
+      // Set task id for each task.
+      final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
+      jcb.bindNamedParameter(TaskId.class, taskId);
+      final String serializedConf = confSerializer.toString(Configurations.merge(commonConf, jcb.build()));
+      final TaskRequest taskRequest = TaskRequest.newBuilder()
+          .setTaskId(taskId)
+          .setTaskCpuNum(numTaskCores)
+          .setTaskMemSize(taskMemSize)
+          .setNewRatio(newRatio)
+          .setReservedCodeCacheSize(reservedCodeCacheSize)
+          .setSerializedTaskConfiguration(serializedConf)
+          .build();
+      taskIdIndex += 1;
+      LOG.log(Level.INFO, "Requesting for a task to the driver... Task ID = {0}", taskId);
+      proxyToDriver.requestNewTask(taskRequest);
+      countDownLatch = new CountDownLatch(1);
+      countDownLatch.await();
     }
-    return allocatedTaskList;
   }
 
   @Override
   public synchronized void recoverTaskConn() {
 
-    final List<String> runningTaskHostnameList;
+    final List<TaskInfo> runningTaskIdList;
     try {
-      runningTaskHostnameList = proxyToDriver.retrieveRunningTaskInfo();
+      runningTaskIdList = proxyToDriver.retrieveRunningTaskInfo();
     } catch (final AvroRemoteException e) {
       e.printStackTrace();
       return;
     }
 
-    for (final String taskHostname : runningTaskHostnameList) {
-      taskStatsMap.addTask(taskHostname);
+    // Retrieve the internal data structures.
+    for (final TaskInfo taskInfo : runningTaskIdList) {
+      final String taskId = taskInfo.getTaskId();
+      taskStatsMap.addTask(taskId);
+      taskAddressInfoMap.put(taskInfo.getTaskId(), new TaskAddressInfo(taskInfo.getTaskHostname(),
+          taskInfo.getClientToTaskPort(), taskInfo.getMasterToTaskPort()));
       try {
-        final MasterToTaskMessage proxyToTask = AvroUtils.createAvroProxy(MasterToTaskMessage.class,
-            new InetSocketAddress(taskHostname, masterToTaskPort));
-        proxyToTaskMap.addNewProxy(taskHostname, proxyToTask);
+        proxyToTaskMap.addNewProxy(taskId,
+            AvroUtils.createAvroProxy(MasterToTaskMessage.class, new InetSocketAddress(
+                taskInfo.getTaskHostname(), taskInfo.getMasterToTaskPort())));
       } catch (final IOException e) {
         e.printStackTrace();
         return;
@@ -212,8 +205,7 @@ public final class DefaultTaskRequestorImpl implements TaskRequestor {
   }
 
   @Override
-  public void notifyAllocatedTask(final AllocatedTask allocatedTask) {
-    allocatedTaskQueue.add(allocatedTask);
+  public void notifyAllocatedTask() {
     countDownLatch.countDown();
   }
 }

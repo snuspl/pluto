@@ -19,10 +19,17 @@ import edu.snu.mist.core.configs.MistCommonConfigs;
 import edu.snu.mist.core.configs.MistMasterConfigs;
 import edu.snu.mist.core.configs.MistTaskConfigs;
 import edu.snu.mist.core.master.MistMaster;
-import edu.snu.mist.core.parameters.*;
+import edu.snu.mist.core.parameters.DriverHostname;
+import edu.snu.mist.core.parameters.DriverToMasterPort;
+import edu.snu.mist.core.parameters.MasterHostname;
+import edu.snu.mist.core.parameters.MasterIndex;
+import edu.snu.mist.core.parameters.MasterMemorySize;
+import edu.snu.mist.core.parameters.MasterRecovery;
+import edu.snu.mist.core.parameters.MasterToDriverPort;
+import edu.snu.mist.core.parameters.NumMasterCores;
+import edu.snu.mist.core.parameters.TaskHostname;
 import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.MistTask;
-import edu.snu.mist.formats.avro.AllocatedTask;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
 import edu.snu.mist.formats.avro.MasterToDriverMessage;
 import org.apache.avro.AvroRemoteException;
@@ -31,11 +38,16 @@ import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.driver.context.ContextConfiguration;
-import org.apache.reef.driver.evaluator.*;
+import org.apache.reef.driver.evaluator.AllocatedEvaluator;
+import org.apache.reef.driver.evaluator.CompletedEvaluator;
+import org.apache.reef.driver.evaluator.EvaluatorDescriptor;
+import org.apache.reef.driver.evaluator.EvaluatorRequest;
+import org.apache.reef.driver.evaluator.EvaluatorRequestor;
+import org.apache.reef.driver.evaluator.FailedEvaluator;
+import org.apache.reef.driver.evaluator.JVMProcess;
+import org.apache.reef.driver.evaluator.JVMProcessFactory;
 import org.apache.reef.driver.task.RunningTask;
 import org.apache.reef.driver.task.TaskConfiguration;
-import org.apache.reef.io.network.naming.NameResolverConfiguration;
-import org.apache.reef.io.network.naming.NameServer;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Configurations;
 import org.apache.reef.tang.JavaConfigurationBuilder;
@@ -82,16 +94,6 @@ public final class MistDriver {
   private static final String MIST_MASTER_ID_PREFIX = "MIST_MASTER_";
 
   /**
-   * The ID prefix of ActiveContexts for MistTask.
-   */
-  private static final String MIST_TASK_ID_PREFIX = "MIST_TASK_";
-
-  /**
-   * The ID prefix of ActiveContexts for recovery task.
-   */
-  private static final String MIST_RECOVERY_TASK_ID_PREFIX = "MIST_RECOVERY_";
-
-  /**
    * Static Tang object.
    */
   private final Tang tang = Tang.Factory.getTang();
@@ -117,19 +119,9 @@ public final class MistDriver {
   private final int driverToMasterPort;
 
   /**
-   * Index of MistTasks.
-   */
-  private final AtomicInteger taskIndex;
-
-  /**
    * Index of MistMasters.
    */
   private final AtomicInteger masterIndex;
-
-  /**
-   * A name server.
-   */
-  private final NameServer nameServer;
 
   /**
    * A local address provider.
@@ -169,7 +161,7 @@ public final class MistDriver {
   /**
    * The shared running task information.
    */
-  private MistRunningTaskInfo runningTaskInfo;
+  private RunningTaskInfoStore runningTaskInfoStore;
 
   /**
    * The Avro RPC proxy for master.
@@ -179,7 +171,7 @@ public final class MistDriver {
   /**
    * The shared store for necessary informations for launching MistTask.
    */
-  private MistTaskSubmitInfo mistTaskSubmitInfo;
+  private TaskSubmitInfoStore taskSubmitInfoStore;
 
   /**
    * The avro master-to-driver server.
@@ -194,7 +186,6 @@ public final class MistDriver {
   @Inject
   private MistDriver(final EvaluatorRequestor requestor,
                      final JVMProcessFactory jvmProcessFactory,
-                     final NameServer nameServer,
                      final LocalAddressProvider localAddressProvider,
                      @Parameter(NumMasterCores.class) final int masterCpuCores,
                      @Parameter(MasterMemorySize.class) final int masterMemsize,
@@ -202,18 +193,16 @@ public final class MistDriver {
                      final MistCommonConfigs mistCommonConfigs,
                      final MistTaskConfigs mistTaskConfigs,
                      final MistMasterConfigs mistMasterConfigs,
-                     final MistTaskSubmitInfo mistTaskSubmitInfo,
+                     final TaskSubmitInfoStore taskSubmitInfoStore,
                      final MasterToDriverMessage masterToDriverMessage,
                      @Parameter(MasterToDriverPort.class) final int masterToDriverPort,
-                     final MistRunningTaskInfo runningTaskInfo) {
-    this.nameServer = nameServer;
+                     final RunningTaskInfoStore runningTaskInfoStore) throws Exception {
     this.localAddressProvider = localAddressProvider;
     this.requestor = requestor;
     this.jvmProcessFactory = jvmProcessFactory;
     this.masterCpuCores = masterCpuCores;
     this.masterMemSize = masterMemsize;
     this.driverToMasterPort = driverToMasterPort;
-    this.taskIndex = new AtomicInteger(0);
     this.masterIndex = new AtomicInteger(0);
     this.mistCommonConfigs = mistCommonConfigs;
     this.mistTaskConfigs = mistTaskConfigs;
@@ -221,10 +210,10 @@ public final class MistDriver {
     this.isMasterRunning = new AtomicBoolean(false);
     this.isMasterFailed = new AtomicBoolean(false);
     this.proxyToMaster = null;
-    this.mistTaskSubmitInfo = mistTaskSubmitInfo;
+    this.taskSubmitInfoStore = taskSubmitInfoStore;
     this.masterToDriverServer = AvroUtils.createAvroServer(MasterToDriverMessage.class,
         masterToDriverMessage, new InetSocketAddress(masterToDriverPort));
-    this.runningTaskInfo = runningTaskInfo;
+    this.runningTaskInfoStore = runningTaskInfoStore;
   }
 
   public final class StartHandler implements EventHandler<StartTime> {
@@ -252,10 +241,11 @@ public final class MistDriver {
             .build());
       } else {
         // This is for MistTask.
-        final String taskId = MIST_TASK_ID_PREFIX + taskIndex.getAndIncrement();
+        final TaskSubmitInfo taskSubmitInfo = taskSubmitInfoStore.getCurrentSubmitInfo();
+        final String taskId = taskSubmitInfo.getTaskId();
         final JVMProcess jvmProcess = jvmProcessFactory.newEvaluatorProcess()
-            .addOption("-XX:NewRatio=" + mistTaskSubmitInfo.getNewRatio())
-            .addOption("-XX:ReservedCodeCacheSize=" + mistTaskSubmitInfo.getReservedCodeCacheSize() + "m");
+            .addOption("-XX:NewRatio=" + taskSubmitInfo.getNewRatio())
+            .addOption("-XX:ReservedCodeCacheSize=" + taskSubmitInfo.getReservedCodeCacheSize() + "m");
         LOG.log(Level.INFO, "A MistTask allocated to {0}", descriptor.getNodeDescriptor().getName());
         allocatedEvaluator.setProcess(jvmProcess);
         allocatedEvaluator.submitContext(ContextConfiguration.CONF
@@ -270,11 +260,6 @@ public final class MistDriver {
     public void onNext(final ActiveContext activeContext) {
       LOG.log(Level.INFO, "Submitting Task to Context: {0}", activeContext);
       final String taskId = activeContext.getId();
-      // Configuration for NCS of mist task.
-      final Configuration nameResolverConf = NameResolverConfiguration.CONF
-          .set(NameResolverConfiguration.NAME_SERVICE_PORT, nameServer.getPort())
-          .set(NameResolverConfiguration.NAME_SERVER_HOSTNAME, localAddressProvider.getLocalAddress())
-          .build();
       if (taskId.startsWith(MIST_MASTER_ID_PREFIX)) {
         // This is for master.
         masterHostname = activeContext.getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress()
@@ -299,7 +284,8 @@ public final class MistDriver {
                 mistCommonConfigs.getConfiguration(),
                 mistTaskConfigs.getConfiguration(),
                 mistMasterConfigs.getConfiguration()));
-      } else if (taskId.startsWith(MIST_TASK_ID_PREFIX)) {
+      } else {
+        runningTaskInfoStore.put(taskId);
         final String taskHostname = activeContext.getEvaluatorDescriptor().getNodeDescriptor().getInetSocketAddress()
             .getHostName();
         final Configuration basicTaskConf = TaskConfiguration.CONF
@@ -311,14 +297,12 @@ public final class MistDriver {
         jcb.bindNamedParameter(MasterHostname.class, masterHostname);
         jcb.bindNamedParameter(TaskHostname.class, taskHostname);
         final Configuration hostnameConf = jcb.build();
+        final TaskSubmitInfo taskSubmitInfo = taskSubmitInfoStore.getCurrentSubmitInfo();
         activeContext.submitTask(
             Configurations.merge(
                 basicTaskConf,
                 hostnameConf,
-                mistTaskSubmitInfo.getTaskConfiguration()));
-      } else {
-        LOG.log(Level.SEVERE, "Invalid contextId: {0}", taskId);
-        throw new RuntimeException("Internal error: Invalid contextId!");
+                taskSubmitInfo.getTaskConfiguration()));
       }
     }
   }
@@ -341,11 +325,11 @@ public final class MistDriver {
             .build());
         LOG.log(Level.INFO, "Requested Evaluator.");
       } else {
-        // Worker has failed. we need to recovery worker.
+        // Worker has failed. we need to recover worker.
         try {
-          final String failedTaskHostname = failedNodeInetSocketAddress.getHostName();
-          runningTaskInfo.remove(failedTaskHostname);
-          proxyToMaster.notifyFailedTask(failedTaskHostname);
+          final String failedTaskId = failedEvaluator.getFailedContextList().get(0).getId();
+          runningTaskInfoStore.remove(failedTaskId);
+          proxyToMaster.notifyFailedTask(failedTaskId);
         } catch (final AvroRemoteException e) {
           LOG.log(Level.SEVERE, "Cannot connect to MistMaster for notifying failure! " + e.toString());
           throw new IllegalStateException("Cannot connect to MistMaster while failure recovery");
@@ -377,16 +361,14 @@ public final class MistDriver {
           throw new RuntimeException("driver-to-master avro connection failed");
         }
       } else {
+        // Remove the current task submit info.
+        taskSubmitInfoStore.removeCurrentSubmitInfo();
         // The running task is MistTask.
-        final String taskHostname = runningTask.getActiveContext().getEvaluatorDescriptor().getNodeDescriptor()
-            .getInetSocketAddress().getHostName();
-        runningTaskInfo.put(taskHostname, runningTask);
+        final String taskId = runningTask.getId();
+        runningTaskInfoStore.updateRunningTask(taskId, runningTask);
         try {
           // Notify to the master.
-          proxyToMaster.notifyTaskAllocated(AllocatedTask.newBuilder()
-              .setTaskId(runningTask.getId())
-              .setTaskHostname(taskHostname)
-              .build());
+          proxyToMaster.notifyTaskAllocated(runningTask.getId());
         } catch (final AvroRemoteException e) {
           LOG.log(Level.SEVERE, "AvroRemoteException occurred during adding a task to master!");
           throw new RuntimeException("Avro addTask failed!");
