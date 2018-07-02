@@ -16,6 +16,7 @@
 package edu.snu.mist.core.operators;
 
 import com.rits.cloning.Cloner;
+import com.rits.cloning.ObjenesisInstantiationStrategy;
 import edu.snu.mist.core.MistCheckpointEvent;
 import edu.snu.mist.core.MistDataEvent;
 import edu.snu.mist.core.MistWatermarkEvent;
@@ -94,7 +95,8 @@ public final class ApplyStatefulOperator<IN, OUT>
   @Override
   public Map<String, Object> getStateSnapshot() {
     final Map<String, Object> stateMap = new HashMap<>();
-    stateMap.put("applyStatefulFunctionState", new Cloner().deepClone(applyStatefulFunction.getCurrentState()));
+    stateMap.put("applyStatefulFunctionState",
+        new Cloner(new ObjenesisInstantiationStrategy()).deepClone(applyStatefulFunction.getCurrentState()));
     return stateMap;
   }
 

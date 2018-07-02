@@ -16,6 +16,7 @@
 package edu.snu.mist.core.operators.window;
 
 import com.rits.cloning.Cloner;
+import com.rits.cloning.ObjenesisInstantiationStrategy;
 import edu.snu.mist.core.MistCheckpointEvent;
 import edu.snu.mist.core.MistDataEvent;
 import edu.snu.mist.core.MistWatermarkEvent;
@@ -143,7 +144,7 @@ abstract class FixedSizeWindowOperator<T> extends OneStreamStateHandlerOperator 
   public Map<String, Object> getStateSnapshot() {
     final Map<String, Object> stateMap = new HashMap<>();
     stateMap.put("windowCreationPoint", windowCreationPoint);
-    stateMap.put("windowQueue", new Cloner().deepClone(windowQueue));
+    stateMap.put("windowQueue", new Cloner(new ObjenesisInstantiationStrategy()).deepClone(windowQueue));
     return stateMap;
   }
 

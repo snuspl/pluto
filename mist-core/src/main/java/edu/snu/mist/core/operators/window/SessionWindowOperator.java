@@ -16,6 +16,7 @@
 package edu.snu.mist.core.operators.window;
 
 import com.rits.cloning.Cloner;
+import com.rits.cloning.ObjenesisInstantiationStrategy;
 import edu.snu.mist.core.MistCheckpointEvent;
 import edu.snu.mist.core.MistDataEvent;
 import edu.snu.mist.core.MistWatermarkEvent;
@@ -122,7 +123,7 @@ public final class SessionWindowOperator<T> extends OneStreamStateHandlerOperato
   @Override
   public Map<String, Object> getStateSnapshot() {
     final Map<String, Object> stateMap = new HashMap<>();
-    stateMap.put("currentWindow", new Cloner().deepClone(currentWindow));
+    stateMap.put("currentWindow", new Cloner(new ObjenesisInstantiationStrategy()).deepClone(currentWindow));
     stateMap.put("latestDataTimestamp", latestDataTimestamp);
     stateMap.put("startedNewWindow", startedNewWindow);
     return stateMap;
