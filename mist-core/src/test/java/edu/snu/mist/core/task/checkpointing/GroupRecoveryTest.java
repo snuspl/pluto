@@ -16,6 +16,7 @@
 package edu.snu.mist.core.task.checkpointing;
 
 import com.rits.cloning.Cloner;
+import com.rits.cloning.ObjenesisInstantiationStrategy;
 import edu.snu.mist.client.MISTQuery;
 import edu.snu.mist.client.MISTQueryBuilder;
 import edu.snu.mist.client.datastreams.configurations.PeriodicWatermarkConfiguration;
@@ -250,7 +251,7 @@ public class GroupRecoveryTest {
 
   private AvroDag modifySinkAvroChainedDag(final AvroDag originalAvroOpChainDag) throws IOException {
     // Do a deep copy for operatorChainDag
-    final AvroDag opDagClone = new Cloner().deepClone(originalAvroOpChainDag);
+    final AvroDag opDagClone = new Cloner(new ObjenesisInstantiationStrategy()).deepClone(originalAvroOpChainDag);
     for (final AvroVertex avroVertex : opDagClone.getAvroVertices()) {
       switch (avroVertex.getAvroVertexType()) {
         case SINK: {
