@@ -13,33 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
- /**
-  * This is a skeleton protocol for RPC communication from MistDriver to MistMaster message.
-  */
-{
-  "namespace": "edu.snu.mist.formats.avro",
-  "protocol": "DriverToMasterMessage",
-  "messages":
-  {
-    "notifyTaskAllocated": {
-      "request": [
-        {
-          "name": "runingTaskId",
-          "type": "string"
-        }
-      ],
-      "response": "null"
-    },
-    "notifyFailedTask":
-    {
-      "request": [
-        {
-          "name": "failedTaskId",
-          "type": "string"
-        }
-      ],
-      "response": "null"
-    }
-  }
-}
+/**
+ * This package contains test cases of replaying.
+ */
+package edu.snu.mist.core.replay;

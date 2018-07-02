@@ -28,10 +28,7 @@ import org.apache.reef.io.network.naming.NameResolver;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.runtime.local.client.LocalRuntimeConfiguration;
 import org.apache.reef.runtime.yarn.client.YarnClientConfiguration;
-import org.apache.reef.tang.Configuration;
-import org.apache.reef.tang.Configurations;
-import org.apache.reef.tang.JavaConfigurationBuilder;
-import org.apache.reef.tang.Tang;
+import org.apache.reef.tang.*;
 import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.util.EnvironmentUtils;
@@ -91,8 +88,11 @@ public final class MistLauncher {
   /**
    * @return the configuration of the Mist driver.
    */
-  public static Configuration getDriverConfiguration(final Configuration conf) {
+  public static Configuration getDriverConfiguration(final Configuration conf) throws InjectionException {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder(conf);
+    final Injector injector = Tang.Factory.getTang().newInjector(conf);
+    final int memorySize = injector.getNamedInstance(DriverMemorySize.class);
+
     jcb.bindImplementation(NameResolver.class, LocalNameResolverImpl.class);
     jcb.bindImplementation(IdentifierFactory.class, StringIdentifierFactory.class);
     jcb.bindImplementation(MasterToDriverMessage.class, DefaultMasterToDriverMessageImpl.class);
@@ -100,6 +100,7 @@ public final class MistLauncher {
     final Configuration driverConf = DriverConfiguration.CONF
         .set(DriverConfiguration.GLOBAL_LIBRARIES, EnvironmentUtils.getClassLocation(MistDriver.class))
         .set(DriverConfiguration.DRIVER_IDENTIFIER, "MistDriver")
+        .set(DriverConfiguration.DRIVER_MEMORY, Integer.toString(memorySize))
         .set(DriverConfiguration.ON_DRIVER_STARTED, MistDriver.StartHandler.class)
         .set(DriverConfiguration.ON_EVALUATOR_ALLOCATED, MistDriver.EvaluatorAllocatedHandler.class)
         .set(DriverConfiguration.ON_CONTEXT_ACTIVE, MistDriver.ActiveContextHandler.class)

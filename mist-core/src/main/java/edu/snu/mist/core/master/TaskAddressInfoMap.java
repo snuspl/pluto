@@ -15,39 +15,41 @@
  */
 package edu.snu.mist.core.master;
 
-import edu.snu.mist.formats.avro.MasterToTaskMessage;
+import edu.snu.mist.formats.avro.IPAddress;
 
 import javax.inject.Inject;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * The wrapper class which contains proxies to managed tasks.
+ * The Shared task-port info map.
  */
-public final class ProxyToTaskMap {
+public final class TaskAddressInfoMap {
 
-  private ConcurrentMap<String, MasterToTaskMessage> innerMap;
+  private final ConcurrentMap<String, TaskAddressInfo> innerMap;
 
   @Inject
-  private ProxyToTaskMap() {
+  private TaskAddressInfoMap() {
     this.innerMap = new ConcurrentHashMap<>();
   }
 
-  public void addNewProxy(final String taskId, final MasterToTaskMessage proxyToTask) {
-    innerMap.put(taskId, proxyToTask);
-  }
-
-  public Set<Map.Entry<String, MasterToTaskMessage>> entrySet() {
-    return innerMap.entrySet();
-  }
-
-  public MasterToTaskMessage get(final String taskId) {
+  public TaskAddressInfo get(final String taskId) {
     return innerMap.get(taskId);
   }
 
-  public MasterToTaskMessage remove(final String taskId) {
+  public TaskAddressInfo put(final String taskId, final TaskAddressInfo taskAddressInfo) {
+    return innerMap.put(taskId, taskAddressInfo);
+  }
+
+  public IPAddress getClientToTaskAddress(final String taskId) {
+    return new IPAddress(innerMap.get(taskId).getHostname(), innerMap.get(taskId).getClientToTaskPort());
+  }
+
+  public IPAddress getMasterToTaskAddress(final String taskId) {
+    return new IPAddress(innerMap.get(taskId).getHostname(), innerMap.get(taskId).getMasterToTaskPort());
+  }
+
+  public TaskAddressInfo remove(final String taskId) {
     return innerMap.remove(taskId);
   }
 }

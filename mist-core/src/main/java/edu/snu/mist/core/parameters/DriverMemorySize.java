@@ -13,33 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package edu.snu.mist.core.parameters;
 
- /**
-  * This is a skeleton protocol for RPC communication from MistDriver to MistMaster message.
-  */
-{
-  "namespace": "edu.snu.mist.formats.avro",
-  "protocol": "DriverToMasterMessage",
-  "messages":
-  {
-    "notifyTaskAllocated": {
-      "request": [
-        {
-          "name": "runingTaskId",
-          "type": "string"
-        }
-      ],
-      "response": "null"
-    },
-    "notifyFailedTask":
-    {
-      "request": [
-        {
-          "name": "failedTaskId",
-          "type": "string"
-        }
-      ],
-      "response": "null"
-    }
-  }
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
+
+/**
+ * The memory size of Driver.
+ */
+@NamedParameter(doc = "Driver memory size (mb).", default_value = "1024", short_name =
+    "driver_mem_size")
+public final class DriverMemorySize implements Name<Integer> {
 }

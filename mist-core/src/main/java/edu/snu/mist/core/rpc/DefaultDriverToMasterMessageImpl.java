@@ -15,11 +15,12 @@
  */
 package edu.snu.mist.core.rpc;
 
+import edu.snu.mist.core.master.ProxyToTaskMap;
+import edu.snu.mist.core.master.TaskAddressInfoMap;
 import edu.snu.mist.core.master.TaskRequestor;
 import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.master.recovery.RecoveryScheduler;
 import edu.snu.mist.core.master.recovery.RecoveryStarter;
-import edu.snu.mist.formats.avro.AllocatedTask;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
 import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.avro.AvroRemoteException;
@@ -36,12 +37,22 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   /**
    * The task stats map.
    */
-  private TaskStatsMap taskStatsMap;
+  private final TaskStatsMap taskStatsMap;
+
+  /**
+   * The task address info map.
+   */
+  private final TaskAddressInfoMap taskAddressInfoMap;
+
+  /**
+   * The proxy to task map.
+   */
+  private final ProxyToTaskMap proxyToTaskMap;
 
   /**
    * The task requestor for MistMaster.
    */
-  private TaskRequestor taskRequestor;
+  private final TaskRequestor taskRequestor;
 
   /**
    * The recovery scheduler.
@@ -56,24 +67,30 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   @Inject
   private DefaultDriverToMasterMessageImpl(
       final TaskStatsMap taskStatsMap,
+      final TaskAddressInfoMap taskAddressInfoMap,
+      final ProxyToTaskMap proxyToTaskMap,
       final RecoveryScheduler recoveryScheduler,
       final TaskRequestor taskRequestor) {
     this.taskStatsMap = taskStatsMap;
+    this.taskAddressInfoMap = taskAddressInfoMap;
+    this.proxyToTaskMap = proxyToTaskMap;
     this.recoveryScheduler = recoveryScheduler;
     this.taskRequestor = taskRequestor;
     this.singleThreadedExecutor = Executors.newSingleThreadExecutor();
   }
 
   @Override
-  public Void notifyTaskAllocated(final AllocatedTask allocatedTask) throws AvroRemoteException {
-    taskRequestor.notifyAllocatedTask(allocatedTask);
+  public Void notifyTaskAllocated(final String allocatedTaskId) throws AvroRemoteException {
+    taskRequestor.notifyAllocatedTask();
     return null;
   }
 
   @Override
-  public synchronized Void notifyFailedTask(final String taskHostname) {
-    // Remove the allocated queries firstly...
-    final TaskStats taskStats = taskStatsMap.removeTask(taskHostname);
+  public synchronized Void notifyFailedTask(final String taskId) {
+    // Remove the failed task...
+    final TaskStats taskStats = taskStatsMap.removeTask(taskId);
+    taskAddressInfoMap.remove(taskId);
+    proxyToTaskMap.remove(taskId);
     singleThreadedExecutor.submit(new RecoveryStarter(taskStats.getGroupStatsMap(), recoveryScheduler, taskRequestor));
     return null;
   }

@@ -16,6 +16,7 @@
 package edu.snu.mist.core.operators;
 
 import com.rits.cloning.Cloner;
+import com.rits.cloning.ObjenesisInstantiationStrategy;
 import edu.snu.mist.core.MistCheckpointEvent;
 import edu.snu.mist.core.MistDataEvent;
 import edu.snu.mist.core.MistWatermarkEvent;
@@ -148,7 +149,7 @@ public final class ReduceByKeyOperator<K extends Serializable, V extends Seriali
   @Override
   public Map<String, Object> getStateSnapshot() {
     final Map<String, Object> stateMap = new HashMap<>();
-    stateMap.put("reduceByKeyState", new Cloner().deepClone(state));
+    stateMap.put("reduceByKeyState", new Cloner(new ObjenesisInstantiationStrategy()).deepClone(state));
     return stateMap;
   }
 

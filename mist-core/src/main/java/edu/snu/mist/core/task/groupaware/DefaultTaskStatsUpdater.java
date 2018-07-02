@@ -16,7 +16,7 @@
 package edu.snu.mist.core.task.groupaware;
 
 import edu.snu.mist.core.parameters.MasterHostname;
-import edu.snu.mist.core.parameters.TaskHostname;
+import edu.snu.mist.core.parameters.TaskId;
 import edu.snu.mist.core.parameters.TaskToMasterPort;
 import edu.snu.mist.core.rpc.AvroUtils;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
@@ -40,9 +40,9 @@ import java.util.Map;
 public final class DefaultTaskStatsUpdater implements TaskStatsUpdater {
 
   /**
-   * The task host name.
+   * The task id.
    */
-  private String taskHostname;
+  private String taskId;
 
   /**
    * The avro proxy to master.
@@ -53,8 +53,8 @@ public final class DefaultTaskStatsUpdater implements TaskStatsUpdater {
   private DefaultTaskStatsUpdater(
       @Parameter(MasterHostname.class) final String masterHostname,
       @Parameter(TaskToMasterPort.class) final int taskToMasterPort,
-      @Parameter(TaskHostname.class) final String taskHostname) throws IOException {
-    this.taskHostname = taskHostname;
+      @Parameter(TaskId.class) final String taskId) throws IOException {
+    this.taskId = taskId;
     this.proxyToMaster = AvroUtils.createAvroProxy(TaskToMasterMessage.class,
         new InetSocketAddress(masterHostname, taskToMasterPort));
   }
@@ -83,7 +83,7 @@ public final class DefaultTaskStatsUpdater implements TaskStatsUpdater {
       totalLoad += group.getLoad();
     }
     final double taskCpuLoad = totalLoad / numEventProcessors;
-    proxyToMaster.updateTaskStats(taskHostname,
+    proxyToMaster.updateTaskStats(taskId,
         TaskStats.newBuilder()
             .setTaskLoad(taskCpuLoad)
             .setNumEventProcessors(numEventProcessors)

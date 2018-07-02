@@ -15,11 +15,10 @@
  */
 package edu.snu.mist.core.master.lb.allocation;
 
+import edu.snu.mist.core.master.TaskAddressInfoMap;
 import edu.snu.mist.core.master.TaskStatsMap;
-import edu.snu.mist.core.parameters.ClientToTaskPort;
 import edu.snu.mist.formats.avro.IPAddress;
 import edu.snu.mist.formats.avro.TaskStats;
-import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.Map;
@@ -28,11 +27,10 @@ import java.util.Map;
  * The minimum load query allocation manager.
  */
 public final class MinLoadQueryAllocationManager implements QueryAllocationManager {
-
   /**
-   * The client-to-task avro rpc port.
+   * The shared task address info map.
    */
-  private final int clientToTaskPort;
+  private final TaskAddressInfoMap taskAddressInfoMap;
 
   /**
    * The task stats map.
@@ -41,10 +39,10 @@ public final class MinLoadQueryAllocationManager implements QueryAllocationManag
 
   @Inject
   private MinLoadQueryAllocationManager(
-      @Parameter(ClientToTaskPort.class) final int clientToTaskPort,
+      final TaskAddressInfoMap taskAddressInfoMap,
       final TaskStatsMap taskStatsMap) {
     super();
-    this.clientToTaskPort = clientToTaskPort;
+    this.taskAddressInfoMap = taskAddressInfoMap;
     this.taskStatsMap = taskStatsMap;
   }
 
@@ -60,9 +58,8 @@ public final class MinLoadQueryAllocationManager implements QueryAllocationManag
         minTask = entry.getKey();
       }
     }
-
     assert minTask != null;
-    return new IPAddress(minTask, clientToTaskPort);
+    return taskAddressInfoMap.getClientToTaskAddress(minTask);
   }
 
   @Override

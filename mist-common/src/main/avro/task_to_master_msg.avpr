@@ -23,6 +23,28 @@
   "protocol": "TaskToMasterMessage",
   "types":[
     {
+      "name": "TaskInfo",
+      "type": "record",
+      "fields": [
+        {
+          "name": "TaskId",
+          "type": "string"
+        },
+        {
+          "name": "TaskHostname",
+          "type": "string"
+        },
+        {
+          "name": "ClientToTaskPort",
+          "type": "int"
+        },
+        {
+          "name": "MasterToTaskPort",
+          "type": "int"
+        }
+      ]
+    },
+    {
       "name": "GroupStats",
       "type": "record",
       "fields": [
@@ -81,12 +103,23 @@
     }
   ],
   "messages": {
+    "registerTaskInfo":
+    {
+      "request":
+      [
+        {
+          "name": "taskInfo",
+          "type": "TaskInfo"
+        }
+      ],
+      "response": "boolean"
+    },
     "createGroup":
     {
       "request":
       [
         {
-          "name": "taskHostname",
+          "name": "taskId",
           "type": "string"
         },
         {
@@ -100,7 +133,7 @@
     {
       "request": [
         {
-          "name": "taskHostname",
+          "name": "taskId",
           "type": "string"
         },
         {
@@ -114,7 +147,7 @@
     {
       "request": [
         {
-          "name": "taskHostname",
+          "name": "taskId",
           "type": "string"
         }
       ],

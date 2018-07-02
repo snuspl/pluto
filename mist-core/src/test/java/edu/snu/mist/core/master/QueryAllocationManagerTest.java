@@ -35,6 +35,7 @@ public final class QueryAllocationManagerTest {
   public void testApplicationAwareQueryAllocationManager() throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector();
     final TaskStatsMap taskStatsMap = injector.getInstance(TaskStatsMap.class);
+    final TaskAddressInfoMap taskAddressInfoMap = injector.getInstance(TaskAddressInfoMap.class);
     final QueryAllocationManager manager = injector.getInstance(ApplicationAwareQueryAllocationManager.class);
     final double overloadedTaskThreshold = injector.getNamedInstance(OverloadedTaskLoadThreshold.class);
     final double underloadedTaskThreshold = injector.getNamedInstance(UnderloadedTaskLoadThreshold.class);
@@ -43,6 +44,8 @@ public final class QueryAllocationManagerTest {
 
     taskStatsMap.addTask(task1);
     taskStatsMap.addTask(task2);
+    taskAddressInfoMap.put(task1, new TaskAddressInfo(task1, 0, 0));
+    taskAddressInfoMap.put(task2, new TaskAddressInfo(task2, 0, 0));
     final TaskStats task1Stats = taskStatsMap.get(task1);
     final TaskStats task2Stats = taskStatsMap.get(task2);
     task1Stats.setTaskLoad(0.0);

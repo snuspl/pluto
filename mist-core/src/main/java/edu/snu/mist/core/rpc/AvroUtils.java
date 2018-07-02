@@ -44,7 +44,7 @@ public final class AvroUtils {
   public static <T> Server createAvroServer(
       final Class<T> messageClass,
       final T messageInstance,
-      final InetSocketAddress serverAddress) {
+      final InetSocketAddress serverAddress) throws Exception {
     final SpecificResponder responder = new SpecificResponder(messageClass, messageInstance);
     return new NettyServer(responder, serverAddress);
   }

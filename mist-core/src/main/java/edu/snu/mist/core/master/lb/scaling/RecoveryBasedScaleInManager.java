@@ -82,11 +82,11 @@ public final class RecoveryBasedScaleInManager implements ScaleInManager {
 
   @Override
   public boolean scaleIn() throws AvroRemoteException {
-    final String removedTaskName = getMinimumLoadTask();
-    final boolean stopTaskSuccess = proxyToDriver.stopTask(removedTaskName);
+    final String removedTaskId = getMinimumLoadTask();
+    final boolean stopTaskSuccess = proxyToDriver.stopTask(removedTaskId);
 
     if (stopTaskSuccess) {
-      final TaskStats taskStats = taskStatsMap.removeTask(removedTaskName);
+      final TaskStats taskStats = taskStatsMap.removeTask(removedTaskId);
       singleThreadedExecutor
           .submit(new RecoveryStarter(taskStats.getGroupStatsMap(), recoveryScheduler));
       return true;
