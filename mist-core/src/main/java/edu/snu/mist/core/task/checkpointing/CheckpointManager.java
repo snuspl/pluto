@@ -38,10 +38,18 @@ public interface CheckpointManager {
 
   /**
    * Store the given query to the disk.
-   * @param avroDag
+   * @param avroDag The avro dag to be stored.
+   * @param group The group.
    * @return
    */
-  boolean storeQuery(AvroDag avroDag);
+  boolean storeQuery(Group group, AvroDag avroDag);
+
+  /**
+   * Create the group query information file.
+   * @param group the group.
+   * @return success / fail
+   */
+  boolean createGroupQueryInfoFile(Group group);
 
   /**
    * Checkpoint a single group.
