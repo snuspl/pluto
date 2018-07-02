@@ -81,6 +81,10 @@ public final class StateSerializer {
     }
   }
 
+  public static Map<String, Object> deserializeStateMap(final Map<String, Object> serializedStateMap) {
+    return deserializeStateMap(serializedStateMap, null);
+  }
+
   /**
    * Receives a Map<String, ByteBuffer>, deserializes the values, and returns it.
    * @param serializedStateMap
@@ -116,7 +120,11 @@ public final class StateSerializer {
     final byte[] bytes = new byte[byteBuffer.remaining()];
     byteBuffer.get(bytes);
     try {
-      return SerializeUtils.deserializeFromString(new String(bytes), classLoader);
+      if (classLoader != null) {
+        return SerializeUtils.deserializeFromString(new String(bytes), classLoader);
+      } else {
+        return SerializeUtils.deserializeFromString(new String(bytes));
+      }
       /**
       try (final ByteArrayInputStream b = new ByteArrayInputStream(bytes)) {
         try (final ObjectInputStream o = new ObjectInputStream(b)) {
