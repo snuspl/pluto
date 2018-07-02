@@ -25,6 +25,7 @@ import edu.snu.mist.core.master.lb.parameters.ScaleInIdleTaskRatio;
 import edu.snu.mist.core.master.lb.parameters.ScaleOutGracePeriod;
 import edu.snu.mist.core.master.lb.parameters.ScaleOutOverloadedTaskRatio;
 import edu.snu.mist.core.master.lb.parameters.DynamicScalingPeriod;
+import edu.snu.mist.core.master.recovery.RecoveryScheduler;
 import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -118,6 +119,11 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
    */
   private final ScaleInManager scaleInManager;
 
+  /**
+   * The recovery scheduler.
+   */
+  private final RecoveryScheduler recoveryScheduler;
+
   @Inject
   private PeriodicDynamicScalingManager(
       final TaskStatsMap taskStatsMap,
@@ -130,7 +136,8 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
       @Parameter(ScaleOutGracePeriod.class) final long scaleOutGracePeriod,
       @Parameter(ScaleInIdleTaskRatio.class) final double scaleInIdleTaskRatio,
       @Parameter(ScaleOutOverloadedTaskRatio.class) final double scaleOutOverloadedTaskRatio,
-      final ScaleInManager scaleInManager) {
+      final ScaleInManager scaleInManager,
+      final RecoveryScheduler recoveryScheduler) {
     this.taskStatsMap = taskStatsMap;
     this.dynamicScalingPeriod = dynamicScalingPeriod;
     this.maxTaskNum = maxTaskNum;
@@ -146,6 +153,7 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
     this.lastMeasuredTimestamp = 0L;
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     this.scaleInManager = scaleInManager;
+    this.recoveryScheduler = recoveryScheduler;
   }
 
   private boolean isClusterOverloaded() {
@@ -182,8 +190,8 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
         final long oldTimeStamp = lastMeasuredTimestamp;
         lastMeasuredTimestamp = System.currentTimeMillis();
 
-        // Do not perform auto-scaling when firstly called.
-        if (oldTimeStamp == 0L) {
+        // Do not perform auto-scaling when firstly called or the recovery is ongoing.
+        if (oldTimeStamp == 0L || recoveryScheduler.isRecoverOngoing()) {
           return;
         }
 

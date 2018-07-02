@@ -161,4 +161,8 @@ public final class DistributedRecoveryScheduler implements RecoveryScheduler {
     }
   }
 
+  @Override
+  public boolean isRecoverOngoing() {
+    return isRecoveryOngoing.get();
+  }
 }
