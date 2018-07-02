@@ -73,16 +73,26 @@ public final class DefaultClientToMasterMessageImpl implements ClientToMasterMes
   }
 
   @Override
-  public JarUploadResult uploadJarFiles(final List<ByteBuffer> jarFile) throws AvroRemoteException {
-    return appCodeManager.registerNewAppCode(jarFile);
+  public JarUploadResult uploadJarFiles(final List<ByteBuffer> jarFile) {
+    try {
+      return appCodeManager.registerNewAppCode(jarFile);
+    } catch (final Exception e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
   public QuerySubmitInfo getQuerySubmitInfo(final String appId) {
-    return QuerySubmitInfo.newBuilder()
-        .setJarPaths(appCodeManager.getJarPaths(appId))
-        .setQueryId(queryIdGenerator.generate())
-        .setTask(queryAllocationManager.getAllocatedTask(appId))
-        .build();
+    try {
+      return QuerySubmitInfo.newBuilder()
+          .setJarPaths(appCodeManager.getJarPaths(appId))
+          .setQueryId(queryIdGenerator.generate())
+          .setTask(queryAllocationManager.getAllocatedTask(appId))
+          .build();
+    } catch (final Exception e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
+    }
   }
 }
