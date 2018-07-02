@@ -16,24 +16,34 @@
 package edu.snu.mist.core.task.merging;
 
 import edu.snu.mist.common.SerializeUtils;
+import edu.snu.mist.common.configurations.ConfKeys;
 import edu.snu.mist.common.graph.DAG;
 import edu.snu.mist.common.graph.GraphUtils;
 import edu.snu.mist.common.graph.MISTEdge;
+import edu.snu.mist.core.parameters.ReplayServerAddress;
+import edu.snu.mist.core.parameters.ReplayServerPort;
 import edu.snu.mist.core.task.*;
 import edu.snu.mist.core.task.codeshare.ClassLoaderProvider;
+import org.apache.reef.io.Tuple;
+import org.apache.reef.tang.annotations.Parameter;
+import org.apache.reef.tang.exceptions.InjectionException;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This starter tries to merges the submitted dag with the currently running dag.
  * When a query is submitted, this starter first finds mergeable execution dags.
  * After that, it merges them with the submitted query.
  */
-public final class ImmediateQueryMergingStarter implements QueryStarter {
+public final class ImmediateQueryMergingStarter extends BaseQueryStarter implements QueryStarter {
+
+  private static final Logger LOG = Logger.getLogger(ImmediateQueryMergingStarter.class.getName());
 
   /**
    * An algorithm for finding the sub-dag between the execution and submitted dag.
@@ -86,6 +96,22 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
    */
   private final List<String> groupJarFilePaths;
 
+  /**
+   * The map of sources and queryIds.
+   * This is only used for replaying events and is empty at other times.
+   */
+  private final Map<PhysicalSource, String> srcAndQueryIdMap;
+
+  /**
+   * The address of the replay server.
+   */
+  private final String replayServerAddress;
+
+  /**
+   * The port number of the replay server.
+   */
+  private final int replayServerPort;
+
   @Inject
   private ImmediateQueryMergingStarter(final CommonSubDagFinder commonSubDagFinder,
                                        final SrcAndDagMap<Map<String, String>> srcAndDagMap,
@@ -95,7 +121,10 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
                                        final ExecutionVertexCountMap executionVertexCountMap,
                                        final ClassLoaderProvider classLoaderProvider,
                                        final ExecutionVertexGenerator executionVertexGenerator,
-                                       final ExecutionVertexDagMap executionVertexDagMap) {
+                                       final ExecutionVertexDagMap executionVertexDagMap,
+                                       @Parameter(ReplayServerAddress.class) final String replayServerAddress,
+                                       @Parameter(ReplayServerPort.class) final int replayServerPort) {
+    super(replayServerAddress, replayServerPort);
     this.commonSubDagFinder = commonSubDagFinder;
     this.srcAndDagMap = srcAndDagMap;
     this.queryIdConfigDagMap = queryIdConfigDagMap;
@@ -106,13 +135,20 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
     this.executionVertexCountMap = executionVertexCountMap;
     this.executionVertexDagMap = executionVertexDagMap;
     this.groupJarFilePaths = new CopyOnWriteArrayList<>();
+    this.srcAndQueryIdMap = new HashMap<>();
+    this.replayServerAddress = replayServerAddress;
+    this.replayServerPort = replayServerPort;
   }
 
   @Override
-  public synchronized void start(final String queryId,
-                                 final Query query,
-                                 final DAG<ConfigVertex, MISTEdge> submittedDag,
-                                 final List<String> jarFilePaths) throws IOException, ClassNotFoundException {
+  public synchronized Set<Tuple<String, String>> startOrSetupForReplay(final boolean isStart,
+                                                                       final String queryId,
+                                                                       final Query query,
+                                                                       final DAG<ConfigVertex, MISTEdge> submittedDag,
+                                                                       final List<String> jarFilePaths)
+      throws IOException, ClassNotFoundException {
+    // The set to contain the tuples (topic and broker uri) of the submitted query.
+    final Set<Tuple<String, String>> topicAndBrokerURISet = new HashSet<>();
 
     queryIdConfigDagMap.put(queryId, submittedDag);
 
@@ -129,6 +165,21 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
     // Synchronize the execution dags to evade concurrent modifications
     // TODO:[MIST-590] We need to improve this code for concurrent modification
     synchronized (srcAndDagMap) {
+      if (!isStart) {
+        for (final ConfigVertex source : submittedDag.getRootVertices()) {
+          final Map<String, String> srcConfMap = source.getConfiguration();
+
+          final String mqttTopic = srcConfMap.get(ConfKeys.MQTTSourceConf.MQTT_SRC_TOPIC.name());
+          final String mqttBrokerAddressAndPort = srcConfMap.get(ConfKeys.MQTTSourceConf.MQTT_SRC_BROKER_URI.name());
+
+          if (mqttTopic != null && mqttBrokerAddressAndPort != null) {
+            final Tuple<String, String> brokerTopic = new Tuple<>(mqttTopic, mqttBrokerAddressAndPort);
+            topicAndBrokerURISet.add(brokerTopic);
+          } else {
+            LOG.log(Level.WARNING, "No mqttTopic or mqttBrokerAddressAndPort were found");
+          }
+        }
+      }
       // Find mergeable DAGs from the execution dags
       final Map<Map<String, String>, ExecutionDag> mergeableDags = findMergeableDags(submittedDag);
 
@@ -139,10 +190,14 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
         QueryStarterUtils.setUpOutputEmitters(executionDag, query);
 
         for (final ExecutionVertex source : executionDag.getDag().getRootVertices()) {
-          // Start the source
+          // Set up the source
           final PhysicalSource src = (PhysicalSource) source;
           srcAndDagMap.put(src.getConfiguration(), executionDag);
-          src.start();
+          if (!isStart) {
+            srcAndQueryIdMap.put(src, queryId);
+          } else {
+            src.start();
+          }
         }
 
         // Update the execution dag of the execution vertex
@@ -151,7 +206,7 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
         }
 
         executionDags.add(executionDag);
-        return;
+        return topicAndBrokerURISet;
       }
 
       // If there exist mergeable execution dags,
@@ -192,6 +247,9 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
           sharableExecutionDag.getDag().addVertex(executionVertex);
           executionVertexCountMap.put(executionVertex, 1);
           executionVertexDagMap.put(executionVertex, sharableExecutionDag);
+          if (!isStart) {
+            srcAndQueryIdMap.put((PhysicalSource) executionVertex, queryId);
+          }
         } else {
           executionVertex = subDagMap.get(source);
           executionVertexCountMap.put(executionVertex, executionVertexCountMap.get(executionVertex) + 1);
@@ -204,14 +262,25 @@ public final class ImmediateQueryMergingStarter implements QueryStarter {
         }
       }
 
-      // If there are sources that are not shared, start them
+      // If there are sources that are not shared, put them in the srcAndDagMap.
       for (final ConfigVertex source : submittedDag.getRootVertices()) {
         if (!subDagMap.containsKey(source)) {
           srcAndDagMap.put(source.getConfiguration(), sharableExecutionDag);
-          ((PhysicalSource)configExecutionVertexMap.get(source)).start();
+          if (isStart) {
+            ((PhysicalSource)configExecutionVertexMap.get(source)).start();
+          }
         }
       }
+
+      return topicAndBrokerURISet;
     }
+  }
+
+  @Override
+  public void replayAndStart(final Map<String, Set<Tuple<String, String>>> queryIdAndBrokerTopicMap,
+                             final long minTimestamp)
+      throws InjectionException, IOException, ClassNotFoundException {
+    super.replayAndStart(queryIdAndBrokerTopicMap, minTimestamp, executionDags.values());
   }
 
   /**

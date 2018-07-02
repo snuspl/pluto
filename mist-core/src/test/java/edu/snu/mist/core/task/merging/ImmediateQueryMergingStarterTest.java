@@ -177,7 +177,7 @@ public final class ImmediateQueryMergingStarterTest {
   public void singleQueryMergingTest() throws InjectionException, IOException, ClassNotFoundException {
     final List<String> result = new LinkedList<>();
 
-   // Physical vertices
+    // Physical vertices
     final Map<String, String> sourceConf = idAndConfGenerator.generateConf();
     final Map<String, String> ocConf = idAndConfGenerator.generateConf();
     final Map<String, String> sinkConf = idAndConfGenerator.generateConf();
@@ -201,7 +201,7 @@ public final class ImmediateQueryMergingStarterTest {
     // Execute the query 1
     final Query query1 = mock(Query.class);
     final List<String> paths = mock(List.class);
-    queryStarter.start("q1", query1, dagTuple.getKey(), paths);
+    queryStarter.startOrSetupForReplay(true, "q1", query1, dagTuple.getKey(), paths);
 
     // Generate events for the query and check if the dag is executed correctly
     final String data1 = "Hello";
@@ -307,8 +307,8 @@ public final class ImmediateQueryMergingStarterTest {
 
     final String query1Id = "q1";
     final String query2Id = "q2";
-    queryStarter.start(query1Id, query1, dagTuple1.getKey(), paths1);
-    queryStarter.start(query2Id, query2, dagTuple2.getKey(), paths2);
+    queryStarter.startOrSetupForReplay(true, query1Id, query1, dagTuple1.getKey(), paths1);
+    queryStarter.startOrSetupForReplay(true, query2Id, query2, dagTuple2.getKey(), paths2);
 
     // The query 1 and 2 have different sources, so they should be executed separately
     final String data1 = "Hello";
@@ -434,8 +434,8 @@ public final class ImmediateQueryMergingStarterTest {
     final Query query2 = mock(Query.class);
     final String query1Id = "q1";
     final String query2Id = "q2";
-    queryStarter.start(query1Id, query1, dagTuple1.getKey(), paths1);
-    queryStarter.start(query2Id, query2, dagTuple2.getKey(), paths2);
+    queryStarter.startOrSetupForReplay(true, query1Id, query1, dagTuple1.getKey(), paths1);
+    queryStarter.startOrSetupForReplay(true, query2Id, query2, dagTuple2.getKey(), paths2);
 
     // Generate events for the merged query and check if the dag is executed correctly
     final String data = "Hello";
@@ -565,8 +565,8 @@ public final class ImmediateQueryMergingStarterTest {
     final String query2Id = "q2";
     final Query query1 = mock(Query.class);
     final Query query2 = mock(Query.class);
-    queryStarter.start(query1Id, query1, dagTuple1.getKey(), paths1);
-    queryStarter.start(query2Id, query2, dagTuple2.getKey(), paths2);
+    queryStarter.startOrSetupForReplay(true, query1Id, query1, dagTuple1.getKey(), paths1);
+    queryStarter.startOrSetupForReplay(true, query2Id, query2, dagTuple2.getKey(), paths2);
 
     // Generate events for the merged query and check if the dag is executed correctly
     final String data1 = "Hello";

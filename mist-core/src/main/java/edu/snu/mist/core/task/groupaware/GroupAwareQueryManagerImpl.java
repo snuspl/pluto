@@ -42,6 +42,7 @@ import org.apache.reef.tang.exceptions.InjectionException;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -175,45 +176,8 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     final String queryId = avroDag.getQueryId();
     queryControlResult.setQueryId(queryId);
     try {
-      // Create the submitted query
-      // 1) Saves the avr dag to the PlanStore and
-      // converts the avro dag to the logical and execution dag
-      checkpointManager.storeQuery(avroDag);
-
-      // Update app information
-      final String appId = avroDag.getAppId();
-
-      if (LOG.isLoggable(Level.FINE)) {
-        LOG.log(Level.FINE, "Create Query [aid: {0}, qid: {2}]",
-            new Object[]{appId, queryId});
-      }
-
-      if (!applicationMap.containsKey(appId)) {
-        createApplication(appId, avroDag.getJarPaths());
-      }
-
-      final ApplicationInfo applicationInfo = applicationMap.get(appId);
-      if (applicationInfo.getGroups().size() == 0) {
-        synchronized (applicationInfo) {
-          if (applicationInfo.getGroups().size() == 0) {
-            createGroup(applicationInfo);
-            // Waiting for group information being added
-            while (applicationInfo.getGroups().isEmpty()) {
-              Thread.sleep(100);
-            }
-          }
-        }
-      }
-
-      final DAG<ConfigVertex, MISTEdge> configDag;
-      if (checkpointedState == null) {
-        configDag = configDagGenerator.generate(avroDag);
-      } else {
-        configDag = configDagGenerator.generateWithCheckpointedStates(avroDag, checkpointedState);
-      }
-
-      final Query query = createAndStartQuery(queryId, applicationInfo, configDag);
-
+      final Tuple<ApplicationInfo, DAG<ConfigVertex, MISTEdge>> tuple = startSetupCommonOp(avroDag, checkpointedState);
+      final Query query = createAndStartQuery(queryId, tuple.getKey(), tuple.getValue());
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(queryId));
       return queryControlResult;
@@ -230,6 +194,29 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
   }
 
   @Override
+  public Set<Tuple<String, String>> setupQueryWithCheckpoint(final AvroDag avroDag,
+                                                             final QueryCheckpoint checkpointedState) {
+    final String queryId = avroDag.getQueryId();
+    try {
+      final Tuple<ApplicationInfo, DAG<ConfigVertex, MISTEdge>> tuple = startSetupCommonOp(avroDag, checkpointedState);
+      final ApplicationInfo applicationInfo = tuple.getKey();
+      final DAG<ConfigVertex, MISTEdge> configDag = tuple.getValue();
+      final Query query = new DefaultQueryImpl(queryId);
+      groupAllocationTableModifier.addEvent(new WritingEvent(WritingEvent.EventType.QUERY_ADD,
+          new Tuple<>(applicationInfo, query)));
+      // Setup the submitted dag
+      return applicationInfo.getQueryStarter().startOrSetupForReplay(false, queryId, query, configDag,
+          applicationInfo.getJarFilePath());
+    } catch (final Exception e) {
+      e.printStackTrace();
+      // [MIST-345] We need to release all of the information that is required for the query when it fails.
+      LOG.log(Level.SEVERE, "An exception occurred while starting {0} query: {1}",
+          new Object[] {queryId, e.toString()});
+      return null;
+    }
+  }
+
+  @Override
   public Query createAndStartQuery(final String queryId,
                                    final ApplicationInfo applicationInfo,
                                    final DAG<ConfigVertex, MISTEdge> configDag)
@@ -238,7 +225,8 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     groupAllocationTableModifier.addEvent(new WritingEvent(WritingEvent.EventType.QUERY_ADD,
         new Tuple<>(applicationInfo, query)));
     // Start the submitted dag
-    applicationInfo.getQueryStarter().start(queryId, query, configDag, applicationInfo.getJarFilePath());
+    applicationInfo.getQueryStarter().startOrSetupForReplay(true, queryId, query, configDag,
+        applicationInfo.getJarFilePath());
     return query;
   }
 
@@ -301,5 +289,48 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     queryControlResult.setIsSuccess(true);
     queryControlResult.setMsg(ResultMessage.deleteSuccess(queryId));
     return queryControlResult;
+  }
+
+  private Tuple<ApplicationInfo, DAG<ConfigVertex, MISTEdge>> startSetupCommonOp(final AvroDag avroDag,
+                                                                                 final QueryCheckpoint state)
+      throws InjectionException, InterruptedException {
+    final String queryId = avroDag.getQueryId();
+    // Create the submitted query
+    // 1) Saves the avro dag to the PlanStore and
+    // converts the avro dag to the logical and execution dag
+    checkpointManager.storeQuery(avroDag);
+
+    // Update app information
+    final String appId = avroDag.getAppId();
+
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.log(Level.FINE, "Create Query [aid: {0}, qid: {2}]",
+          new Object[]{appId, queryId});
+    }
+
+    if (!applicationMap.containsKey(appId)) {
+      createApplication(appId, avroDag.getJarPaths());
+    }
+
+    final ApplicationInfo applicationInfo = applicationMap.get(appId);
+    if (applicationInfo.getGroups().size() == 0) {
+      synchronized (applicationInfo) {
+        if (applicationInfo.getGroups().size() == 0) {
+          createGroup(applicationInfo);
+          // Waiting for group information being added
+          while (applicationInfo.getGroups().isEmpty()) {
+            Thread.sleep(100);
+          }
+        }
+      }
+    }
+
+    final DAG<ConfigVertex, MISTEdge> configDag;
+    if (state == null) {
+      configDag = configDagGenerator.generate(avroDag);
+    } else {
+      configDag = configDagGenerator.generateWithCheckpointedStates(avroDag, state);
+    }
+    return new Tuple<>(applicationInfo, configDag);
   }
 }

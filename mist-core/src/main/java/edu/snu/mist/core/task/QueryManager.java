@@ -23,11 +23,13 @@ import edu.snu.mist.core.task.groupaware.GroupAwareQueryManagerImpl;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.QueryCheckpoint;
 import edu.snu.mist.formats.avro.QueryControlResult;
+import org.apache.reef.io.Tuple;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 import org.apache.reef.tang.exceptions.InjectionException;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 /**
  * This interface manages queries that are submitted from clients.
@@ -49,6 +51,16 @@ public interface QueryManager extends AutoCloseable {
    */
   QueryControlResult createQueryWithCheckpoint(AvroDag avroDag,
                                                QueryCheckpoint checkpointedState);
+
+  /**
+   * Recover a checkpointed query.
+   * This method does not replay missed events and does not start the sources of the query.
+   * @param avroDag
+   * @param checkpointedState
+   * @return the set of tuples (mqtt topic and the brokerURI) of the submitted query
+   */
+  Set<Tuple<String, String>> setupQueryWithCheckpoint(AvroDag avroDag,
+                                                      QueryCheckpoint checkpointedState);
 
   /**
    * Create a query (this is for checkpointing).

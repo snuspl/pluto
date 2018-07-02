@@ -86,8 +86,12 @@ public final class MQTTSourceTest {
     dataGenerator1.setEventGenerator(eventGenerator1);
     dataGenerator2.setEventGenerator(eventGenerator2);
 
+    dataGenerator1.setup();
+    dataGenerator2.setup();
     dataGenerator1.start();
     dataGenerator2.start();
+    // Wait for the MQTT data generator to subscribe.
+    Thread.sleep(500);
 
     // create test client and publish data
     final PublishTestClient publishClient = new PublishTestClient(MqttUtils.BROKER_URI);

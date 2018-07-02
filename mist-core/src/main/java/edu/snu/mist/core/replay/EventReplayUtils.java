@@ -15,6 +15,9 @@
  */
 package edu.snu.mist.core.replay;
 
+import edu.snu.mist.core.task.ExecutionDag;
+import edu.snu.mist.core.task.ExecutionVertex;
+import edu.snu.mist.core.task.PhysicalSource;
 import org.apache.reef.io.Tuple;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.json.simple.JSONArray;
@@ -288,5 +291,68 @@ public final class EventReplayUtils {
 
   private static String getReplayServerUrl(final String replayServerAddress, final int replayServerPort) {
     return "http://" + replayServerAddress + ":" + replayServerPort;
+  }
+
+  /**
+   * Start the sources.
+   */
+  public static void startSources(final Collection<ExecutionDag> executionDags) {
+    LOG.log(Level.INFO, "Starting sources...");
+    for (final ExecutionDag executionDag : executionDags) {
+      for (final ExecutionVertex executionVertex : executionDag.getDag().getRootVertices()) {
+        final PhysicalSource src = (PhysicalSource) executionVertex;
+        src.start();
+      }
+    }
+  }
+
+  /**
+   * Send the MqttMessages of the sources in chronological order.
+   * @param srcAndMqttMessageListMap each value(List) is always required to be ordered in chronological order.
+   */
+  public static void sendMsgs(final Map<PhysicalSource, List<Tuple<Long, MqttMessage>>> srcAndMqttMessageListMap) {
+    final Map<Tuple<Long, MqttMessage>, PhysicalSource> timestampMqttMessageTupleAndSrcMap = new HashMap<>();
+    for (final Map.Entry<PhysicalSource, List<Tuple<Long, MqttMessage>>> entry : srcAndMqttMessageListMap.entrySet()) {
+      final List<Tuple<Long, MqttMessage>> messageList = entry.getValue();
+      if (!messageList.isEmpty()) {
+        timestampMqttMessageTupleAndSrcMap.put(entry.getValue().remove(0), entry.getKey());
+      }
+    }
+    while (!srcAndMqttMessageListMap.isEmpty()) {
+      // Select the entry with the minimum timestamp.
+      final Tuple<Tuple<Long, MqttMessage>, PhysicalSource> minTimestampEntry =
+          selectAndRemoveMinTimestampEntry(timestampMqttMessageTupleAndSrcMap);
+      final Tuple<Long, MqttMessage> minTimestampTuple = minTimestampEntry.getKey();
+      final PhysicalSource minTimestampSrc = minTimestampEntry.getValue();
+
+      // Emit the MqttMessage corresponding to the minimum timestamp.
+      minTimestampSrc.getEventGenerator().emitData(minTimestampTuple.getValue());
+
+      if (srcAndMqttMessageListMap.get(minTimestampSrc).isEmpty()) {
+        // If there are no more messages to send for the source, exclude it completely.
+        srcAndMqttMessageListMap.remove(minTimestampSrc);
+      } else {
+        // If there are still more messages to send for the source, put the next message in the
+        // timestampMqttMessageAndSrcMap.
+        timestampMqttMessageTupleAndSrcMap.put(srcAndMqttMessageListMap.get(minTimestampSrc).remove(0),
+            minTimestampSrc);
+      }
+    }
+  }
+
+  private static Tuple<Tuple<Long, MqttMessage>, PhysicalSource> selectAndRemoveMinTimestampEntry(
+      final Map<Tuple<Long, MqttMessage>, PhysicalSource> timestampMqttMessageAndSrcMap) {
+    Long minimumTimestamp = Long.MAX_VALUE;
+    Tuple<Tuple<Long, MqttMessage>, PhysicalSource> result = null;
+    for (final Map.Entry<Tuple<Long, MqttMessage>, PhysicalSource> entry : timestampMqttMessageAndSrcMap.entrySet()) {
+      final Long entryTimestamp = entry.getKey().getKey();
+      if (entryTimestamp < minimumTimestamp) {
+        minimumTimestamp = entryTimestamp;
+        result = new Tuple<>(entry.getKey(), entry.getValue());
+      }
+    }
+    // Remove the entry to emit from the map.
+    timestampMqttMessageAndSrcMap.remove(result.getKey());
+    return result;
   }
 }

@@ -102,6 +102,11 @@ public final class KafkaDataGenerator<K, V> implements DataGenerator<ConsumerRec
   }
 
   @Override
+  public void setup() {
+    // This method is only for MQTTDataGenerator.
+  }
+
+  @Override
   public void start() {
     if (started.compareAndSet(false, true)) {
       if (eventGenerator != null) {
