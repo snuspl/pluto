@@ -23,7 +23,6 @@ import edu.snu.mist.core.master.lb.parameters.UnderloadedTaskLoadThreshold;
 import edu.snu.mist.core.master.recovery.RecoveryScheduler;
 import edu.snu.mist.core.master.recovery.RecoveryStarter;
 import edu.snu.mist.core.master.recovery.SingleNodeRecoveryScheduler;
-import edu.snu.mist.formats.avro.AllocatedTask;
 import edu.snu.mist.formats.avro.GroupStats;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
 import edu.snu.mist.formats.avro.TaskStats;
@@ -93,7 +92,7 @@ public final class RecoveryBasedScaleOutManager implements ScaleOutManager {
   @Override
   public void scaleOut() throws Exception {
     // Step 1: Request a new task and setup the connection.
-    final AllocatedTask allocatedTask = taskRequestor.setupTaskAndConn(1).iterator().next();
+    taskRequestor.setupTaskAndConn(1);
     // Step 2: Get the groups which will be moved from overloaded tasks to the newly allocated groups.
     // Our goal is to move the queries from the overloaded tasks to the newly allocated task as much as we can.
     final List<String> overloadedTaskList = new ArrayList<>();
