@@ -87,6 +87,14 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
       throw new IllegalStateException("Internal Error : startRecovery() is called while other recovery process is " +
           "already running!");
     }
+    // No groups to recover.
+    if (failedGroups.isEmpty()) {
+      lock.lock();
+      isRecoveryOngoing.set(false);
+      recoveryFinished.signalAll();
+      lock.unlock();
+      return;
+    }
     LOG.log(Level.INFO, "Start recovery on failed groups: {0}", failedGroups.keySet());
     recoveryGroups.putAll(failedGroups);
     MasterToTaskMessage proxyToRecoveryTask;
@@ -121,6 +129,7 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
       while (isRecoveryOngoing.get()) {
         recoveryFinished.await();
       }
+      LOG.log(Level.INFO, "Recovery process has finished!");
       lock.unlock();
     } catch (final InterruptedException e) {
       LOG.log(Level.SEVERE, "Recovery has been interrupted while awaiting..." + e.toString());
@@ -133,6 +142,7 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
     if (recoveryGroups.isEmpty()) {
       // Set the recovery ongoing to false.
       if (isRecoveryOngoing.compareAndSet(true, false)) {
+        LOG.log(Level.INFO, "No more groups to recover.. Set isRecoveryOngoing to false");
         lock.lock();
         // Notify the awaiting threads that the recovery is done.
         recoveryFinished.signalAll();
