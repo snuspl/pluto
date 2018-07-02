@@ -17,9 +17,11 @@
 package edu.snu.mist.core;
 
 import edu.snu.mist.core.configs.MistCommandLineOptions;
+import edu.snu.mist.core.parameters.DriverMemorySize;
 import edu.snu.mist.core.parameters.DriverRuntimeType;
 import org.apache.reef.client.LauncherStatus;
 import org.apache.reef.tang.Configuration;
+import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.JavaConfigurationBuilder;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.formats.CommandLine;
@@ -39,7 +41,8 @@ public final class Mist {
   private static Configuration getCommandLineConf(final String[] args) throws Exception {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
     CommandLine commandLine = new CommandLine(jcb)
-        .registerShortNameOfClass(DriverRuntimeType.class);
+        .registerShortNameOfClass(DriverRuntimeType.class)
+        .registerShortNameOfClass(DriverMemorySize.class);
     commandLine = MistCommandLineOptions.addCommandLineConf(commandLine);
     commandLine = commandLine.processCommandLine(args);
     if (commandLine == null) { // Option '?' was entered and processCommandLine printed the help.
@@ -54,6 +57,8 @@ public final class Mist {
    */
   public static void main(final String[] args) throws Exception {
     final Configuration commandLineConf = getCommandLineConf(args);
+    final Injector injector = Tang.Factory.getTang().newInjector(commandLineConf);
+    final int mem = injector.getNamedInstance(DriverMemorySize.class);
     if (commandLineConf == null) {
       return;
     }
