@@ -17,6 +17,7 @@ package edu.snu.mist.core.master.recovery;
 
 import edu.snu.mist.core.master.TaskRequestor;
 import edu.snu.mist.formats.avro.GroupStats;
+import org.apache.avro.AvroRemoteException;
 
 import java.util.Map;
 import java.util.logging.Level;
@@ -60,16 +61,20 @@ public final class RecoveryStarter implements Runnable {
 
   @Override
   public void run() {
-    if (taskRequestor != null) {
-      // Request an evaluator for recovery task if recoveryScheduler is not null.
-      // If recovery scheduler is null, it does not request a new task.
-      taskRequestor.setupTaskAndConn(1);
+    try {
+      if (taskRequestor != null) {
+        // Request an evaluator for recovery task if recoveryScheduler is not null.
+        // If recovery scheduler is null, it does not request a new task.
+        taskRequestor.setupTaskAndConn(1);
+      }
+      // Start recovering of the queries...
+      recoveryScheduler.startRecovery(failedGroupMap);
+      final long startTime = System.currentTimeMillis();
+      // Blocks the thread until the recovery has been finished...
+      recoveryScheduler.awaitUntilRecoveryFinish();
+      LOG.log(Level.INFO, "Recovery is finished in {0} ms...", System.currentTimeMillis() - startTime);
+    } catch (final AvroRemoteException | InterruptedException e) {
+      e.printStackTrace();
     }
-    // Start recovering of the queries...
-    recoveryScheduler.startRecovery(failedGroupMap);
-    final long startTime = System.currentTimeMillis();
-    // Blocks the thread until the recovery has been finished...
-    recoveryScheduler.awaitUntilRecoveryFinish();
-    LOG.log(Level.INFO, "Recovery is finished in {0} ms...", System.currentTimeMillis() - startTime);
   }
 }

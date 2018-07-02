@@ -143,7 +143,7 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
     this.scaleOutOverloadedTaskRatio = scaleOutOverloadedTaskRatio;
     this.idleTimeElapsed = 0L;
     this.overloadedTimeElapsed = 0L;
-    this.lastMeasuredTimestamp = System.currentTimeMillis();
+    this.lastMeasuredTimestamp = 0L;
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     this.scaleInManager = scaleInManager;
   }
@@ -178,47 +178,59 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
 
     @Override
     public void run() {
-      final long oldTimeStamp = lastMeasuredTimestamp;
-      lastMeasuredTimestamp = System.currentTimeMillis();
+      try {
+        final long oldTimeStamp = lastMeasuredTimestamp;
+        lastMeasuredTimestamp = System.currentTimeMillis();
 
-      final boolean clusterOverloaded = isClusterOverloaded();
-      final boolean clusterIdle = isClusterIdle();
-
-      // Add to the
-      if (clusterOverloaded) {
-        overloadedTimeElapsed += lastMeasuredTimestamp - oldTimeStamp;
-        if (overloadedTimeElapsed > scaleOutGracePeriod && taskStatsMap.getTaskList().size() < maxTaskNum) {
-          // TODO: [MIST-1130] Perform automatic scale-out.
-          overloadedTimeElapsed = 0;
+        // Do not perform auto-scaling when firstly called.
+        if (oldTimeStamp == 0L) {
           return;
         }
-      } else {
-        overloadedTimeElapsed = 0;
-      }
 
-      if (clusterIdle) {
-        idleTimeElapsed += lastMeasuredTimestamp - oldTimeStamp;
-        if (idleTimeElapsed > scaleInGracePeriod && taskStatsMap.getTaskList().size() > minTaskNum) {
-          LOG.log(Level.INFO, "Start scaling-in...");
-          try {
-            final boolean scaleInSuccess = scaleInManager.scaleIn();
-            if (!scaleInSuccess) {
-              throw new RuntimeException("Automatic scale-in failed! - Task cannot be found");
-            }
-          } catch (final Exception e) {
-            e.printStackTrace();
+        final boolean clusterOverloaded = isClusterOverloaded();
+        final boolean clusterIdle = isClusterIdle();
+
+        LOG.log(Level.INFO, "Task Num = {0}. Overloaded = {1}, Idle = {2}",
+            new Object[]{taskStatsMap.entrySet().size(), clusterOverloaded, clusterIdle});
+
+        if (clusterOverloaded) {
+          overloadedTimeElapsed += lastMeasuredTimestamp - oldTimeStamp;
+          if (overloadedTimeElapsed > scaleOutGracePeriod && taskStatsMap.getTaskList().size() < maxTaskNum) {
+            // TODO: [MIST-1130] Perform automatic scale-out.
+            overloadedTimeElapsed = 0;
+            return;
           }
+        } else {
+          overloadedTimeElapsed = 0;
+        }
+
+        if (clusterIdle) {
+          idleTimeElapsed += lastMeasuredTimestamp - oldTimeStamp;
+          if (idleTimeElapsed > scaleInGracePeriod && taskStatsMap.getTaskList().size() > minTaskNum) {
+            LOG.log(Level.INFO, "Start scaling-in...");
+            try {
+              final boolean scaleInSuccess = scaleInManager.scaleIn();
+              if (!scaleInSuccess) {
+                throw new RuntimeException("Automatic scale-in failed! - Task cannot be found");
+              }
+            } catch (final Exception e) {
+              e.printStackTrace();
+            }
+            idleTimeElapsed = 0;
+          }
+        } else {
           idleTimeElapsed = 0;
         }
-      } else {
-        idleTimeElapsed = 0;
+      } catch (final Exception e) {
+        e.printStackTrace();
       }
     }
   }
 
   @Override
   public void startAutoScaling() {
-    scheduledExecutorService.schedule(new AutoScaleRunner(), dynamicScalingPeriod, TimeUnit.MILLISECONDS);
+    scheduledExecutorService.scheduleAtFixedRate(new AutoScaleRunner(),
+        dynamicScalingPeriod, dynamicScalingPeriod, TimeUnit.MILLISECONDS);
   }
 
   @Override
