@@ -19,6 +19,7 @@ import edu.snu.mist.core.master.ProxyToTaskMap;
 import edu.snu.mist.core.master.TaskAddressInfoMap;
 import edu.snu.mist.core.master.TaskRequestor;
 import edu.snu.mist.core.master.TaskStatsMap;
+import edu.snu.mist.core.master.lb.AppTaskListMap;
 import edu.snu.mist.core.master.recovery.RecoveryScheduler;
 import edu.snu.mist.core.master.recovery.RecoveryStarter;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
@@ -50,6 +51,11 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   private final ProxyToTaskMap proxyToTaskMap;
 
   /**
+   * The app task-list map.
+   */
+  private final AppTaskListMap appTaskListMap;
+
+  /**
    * The task requestor for MistMaster.
    */
   private final TaskRequestor taskRequestor;
@@ -70,10 +76,12 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
       final TaskAddressInfoMap taskAddressInfoMap,
       final ProxyToTaskMap proxyToTaskMap,
       final RecoveryScheduler recoveryScheduler,
-      final TaskRequestor taskRequestor) {
+      final TaskRequestor taskRequestor,
+      final AppTaskListMap appTaskListMap) {
     this.taskStatsMap = taskStatsMap;
     this.taskAddressInfoMap = taskAddressInfoMap;
     this.proxyToTaskMap = proxyToTaskMap;
+    this.appTaskListMap = appTaskListMap;
     this.recoveryScheduler = recoveryScheduler;
     this.taskRequestor = taskRequestor;
     this.singleThreadedExecutor = Executors.newSingleThreadExecutor();
@@ -91,6 +99,7 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
     final TaskStats taskStats = taskStatsMap.removeTask(taskId);
     taskAddressInfoMap.remove(taskId);
     proxyToTaskMap.remove(taskId);
+    appTaskListMap.removeTask(taskId);
     singleThreadedExecutor.submit(new RecoveryStarter(taskStats.getGroupStatsMap(), recoveryScheduler, taskRequestor));
     return null;
   }

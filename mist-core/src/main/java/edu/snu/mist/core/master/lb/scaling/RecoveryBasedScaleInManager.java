@@ -15,7 +15,10 @@
  */
 package edu.snu.mist.core.master.lb.scaling;
 
+import edu.snu.mist.core.master.ProxyToTaskMap;
+import edu.snu.mist.core.master.TaskAddressInfoMap;
 import edu.snu.mist.core.master.TaskStatsMap;
+import edu.snu.mist.core.master.lb.AppTaskListMap;
 import edu.snu.mist.core.master.recovery.RecoveryScheduler;
 import edu.snu.mist.core.master.recovery.RecoveryStarter;
 import edu.snu.mist.core.parameters.DriverHostname;
@@ -46,6 +49,21 @@ public final class RecoveryBasedScaleInManager implements ScaleInManager {
   private final TaskStatsMap taskStatsMap;
 
   /**
+   * The shared proxy to task map.
+   */
+  private final ProxyToTaskMap proxyToTaskMap;
+
+  /**
+   * The shared task address info map.
+   */
+  private final TaskAddressInfoMap taskAddressInfoMap;
+
+  /**
+   * The shared app task list map.
+   */
+  private final AppTaskListMap appTaskListMap;
+
+  /**
    * The shared recovery scheduler.
    */
   private final RecoveryScheduler recoveryScheduler;
@@ -60,10 +78,16 @@ public final class RecoveryBasedScaleInManager implements ScaleInManager {
       @Parameter(DriverHostname.class) final String driverHostname,
       @Parameter(MasterToDriverPort.class) final int masterToDriverPort,
       final TaskStatsMap taskStatsMap,
+      final ProxyToTaskMap proxyToTaskMap,
+      final TaskAddressInfoMap taskAddressInfoMap,
+      final AppTaskListMap appTaskListMap,
       final RecoveryScheduler recoveryScheduler) throws Exception {
     this.proxyToDriver = AvroUtils.createAvroProxy(MasterToDriverMessage.class, new InetSocketAddress(
         driverHostname, masterToDriverPort));
     this.taskStatsMap = taskStatsMap;
+    this.proxyToTaskMap = proxyToTaskMap;
+    this.taskAddressInfoMap = taskAddressInfoMap;
+    this.appTaskListMap = appTaskListMap;
     this.recoveryScheduler = recoveryScheduler;
     this.singleThreadedExecutor = Executors.newSingleThreadExecutor();
   }
@@ -83,10 +107,15 @@ public final class RecoveryBasedScaleInManager implements ScaleInManager {
   @Override
   public boolean scaleIn() throws AvroRemoteException {
     final String removedTaskId = getMinimumLoadTask();
+    // Remove task information firstly.
+    final TaskStats taskStats = taskStatsMap.removeTask(removedTaskId);
+    appTaskListMap.removeTask(removedTaskId);
+    proxyToTaskMap.remove(removedTaskId);
+    taskAddressInfoMap.remove(removedTaskId);
+    // Stop task.
     final boolean stopTaskSuccess = proxyToDriver.stopTask(removedTaskId);
 
     if (stopTaskSuccess) {
-      final TaskStats taskStats = taskStatsMap.removeTask(removedTaskId);
       singleThreadedExecutor
           .submit(new RecoveryStarter(taskStats.getGroupStatsMap(), recoveryScheduler));
       return true;
