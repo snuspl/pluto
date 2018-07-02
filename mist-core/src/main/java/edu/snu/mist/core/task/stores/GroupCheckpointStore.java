@@ -43,12 +43,28 @@ public interface GroupCheckpointStore {
   GroupCheckpoint loadSavedGroupState(String groupId) throws IOException;
 
   /**
+   * Load a saved group query info.
+   * @param groupId groupId.
+   * @return the list of queries in the group.
+   * @throws IOException
+   */
+  List<String> loadSaveGroupQueryInfo(String groupId) throws IOException;
+
+  /**
    * Save the given query to the disk.
    *
-   * @param avroDag
-   * @return
+   * @param group the group of the dag
+   * @param avroDag the avro dag to be stored
+   * @return success / fail
    */
-  boolean saveQuery(AvroDag avroDag);
+  boolean saveQuery(Group group, AvroDag avroDag);
+
+  /**
+   * Creates the group query info file.
+   * @param group the group
+   * @return success / fail
+   */
+  boolean createGroupQueryInfoFile(Group group);
 
   /**
    * Load the avro dags from the group.

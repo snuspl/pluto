@@ -16,9 +16,14 @@
 package edu.snu.mist.core.task.groupaware;
 
 import edu.snu.mist.core.task.Query;
+import edu.snu.mist.core.task.checkpointing.CheckpointManager;
 import edu.snu.mist.core.task.groupaware.eventprocessor.EventProcessor;
 import edu.snu.mist.core.task.groupaware.groupassigner.GroupAssigner;
-import edu.snu.mist.core.task.groupaware.rebalancer.*;
+import edu.snu.mist.core.task.groupaware.rebalancer.GroupIsolator;
+import edu.snu.mist.core.task.groupaware.rebalancer.GroupMerger;
+import edu.snu.mist.core.task.groupaware.rebalancer.GroupRebalancer;
+import edu.snu.mist.core.task.groupaware.rebalancer.GroupSplitter;
+import edu.snu.mist.core.task.groupaware.rebalancer.LoadUpdater;
 import org.apache.reef.io.Tuple;
 
 import javax.inject.Inject;
@@ -107,6 +112,11 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
    */
   private final TaskStatsUpdater taskStatsUpdater;
 
+  /**
+   * The checkpoint manager.
+   */
+  private final CheckpointManager checkpointManager;
+
   @Inject
   private GroupAllocationTableModifierImpl(final GroupAllocationTable groupAllocationTable,
                                            final GroupAssigner groupAssigner,
@@ -116,7 +126,8 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
                                            final GroupMerger groupMerger,
                                            final GroupSplitter groupSplitter,
                                            final GroupMap groupMap,
-                                           final TaskStatsUpdater taskStatsUpdater) {
+                                           final TaskStatsUpdater taskStatsUpdater,
+                                           final CheckpointManager checkpointManager) {
     this.groupAllocationTable = groupAllocationTable;
     this.groupAssigner = groupAssigner;
     this.groupRebalancer = groupRebalancer;
@@ -128,6 +139,7 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
     this.groupSplitter = groupSplitter;
     this.groupMap = groupMap;
     this.taskStatsUpdater = taskStatsUpdater;
+    this.checkpointManager = checkpointManager;
     // Create a writer thread
     singleWriter.submit(new SingleWriterThread());
   }
@@ -170,6 +182,7 @@ public final class GroupAllocationTableModifierImpl implements GroupAllocationTa
               applicationInfo.addGroup(group);
               groupAssigner.assignGroup(group);
               groupMap.putIfAbsent(group.getGroupId(), group);
+              checkpointManager.createGroupQueryInfoFile(group);
               break;
             }
             case QUERY_ADD: {

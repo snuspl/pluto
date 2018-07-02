@@ -176,9 +176,6 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
     queryControlResult.setQueryId(queryId);
     try {
       // Create the submitted query
-      // 1) Saves the avr dag to the PlanStore and
-      // converts the avro dag to the logical and execution dag
-      checkpointManager.storeQuery(avroDag);
 
       // Update app information
       final String appId = avroDag.getAppId();
@@ -213,6 +210,12 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
       }
 
       final Query query = createAndStartQuery(queryId, applicationInfo, configDag);
+      // Waiting for the query is assigned to a group
+      while (query.getGroup() == null) {
+        Thread.sleep(100);
+      }
+      // Store the query to the disk.
+      checkpointManager.storeQuery(query.getGroup(), avroDag);
 
       queryControlResult.setIsSuccess(true);
       queryControlResult.setMsg(ResultMessage.submitSuccess(queryId));
@@ -222,7 +225,6 @@ public final class GroupAwareQueryManagerImpl implements QueryManager {
       // [MIST-345] We need to release all of the information that is required for the query when it fails.
       LOG.log(Level.SEVERE, "An exception occurred while starting {0} query: {1}",
           new Object[] {queryId, e.toString()});
-
       queryControlResult.setIsSuccess(false);
       queryControlResult.setMsg(e.getMessage());
       return queryControlResult;

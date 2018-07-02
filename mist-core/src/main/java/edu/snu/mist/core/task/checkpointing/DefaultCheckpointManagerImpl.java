@@ -19,7 +19,12 @@ import edu.snu.mist.core.sources.parameters.PeriodicCheckpointPeriod;
 import edu.snu.mist.core.task.Query;
 import edu.snu.mist.core.task.QueryManager;
 import edu.snu.mist.core.task.QueryRemover;
-import edu.snu.mist.core.task.groupaware.*;
+import edu.snu.mist.core.task.groupaware.ApplicationInfo;
+import edu.snu.mist.core.task.groupaware.ApplicationMap;
+import edu.snu.mist.core.task.groupaware.Group;
+import edu.snu.mist.core.task.groupaware.GroupAllocationTableModifier;
+import edu.snu.mist.core.task.groupaware.GroupMap;
+import edu.snu.mist.core.task.groupaware.WritingEvent;
 import edu.snu.mist.core.task.stores.GroupCheckpointStore;
 import edu.snu.mist.formats.avro.AvroDag;
 import edu.snu.mist.formats.avro.CheckpointResult;
@@ -31,7 +36,7 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -62,7 +67,7 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
   /**
    * A modifier for the group allocation table.
    */
-  private final GroupAllocationTableModifier groupAllocationTableModifier;
+  private final InjectionFuture<GroupAllocationTableModifier> tableModifierFuture;
 
   /**
    * The query manager for the task. Use InjectionFuture to avoid cyclic injection.
@@ -78,13 +83,13 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
   private DefaultCheckpointManagerImpl(final ApplicationMap applicationMap,
                                        final GroupMap groupMap,
                                        final GroupCheckpointStore groupCheckpointStore,
-                                       final GroupAllocationTableModifier groupAllocationTableModifier,
+                                       final InjectionFuture<GroupAllocationTableModifier> tableModifierFuture,
                                        final InjectionFuture<QueryManager> queryManagerFuture,
                                        @Parameter(PeriodicCheckpointPeriod.class) final long checkpointPeriod) {
     this.applicationMap = applicationMap;
     this.groupMap = groupMap;
     this.checkpointStore = groupCheckpointStore;
-    this.groupAllocationTableModifier = groupAllocationTableModifier;
+    this.tableModifierFuture = tableModifierFuture;
     this.checkpointPeriod = checkpointPeriod;
     this.queryManagerFuture = queryManagerFuture;
     if (checkpointPeriod == 0) {
@@ -98,31 +103,31 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
   }
 
   @Override
-  public boolean storeQuery(final AvroDag avroDag) {
-    return checkpointStore.saveQuery(avroDag);
+  public boolean storeQuery(final Group group,
+                            final AvroDag avroDag) {
+    return checkpointStore.saveQuery(group, avroDag);
   }
 
   @Override
   public void recoverGroup(final String groupId) throws IOException {
-    final Map<String, QueryCheckpoint> queryCheckpointMap;
+    Map<String, QueryCheckpoint> queryCheckpointMap;
     final List<AvroDag> dagList;
     final QueryManager queryManager = queryManagerFuture.get();
     try {
       // Load the checkpointed states and the query lists.
       queryCheckpointMap = checkpointStore.loadSavedGroupState(groupId).getQueryCheckpointMap();
-      final List<String> queryIdListInGroup = new ArrayList<>();
-      for (final String queryId : queryCheckpointMap.keySet()) {
-        queryIdListInGroup.add(queryId);
-      }
       // Load the queries.
-      dagList = checkpointStore.loadSavedQueries(queryIdListInGroup);
     } catch (final FileNotFoundException ie) {
-      LOG.log(Level.WARNING, "Failed in loading group {0}, this group may not exist in the checkpoint store.",
-          new Object[]{groupId});
-      return;
+      LOG.log(Level.WARNING, "Checkpoint is not found for group {0}.", new Object[]{groupId});
+      // Insert an empty map to prevent null point exception.
+      queryCheckpointMap = new HashMap<>();
     }
 
+    final List<String> queryIdListInGroup = checkpointStore.loadSaveGroupQueryInfo(groupId);
+    dagList = checkpointStore.loadSavedQueries(queryIdListInGroup);
+
     for (final AvroDag avroDag : dagList) {
+      // Get the checkpoint for each dag. If there is no checkpoint for the query, it returns null.
       final QueryCheckpoint queryCheckpoint = queryCheckpointMap.get(avroDag.getQueryId());
       // Recover each query in the group.
       queryManager.createQueryWithCheckpoint(avroDag, queryCheckpoint);
@@ -145,6 +150,11 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
   }
 
   @Override
+  public boolean createGroupQueryInfoFile(final Group group) {
+    return checkpointStore.createGroupQueryInfoFile(group);
+  }
+
+  @Override
   public void deleteGroup(final String groupId) {
     final Group group = groupMap.get(groupId);
     if (group == null) {
@@ -157,7 +167,7 @@ public final class DefaultCheckpointManagerImpl implements CheckpointManager {
       remover.deleteQuery(query.getId());
     }
     applicationMap.remove(groupId);
-    groupAllocationTableModifier.addEvent(
+    tableModifierFuture.get().addEvent(
         new WritingEvent(WritingEvent.EventType.GROUP_REMOVE, group));
   }
 
