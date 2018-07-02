@@ -50,7 +50,7 @@ public final class AppTaskListMap {
     innerMap.get(appId).add(taskId);
   }
 
-  public List<String> getTaskListForApp(final String appId) {
+  public synchronized List<String> getTaskListForApp(final String appId) {
     return innerMap.get(appId);
   }
 }

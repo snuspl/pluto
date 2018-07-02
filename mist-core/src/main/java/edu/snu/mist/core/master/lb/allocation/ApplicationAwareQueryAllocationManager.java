@@ -21,6 +21,7 @@ import edu.snu.mist.core.master.lb.AppTaskListMap;
 import edu.snu.mist.core.master.lb.parameters.OverloadedTaskLoadThreshold;
 import edu.snu.mist.core.master.lb.parameters.UnderloadedTaskLoadThreshold;
 import edu.snu.mist.formats.avro.IPAddress;
+import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -80,6 +81,13 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
     final List<String> underloadedTaskList = new ArrayList<>();
     final List<String> normalTaskList = new ArrayList<>();
     for (final String task : allTaskList) {
+      final TaskStats taskStats = taskStatsMap.get(task);
+      if (taskStats == null) {
+        // Cannot find the task stats due to synchronization issue...
+        // Need to remove the task from the list, throw an exception, and start again...
+        allTaskList.remove(task);
+        throw new IllegalStateException("Exception thrown! This might be because of synchronization issue... Try again!");
+      }
       final double currentTaskLoad = taskStatsMap.get(task).getTaskLoad();
       if (currentTaskLoad < underloadedTaskThreshold) {
         underloadedTaskList.add(task);
@@ -129,9 +137,8 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
             }
             return taskAddressInfoMap.getClientToTaskAddress(selectedTask);
           }
-      } catch (final Exception e) {
+      } catch (final IllegalStateException e) {
         e.printStackTrace();
-        LOG.log(Level.INFO, "Exception thrown! This might be because of synchronization issue... Try again!");
       }
     }
   }
