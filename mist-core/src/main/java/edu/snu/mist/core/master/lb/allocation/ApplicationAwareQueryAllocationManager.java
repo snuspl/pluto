@@ -28,7 +28,6 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -86,7 +85,7 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
         // Cannot find the task stats due to synchronization issue...
         // Need to remove the task from the list, throw an exception, and start again...
         allTaskList.remove(task);
-        throw new IllegalStateException("Exception thrown! This might be because of synchronization issue... Try again!");
+        throw new IllegalStateException("Try again! Possible synchronization error!");
       }
       final double currentTaskLoad = taskStatsMap.get(task).getTaskLoad();
       if (currentTaskLoad < underloadedTaskThreshold) {
