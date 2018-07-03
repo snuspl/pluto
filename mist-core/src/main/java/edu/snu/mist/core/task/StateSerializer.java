@@ -70,14 +70,6 @@ public final class StateSerializer {
     try {
       final String serializedString = SerializeUtils.serializeToString((Serializable) obj);
       return ByteBuffer.wrap(serializedString.getBytes());
-      /**
-      try (final ByteArrayOutputStream b = new ByteArrayOutputStream()) {
-        try (final ObjectOutputStream o = new ObjectOutputStream(b)) {
-          o.writeObject(obj);
-          o.flush();
-        }
-        return ByteBuffer.wrap(b.toByteArray());
-      }**/
     } catch (final IOException e) {
       LOG.log(Level.SEVERE, "An exception occured while serializing the state.");
       e.printStackTrace();
@@ -129,12 +121,6 @@ public final class StateSerializer {
       } else {
         return SerializeUtils.deserializeFromString(new String(bytes));
       }
-      /**
-      try (final ByteArrayInputStream b = new ByteArrayInputStream(bytes)) {
-        try (final ObjectInputStream o = new ObjectInputStream(b)) {
-          return o.readObject();
-        }
-      }**/
     } catch (final Exception e) {
       LOG.log(Level.SEVERE, "An exception occured while deserializing the state.");
       e.printStackTrace();
