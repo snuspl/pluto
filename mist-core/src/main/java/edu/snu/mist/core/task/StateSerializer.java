@@ -15,7 +15,10 @@
  */
 package edu.snu.mist.core.task;
 
-import java.io.*;
+import edu.snu.mist.common.SerializeUtils;
+
+import java.io.IOException;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -65,13 +68,16 @@ public final class StateSerializer {
    */
   private static ByteBuffer serializeState(final Object obj) throws RuntimeException {
     try {
+      final String serializedString = SerializeUtils.serializeToString((Serializable) obj);
+      return ByteBuffer.wrap(serializedString.getBytes());
+      /**
       try (final ByteArrayOutputStream b = new ByteArrayOutputStream()) {
         try (final ObjectOutputStream o = new ObjectOutputStream(b)) {
           o.writeObject(obj);
           o.flush();
         }
         return ByteBuffer.wrap(b.toByteArray());
-      }
+      }**/
     } catch (final IOException e) {
       LOG.log(Level.SEVERE, "An exception occured while serializing the state.");
       e.printStackTrace();
@@ -79,19 +85,24 @@ public final class StateSerializer {
     }
   }
 
+  public static Map<String, Object> deserializeStateMap(final Map<String, Object> serializedStateMap) {
+    return deserializeStateMap(serializedStateMap, null);
+  }
+
   /**
    * Receives a Map<String, ByteBuffer>, deserializes the values, and returns it.
    * @param serializedStateMap
    * @return the deserialized StateMap
    */
-  public static Map<String, Object> deserializeStateMap(final Map<String, Object> serializedStateMap)
+  public static Map<String, Object> deserializeStateMap(final Map<String, Object> serializedStateMap,
+                                                        final ClassLoader classLoader)
       throws RuntimeException {
     final Map<String, Object> result = new HashMap<>();
     for (final Map.Entry<String, Object> mapEntry : serializedStateMap.entrySet()) {
       final Object state = mapEntry.getValue();
       if (state instanceof ByteBuffer) {
         try {
-          final Object deserializedState = deserializeState((ByteBuffer)state);
+          final Object deserializedState = deserializeState((ByteBuffer)state, classLoader);
           result.put(mapEntry.getKey(), deserializedState);
         } catch (final RuntimeException e) {
           throw e;
@@ -108,15 +119,22 @@ public final class StateSerializer {
    * @param byteBuffer
    * @return the deserialized state
    */
-  private static Object deserializeState(final ByteBuffer byteBuffer) throws RuntimeException {
+  private static Object deserializeState(final ByteBuffer byteBuffer,
+                                         final ClassLoader classLoader) throws RuntimeException {
     final byte[] bytes = new byte[byteBuffer.remaining()];
     byteBuffer.get(bytes);
     try {
+      if (classLoader != null) {
+        return SerializeUtils.deserializeFromString(new String(bytes), classLoader);
+      } else {
+        return SerializeUtils.deserializeFromString(new String(bytes));
+      }
+      /**
       try (final ByteArrayInputStream b = new ByteArrayInputStream(bytes)) {
         try (final ObjectInputStream o = new ObjectInputStream(b)) {
           return o.readObject();
         }
-      }
+      }**/
     } catch (final Exception e) {
       LOG.log(Level.SEVERE, "An exception occured while deserializing the state.");
       e.printStackTrace();
