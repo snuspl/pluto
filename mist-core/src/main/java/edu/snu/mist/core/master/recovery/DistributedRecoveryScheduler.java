@@ -160,5 +160,5 @@ public final class DistributedRecoveryScheduler implements RecoveryScheduler {
       return new ArrayList<>(allocatedGroups);
     }
   }
-  
+
 }
