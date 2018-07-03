@@ -20,7 +20,6 @@ import edu.snu.mist.common.SerializeUtils;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -70,7 +69,7 @@ public final class StateSerializer {
   private static ByteBuffer serializeState(final Object obj) throws RuntimeException {
     try {
       final String serializedString = SerializeUtils.serializeToString((Serializable) obj);
-      return ByteBuffer.wrap(Base64.getEncoder().encode(serializedString.getBytes()));
+      return ByteBuffer.wrap(serializedString.getBytes());
       /**
       try (final ByteArrayOutputStream b = new ByteArrayOutputStream()) {
         try (final ObjectOutputStream o = new ObjectOutputStream(b)) {
