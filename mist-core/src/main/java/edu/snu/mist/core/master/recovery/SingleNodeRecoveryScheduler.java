@@ -121,7 +121,6 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
       while (isRecoveryOngoing.get()) {
         recoveryFinished.await();
       }
-      LOG.log(Level.INFO, "Recovery process has finished!");
       lock.unlock();
     } catch (final InterruptedException e) {
       LOG.log(Level.SEVERE, "Recovery has been interrupted while awaiting..." + e.toString());
@@ -134,7 +133,6 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
     if (recoveryGroups.isEmpty()) {
       // Set the recovery ongoing to false.
       if (isRecoveryOngoing.compareAndSet(true, false)) {
-        LOG.log(Level.INFO, "No more groups to recover.. Set isRecoveryOngoing to false");
         lock.lock();
         // Notify the awaiting threads that the recovery is done.
         recoveryFinished.signalAll();
@@ -150,10 +148,5 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
       }
       return new ArrayList<>(allocatedGroups);
     }
-  }
-
-  @Override
-  public boolean isRecoverOngoing() {
-    return isRecoveryOngoing.get();
   }
 }
