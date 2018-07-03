@@ -87,14 +87,6 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
       throw new IllegalStateException("Internal Error : startRecovery() is called while other recovery process is " +
           "already running!");
     }
-    // No groups to recover.
-    if (failedGroups.isEmpty()) {
-      lock.lock();
-      isRecoveryOngoing.set(false);
-      recoveryFinished.signalAll();
-      lock.unlock();
-      return;
-    }
     LOG.log(Level.INFO, "Start recovery on failed groups: {0}", failedGroups.keySet());
     recoveryGroups.putAll(failedGroups);
     MasterToTaskMessage proxyToRecoveryTask;
