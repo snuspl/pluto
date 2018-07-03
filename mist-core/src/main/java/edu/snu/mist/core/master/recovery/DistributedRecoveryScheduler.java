@@ -103,6 +103,14 @@ public final class DistributedRecoveryScheduler implements RecoveryScheduler {
       throw new IllegalStateException("Internal Error : startRecovery() is called while other recovery process is " +
           "already running!");
     }
+    if (failedGroups.isEmpty()) {
+      // Release the possibly awaiting thread when the failed groups are empty.
+      lock.lock();
+      isRecoveryOngoing.set(true);
+      recoveryFinished.signalAll();
+      lock.unlock();
+      return;
+    }
     LOG.log(Level.INFO, "Start distributed recovery on failed groups: {0}", failedGroups.keySet());
     recoveryGroups.putAll(failedGroups);
     final List<MasterToTaskMessage> proxyToRecoveryTaskList = new ArrayList<>();
