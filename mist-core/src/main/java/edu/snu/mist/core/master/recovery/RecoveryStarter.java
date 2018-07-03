@@ -75,6 +75,7 @@ public final class RecoveryStarter implements Runnable {
       LOG.log(Level.INFO, "Recovery is finished in {0} ms...", System.currentTimeMillis() - startTime);
     } catch (final AvroRemoteException | InterruptedException e) {
       e.printStackTrace();
+      throw new RuntimeException("Failed to start recovery...");
     }
   }
 }
