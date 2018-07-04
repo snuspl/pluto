@@ -16,6 +16,7 @@
 package edu.snu.mist.core.master.lb.scaling;
 
 import edu.snu.mist.core.master.TaskStatsMap;
+import edu.snu.mist.core.master.lb.parameters.DynamicScalingPeriod;
 import edu.snu.mist.core.master.lb.parameters.IdleTaskLoadThreshold;
 import edu.snu.mist.core.master.lb.parameters.MaxTaskNum;
 import edu.snu.mist.core.master.lb.parameters.MinTaskNum;
@@ -24,7 +25,6 @@ import edu.snu.mist.core.master.lb.parameters.ScaleInGracePeriod;
 import edu.snu.mist.core.master.lb.parameters.ScaleInIdleTaskRatio;
 import edu.snu.mist.core.master.lb.parameters.ScaleOutGracePeriod;
 import edu.snu.mist.core.master.lb.parameters.ScaleOutOverloadedTaskRatio;
-import edu.snu.mist.core.master.lb.parameters.DynamicScalingPeriod;
 import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -184,7 +184,9 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
       final boolean clusterOverloaded = isClusterOverloaded();
       final boolean clusterIdle = isClusterIdle();
 
-      // Add to the
+      LOG.log(Level.INFO, "Task Num = {0}. Overloaded = {1}, Idle = {2}",
+          new Object[]{taskStatsMap.entrySet().size(), clusterOverloaded, clusterIdle});
+
       if (clusterOverloaded) {
         overloadedTimeElapsed += lastMeasuredTimestamp - oldTimeStamp;
         if (overloadedTimeElapsed > scaleOutGracePeriod && taskStatsMap.getTaskList().size() < maxTaskNum) {
@@ -218,7 +220,8 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
 
   @Override
   public void startAutoScaling() {
-    scheduledExecutorService.schedule(new AutoScaleRunner(), dynamicScalingPeriod, TimeUnit.MILLISECONDS);
+    scheduledExecutorService.scheduleAtFixedRate(new AutoScaleRunner(),
+        dynamicScalingPeriod, dynamicScalingPeriod, TimeUnit.MILLISECONDS);
   }
 
   @Override
