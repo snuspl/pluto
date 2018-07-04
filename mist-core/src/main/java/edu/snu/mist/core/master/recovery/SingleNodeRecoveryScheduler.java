@@ -83,6 +83,10 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
 
   @Override
   public synchronized void startRecovery(final Map<String, GroupStats> failedGroups) {
+    if (failedGroups.isEmpty()) {
+      LOG.log(Level.INFO, "No groups to recover...");
+      return;
+    }
     if (!isRecoveryOngoing.compareAndSet(false, true)) {
       throw new IllegalStateException("Internal Error : startRecovery() is called while other recovery process is " +
           "already running!");
