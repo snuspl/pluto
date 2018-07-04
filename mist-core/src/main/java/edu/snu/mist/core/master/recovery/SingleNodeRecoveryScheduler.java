@@ -84,7 +84,7 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
   @Override
   public synchronized void startRecovery(final Map<String, GroupStats> failedGroups) {
     if (failedGroups.isEmpty()) {
-      isRecoveryOngoing.set(false);
+      LOG.log(Level.INFO, "No groups to recover...");
       return;
     }
     if (!isRecoveryOngoing.compareAndSet(false, true)) {
