@@ -153,4 +153,9 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
       return new ArrayList<>(allocatedGroups);
     }
   }
+
+  @Override
+  public boolean isRecoveryOngoing() {
+    return isRecoveryOngoing.get();
+  }
 }

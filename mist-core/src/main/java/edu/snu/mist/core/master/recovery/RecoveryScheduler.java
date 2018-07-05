@@ -46,4 +46,10 @@ public interface RecoveryScheduler {
    */
   List<String> pullRecoverableGroups(String taskHostname);
 
+  /**
+   * Checks whether the recovery is currently ongoing or not.
+   * @return true if recovery is current ongoing / false if not
+   */
+  boolean isRecoveryOngoing();
+
 }
