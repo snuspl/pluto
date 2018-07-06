@@ -20,15 +20,13 @@ import edu.snu.mist.core.master.TaskAddressInfoMap;
 import edu.snu.mist.core.master.TaskRequestor;
 import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.master.lb.AppTaskListMap;
+import edu.snu.mist.core.master.recovery.RecoveryLock;
 import edu.snu.mist.core.master.recovery.RecoveryScheduler;
-import edu.snu.mist.core.master.recovery.RecoveryStarter;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
 import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.avro.AvroRemoteException;
 
 import javax.inject.Inject;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * The default driver-to-message implementation.
@@ -66,9 +64,9 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
   private final RecoveryScheduler recoveryScheduler;
 
   /**
-   * The single threaded executor service for recovery synchronization.
+   * The shared lock for synchronizing recovery process.
    */
-  private final ExecutorService singleThreadedExecutor;
+  private final RecoveryLock recoveryLock;
 
   @Inject
   private DefaultDriverToMasterMessageImpl(
@@ -77,14 +75,15 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
       final ProxyToTaskMap proxyToTaskMap,
       final RecoveryScheduler recoveryScheduler,
       final TaskRequestor taskRequestor,
-      final AppTaskListMap appTaskListMap) {
+      final AppTaskListMap appTaskListMap,
+      final RecoveryLock recoveryLock) {
     this.taskStatsMap = taskStatsMap;
     this.taskAddressInfoMap = taskAddressInfoMap;
     this.proxyToTaskMap = proxyToTaskMap;
     this.appTaskListMap = appTaskListMap;
     this.recoveryScheduler = recoveryScheduler;
     this.taskRequestor = taskRequestor;
-    this.singleThreadedExecutor = Executors.newSingleThreadExecutor();
+    this.recoveryLock = recoveryLock;
   }
 
   @Override
@@ -100,7 +99,14 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
     taskAddressInfoMap.remove(taskId);
     proxyToTaskMap.remove(taskId);
     appTaskListMap.removeTask(taskId);
-    singleThreadedExecutor.submit(new RecoveryStarter(taskStats.getGroupStatsMap(), recoveryScheduler, taskRequestor));
+    recoveryLock.lock();
+    try {
+      recoveryScheduler.recover(taskStats.getGroupStatsMap());
+    } catch (final Exception e) {
+      e.printStackTrace();
+    } finally {
+      recoveryLock.unlock();
+    }
     return null;
   }
 
