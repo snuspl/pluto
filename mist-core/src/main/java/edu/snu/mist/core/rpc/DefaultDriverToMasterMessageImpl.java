@@ -20,14 +20,11 @@ import edu.snu.mist.core.master.TaskAddressInfoMap;
 import edu.snu.mist.core.master.TaskRequestor;
 import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.master.recovery.RecoveryScheduler;
-import edu.snu.mist.core.master.recovery.RecoveryStarter;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
 import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.avro.AvroRemoteException;
 
 import javax.inject.Inject;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * The default driver-to-message implementation.
@@ -59,11 +56,6 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
    */
   private final RecoveryScheduler recoveryScheduler;
 
-  /**
-   * The single threaded executor service for recovery synchronization.
-   */
-  private final ExecutorService singleThreadedExecutor;
-
   @Inject
   private DefaultDriverToMasterMessageImpl(
       final TaskStatsMap taskStatsMap,
@@ -76,7 +68,6 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
     this.proxyToTaskMap = proxyToTaskMap;
     this.recoveryScheduler = recoveryScheduler;
     this.taskRequestor = taskRequestor;
-    this.singleThreadedExecutor = Executors.newSingleThreadExecutor();
   }
 
   @Override
@@ -91,7 +82,14 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
     final TaskStats taskStats = taskStatsMap.removeTask(taskId);
     taskAddressInfoMap.remove(taskId);
     proxyToTaskMap.remove(taskId);
-    singleThreadedExecutor.submit(new RecoveryStarter(taskStats.getGroupStatsMap(), recoveryScheduler, taskRequestor));
+    recoveryScheduler.acquireRecoveryLock();
+    try {
+      recoveryScheduler.recover(taskStats.getGroupStatsMap());
+    } catch (final Exception e) {
+      e.printStackTrace();
+    } finally {
+      recoveryScheduler.releaseRecoveryLock();
+    }
     return null;
   }
 

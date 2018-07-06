@@ -16,6 +16,7 @@
 package edu.snu.mist.core.master.recovery;
 
 import edu.snu.mist.formats.avro.GroupStats;
+import org.apache.avro.AvroRemoteException;
 
 import java.util.List;
 import java.util.Map;
@@ -26,18 +27,28 @@ import java.util.Map;
 public interface RecoveryScheduler {
 
   /**
-   * Start recovery process of the failed groups.
-   * This thread does not await until the recovery finishes
-   * and returns immediately after starting the recovery process in MistMaster.
-   * Note that no new recoveries can be started until the current recovery process has been done.
+   * Acquire the lock necessary for recovery. If another thread holds the lock,
+   * it waits for its turn.
    */
-  void startRecovery(Map<String, GroupStats> failedGroups);
+  void acquireRecoveryLock();
 
   /**
-   * Blocks the calling thread until the recovery is done, and returns when
-   * it is done.
+   * Try to acquire the lock and returns immediately with the result without blocking.
+   * @return true on success / false on fail
    */
-  void awaitUntilRecoveryFinish();
+  boolean tryAcquireRecoveryLock();
+
+  /**
+   * Release the currently holding recovery lock.
+   */
+  void releaseRecoveryLock();
+
+  /**
+   * Start the recovery process and wait until the recovery process finished.
+   * Note that the thread calling this method should hold the lock - if not, it will throw an exception.
+   * @param failedGroups The information of failed groups
+   */
+  void recover(Map<String, GroupStats> failedGroups) throws AvroRemoteException, InterruptedException;
 
   /**
    * Allocate the recovering groups to the designated MistTask when task requests the list of groups to recover.

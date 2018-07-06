@@ -17,7 +17,6 @@ package edu.snu.mist.core.master.lb.scaling;
 
 import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.master.recovery.RecoveryScheduler;
-import edu.snu.mist.core.master.recovery.RecoveryStarter;
 import edu.snu.mist.core.parameters.DriverHostname;
 import edu.snu.mist.core.parameters.MasterToDriverPort;
 import edu.snu.mist.core.rpc.AvroUtils;
@@ -81,14 +80,13 @@ public final class RecoveryBasedScaleInManager implements ScaleInManager {
   }
 
   @Override
-  public boolean scaleIn() throws AvroRemoteException {
+  public boolean scaleIn() throws AvroRemoteException, InterruptedException {
     final String removedTaskId = getMinimumLoadTask();
     final boolean stopTaskSuccess = proxyToDriver.stopTask(removedTaskId);
 
     if (stopTaskSuccess) {
       final TaskStats taskStats = taskStatsMap.removeTask(removedTaskId);
-      singleThreadedExecutor
-          .submit(new RecoveryStarter(taskStats.getGroupStatsMap(), recoveryScheduler));
+      recoveryScheduler.recover(taskStats.getGroupStatsMap());
       return true;
     } else {
       return false;

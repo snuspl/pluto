@@ -26,7 +26,6 @@ import edu.snu.mist.formats.avro.ClientToMasterMessage;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
 import edu.snu.mist.formats.avro.TaskToMasterMessage;
 import org.apache.avro.ipc.Server;
-import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.annotations.Unit;
 import org.apache.reef.task.Task;
@@ -48,11 +47,6 @@ public final class MistMaster implements Task {
   private static final Logger LOG = Logger.getLogger(MistMaster.class.getName());
 
   private final CountDownLatch countDownLatch;
-
-  /**
-   * Shared tang object.
-   */
-  private Tang tang = Tang.Factory.getTang();
 
   /**
    * Avro RPC servers.

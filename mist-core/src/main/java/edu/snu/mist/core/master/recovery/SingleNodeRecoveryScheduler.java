@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 /**
  * The recovery manager which assigns recovery of all the failed queries to a single node.
  */
-public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
+public final class SingleNodeRecoveryScheduler extends AbstractRecoveryScheduler {
 
   private static final Logger LOG = Logger.getLogger(RecoveryScheduler.class.getName());
 
@@ -57,7 +57,7 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
   /**
    * The lock which is used for conditional variable.
    */
-  private final Lock lock;
+  private final Lock conditionLock;
 
   /**
    * The conditional variable which synchronizes the recovery process.
@@ -73,22 +73,31 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
   private SingleNodeRecoveryScheduler(
       final TaskStatsMap taskStatsMap,
       final ProxyToTaskMap proxyToTaskMap) {
+    super();
     this.recoveryGroups = new ConcurrentHashMap<>();
     this.taskStatsMap = taskStatsMap;
     this.proxyToTaskMap = proxyToTaskMap;
-    this.lock = new ReentrantLock();
-    this.recoveryFinished = this.lock.newCondition();
+    this.conditionLock = new ReentrantLock();
+    this.recoveryFinished = this.conditionLock.newCondition();
     this.isRecoveryOngoing = new AtomicBoolean(false);
   }
 
   @Override
-  public synchronized void startRecovery(final Map<String, GroupStats> failedGroups) {
+  public void recover(final Map<String, GroupStats> failedGroups) throws AvroRemoteException, InterruptedException {
+    // Check whether current thread is holding a lock.
+    assert recoveryLock.isHeldByCurrentThread();
+    // Start the recovery process.
+    performRecovery(failedGroups);
+  }
+
+  private void performRecovery(final Map<String, GroupStats> failedGroups) throws AvroRemoteException,
+      InterruptedException {
     if (failedGroups.isEmpty()) {
       LOG.log(Level.INFO, "No groups to recover...");
       return;
     }
     if (!isRecoveryOngoing.compareAndSet(false, true)) {
-      throw new IllegalStateException("Internal Error : startRecovery() is called while other recovery process is " +
+      throw new IllegalStateException("Internal Error : recover() is called while other recovery process is " +
           "already running!");
     }
     LOG.log(Level.INFO, "Start recovery on failed groups: {0}", failedGroups.keySet());
@@ -115,19 +124,15 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
       proxyToRecoveryTask.startTaskSideRecovery();
     } catch (final AvroRemoteException e) {
       LOG.log(Level.SEVERE, "Start recovery through avro server has failed! " + e.toString());
+      throw e;
     }
-  }
-
-  @Override
-  public void awaitUntilRecoveryFinish() {
     try {
-      lock.lock();
+      conditionLock.lock();
       while (isRecoveryOngoing.get()) {
         recoveryFinished.await();
       }
-      lock.unlock();
-    } catch (final InterruptedException e) {
-      LOG.log(Level.SEVERE, "Recovery has been interrupted while awaiting..." + e.toString());
+    } finally {
+      conditionLock.unlock();
     }
   }
 
@@ -137,10 +142,10 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
     if (recoveryGroups.isEmpty()) {
       // Set the recovery ongoing to false.
       if (isRecoveryOngoing.compareAndSet(true, false)) {
-        lock.lock();
+        conditionLock.lock();
         // Notify the awaiting threads that the recovery is done.
         recoveryFinished.signalAll();
-        lock.unlock();
+        conditionLock.unlock();
       }
       return new ArrayList<>();
     } else {
