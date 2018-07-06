@@ -22,11 +22,17 @@ import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.master.lb.AppTaskListMap;
 import edu.snu.mist.core.master.recovery.RecoveryLock;
 import edu.snu.mist.core.master.recovery.RecoveryScheduler;
+import edu.snu.mist.core.parameters.DriverHostname;
+import edu.snu.mist.core.parameters.MasterToDriverPort;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
+import edu.snu.mist.formats.avro.MasterToDriverMessage;
 import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.avro.AvroRemoteException;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.io.IOException;
+import java.net.InetSocketAddress;
 
 /**
  * The default driver-to-message implementation.
@@ -68,15 +74,23 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
    */
   private final RecoveryLock recoveryLock;
 
+  /**
+   * The proxy to MIST driver.
+   */
+  private final MasterToDriverMessage proxyToDriver;
+
   @Inject
   private DefaultDriverToMasterMessageImpl(
       final TaskStatsMap taskStatsMap,
       final TaskAddressInfoMap taskAddressInfoMap,
       final ProxyToTaskMap proxyToTaskMap,
+      @Parameter(DriverHostname.class) final String driverHostname,
+      @Parameter(MasterToDriverPort.class) final int masterToDriverPort,
       final RecoveryScheduler recoveryScheduler,
       final TaskRequestor taskRequestor,
       final AppTaskListMap appTaskListMap,
-      final RecoveryLock recoveryLock) {
+      final RecoveryLock recoveryLock) throws IOException {
+
     this.taskStatsMap = taskStatsMap;
     this.taskAddressInfoMap = taskAddressInfoMap;
     this.proxyToTaskMap = proxyToTaskMap;
@@ -84,6 +98,8 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
     this.recoveryScheduler = recoveryScheduler;
     this.taskRequestor = taskRequestor;
     this.recoveryLock = recoveryLock;
+    this.proxyToDriver = AvroUtils.createAvroProxy(MasterToDriverMessage.class,
+        new InetSocketAddress(driverHostname, masterToDriverPort));
   }
 
   @Override
@@ -99,15 +115,37 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
     taskAddressInfoMap.remove(taskId);
     proxyToTaskMap.remove(taskId);
     appTaskListMap.removeTask(taskId);
-    recoveryLock.lock();
-    try {
-      recoveryScheduler.recover(taskStats.getGroupStatsMap());
-    } catch (final Exception e) {
-      e.printStackTrace();
-    } finally {
-      recoveryLock.unlock();
-    }
+    final Thread t = new Thread(new RecoveryStartRunnable(taskStats));
+    // Start the recovery process in another thread.
+    t.start();
     return null;
+  }
+
+  private final class RecoveryStartRunnable implements Runnable {
+
+    private TaskStats failedTaskStats;
+
+    private RecoveryStartRunnable(final TaskStats failedTaskStats) {
+      this.failedTaskStats = failedTaskStats;
+    }
+
+    @Override
+    public void run() {
+      try {
+        taskRequestor.setupTaskAndConn(1);
+      } catch (final AvroRemoteException | InterruptedException e) {
+        e.printStackTrace();
+        throw new RuntimeException("Task request for recovery has been failed...");
+      }
+      recoveryLock.lock();
+      try {
+        recoveryScheduler.recover(failedTaskStats.getGroupStatsMap());
+      } catch (final Exception e) {
+        e.printStackTrace();
+      } finally {
+        recoveryLock.unlock();
+      }
+    }
   }
 
 }
