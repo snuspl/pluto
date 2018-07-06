@@ -26,7 +26,13 @@ import org.apache.avro.AvroRemoteException;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -57,9 +63,14 @@ public final class DistributedRecoveryScheduler implements RecoveryScheduler {
   private final ProxyToTaskMap proxyToTaskMap;
 
   /**
-   * The lock which is used for conditional variable.
+   * The shared lock used for synchronizing the recovery process.
    */
-  private final Lock lock;
+  private RecoveryLock recoveryLock;
+
+  /**
+   * The lock used for conditional variable.
+   */
+  private final Lock conditionLock;
 
   /**
    * The conditional variable which synchronizes the recovery process.
@@ -85,29 +96,36 @@ public final class DistributedRecoveryScheduler implements RecoveryScheduler {
   private DistributedRecoveryScheduler(
       final TaskStatsMap taskStatsMap,
       final ProxyToTaskMap proxyToTaskMap,
+      final RecoveryLock recoveryLock,
       @Parameter(OverloadedTaskLoadThreshold.class) final double overloadedTaskThreshold,
       @Parameter(RecoveryUnitSize.class) final int recoveryUnitSize) {
+    super();
     this.taskStatsMap = taskStatsMap;
     this.proxyToTaskMap = proxyToTaskMap;
     this.recoveryGroups = new HashMap<>();
-    this.lock = new ReentrantLock();
-    this.recoveryFinished = this.lock.newCondition();
+    this.recoveryLock = recoveryLock;
+    this.conditionLock = new ReentrantLock();
+    this.recoveryFinished = this.conditionLock.newCondition();
     this.isRecoveryOngoing = new AtomicBoolean(false);
     this.overloadedTaskThreshold = overloadedTaskThreshold;
     this.recoveryUnitSize = recoveryUnitSize;
   }
 
   @Override
-  public synchronized void startRecovery(final Map<String, GroupStats> failedGroups) {
+  public void recover(final Map<String, GroupStats> failedGroups) throws AvroRemoteException, InterruptedException {
+    // Firstly, we need to make sure that the current thread is holding the lock.
+    assert recoveryLock.isHeldByCurrentThread();
+    // Then, perform recovery.
+    performRecovery(failedGroups);
+  }
+
+  private void performRecovery(final Map<String, GroupStats> failedGroups)
+      throws AvroRemoteException, InterruptedException {
+    LOG.log(Level.INFO, "Start distributed recovery on failed groups: {0}", failedGroups.keySet());
     if (failedGroups.isEmpty()) {
-      LOG.log(Level.INFO, "No groups to recover...");
+      LOG.log(Level.INFO, "");
       return;
     }
-    if (!isRecoveryOngoing.compareAndSet(false, true)) {
-      throw new IllegalStateException("Internal Error : startRecovery() is called while other recovery process is " +
-          "already running!");
-    }
-    LOG.log(Level.INFO, "Start distributed recovery on failed groups: {0}", failedGroups.keySet());
     recoveryGroups.putAll(failedGroups);
     final List<MasterToTaskMessage> proxyToRecoveryTaskList = new ArrayList<>();
     try {
@@ -124,19 +142,18 @@ public final class DistributedRecoveryScheduler implements RecoveryScheduler {
       }
     } catch (final AvroRemoteException e) {
       LOG.log(Level.SEVERE, "Start recovery through avro server has failed! " + e.toString());
+      throw e;
     }
-  }
-
-  @Override
-  public void awaitUntilRecoveryFinish() {
+    // Wait until finish...
     try {
-      lock.lock();
+      conditionLock.lock();
       while (isRecoveryOngoing.get()) {
         recoveryFinished.await();
       }
-      lock.unlock();
+      conditionLock.unlock();
     } catch (final InterruptedException e) {
       LOG.log(Level.SEVERE, "Recovery has been interrupted while awaiting..." + e.toString());
+      throw e;
     }
   }
 
@@ -144,9 +161,9 @@ public final class DistributedRecoveryScheduler implements RecoveryScheduler {
   public synchronized List<String> pullRecoverableGroups(final String taskHostname) {
     if (recoveryGroups.isEmpty()) {
       if (isRecoveryOngoing.compareAndSet(true, false)) {
-        lock.lock();
+        conditionLock.lock();
         recoveryFinished.signalAll();
-        lock.unlock();
+        conditionLock.unlock();
       }
       return new ArrayList<>();
     } else {
