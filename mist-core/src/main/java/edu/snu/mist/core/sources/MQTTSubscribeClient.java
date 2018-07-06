@@ -54,7 +54,7 @@ public final class MQTTSubscribeClient implements MqttCallback {
    */
   private final ConcurrentMap<String, Queue<MQTTDataGenerator>> dataGeneratorListMap;
   /**
-   * The recoveryLock used when a DataGenerator want to start subscription.
+   * The lock used when a DataGenerator want to start subscription.
    */
   private final Object subscribeLock;
 
