@@ -103,12 +103,12 @@ public final class MQTTSharedResource implements MQTTResource {
   private final int maxInflightMqttEventNum;
 
   /**
-   * The recoveryLock used to synchronize subscriber creation.
+   * The lock used to synchronize subscriber creation.
    */
   private final Lock subscriberLock;
 
   /**
-   * The recoveryLock used to sychronize publisher creation.
+   * The lock used to sychronize publisher creation.
    */
   private final Lock publisherLock;
 
