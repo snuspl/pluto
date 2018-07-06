@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 /**
  * The recovery manager which assigns recovery of all the failed queries to a single node.
  */
-public final class SingleNodeRecoveryScheduler extends AbstractRecoveryScheduler {
+public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
 
   private static final Logger LOG = Logger.getLogger(RecoveryScheduler.class.getName());
 
@@ -55,6 +55,11 @@ public final class SingleNodeRecoveryScheduler extends AbstractRecoveryScheduler
   private final ProxyToTaskMap proxyToTaskMap;
 
   /**
+   * The shared lock for synchronizing recovery process.
+   */
+  private final RecoveryLock recoveryLock;
+
+  /**
    * The lock which is used for conditional variable.
    */
   private final Lock conditionLock;
@@ -72,7 +77,8 @@ public final class SingleNodeRecoveryScheduler extends AbstractRecoveryScheduler
   @Inject
   private SingleNodeRecoveryScheduler(
       final TaskStatsMap taskStatsMap,
-      final ProxyToTaskMap proxyToTaskMap) {
+      final ProxyToTaskMap proxyToTaskMap,
+      final RecoveryLock recoveryLock) {
     super();
     this.recoveryGroups = new ConcurrentHashMap<>();
     this.taskStatsMap = taskStatsMap;
@@ -80,6 +86,7 @@ public final class SingleNodeRecoveryScheduler extends AbstractRecoveryScheduler
     this.conditionLock = new ReentrantLock();
     this.recoveryFinished = this.conditionLock.newCondition();
     this.isRecoveryOngoing = new AtomicBoolean(false);
+    this.recoveryLock = recoveryLock;
   }
 
   @Override

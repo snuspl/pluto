@@ -27,23 +27,6 @@ import java.util.Map;
 public interface RecoveryScheduler {
 
   /**
-   * Acquire the lock necessary for recovery. If another thread holds the lock,
-   * it waits for its turn.
-   */
-  void acquireRecoveryLock();
-
-  /**
-   * Try to acquire the lock and returns immediately with the result without blocking.
-   * @return true on success / false on fail
-   */
-  boolean tryAcquireRecoveryLock();
-
-  /**
-   * Release the currently holding recovery lock.
-   */
-  void releaseRecoveryLock();
-
-  /**
    * Start the recovery process and wait until the recovery process finished.
    * Note that the thread calling this method should hold the lock - if not, it will throw an exception.
    * @param failedGroups The information of failed groups

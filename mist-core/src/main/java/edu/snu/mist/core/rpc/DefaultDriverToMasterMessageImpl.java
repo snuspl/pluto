@@ -19,6 +19,7 @@ import edu.snu.mist.core.master.ProxyToTaskMap;
 import edu.snu.mist.core.master.TaskAddressInfoMap;
 import edu.snu.mist.core.master.TaskRequestor;
 import edu.snu.mist.core.master.TaskStatsMap;
+import edu.snu.mist.core.master.recovery.RecoveryLock;
 import edu.snu.mist.core.master.recovery.RecoveryScheduler;
 import edu.snu.mist.formats.avro.DriverToMasterMessage;
 import edu.snu.mist.formats.avro.TaskStats;
@@ -56,18 +57,25 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
    */
   private final RecoveryScheduler recoveryScheduler;
 
+  /**
+   * The shared lock for synchronizing recovery process.
+   */
+  private final RecoveryLock recoveryLock;
+
   @Inject
   private DefaultDriverToMasterMessageImpl(
       final TaskStatsMap taskStatsMap,
       final TaskAddressInfoMap taskAddressInfoMap,
       final ProxyToTaskMap proxyToTaskMap,
       final RecoveryScheduler recoveryScheduler,
-      final TaskRequestor taskRequestor) {
+      final TaskRequestor taskRequestor,
+      final RecoveryLock recoveryLock) {
     this.taskStatsMap = taskStatsMap;
     this.taskAddressInfoMap = taskAddressInfoMap;
     this.proxyToTaskMap = proxyToTaskMap;
     this.recoveryScheduler = recoveryScheduler;
     this.taskRequestor = taskRequestor;
+    this.recoveryLock = recoveryLock;
   }
 
   @Override
@@ -82,13 +90,13 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
     final TaskStats taskStats = taskStatsMap.removeTask(taskId);
     taskAddressInfoMap.remove(taskId);
     proxyToTaskMap.remove(taskId);
-    recoveryScheduler.acquireRecoveryLock();
+    recoveryLock.lock();
     try {
       recoveryScheduler.recover(taskStats.getGroupStatsMap());
     } catch (final Exception e) {
       e.printStackTrace();
     } finally {
-      recoveryScheduler.releaseRecoveryLock();
+      recoveryLock.unlock();
     }
     return null;
   }

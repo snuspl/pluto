@@ -15,31 +15,17 @@
  */
 package edu.snu.mist.core.master.recovery;
 
+import javax.inject.Inject;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * The abstract implementation of RecoveryScheduler with lcoks.
+ * The shared lock class for recovery.
  */
-public abstract class AbstractRecoveryScheduler implements RecoveryScheduler {
+public final class RecoveryLock extends ReentrantLock {
 
-  protected ReentrantLock recoveryLock;
-
-  protected AbstractRecoveryScheduler() {
-    this.recoveryLock = new ReentrantLock();
-  }
-
-  @Override
-  public void acquireRecoveryLock() {
-    this.recoveryLock.lock();
-  }
-
-  @Override
-  public boolean tryAcquireRecoveryLock() {
-    return this.recoveryLock.tryLock();
-  }
-
-  @Override
-  public void releaseRecoveryLock() {
-    this.recoveryLock.unlock();
+  // Injectable constructor for RecoveryLock class.
+  @Inject
+  private RecoveryLock() {
+    super();
   }
 }

@@ -43,7 +43,7 @@ import java.util.logging.Logger;
 /**
  * The recovery manager which leverages multiple nodes in fault recovery process.
  */
-public final class DistributedRecoveryScheduler extends AbstractRecoveryScheduler {
+public final class DistributedRecoveryScheduler implements RecoveryScheduler {
 
   private static final Logger LOG = Logger.getLogger(RecoveryScheduler.class.getName());
 
@@ -61,6 +61,11 @@ public final class DistributedRecoveryScheduler extends AbstractRecoverySchedule
    * The shared map which contains Avro proxies to task.
    */
   private final ProxyToTaskMap proxyToTaskMap;
+
+  /**
+   * The shared lock used for synchronizing the recovery process.
+   */
+  private RecoveryLock recoveryLock;
 
   /**
    * The lock used for conditional variable.
@@ -91,12 +96,14 @@ public final class DistributedRecoveryScheduler extends AbstractRecoverySchedule
   private DistributedRecoveryScheduler(
       final TaskStatsMap taskStatsMap,
       final ProxyToTaskMap proxyToTaskMap,
+      final RecoveryLock recoveryLock,
       @Parameter(OverloadedTaskLoadThreshold.class) final double overloadedTaskThreshold,
       @Parameter(RecoveryUnitSize.class) final int recoveryUnitSize) {
     super();
     this.taskStatsMap = taskStatsMap;
     this.proxyToTaskMap = proxyToTaskMap;
     this.recoveryGroups = new HashMap<>();
+    this.recoveryLock = recoveryLock;
     this.conditionLock = new ReentrantLock();
     this.recoveryFinished = this.conditionLock.newCondition();
     this.isRecoveryOngoing = new AtomicBoolean(false);

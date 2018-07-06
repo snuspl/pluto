@@ -25,7 +25,7 @@ import edu.snu.mist.core.master.lb.parameters.ScaleInGracePeriod;
 import edu.snu.mist.core.master.lb.parameters.ScaleInIdleTaskRatio;
 import edu.snu.mist.core.master.lb.parameters.ScaleOutGracePeriod;
 import edu.snu.mist.core.master.lb.parameters.ScaleOutOverloadedTaskRatio;
-import edu.snu.mist.core.master.recovery.RecoveryScheduler;
+import edu.snu.mist.core.master.recovery.RecoveryLock;
 import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -120,9 +120,9 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
   private final ScaleInManager scaleInManager;
 
   /**
-   * The recovery scheduler.
+   * The shared lock for synchronizing recovery process.
    */
-  private final RecoveryScheduler recoveryScheduler;
+  private final RecoveryLock recoveryLock;
 
   @Inject
   private PeriodicDynamicScalingManager(
@@ -137,7 +137,7 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
       @Parameter(ScaleInIdleTaskRatio.class) final double scaleInIdleTaskRatio,
       @Parameter(ScaleOutOverloadedTaskRatio.class) final double scaleOutOverloadedTaskRatio,
       final ScaleInManager scaleInManager,
-      final RecoveryScheduler recoveryScheduler) {
+      final RecoveryLock recoveryLock) {
     this.taskStatsMap = taskStatsMap;
     this.dynamicScalingPeriod = dynamicScalingPeriod;
     this.maxTaskNum = maxTaskNum;
@@ -153,7 +153,7 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
     this.lastMeasuredTimestamp = System.currentTimeMillis();
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     this.scaleInManager = scaleInManager;
-    this.recoveryScheduler = recoveryScheduler;
+    this.recoveryLock = recoveryLock;
   }
 
   private boolean isClusterOverloaded() {
@@ -198,14 +198,14 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
       if (clusterOverloaded) {
         overloadedTimeElapsed += lastMeasuredTimestamp - oldTimeStamp;
         if (overloadedTimeElapsed > scaleOutGracePeriod && taskStatsMap.getTaskList().size() < maxTaskNum
-            && recoveryScheduler.tryAcquireRecoveryLock()) {
+            && recoveryLock.tryLock()) {
           try {
             // TODO: [MIST-1130] Perform automatic scale-out.
             overloadedTimeElapsed = 0;
           } catch (final Exception e) {
             e.printStackTrace();
           } finally {
-            recoveryScheduler.releaseRecoveryLock();
+            recoveryLock.unlock();
           }
           return;
         }
@@ -217,7 +217,7 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
         idleTimeElapsed += lastMeasuredTimestamp - oldTimeStamp;
         // Try to acquire recovery lock to prevent fault recovery during automatic scaling.
         if (idleTimeElapsed > scaleInGracePeriod && taskStatsMap.getTaskList().size() > minTaskNum
-            && recoveryScheduler.tryAcquireRecoveryLock()) {
+            && recoveryLock.tryLock()) {
           LOG.log(Level.INFO, "Start scaling-in...");
           try {
             scaleInManager.scaleIn();
@@ -226,7 +226,7 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
           } catch (final Exception e) {
             e.printStackTrace();
           } finally {
-            recoveryScheduler.releaseRecoveryLock();
+            recoveryLock.unlock();
           }
         }
       } else {
