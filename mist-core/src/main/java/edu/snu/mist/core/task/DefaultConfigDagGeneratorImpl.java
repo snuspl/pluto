@@ -92,15 +92,25 @@ public final class DefaultConfigDagGeneratorImpl implements ConfigDagGenerator {
       for (final AvroVertex avroVertex : avroVertices) {
         final StateWithTimestamp vertexStateWithTimestamp = queryState.get(avroVertex.getVertexId());
         final ExecutionVertex.Type type = getVertexType(avroVertex);
-        // Create a config vertex with checkpointed states.
-        final ConfigVertex configVertex = new ConfigVertex(
-            Long.toString(configVertexId.getAndIncrement()),
-            type,
-            avroVertex.getConfiguration(),
-            vertexStateWithTimestamp.getVertexState(),
-            vertexStateWithTimestamp.getCheckpointTimestamp());
-        deserializedVertices.add(configVertex);
-        configDag.addVertex(configVertex);
+        if (vertexStateWithTimestamp == null) {
+          // This operator is stateless.
+          // Create a config vertex without checkpointed states.
+          final ConfigVertex configVertex = new ConfigVertex(
+              Long.toString(configVertexId.getAndIncrement()),
+              type,
+              avroVertex.getConfiguration());
+        } else {
+          // This operator is stateful.
+          // Create a config vertex with checkpointed states.
+          final ConfigVertex configVertex = new ConfigVertex(
+              Long.toString(configVertexId.getAndIncrement()),
+              type,
+              avroVertex.getConfiguration(),
+              vertexStateWithTimestamp.getVertexState(),
+              vertexStateWithTimestamp.getCheckpointTimestamp());
+          deserializedVertices.add(configVertex);
+          configDag.addVertex(configVertex);
+        }
       }
     }
 
