@@ -118,10 +118,7 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
     taskInfoRWLock.readLock().lock();
     final List<String> taskList = appTaskListMap.getTaskListForApp(appId);
     if (taskList == null) {
-      List<String> allTaskList;
-      do {
-        allTaskList = taskStatsMap.getTaskList();
-      } while (allTaskList.isEmpty());
+      final List<String> allTaskList = taskStatsMap.getTaskList();
       final String selectedTask = getRandomTask(allTaskList);
       appTaskListMap.addTaskToApp(appId, selectedTask);
       taskInfoRWLock.readLock().unlock();
