@@ -215,6 +215,7 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
             e.printStackTrace();
           } finally {
             recoveryLock.unlock();
+            taskInfoRWLock.readLock().unlock();
           }
           return;
         }
@@ -236,8 +237,10 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
             e.printStackTrace();
           } finally {
             recoveryLock.unlock();
+            taskInfoRWLock.readLock().unlock();
           }
         }
+        return;
       } else {
         idleTimeElapsed = 0;
       }
