@@ -15,6 +15,7 @@
  */
 package edu.snu.mist.core.master.lb.scaling;
 
+import edu.snu.mist.core.master.TaskInfoRWLock;
 import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.master.lb.parameters.DynamicScalingPeriod;
 import edu.snu.mist.core.master.lb.parameters.IdleTaskLoadThreshold;
@@ -124,6 +125,11 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
    */
   private final RecoveryLock recoveryLock;
 
+  /**
+   * The read/write lock for task info update.
+   */
+  private final TaskInfoRWLock taskInfoRWLock;
+
   @Inject
   private PeriodicDynamicScalingManager(
       final TaskStatsMap taskStatsMap,
@@ -137,7 +143,8 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
       @Parameter(ScaleInIdleTaskRatio.class) final double scaleInIdleTaskRatio,
       @Parameter(ScaleOutOverloadedTaskRatio.class) final double scaleOutOverloadedTaskRatio,
       final ScaleInManager scaleInManager,
-      final RecoveryLock recoveryLock) {
+      final RecoveryLock recoveryLock,
+      final TaskInfoRWLock taskInfoRWLock) {
     this.taskStatsMap = taskStatsMap;
     this.dynamicScalingPeriod = dynamicScalingPeriod;
     this.maxTaskNum = maxTaskNum;
@@ -154,6 +161,7 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     this.scaleInManager = scaleInManager;
     this.recoveryLock = recoveryLock;
+    this.taskInfoRWLock = taskInfoRWLock;
   }
 
   private boolean isClusterOverloaded() {
@@ -186,6 +194,7 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
 
     @Override
     public void run() {
+      taskInfoRWLock.readLock().lock();
       final long oldTimeStamp = lastMeasuredTimestamp;
       lastMeasuredTimestamp = System.currentTimeMillis();
 
@@ -232,6 +241,7 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
       } else {
         idleTimeElapsed = 0;
       }
+      taskInfoRWLock.readLock().unlock();
     }
   }
 

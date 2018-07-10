@@ -16,6 +16,7 @@
 package edu.snu.mist.core.master.recovery;
 
 import edu.snu.mist.core.master.ProxyToTaskMap;
+import edu.snu.mist.core.master.TaskInfoRWLock;
 import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.master.lb.AppTaskListMap;
 import edu.snu.mist.formats.avro.GroupStats;
@@ -66,6 +67,11 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
   private final RecoveryLock recoveryLock;
 
   /**
+   * The shared read/write lock for synchronizing task info.
+   */
+  private final TaskInfoRWLock taskInfoRWLock;
+
+  /**
    * The lock which is used for conditional variable.
    */
   private final Lock conditionLock;
@@ -85,7 +91,8 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
       final TaskStatsMap taskStatsMap,
       final ProxyToTaskMap proxyToTaskMap,
       final AppTaskListMap appTaskListMap,
-      final RecoveryLock recoveryLock) {
+      final RecoveryLock recoveryLock,
+      final TaskInfoRWLock taskInfoRWLock) {
     super();
     this.recoveryGroups = new ConcurrentHashMap<>();
     this.taskStatsMap = taskStatsMap;
@@ -96,6 +103,7 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
     this.recoveryGroups = new ConcurrentHashMap<>();
     this.isRecoveryOngoing = new AtomicBoolean(false);
     this.recoveryLock = recoveryLock;
+    this.taskInfoRWLock = taskInfoRWLock;
   }
 
   @Override
@@ -121,6 +129,7 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
     MasterToTaskMessage proxyToRecoveryTask;
     String recoveryTaskId = "";
     try {
+      taskInfoRWLock.readLock().lock();
       // Select the newly allocated task with the least load for recovery
       double minLoad = Double.MAX_VALUE;
       proxyToRecoveryTask = null;
@@ -141,6 +150,8 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
     } catch (final AvroRemoteException e) {
       LOG.log(Level.SEVERE, "Start recovery through avro server has failed! " + e.toString());
       throw e;
+    } finally {
+      taskInfoRWLock.readLock().unlock();
     }
     try {
       conditionLock.lock();
@@ -173,11 +184,15 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
         allocatedGroups.add(entry.getKey());
         appSet.add(entry.getValue().getAppId());
       }
-
-      // Update the app-task info.
-      for (final String appId : appSet) {
-        appTaskListMap.addTaskToApp(appId, taskId);
+      taskInfoRWLock.readLock().lock();
+      // Checks whether task is still alive.
+      if (taskStatsMap.get(taskId) != null) {
+        // Update the app-task info only when the task is still alive.
+        for (final String appId : appSet) {
+          appTaskListMap.addTaskToApp(appId, taskId);
+        }
       }
+      taskInfoRWLock.readLock().unlock();
       return new ArrayList<>(allocatedGroups);
     }
   }

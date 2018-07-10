@@ -46,17 +46,25 @@ public final class TaskStatsMap {
    */
   private final List<String> innerList;
 
+  /**
+   * The read/write lock for task info update.
+   */
+  private final TaskInfoRWLock taskInfoRWLock;
+
   @Inject
-  private TaskStatsMap() {
+  private TaskStatsMap(final TaskInfoRWLock taskInfoRWLock) {
+    this.taskInfoRWLock = taskInfoRWLock;
     this.innerMap = new ConcurrentHashMap<>();
     this.innerList = new CopyOnWriteArrayList<>();
   }
 
   public TaskStats get(final String taskId) {
+    assert taskInfoRWLock.isReadHoldByCurrentThread();
     return innerMap.get(taskId);
   }
 
   public TaskStats addTask(final String taskId) {
+    assert taskInfoRWLock.isWriteLockedByCurrentThread();
     innerList.add(taskId);
     return innerMap.putIfAbsent(taskId, TaskStats.newBuilder()
         .setTaskLoad(0.0)
@@ -65,6 +73,7 @@ public final class TaskStatsMap {
   }
 
   public TaskStats removeTask(final String taskId) {
+    assert taskInfoRWLock.isWriteLockedByCurrentThread();
     innerList.remove(taskId);
     return innerMap.remove(taskId);
   }
@@ -76,10 +85,12 @@ public final class TaskStatsMap {
   }
 
   public Set<Map.Entry<String, TaskStats>> entrySet() {
+    assert taskInfoRWLock.isReadHoldByCurrentThread();
     return innerMap.entrySet();
   }
 
   public List<String> getTaskList() {
+    assert taskInfoRWLock.isReadHoldByCurrentThread();
     return new ArrayList<>(innerMap.keySet());
   }
 }

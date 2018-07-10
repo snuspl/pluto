@@ -16,6 +16,7 @@
 package edu.snu.mist.core.master.lb.allocation;
 
 import edu.snu.mist.core.master.TaskAddressInfoMap;
+import edu.snu.mist.core.master.TaskInfoRWLock;
 import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.formats.avro.IPAddress;
 import edu.snu.mist.formats.avro.TaskStats;
@@ -37,13 +38,20 @@ public final class MinLoadQueryAllocationManager implements QueryAllocationManag
    */
   private final TaskStatsMap taskStatsMap;
 
+  /**
+   * The read/write lock for task info update.
+   */
+  private final TaskInfoRWLock taskInfoRWLock;
+
   @Inject
   private MinLoadQueryAllocationManager(
       final TaskAddressInfoMap taskAddressInfoMap,
-      final TaskStatsMap taskStatsMap) {
+      final TaskStatsMap taskStatsMap,
+      final TaskInfoRWLock taskInfoRWLock) {
     super();
     this.taskAddressInfoMap = taskAddressInfoMap;
     this.taskStatsMap = taskStatsMap;
+    this.taskInfoRWLock = taskInfoRWLock;
   }
 
   /**
@@ -64,6 +72,9 @@ public final class MinLoadQueryAllocationManager implements QueryAllocationManag
 
   @Override
   public IPAddress getAllocatedTask(final String appId) {
-    return getMinTaskIpAddress();
+    taskInfoRWLock.readLock().lock();
+    final IPAddress minTaskIpAddress = getMinTaskIpAddress();
+    taskInfoRWLock.readLock().unlock();
+    return minTaskIpAddress;
   }
 }

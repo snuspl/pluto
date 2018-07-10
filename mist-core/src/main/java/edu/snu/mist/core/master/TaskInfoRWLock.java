@@ -29,4 +29,13 @@ public final class TaskInfoRWLock extends ReentrantReadWriteLock {
     super();
     // Do nothing.
   }
+
+  /**
+   * This method utilizes getReadHoldCount() for determining
+   * whether the current thread is holding a read lock or not.
+   * @return true / false
+   */
+  public boolean isReadHoldByCurrentThread() {
+    return this.getReadHoldCount() > 0 || this.isWriteLockedByCurrentThread();
+  }
 }

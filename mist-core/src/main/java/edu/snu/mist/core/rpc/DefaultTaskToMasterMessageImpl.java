@@ -144,12 +144,14 @@ public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage
     }
     final AtomicInteger groupCounter = appGroupCounterMap.get(appId);
     final String groupId = String.format("%s_%d", appId, groupCounter.getAndIncrement());
+    taskInfoRWLock.readLock().lock();
     taskStatsMap.get(taskId).getGroupStatsMap().put(groupId, GroupStats.newBuilder()
         .setGroupQueryNum(0)
         .setGroupLoad(0.0)
         .setGroupId(groupId)
         .setAppId(appId)
         .build());
+    taskInfoRWLock.readLock().lock();
     LOG.log(Level.INFO, "Created new group {0}", groupId);
     return groupId;
   }

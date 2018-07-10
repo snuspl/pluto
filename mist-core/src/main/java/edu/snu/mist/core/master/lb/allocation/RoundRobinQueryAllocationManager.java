@@ -16,6 +16,7 @@
 package edu.snu.mist.core.master.lb.allocation;
 
 import edu.snu.mist.core.master.TaskAddressInfoMap;
+import edu.snu.mist.core.master.TaskInfoRWLock;
 import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.formats.avro.IPAddress;
 
@@ -43,20 +44,30 @@ public final class RoundRobinQueryAllocationManager implements QueryAllocationMa
    */
   private final TaskAddressInfoMap taskAddressInfoMap;
 
+  /**
+   * The read/write lock for task info update.
+   */
+  private final TaskInfoRWLock taskInfoRWLock;
+
   @Inject
   private RoundRobinQueryAllocationManager(
       final TaskAddressInfoMap taskAddressInfoMap,
-      final TaskStatsMap taskStatsMap) {
+      final TaskStatsMap taskStatsMap,
+      final TaskInfoRWLock taskInfoRWLock) {
     super();
     this.currentIndex = new AtomicInteger();
     this.taskStatsMap = taskStatsMap;
     this.taskAddressInfoMap = taskAddressInfoMap;
+    this.taskInfoRWLock = taskInfoRWLock;
   }
 
   @Override
   public IPAddress getAllocatedTask(final String appId) {
+    taskInfoRWLock.readLock().lock();
     final List<String> taskList = taskStatsMap.getTaskList();
     final int myIndex = currentIndex.getAndIncrement() % taskList.size();
-    return taskAddressInfoMap.getClientToTaskAddress(taskList.get(myIndex));
+    final IPAddress result = taskAddressInfoMap.getClientToTaskAddress(taskList.get(myIndex));
+    taskInfoRWLock.readLock().unlock();
+    return result;
   }
 }

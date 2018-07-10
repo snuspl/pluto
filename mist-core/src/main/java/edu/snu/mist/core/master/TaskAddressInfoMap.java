@@ -28,28 +28,37 @@ public final class TaskAddressInfoMap {
 
   private final ConcurrentMap<String, TaskAddressInfo> innerMap;
 
+  /**
+   * The read/write lock for task info synchronization.
+   */
+  private final TaskInfoRWLock taskInfoRWLock;
+
   @Inject
-  private TaskAddressInfoMap() {
+  private TaskAddressInfoMap(final TaskInfoRWLock taskInfoRWLock) {
+    this.taskInfoRWLock = taskInfoRWLock;
     this.innerMap = new ConcurrentHashMap<>();
   }
 
   public TaskAddressInfo get(final String taskId) {
+    assert taskInfoRWLock.isReadHoldByCurrentThread();
     return innerMap.get(taskId);
   }
 
   public TaskAddressInfo put(final String taskId, final TaskAddressInfo taskAddressInfo) {
+    assert taskInfoRWLock.isWriteLockedByCurrentThread();
     return innerMap.put(taskId, taskAddressInfo);
   }
 
   public IPAddress getClientToTaskAddress(final String taskId) {
-    return new IPAddress(innerMap.get(taskId).getHostname(), innerMap.get(taskId).getClientToTaskPort());
+    return new IPAddress(this.get(taskId).getHostname(), this.get(taskId).getClientToTaskPort());
   }
 
   public IPAddress getMasterToTaskAddress(final String taskId) {
-    return new IPAddress(innerMap.get(taskId).getHostname(), innerMap.get(taskId).getMasterToTaskPort());
+    return new IPAddress(this.get(taskId).getHostname(), this.get(taskId).getMasterToTaskPort());
   }
 
   public TaskAddressInfo remove(final String taskId) {
+    assert taskInfoRWLock.isWriteLockedByCurrentThread();
     return innerMap.remove(taskId);
   }
 }

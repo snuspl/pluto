@@ -121,8 +121,9 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
       final List<String> allTaskList = taskStatsMap.getTaskList();
       final String selectedTask = getRandomTask(allTaskList);
       appTaskListMap.addTaskToApp(appId, selectedTask);
+      final IPAddress result = taskAddressInfoMap.getClientToTaskAddress(selectedTask);
       taskInfoRWLock.readLock().unlock();
-      return taskAddressInfoMap.getClientToTaskAddress(selectedTask);
+      return result;
     } else {
       final String selectedTask = getRandomTask(taskList);
       final double selectedTaskLoad = taskStatsMap.get(selectedTask).getTaskLoad();
@@ -134,13 +135,15 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
           final String taskCandidate = getRandomTask(remainingList);
           if (taskStatsMap.get(taskCandidate).getTaskLoad() < overloadedTaskThreshold) {
             appTaskListMap.addTaskToApp(appId, taskCandidate);
+            final IPAddress result = taskAddressInfoMap.getClientToTaskAddress(taskCandidate);
             taskInfoRWLock.readLock().unlock();
-            return taskAddressInfoMap.getClientToTaskAddress(taskCandidate);
+            return result;
           }
         }
       }
+      final IPAddress result = taskAddressInfoMap.getClientToTaskAddress(selectedTask);
       taskInfoRWLock.readLock().unlock();
-      return taskAddressInfoMap.getClientToTaskAddress(selectedTask);
+      return result;
     }
   }
 }

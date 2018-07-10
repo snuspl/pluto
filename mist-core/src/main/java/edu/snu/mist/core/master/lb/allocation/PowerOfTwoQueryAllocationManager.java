@@ -16,6 +16,7 @@
 package edu.snu.mist.core.master.lb.allocation;
 
 import edu.snu.mist.core.master.TaskAddressInfoMap;
+import edu.snu.mist.core.master.TaskInfoRWLock;
 import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.formats.avro.IPAddress;
 
@@ -43,21 +44,28 @@ public final class PowerOfTwoQueryAllocationManager implements QueryAllocationMa
    */
   private final TaskStatsMap taskStatsMap;
 
+  /**
+   * The shared read/write lock for task info synchronization.
+   */
+  private final TaskInfoRWLock taskInfoRWLock;
+
   @Inject
   private PowerOfTwoQueryAllocationManager(
       final TaskAddressInfoMap taskAddressInfoMap,
-      final TaskStatsMap taskStatsMap) {
+      final TaskStatsMap taskStatsMap,
+      final TaskInfoRWLock taskInfoRWLock) {
     super();
     this.random = new Random();
     this.taskAddressInfoMap = taskAddressInfoMap;
     this.taskStatsMap = taskStatsMap;
+    this.taskInfoRWLock = taskInfoRWLock;
   }
 
   @Override
   public IPAddress getAllocatedTask(final String appId) {
+    taskInfoRWLock.readLock().lock();
     final List<String> taskList = taskStatsMap.getTaskList();
     int index0, index1;
-
     index0 = random.nextInt(taskList.size());
     index1 = random.nextInt(taskList.size());
     while (index1 == index0) {
@@ -66,9 +74,13 @@ public final class PowerOfTwoQueryAllocationManager implements QueryAllocationMa
     final String task0 = taskList.get(index0);
     final String task1 = taskList.get(index1);
     if (this.taskStatsMap.get(task0).getTaskLoad() < this.taskStatsMap.get(task1).getTaskLoad()) {
-      return taskAddressInfoMap.getClientToTaskAddress(task0);
+      final IPAddress result = taskAddressInfoMap.getClientToTaskAddress(task0);
+      taskInfoRWLock.readLock().unlock();
+      return result;
     } else {
-      return taskAddressInfoMap.getClientToTaskAddress(task1);
+      final IPAddress result = taskAddressInfoMap.getClientToTaskAddress(task1);
+      taskInfoRWLock.readLock().unlock();
+      return result;
     }
   }
 }
