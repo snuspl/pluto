@@ -16,6 +16,7 @@
 package edu.snu.mist.core.master.lb.allocation;
 
 import edu.snu.mist.core.master.TaskAddressInfoMap;
+import edu.snu.mist.core.master.TaskInfoRWLock;
 import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.master.lb.AppTaskListMap;
 import edu.snu.mist.core.master.lb.parameters.OverloadedTaskLoadThreshold;
@@ -51,6 +52,11 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
   private final TaskAddressInfoMap taskAddressInfoMap;
 
   /**
+   * The read/write lock for synchronizing task info.
+   */
+  private final TaskInfoRWLock taskInfoRWLock;
+
+  /**
    * The threshold for determining overloaded task.
    */
   private final double overloadedTaskThreshold;
@@ -66,12 +72,14 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
       @Parameter(UnderloadedTaskLoadThreshold.class) final double underloadedTaskThreshold,
       final TaskAddressInfoMap taskAddressInfoMap,
       final TaskStatsMap taskStatsMap,
-      final AppTaskListMap appTaskListMap) {
+      final AppTaskListMap appTaskListMap,
+      final TaskInfoRWLock taskInfoRWLock) {
     this.overloadedTaskThreshold = overloadedTaskThreshold;
     this.underloadedTaskThreshold = underloadedTaskThreshold;
     this.taskAddressInfoMap = taskAddressInfoMap;
     this.taskStatsMap = taskStatsMap;
     this.appTaskListMap = appTaskListMap;
+    this.taskInfoRWLock = taskInfoRWLock;
   }
 
   private String getRandomTask(final List<String> allTaskList) {
@@ -83,9 +91,8 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
       final TaskStats taskStats = taskStatsMap.get(task);
       if (taskStats == null) {
         // Cannot find the task stats due to synchronization issue...
-        // Need to remove the task from the list, throw an exception, and start again...
-        allTaskList.remove(task);
-        throw new IllegalStateException("Try again! Possible synchronization error!");
+        // This should not happen, so we throw RuntimeException here.
+        throw new RuntimeException("Try again! Possible synchronization error!");
       }
       final double currentTaskLoad = taskStatsMap.get(task).getTaskLoad();
       if (currentTaskLoad < underloadedTaskThreshold) {
@@ -107,38 +114,36 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
   // TODO: [MIST-519] Consider query reallocation.
   @Override
   public IPAddress getAllocatedTask(final String appId) {
-    // Iterate until success.
-    while (true) {
-      try {
-        final List<String> taskList = appTaskListMap.getTaskListForApp(appId);
-          if (taskList == null) {
-            List<String> allTaskList;
-            do {
-              allTaskList = taskStatsMap.getTaskList();
-            } while (allTaskList.isEmpty());
-            final String selectedTask = getRandomTask(allTaskList);
-            appTaskListMap.addTaskToApp(appId, selectedTask);
-            return taskAddressInfoMap.getClientToTaskAddress(selectedTask);
-          } else {
-            final String selectedTask = getRandomTask(taskList);
-            final double selectedTaskLoad = taskStatsMap.get(selectedTask).getTaskLoad();
-            if (selectedTaskLoad > overloadedTaskThreshold) {
-              // All the tasks are overloaded. Allocate to a new task.
-              final List<String> remainingList = taskStatsMap.getTaskList();
-              remainingList.removeAll(taskList);
-              if (!remainingList.isEmpty()) {
-                final String taskCandidate = getRandomTask(remainingList);
-                if (taskStatsMap.get(taskCandidate).getTaskLoad() < overloadedTaskThreshold) {
-                  appTaskListMap.addTaskToApp(appId, taskCandidate);
-                  return taskAddressInfoMap.getClientToTaskAddress(taskCandidate);
-                }
-              }
-            }
-            return taskAddressInfoMap.getClientToTaskAddress(selectedTask);
+    // Acquire read lock starting task allocation.
+    taskInfoRWLock.readLock().lock();
+    final List<String> taskList = appTaskListMap.getTaskListForApp(appId);
+    if (taskList == null) {
+      List<String> allTaskList;
+      do {
+        allTaskList = taskStatsMap.getTaskList();
+      } while (allTaskList.isEmpty());
+      final String selectedTask = getRandomTask(allTaskList);
+      appTaskListMap.addTaskToApp(appId, selectedTask);
+      taskInfoRWLock.readLock().unlock();
+      return taskAddressInfoMap.getClientToTaskAddress(selectedTask);
+    } else {
+      final String selectedTask = getRandomTask(taskList);
+      final double selectedTaskLoad = taskStatsMap.get(selectedTask).getTaskLoad();
+      if (selectedTaskLoad > overloadedTaskThreshold) {
+        // All the tasks are overloaded. Allocate to a new task.
+        final List<String> remainingList = taskStatsMap.getTaskList();
+        remainingList.removeAll(taskList);
+        if (!remainingList.isEmpty()) {
+          final String taskCandidate = getRandomTask(remainingList);
+          if (taskStatsMap.get(taskCandidate).getTaskLoad() < overloadedTaskThreshold) {
+            appTaskListMap.addTaskToApp(appId, taskCandidate);
+            taskInfoRWLock.readLock().unlock();
+            return taskAddressInfoMap.getClientToTaskAddress(taskCandidate);
           }
-      } catch (final IllegalStateException e) {
-        e.printStackTrace();
+        }
       }
+      taskInfoRWLock.readLock().unlock();
+      return taskAddressInfoMap.getClientToTaskAddress(selectedTask);
     }
   }
 }

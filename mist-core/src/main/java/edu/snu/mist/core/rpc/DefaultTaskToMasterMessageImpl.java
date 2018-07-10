@@ -18,6 +18,7 @@ package edu.snu.mist.core.rpc;
 import edu.snu.mist.core.master.ProxyToTaskMap;
 import edu.snu.mist.core.master.TaskAddressInfo;
 import edu.snu.mist.core.master.TaskAddressInfoMap;
+import edu.snu.mist.core.master.TaskInfoRWLock;
 import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.master.recovery.RecoveryScheduler;
 import edu.snu.mist.core.parameters.DriverHostname;
@@ -86,11 +87,17 @@ public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage
    */
   private final ExecutorService executorService;
 
+  /**
+   * The read/write lock for synchronizing modifying task info.
+   */
+  private final TaskInfoRWLock taskInfoRWLock;
+
   @Inject
   private DefaultTaskToMasterMessageImpl(final TaskStatsMap taskStatsMap,
                                          final RecoveryScheduler recoveryScheduler,
                                          final TaskAddressInfoMap taskAddressInfoMap,
                                          final ProxyToTaskMap proxyToTaskMap,
+                                         final TaskInfoRWLock taskInfoRWLock,
                                          @Parameter(DriverHostname.class) final String driverHostname,
                                          @Parameter(MasterToDriverPort.class) final int masterToDriverPort)
       throws Exception {
@@ -99,6 +106,7 @@ public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage
     this.recoveryScheduler = recoveryScheduler;
     this.taskAddressInfoMap = taskAddressInfoMap;
     this.proxyToTaskMap = proxyToTaskMap;
+    this.taskInfoRWLock = taskInfoRWLock;
     this.proxyToDriver = AvroUtils.createAvroProxy(MasterToDriverMessage.class, new InetSocketAddress(driverHostname,
         masterToDriverPort));
     this.executorService = Executors.newSingleThreadExecutor();
@@ -111,6 +119,7 @@ public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage
     executorService.submit(new SaveTaskInfoRunner(proxyToDriver, taskInfo));
     LOG.log(Level.INFO, "Registering task info for {0}", taskInfo.getTaskId());
     // Update the shared data structures in master.
+    taskInfoRWLock.writeLock().lock();
     taskStatsMap.addTask(taskId);
     taskAddressInfoMap.put(taskInfo.getTaskId(), new TaskAddressInfo(taskInfo.getTaskHostname(),
         taskInfo.getClientToTaskPort(), taskInfo.getMasterToTaskPort()));
@@ -121,7 +130,9 @@ public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage
       t.join();
     } catch (final InterruptedException e) {
       e.printStackTrace();
-      return false;
+      throw new RuntimeException("Failed to create avro proxy to mist task!");
+    } finally {
+      taskInfoRWLock.writeLock().unlock();
     }
     return true;
   }
@@ -195,6 +206,7 @@ public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage
                 taskInfo.getTaskHostname(), taskInfo.getMasterToTaskPort())));
       } catch (final IOException e) {
         e.printStackTrace();
+        throw new RuntimeException("Failed to create avro proxy to mist task!");
       }
     }
   }
