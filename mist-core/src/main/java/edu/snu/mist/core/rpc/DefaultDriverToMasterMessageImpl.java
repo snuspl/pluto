@@ -17,6 +17,7 @@ package edu.snu.mist.core.rpc;
 
 import edu.snu.mist.core.master.ProxyToTaskMap;
 import edu.snu.mist.core.master.TaskAddressInfoMap;
+import edu.snu.mist.core.master.TaskInfoRWLock;
 import edu.snu.mist.core.master.TaskRequestor;
 import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.master.lb.AppTaskListMap;
@@ -74,6 +75,12 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
    */
   private final RecoveryLock recoveryLock;
 
+
+  /**
+   * The shared lock for synchronizing task info.
+   */
+  private final TaskInfoRWLock taskInfoRWLock;
+
   /**
    * The proxy to MIST driver.
    */
@@ -89,8 +96,8 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
       final RecoveryScheduler recoveryScheduler,
       final TaskRequestor taskRequestor,
       final AppTaskListMap appTaskListMap,
-      final RecoveryLock recoveryLock) throws IOException {
-
+      final RecoveryLock recoveryLock,
+      final TaskInfoRWLock taskInfoRWLock) throws IOException {
     this.taskStatsMap = taskStatsMap;
     this.taskAddressInfoMap = taskAddressInfoMap;
     this.proxyToTaskMap = proxyToTaskMap;
@@ -98,6 +105,7 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
     this.recoveryScheduler = recoveryScheduler;
     this.taskRequestor = taskRequestor;
     this.recoveryLock = recoveryLock;
+    this.taskInfoRWLock = taskInfoRWLock;
     this.proxyToDriver = AvroUtils.createAvroProxy(MasterToDriverMessage.class,
         new InetSocketAddress(driverHostname, masterToDriverPort));
   }
@@ -110,11 +118,14 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
 
   @Override
   public synchronized Void notifyFailedTask(final String taskId) {
+    // Acquire write lock for task info.
+    taskInfoRWLock.writeLock().lock();
     // Remove the failed task...
     final TaskStats taskStats = taskStatsMap.removeTask(taskId);
     taskAddressInfoMap.remove(taskId);
     proxyToTaskMap.remove(taskId);
     appTaskListMap.removeTask(taskId);
+    taskInfoRWLock.writeLock().unlock();
     final Thread t = new Thread(new RecoveryStartRunnable(taskStats));
     // Start the recovery process in another thread.
     t.start();
