@@ -209,13 +209,14 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
         if (overloadedTimeElapsed > scaleOutGracePeriod && taskStatsMap.getTaskList().size() < maxTaskNum
             && recoveryLock.tryLock()) {
           try {
+            // Release the lock.
+            taskInfoRWLock.readLock().unlock();
             // TODO: [MIST-1130] Perform automatic scale-out.
             overloadedTimeElapsed = 0;
           } catch (final Exception e) {
             e.printStackTrace();
           } finally {
             recoveryLock.unlock();
-            taskInfoRWLock.readLock().unlock();
           }
           return;
         }
@@ -230,6 +231,8 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
             && recoveryLock.tryLock()) {
           LOG.log(Level.INFO, "Start scaling-in...");
           try {
+            // Release the lock.
+            taskInfoRWLock.readLock().unlock();
             scaleInManager.scaleIn();
             // Initialize the idleTimeElapsed.
             idleTimeElapsed = 0;
@@ -237,7 +240,6 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
             e.printStackTrace();
           } finally {
             recoveryLock.unlock();
-            taskInfoRWLock.readLock().unlock();
           }
         }
         return;
