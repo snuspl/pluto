@@ -34,11 +34,17 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The default driver-to-message implementation.
  */
 public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMessage {
+
+  private static final Logger LOG = Logger.getLogger(DefaultDriverToMasterMessageImpl.class.getName());
 
   /**
    * The task stats map.
@@ -118,41 +124,41 @@ public final class DefaultDriverToMasterMessageImpl implements DriverToMasterMes
 
   @Override
   public synchronized Void notifyFailedTask(final String taskId) {
-    // Acquire write lock for task info.
-    taskInfoRWLock.writeLock().lock();
-    // Remove the failed task...
-    final TaskStats taskStats = taskStatsMap.removeTask(taskId);
-    taskAddressInfoMap.remove(taskId);
-    proxyToTaskMap.remove(taskId);
-    appTaskListMap.removeTask(taskId);
-    taskInfoRWLock.writeLock().unlock();
-    final Thread t = new Thread(new RecoveryStartRunnable(taskStats));
+    final ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
     // Start the recovery process in another thread.
-    t.start();
+    singleThreadExecutor.submit(new RecoveryStartRunnable(taskId));
     return null;
   }
 
   private final class RecoveryStartRunnable implements Runnable {
 
-    private TaskStats failedTaskStats;
+    private String failedTaskId;
 
-    private RecoveryStartRunnable(final TaskStats failedTaskStats) {
-      this.failedTaskStats = failedTaskStats;
+    private RecoveryStartRunnable(final String failedTaskId) {
+      this.failedTaskId = failedTaskId;
     }
 
     @Override
     public void run() {
       try {
+        LOG.log(Level.INFO, "Got an failed task...");
+        // Acquire write lock for task info.
+        taskInfoRWLock.writeLock().lock();
+        // Remove the failed task...
+        final TaskStats taskStats = taskStatsMap.removeTask(failedTaskId);
+        taskAddressInfoMap.remove(failedTaskId);
+        proxyToTaskMap.remove(failedTaskId);
+        appTaskListMap.removeTask(failedTaskId);
+        taskInfoRWLock.writeLock().unlock();
+        LOG.log(Level.INFO, "Updated the task info... Request a new task...");
         taskRequestor.setupTaskAndConn(1);
+        LOG.log(Level.INFO, "Task is allocated... Start recovery process");
+        recoveryLock.lock();
+        recoveryScheduler.recover(taskStats.getGroupStatsMap());
+        LOG.log(Level.INFO, "Finished recovery");
       } catch (final AvroRemoteException | InterruptedException e) {
         e.printStackTrace();
         throw new RuntimeException("Task request for recovery has been failed...");
-      }
-      recoveryLock.lock();
-      try {
-        recoveryScheduler.recover(failedTaskStats.getGroupStatsMap());
-      } catch (final Exception e) {
-        e.printStackTrace();
       } finally {
         recoveryLock.unlock();
       }

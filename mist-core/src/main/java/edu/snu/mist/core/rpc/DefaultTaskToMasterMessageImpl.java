@@ -151,7 +151,7 @@ public final class DefaultTaskToMasterMessageImpl implements TaskToMasterMessage
         .setGroupId(groupId)
         .setAppId(appId)
         .build());
-    taskInfoRWLock.readLock().lock();
+    taskInfoRWLock.readLock().unlock();
     LOG.log(Level.INFO, "Created new group {0}", groupId);
     return groupId;
   }

@@ -16,18 +16,30 @@
 package edu.snu.mist.core.master;
 
 import javax.inject.Inject;
+import java.util.Arrays;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The shared read/write lock used for synchronizing adding / deleting task info
  * based on ReentrantReadWriteLock class.
  */
 public final class TaskInfoRWLock extends ReentrantReadWriteLock {
+
+  private static final Logger LOG = Logger.getLogger(TaskInfoRWLock.class.getName());
+
+  private final LoggableReadLock loggableReadLock;
+
+  private final LoggableWriteLock loggableWriteLock;
+
   // The injectable constructor.
   @Inject
   private TaskInfoRWLock() {
     super();
     // Do nothing.
+    this.loggableReadLock = new LoggableReadLock(this);
+    this.loggableWriteLock = new LoggableWriteLock(this);
   }
 
   /**
@@ -37,5 +49,55 @@ public final class TaskInfoRWLock extends ReentrantReadWriteLock {
    */
   public boolean isReadHoldByCurrentThread() {
     return this.getReadHoldCount() > 0 || this.isWriteLockedByCurrentThread();
+  }
+
+  @Override
+  public WriteLock writeLock() {
+    return loggableWriteLock;
+  }
+
+  @Override
+  public ReadLock readLock() {
+    return loggableReadLock;
+  }
+
+  private static class LoggableReadLock extends ReadLock {
+    public LoggableReadLock(final ReentrantReadWriteLock lock) {
+      super(lock);
+    }
+
+    @Override
+    public void lock() {
+      LOG.log(Level.INFO, "Acquiring Readlock on TaskInfoRWLock: {0}",
+          Arrays.toString(Thread.currentThread().getStackTrace()));
+      super.lock();
+    }
+
+    @Override
+    public void unlock() {
+      LOG.log(Level.INFO, "Releasing Readlock on TaskInfoRWLock: {0}",
+          Arrays.toString(Thread.currentThread().getStackTrace()));
+      super.unlock();
+    }
+  }
+
+  private static class LoggableWriteLock extends WriteLock {
+    public LoggableWriteLock(final ReentrantReadWriteLock lock) {
+      super(lock);
+    }
+
+    @Override
+    public void lock() {
+      LOG.log(Level.INFO, "Acquiring Writelock on TaskInfoRWLock: {0}",
+          Arrays.toString(Thread.currentThread().getStackTrace()));
+      super.lock();
+    }
+
+    @Override
+    public void unlock() {
+      LOG.log(Level.INFO, "Releasing Readlock on TaskInfoRWLock: {0}",
+          Arrays.toString(Thread.currentThread().getStackTrace()));
+      super.unlock();
+    }
   }
 }
