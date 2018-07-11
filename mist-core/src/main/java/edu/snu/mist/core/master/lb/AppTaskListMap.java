@@ -36,8 +36,9 @@ public final class AppTaskListMap {
 
   public synchronized void removeTask(final String removedTaskId) {
     for (final Map.Entry<String, List<String>> entry: innerMap.entrySet()) {
-      entry.getValue().remove(removedTaskId);
-      if (entry.getValue().isEmpty()) {
+      final List<String> taskIdList = entry.getValue();
+      taskIdList.removeIf(taskId -> taskId.equals(removedTaskId));
+      if (taskIdList.isEmpty()) {
         innerMap.remove(entry.getKey());
       }
     }

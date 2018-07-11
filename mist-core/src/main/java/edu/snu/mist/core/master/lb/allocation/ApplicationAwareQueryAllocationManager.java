@@ -92,7 +92,7 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
       if (taskStats == null) {
         // Cannot find the task stats due to synchronization issue...
         // This should not happen, so we throw RuntimeException here.
-        throw new RuntimeException("Try again! Possible synchronization error!");
+        throw new RuntimeException("Synchronization error!");
       }
       final double currentTaskLoad = taskStatsMap.get(task).getTaskLoad();
       if (currentTaskLoad < underloadedTaskThreshold) {
