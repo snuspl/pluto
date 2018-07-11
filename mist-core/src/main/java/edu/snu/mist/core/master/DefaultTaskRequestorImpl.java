@@ -120,6 +120,11 @@ public final class DefaultTaskRequestorImpl implements TaskRequestor {
    */
   private CountDownLatch countDownLatch;
 
+  /**
+   * The shared task info read/write lock.
+   */
+  private TaskInfoRWLock taskInfoRWLock;
+
   @Inject
   private DefaultTaskRequestorImpl(
       final TaskStatsMap taskStatsMap,
@@ -132,7 +137,8 @@ public final class DefaultTaskRequestorImpl implements TaskRequestor {
       @Parameter(NewRatio.class) final int newRatio,
       @Parameter(ReservedCodeCacheSize.class) final int reservedCodeCacheSize,
       final MistCommonConfigs commonConfigs,
-      final MistTaskConfigs taskConfigs) throws IOException {
+      final MistTaskConfigs taskConfigs,
+      final TaskInfoRWLock taskInfoRWLock) throws IOException {
     this.taskIdIndex = 0;
     this.taskStatsMap = taskStatsMap;
     this.proxyToTaskMap = proxyToTaskMap;
@@ -190,6 +196,7 @@ public final class DefaultTaskRequestorImpl implements TaskRequestor {
     // Retrieve the internal data structures.
     for (final TaskInfo taskInfo : runningTaskIdList) {
       final String taskId = taskInfo.getTaskId();
+      taskInfoRWLock.writeLock().lock();
       taskStatsMap.addTask(taskId);
       taskAddressInfoMap.put(taskInfo.getTaskId(), new TaskAddressInfo(taskInfo.getTaskHostname(),
           taskInfo.getClientToTaskPort(), taskInfo.getMasterToTaskPort()));
@@ -199,7 +206,9 @@ public final class DefaultTaskRequestorImpl implements TaskRequestor {
                 taskInfo.getTaskHostname(), taskInfo.getMasterToTaskPort())));
       } catch (final IOException e) {
         e.printStackTrace();
-        return;
+        throw new RuntimeException("Failed to recovery the connection to mist task...");
+      } finally {
+        taskInfoRWLock.writeLock().unlock();
       }
     }
   }

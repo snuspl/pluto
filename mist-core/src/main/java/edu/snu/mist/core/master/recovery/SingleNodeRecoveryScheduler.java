@@ -16,7 +16,9 @@
 package edu.snu.mist.core.master.recovery;
 
 import edu.snu.mist.core.master.ProxyToTaskMap;
+import edu.snu.mist.core.master.TaskInfoRWLock;
 import edu.snu.mist.core.master.TaskStatsMap;
+import edu.snu.mist.core.master.lb.AppTaskListMap;
 import edu.snu.mist.formats.avro.GroupStats;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
 import org.apache.avro.AvroRemoteException;
@@ -55,9 +57,19 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
   private final ProxyToTaskMap proxyToTaskMap;
 
   /**
+   * The app-task list map.
+   */
+  private final AppTaskListMap appTaskListMap;
+
+  /**
    * The shared lock for synchronizing recovery process.
    */
   private final RecoveryLock recoveryLock;
+
+  /**
+   * The shared read/write lock for synchronizing task info.
+   */
+  private final TaskInfoRWLock taskInfoRWLock;
 
   /**
    * The lock which is used for conditional variable.
@@ -78,15 +90,20 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
   private SingleNodeRecoveryScheduler(
       final TaskStatsMap taskStatsMap,
       final ProxyToTaskMap proxyToTaskMap,
-      final RecoveryLock recoveryLock) {
+      final AppTaskListMap appTaskListMap,
+      final RecoveryLock recoveryLock,
+      final TaskInfoRWLock taskInfoRWLock) {
     super();
     this.recoveryGroups = new ConcurrentHashMap<>();
     this.taskStatsMap = taskStatsMap;
     this.proxyToTaskMap = proxyToTaskMap;
+    this.appTaskListMap = appTaskListMap;
     this.conditionLock = new ReentrantLock();
     this.recoveryFinished = this.conditionLock.newCondition();
+    this.recoveryGroups = new ConcurrentHashMap<>();
     this.isRecoveryOngoing = new AtomicBoolean(false);
     this.recoveryLock = recoveryLock;
+    this.taskInfoRWLock = taskInfoRWLock;
   }
 
   @Override
@@ -112,6 +129,7 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
     MasterToTaskMessage proxyToRecoveryTask;
     String recoveryTaskId = "";
     try {
+      taskInfoRWLock.readLock().lock();
       // Select the newly allocated task with the least load for recovery
       double minLoad = Double.MAX_VALUE;
       proxyToRecoveryTask = null;
@@ -132,6 +150,8 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
     } catch (final AvroRemoteException e) {
       LOG.log(Level.SEVERE, "Start recovery through avro server has failed! " + e.toString());
       throw e;
+    } finally {
+      taskInfoRWLock.readLock().unlock();
     }
     try {
       conditionLock.lock();
@@ -144,7 +164,7 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
   }
 
   @Override
-  public List<String> pullRecoverableGroups(final String taskHostname) {
+  public List<String> pullRecoverableGroups(final String taskId) {
     // No more groups to be recovered! Recovery is done!
     if (recoveryGroups.isEmpty()) {
       // Set the recovery ongoing to false.
@@ -156,12 +176,23 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
       }
       return new ArrayList<>();
     } else {
-      // Allocate all the recovery groups in a single node. No need to check taskHostname here.
+      // Allocate all the recovery groups in a single node. No need to check taskId here.
       final Set<String> allocatedGroups = new HashSet<>();
+      final Set<String> appSet = new HashSet<>();
       for (final Map.Entry<String, GroupStats> entry : recoveryGroups.entrySet()) {
         recoveryGroups.remove(entry.getKey());
         allocatedGroups.add(entry.getKey());
+        appSet.add(entry.getValue().getAppId());
       }
+      taskInfoRWLock.readLock().lock();
+      // Checks whether task is still alive.
+      if (taskStatsMap.get(taskId) != null) {
+        // Update the app-task info only when the task is still alive.
+        for (final String appId : appSet) {
+          appTaskListMap.addTaskToApp(appId, taskId);
+        }
+      }
+      taskInfoRWLock.readLock().unlock();
       return new ArrayList<>(allocatedGroups);
     }
   }

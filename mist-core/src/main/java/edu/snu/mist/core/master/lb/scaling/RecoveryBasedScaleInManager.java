@@ -15,7 +15,11 @@
  */
 package edu.snu.mist.core.master.lb.scaling;
 
+import edu.snu.mist.core.master.ProxyToTaskMap;
+import edu.snu.mist.core.master.TaskAddressInfoMap;
+import edu.snu.mist.core.master.TaskInfoRWLock;
 import edu.snu.mist.core.master.TaskStatsMap;
+import edu.snu.mist.core.master.lb.AppTaskListMap;
 import edu.snu.mist.core.master.recovery.RecoveryScheduler;
 import edu.snu.mist.core.parameters.DriverHostname;
 import edu.snu.mist.core.parameters.MasterToDriverPort;
@@ -45,6 +49,21 @@ public final class RecoveryBasedScaleInManager implements ScaleInManager {
   private final TaskStatsMap taskStatsMap;
 
   /**
+   * The shared proxy to task map.
+   */
+  private final ProxyToTaskMap proxyToTaskMap;
+
+  /**
+   * The shared task address info map.
+   */
+  private final TaskAddressInfoMap taskAddressInfoMap;
+
+  /**
+   * The shared app task list map.
+   */
+  private final AppTaskListMap appTaskListMap;
+
+  /**
    * The shared recovery scheduler.
    */
   private final RecoveryScheduler recoveryScheduler;
@@ -54,20 +73,34 @@ public final class RecoveryBasedScaleInManager implements ScaleInManager {
    */
   private final ExecutorService singleThreadedExecutor;
 
+  /**
+   * The shared task info read/write lock for synchronization.
+   */
+  private final TaskInfoRWLock taskInfoRWLock;
+
   @Inject
   private RecoveryBasedScaleInManager(
       @Parameter(DriverHostname.class) final String driverHostname,
       @Parameter(MasterToDriverPort.class) final int masterToDriverPort,
       final TaskStatsMap taskStatsMap,
-      final RecoveryScheduler recoveryScheduler) throws Exception {
+      final ProxyToTaskMap proxyToTaskMap,
+      final TaskAddressInfoMap taskAddressInfoMap,
+      final AppTaskListMap appTaskListMap,
+      final RecoveryScheduler recoveryScheduler,
+      final TaskInfoRWLock taskInfoRWLock) throws Exception {
     this.proxyToDriver = AvroUtils.createAvroProxy(MasterToDriverMessage.class, new InetSocketAddress(
         driverHostname, masterToDriverPort));
     this.taskStatsMap = taskStatsMap;
+    this.proxyToTaskMap = proxyToTaskMap;
+    this.taskAddressInfoMap = taskAddressInfoMap;
+    this.appTaskListMap = appTaskListMap;
     this.recoveryScheduler = recoveryScheduler;
+    this.taskInfoRWLock = taskInfoRWLock;
     this.singleThreadedExecutor = Executors.newSingleThreadExecutor();
   }
 
   private String getMinimumLoadTask() {
+    assert taskInfoRWLock.writeLock().isHeldByCurrentThread();
     double minimumLoad = Double.MAX_VALUE;
     String minimumLoadTask = null;
     for (final Map.Entry<String, TaskStats> entry : taskStatsMap.entrySet()) {
@@ -81,11 +114,20 @@ public final class RecoveryBasedScaleInManager implements ScaleInManager {
 
   @Override
   public boolean scaleIn() throws AvroRemoteException, InterruptedException {
+    // Acquire the task info write lock firstly.
+    taskInfoRWLock.writeLock().lock();
     final String removedTaskId = getMinimumLoadTask();
+    // Remove task information firstly.
+    final TaskStats taskStats = taskStatsMap.removeTask(removedTaskId);
+    appTaskListMap.removeTask(removedTaskId);
+    proxyToTaskMap.remove(removedTaskId);
+    taskAddressInfoMap.remove(removedTaskId);
+    // Release the lock.
+    taskInfoRWLock.writeLock().unlock();
+    // Stop task.
     final boolean stopTaskSuccess = proxyToDriver.stopTask(removedTaskId);
 
     if (stopTaskSuccess) {
-      final TaskStats taskStats = taskStatsMap.removeTask(removedTaskId);
       recoveryScheduler.recover(taskStats.getGroupStatsMap());
       return true;
     } else {

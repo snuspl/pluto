@@ -16,6 +16,7 @@
 package edu.snu.mist.core.master.recovery;
 
 import edu.snu.mist.core.master.ProxyToTaskMap;
+import edu.snu.mist.core.master.TaskInfoRWLock;
 import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.master.lb.parameters.OverloadedTaskLoadThreshold;
 import edu.snu.mist.core.master.recovery.parameters.RecoveryUnitSize;
@@ -73,6 +74,11 @@ public final class DistributedRecoveryScheduler implements RecoveryScheduler {
   private final Lock conditionLock;
 
   /**
+   * The shared read/write lock for task info synchronization.
+   */
+  private final TaskInfoRWLock taskInfoRWLock;
+
+  /**
    * The conditional variable which synchronizes the recovery process.
    */
   private final Condition recoveryFinished;
@@ -97,6 +103,7 @@ public final class DistributedRecoveryScheduler implements RecoveryScheduler {
       final TaskStatsMap taskStatsMap,
       final ProxyToTaskMap proxyToTaskMap,
       final RecoveryLock recoveryLock,
+      final TaskInfoRWLock taskInfoRWLock,
       @Parameter(OverloadedTaskLoadThreshold.class) final double overloadedTaskThreshold,
       @Parameter(RecoveryUnitSize.class) final int recoveryUnitSize) {
     super();
@@ -104,6 +111,7 @@ public final class DistributedRecoveryScheduler implements RecoveryScheduler {
     this.proxyToTaskMap = proxyToTaskMap;
     this.recoveryGroups = new HashMap<>();
     this.recoveryLock = recoveryLock;
+    this.taskInfoRWLock = taskInfoRWLock;
     this.conditionLock = new ReentrantLock();
     this.recoveryFinished = this.conditionLock.newCondition();
     this.isRecoveryOngoing = new AtomicBoolean(false);
@@ -127,6 +135,8 @@ public final class DistributedRecoveryScheduler implements RecoveryScheduler {
       return;
     }
     recoveryGroups.putAll(failedGroups);
+    // Acquire read lock firstly
+    taskInfoRWLock.readLock().lock();
     final List<MasterToTaskMessage> proxyToRecoveryTaskList = new ArrayList<>();
     try {
       // Put the all tasks for recovery, except for overloaded tasks.
@@ -143,6 +153,8 @@ public final class DistributedRecoveryScheduler implements RecoveryScheduler {
     } catch (final AvroRemoteException e) {
       LOG.log(Level.SEVERE, "Start recovery through avro server has failed! " + e.toString());
       throw e;
+    } finally {
+      taskInfoRWLock.readLock().unlock();
     }
     // Wait until finish...
     try {

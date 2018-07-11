@@ -331,6 +331,7 @@ public final class MistDriver {
           runningTaskInfoStore.remove(failedTaskId);
           proxyToMaster.notifyFailedTask(failedTaskId);
         } catch (final AvroRemoteException e) {
+          e.printStackTrace();
           LOG.log(Level.SEVERE, "Cannot connect to MistMaster for notifying failure! " + e.toString());
           throw new IllegalStateException("Cannot connect to MistMaster while failure recovery");
         }

@@ -30,24 +30,34 @@ public final class ProxyToTaskMap {
 
   private ConcurrentMap<String, MasterToTaskMessage> innerMap;
 
+  /**
+   * The shared lock for task info synchronization.
+   */
+  private final TaskInfoRWLock taskInfoRWLock;
+
   @Inject
-  private ProxyToTaskMap() {
+  private ProxyToTaskMap(final TaskInfoRWLock taskInfoRWLock) {
+    this.taskInfoRWLock = taskInfoRWLock;
     this.innerMap = new ConcurrentHashMap<>();
   }
 
   public void addNewProxy(final String taskId, final MasterToTaskMessage proxyToTask) {
+    assert taskInfoRWLock.isWriteLockedByCurrentThread();
     innerMap.put(taskId, proxyToTask);
   }
 
   public Set<Map.Entry<String, MasterToTaskMessage>> entrySet() {
+    assert taskInfoRWLock.isReadHoldByCurrentThread();
     return innerMap.entrySet();
   }
 
   public MasterToTaskMessage get(final String taskId) {
+    assert taskInfoRWLock.isReadHoldByCurrentThread();
     return innerMap.get(taskId);
   }
 
   public MasterToTaskMessage remove(final String taskId) {
+    assert taskInfoRWLock.isWriteLockedByCurrentThread();
     return innerMap.remove(taskId);
   }
 }
