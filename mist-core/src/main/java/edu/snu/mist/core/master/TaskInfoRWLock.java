@@ -68,15 +68,19 @@ public final class TaskInfoRWLock extends ReentrantReadWriteLock {
 
     @Override
     public void lock() {
-      LOG.log(Level.INFO, "Acquiring Readlock on TaskInfoRWLock: {0}",
-          Arrays.toString(Thread.currentThread().getStackTrace()));
+      if (LOG.isLoggable(Level.FINE)) {
+        LOG.log(Level.FINE, "Acquiring Readlock on TaskInfoRWLock: {0}",
+            Arrays.toString(Thread.currentThread().getStackTrace()));
+      }
       super.lock();
     }
 
     @Override
     public void unlock() {
-      LOG.log(Level.INFO, "Releasing Readlock on TaskInfoRWLock: {0}",
-          Arrays.toString(Thread.currentThread().getStackTrace()));
+      if (LOG.isLoggable(Level.FINE)) {
+        LOG.log(Level.FINE, "Releasing Readlock on TaskInfoRWLock: {0}",
+            Arrays.toString(Thread.currentThread().getStackTrace()));
+      }
       super.unlock();
     }
   }
@@ -88,15 +92,19 @@ public final class TaskInfoRWLock extends ReentrantReadWriteLock {
 
     @Override
     public void lock() {
-      LOG.log(Level.INFO, "Acquiring Writelock on TaskInfoRWLock: {0}",
-          Arrays.toString(Thread.currentThread().getStackTrace()));
+      if (LOG.isLoggable(Level.FINE)) {
+        LOG.log(Level.FINE, "Acquiring Writelock on TaskInfoRWLock: {0}",
+            Arrays.toString(Thread.currentThread().getStackTrace()));
+      }
       super.lock();
     }
 
     @Override
     public void unlock() {
-      LOG.log(Level.INFO, "Releasing Readlock on TaskInfoRWLock: {0}",
-          Arrays.toString(Thread.currentThread().getStackTrace()));
+      if (LOG.isLoggable(Level.FINE)) {
+        LOG.log(Level.FINE, "Releasing Readlock on TaskInfoRWLock: {0}",
+            Arrays.toString(Thread.currentThread().getStackTrace()));
+      }
       super.unlock();
     }
   }
