@@ -18,6 +18,7 @@ package edu.snu.mist.core.master.lb.scaling;
 import edu.snu.mist.core.master.ProxyToTaskMap;
 import edu.snu.mist.core.master.TaskRequestor;
 import edu.snu.mist.core.master.TaskStatsMap;
+import edu.snu.mist.core.master.lb.AppTaskListMap;
 import edu.snu.mist.core.master.lb.parameters.OverloadedTaskLoadThreshold;
 import edu.snu.mist.core.master.lb.parameters.UnderloadedTaskLoadThreshold;
 import edu.snu.mist.core.master.recovery.RecoveryScheduler;
@@ -54,6 +55,11 @@ public final class RecoveryBasedScaleOutManager implements ScaleOutManager {
   private final ProxyToTaskMap proxyToTaskMap;
 
   /**
+   * The app task list map.
+   */
+  private final AppTaskListMap appTaskListMap;
+
+  /**
    * The shared task requestor to driver.
    */
   private final TaskRequestor taskRequestor;
@@ -77,11 +83,13 @@ public final class RecoveryBasedScaleOutManager implements ScaleOutManager {
   private RecoveryBasedScaleOutManager(
       final TaskStatsMap taskStatsMap,
       final ProxyToTaskMap proxyToTaskMap,
+      final AppTaskListMap appTaskListMap,
       final TaskRequestor taskRequestor,
       @Parameter(UnderloadedTaskLoadThreshold.class) final double underloadedTaskLoadThreshold,
       @Parameter(OverloadedTaskLoadThreshold.class) final double overloadedTaskLoadThreshold) {
     this.taskStatsMap = taskStatsMap;
     this.proxyToTaskMap = proxyToTaskMap;
+    this.appTaskListMap = appTaskListMap;
     this.taskRequestor = taskRequestor;
     this.underloadedTaskLoadThreshold = underloadedTaskLoadThreshold;
     this.overloadedTaskLoadThreshold = overloadedTaskLoadThreshold;
@@ -93,7 +101,8 @@ public final class RecoveryBasedScaleOutManager implements ScaleOutManager {
     // Step 1: Request a new task and setup the connection.
     taskRequestor.setupTaskAndConn(1);
     // Step 2: Get the groups which will be moved from overloaded tasks to the newly allocated groups.
-    // Our goal is to move the queries from the overloaded tasks to the newly allocated task as much as we can.
+    // Our goal is to move the queries from the overloaded tasks to the newly allocated task as much as we can
+    // without making the new task overloaded.
     final List<String> overloadedTaskList = new ArrayList<>();
     for (final Map.Entry<String, TaskStats> entry: taskStatsMap.entrySet()) {
       if (entry.getValue().getTaskLoad() > overloadedTaskLoadThreshold) {
@@ -105,21 +114,48 @@ public final class RecoveryBasedScaleOutManager implements ScaleOutManager {
     final double movableGroupLoadPerTask = maximumNewTaskLoad / overloadedTaskList.size();
     final Map<String, GroupStats> movedGroupStatsMap = new HashMap<>();
     // Choose the moved groups from the overloaded tasks.
-    for (final String overloadedTaskHostname : overloadedTaskList) {
-      final TaskStats taskStats = taskStatsMap.get(overloadedTaskHostname);
+    for (final String overloadedTaskId : overloadedTaskList) {
+      final TaskStats taskStats = taskStatsMap.get(overloadedTaskId);
+      final Map<String, GroupStats> groupStatsMap = taskStats.getGroupStatsMap();
+
+      // Organize the group stats according to the applications.
+      final Map<String, List<GroupStats>> appGroupStatsMap = new HashMap<>();
+      for (final Map.Entry<String, GroupStats> entry : groupStatsMap.entrySet()) {
+        final String appId = entry.getValue().getAppId();
+        if (!appGroupStatsMap.containsKey(appId)) {
+          appGroupStatsMap.put(appId, new ArrayList<>());
+        }
+        appGroupStatsMap.get(appId).add(entry.getValue());
+      }
+
+      // Select the moved group.
       final List<String> movedGroupList = new ArrayList<>();
       final int numEp = taskStats.getNumEventProcessors();
       double movedGroupLoad = 0.;
-      for (final Map.Entry<String, GroupStats> entry : taskStats.getGroupStatsMap().entrySet()) {
-        final double effectiveGroupLoad = entry.getValue().getGroupLoad() / numEp;
-        if (movedGroupLoad + effectiveGroupLoad < movableGroupLoadPerTask) {
-          movedGroupStatsMap.put(entry.getKey(), entry.getValue());
-          movedGroupList.add(entry.getKey());
-          movedGroupLoad += effectiveGroupLoad;
+      for (final Map.Entry<String, List<GroupStats>> entry : appGroupStatsMap.entrySet()) {
+        final String appId = entry.getKey();
+        final List<GroupStats> groupStatsList = entry.getValue();
+        boolean isAppCompletelyMoved = true;
+        for (final GroupStats groupStats : groupStatsList) {
+          final double effectiveGroupLoad = groupStats.getGroupLoad() / numEp;
+          if (movedGroupLoad + effectiveGroupLoad < movableGroupLoadPerTask) {
+            movedGroupStatsMap.put(groupStats.getGroupId(), groupStats);
+            movedGroupList.add(groupStats.getGroupId());
+            movedGroupLoad += effectiveGroupLoad;
+          } else {
+            isAppCompletelyMoved = false;
+          }
+        }
+        if (isAppCompletelyMoved) {
+          // Update the AppTaskListMap if all the groups in the app are removed.
+          appTaskListMap.removeAppFromTask(overloadedTaskId, appId);
+        } else {
+          // No more groups to move.
+          break;
         }
       }
       // Remove the stopped groups in the overloaded tasks.
-      final MasterToTaskMessage proxyToTask = proxyToTaskMap.get(overloadedTaskHostname);
+      final MasterToTaskMessage proxyToTask = proxyToTaskMap.get(overloadedTaskId);
       proxyToTask.removeGroup(movedGroupList);
     }
     // Recover the moved groups into the new task using a single node recovery scheduler.
