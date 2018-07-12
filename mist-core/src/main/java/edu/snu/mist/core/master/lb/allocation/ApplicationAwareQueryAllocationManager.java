@@ -16,18 +16,19 @@
 package edu.snu.mist.core.master.lb.allocation;
 
 import edu.snu.mist.core.master.TaskAddressInfoMap;
+import edu.snu.mist.core.master.TaskInfoRWLock;
 import edu.snu.mist.core.master.TaskStatsMap;
+import edu.snu.mist.core.master.lb.AppTaskListMap;
 import edu.snu.mist.core.master.lb.parameters.OverloadedTaskLoadThreshold;
 import edu.snu.mist.core.master.lb.parameters.UnderloadedTaskLoadThreshold;
 import edu.snu.mist.formats.avro.IPAddress;
+import edu.snu.mist.formats.avro.TaskStats;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 
 /**
@@ -37,10 +38,8 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
 
   private static final Logger LOG = Logger.getLogger(ApplicationAwareQueryAllocationManager.class.toString());
 
-  /**
-   * The map which maintains the app-task list information.
-   */
-  private final ConcurrentMap<String, List<String>> appTaskListMap;
+
+  private final AppTaskListMap appTaskListMap;
 
   /**
    * The shared task stats map.
@@ -51,6 +50,11 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
    * The shared task address info map.
    */
   private final TaskAddressInfoMap taskAddressInfoMap;
+
+  /**
+   * The read/write lock for synchronizing task info.
+   */
+  private final TaskInfoRWLock taskInfoRWLock;
 
   /**
    * The threshold for determining overloaded task.
@@ -67,12 +71,15 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
       @Parameter(OverloadedTaskLoadThreshold.class) final double overloadedTaskThreshold,
       @Parameter(UnderloadedTaskLoadThreshold.class) final double underloadedTaskThreshold,
       final TaskAddressInfoMap taskAddressInfoMap,
-      final TaskStatsMap taskStatsMap) {
-    this.appTaskListMap = new ConcurrentHashMap<>();
+      final TaskStatsMap taskStatsMap,
+      final AppTaskListMap appTaskListMap,
+      final TaskInfoRWLock taskInfoRWLock) {
     this.overloadedTaskThreshold = overloadedTaskThreshold;
     this.underloadedTaskThreshold = underloadedTaskThreshold;
     this.taskAddressInfoMap = taskAddressInfoMap;
     this.taskStatsMap = taskStatsMap;
+    this.appTaskListMap = appTaskListMap;
+    this.taskInfoRWLock = taskInfoRWLock;
   }
 
   private String getRandomTask(final List<String> allTaskList) {
@@ -81,6 +88,12 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
     final List<String> underloadedTaskList = new ArrayList<>();
     final List<String> normalTaskList = new ArrayList<>();
     for (final String task : allTaskList) {
+      final TaskStats taskStats = taskStatsMap.get(task);
+      if (taskStats == null) {
+        // Cannot find the task stats due to synchronization issue...
+        // This should not happen, so we throw RuntimeException here.
+        throw new RuntimeException("Synchronization error!");
+      }
       final double currentTaskLoad = taskStatsMap.get(task).getTaskLoad();
       if (currentTaskLoad < underloadedTaskThreshold) {
         underloadedTaskList.add(task);
@@ -101,37 +114,36 @@ public final class ApplicationAwareQueryAllocationManager implements QueryAlloca
   // TODO: [MIST-519] Consider query reallocation.
   @Override
   public IPAddress getAllocatedTask(final String appId) {
-    if (!appTaskListMap.containsKey(appId)) {
-      appTaskListMap.putIfAbsent(appId, new ArrayList<>());
-    }
-
-    final List<String> taskList = appTaskListMap.get(appId);
-    synchronized (taskList) {
-      if (taskList.isEmpty()) {
-        List<String> allTaskList;
-        do {
-          allTaskList = taskStatsMap.getTaskList();
-        } while (allTaskList.isEmpty());
-        final String selectedTask = getRandomTask(allTaskList);
-        taskList.add(selectedTask);
-        return taskAddressInfoMap.getClientToTaskAddress(selectedTask);
-      } else {
-        final String selectedTask = getRandomTask(taskList);
-        final double selectedTaskLoad = taskStatsMap.get(selectedTask).getTaskLoad();
-        if (selectedTaskLoad > overloadedTaskThreshold) {
-          // All the tasks are overloaded. Allocate to a new task.
-          final List<String> remainingList = taskStatsMap.getTaskList();
-          remainingList.removeAll(taskList);
-          if (!remainingList.isEmpty()) {
-            final String taskCandidate = getRandomTask(remainingList);
-            if (taskStatsMap.get(taskCandidate).getTaskLoad() < overloadedTaskThreshold) {
-              taskList.add(taskCandidate);
-              return taskAddressInfoMap.getClientToTaskAddress(taskCandidate);
-            }
+    // Acquire read lock starting task allocation.
+    taskInfoRWLock.readLock().lock();
+    final List<String> taskList = appTaskListMap.getTaskListForApp(appId);
+    if (taskList == null) {
+      final List<String> allTaskList = taskStatsMap.getTaskList();
+      final String selectedTask = getRandomTask(allTaskList);
+      appTaskListMap.addTaskToApp(appId, selectedTask);
+      final IPAddress result = taskAddressInfoMap.getClientToTaskAddress(selectedTask);
+      taskInfoRWLock.readLock().unlock();
+      return result;
+    } else {
+      final String selectedTask = getRandomTask(taskList);
+      final double selectedTaskLoad = taskStatsMap.get(selectedTask).getTaskLoad();
+      if (selectedTaskLoad > overloadedTaskThreshold) {
+        // All the tasks are overloaded. Allocate to a new task.
+        final List<String> remainingList = taskStatsMap.getTaskList();
+        remainingList.removeAll(taskList);
+        if (!remainingList.isEmpty()) {
+          final String taskCandidate = getRandomTask(remainingList);
+          if (taskStatsMap.get(taskCandidate).getTaskLoad() < overloadedTaskThreshold) {
+            appTaskListMap.addTaskToApp(appId, taskCandidate);
+            final IPAddress result = taskAddressInfoMap.getClientToTaskAddress(taskCandidate);
+            taskInfoRWLock.readLock().unlock();
+            return result;
           }
         }
-        return taskAddressInfoMap.getClientToTaskAddress(selectedTask);
       }
+      final IPAddress result = taskAddressInfoMap.getClientToTaskAddress(selectedTask);
+      taskInfoRWLock.readLock().unlock();
+      return result;
     }
   }
 }

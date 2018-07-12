@@ -70,7 +70,7 @@ final class DefaultExecutionVertexGeneratorImpl implements ExecutionVertexGenera
             physicalObjectGenerator.newOperator(conf, classLoader));
         if (configVertex.getState().size() != 0) {
           ((StateHandler) operator.getOperator()).setState(
-              StateSerializer.deserializeStateMap(configVertex.getState()));
+              StateSerializer.deserializeStateMap(configVertex.getState(), classLoader));
         }
         if (configVertex.getLatestCheckpointTimestamp() != 0) {
           ((StateHandler) operator.getOperator()).setRecoveredTimestamp(

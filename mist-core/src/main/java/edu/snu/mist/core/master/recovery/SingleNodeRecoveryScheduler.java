@@ -16,7 +16,9 @@
 package edu.snu.mist.core.master.recovery;
 
 import edu.snu.mist.core.master.ProxyToTaskMap;
+import edu.snu.mist.core.master.TaskInfoRWLock;
 import edu.snu.mist.core.master.TaskStatsMap;
+import edu.snu.mist.core.master.lb.AppTaskListMap;
 import edu.snu.mist.formats.avro.GroupStats;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
 import org.apache.avro.AvroRemoteException;
@@ -55,9 +57,24 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
   private final ProxyToTaskMap proxyToTaskMap;
 
   /**
+   * The app-task list map.
+   */
+  private final AppTaskListMap appTaskListMap;
+
+  /**
+   * The shared lock for synchronizing recovery process.
+   */
+  private final RecoveryLock recoveryLock;
+
+  /**
+   * The shared read/write lock for synchronizing task info.
+   */
+  private final TaskInfoRWLock taskInfoRWLock;
+
+  /**
    * The lock which is used for conditional variable.
    */
-  private final Lock lock;
+  private final Lock conditionLock;
 
   /**
    * The conditional variable which synchronizes the recovery process.
@@ -72,19 +89,39 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
   @Inject
   private SingleNodeRecoveryScheduler(
       final TaskStatsMap taskStatsMap,
-      final ProxyToTaskMap proxyToTaskMap) {
+      final ProxyToTaskMap proxyToTaskMap,
+      final AppTaskListMap appTaskListMap,
+      final RecoveryLock recoveryLock,
+      final TaskInfoRWLock taskInfoRWLock) {
+    super();
     this.recoveryGroups = new ConcurrentHashMap<>();
     this.taskStatsMap = taskStatsMap;
     this.proxyToTaskMap = proxyToTaskMap;
-    this.lock = new ReentrantLock();
-    this.recoveryFinished = this.lock.newCondition();
+    this.appTaskListMap = appTaskListMap;
+    this.conditionLock = new ReentrantLock();
+    this.recoveryFinished = this.conditionLock.newCondition();
+    this.recoveryGroups = new ConcurrentHashMap<>();
     this.isRecoveryOngoing = new AtomicBoolean(false);
+    this.recoveryLock = recoveryLock;
+    this.taskInfoRWLock = taskInfoRWLock;
   }
 
   @Override
-  public synchronized void startRecovery(final Map<String, GroupStats> failedGroups) {
+  public void recover(final Map<String, GroupStats> failedGroups) throws AvroRemoteException, InterruptedException {
+    // Check whether current thread is holding a lock.
+    assert recoveryLock.isHeldByCurrentThread();
+    // Start the recovery process.
+    performRecovery(failedGroups);
+  }
+
+  private void performRecovery(final Map<String, GroupStats> failedGroups) throws AvroRemoteException,
+      InterruptedException {
+    if (failedGroups.isEmpty()) {
+      LOG.log(Level.INFO, "No groups to recover...");
+      return;
+    }
     if (!isRecoveryOngoing.compareAndSet(false, true)) {
-      throw new IllegalStateException("Internal Error : startRecovery() is called while other recovery process is " +
+      throw new IllegalStateException("Internal Error : recover() is called while other recovery process is " +
           "already running!");
     }
     LOG.log(Level.INFO, "Start recovery on failed groups: {0}", failedGroups.keySet());
@@ -92,6 +129,7 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
     MasterToTaskMessage proxyToRecoveryTask;
     String recoveryTaskId = "";
     try {
+      taskInfoRWLock.readLock().lock();
       // Select the newly allocated task with the least load for recovery
       double minLoad = Double.MAX_VALUE;
       proxyToRecoveryTask = null;
@@ -111,41 +149,50 @@ public final class SingleNodeRecoveryScheduler implements RecoveryScheduler {
       proxyToRecoveryTask.startTaskSideRecovery();
     } catch (final AvroRemoteException e) {
       LOG.log(Level.SEVERE, "Start recovery through avro server has failed! " + e.toString());
+      throw e;
+    } finally {
+      taskInfoRWLock.readLock().unlock();
     }
-  }
-
-  @Override
-  public void awaitUntilRecoveryFinish() {
     try {
-      lock.lock();
+      conditionLock.lock();
       while (isRecoveryOngoing.get()) {
         recoveryFinished.await();
       }
-      lock.unlock();
-    } catch (final InterruptedException e) {
-      LOG.log(Level.SEVERE, "Recovery has been interrupted while awaiting..." + e.toString());
+    } finally {
+      conditionLock.unlock();
     }
   }
 
   @Override
-  public List<String> pullRecoverableGroups(final String taskHostname) {
+  public List<String> pullRecoverableGroups(final String taskId) {
     // No more groups to be recovered! Recovery is done!
     if (recoveryGroups.isEmpty()) {
       // Set the recovery ongoing to false.
       if (isRecoveryOngoing.compareAndSet(true, false)) {
-        lock.lock();
+        conditionLock.lock();
         // Notify the awaiting threads that the recovery is done.
         recoveryFinished.signalAll();
-        lock.unlock();
+        conditionLock.unlock();
       }
       return new ArrayList<>();
     } else {
-      // Allocate all the recovery groups in a single node. No need to check taskHostname here.
+      // Allocate all the recovery groups in a single node. No need to check taskId here.
       final Set<String> allocatedGroups = new HashSet<>();
+      final Set<String> appSet = new HashSet<>();
       for (final Map.Entry<String, GroupStats> entry : recoveryGroups.entrySet()) {
         recoveryGroups.remove(entry.getKey());
         allocatedGroups.add(entry.getKey());
+        appSet.add(entry.getValue().getAppId());
       }
+      taskInfoRWLock.readLock().lock();
+      // Checks whether task is still alive.
+      if (taskStatsMap.get(taskId) != null) {
+        // Update the app-task info only when the task is still alive.
+        for (final String appId : appSet) {
+          appTaskListMap.addTaskToApp(appId, taskId);
+        }
+      }
+      taskInfoRWLock.readLock().unlock();
       return new ArrayList<>(allocatedGroups);
     }
   }
