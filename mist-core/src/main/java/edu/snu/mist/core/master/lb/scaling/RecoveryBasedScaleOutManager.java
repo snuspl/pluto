@@ -21,7 +21,6 @@ import edu.snu.mist.core.master.TaskStatsMap;
 import edu.snu.mist.core.master.lb.parameters.OverloadedTaskLoadThreshold;
 import edu.snu.mist.core.master.lb.parameters.UnderloadedTaskLoadThreshold;
 import edu.snu.mist.core.master.recovery.RecoveryScheduler;
-import edu.snu.mist.core.master.recovery.RecoveryStarter;
 import edu.snu.mist.core.master.recovery.SingleNodeRecoveryScheduler;
 import edu.snu.mist.formats.avro.GroupStats;
 import edu.snu.mist.formats.avro.MasterToTaskMessage;
@@ -128,7 +127,8 @@ public final class RecoveryBasedScaleOutManager implements ScaleOutManager {
     injector.bindVolatileInstance(TaskStatsMap.class, taskStatsMap);
     injector.bindVolatileInstance(ProxyToTaskMap.class, proxyToTaskMap);
     final RecoveryScheduler recoveryScheduler = injector.getInstance(SingleNodeRecoveryScheduler.class);
-    singleThreadedExecutorService.submit(new RecoveryStarter(movedGroupStatsMap, recoveryScheduler));
+    // Start the recovery process.
+    recoveryScheduler.recover(movedGroupStatsMap);
   }
 
   @Override
