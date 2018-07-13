@@ -75,6 +75,11 @@ public final class MistMaster implements Task {
    */
   private final ApplicationCodeManager applicationCodeManager;
 
+  /**
+   * The shared store manager.
+   */
+  private final SharedStoreManager sharedStoreManager;
+
   @Inject
   private MistMaster(
       @Parameter(DriverToMasterPort.class) final int driverToMasterPort,
@@ -88,13 +93,15 @@ public final class MistMaster implements Task {
       final MasterSetupFinished masterSetupFinished,
       @Parameter(MasterRecovery.class) final boolean masterRecovery,
       final ApplicationCodeManager applicationCodeManager,
-      final DynamicScalingManager dynamicScalingManager) throws Exception {
+      final DynamicScalingManager dynamicScalingManager,
+      final SharedStoreManager sharedStoreManager) throws Exception {
     this.initialTaskNum = initialTaskNum;
     this.taskRequestor = taskRequestor;
     this.masterSetupFinished = masterSetupFinished;
     this.masterRecovery = masterRecovery;
     this.applicationCodeManager = applicationCodeManager;
     this.dynamicScalingManager = dynamicScalingManager;
+    this.sharedStoreManager = sharedStoreManager;
 
     // Initialize countdown latch
     this.countDownLatch = new CountDownLatch(1);
@@ -114,6 +121,10 @@ public final class MistMaster implements Task {
     if (!masterRecovery) {
       taskRequestor.setupTaskAndConn(initialTaskNum);
       masterSetupFinished.setFinished();
+      // Clear the shared store when the master is initiated for the first time.
+      if (!sharedStoreManager.clearSharedStore()) {
+        throw new RuntimeException("Cannot clear the shared store.. shutting down MIST...");
+      }
     } else {
       applicationCodeManager.recoverAppJarInfo();
       taskRequestor.recoverTaskConn();
