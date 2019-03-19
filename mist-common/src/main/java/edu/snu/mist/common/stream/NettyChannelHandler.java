@@ -34,14 +34,14 @@ public interface NettyChannelHandler {
    * @param msg message
    * @throws Exception exception
    */
-  void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception;
+  void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception;
 
   /**
    * Handling inactive channel.
    * @param ctx the context object
    * @throws Exception
    */
-  void channelInactive(final ChannelHandlerContext ctx) throws Exception;
+  void channelInactive(ChannelHandlerContext ctx) throws Exception;
 
   /**
    * Handling exception from the channel.
@@ -49,5 +49,5 @@ public interface NettyChannelHandler {
    * @param cause exception cause
    * @throws Exception exception
    */
-  void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) throws Exception;
+  void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception;
 }

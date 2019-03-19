@@ -141,7 +141,7 @@
         <!-- Modifier Checks                                    -->
         <!-- See http://checkstyle.sf.net/config_modifiers.html -->
         <module name="ModifierOrder"/>
-        <module name="RedundantModifier"/>
+        <!--<module name="RedundantModifier"/>-->
 
 
         <!-- Checks for blocks. You know, those {}'s         -->
@@ -152,7 +152,7 @@
         <module name="EmptyBlock">
             <property name="option" value="text"/>
         </module>
-        <module name="LeftCurly"/>
+        <!--<module name="LeftCurly"/>-->
         <module name="NeedBraces"/>
         <module name="RightCurly"/>
 
@@ -174,7 +174,7 @@
         <module name="SimplifyBooleanReturn"/>
 
         <module name="FinalParameters"/>
-        <module name="UnnecessaryParentheses"/>
+        <!--<module name="UnnecessaryParentheses"/>-->
 
         <!-- Checks for class design                         -->
         <!-- See http://checkstyle.sf.net/config_design.html -->

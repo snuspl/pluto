@@ -31,8 +31,8 @@ limitations under the License.
         <reef.version>0.16.0</reef.version>
         <hadoop.version>2.7.0</hadoop.version>
         <project.build.directory>target</project.build.directory>
-        <maven-checkstyle-plugin.version>2.15</maven-checkstyle-plugin.version>
-        <checkstyle.version>6.6</checkstyle.version>
+        <maven-checkstyle-plugin.version>3.0.0</maven-checkstyle-plugin.version>
+        <checkstyle.version>8.18</checkstyle.version>
         <avro.version>1.7.7</avro.version>
         <kafka.version>0.10.1.0</kafka.version>
         <paho.version>1.1.0</paho.version>
@@ -95,11 +95,11 @@ limitations under the License.
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>${maven-checkstyle-plugin.version}</version>
                 <dependencies>
-                    <dependency>
-                        <groupId>com.puppycrawl.tools</groupId>
-                        <artifactId>checkstyle</artifactId>
-                        <version>${checkstyle.version}</version>
-                    </dependency>
+                  <dependency>
+                    <groupId>com.puppycrawl.tools</groupId>
+                    <artifactId>checkstyle</artifactId>
+                    <version>${checkstyle.version}</version>
+                  </dependency> 
                 </dependencies>
                 <configuration>
                     <configLocation>mist-common/src/main/resources/checkstyle.xml</configLocation>

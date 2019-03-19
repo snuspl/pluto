@@ -41,7 +41,7 @@ public abstract class RuleBasedCCPredicate implements MISTPredicate<Map<String, 
   }
 
   @Override
-  public abstract boolean test(final Map<String, Object> stringObjectMap);
+  public abstract boolean test(Map<String, Object> stringObjectMap);
 
   /**
    * Check type of compared object and return the int for comparison condition.

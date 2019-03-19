@@ -33,7 +33,7 @@ public final class ProportionalEventProcessorNumAssigner implements EventProcess
    * If there are more groups than this number,
    * event processors according to the number of groups will be created ignoring this value.
    */
-  final int threadNumLimit;
+  private final int threadNumLimit;
 
   /**
    * The map of group ids and group info to update.

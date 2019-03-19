@@ -24,6 +24,7 @@ nb-configuration.xml
 .idea
 atlassian-ide-plugin.xml
 *.sln.DotSettings.user
+lib/*
 #
 # ----------------------------------------------------------------------
 # OS Files

@@ -41,7 +41,7 @@ public interface ApplyStatefulFunction<T, R> extends Serializable {
    * Updates the internal state with the input.
    * @param input the input to consume
    */
-  void update(final T input);
+  void update(T input);
 
   /**
    * @return the current state
@@ -51,7 +51,7 @@ public interface ApplyStatefulFunction<T, R> extends Serializable {
   /**
    * Set the current state.
    */
-  void setFunctionState(final Object state);
+  void setFunctionState(Object state);
 
   /**
    * Produces a final result with the current state.
