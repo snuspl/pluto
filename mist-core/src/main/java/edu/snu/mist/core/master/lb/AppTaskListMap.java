@@ -44,6 +44,13 @@ public final class AppTaskListMap {
     }
   }
 
+  public synchronized void removeAppFromTask(final String removedTaskId, final String appId) {
+    final List<String> taskIdList = innerMap.get(appId);
+    if (taskIdList != null) {
+      taskIdList.removeIf(taskId -> taskId.equals(removedTaskId));
+    }
+  }
+
   public synchronized void addTaskToApp(final String appId, final String taskId) {
     if (!innerMap.containsKey(appId)) {
       innerMap.putIfAbsent(appId, new ArrayList<>());

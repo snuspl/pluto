@@ -68,6 +68,7 @@ public final class TaskStatsMap {
     innerList.add(taskId);
     return innerMap.putIfAbsent(taskId, TaskStats.newBuilder()
         .setTaskLoad(0.0)
+        .setNumEventProcessors(1)
         .setGroupStatsMap(new HashMap<>())
         .build());
   }

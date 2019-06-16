@@ -121,6 +121,11 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
   private final ScaleInManager scaleInManager;
 
   /**
+   * The scale-out manager.
+   */
+  private final ScaleOutManager scaleOutManager;
+
+  /**
    * The shared lock for synchronizing recovery process.
    */
   private final RecoveryLock recoveryLock;
@@ -143,6 +148,7 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
       @Parameter(ScaleInIdleTaskRatio.class) final double scaleInIdleTaskRatio,
       @Parameter(ScaleOutOverloadedTaskRatio.class) final double scaleOutOverloadedTaskRatio,
       final ScaleInManager scaleInManager,
+      final ScaleOutManager scaleOutManager,
       final RecoveryLock recoveryLock,
       final TaskInfoRWLock taskInfoRWLock) {
     this.taskStatsMap = taskStatsMap;
@@ -160,6 +166,7 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
     this.lastMeasuredTimestamp = System.currentTimeMillis();
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     this.scaleInManager = scaleInManager;
+    this.scaleOutManager = scaleOutManager;
     this.recoveryLock = recoveryLock;
     this.taskInfoRWLock = taskInfoRWLock;
   }
@@ -211,7 +218,7 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
           try {
             // Release the lock.
             taskInfoRWLock.readLock().unlock();
-            // TODO: [MIST-1130] Perform automatic scale-out.
+            scaleOutManager.scaleOut();
             overloadedTimeElapsed = 0;
           } catch (final Exception e) {
             e.printStackTrace();
@@ -259,6 +266,7 @@ public final class PeriodicDynamicScalingManager implements DynamicScalingManage
   @Override
   public void close() throws Exception {
     scaleInManager.close();
+    scaleOutManager.close();
     scheduledExecutorService.shutdown();
     scheduledExecutorService.awaitTermination(6000, TimeUnit.MILLISECONDS);
   }

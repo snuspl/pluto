@@ -86,6 +86,7 @@ public final class DefaultTaskStatsUpdater implements TaskStatsUpdater {
     proxyToMaster.updateTaskStats(taskId,
         TaskStats.newBuilder()
             .setTaskLoad(taskCpuLoad)
+            .setNumEventProcessors(numEventProcessors)
             .setGroupStatsMap(groupStatsMap)
             .build());
   }

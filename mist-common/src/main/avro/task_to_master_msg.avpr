@@ -75,6 +75,10 @@
           "type": "double"
         },
         {
+          "name": "NumEventProcessors",
+          "type": "int"
+        },
+        {
           "name": "GroupStatsMap",
           "type": {
             "type": "map",
